@@ -2,6 +2,16 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-}
+  experimental: { appDir: true },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "placeimg.com",
+        pathname: "/**",
+      },
+    ],
+  },
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { themeChange } from "theme-change";
+import Link from "next/link";
 
 export default function Navigation() {
   useEffect(() => {
@@ -7,7 +8,7 @@ export default function Navigation() {
   }, []);
 
   return (
-    <header className="sticky top-0 left-0 right-0 flex flex-row justify-between h-24 text-white justify-items-center">
+    <header className="top-0 flex flex-row justify-between h-24 text-white justify-items-center">
       <div className="navbar bg-base-100 bg-gradient-to-r from-purple-500 via-cyan-400 to-blue-600">
         <div className="navbar-start">
           <div className="dropdown">
@@ -32,22 +33,22 @@ export default function Navigation() {
             {/* HAMBURGER MENU BELOW*/}
             <ul
               tabIndex={0}
-              className="p-2 mt-3 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52"
+              className="p-2 mt-3 text-black shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52 dark:text-white"
             >
               <li>
-                <a>Despre proiect</a>
+                <Link href="/about/the-project/">Despre proiect</Link>
               </li>
               <li>
-                <a>Preț</a>
+                <Link href="/pricing/">Preț</Link>
               </li>
               <li>
-                <a>Despre noi</a>
+                <Link href="/about/the-team/">Despre noi</Link>
               </li>
             </ul>
           </div>
 
           {/* PLATFORM LOGO SVG BELOW*/}
-          <a className="text-xl normal-case btn btn-ghost">
+          <Link className="text-xl normal-case btn btn-ghost" href="/">
             <svg
               width="100"
               height="47"
@@ -60,27 +61,29 @@ export default function Navigation() {
                 fill="white"
               />
             </svg>
-          </a>
+          </Link>
         </div>
 
         {/*  MAIN NAVIGATION LINKS */}
         <div className="hidden navbar-center lg:flex">
           <ul tabIndex={0} className="p-0 menu menu-horizontal">
             <li>
-              <a>Despre proiect</a>
+              <Link href="/about/the-project/">Despre proiect</Link>
             </li>
             <li>
-              <a>Preț</a>
+              <Link href="/pricing/">Preț</Link>
             </li>
             <li>
-              <a>Despre noi</a>
+              <Link href="/about/the-team/">Despre noi</Link>
             </li>
           </ul>
         </div>
 
         {/*  AUTHENTICATION (CTA) BUTTON */}
         <div className="navbar-end">
-          <a className="btn">Autentificare</a>
+          <Link className="btn" href="/auth/">
+            Autentificare
+          </Link>
 
           {/*  THEME SWAP BUTTON */}
           <label className="mx-5 swap swap-rotate">

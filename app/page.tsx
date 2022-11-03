@@ -10,7 +10,9 @@ export default function Homepage() {
               Platforma ITC oferă cursuri în mod gratuit pentru toți cei
               pasionați de domeniul cibersecurității. Fă-ți un cont chiar acum!
             </p>
-            <button className="btn btn-primary">Autentificare</button>
+            <button className="btn btn-primary" type="button">
+              Autentificare
+            </button>
           </div>
         </div>
       </section>

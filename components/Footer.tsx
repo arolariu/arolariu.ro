@@ -1,6 +1,6 @@
 export default function Footer() {
   return (
-    <footer className="p-10 text-black footer footer-center bg-gradient-to-l from-purple-500 via-cyan-400 to-blue-600">
+    <footer className="py-10 text-black footer footer-center bg-gradient-to-l from-purple-500 via-cyan-400 to-blue-600">
       <div>
         {/*  ITC PLATFORM LOGO SVG*/}
         <svg
