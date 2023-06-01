@@ -43,8 +43,8 @@ namespace ContainerBackend.Domain.Invoices.Endpoints
 
         private static async Task<IResult> RetrieveInvoiceAsync([FromRoute] Guid id, IKeyVaultService keyVaultService)
         {
-            var secret = await keyVaultService.GetSecretAsync("arolariu-sql-connstring");
-            return Results.Ok("Received secret: " + secret + "\n from Id: " + id);
+            Task.Delay(1000);
+            return Results.Ok("Received id: " + secret + "\n from Id: " + id);
         }
     }
 }
