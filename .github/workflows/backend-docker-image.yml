@@ -39,7 +39,7 @@ jobs:
         resource-group: arolariu-rg
         dns-name-label: arolariu 
         location: swedencentral
-        image: container-backend:latest
+        image: latest
         name: container-backend
         cpu: 1
         memory: 1
