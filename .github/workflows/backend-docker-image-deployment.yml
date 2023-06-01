@@ -1,0 +1,19 @@
+name: Build Docker Image CI pipeline for backend
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Docker image.
+      run: docker build ./backend/ --file Dockerfile --tag container-backend
+    - name: Tag the built Docker image with the private Azure Container Registry and append the version number.
+      run: docker tag container-backend arolariu.azurecr.io/container-backend:v2
+    - name: Push the built & tagged Docker image to the private Azure Container Registry.
+      run: docker push arolariu.azurecr.io/container-backend:v2
