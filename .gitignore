@@ -1,0 +1,6 @@
+*/node_modules/*
+*/obj/*
+*/bin/*
+*/.vs/*
+*/.vscode/*
+*/.vsc
