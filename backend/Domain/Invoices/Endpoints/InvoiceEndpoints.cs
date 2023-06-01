@@ -41,10 +41,10 @@ namespace ContainerBackend.Domain.Invoices.Endpoints
             return Results.Ok("Received blob of size: " + blob.Length);
         }
 
-        private static async Task<IResult> RetrieveInvoiceAsync([FromRoute] Guid id, IKeyVaultService keyVaultService)
+        private static async Task<IResult> RetrieveInvoiceAsync([FromRoute] Guid id)
         {
-            Task.Delay(1000);
-            return Results.Ok("Received id: " + secret + "\n from Id: " + id);
+            await Task.Delay(1000);
+            return Results.Ok("Received id: " + id);
         }
     }
 }
