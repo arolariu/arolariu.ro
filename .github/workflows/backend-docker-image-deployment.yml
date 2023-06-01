@@ -29,18 +29,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-    - name: Deploy to Azure Container Instances
+    - name: Login to Azure.
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Deploy to Azure Container Instances.
       uses: Azure/aci-deploy@v1
       with:
         resource-group: arolariu-rg
-        cpu: 1
-        gpu-count: 0 
         dns-name-label: arolariu 
         image: container-backend:latest
+        name: container-backend
+        cpu: 1
+        memory: 1
+        gpu-count: 0 
         ip-address: Public
         location: france-central
-        memory: 1
-        name: container-backend
         os-type: linux
         ports: 8080
         protocol: TCP
