@@ -43,7 +43,7 @@ jobs:
         name: container-backend
         cpu: 1
         memory: 1
-        ports: 8080
+        ports: 80
         registry-login-server: arolariu.azurecr.io 
         registry-username: ${{ secrets.ACR_USERNAME }}
         registry-password: ${{ secrets.ACR_PASSWORD }}
