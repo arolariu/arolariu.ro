@@ -38,16 +38,12 @@ jobs:
       with:
         resource-group: arolariu-rg
         dns-name-label: arolariu 
+        location: france-central
         image: container-backend:latest
         name: container-backend
         cpu: 1
         memory: 1
-        gpu-count: 0 
-        ip-address: Public
-        location: france-central
-        os-type: linux
         ports: 8080
-        protocol: TCP
         registry-login-server: arolariu.azurecr.io 
         registry-username: ${{ secrets.ACR_USERNAME }}
         registry-password: ${{ secrets.ACR_PASSWORD }}
