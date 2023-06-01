@@ -7,6 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -20,6 +21,29 @@ jobs:
         username: ${{ secrets.AZURE_CLIENT_ID }}
         password: ${{ secrets.AZURE_CLIENT_SECRET }}
     - name: Tag the built Docker image with the private Azure Container Registry and append the version number.
-      run: docker tag container-backend arolariu.azurecr.io/container-backend:v1
+      run: docker tag container-backend arolariu.azurecr.io/container-backend:latest
     - name: Push the built & tagged Docker image to the private Azure Container Registry.
-      run: docker push arolariu.azurecr.io/container-backend:v1
+      run: docker push arolariu.azurecr.io/container-backend:latest
+      
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy to Azure Container Instances
+      uses: Azure/aci-deploy@v1
+      with:
+        resource-group: arolariu-rg
+        cpu: 1
+        gpu-count: 0 
+        dns-name-label: arolariu 
+        image: container-backend:latest
+        ip-address: Public
+        location: france-central
+        memory: 1
+        name: container-backend
+        os-type: linux
+        ports: 8080
+        protocol: TCP
+        registry-login-server: arolariu.azurecr.io 
+        registry-username: ${{ secrets.ACR_USERNAME }}
+        registry-password: ${{ secrets.ACR_PASSWORD }}
+        restart-policy: Always
