@@ -1,4 +1,4 @@
-name: Build Docker Image CI pipeline for backend
+name: Backend Container Deployment
 
 on:
   push:
@@ -26,8 +26,8 @@ jobs:
       run: docker push arolariu.azurecr.io/container-backend:latest
       
   deploy:
-    runs-on: ubuntu-latest
     needs: build
+    runs-on: ubuntu-latest
     steps:
     - name: Login to Azure.
       uses: azure/login@v1
@@ -38,7 +38,7 @@ jobs:
       with:
         resource-group: arolariu-rg
         dns-name-label: arolariu 
-        location: france-central
+        location: swedencentral
         image: container-backend:latest
         name: container-backend
         cpu: 1
