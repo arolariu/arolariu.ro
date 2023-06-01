@@ -33,18 +33,14 @@ jobs:
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-    - name: Deploy to Azure Container Instances.
-      uses: Azure/aci-deploy@v1
+    - name: Publish contaner to Azure Container Apps.
+      uses: azure/container-apps-deploy-action@v1
       with:
-        resource-group: arolariu-rg
-        dns-name-label: arolariu 
+        resourceGroup: arolariu-rg
+        containerAppName: container-backend
+        acrName: arolariu
+        acrUsername: ${{ secrets.ACR_USERNAME }}
+        acrPassword: ${{ secrets.ACR_PASSWORD }}
         location: swedencentral
-        image: arolariu.azurecr.io/container-backend:latest
-        name: container-backend
-        cpu: 1
-        memory: 1
-        ports: 80
-        registry-login-server: arolariu.azurecr.io 
-        registry-username: ${{ secrets.ACR_USERNAME }}
-        registry-password: ${{ secrets.ACR_PASSWORD }}
-        restart-policy: Always
+        imageToDeploy: arolariu.azurecr.io/container-backend:latest
+        runtimeStack: 'dotnetcore:7.0'
