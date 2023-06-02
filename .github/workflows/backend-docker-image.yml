@@ -1,22 +1,20 @@
-name: Trigger auto deployment for container-backend
+name: Backend Container Deployment
 
-# When this action will be executed
 on:
-  # Automatically trigger it when detected changes in repo
   push:
     branches: 
       [ main ]
     paths:
     - 'backend/**'
-    - '.github/workflows/container-backend-AutoDeployTrigger-4bf7a51a-a263-475f-8828-2297b4c7f41d.yml'
+  pull_request:
+    branches: 
+      [ main ]
+    paths:
+    - 'backend/**'
 
-  # Allow mannually trigger 
-  workflow_dispatch:
-      
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout to the branch
         uses: actions/checkout@v2
@@ -37,6 +35,3 @@ jobs:
           resourceGroup: arolariu-rg
           imageToBuild: arolariu.azurecr.io/container-backend:${{ github.sha }}
           dockerfilePath: Dockerfile
-
-     
-
