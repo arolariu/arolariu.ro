@@ -2,45 +2,36 @@ name: Backend Container Deployment
 
 on:
   push:
-    branches: [ "main" ]
+    branches: 
+      [ main ]
+    paths:
+    - 'backend/**'
   pull_request:
-    branches: [ "main" ]
+    branches: 
+      [ main ]
+    paths:
+    - 'backend/**'
 
 jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
 
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build the Docker image.
-      run: docker build ./backend/ --file ./backend/Dockerfile --tag container-backend
-    - name: Login to the private Azure Container Registry to be able to push Docker built image.
-      uses: docker/login-action@v2
-      with:
-        registry: arolariu.azurecr.io
-        username: ${{ secrets.AZURE_CLIENT_ID }}
-        password: ${{ secrets.AZURE_CLIENT_SECRET }}
-    - name: Tag the built Docker image with the private Azure Container Registry and append the version number.
-      run: docker tag container-backend arolariu.azurecr.io/container-backend:latest
-    - name: Push the built & tagged Docker image to the private Azure Container Registry.
-      run: docker push arolariu.azurecr.io/container-backend:latest
-      
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-    - name: Login to Azure.
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    - name: Publish contaner to Azure Container Apps.
-      uses: azure/container-apps-deploy-action@v1
-      with:
-        resourceGroup: arolariu-rg
-        containerAppName: container-backend
-        acrName: arolariu
-        acrUsername: ${{ secrets.ACR_USERNAME }}
-        acrPassword: ${{ secrets.ACR_PASSWORD }}
-        location: swedencentral
-        imageToDeploy: arolariu.azurecr.io/container-backend:latest
-        runtimeStack: 'dotnetcore:7.0'
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.CONTAINERBACKEND_AZURE_CREDENTIALS }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }}/backend 
+          registryUrl: arolariu.azurecr.io
+          registryUsername: ${{ secrets.CONTAINERBACKEND_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.CONTAINERBACKEND_REGISTRY_PASSWORD }}
+          containerAppName: container-backend
+          resourceGroup: arolariu-rg
+          imageToBuild: arolariu.azurecr.io/container-backend:${{ github.sha }}
+          dockerfilePath: Dockerfile
