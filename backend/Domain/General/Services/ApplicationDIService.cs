@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using System.Data.SqlClient;
-using System.Data;
+using ContainerBackend.Domain.General.Services.Swagger;
 
 namespace ContainerBackend.Domain.General.Services
 {
@@ -14,13 +12,14 @@ namespace ContainerBackend.Domain.General.Services
         /// The application DI service injection method.
         /// </summary>
         /// <param name="app"></param>
-        /// <returns></returns>
+        /// <returns><see cref="IApplicationBuilder"/> application builder object.</returns>
         public static IApplicationBuilder AddGeneralApplicationConfiguration(this IApplicationBuilder app)
         {
-            app.UseSwagger();
-            app.UseSwaggerUI();
+            app.UseSwagger(SwaggerService.GetSwaggerOptions());
+            app.UseSwaggerUI(SwaggerService.GetSwaggerUIOptions());
             app.UseHttpsRedirection();
             app.UseAuthorization();
+            app.UseStaticFiles();
             app.UseCors("AllowAllOrigins");
             return app;
         }

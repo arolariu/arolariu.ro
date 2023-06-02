@@ -1,58 +1,15 @@
 {
   "profiles": {
-    "http": {
-      "commandName": "Project",
-      "launchBrowser": true,
-      "launchUrl": "swagger",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "azKeyVault": "https://arolariukv.vault.azure.net/",
-        "AZURE_USERNAME": "olariu.alexandru@protonmail.ch"
-      },
-      "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:5138"
-    },
-    "https": {
-      "commandName": "Project",
-      "launchBrowser": true,
-      "launchUrl": "swagger",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "azKeyVault": "https://arolariukv.vault.azure.net/",
-        "AZURE_USERNAME": "olariu.alexandru@protonmail.ch"
-      },
-      "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7051;http://localhost:5138"
-    },
-    "IIS Express": {
-      "commandName": "IISExpress",
-      "launchBrowser": true,
-      "launchUrl": "swagger",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "azKeyVault": "https://arolariukv.vault.azure.net/",
-        "AZURE_USERNAME": "olariu.alexandru@protonmail.ch"
-      }
-    },
     "Docker": {
       "commandName": "Docker",
       "launchBrowser": true,
-      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/swagger",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/",
       "publishAllPorts": true,
       "useSSL": true,
       "environmentVariables": {
-        "azKeyVault": "https://arolariukv.vault.azure.net/",
-        "AZURE_USERNAME": "olariu.alexandru@protonmail.ch"
+        "azKeyVault": "https://arolariukv.vault.azure.net/"
       }
     }
   },
-  "$schema": "https://json.schemastore.org/launchsettings.json",
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:40600",
-      "sslPort": 44307
-    }
-  }
+  "$schema": "https://json.schemastore.org/launchsettings.json"
 }

@@ -20,3 +20,12 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "ContainerBackend.dll"]
+
+
+# Install additional packages
+RUN apt-get update && apt-get install -y \
+	curl \
+	&& rm -rf /var/lib/apt/lists/*
+
+HEALTHCHECK --interval=60s --timeout=3s \
+	CMD curl --fail http://localhost:80/health || exit 1

@@ -15,6 +15,7 @@ namespace ContainerBackend.Domain.General.Services.KeyVault
     public class KeyVaultService : IKeyVaultService
     {
         private readonly SecretClient _secretClient;
+        private readonly IConfiguration _configuration;
 
         /// <summary>
         /// Constructor.
@@ -22,8 +23,9 @@ namespace ContainerBackend.Domain.General.Services.KeyVault
         /// <param name="configuration"></param>
         public KeyVaultService(IConfiguration configuration)
         {
+            _configuration = configuration;
             _secretClient = new SecretClient(
-                new Uri(configuration["Azure:KeyVault:Uri"]!),
+                new Uri(_configuration["Azure:KeyVault:Uri"]!),
                 new DefaultAzureCredential());
         }
 
@@ -39,6 +41,27 @@ namespace ContainerBackend.Domain.General.Services.KeyVault
             {
                 #pragma warning disable S112 // General exceptions should never be thrown
                 throw new Exception($"Failed to get secret '{secretName}' from Key Vault: {ex.Message}");
+                #pragma warning restore S112 // General exceptions should never be thrown
+            }
+        }
+
+        /// <summary>
+        /// Set the appsettings.json ConnectionStrings for the given service name.
+        /// </summary>
+        /// <param name="serviceName"></param>
+        /// <exception cref="Exception"></exception>
+        public void SetConnectionStringFor(string serviceName)
+        {
+            try
+            {
+                var secret = _secretClient.GetSecret(serviceName);
+                var connectionString = secret.Value.Value;
+                _configuration["ConnectionStrings:" + serviceName] = connectionString;
+            }
+            catch (RequestFailedException ex)
+            {
+                #pragma warning disable S112 // General exceptions should never be thrown
+                throw new Exception($"Failed to get secret '{serviceName}' from Key Vault: {ex.Message}");
                 #pragma warning restore S112 // General exceptions should never be thrown
             }
         }

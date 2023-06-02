@@ -1,9 +1,0 @@
-{
-  "dependencies": {
-    "secrets1": {
-      "type": "secrets",
-      "connectionId": "azKeyVault",
-      "dynamicId": null
-    }
-  }
-}

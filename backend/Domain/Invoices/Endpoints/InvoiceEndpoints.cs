@@ -1,8 +1,10 @@
 ﻿using ContainerBackend.Domain.General.Services.KeyVault;
+using ContainerBackend.Domain.Invoices.DTOs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -32,7 +34,7 @@ namespace ContainerBackend.Domain.Invoices.Endpoints
                 .WithOpenApi();
         }
 
-
+        [SwaggerOperation]
         private static async Task<IResult> PostBlobToSqlDb(HttpRequest request)
         {
             var stream = new MemoryStream();
