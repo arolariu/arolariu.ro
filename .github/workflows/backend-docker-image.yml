@@ -33,5 +33,5 @@ jobs:
           registryPassword: ${{ secrets.CONTAINERBACKEND_REGISTRY_PASSWORD }}
           containerAppName: container-backend
           resourceGroup: arolariu-rg
-          imageToBuild: arolariu.azurecr.io/container-backend:${{ github.sha }}
+          imageToBuild: arolariu.azurecr.io/container-backend:latest
           dockerfilePath: Dockerfile
