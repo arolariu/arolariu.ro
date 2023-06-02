@@ -24,12 +24,10 @@ namespace ContainerBackend
         /// <param name="args"></param>
         public static void Main(string[] args)
         {
-            
-
             var builder = WebApplication.CreateBuilder(args);
             builder.AddGeneralDomainConfiguration();   // Add general domain configuration
             //builder.AddInvoicesDomainConfiguration();  // Add invoices domain configuration
-            
+
             var app = builder.Build();
             app.AddGeneralApplicationConfiguration();
             app.MapInvoiceEndpoints();
