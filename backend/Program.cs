@@ -1,12 +1,8 @@
-using Azure.Identity;
 using ContainerBackend.Domain.General.Services;
-using ContainerBackend.Domain.General.Services.KeyVault;
 using ContainerBackend.Domain.Invoices.Endpoints;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Configuration;
-using System;
 
 namespace ContainerBackend
 {
@@ -26,15 +22,16 @@ namespace ContainerBackend
         {
             var builder = WebApplication.CreateBuilder(args);
             builder.AddGeneralDomainConfiguration();   // Add general domain configuration
-            //builder.AddInvoicesDomainConfiguration();  // Add invoices domain configuration
+            builder.AddInvoicesDomainConfiguration();  // Add invoices domain configuration
 
             var app = builder.Build();
             app.AddGeneralApplicationConfiguration();
-            app.MapInvoiceEndpoints();
             app.MapHealthChecks("/health", new HealthCheckOptions
             {
                 ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
             });
+            app.MapInvoiceEndpoints();
+
             app.Run();
         }
     }

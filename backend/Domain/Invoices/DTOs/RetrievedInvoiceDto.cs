@@ -3,19 +3,33 @@
 namespace ContainerBackend.Domain.Invoices.DTOs
 {
     /// <summary>
-    /// The retrieved invoice DTO, this is the invoice that is retrieved from the database.
+    /// The retrieved invoice DTO from the database.
     /// </summary>
-    [Serializable]
     public class RetrievedInvoiceDto
     {
         /// <summary>
-        /// The invoice id.
+        /// The retried invoice id.
         /// </summary>
-        public required Guid InvoiceId { get; set; }
+        public Guid InvoiceId { get; set; } = Guid.NewGuid();
 
         /// <summary>
-        /// This is the retrieved compressed image of the invoice.
+        /// The retrieved (compressed) invoice image.
         /// </summary>
-        public required byte[] CompressedInvoiceBlobImage { get; set; }
+        public string InvoiceImage { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The retrieved invoice total cost, in $USD currency.
+        /// </summary>
+        public double InvoiceTotalCost { get; set; } = 0.0;
+
+        /// <summary>
+        /// The retrieved invoice total calories.
+        /// </summary>
+        public double InvoiceTotalCalories { get; set; } = 0.0;
+
+        /// <summary>
+        /// Additional invoice metadata that was stored.
+        /// </summary>
+        public string InvoiceMetadata { get; set; } = string.Empty;
     }
 }

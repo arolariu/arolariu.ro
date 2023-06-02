@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using ContainerBackend.Domain.General.Services.Swagger;
+using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 namespace ContainerBackend.Domain.General.Services
 {
@@ -15,12 +17,13 @@ namespace ContainerBackend.Domain.General.Services
         /// <returns><see cref="IApplicationBuilder"/> application builder object.</returns>
         public static IApplicationBuilder AddGeneralApplicationConfiguration(this IApplicationBuilder app)
         {
+            app.UseStaticFiles();
+            app.UseAuthorization();
+            app.UseHttpsRedirection();
+            app.UseCors("AllowAllOrigins");
             app.UseSwagger(SwaggerService.GetSwaggerOptions());
             app.UseSwaggerUI(SwaggerService.GetSwaggerUIOptions());
-            app.UseHttpsRedirection();
-            app.UseAuthorization();
-            app.UseStaticFiles();
-            app.UseCors("AllowAllOrigins");
+
             return app;
         }
     }

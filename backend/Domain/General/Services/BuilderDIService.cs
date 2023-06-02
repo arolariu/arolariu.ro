@@ -8,6 +8,9 @@ using ContainerBackend.Domain.General.Services.Swagger;
 using ContainerBackend.Domain.General.Services.Database;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
+using ContainerBackend.Domain.Invoices.Services.InvoiceReader;
+using ContainerBackend.Domain.Invoices.Services.InvoiceStorage;
+using Microsoft.AspNetCore.Http;
 
 namespace ContainerBackend.Domain.General.Services
 {
@@ -48,6 +51,7 @@ namespace ContainerBackend.Domain.General.Services
                 .AddHealthChecks()
                 .AddSqlServer(config.GetConnectionString("arolariu-sql-connstring")!)
                 .AddCosmosDb(config.GetConnectionString("arolariu-cosmosdb-connstring")!)
+                .AddAzureBlobStorage(config.GetConnectionString("arolariu-storage-connstring")!)
                 .AddAzureKeyVault(
                     new Uri(config["Azure:KeyVault:Uri"]!),
                     new DefaultAzureCredential(),
@@ -65,26 +69,24 @@ namespace ContainerBackend.Domain.General.Services
         {
             var services = builder.Services;
             var keyVaultService = services.BuildServiceProvider().GetRequiredService<IKeyVaultService>();
-            var sqlConnectionString = keyVaultService.GetSecret("arolariu-sql-connstring");
-            var cosmosDbConnectionString = keyVaultService.GetSecret("arolariu-cosmosdb-connstring");
-            builder.Configuration["ConnectionStrings:arolariu-sql-connstring"] = sqlConnectionString;
-            builder.Configuration["ConnectionStrings:arolariu-cosmosdb-connstring"] = cosmosDbConnectionString;
+
+            builder.Configuration["ConnectionStrings:arolariu-sql-connstring"] = keyVaultService.GetSecret("arolariu-sql-connstring");
+            builder.Configuration["ConnectionStrings:arolariu-cosmosdb-connstring"] = keyVaultService.GetSecret("arolariu-cosmosdb-connstring");
+            builder.Configuration["ConnectionStrings:arolariu-storage-connstring"] = keyVaultService.GetSecret("arolariu-storage-connstring");
+            builder.Configuration["ConnectionStrings:arolariu-cognitive-services-connstring"] = keyVaultService.GetSecret("arolariu-cognitive-services-connString");
         }
 
-#pragma warning disable S125 // Sections of code should not be commented out
-        ///// <summary>
-        ///// The builder DI service.
-        ///// </summary>
-        //public static IServiceCollection AddInvoicesDomainConfiguration(this WebApplicationBuilder builder)
+        /// <summary>
+        /// The builder DI service.
+        /// </summary>
+        /// <param name="builder"></param>
+        public static IServiceCollection AddInvoicesDomainConfiguration(this WebApplicationBuilder builder)
 
-        //{
-        //    var services = builder.Services;
-        //    const string connStringSecret = "arolariu-sql-connstring";
-        //    var connStringValue = keyVaultService.GetSecret(connStringSecret);
-        //    services.AddSingleton<IDbConnection>(new SqlConnection(connStringValue));
-
-        //    return services;
-        //}
-#pragma warning restore S125 // Sections of code should not be commented out
+        {
+            var services = builder.Services;
+            services.AddSingleton<IInvoiceReaderService, InvoiceReaderService>();
+            services.AddSingleton<IInvoiceStorageService, InvoiceStorageService>();
+            return services;
+        }
     }
 }
