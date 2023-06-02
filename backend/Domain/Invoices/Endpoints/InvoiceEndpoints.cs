@@ -1,6 +1,4 @@
-﻿using ContainerBackend.Domain.General.Services.KeyVault;
-using ContainerBackend.Domain.Invoices.DTOs;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -46,7 +44,7 @@ namespace ContainerBackend.Domain.Invoices.Endpoints
         private static async Task<IResult> RetrieveInvoiceAsync([FromRoute] Guid id)
         {
             await Task.Delay(1000);
-            return Results.Ok("Received id: " + id);
+            return Results.Ok("Received the id: " + id);
         }
     }
 }
