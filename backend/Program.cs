@@ -31,7 +31,6 @@ namespace ContainerBackend
                 ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
             });
             app.MapInvoiceEndpoints();
-
             app.Run();
         }
     }

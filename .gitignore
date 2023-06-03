@@ -1,6 +1,10 @@
-*/node_modules/*
-*/obj/*
-*/bin/*
-*/.vs/*
-*/.vscode/*
-*/.vsc
+**/node_modules
+**/obj
+**/bin
+**/build
+**/package
+**/.vs
+**/.vscode
+**/.vsc
+**/.env
+**/.env.*

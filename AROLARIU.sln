@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33723.286
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend", ".\backend\arolariu.Backend.csproj", "{9CEEAF32-610C-4DA1-86FC-08337F6DB046}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "arolariu.Frontend", ".\frontend\arolariu.Frontend.csproj", "{09530F01-81D0-47BE-ADC7-4DCC331E20E1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9CEEAF32-610C-4DA1-86FC-08337F6DB046}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9CEEAF32-610C-4DA1-86FC-08337F6DB046}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9CEEAF32-610C-4DA1-86FC-08337F6DB046}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9CEEAF32-610C-4DA1-86FC-08337F6DB046}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09530F01-81D0-47BE-ADC7-4DCC331E20E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09530F01-81D0-47BE-ADC7-4DCC331E20E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09530F01-81D0-47BE-ADC7-4DCC331E20E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09530F01-81D0-47BE-ADC7-4DCC331E20E1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {875E8435-79EF-4F24-A31F-98DA38925269}
+	EndGlobalSection
+EndGlobal
