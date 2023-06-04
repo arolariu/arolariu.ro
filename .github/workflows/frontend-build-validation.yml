@@ -24,15 +24,17 @@ jobs:
          node-version: '18.x'
 
      - name: Install Blazor WebAssembly project dependencies
-       run: dotnet restore && dotnet workload restore
+       run: |
+        dotnet workload restore
+        dotnet restore
 
      - name: Build Blazor WebAssembly project
-       run: dotnet build --configuration Release --no-restore
+       run: |
+        dotnet build --configuration Release --no-restore
 
      - name: Install-n-Run Node.JS Tests
        run: |
          npx playwright install-deps
-         # Todo: Add tests here
 
      - name: Install-n-Run Blazor WebAssembly Tests
        run: |
