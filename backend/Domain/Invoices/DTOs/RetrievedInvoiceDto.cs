@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ContainerBackend.Domain.Invoices.DTOs
+namespace arolariu.Backend.Domain.Invoices.DTOs
 {
     /// <summary>
     /// The retrieved invoice DTO from the database.

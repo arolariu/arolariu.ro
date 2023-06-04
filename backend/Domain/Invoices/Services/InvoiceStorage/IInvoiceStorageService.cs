@@ -1,8 +1,8 @@
-﻿using ContainerBackend.Domain.Invoices.DTOs;
+﻿using arolariu.Backend.Domain.Invoices.DTOs;
 using Microsoft.AspNetCore.Http;
 using System;
 
-namespace ContainerBackend.Domain.Invoices.Services.InvoiceStorage
+namespace arolariu.Backend.Domain.Invoices.Services.InvoiceStorage
 {
     /// <summary>
     /// Interface that defines the invoice storage service contract.

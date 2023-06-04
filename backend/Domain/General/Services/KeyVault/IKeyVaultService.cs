@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace ContainerBackend.Domain.General.Services.KeyVault
+namespace arolariu.Backend.Domain.General.Services.KeyVault
 {
     /// <summary>
     /// Interface that handles the Azure Key Vault integration.

@@ -1,12 +1,12 @@
 ﻿using Microsoft.Azure.Cosmos;
 using System.Data;
 
-namespace ContainerBackend.Domain.General.Services.Database
+namespace arolariu.Backend.Domain.General.Services.Database
 {
     /// <summary>
     /// Interface that handles the database connection.
     /// </summary>
-    public interface IDbConnectionFactory<T> where T: class
+    public interface IDbConnectionFactory<T> where T : class
     {
         /// <summary>
         /// The method that gets the database connection.

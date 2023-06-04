@@ -1,7 +1,7 @@
 ﻿using ImageMagick;
 using System.IO;
 
-namespace ContainerBackend.Domain.Invoices.Services
+namespace arolariu.Backend.Domain.Invoices.Services
 {
     /// <summary>
     /// The invoice compression service.

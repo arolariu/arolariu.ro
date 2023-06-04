@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace ContainerBackend.Domain.Invoices.Models
+namespace arolariu.Backend.Domain.Invoices.Models
 {
     /// <summary>
     /// The Invoice model as "partially-stored" in the SQL database.

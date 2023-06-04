@@ -1,0 +1,40 @@
+name: Frontend Build Validation
+
+on: 
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+ build:
+   name: build
+   runs-on: ubuntu-latest
+   steps:
+     - uses: actions/checkout@v2
+     
+     - name: Setup .NET 7.0x environment.
+       uses: actions/setup-dotnet@v1
+       with:
+         dotnet-version: 7.0.x
+    
+     - name: Setup Node.JS 18.x environment.
+       uses: actions/setup-node@v1
+       with:
+         node-version: '18.x'
+
+     - name: Install Blazor WebAssembly project dependencies
+       run: dotnet restore
+
+     - name: Build Blazor WebAssembly project
+       run: dotnet build --configuration Release --no-restore
+
+     - name: Install-n-Run Node.JS Tests
+       run: |
+         npx playwright install-deps
+         # Todo: Add tests here
+
+     - name: Install-n-Run Blazor WebAssembly Tests
+       run: |
+         dotnet test --no-restore --versbosity normal
+

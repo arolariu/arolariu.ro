@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace ContainerBackend.Domain.Invoices.DTOs
+namespace arolariu.Backend.Domain.Invoices.DTOs
 {
     /// <summary>
     /// The posted invoice DTO, this is the invoice that is posted to the database.
@@ -42,7 +42,7 @@ namespace ContainerBackend.Domain.Invoices.DTOs
             var fileType = splittedContentType[0];
             var fileExtension = splittedContentType[1];
             var array = Convert.FromBase64String(base64String);
-            var stream = new MemoryStream(array) { Position = 0};
+            var stream = new MemoryStream(array) { Position = 0 };
             return new FormFile(stream, 0, stream.Length,
                 fileType, $"InvoiceImage.{fileExtension}")
             {

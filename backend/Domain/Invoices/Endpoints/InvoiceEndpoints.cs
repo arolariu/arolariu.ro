@@ -1,9 +1,7 @@
-﻿using Azure.AI.FormRecognizer.DocumentAnalysis;
-using ContainerBackend.Domain.General.Services.KeyVault;
-using ContainerBackend.Domain.Invoices.DTOs;
-using ContainerBackend.Domain.Invoices.Services;
-using ContainerBackend.Domain.Invoices.Services.InvoiceReader;
-using ContainerBackend.Domain.Invoices.Services.InvoiceStorage;
+﻿using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.Services.InvoiceReader;
+using arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
+using Azure.AI.FormRecognizer.DocumentAnalysis;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace ContainerBackend.Domain.Invoices.Endpoints
+namespace arolariu.Backend.Domain.Invoices.Endpoints
 {
     /// <summary>
     /// The invoice endpoints.

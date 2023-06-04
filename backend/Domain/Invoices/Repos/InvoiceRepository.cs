@@ -2,7 +2,7 @@
 using System.Data;
 using System.Threading.Tasks;
 
-namespace ContainerBackend.Domain.Invoices.Repos
+namespace arolariu.Backend.Domain.Invoices.Repos
 {
     /// <summary>
     /// The Invoices repository.

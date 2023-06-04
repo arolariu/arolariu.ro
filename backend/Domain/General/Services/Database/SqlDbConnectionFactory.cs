@@ -1,9 +1,8 @@
-﻿using ContainerBackend.Domain.General.Services.KeyVault;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Data;
 using System.Data.SqlClient;
 
-namespace ContainerBackend.Domain.General.Services.Database
+namespace arolariu.Backend.Domain.General.Services.Database
 {
     /// <summary>
     /// The database connection factory.

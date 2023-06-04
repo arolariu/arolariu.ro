@@ -1,14 +1,11 @@
-﻿using Azure;
+﻿using arolariu.Backend.Domain.General.Services.KeyVault;
+using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
-using ContainerBackend.Domain.General.Services.KeyVault;
-using ContainerBackend.Domain.Invoices.DTOs;
-using Microsoft.Azure.CognitiveServices.Vision.ComputerVision;
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace ContainerBackend.Domain.Invoices.Services.InvoiceReader
+namespace arolariu.Backend.Domain.Invoices.Services.InvoiceReader
 {
     /// <summary>
     /// Invoice reader service.
@@ -25,7 +22,7 @@ namespace ContainerBackend.Domain.Invoices.Services.InvoiceReader
         {
             var endpoint = new Uri(keyVaultService.GetSecret("arolariu-cognitive-services-endpoint"));
             var credentials = new AzureKeyCredential(keyVaultService.GetSecret("arolariu-cognitive-services-connString"));
-            this.client = new DocumentAnalysisClient(endpoint, credentials);
+            client = new DocumentAnalysisClient(endpoint, credentials);
         }
 
         /// <inheritdoc/>

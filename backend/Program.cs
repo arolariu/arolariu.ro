@@ -1,10 +1,10 @@
-using ContainerBackend.Domain.General.Services;
-using ContainerBackend.Domain.Invoices.Endpoints;
+using arolariu.Backend.Domain.General.Extensions;
+using arolariu.Backend.Domain.Invoices.Endpoints;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
-namespace ContainerBackend
+namespace arolariu.Backend
 {
     /// <summary>
     /// The main backend program.cs file.
@@ -21,15 +21,12 @@ namespace ContainerBackend
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            builder.AddGeneralDomainConfiguration();   // Add general domain configuration
-            builder.AddInvoicesDomainConfiguration();  // Add invoices domain configuration
+            builder.AddGeneralDomainConfiguration();
+            builder.AddInvoicesDomainConfiguration();
 
             var app = builder.Build();
             app.AddGeneralApplicationConfiguration();
-            app.MapHealthChecks("/health", new HealthCheckOptions
-            {
-                ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
-            });
+            app.AddGeneralApplicationEndpoints();
             app.MapInvoiceEndpoints();
             app.Run();
         }

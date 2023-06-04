@@ -1,3 +1,3 @@
 # arolariu.ro
 
-[![Backend CI/CD pipeline status](https://github.com/arolariu/arolariu.ro/actions/workflows/backend-docker-image.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/backend-docker-image.yml)
+[![Backend deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/backend-deployment.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/backend-deployment.yml)

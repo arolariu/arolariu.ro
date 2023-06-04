@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System;
 using Azure;
 
-namespace ContainerBackend.Domain.General.Services.KeyVault
+namespace arolariu.Backend.Domain.General.Services.KeyVault
 {
     /// <summary>
     /// Service that handles the Azure Key Vault integration.
@@ -36,9 +36,9 @@ namespace ContainerBackend.Domain.General.Services.KeyVault
             }
             catch (RequestFailedException ex)
             {
-                #pragma warning disable S112 // General exceptions should never be thrown
+#pragma warning disable S112 // General exceptions should never be thrown
                 throw new Exception($"Failed to get secret '{secretName}' from Key Vault: {ex.Message}");
-                #pragma warning restore S112 // General exceptions should never be thrown
+#pragma warning restore S112 // General exceptions should never be thrown
             }
         }
 
@@ -52,9 +52,9 @@ namespace ContainerBackend.Domain.General.Services.KeyVault
             }
             catch (RequestFailedException ex)
             {
-                #pragma warning disable S112 // General exceptions should never be thrown
+#pragma warning disable S112 // General exceptions should never be thrown
                 throw new Exception($"Failed to get secret '{secretName}' from Key Vault: {ex.Message}");
-                #pragma warning restore S112 // General exceptions should never be thrown
+#pragma warning restore S112 // General exceptions should never be thrown
             }
         }
     }

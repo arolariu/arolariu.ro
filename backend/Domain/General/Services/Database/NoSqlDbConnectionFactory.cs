@@ -2,7 +2,7 @@
 using System.Collections.Concurrent;
 using System.Data;
 
-namespace ContainerBackend.Domain.General.Services.Database
+namespace arolariu.Backend.Domain.General.Services.Database
 {
     /// <summary>
     /// The NoSQL Db Connection Factory class.

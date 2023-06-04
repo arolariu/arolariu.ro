@@ -1,12 +1,12 @@
-﻿using Azure.Storage.Blobs;
-using ContainerBackend.Domain.General.Services.KeyVault;
-using ContainerBackend.Domain.Invoices.DTOs;
+﻿using arolariu.Backend.Domain.General.Services.KeyVault;
+using arolariu.Backend.Domain.Invoices.DTOs;
+using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.IO;
 using System.Text;
 
-namespace ContainerBackend.Domain.Invoices.Services.InvoiceStorage
+namespace arolariu.Backend.Domain.Invoices.Services.InvoiceStorage
 {
     /// <summary>
     /// Service that stores an invoice blob to an Azure Blob Storage container.

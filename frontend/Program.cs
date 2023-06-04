@@ -1,11 +1,23 @@
-using frontend;
+using arolariu.Frontend.Domain.Extensions;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 
-namespace frontend
+namespace arolariu.Frontend
 {
-    public class Program
+    /// <summary>
+    /// The main program class.
+    /// </summary>
+    public static class Program
     {
+        /// <summary>
+        /// The main entry point for the application.
+        /// </summary>
+        /// <param name="args"></param>
         public static async Task Main(string[] args)
         {
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -21,7 +33,11 @@ namespace frontend
                 builder.Configuration.Bind("Local", options.ProviderOptions);
             });
 
-            await builder.Build().RunAsync();
+            builder.ConfigureServices();
+
+            await using var host = builder.Build();
+            host.TrySetDefaultCulture();
+            await host.RunAsync();
         }
     }
 }

@@ -1,23 +1,19 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Azure.Identity;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.DependencyInjection;
 using System.Data;
 using System;
-using Microsoft.AspNetCore.Builder;
-using Azure.Identity;
-using ContainerBackend.Domain.General.Services.KeyVault;
-using ContainerBackend.Domain.General.Services.Swagger;
-using ContainerBackend.Domain.General.Services.Database;
-using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
-using ContainerBackend.Domain.Invoices.Services.InvoiceReader;
-using ContainerBackend.Domain.Invoices.Services.InvoiceStorage;
-using Microsoft.AspNetCore.Http;
+using arolariu.Backend.Domain.General.Services.KeyVault;
+using arolariu.Backend.Domain.Invoices.Services.InvoiceReader;
+using arolariu.Backend.Domain.General.Services.Swagger;
+using arolariu.Backend.Domain.General.Services.Database;
+using arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
 
-namespace ContainerBackend.Domain.General.Services
+namespace arolariu.Backend.Domain.General.Extensions
 {
-    /// <summary>
-    /// The builder DI service.
-    /// </summary>
-    public static class BuilderDIService
+    internal static class WebApplicationBuilderExtensions
     {
         /// <summary>
         /// The builder DI service for general domain configuration.
