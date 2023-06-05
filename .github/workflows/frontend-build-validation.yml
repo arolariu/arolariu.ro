@@ -38,5 +38,5 @@ jobs:
 
      - name: Install-n-Run Blazor WebAssembly Tests
        run: |
-         dotnet test --no-restore --versbosity normal
+         dotnet test --no-restore
 
