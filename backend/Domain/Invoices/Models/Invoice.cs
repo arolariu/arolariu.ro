@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 
 namespace arolariu.Backend.Domain.Invoices.Models
 {
@@ -16,13 +14,45 @@ namespace arolariu.Backend.Domain.Invoices.Models
         public required Guid InvoiceId { get; set; } = Guid.NewGuid();
 
         /// <summary>
-        /// The invoice submitted date. (not to be confused with the invoice recognized date (OCR).)
+        /// The invoice image URI.
         /// </summary>
-        public required DateTime InvoiceSubmittedDate { get; set; } = DateTime.UtcNow;
+        public required Uri InvoiceImageBlobUri { get; set; }
 
         /// <summary>
-        /// The byte array of the invoice image.
+        /// The invoice items.
         /// </summary>
-        public required byte[] InvoiceBlobImage { get; set; }
+        public required InvoiceItemsInformation InvoiceItems { get; set; } = new InvoiceItemsInformation();
+
+        /// <summary>
+        /// The invoice merchant information.
+        /// </summary>
+        public required InvoiceMerchantInformation MerchantInformation { get; set; } = new InvoiceMerchantInformation();
+
+        /// <summary>
+        /// The invoice time information.
+        /// </summary>
+        public required InvoiceTimeInformation InvoiceTime { get; set; } = new InvoiceTimeInformation();
+
+        /// <summary>
+        /// The invoice transaction information.
+        /// </summary>
+        public required InvoiceTransactionInformation TransactionInformation { get; set; } = new InvoiceTransactionInformation();
+
+        /// <summary>
+        /// Null object pattern for the invoice model.
+        /// </summary>
+        /// <returns></returns>
+        internal static Invoice CreateNullInvoice()
+        {
+            return new Invoice()
+            {
+                InvoiceId = Guid.Empty,
+                InvoiceImageBlobUri = null!,
+                InvoiceTime = InvoiceTimeInformation.CreateNullInvoiceTimeInformation(),
+                InvoiceItems = InvoiceItemsInformation.CreateNullInvoiceItemsInformation(),
+                MerchantInformation = InvoiceMerchantInformation.CreateNullInvoiceMerchantInformation(),
+                TransactionInformation = InvoiceTransactionInformation.CreateNullInvoiceTransactionInformation()
+            };
+        }
     }
 }

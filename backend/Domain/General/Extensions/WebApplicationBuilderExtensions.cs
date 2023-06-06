@@ -10,6 +10,8 @@ using arolariu.Backend.Domain.Invoices.Services.InvoiceReader;
 using arolariu.Backend.Domain.General.Services.Swagger;
 using arolariu.Backend.Domain.General.Services.Database;
 using arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
+using arolariu.Backend.Domain.Invoices.Brokers;
+using arolariu.Backend.Domain.Invoices.Foundation;
 
 namespace arolariu.Backend.Domain.General.Extensions
 {
@@ -25,11 +27,13 @@ namespace arolariu.Backend.Domain.General.Extensions
 
             services.AddAuthorization();
             services.AddEndpointsApiExplorer();
-            services.AddSwaggerGen(SwaggerService.GetSwaggerGenOptions());
+            services.AddSwaggerGen(SwaggerConfigurationService.GetSwaggerGenOptions());
             services.AddHttpClient();
+            services.AddHttpContextAccessor();
+            services.AddLocalization();
 
             services.AddSingleton<IKeyVaultService, KeyVaultService>();
-            PopulateAppSettingsFromKeyVaultService(builder);
+            PopulateConnectionStringsChapter(builder);
             services.AddSingleton<IDbConnectionFactory<IDbConnection>>(new SqlDbConnectionFactory(config.GetConnectionString("arolariu-sql-connstring")!));
             services.AddSingleton<IDbConnectionFactory<CosmosClient>>(new NoSqlDbConnectionFactory(config.GetConnectionString("arolariu-cosmosdb-connstring")!));
             services.AddCors(options =>
@@ -61,7 +65,7 @@ namespace arolariu.Backend.Domain.General.Extensions
             return services;
         }
 
-        private static void PopulateAppSettingsFromKeyVaultService(WebApplicationBuilder builder)
+        private static void PopulateConnectionStringsChapter(WebApplicationBuilder builder)
         {
             var services = builder.Services;
             var keyVaultService = services.BuildServiceProvider().GetRequiredService<IKeyVaultService>();
@@ -80,8 +84,10 @@ namespace arolariu.Backend.Domain.General.Extensions
 
         {
             var services = builder.Services;
+            services.AddSingleton<IInvoiceSqlBroker, InvoiceSqlBroker>();
             services.AddSingleton<IInvoiceReaderService, InvoiceReaderService>();
             services.AddSingleton<IInvoiceStorageService, InvoiceStorageService>();
+            services.AddSingleton<IInvoiceFoundationService, InvoiceFoundationService>();
             return services;
         }
     }
