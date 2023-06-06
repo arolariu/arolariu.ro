@@ -3,8 +3,10 @@ name: Frontend Build Validation
 on: 
   push:
     branches: [ main ]
+    paths: 'frontend/**'
   pull_request:
     branches: [ main ]
+    paths: 'frontend/**'
 
 jobs:
  build:
@@ -24,17 +26,19 @@ jobs:
          node-version: '18.x'
 
      - name: Install Blazor WebAssembly project dependencies
-       run: dotnet restore
+       run: |
+        dotnet workload restore
+        dotnet restore
 
      - name: Build Blazor WebAssembly project
-       run: dotnet build --configuration Release --no-restore
+       run: |
+        dotnet build --configuration Release --no-restore
 
      - name: Install-n-Run Node.JS Tests
        run: |
          npx playwright install-deps
-         # Todo: Add tests here
 
      - name: Install-n-Run Blazor WebAssembly Tests
        run: |
-         dotnet test --no-restore --versbosity normal
+         dotnet test --no-restore
 
