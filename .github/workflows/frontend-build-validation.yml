@@ -10,10 +10,10 @@ on:
 
 jobs:
  build:
-   name: build
    runs-on: ubuntu-latest
    steps:
-     - uses: actions/checkout@v2
+     - name: Checkout the branch
+       uses: actions/checkout@v3
      
      - name: Setup .NET 7.0x environment.
        uses: actions/setup-dotnet@v1
