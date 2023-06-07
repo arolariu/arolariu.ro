@@ -1,13 +1,12 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
 namespace arolariu.Backend.Domain.General.Services.Swagger
@@ -76,6 +75,7 @@ namespace arolariu.Backend.Domain.General.Services.Swagger
                     TermsOfService = new Uri("/terms"),
                 });
                 options.EnableAnnotations();
+                options.UseInlineDefinitionsForEnums();
                 var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
                 options.IncludeXmlComments(xmlPath);

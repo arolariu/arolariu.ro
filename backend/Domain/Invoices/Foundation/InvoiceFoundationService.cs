@@ -3,13 +3,8 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Models;
 using arolariu.Backend.Domain.Invoices.Services.InvoiceReader;
 using arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
-using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace arolariu.Backend.Domain.Invoices.Foundation
@@ -20,13 +15,13 @@ namespace arolariu.Backend.Domain.Invoices.Foundation
     public class InvoiceFoundationService : IInvoiceFoundationService
     {
         /// <inheritdoc/>
-        public IInvoiceReaderService invoiceReaderService { get; }
+        public IInvoiceReaderService InvoiceReaderService { get; }
 
         /// <inheritdoc/>
-        public IInvoiceStorageService invoiceStorageService { get; }
+        public IInvoiceStorageService InvoiceStorageService { get; }
 
         /// <inheritdoc/>
-        public IInvoiceSqlBroker invoiceSqlBroker { get; }
+        public IInvoiceSqlBroker InvoiceSqlBroker { get; }
 
         /// <summary>
         /// Constructor.
@@ -39,17 +34,17 @@ namespace arolariu.Backend.Domain.Invoices.Foundation
             IInvoiceStorageService invoiceStorageService,
             IInvoiceSqlBroker invoiceSqlBroker)
         {
-            this.invoiceReaderService = invoiceReaderService;
-            this.invoiceStorageService = invoiceStorageService;
-            this.invoiceSqlBroker = invoiceSqlBroker;
+            InvoiceReaderService = invoiceReaderService ?? throw new ArgumentNullException(nameof(invoiceReaderService));
+            InvoiceStorageService = invoiceStorageService ?? throw new ArgumentNullException(nameof(invoiceStorageService));
+            InvoiceSqlBroker = invoiceSqlBroker ?? throw new ArgumentNullException(nameof(invoiceSqlBroker));
         }
 
         /// <inheritdoc/>
-        public async Task<Invoice> PublishNewInvoiceObjectIntoTheSystem(PostedInvoiceDto postedInvoiceDto)
+        public async Task<Invoice> PublishNewInvoiceObjectIntoTheSystemAsync(PostedInvoiceDto postedInvoiceDto)
         {
-            var blobUri = invoiceStorageService.UploadInvoiceBlobToBlobStorage(postedInvoiceDto);
-            var detectedInvoiceAnalysisResult = await invoiceReaderService.SendInvoiceBlobForAnalysis(blobUri);
-            var jsonResult = invoiceReaderService.ParseInvoiceAnalysisResult(detectedInvoiceAnalysisResult);
+            var blobUri = InvoiceStorageService.UploadInvoiceBlobToBlobStorage(postedInvoiceDto);
+            var detectedInvoiceAnalysisResult = await InvoiceReaderService.SendInvoiceBlobForAnalysis(blobUri);
+            var jsonResult = InvoiceReaderService.ParseInvoiceAnalysisResult(detectedInvoiceAnalysisResult);
 
             if (jsonResult is not null)
             {
@@ -73,25 +68,27 @@ namespace arolariu.Backend.Domain.Invoices.Foundation
                     InvoiceTime = new InvoiceTimeInformation()
                     {
                         InvoiceIdentifiedDate = (DateTime)jsonResult["TransactionDate"]!,
-                        InvoiceIdentifiedTime = (TimeSpan)jsonResult["TransactionTime"]!,
                         InvoiceSubmittedDate = DateTimeOffset.UtcNow.Date,
-                        InvoiceSubmittedTime = DateTimeOffset.UtcNow.TimeOfDay,
+                        InvoiceIdentifiedTime = (TimeSpan)jsonResult["TransactionTime"]!,
+                        InvoiceSubmittedTime = DateTime.UtcNow.TimeOfDay,
                     },
                     MerchantInformation = new InvoiceMerchantInformation()
                     {
                         MerchantName = (string)jsonResult["MerchantName"]!,
                         MerchantAddress = (string)jsonResult["MerchantAddress"]!,
                         MerchantPhoneNumber = (string)jsonResult["MerchantPhoneNumber"]!,
-                    }
+                    },
+                    AdditionalMetadata = postedInvoiceDto.AdditionalMetadata,
                 };
 
+                // TODO: when done with invoice logic: await invoiceSqlBroker.CreateInvoiceAsync(invoice);
                 return invoice;
             }
             return Invoice.CreateNullInvoice();
         }
 
         /// <inheritdoc/>
-        public async Task<Invoice> RetrieveExistingInvoiceBasedOnIdentifier(Guid invoiceIdentifier)
+        public async Task<Invoice> RetrieveExistingInvoiceBasedOnIdentifierAsync(Guid invoiceIdentifier)
         {
             await Task.Delay(1);
             throw new NotImplementedException();

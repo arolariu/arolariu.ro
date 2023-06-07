@@ -14,16 +14,16 @@ namespace arolariu.Backend.Domain.Invoices.Models
     [Serializable]
     public record struct InvoiceTimeInformation(
         DateTime InvoiceIdentifiedDate,
-        TimeSpan InvoiceIdentifiedTime,
         DateTime InvoiceSubmittedDate,
+        TimeSpan InvoiceIdentifiedTime,
         TimeSpan InvoiceSubmittedTime)
     {
         internal static InvoiceTimeInformation CreateNullInvoiceTimeInformation()
         {
             return new InvoiceTimeInformation(
                 InvoiceIdentifiedDate: DateTime.MinValue,
-                InvoiceIdentifiedTime: TimeSpan.MinValue,
                 InvoiceSubmittedDate: DateTime.MinValue,
+                InvoiceIdentifiedTime: TimeSpan.MinValue,
                 InvoiceSubmittedTime: TimeSpan.MinValue);
         }
     }

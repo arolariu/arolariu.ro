@@ -1,4 +1,5 @@
 ﻿using Microsoft.Azure.Cosmos;
+using System;
 using System.Collections.Concurrent;
 using System.Data;
 
@@ -19,7 +20,7 @@ namespace arolariu.Backend.Domain.General.Services.Database
         /// <param name="connectionString"></param>
         public NoSqlDbConnectionFactory(string connectionString)
         {
-            _connectionString = connectionString;
+            _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
             _connectionPool = new ConcurrentBag<CosmosClient>();
         }
 

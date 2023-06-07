@@ -28,6 +28,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.InvoiceReader
             jsonResult = new JObject()
             {
                 ["MerchantName"] = "",
+                ["MerchantAddress"] = "",
                 ["TransactionDate"] = "",
                 ["TransactionTime"] = "",
                 ["TransactionTotal"] = "",
@@ -151,6 +152,18 @@ namespace arolariu.Backend.Domain.Invoices.Services.InvoiceReader
                     string merchantName = merchantNameField.Value.AsString();
                     jsonResult["MerchantName"] = merchantName;
                     Console.WriteLine($"Merchant Name: '{merchantName}', with confidence {merchantNameField.Confidence}");
+                }
+            }
+        }
+        private void ValidateMerchantAddress(AnalyzedDocument receipt)
+        {
+            if (receipt.Fields.TryGetValue("MerchantAddress", out DocumentField? merchantAddressField))
+            {
+                if (merchantAddressField.FieldType == DocumentFieldType.String)
+                {
+                    string merchantAddress = merchantAddressField.Value.AsString();
+                    jsonResult["MerchantAddress"] = merchantAddress;
+                    Console.WriteLine($"Merchant Address: '{merchantAddress}', with confidence {merchantAddressField.Confidence}");
                 }
             }
         }

@@ -21,8 +21,9 @@ namespace arolariu.Backend.Domain.General.Services.KeyVault
         /// <param name="configuration"></param>
         public KeyVaultService(IConfiguration configuration)
         {
+            var kvUri = configuration["Azure:KeyVault:Uri"] ?? throw new ArgumentNullException(nameof(configuration));
             _secretClient = new SecretClient(
-                new Uri(configuration["Azure:KeyVault:Uri"]!),
+                new Uri(kvUri),
                 new DefaultAzureCredential());
         }
 

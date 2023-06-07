@@ -21,16 +21,15 @@ namespace arolariu.Backend.Domain.Invoices.Services.InvoiceStorage
         /// <param name="keyVaultService"></param>
         public InvoiceStorageService(IKeyVaultService keyVaultService)
         {
-            this.keyVaultService = keyVaultService;
+            this.keyVaultService = keyVaultService ?? throw new ArgumentNullException(nameof(keyVaultService));
         }
 
         /// <inheritdoc/>
         public Uri UploadInvoiceBlobToBlobStorage(PostedInvoiceDto invoice)
         {
             // create blob container client
-            var blobContainerClient = new BlobContainerClient(
-                keyVaultService.GetSecret("arolariu-storage-connstring"),
-                "invoices");
+            var connectionString = keyVaultService.GetSecret("arolariu-storage-connstring");
+            var blobContainerClient = new BlobContainerClient(connectionString,"invoices");
             blobContainerClient.CreateIfNotExists();
 
             // upload blob

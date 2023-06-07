@@ -59,7 +59,7 @@ namespace arolariu.Backend.Domain.Invoices.Endpoints
         {
             try
             {
-                var invoice = await invoiceFoundationService.PublishNewInvoiceObjectIntoTheSystem(invoicePhoto);
+                var invoice = await invoiceFoundationService.PublishNewInvoiceObjectIntoTheSystemAsync(invoicePhoto);
                 return Results.Ok(invoice);
             }
             catch (Exception exception)

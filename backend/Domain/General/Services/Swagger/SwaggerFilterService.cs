@@ -1,5 +1,7 @@
-﻿using Microsoft.OpenApi.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System;
 using System.Linq;
 
 namespace arolariu.Backend.Domain.General.Services.Swagger
@@ -17,6 +19,7 @@ namespace arolariu.Backend.Domain.General.Services.Swagger
         public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
         {
             FilterEndpointsFromDiscovery(swaggerDoc);
+            FilterSchemasFromDiscovery(swaggerDoc);
         }
 
         private static void FilterEndpointsFromDiscovery(OpenApiDocument swaggerDoc)
@@ -29,6 +32,22 @@ namespace arolariu.Backend.Domain.General.Services.Swagger
 
             foreach (var endpoint in ignoredEndpoints)
                 swaggerDoc.Paths.Remove(endpoint);
+        }
+
+        private static void FilterSchemasFromDiscovery(OpenApiDocument swaggerDoc)
+        {
+            var ignoredSchemas = new[]
+            {
+                nameof(ProblemDetails),
+                nameof(TimeSpan),
+            };
+
+            var swaggerSchemas = swaggerDoc.Components.Schemas;
+            foreach (var schema in swaggerSchemas)
+            {
+                if (ignoredSchemas.Contains(schema.Key))
+                    swaggerDoc.Components.Schemas.Remove(schema.Key);
+            }
         }
     }
 }

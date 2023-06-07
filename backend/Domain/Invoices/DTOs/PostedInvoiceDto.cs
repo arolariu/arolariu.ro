@@ -27,7 +27,7 @@ namespace arolariu.Backend.Domain.Invoices.DTOs
         /// Additional invoice metadata to be processed.
         /// The metadata will be stored in the database as a JSON field.
         /// </summary>
-        public required IDictionary<string, string> AdditionalMetadata { get; set; } = new Dictionary<string, string>();
+        public required IDictionary<string, object> AdditionalMetadata { get; set; } = new Dictionary<string, object>();
 
         /// <summary>
         /// Method that converts the base 64 representation of the invoice image to a <see cref="IFormFile"/> object.

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace arolariu.Backend.Domain.Invoices.Models
 {
@@ -39,6 +40,11 @@ namespace arolariu.Backend.Domain.Invoices.Models
         public required InvoiceTransactionInformation TransactionInformation { get; set; } = new InvoiceTransactionInformation();
 
         /// <summary>
+        /// Additional metadata for the invoice.
+        /// </summary>
+        public required IDictionary<string, object> AdditionalMetadata { get; set; } = new  Dictionary<string, object>();
+        
+        /// <summary>
         /// Null object pattern for the invoice model.
         /// </summary>
         /// <returns></returns>
@@ -51,7 +57,8 @@ namespace arolariu.Backend.Domain.Invoices.Models
                 InvoiceTime = InvoiceTimeInformation.CreateNullInvoiceTimeInformation(),
                 InvoiceItems = InvoiceItemsInformation.CreateNullInvoiceItemsInformation(),
                 MerchantInformation = InvoiceMerchantInformation.CreateNullInvoiceMerchantInformation(),
-                TransactionInformation = InvoiceTransactionInformation.CreateNullInvoiceTransactionInformation()
+                TransactionInformation = InvoiceTransactionInformation.CreateNullInvoiceTransactionInformation(),
+                AdditionalMetadata = null!
             };
         }
     }

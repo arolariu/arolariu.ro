@@ -67,12 +67,10 @@ namespace arolariu.Backend.Domain.General.Extensions
 
         private static void PopulateConnectionStringsChapter(WebApplicationBuilder builder)
         {
-            var services = builder.Services;
-            var keyVaultService = services.BuildServiceProvider().GetRequiredService<IKeyVaultService>();
-
+            var keyVaultService = builder.Services.BuildServiceProvider().GetRequiredService<IKeyVaultService>();
             builder.Configuration["ConnectionStrings:arolariu-sql-connstring"] = keyVaultService.GetSecret("arolariu-sql-connstring");
-            builder.Configuration["ConnectionStrings:arolariu-cosmosdb-connstring"] = keyVaultService.GetSecret("arolariu-cosmosdb-connstring");
             builder.Configuration["ConnectionStrings:arolariu-storage-connstring"] = keyVaultService.GetSecret("arolariu-storage-connstring");
+            builder.Configuration["ConnectionStrings:arolariu-cosmosdb-connstring"] = keyVaultService.GetSecret("arolariu-cosmosdb-connstring");
             builder.Configuration["ConnectionStrings:arolariu-cognitive-services-connstring"] = keyVaultService.GetSecret("arolariu-cognitive-services-connString");
         }
 

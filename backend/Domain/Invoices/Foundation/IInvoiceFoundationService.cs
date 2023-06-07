@@ -18,29 +18,29 @@ namespace arolariu.Backend.Domain.Invoices.Foundation
         /// <summary>
         /// The injected invoice reader service.
         /// </summary>
-        protected IInvoiceReaderService invoiceReaderService { get; }
+        public IInvoiceReaderService InvoiceReaderService { get; }
 
         /// <summary>
         /// The injected invoice storage service.
         /// </summary>
-        protected IInvoiceStorageService invoiceStorageService { get; }
+        public IInvoiceStorageService InvoiceStorageService { get; }
 
         /// <summary>
         /// The injected invoice SQL broker.
         /// </summary>
-        protected IInvoiceSqlBroker invoiceSqlBroker { get; }
+        public IInvoiceSqlBroker InvoiceSqlBroker { get; }
 
         /// <summary>
         /// The invoice foundation service method for processing new invoices into the system.
         /// </summary>
         /// <returns></returns>
-        public Task<Invoice> PublishNewInvoiceObjectIntoTheSystem(PostedInvoiceDto postedInvoiceDto);
+        public Task<Invoice> PublishNewInvoiceObjectIntoTheSystemAsync(PostedInvoiceDto postedInvoiceDto);
 
         /// <summary>
         /// The invoice foundation service method for retrieving existing invoices from the system.
         /// </summary>
         /// <param name="invoiceIdentifier"></param>
         /// <returns></returns>
-        public Task<Invoice> RetrieveExistingInvoiceBasedOnIdentifier(Guid invoiceIdentifier);
+        public Task<Invoice> RetrieveExistingInvoiceBasedOnIdentifierAsync(Guid invoiceIdentifier);
     }
 }
