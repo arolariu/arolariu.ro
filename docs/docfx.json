@@ -3,17 +3,20 @@
     {
       "src": [
         {
+          "src": "../",
           "files": [
-            "../**/**"
+            "/backend/*.csproj",
+            "/frontend/*.csproj"
           ]
         }
       ],
       "dest": "api",
-      "includePrivateMembers": false,
-      "disableGitFeatures": false,
+      "shouldSkipMarkup": false,
+      "includePrivateMembers": true,
+      "disableGitFeatures": true,
       "disableDefaultFilter": false,
       "noRestore": false,
-      "namespaceLayout": "flattened",
+      "namespaceLayout": "nested",
       "memberLayout": "samePage",
       "allowCompilationErrors": false
     }
@@ -22,35 +25,37 @@
     "content": [
       {
         "files": [
-          "api/**.yml",
-          "api/index.md"
-        ]
-      },
-      {
-        "files": [
-          "articles/**.md",
-          "articles/**/toc.yml",
-          "toc.yml",
-          "*.md"
+          "**/*.yml",
+          "**/*.md"
+        ],
+        "exclude": [
+          "_site/**"
         ]
       }
     ],
     "resource": [
       {
         "files": [
-          "../**/**"
+          "images/**"
         ]
       }
     ],
     "output": "_site",
-    "globalMetadataFiles": [],
-    "fileMetadataFiles": [],
+    "globalMetadata": {
+      "_appTitle": "arolariu.ro DocFX",
+      "_enableSearch": "true",
+      "_enableNewTab": "true"
+    },
     "template": [
       "default",
       "modern"
     ],
-    "postProcessors": [],
     "keepFileLink": false,
-    "disableGitFeatures": false
+    "disableGitFeatures": false,
+    "sitemap": {
+      "baseUrl": "https://docs.arolariu.ro/",
+      "priority": 0.5,
+      "changefreq": "daily"
+    }
   }
 }
