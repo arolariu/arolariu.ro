@@ -18,8 +18,8 @@ jobs:
 
       - name: Install DocFX dependencies
         run: |
-          dotnet restore
           dotnet workload restore
+          dotnet restore
           dotnet tool update -g docfx
 
       - name: Setup DocFX platform
