@@ -9,6 +9,7 @@
 		<DockerfileContext>.</DockerfileContext>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<SignAssembly>False</SignAssembly>
+		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
 	</PropertyGroup>
 
 	<!-- Treat warnings as errors for `DEBUG` deployment. -->

@@ -4,6 +4,7 @@ namespace arolariu.Backend.Domain.General.Services.KeyVault
 {
     /// <summary>
     /// Interface that handles the Azure Key Vault integration.
+    /// This interface is used by the <see cref="KeyVaultService"/> class.
     /// </summary>
     public interface IKeyVaultService
     {

@@ -8,9 +8,9 @@ namespace arolariu.Backend
 {
     /// <summary>
     /// The main backend program.cs file.
-    /// The backend consists of a .NET 8.0 web application.
+    /// The backend consists of a .NET 7.0 web application.
+    /// The backend is deployed as a monolith on Azure.
     /// The backend is a containerized application.
-    /// The backend is deployed as a monolith.
     /// </summary>
     public static class Program
     {

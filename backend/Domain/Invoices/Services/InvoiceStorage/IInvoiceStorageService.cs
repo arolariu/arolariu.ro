@@ -6,6 +6,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.InvoiceStorage
 {
     /// <summary>
     /// Interface that defines the invoice storage service contract.
+    /// This interface is used by the <see cref="InvoiceStorageService"/> class.
     /// </summary>
     public interface IInvoiceStorageService
     {

@@ -15,10 +15,16 @@ using arolariu.Backend.Domain.Invoices.Foundation;
 
 namespace arolariu.Backend.Domain.General.Extensions
 {
+    /// <summary>
+    /// Extension methods for <see cref="WebApplicationBuilder"/> to register general domain services.
+    /// This class is used by the <see cref="Program"/> class.
+    /// </summary>
     internal static class WebApplicationBuilderExtensions
     {
         /// <summary>
-        /// The builder DI service for general domain configuration.
+        /// Method that registers general domain services.
+        /// This method is an extension method for <see cref="WebApplicationBuilder"/>.
+        /// This method is used by the <see cref="Program"/> class.
         /// </summary>
         public static IServiceCollection AddGeneralDomainConfiguration(this WebApplicationBuilder builder)
         {
@@ -65,6 +71,11 @@ namespace arolariu.Backend.Domain.General.Extensions
             return services;
         }
 
+        /// <summary>
+        /// Populates the connection strings fields in the appsettings.json file.
+        /// This method should be private and used only by the <see cref="AddGeneralDomainConfiguration(WebApplicationBuilder)"/> method.
+        /// </summary>
+        /// <param name="builder"></param>
         private static void PopulateConnectionStringsChapter(WebApplicationBuilder builder)
         {
             var keyVaultService = builder.Services.BuildServiceProvider().GetRequiredService<IKeyVaultService>();
@@ -75,7 +86,9 @@ namespace arolariu.Backend.Domain.General.Extensions
         }
 
         /// <summary>
-        /// The builder DI service.
+        /// The method that registers the invoices domain services.
+        /// This method is an extension method for <see cref="WebApplicationBuilder"/>.
+        /// The method is used by the <see cref="Program"/> class.
         /// </summary>
         /// <param name="builder"></param>
         public static IServiceCollection AddInvoicesDomainConfiguration(this WebApplicationBuilder builder)

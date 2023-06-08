@@ -5,6 +5,7 @@ namespace arolariu.Backend.Domain.General.Services.Database
 {
     /// <summary>
     /// Interface that handles the database connection.
+    /// This interface is used by the <see cref="SqlDbConnectionFactory"/> and <see cref="NoSqlDbConnectionFactory"/> classes.
     /// </summary>
     public interface IDbConnectionFactory<T> where T : class
     {

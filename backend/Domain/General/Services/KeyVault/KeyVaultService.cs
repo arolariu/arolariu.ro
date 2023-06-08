@@ -9,7 +9,6 @@ namespace arolariu.Backend.Domain.General.Services.KeyVault
 {
     /// <summary>
     /// Service that handles the Azure Key Vault integration.
-    /// This class is registered as a singleton in Domain\General\Services\BuilderDIService.cs.
     /// </summary>
     public class KeyVaultService : IKeyVaultService
     {

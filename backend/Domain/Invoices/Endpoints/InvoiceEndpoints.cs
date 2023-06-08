@@ -64,7 +64,8 @@ namespace arolariu.Backend.Domain.Invoices.Endpoints
             }
             catch (Exception exception)
             {
-                return Results.Problem(exception.Message);
+                var err = exception.Message + "\n" + exception.StackTrace;
+                return Results.Problem(err);
             }
         }
 

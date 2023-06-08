@@ -8,6 +8,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.InvoiceReader
 {
     /// <summary>
     /// Interface that defines the invoice reader service contract.
+    /// This interface is used by the <see cref="InvoiceReaderService"/> class.
     /// </summary>
     public interface IInvoiceReaderService
     {

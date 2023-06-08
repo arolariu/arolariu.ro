@@ -2,7 +2,6 @@
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Mvc;
 using System;
 
 namespace arolariu.Backend.Domain.General.Extensions
@@ -13,8 +12,8 @@ namespace arolariu.Backend.Domain.General.Extensions
         /// The application DI service injection method.
         /// </summary>
         /// <param name="app"></param>
-        /// <returns><see cref="IApplicationBuilder"/> application builder object.</returns>
-        internal static IApplicationBuilder AddGeneralApplicationConfiguration(this WebApplication app)
+        /// <returns><see cref="WebApplication"/> application object.</returns>
+        internal static WebApplication AddGeneralApplicationConfiguration(this WebApplication app)
         {
             ArgumentNullException.ThrowIfNull(app);
             app.UseStaticFiles();
@@ -31,12 +30,11 @@ namespace arolariu.Backend.Domain.General.Extensions
         /// Add general application endpoints such as `/health` and `/terms`.
         /// </summary>
         /// <param name="app"></param>
-        /// <returns></returns>
-        internal static IApplicationBuilder AddGeneralApplicationEndpoints(this WebApplication app)
+        /// <returns><see cref="WebApplication"/> application object.</returns>
+        internal static WebApplication AddGeneralApplicationEndpoints(this WebApplication app)
         {
             app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse });
             app.MapGet("/terms", () => app.Configuration["TermsAndConditions"]);
-
             return app;
         }
     }

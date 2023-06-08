@@ -8,6 +8,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers
 {
     /// <summary>
     /// Interface that defines the invoice SQL broker contract.
+    /// This interface is used by the <see cref="InvoiceSqlBroker"/> class.
     /// </summary>
     public interface IInvoiceSqlBroker
     {

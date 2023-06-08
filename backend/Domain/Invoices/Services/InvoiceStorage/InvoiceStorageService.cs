@@ -36,7 +36,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.InvoiceStorage
             var blobName = invoice.InvoiceId.ToString();
             var blobClient = blobContainerClient.GetBlobClient(blobName);
 
-            var photo = invoice.ConvertToFormFile();
+            var photo = PostedInvoiceDto.ConvertToFormFile(invoice);
             using var stream = photo.OpenReadStream();
             blobClient.Upload(stream, overwrite: true);
             return blobClient.Uri;

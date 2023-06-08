@@ -6,6 +6,7 @@ namespace arolariu.Backend.Domain.General.Services.Database
 {
     /// <summary>
     /// The database connection factory.
+    /// This factory is used to create and release connections to the SQL database.
     /// </summary>
     public class SqlDbConnectionFactory : IDbConnectionFactory<IDbConnection>
     {

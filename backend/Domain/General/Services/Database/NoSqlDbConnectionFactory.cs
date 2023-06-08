@@ -7,6 +7,7 @@ namespace arolariu.Backend.Domain.General.Services.Database
 {
     /// <summary>
     /// The NoSQL Db Connection Factory class.
+    /// This factory is used to create and release connections to the NoSQL database.
     /// </summary>
     public class NoSqlDbConnectionFactory : IDbConnectionFactory<CosmosClient>
     {

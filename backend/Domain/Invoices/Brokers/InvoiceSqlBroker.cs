@@ -25,23 +25,23 @@ namespace arolariu.Backend.Domain.Invoices.Brokers
         }
 
         /// <inheritdoc/>
-        public Task<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier)
+        public async Task<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier)
         {
             using (DbConnection)
             {
-                return DbConnection.QueryFirstOrDefaultAsync<Invoice>(
+                return await DbConnection.QueryFirstOrDefaultAsync<Invoice>(
                                 "SELECT * FROM Invoices WHERE InvoiceIdentifier = @InvoiceIdentifier",
                                 new { InvoiceIdentifier = invoiceIdentifier });
             }
         }
 
         /// <inheritdoc/>
-        public Task<int> CreateInvoiceAsync(Invoice invoice)
+        public async Task<int> CreateInvoiceAsync(Invoice invoice)
         {
             using (DbConnection)
             {
                 var sql = @$"INSERT INTO BonFiscal VALUES (@Value1, @Value2)";
-                return DbConnection.ExecuteAsync(sql, new { Value1 = invoice.InvoiceId.ToString(), Value2 = invoice.InvoiceImageBlobUri.ToString() });
+                return await DbConnection.ExecuteAsync(sql, new { Value1 = invoice.InvoiceId.ToString(), Value2 = invoice.InvoiceImageBlobUri.ToString() });
             }
         }
     }
