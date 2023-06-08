@@ -16,8 +16,8 @@
       "disableGitFeatures": true,
       "disableDefaultFilter": false,
       "noRestore": false,
-      "namespaceLayout": "nested",
       "memberLayout": "samePage",
+      "namespaceLayout": "nested",
       "allowCompilationErrors": false
     }
   ],
@@ -43,12 +43,22 @@
     "output": "_site",
     "globalMetadata": {
       "_appTitle": "arolariu.ro DocFX",
-      "_enableSearch": "true",
-      "_enableNewTab": "true"
+      "_appName": "docs.arolariu.ro",
+      "_appFooter": "<strong>Built using <em><a href=\"https://dotnet.github.io/docfx\">DocFX</a></em> and <em><a href=\"https://github.com/Singulink/SingulinkFX\" style='color:red!IMPORTANT'>Singulink</a></em>.</strong>",
+      "_copyrightFooter": "Project is backed by an MIT License.",
+      "_enableSearch": true,
+      "_enableNewTab": true,
+      "_disableSideFilter": false,
+      "_disableContribution": false,
+      "_disableBreadcrumb": false,
+      "_gitContribute": {
+        "repo": "https://github.com/arolariu/arolariu.ro"
+      },
+      "_gitUrlPattern": "github"
     },
     "template": [
       "default",
-      "modern"
+      "templates/singulinkfx"
     ],
     "keepFileLink": false,
     "disableGitFeatures": false,
@@ -56,6 +66,16 @@
       "baseUrl": "https://docs.arolariu.ro/",
       "priority": 0.5,
       "changefreq": "daily"
-    }
+    },
+    "markdownEngineName": "markdig",
+    "markdownEngineProperties": {
+      "markdigExtensions": [
+        "tasklists",
+        "diagrams"
+      ]
+    },
+    "postProcessors": [
+      "ExtractSearchIndex"
+    ]
   }
 }

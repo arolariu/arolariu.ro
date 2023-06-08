@@ -2,38 +2,33 @@ name: Docs platform (docs.arolariu.ro) deployment
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout the branch
+      - name: Checkout the branch inside runner environment
         uses: actions/checkout@v3
 
-      - name: Setup .NET 7.0x environment.
+      - name: Setup .NET 7.0x environment
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 7.0.x
-      
+
       - name: Install DocFX dependencies
-        run: | 
-          dotnet workload restore
+        run: |
           dotnet restore
+          dotnet workload restore
           dotnet tool update -g docfx
 
       - name: Setup DocFX platform
         run: |
           docfx metadata "./docs/docfx.json"
           docfx build "./docs/docfx.json"
-          
+
       - name: Publish DocFX `_site`
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: docs/_site
-          
-          
-        
