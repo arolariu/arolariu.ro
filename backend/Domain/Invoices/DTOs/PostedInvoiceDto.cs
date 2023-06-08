@@ -33,9 +33,9 @@ namespace arolariu.Backend.Domain.Invoices.DTOs
         /// Method that converts the base 64 representation of the invoice image to a <see cref="IFormFile"/> object.
         /// </summary>
         /// <returns></returns>
-        public IFormFile ConvertToFormFile()
+        public static IFormFile ConvertToFormFile(PostedInvoiceDto postedInvoiceDto)
         {
-            var splittedBase64String = InvoiceBase64Photo.Split(";base64,");
+            var splittedBase64String = postedInvoiceDto.InvoiceBase64Photo.Split(";base64,");
             var base64String = splittedBase64String[1];
             var contentType = splittedBase64String[0].Split(":")[1];
             var splittedContentType = contentType.Split("/");

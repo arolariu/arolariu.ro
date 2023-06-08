@@ -53,6 +53,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.InvoiceReader
             foreach (AnalyzedDocument receipt in invoiceAnalysisResult.Documents)
             {
                 ValidateMerchantName(receipt);
+                ValidateMerchantAddress(receipt);
                 ValidateTransactionDate(receipt);
                 ValidateTransactionTime(receipt);
                 ValidateInvoiceItems(receipt);
