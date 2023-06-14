@@ -3,10 +3,10 @@ name: Frontend Build Validation
 on:
   push:
     branches: [main]
-    paths: ["frontend/**"]
+    paths: ["frontend/src/**"]
   pull_request:
     branches: [main]
-    paths: ["frontend/**"]
+    paths: ["frontend/src/**"]
 
 jobs:
   build:
