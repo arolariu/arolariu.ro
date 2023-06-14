@@ -81,7 +81,6 @@ namespace arolariu.Backend.Domain.Invoices.Foundation
                     AdditionalMetadata = postedInvoiceDto.AdditionalMetadata,
                 };
 
-                // TODO: when done with invoice logic: await invoiceSqlBroker.CreateInvoiceAsync(invoice);
                 return invoice;
             }
             return Invoice.CreateNullInvoice();
