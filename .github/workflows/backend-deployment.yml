@@ -3,10 +3,10 @@ name: Backend Container Deployment
 on:
   push:
     branches: [main]
-    paths: "backend/**"
+    paths: ["backend/src/**"]
   pull_request:
     branches: [main]
-    paths: "backend/**"
+    paths: ["backend/src/**"]
 
 jobs:
   build-and-deploy:
@@ -23,7 +23,7 @@ jobs:
       - name: Build and push container image to private Azure Container Registry
         uses: Azure/container-apps-deploy-action@v1
         with:
-          appSourcePath: ${{ github.workspace }}/backend
+          appSourcePath: ${{ github.workspace }}/backend/src
           registryUrl: arolariu.azurecr.io
           registryUsername: ${{ secrets.CONTAINERBACKEND_REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.CONTAINERBACKEND_REGISTRY_PASSWORD }}
