@@ -20,6 +20,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "design", "design", "{01145741-4842-4176-AAA0-D7016BDB7AD5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.General.Tests", "backend\tests\arolariu.Backend.General.Tests\arolariu.Backend.General.Tests.csproj", "{865ED365-FD08-431A-9F4D-102EF0E915DF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{06BB3A9C-3AAA-46B4-95FA-445381905347} = {06BB3A9C-3AAA-46B4-95FA-445381905347}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend", "backend\src\arolariu.Backend.csproj", "{06BB3A9C-3AAA-46B4-95FA-445381905347}"
 EndProject

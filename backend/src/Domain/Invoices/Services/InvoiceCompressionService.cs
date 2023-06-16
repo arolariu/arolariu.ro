@@ -1,32 +1,32 @@
 ﻿using ImageMagick;
+
 using System.IO;
 
-namespace arolariu.Backend.Domain.Invoices.Services
+namespace arolariu.Backend.Domain.Invoices.Services;
+
+/// <summary>
+/// The invoice compression service.
+/// </summary>
+public static class InvoiceCompressionService
 {
     /// <summary>
-    /// The invoice compression service.
+    /// The compress stream method.
     /// </summary>
-    public static class InvoiceCompressionService
+    /// <param name="blob"></param>
+    /// <returns></returns>
+    public static byte[] CompressStream(byte[] blob)
     {
-        /// <summary>
-        /// The compress stream method.
-        /// </summary>
-        /// <param name="blob"></param>
-        /// <returns></returns>
-        public static byte[] CompressStream(byte[] blob)
-        {
-            using var stream = new MemoryStream(blob);
-            using var image = new MagickImage(stream);
+        using var stream = new MemoryStream(blob);
+        using var image = new MagickImage(stream);
 
-            // Set the compression level
-            image.Quality = 50;
+        // Set the compression level
+        image.Quality = 50;
 
-            // Save the compressed image to a byte array
-            using var compressedStream = new MemoryStream();
+        // Save the compressed image to a byte array
+        using var compressedStream = new MemoryStream();
 
-            image.Write(compressedStream, MagickFormat.Jpeg);
-            var compressedData = compressedStream.ToArray();
-            return compressedData;
-        }
+        image.Write(compressedStream, MagickFormat.Jpeg);
+        var compressedData = compressedStream.ToArray();
+        return compressedData;
     }
 }
