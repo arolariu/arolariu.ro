@@ -20,7 +20,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     /// <summary>
     /// Constructor.
     /// </summary>
-    /// <param name="dbConnectionFactory"></param>
+    /// <param name="dbConnectionFactory">The database connection factory used to create the database connection.</param>
     public InvoiceSqlBroker(IDbConnectionFactory<IDbConnection> dbConnectionFactory)
     {
         DbConnection = dbConnectionFactory.CreateConnection();

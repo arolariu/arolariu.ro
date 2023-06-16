@@ -13,21 +13,21 @@ namespace arolariu.Backend.Domain.Invoices.Brokers;
 public interface IInvoiceSqlBroker
 {
     /// <summary>
-    /// The database connection.
+    /// Gets the database connection used by the invoice SQL broker.
     /// </summary>
     public IDbConnection DbConnection { get; }
 
     /// <summary>
-    /// Create an invoice entry in the SQL database.
+    /// Creates an invoice entry in the SQL database asynchronously.
     /// </summary>
-    /// <param name="invoice"></param>
-    /// <returns></returns>
+    /// <param name="invoice">The invoice object to be created.</param>
+    /// <returns>A task representing the asynchronous operation with the number of affected rows.</returns>
     public Task<int> CreateInvoiceAsync(Invoice invoice);
 
     /// <summary>
-    /// Read an invoice from the SQL database.
+    /// Reads an invoice from the SQL database asynchronously.
     /// </summary>
-    /// <param name="invoiceIdentifier"></param>
-    /// <returns></returns>
+    /// <param name="invoiceIdentifier">The unique identifier of the invoice.</param>
+    /// <returns>A task representing the asynchronous operation with the retrieved invoice object.</returns>
     public Task<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier);
 }

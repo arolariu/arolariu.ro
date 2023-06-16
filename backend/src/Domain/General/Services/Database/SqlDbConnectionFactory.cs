@@ -11,20 +11,19 @@ namespace arolariu.Backend.Domain.General.Services.Database;
 public class SqlDbConnectionFactory : IDbConnectionFactory<IDbConnection>
 {
     private readonly SqlConnectionStringBuilder _sqlConnectionStringBuilder;
-    private readonly ConcurrentBag<SqlConnection> _connectionPool;
+    private readonly ConcurrentBag<SqlConnection> _connectionPool = new();
 
     /// <summary>
     /// DbConnectionFactory constructor.
     /// </summary>
-    /// <param name="connectionString"></param>
+    /// <param name="connectionString">The connection string for the SQL database.</param>
     public SqlDbConnectionFactory(string connectionString)
     {
         _sqlConnectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
-        _connectionPool = new ConcurrentBag<SqlConnection>();
     }
 
-
     /// <inheritdoc/>
+    /// <returns>An <see cref="IDbConnection"/> instance representing the connection to the SQL database.</returns>
     public IDbConnection CreateConnection()
     {
         if (_connectionPool.TryTake(out var connection))
@@ -42,6 +41,7 @@ public class SqlDbConnectionFactory : IDbConnectionFactory<IDbConnection>
     }
 
     /// <inheritdoc/>
+    /// <param name="connection">The <see cref="IDbConnection"/> connection to release.</param>
     public void ReleaseConnection(IDbConnection connection)
     {
         if (connection is SqlConnection sqlConnection)
@@ -60,5 +60,5 @@ public class SqlDbConnectionFactory : IDbConnectionFactory<IDbConnection>
             connection.Dispose();
         }
     }
-
 }
+

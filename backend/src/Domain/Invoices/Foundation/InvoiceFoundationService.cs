@@ -51,7 +51,8 @@ public class InvoiceFoundationService : IInvoiceFoundationService
         {
             var boughtItems = jsonResult["Items"]!["BoughtItems"]!.ToObject<Dictionary<string, decimal>>();
             var discountedItems = jsonResult["Items"]!["DiscountedItems"]!.ToObject<Dictionary<string, decimal>>();
-            Invoice invoice = new Invoice()
+
+            return new Invoice()
             {
                 InvoiceId = postedInvoiceDto.InvoiceId,
                 InvoiceImageBlobUri = blobUri,
@@ -81,8 +82,6 @@ public class InvoiceFoundationService : IInvoiceFoundationService
                 },
                 AdditionalMetadata = postedInvoiceDto.AdditionalMetadata,
             };
-
-            return invoice;
         }
         return Invoice.CreateNullInvoice();
     }

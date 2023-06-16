@@ -19,16 +19,33 @@ using System.Data;
 namespace arolariu.Backend.Domain.General.Extensions;
 
 /// <summary>
-/// Extension methods for <see cref="WebApplicationBuilder"/> to register general domain services.
+/// Extension methods for the <see cref="WebApplicationBuilder"/> builder.
+/// This extension class acts as a IoC / DI container.
 /// This class is used by the <see cref="Program"/> class.
+/// This class represents the `Composition Root` of the application.
 /// </summary>
 internal static class WebApplicationBuilderExtensions
 {
     /// <summary>
-    /// Method that registers general domain services.
-    /// This method is an extension method for <see cref="WebApplicationBuilder"/>.
-    /// This method is used by the <see cref="Program"/> class.
+    /// Adds general domain configurations to the WebApplicationBuilder instance.
     /// </summary>
+    /// <param name="builder">The WebApplicationBuilder instance.</param>
+    /// <returns>The modified IServiceCollection instance.</returns>
+    /// <remarks>
+    /// This method configures various services and settings related to the general domain.
+    /// It adds authorization, API explorer endpoints, Swagger documentation generation, HTTP client, HTTP context accessor,
+    /// localization support, key vault service, connection strings, cross-origin resource sharing (CORS), health checks,
+    /// and Azure services integration.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Configure general domain configurations
+    /// services.AddGeneralDomainConfiguration(builder);
+    /// </code>
+    /// </example>
+    /// <seealso cref="WebApplicationBuilder"/>
+    /// <seealso cref="IServiceCollection"/>
+
     public static IServiceCollection AddGeneralDomainConfiguration(this WebApplicationBuilder builder)
     {
         var services = builder.Services;
@@ -75,10 +92,15 @@ internal static class WebApplicationBuilderExtensions
     }
 
     /// <summary>
-    /// Populates the connection strings fields in the appsettings.json file.
-    /// This method should be private and used only by the <see cref="AddGeneralDomainConfiguration(WebApplicationBuilder)"/> method.
+    /// Populates the connection strings chapter in the WebApplicationBuilder instance.
     /// </summary>
-    /// <param name="builder"></param>
+    /// <param name="builder">The WebApplicationBuilder instance.</param>
+    /// <remarks>
+    /// This method retrieves secrets from the key vault service and populates the connection strings
+    /// chapter in the configuration of the WebApplicationBuilder instance.
+    /// The connection strings are stored with corresponding keys: arolariu-sql-connstring,
+    /// arolariu-storage-connstring, arolariu-cosmosdb-connstring, and arolariu-cognitive-services-connstring.
+    /// </remarks>
     private static void PopulateConnectionStringsChapter(WebApplicationBuilder builder)
     {
         var keyVaultService = builder.Services.BuildServiceProvider().GetRequiredService<IKeyVaultService>();
@@ -89,11 +111,28 @@ internal static class WebApplicationBuilderExtensions
     }
 
     /// <summary>
-    /// The method that registers the invoices domain services.
-    /// This method is an extension method for <see cref="WebApplicationBuilder"/>.
-    /// The method is used by the <see cref="Program"/> class.
+    /// Adds invoices domain configurations to the WebApplicationBuilder instance.
     /// </summary>
-    /// <param name="builder"></param>
+    /// <param name="builder">The WebApplicationBuilder instance.</param>
+    /// <returns>The modified IServiceCollection instance.</returns>
+    /// <remarks>
+    /// This method configures services related to the invoices domain.
+    /// It adds singleton instances of the invoice SQL broker, invoice reader service,
+    /// invoice storage service, and invoice foundation service.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Configure invoices domain configurations
+    /// services.AddInvoicesDomainConfiguration(builder);
+    /// </code>
+    /// </example>
+    /// <seealso cref="WebApplicationBuilder"/>
+    /// <seealso cref="IServiceCollection"/>
+    /// <seealso cref="IInvoiceSqlBroker"/>
+    /// <seealso cref="IInvoiceReaderService"/>
+    /// <seealso cref="IInvoiceStorageService"/>
+    /// <seealso cref="IInvoiceFoundationService"/>
+
     public static IServiceCollection AddInvoicesDomainConfiguration(this WebApplicationBuilder builder)
 
     {

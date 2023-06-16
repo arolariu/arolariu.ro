@@ -8,20 +8,18 @@ namespace arolariu.Backend.Domain.General.Services.Database;
 /// Interface that handles the database connection.
 /// This interface is used by the <see cref="SqlDbConnectionFactory"/> and <see cref="NoSqlDbConnectionFactory"/> classes.
 /// </summary>
+/// <typeparam name="T">The type of database connection, which can be <see cref="IDbConnection"/> or <see cref="CosmosClient"/>.</typeparam>
 public interface IDbConnectionFactory<T> where T : class
 {
     /// <summary>
-    /// The method that gets the database connection.
+    /// Gets the database connection.
     /// </summary>
-    /// <returns>
-    /// <see cref="IDbConnection"/> SQL database connection.
-    /// <see cref="CosmosClient"/> NoSQL database connection.
-    /// </returns>
+    /// <returns>The <typeparamref name="T"/> database connection.</returns>
     public T CreateConnection();
 
     /// <summary>
-    /// Release the database connection.
+    /// Releases the database connection.
     /// </summary>
-    /// <param name="connection"></param>
+    /// <param name="connection">The <typeparamref name="T"/> database connection to release.</param>
     public void ReleaseConnection(T connection);
 }

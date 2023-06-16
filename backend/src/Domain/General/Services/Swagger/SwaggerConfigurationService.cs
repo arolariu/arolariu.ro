@@ -21,7 +21,7 @@ internal static class SwaggerConfigurationService
     /// <summary>
     /// Get the swagger UI options.
     /// </summary>
-    /// <returns><see cref="SwaggerUIOptions"/> object.</returns>
+    /// <returns>An instance of <see cref="SwaggerUIOptions"/>.</returns>
     internal static SwaggerUIOptions GetSwaggerUIOptions()
     {
         var options = new SwaggerUIOptions()
@@ -43,7 +43,7 @@ internal static class SwaggerConfigurationService
     /// <summary>
     /// Get the swagger options.
     /// </summary>
-    /// <returns><see cref="SwaggerOptions"/> object.</returns>
+    /// <returns>An instance of <see cref="SwaggerOptions"/>.</returns>
     internal static SwaggerOptions GetSwaggerOptions()
     {
         SwaggerOptions options = new SwaggerOptions();
@@ -53,7 +53,7 @@ internal static class SwaggerConfigurationService
     /// <summary>
     /// Get the swagger generator options.
     /// </summary>
-    /// <returns><see cref="SwaggerGenOptions"/> object.</returns>
+    /// <returns>An instance of <see cref="Action{SwaggerGenOptions}"/>.</returns>
     internal static Action<SwaggerGenOptions> GetSwaggerGenOptions()
     {
         var options = new Action<SwaggerGenOptions>(options =>

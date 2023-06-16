@@ -12,7 +12,8 @@ namespace arolariu.Backend.Domain.Invoices.Foundation;
 /// <summary>
 /// The invoice foundation service.
 /// This service is used by the <see cref="InvoiceFoundationService"/> class.
-/// This interface acts as a mediator / aggregator for the <see cref="IInvoiceReaderService"/>, <see cref="IInvoiceStorageService"/> and <see cref="IInvoiceSqlBroker"/> contract.
+/// This interface acts as a mediator / aggregator for the <see cref="IInvoiceReaderService"/>,
+/// <see cref="IInvoiceStorageService"/>, and <see cref="IInvoiceSqlBroker"/> contract.
 /// </summary>
 public interface IInvoiceFoundationService
 {
@@ -32,15 +33,16 @@ public interface IInvoiceFoundationService
     public IInvoiceSqlBroker InvoiceSqlBroker { get; }
 
     /// <summary>
-    /// The invoice foundation service method for processing new invoices into the system.
+    /// Process a new invoice object and publish it into the system.
     /// </summary>
-    /// <returns></returns>
+    /// <param name="postedInvoiceDto">The <see cref="PostedInvoiceDto"/> containing the posted invoice information.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation, yielding the processed <see cref="Invoice"/>.</returns>
     public Task<Invoice> PublishNewInvoiceObjectIntoTheSystemAsync(PostedInvoiceDto postedInvoiceDto);
 
     /// <summary>
-    /// The invoice foundation service method for retrieving existing invoices from the system.
+    /// Retrieve an existing invoice based on its identifier from the system.
     /// </summary>
-    /// <param name="invoiceIdentifier"></param>
-    /// <returns></returns>
+    /// <param name="invoiceIdentifier">The identifier of the invoice to retrieve.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation, yielding the retrieved <see cref="Invoice"/>.</returns>
     public Task<Invoice> RetrieveExistingInvoiceBasedOnIdentifierAsync(Guid invoiceIdentifier);
 }

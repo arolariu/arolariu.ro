@@ -8,10 +8,6 @@ namespace arolariu.Backend.Domain.Invoices.Models;
 /// <summary>
 /// The invoice model's time information.
 /// </summary>
-/// <param name="InvoiceIdentifiedDate"></param>
-/// <param name="InvoiceIdentifiedTime"></param>
-/// <param name="InvoiceSubmittedDate"></param>
-/// <param name="InvoiceSubmittedTime"></param>
 [Serializable]
 public record struct InvoiceTimeInformation(
     DateTime InvoiceIdentifiedDate,
@@ -19,6 +15,10 @@ public record struct InvoiceTimeInformation(
     TimeSpan InvoiceIdentifiedTime,
     TimeSpan InvoiceSubmittedTime)
 {
+    /// <summary>
+    /// Creates a null instance of <see cref="InvoiceTimeInformation"/>.
+    /// </summary>
+    /// <returns>A null instance of <see cref="InvoiceTimeInformation"/>.</returns>
     internal static InvoiceTimeInformation CreateNullInvoiceTimeInformation()
     {
         return new InvoiceTimeInformation(
@@ -32,15 +32,16 @@ public record struct InvoiceTimeInformation(
 /// <summary>
 /// The invoice model's merchant information.
 /// </summary>
-/// <param name="MerchantName"></param>
-/// <param name="MerchantAddress"></param>
-/// <param name="MerchantPhoneNumber"></param>
 [Serializable]
 public record struct InvoiceMerchantInformation(
     string MerchantName,
     string MerchantAddress,
     string MerchantPhoneNumber)
 {
+    /// <summary>
+    /// Creates a null instance of <see cref="InvoiceMerchantInformation"/>.
+    /// </summary>
+    /// <returns>A null instance of <see cref="InvoiceMerchantInformation"/>.</returns>
     internal static InvoiceMerchantInformation CreateNullInvoiceMerchantInformation()
     {
         return new InvoiceMerchantInformation(
@@ -53,11 +54,6 @@ public record struct InvoiceMerchantInformation(
 /// <summary>
 /// The invoice model's transaction information.
 /// </summary>
-/// <param name="TransactionDate"></param>
-/// <param name="TransactionTime"></param>
-/// <param name="TransactionDescription"></param>
-/// <param name="TransactionTotal"></param>
-/// <param name="TransactionCalories"></param>
 [Serializable]
 public record struct InvoiceTransactionInformation(
     DateTimeOffset TransactionDate,
@@ -66,6 +62,10 @@ public record struct InvoiceTransactionInformation(
     decimal TransactionTotal,
     decimal TransactionCalories)
 {
+    /// <summary>
+    /// Creates a null instance of <see cref="InvoiceTransactionInformation"/>.
+    /// </summary>
+    /// <returns>A null instance of <see cref="InvoiceTransactionInformation"/>.</returns>
     internal static InvoiceTransactionInformation CreateNullInvoiceTransactionInformation()
     {
         return new InvoiceTransactionInformation(
@@ -80,12 +80,14 @@ public record struct InvoiceTransactionInformation(
 /// <summary>
 /// The invoice model's items information.
 /// </summary>
-/// <param name="BoughtItems"></param>
-/// <param name="DiscountedItems"></param>
 public record struct InvoiceItemsInformation(
     Dictionary<string, decimal> BoughtItems,
     Dictionary<string, decimal> DiscountedItems)
 {
+    /// <summary>
+    /// Creates a null instance of <see cref="InvoiceItemsInformation"/>.
+    /// </summary>
+    /// <returns>A null instance of <see cref="InvoiceItemsInformation"/>.</returns>
     internal static InvoiceItemsInformation CreateNullInvoiceItemsInformation()
     {
         return new InvoiceItemsInformation(
@@ -94,9 +96,9 @@ public record struct InvoiceItemsInformation(
     }
 
     /// <summary>
-    /// Override for parsing the invoice items information to a JSON string.
+    /// Overrides the <see cref="Object.ToString"/> method to parse the invoice items information to a JSON string.
     /// </summary>
-    /// <returns></returns>
+    /// <returns>A JSON string representing the invoice items information.</returns>
     public override readonly string ToString()
     {
         JObject keyValuePairs = new JObject

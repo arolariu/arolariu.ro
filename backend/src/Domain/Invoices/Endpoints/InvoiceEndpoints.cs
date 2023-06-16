@@ -23,7 +23,7 @@ public static class InvoiceEndpoints
     /// <summary>
     /// The map invoice endpoints static method, called by the app builder.
     /// </summary>
-    /// <param name="router"></param>
+    /// <param name="router">The <see cref="IEndpointRouteBuilder"/> used for mapping the endpoints.</param>
     public static void MapInvoiceEndpoints(this IEndpointRouteBuilder router)
     {
         router
@@ -44,6 +44,13 @@ public static class InvoiceEndpoints
             .WithOpenApi();
     }
 
+    /// <summary>
+    /// Post an invoice to the service.
+    /// The invoice will be scanned, analyzed and stored in an Azure SQL database.
+    /// </summary>
+    /// <param name="invoicePhoto">The <see cref="PostedInvoiceDto"/> containing the invoice information.</param>
+    /// <param name="invoiceFoundationService">The <see cref="IInvoiceFoundationService"/> used for invoice processing.</param>
+    /// <returns>An <see cref="IResult"/> representing the result of the operation.</returns>
     [SwaggerOperation(
         Summary = "Post an invoice to the service." +
                 "\nThe invoice will be scanned, analyzed and stored in an Azure SQL database.",
@@ -72,6 +79,12 @@ public static class InvoiceEndpoints
         }
     }
 
+    /// <summary>
+    /// Retrieve an invoice from the service.
+    /// The invoice will be retrieved from an Azure SQL database.
+    /// </summary>
+    /// <param name="id">The identifier of the invoice to retrieve.</param>
+    /// <returns>An <see cref="IResult"/> representing the result of the operation.</returns>
     [SwaggerOperation(
         Summary = "Retrieve an invoice from the service." +
                 "\nThe invoice will be retrieved from an Azure SQL database.",

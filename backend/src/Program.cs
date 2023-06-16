@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Builder;
 namespace arolariu.Backend;
 
 /// <summary>
-/// The main backend program.cs file.
+/// The entry point for the backend.
 /// The backend consists of a .NET 7.0 web application.
 /// The backend is deployed as a monolith on Azure.
 /// The backend is a containerized application.
@@ -16,7 +16,7 @@ public static class Program
     /// <summary>
     /// The main method.
     /// </summary>
-    /// <param name="args"></param>
+    /// <param name="args">Command-line arguments passed to the application.</param>
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);

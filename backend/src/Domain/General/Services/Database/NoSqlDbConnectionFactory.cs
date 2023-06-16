@@ -12,20 +12,20 @@ namespace arolariu.Backend.Domain.General.Services.Database;
 public class NoSqlDbConnectionFactory : IDbConnectionFactory<CosmosClient>
 {
     private readonly string _connectionString;
-    private readonly ConcurrentBag<CosmosClient> _connectionPool;
-
+    private readonly ConcurrentBag<CosmosClient> _connectionPool = new();
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    /// <param name="connectionString"></param>
+    /// <param name="connectionString">The connection string for the NoSQL database.</param>
+    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="connectionString"/> is null.</exception>
     public NoSqlDbConnectionFactory(string connectionString)
     {
         _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
-        _connectionPool = new ConcurrentBag<CosmosClient>();
     }
 
     /// <inheritdoc/>
+    /// <returns>A <see cref="CosmosClient"/> instance representing the connection to the NoSQL database.</returns>
     public CosmosClient CreateConnection()
     {
         if (_connectionPool.TryTake(out var connection))
@@ -36,8 +36,10 @@ public class NoSqlDbConnectionFactory : IDbConnectionFactory<CosmosClient>
     }
 
     /// <inheritdoc/>
+    /// <param name="connection">The <see cref="CosmosClient"/> connection to release.</param>
     public void ReleaseConnection(CosmosClient connection)
     {
         _connectionPool.Add(connection);
     }
 }
+
