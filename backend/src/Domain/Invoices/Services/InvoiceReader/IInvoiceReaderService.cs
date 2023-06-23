@@ -1,8 +1,7 @@
-﻿using Azure.AI.FormRecognizer.DocumentAnalysis;
+﻿using arolariu.Backend.Domain.Invoices.Models;
 
-using Newtonsoft.Json.Linq;
+using Azure.AI.FormRecognizer.DocumentAnalysis;
 
-using System;
 using System.Threading.Tasks;
 
 namespace arolariu.Backend.Domain.Invoices.Services.InvoiceReader;
@@ -16,16 +15,15 @@ public interface IInvoiceReaderService
     /// <summary>
     /// Send an invoice for analysis to the Azure Cognitive Services service.
     /// </summary>
-    /// <param name="invoiceBlobUri"></param>
+    /// <param name="invoice"></param>
     /// <returns></returns>
-    public Task<AnalyzeResult> SendInvoiceBlobForAnalysis(Uri invoiceBlobUri);
+    public Task<AnalyzedDocument> SendInvoiceToCognitiveServices(Invoice invoice);
 
     /// <summary>
-    /// Method that parses the invoice analysis result.
-    /// This method will be called by the Invoice Analysis service.
-    /// This method parses the invoice analysis result and returns a JSON object.
+    /// Update the invoice with the analyzed data.
     /// </summary>
-    /// <param name="invoiceAnalysisResult"></param>
+    /// <param name="invoice"></param>
+    /// <param name="receipt"></param>
     /// <returns></returns>
-    public JObject ParseInvoiceAnalysisResult(AnalyzeResult invoiceAnalysisResult);
+    public Invoice UpdateInvoiceWithAnalyzedData(Invoice invoice, AnalyzedDocument receipt);
 }

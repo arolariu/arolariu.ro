@@ -45,7 +45,6 @@ internal static class WebApplicationBuilderExtensions
     /// </example>
     /// <seealso cref="WebApplicationBuilder"/>
     /// <seealso cref="IServiceCollection"/>
-
     public static IServiceCollection AddGeneralDomainConfiguration(this WebApplicationBuilder builder)
     {
         var services = builder.Services;
@@ -132,7 +131,6 @@ internal static class WebApplicationBuilderExtensions
     /// <seealso cref="IInvoiceReaderService"/>
     /// <seealso cref="IInvoiceStorageService"/>
     /// <seealso cref="IInvoiceFoundationService"/>
-
     public static IServiceCollection AddInvoicesDomainConfiguration(this WebApplicationBuilder builder)
 
     {

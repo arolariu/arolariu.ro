@@ -1,5 +1,4 @@
 ﻿using arolariu.Backend.Domain.Invoices.Brokers;
-using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Models;
 using arolariu.Backend.Domain.Invoices.Services.InvoiceReader;
 using arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
@@ -33,16 +32,17 @@ public interface IInvoiceFoundationService
     public IInvoiceSqlBroker InvoiceSqlBroker { get; }
 
     /// <summary>
-    /// Process a new invoice object and publish it into the system.
+    /// Send an invoice for analysis to the Azure Cognitive Services service.
     /// </summary>
-    /// <param name="postedInvoiceDto">The <see cref="PostedInvoiceDto"/> containing the posted invoice information.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation, yielding the processed <see cref="Invoice"/>.</returns>
-    public Task<Invoice> PublishNewInvoiceObjectIntoTheSystemAsync(PostedInvoiceDto postedInvoiceDto);
+    /// <param name="invoice"></param>
+    /// <returns></returns>
+    public Task SendInvoiceForAnalysis(Invoice invoice);
 
     /// <summary>
-    /// Retrieve an existing invoice based on its identifier from the system.
+    /// Retrieve the status of an invoice.
+    /// This method retrieves the status of the invoice with the specified identifier.
     /// </summary>
-    /// <param name="invoiceIdentifier">The identifier of the invoice to retrieve.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation, yielding the retrieved <see cref="Invoice"/>.</returns>
-    public Task<Invoice> RetrieveExistingInvoiceBasedOnIdentifierAsync(Guid invoiceIdentifier);
+    /// <param name="invoiceIdentifier">The unique identifier of the invoice.</param>
+    /// <returns>A task representing the asynchronous operation with the invoice status.</returns>
+    public Task<InvoiceStatus> RetrieveInvoiceStatus(Guid invoiceIdentifier);
 }

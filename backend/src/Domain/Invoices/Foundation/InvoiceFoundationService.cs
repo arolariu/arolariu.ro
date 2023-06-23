@@ -1,11 +1,9 @@
 ﻿using arolariu.Backend.Domain.Invoices.Brokers;
-using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Models;
 using arolariu.Backend.Domain.Invoices.Services.InvoiceReader;
 using arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace arolariu.Backend.Domain.Invoices.Foundation;
@@ -41,55 +39,40 @@ public class InvoiceFoundationService : IInvoiceFoundationService
     }
 
     /// <inheritdoc/>
-    public async Task<Invoice> PublishNewInvoiceObjectIntoTheSystemAsync(PostedInvoiceDto postedInvoiceDto)
+    public Task<InvoiceStatus> RetrieveInvoiceStatus(Guid invoiceIdentifier)
     {
-        var blobUri = InvoiceStorageService.UploadInvoiceBlobToBlobStorage(postedInvoiceDto);
-        var detectedInvoiceAnalysisResult = await InvoiceReaderService.SendInvoiceBlobForAnalysis(blobUri);
-        var jsonResult = InvoiceReaderService.ParseInvoiceAnalysisResult(detectedInvoiceAnalysisResult);
-
-        if (jsonResult is not null)
-        {
-            var boughtItems = jsonResult["Items"]!["BoughtItems"]!.ToObject<Dictionary<string, decimal>>();
-            var discountedItems = jsonResult["Items"]!["DiscountedItems"]!.ToObject<Dictionary<string, decimal>>();
-
-            return new Invoice()
-            {
-                InvoiceId = postedInvoiceDto.InvoiceId,
-                InvoiceImageBlobUri = blobUri,
-                InvoiceItems = new InvoiceItemsInformation()
-                {
-                    BoughtItems = boughtItems!,
-                    DiscountedItems = discountedItems!,
-                },
-                TransactionInformation = new InvoiceTransactionInformation()
-                {
-                    TransactionDate = (DateTimeOffset)jsonResult["TransactionDate"]!,
-                    TransactionTime = (DateTimeOffset)jsonResult["TransactionTime"]!,
-                    TransactionTotal = (decimal)jsonResult["TransactionTotal"]!,
-                },
-                InvoiceTime = new InvoiceTimeInformation()
-                {
-                    InvoiceIdentifiedDate = (DateTime)jsonResult["TransactionDate"]!,
-                    InvoiceSubmittedDate = DateTimeOffset.UtcNow.Date,
-                    InvoiceIdentifiedTime = (TimeSpan)jsonResult["TransactionTime"]!,
-                    InvoiceSubmittedTime = DateTime.UtcNow.TimeOfDay,
-                },
-                MerchantInformation = new InvoiceMerchantInformation()
-                {
-                    MerchantName = (string)jsonResult["MerchantName"]!,
-                    MerchantAddress = (string)jsonResult["MerchantAddress"]!,
-                    MerchantPhoneNumber = (string)jsonResult["MerchantPhoneNumber"]!,
-                },
-                AdditionalMetadata = postedInvoiceDto.AdditionalMetadata,
-            };
-        }
-        return Invoice.CreateNullInvoice();
+        throw new NotImplementedException();
     }
 
     /// <inheritdoc/>
-    public async Task<Invoice> RetrieveExistingInvoiceBasedOnIdentifierAsync(Guid invoiceIdentifier)
+    public async Task SendInvoiceForAnalysis(Invoice invoice)
     {
-        await Task.Delay(1);
-        throw new NotImplementedException();
+        var invoiceStatus = await InvoiceSqlBroker.RetrieveInvoiceStatus(invoice.InvoiceId);
+        try
+        {
+            // Step 1: Send the invoice to the Azure Cognitive Services service.
+            var analyzedInvoice = await InvoiceReaderService.SendInvoiceToCognitiveServices(invoice);
+            var updatedInvoice = InvoiceReaderService.UpdateInvoiceWithAnalyzedData(invoice, analyzedInvoice);
+            invoiceStatus = invoiceStatus with
+            {
+                IsAnalyzed = true,
+                AnalyzedDate = DateTime.UtcNow,
+                InvoiceLastModifiedDate = DateTime.UtcNow,
+            };
+
+            // Step 2: Update the invoice and its status to represent the state "Analyzed".
+            await InvoiceSqlBroker.UpdateInvoiceStatus(invoice, invoiceStatus);
+            await InvoiceSqlBroker.UpdateSpecificInvoice(updatedInvoice);
+        }
+        catch (Exception) // If an exception occurs, update the invoice status to represent the state "Not Analyzed".
+        {
+            invoiceStatus = invoiceStatus with
+            {
+                IsAnalyzed = false,
+                InvoiceLastModifiedDate = DateTime.UtcNow,
+            };
+            await InvoiceSqlBroker.UpdateInvoiceStatus(invoice, invoiceStatus);
+            throw;
+        }
     }
 }

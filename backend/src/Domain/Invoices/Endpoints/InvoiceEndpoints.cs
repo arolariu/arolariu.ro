@@ -1,103 +1,47 @@
-﻿using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Foundation;
-using arolariu.Backend.Domain.Invoices.Models;
-
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
-
-using Swashbuckle.AspNetCore.Annotations;
-
-using System;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Routing;
 
 namespace arolariu.Backend.Domain.Invoices.Endpoints;
 
 /// <summary>
 /// The invoice endpoints.
 /// </summary>
-public static class InvoiceEndpoints
+public static partial class InvoiceEndpoints
 {
-
     /// <summary>
     /// The map invoice endpoints static method, called by the app builder.
+    /// This method maps all the invoice endpoints for the web application.
+    /// The invoice endpoints are split into three categories:
+    /// <list type="bullet">
+    /// <item> Standard invoice endpoints (CRUD operations) </item>
+    /// <item> Metadata invoice endpoints (metadata operations) </item>
+    /// <item> Extra invoice endpoints (extra operations) </item>
+    /// </list>
     /// </summary>
     /// <param name="router">The <see cref="IEndpointRouteBuilder"/> used for mapping the endpoints.</param>
     public static void MapInvoiceEndpoints(this IEndpointRouteBuilder router)
     {
-        router
-            .MapPost("/api/invoices", PostInvoiceForAnalysis)
-            .WithName(nameof(PostInvoiceForAnalysis))
-            .Accepts<PostedInvoiceDto>("application/json")
-            .Produces<Invoice>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status500InternalServerError)
-            .WithOpenApi();
+        // Endpoints group: /api/invoices
+        // This group contains the standard invoice endpoints (CRUD operations)
+        MapStandardInvoiceEndpoints(router);
 
-        router
-            .MapGet("/api/invoices/{id}", RetrieveInvoiceAsync)
-            .WithName(nameof(RetrieveInvoiceAsync))
-            .Produces<RetrievedInvoiceDto>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status500InternalServerError)
-            .WithOpenApi();
-    }
+        // Endpoints group: /api/invoices/{id}/merchant
+        // This group contains the merchant invoice endpoints (merchant operations)
+        MapMerchantInvoiceEndpoints(router);
 
-    /// <summary>
-    /// Post an invoice to the service.
-    /// The invoice will be scanned, analyzed and stored in an Azure SQL database.
-    /// </summary>
-    /// <param name="invoicePhoto">The <see cref="PostedInvoiceDto"/> containing the invoice information.</param>
-    /// <param name="invoiceFoundationService">The <see cref="IInvoiceFoundationService"/> used for invoice processing.</param>
-    /// <returns>An <see cref="IResult"/> representing the result of the operation.</returns>
-    [SwaggerOperation(
-        Summary = "Post an invoice to the service." +
-                "\nThe invoice will be scanned, analyzed and stored in an Azure SQL database.",
-        Description = "The HTTP POST request will trigger the following workflow:" +
-                    "\n1. Invoice Analysis service, using Azure Cognitive Services." +
-                    "\n2. Invoice Compression service, using Magick8 compression service." +
-                    "\n3. Invoice will be saved to an Azure SQL database after analysis & compression.",
-        OperationId = nameof(PostInvoiceForAnalysis),
-        Tags = new string[] { "Invoices Management System" })]
-    [SwaggerResponse(StatusCodes.Status200OK, "The invoice object was successfully sent for analysis.", typeof(Invoice), "application/json")]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice object could NOT be created.", typeof(ProblemDetails))]
-    [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
-    private static async Task<IResult> PostInvoiceForAnalysis(
-        PostedInvoiceDto invoicePhoto,
-        IInvoiceFoundationService invoiceFoundationService)
-    {
-        try
-        {
-            var invoice = await invoiceFoundationService.PublishNewInvoiceObjectIntoTheSystemAsync(invoicePhoto);
-            return Results.Ok(invoice);
-        }
-        catch (Exception exception)
-        {
-            var err = exception.Message + "\n" + exception.StackTrace;
-            return Results.Problem(err);
-        }
-    }
+        // Endpoints group: /api/invoices/{id}/time
+        // This group contains the time invoice endpoints (time operations)
+        MapTimeInvoiceEndpoints(router);
 
-    /// <summary>
-    /// Retrieve an invoice from the service.
-    /// The invoice will be retrieved from an Azure SQL database.
-    /// </summary>
-    /// <param name="id">The identifier of the invoice to retrieve.</param>
-    /// <returns>An <see cref="IResult"/> representing the result of the operation.</returns>
-    [SwaggerOperation(
-        Summary = "Retrieve an invoice from the service." +
-                "\nThe invoice will be retrieved from an Azure SQL database.",
-        Description = "The HTTP GET request will trigger the following workflow:" +
-                   "\n1. Invoice retrieval from an Azure SQL database.",
-        OperationId = nameof(RetrieveInvoiceAsync),
-        Tags = new string[] { "Invoices Management System" })]
-    [SwaggerResponse(StatusCodes.Status200OK, "The invoice was successfully retrieved.", typeof(RetrievedInvoiceDto))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice was NOT found in the database.", typeof(ProblemDetails))]
-    [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
-    private static async Task<IResult> RetrieveInvoiceAsync([FromRoute] Guid id)
-    {
-        await Task.Delay(1000);
-        return Results.Ok("Received the id: " + id);
+        // Endpoints group: /api/invoices/{id}/items
+        // This group contains the invoice items endpoints (invoice items operations)
+        MapInvoiceItemsEndpoints(router);
+
+        // Endpoints group: /api/invoices/{id}/metadata
+        // This group contains the metadata invoice endpoints (metadata operations)
+        MapMetadataInvoiceEndpoints(router);
+
+        // Endpoints group: /api/invoices/{id}/extra
+        // This group contains the extra invoice endpoints (extra operations)
+        MapExtraInvoiceEndpoints(router);
     }
 }

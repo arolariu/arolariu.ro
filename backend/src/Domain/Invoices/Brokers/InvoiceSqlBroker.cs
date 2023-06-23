@@ -3,8 +3,12 @@ using arolariu.Backend.Domain.Invoices.Models;
 
 using Dapper;
 
+using Newtonsoft.Json;
+
 using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers;
@@ -27,23 +31,269 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier)
+    public async Task<IEnumerable<Invoice>> RetrieveAllInvoices()
     {
-        using (DbConnection)
-        {
-            return await DbConnection.QueryFirstOrDefaultAsync<Invoice>(
-                            "SELECT * FROM Invoices WHERE InvoiceIdentifier = @InvoiceIdentifier",
-                            new { InvoiceIdentifier = invoiceIdentifier });
-        }
+        const string procedureName = "RetrieveAllInvoicesProcedure";
+        var parameters = new DynamicParameters();
+        var result = await DbConnection.QueryAsync<DatabaseInvoice>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+
+        var invoices = result.Select(InvoiceMapper.MapDbInvoiceToDomainInvoice);
+        return invoices;
     }
 
     /// <inheritdoc/>
-    public async Task<int> CreateInvoiceAsync(Invoice invoice)
+    public async Task<bool> InsertNewInvoice(Invoice invoice)
     {
-        using (DbConnection)
+        const string procedureName = "InsertNewInvoiceProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoice.InvoiceId);
+        parameters.Add("InvoicePhotoURI", invoice.InvoiceImageURI.ToString());
+        await DbConnection.ExecuteAsync(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public async Task<Invoice> RetrieveSpecificInvoice(Guid invoiceIdentifier)
+    {
+        const string procedureName = "RetrieveSpecificInvoiceProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+        var databaseInvoice = 
+            await DbConnection.QueryFirstOrDefaultAsync<DatabaseInvoice>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        
+        if (databaseInvoice is not null)
         {
-            var sql = @$"INSERT INTO BonFiscal VALUES (@Value1, @Value2)";
-            return await DbConnection.ExecuteAsync(sql, new { Value1 = invoice.InvoiceId.ToString(), Value2 = invoice.InvoiceImageBlobUri.ToString() });
+            var invoice = InvoiceMapper.MapDbInvoiceToDomainInvoice(databaseInvoice);
+            return invoice;
         }
+        return Invoice.CreateNullInvoice();
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> DeleteSpecificInvoice(Guid invoiceIdentifier)
+    {
+        const string procedureName = "DeleteSpecificInvoiceProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+        var invoiceWasDeletedSuccessfully =
+            await DbConnection.ExecuteAsync(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        return invoiceWasDeletedSuccessfully > 0;
+    }
+
+    /// <inheritdoc/>
+    public async Task<InvoiceMetadata> RetrieveSpecificInvoiceMetadata(Guid invoiceIdentifier)
+    {
+        const string procedureName = "RetrieveSpecificInvoiceMetadataProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+
+        // TODO: This is a hack. In theory, we should have a procedure for metadata bag and another procedure for metadata.
+        // This is in order to respect the InvoiceMetadata record structure schema.
+        var resultDictionary = new Dictionary<string, object>();
+        using (var metadataBag = await DbConnection.QueryMultipleAsync(procedureName, parameters, commandType: CommandType.StoredProcedure))
+        {
+            var rows = await metadataBag.ReadAsync();
+
+            foreach (var row in rows)
+            {
+                var key = row.Key;
+                var value = row.Value;
+
+                resultDictionary.Add(key, value);
+            }
+        }
+        return new InvoiceMetadata() { MetadataBag = resultDictionary };
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> UpdateSpecificInvoiceMetadata(Guid invoiceIdentifier, InvoiceMetadata invoiceMetadata)
+    {
+        const string procedureName = "UpdateSpecificInvoiceMetadataProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+
+        var kvPair = invoiceMetadata.MetadataBag.FirstOrDefault();
+        parameters.Add("MetadataKey", kvPair.Key);
+        parameters.Add("MetadataValue", kvPair.Value.ToString());
+        var metadataBagWasUpdated = await DbConnection.ExecuteAsync(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        return metadataBagWasUpdated > 0;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> DeleteSpecificInvoiceMetadata(Guid invoiceIdentifier, string metadataKey)
+    {
+        const string procedureName = "DeleteSpecificInvoiceMetadataProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+        parameters.Add("MetadataBagKey", metadataKey);
+        var deleteWasSuccessful = await DbConnection.ExecuteAsync(procedureName, parameters, commandType: CommandType.StoredProcedure);
+
+        return deleteWasSuccessful > 0;
+    }
+
+    /// <inheritdoc/>
+    public async Task<Invoice> UpdateSpecificInvoice(Invoice invoice)
+    {
+        var itemsInfo = invoice.Items;
+        var merchantInfo = invoice.MerchantInformation;
+        var timeInfo = invoice.InvoiceTime;
+
+        await UpdateInvoiceItems(invoice.InvoiceId, itemsInfo);
+        await UpdateMerchantInformation(invoice.InvoiceId, merchantInfo);
+        await UpdateTimeInformation(invoice.InvoiceId, timeInfo);
+
+        var updatedInvoice = await RetrieveSpecificInvoice(invoice.InvoiceId);
+        return updatedInvoice;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> UpdateMerchantInformation(Guid invoiceIdentifier, InvoiceMerchantInformation merchantInformation)
+    {
+        const string procedureName = "UpdateInvoiceMerchantInformationProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+        parameters.Add("MerchantName", merchantInformation.MerchantName);
+        parameters.Add("MerchantAddress", merchantInformation.MerchantAddress);
+        parameters.Add("MerchantPhoneNumber", merchantInformation.MerchantPhoneNumber);
+
+        var updateWasSuccessful = await DbConnection.ExecuteAsync(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        return updateWasSuccessful != 0;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> UpdateTimeInformation(Guid invoiceIdentifier, InvoiceTimeInformation timeInformation)
+    {
+        const string procedureName = "UpdateSpecificInvoiceTimeInformationProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+        parameters.Add("InvoiceIdentifiedDate", timeInformation.InvoiceIdentifiedDate);
+        parameters.Add("InvoiceSubmittedDate", timeInformation.InvoiceSubmittedDate);
+        var timeInformationWasUpdated = await DbConnection.ExecuteAsync(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        return timeInformationWasUpdated != 0;
+    }
+
+    /// <inheritdoc/>
+    public async Task<InvoiceMerchantInformation> RetrieveMerchantInformation(Guid invoiceIdentifier)
+    {
+        const string procedureName = "RetrieveSpecificMerchantInformationProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+        var merchantInformation =
+            await DbConnection.QueryFirstOrDefaultAsync<InvoiceMerchantInformation>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+
+        return InvoiceMerchantInformation.CheckInvoiceMerchantInformationStructIsNull(merchantInformation)
+            ? InvoiceMerchantInformation.CreateNullInvoiceMerchantInformation()
+            : merchantInformation;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> DeleteMerchantInformation(Guid invoiceIdentifier)
+    {
+        const string procedureName = "DeleteSpecificInvoiceMerchantInformationProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+
+        var merchantInformationWasDeleted = await DbConnection.ExecuteAsync(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        return merchantInformationWasDeleted > 0;
+    }
+
+    /// <inheritdoc/>
+    public async Task<InvoiceTimeInformation> RetrieveTimeInformation(Guid invoiceIdentifier)
+    {
+        const string procedureName = "RetrieveSpecificTimeInformationProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+        var timeInformation =
+            await DbConnection.QueryFirstOrDefaultAsync<InvoiceTimeInformation>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+
+        return InvoiceTimeInformation.CheckInvoiceTimeInformationStructIsNull(timeInformation)
+            ? InvoiceTimeInformation.CreateNullInvoiceTimeInformation()
+            : timeInformation;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> DeleteTimeInformation(Guid invoiceIdentifier)
+    {
+        const string procedureName = "DeleteSpecificInvoiceTimeInformationProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+        var timeInformationWasDeleted = await DbConnection.ExecuteAsync(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        return timeInformationWasDeleted > 0;
+    }
+
+    /// <inheritdoc/>
+    public async Task<InvoiceItemsInformation> RetrieveInvoiceItems(Guid invoiceIdentifier)
+    {
+        const string procedureName = "RetrieveSpecificInvoiceItemsProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+        var (BoughtItems, DiscountedItems) =
+            await DbConnection.QueryFirstOrDefaultAsync<(string, string)>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+
+        if (BoughtItems is not null && DiscountedItems is not null)
+        {
+            var boughtItems = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(BoughtItems)!;
+            var discountedItems = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(DiscountedItems)!;
+
+            return new InvoiceItemsInformation()
+            {
+                BoughtItems = boughtItems,
+                DiscountedItems = discountedItems
+            };
+        }
+        return InvoiceItemsInformation.CreateNullInvoiceItemsInformation();
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> DeleteInvoiceItems(Guid invoiceIdentifier)
+    {
+        const string procedureName = "DeleteSpecificInvoiceItemsProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+        var invoiceItemsWereDeleted = await DbConnection.ExecuteAsync(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        return invoiceItemsWereDeleted > 0;
+    }
+
+    /// <inheritdoc/>
+    public async Task<InvoiceStatus> RetrieveInvoiceStatus(Guid invoiceIdentifier)
+    {
+        const string procedureName = "RetrieveSpecificInvoiceStatusProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+        var invoiceStatus =
+            await DbConnection.QueryFirstOrDefaultAsync<InvoiceStatus>(procedureName, parameters, commandType: CommandType.StoredProcedure);
+
+        return InvoiceStatus.CheckInvoiceStatusStructIsNull(invoiceStatus)
+           ? InvoiceStatus.CreateNullInvoiceStatus()
+           : invoiceStatus;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> UpdateInvoiceStatus(Invoice invoice, InvoiceStatus invoiceStatus)
+    {
+        const string procedureName = "UpdateSpecificInvoiceStatusProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoice.InvoiceId);
+        parameters.Add("IsCompleteInvoice", Invoice.VerifyInvoiceIsComplete(invoice));
+        parameters.Add("IsAnalyzed", invoiceStatus.IsAnalyzed);
+        parameters.Add("AnalyzedDate", invoiceStatus.AnalyzedDate);
+        var invoiceStatusWasUpdated = await DbConnection.ExecuteAsync(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        return invoiceStatusWasUpdated > 0;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> UpdateInvoiceItems(Guid invoiceIdentifier, InvoiceItemsInformation invoiceItemsInformation)
+    {
+        const string procedureName = "UpdateSpecificInvoiceItemsProcedure";
+        var parameters = new DynamicParameters();
+        parameters.Add("InvoiceIdentifier", invoiceIdentifier);
+
+        var boughtItems = JsonConvert.SerializeObject(invoiceItemsInformation.BoughtItems);
+        var discountedItems = JsonConvert.SerializeObject(invoiceItemsInformation.DiscountedItems);
+        parameters.Add("BoughtItems", boughtItems);
+        parameters.Add("DiscountedItems", discountedItems);
+
+        var invoiceItemsWereUpdated = await DbConnection.ExecuteAsync(procedureName, parameters, commandType: CommandType.StoredProcedure);
+        return invoiceItemsWereUpdated > 0;
     }
 }

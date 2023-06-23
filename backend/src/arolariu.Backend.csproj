@@ -78,6 +78,7 @@
 
 	<ItemGroup>
 		<Folder Include="Domain\General\Helpers\" />
+		<Folder Include="Domain\Invoices\Repos\" />
 	</ItemGroup>
 
 </Project>

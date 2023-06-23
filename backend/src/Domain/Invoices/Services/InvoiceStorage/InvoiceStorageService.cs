@@ -1,9 +1,12 @@
 ﻿using arolariu.Backend.Domain.General.Services.KeyVault;
-using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.Models;
 
 using Azure.Storage.Blobs;
 
+using Microsoft.AspNetCore.Http;
+
 using System;
+using System.Threading.Tasks;
 
 namespace arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
 
@@ -12,7 +15,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
 /// </summary>
 public class InvoiceStorageService : IInvoiceStorageService
 {
-    private readonly IKeyVaultService keyVaultService;
+    private readonly BlobContainerClient blobStorageBroker;
 
     /// <summary>
     /// Constructor.
@@ -20,24 +23,35 @@ public class InvoiceStorageService : IInvoiceStorageService
     /// <param name="keyVaultService"></param>
     public InvoiceStorageService(IKeyVaultService keyVaultService)
     {
-        this.keyVaultService = keyVaultService ?? throw new ArgumentNullException(nameof(keyVaultService));
+        var connString = keyVaultService.GetSecret("arolariu-storage-connstring");
+        blobStorageBroker = new BlobContainerClient(connString, "invoices");
+        blobStorageBroker.CreateIfNotExists();
+    }
+
+    /// <summary>
+    /// to complete.
+    /// </summary>
+    /// <param name="invoiceIdentifier"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public Task<IFormFile> RetrieveInvoicePhotoFromBlobStorage(Guid invoiceIdentifier)
+    {
+        throw new NotImplementedException();
     }
 
     /// <inheritdoc/>
-    public Uri UploadInvoiceBlobToBlobStorage(PostedInvoiceDto invoice)
+    public async Task<Uri> UploadInvoicePhotoToBlobStorage(Invoice invoice)
     {
-        // create blob container client
-        var connectionString = keyVaultService.GetSecret("arolariu-storage-connstring");
-        var blobContainerClient = new BlobContainerClient(connectionString, "invoices");
-        blobContainerClient.CreateIfNotExists();
-
         // upload blob
-        var blobName = invoice.InvoiceId.ToString();
-        var blobClient = blobContainerClient.GetBlobClient(blobName);
+        var blobName = invoice.InvoiceId.ToString() + ".jpg";
+        var blobClient = blobStorageBroker.GetBlobClient(blobName);
 
-        var photo = PostedInvoiceDto.ConvertToFormFile(invoice);
-        using var stream = photo.OpenReadStream();
-        blobClient.Upload(stream, overwrite: true);
+        using var stream = invoice.InvoiceImage.OpenReadStream();
+        
+        await blobClient.UploadAsync(stream, overwrite: true);
+        invoice.InvoiceImageURI = blobClient.Uri;
+        
         return blobClient.Uri;
     }
+
 }

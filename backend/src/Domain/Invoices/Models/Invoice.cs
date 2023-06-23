@@ -1,13 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Http;
+
+using System;
+using System.Text.Json.Serialization;
 
 namespace arolariu.Backend.Domain.Invoices.Models;
 
 /// <summary>
-/// The Invoice model as "partially-stored" in the SQL database.
+/// The Invoice model as "represented" in the Application Domain.
 /// </summary>
 [Serializable]
-public class Invoice
+public record class Invoice
 {
     /// <summary>
     /// The invoice id.
@@ -17,12 +19,18 @@ public class Invoice
     /// <summary>
     /// The invoice image URI.
     /// </summary>
-    public required Uri InvoiceImageBlobUri { get; set; }
+    public Uri InvoiceImageURI { get; set; } = null!;
 
     /// <summary>
-    /// The invoice items.
+    /// The invoice image.
     /// </summary>
-    public required InvoiceItemsInformation InvoiceItems { get; set; } = new InvoiceItemsInformation();
+    [JsonIgnore] // This is not stored in the database and is only used for the initial onboarding of the invoice.
+    public IFormFile InvoiceImage { get; set; } = null!;
+
+    /// <summary>
+    /// Invoice metadata.
+    /// </summary>
+    public required InvoiceMetadata InvoiceMetadata { get; set; } = new InvoiceMetadata();
 
     /// <summary>
     /// The invoice merchant information.
@@ -40,9 +48,9 @@ public class Invoice
     public required InvoiceTransactionInformation TransactionInformation { get; set; } = new InvoiceTransactionInformation();
 
     /// <summary>
-    /// Additional metadata for the invoice.
+    /// The invoice items.
     /// </summary>
-    public required IDictionary<string, object> AdditionalMetadata { get; set; } = new Dictionary<string, object>();
+    public required InvoiceItemsInformation Items { get; set; } = new InvoiceItemsInformation();
 
     /// <summary>
     /// Null object pattern for the invoice model.
@@ -53,12 +61,23 @@ public class Invoice
         return new Invoice()
         {
             InvoiceId = Guid.Empty,
-            InvoiceImageBlobUri = null!,
-            InvoiceTime = InvoiceTimeInformation.CreateNullInvoiceTimeInformation(),
-            InvoiceItems = InvoiceItemsInformation.CreateNullInvoiceItemsInformation(),
-            MerchantInformation = InvoiceMerchantInformation.CreateNullInvoiceMerchantInformation(),
+            InvoiceImageURI = null!,
+            InvoiceMetadata = InvoiceMetadata.CreateNullInvoiceMetadata(),
             TransactionInformation = InvoiceTransactionInformation.CreateNullInvoiceTransactionInformation(),
-            AdditionalMetadata = null!
+            MerchantInformation = InvoiceMerchantInformation.CreateNullInvoiceMerchantInformation(),
+            InvoiceTime = InvoiceTimeInformation.CreateNullInvoiceTimeInformation(),
+            Items = InvoiceItemsInformation.CreateNullInvoiceItemsInformation()
         };
+    }
+
+    internal static bool VerifyInvoiceIsComplete(Invoice invoice)
+    {
+        return
+                invoice.InvoiceId != Guid.Empty &&
+                invoice.InvoiceImageURI != null &&
+                !InvoiceTimeInformation.CheckInvoiceTimeInformationStructIsNull(invoice.InvoiceTime) &&
+                !InvoiceMerchantInformation.CheckInvoiceMerchantInformationStructIsNull(invoice.MerchantInformation) &&
+                !InvoiceTransactionInformation.CheckInvoiceTransactionInformationStructIsNull(invoice.TransactionInformation) &&
+                !InvoiceItemsInformation.CheckInvoiceItemsInformationStructIsNull(invoice.Items);
     }
 }

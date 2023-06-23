@@ -1,6 +1,9 @@
-﻿using arolariu.Backend.Domain.Invoices.DTOs;
+﻿using arolariu.Backend.Domain.Invoices.Models;
+
+using Microsoft.AspNetCore.Http;
 
 using System;
+using System.Threading.Tasks;
 
 namespace arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
 
@@ -11,9 +14,16 @@ namespace arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
 public interface IInvoiceStorageService
 {
     /// <summary>
-    /// Upload a blob image (invoice data) to an Azure Blob Storage container.
+    /// Upload a blob image (invoice photo) to an Azure Blob Storage container.
     /// </summary>
     /// <param name="invoice"></param>
     /// <returns><see cref="Uri"/> object that contains the path to the uploaded blob object.</returns>
-    public Uri UploadInvoiceBlobToBlobStorage(PostedInvoiceDto invoice);
+    public Task<Uri> UploadInvoicePhotoToBlobStorage(Invoice invoice);
+
+    /// <summary>
+    /// Retrieve a blob image (invoice photo) from an Azure Blob Storage container.
+    /// </summary>
+    /// <param name="invoiceIdentifier"></param>
+    /// <returns></returns>
+    public Task<IFormFile> RetrieveInvoicePhotoFromBlobStorage(Guid invoiceIdentifier);
 }

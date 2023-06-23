@@ -10,10 +10,8 @@ namespace arolariu.Backend.Domain.Invoices.Models;
 /// </summary>
 [Serializable]
 public record struct InvoiceTimeInformation(
-    DateTime InvoiceIdentifiedDate,
-    DateTime InvoiceSubmittedDate,
-    TimeSpan InvoiceIdentifiedTime,
-    TimeSpan InvoiceSubmittedTime)
+    DateTimeOffset InvoiceSubmittedDate,
+    DateTimeOffset InvoiceIdentifiedDate)
 {
     /// <summary>
     /// Creates a null instance of <see cref="InvoiceTimeInformation"/>.
@@ -22,10 +20,15 @@ public record struct InvoiceTimeInformation(
     internal static InvoiceTimeInformation CreateNullInvoiceTimeInformation()
     {
         return new InvoiceTimeInformation(
-            InvoiceIdentifiedDate: DateTime.MinValue,
             InvoiceSubmittedDate: DateTime.MinValue,
-            InvoiceIdentifiedTime: TimeSpan.MinValue,
-            InvoiceSubmittedTime: TimeSpan.MinValue);
+            InvoiceIdentifiedDate: DateTime.MinValue);
+    }
+
+    internal static bool CheckInvoiceTimeInformationStructIsNull(InvoiceTimeInformation timeInformation)
+    {
+        return
+            timeInformation.InvoiceSubmittedDate == DateTime.MinValue ||
+            timeInformation.InvoiceIdentifiedDate == DateTime.MinValue;
     }
 }
 
@@ -49,6 +52,14 @@ public record struct InvoiceMerchantInformation(
             MerchantAddress: string.Empty,
             MerchantPhoneNumber: string.Empty);
     }
+
+    internal static bool CheckInvoiceMerchantInformationStructIsNull(InvoiceMerchantInformation merchantInformation)
+    {
+        return
+            string.IsNullOrEmpty(merchantInformation.MerchantName) ||
+            string.IsNullOrEmpty(merchantInformation.MerchantAddress) ||
+            string.IsNullOrEmpty(merchantInformation.MerchantPhoneNumber);
+    }
 }
 
 /// <summary>
@@ -56,8 +67,6 @@ public record struct InvoiceMerchantInformation(
 /// </summary>
 [Serializable]
 public record struct InvoiceTransactionInformation(
-    DateTimeOffset TransactionDate,
-    DateTimeOffset TransactionTime,
     string TransactionDescription,
     decimal TransactionTotal,
     decimal TransactionCalories)
@@ -69,11 +78,54 @@ public record struct InvoiceTransactionInformation(
     internal static InvoiceTransactionInformation CreateNullInvoiceTransactionInformation()
     {
         return new InvoiceTransactionInformation(
-            TransactionDate: DateTimeOffset.MinValue,
-            TransactionTime: DateTimeOffset.MinValue,
             TransactionDescription: string.Empty,
             TransactionTotal: decimal.MinValue,
             TransactionCalories: decimal.MinValue);
+    }
+
+    internal static bool CheckInvoiceTransactionInformationStructIsNull(InvoiceTransactionInformation transactionInformation)
+    {
+        return
+            string.IsNullOrEmpty(transactionInformation.TransactionDescription) &&
+            transactionInformation.TransactionTotal == decimal.MinValue &&
+            transactionInformation.TransactionCalories == decimal.MinValue;
+    }
+}
+
+/// <summary>
+/// Invoice metadata struct
+/// </summary>
+/// <param name="MetadataBag"></param>
+public record struct InvoiceMetadata(
+      IDictionary<string, object> MetadataBag)
+{
+    internal static InvoiceMetadata CreateNullInvoiceMetadata()
+    {
+        return new InvoiceMetadata(
+            MetadataBag: new Dictionary<string, object>());
+    }
+
+    internal InvoiceMetadata AddMetadata(KeyValuePair<string, object> metadata)
+    {
+        var newMetadataBag = new Dictionary<string, object>(MetadataBag)
+        {
+            { metadata.Key, metadata.Value }
+        };
+
+        return this with { MetadataBag = newMetadataBag };
+    }
+
+    internal InvoiceMetadata RemoveMedata(string key)
+    {
+        var newMetadataBag = new Dictionary<string, object>(MetadataBag);
+        newMetadataBag.Remove(key);
+
+        return this with { MetadataBag = newMetadataBag };
+    }
+
+    internal static bool VerifyInvoiceMetadataStructIsNull(InvoiceMetadata invoiceMetadata)
+    {
+        return invoiceMetadata.MetadataBag.Count == 0;
     }
 }
 
@@ -81,8 +133,8 @@ public record struct InvoiceTransactionInformation(
 /// The invoice model's items information.
 /// </summary>
 public record struct InvoiceItemsInformation(
-    Dictionary<string, decimal> BoughtItems,
-    Dictionary<string, decimal> DiscountedItems)
+    IDictionary<string, decimal> BoughtItems,
+    IDictionary<string, decimal> DiscountedItems)
 {
     /// <summary>
     /// Creates a null instance of <see cref="InvoiceItemsInformation"/>.
@@ -93,6 +145,13 @@ public record struct InvoiceItemsInformation(
         return new InvoiceItemsInformation(
             BoughtItems: new Dictionary<string, decimal>(),
             DiscountedItems: new Dictionary<string, decimal>());
+    }
+
+    internal static bool CheckInvoiceItemsInformationStructIsNull(InvoiceItemsInformation itemsInformation)
+    {
+        return
+            itemsInformation.BoughtItems?.Count == 0 ||
+            itemsInformation.DiscountedItems?.Count == 0;
     }
 
     /// <summary>
@@ -109,3 +168,40 @@ public record struct InvoiceItemsInformation(
         return keyValuePairs.ToString();
     }
 }
+
+/// <summary>
+/// Represents the status of an invoice.
+/// </summary>
+public record struct InvoiceStatus(
+    bool IsCompleteInvoice,
+    int InvoiceHitCount,
+    bool IsAnalyzed,
+    DateTimeOffset AnalyzedDate,
+    DateTimeOffset InvoiceCreationDate,
+    DateTimeOffset InvoiceLastModifiedDate
+)
+{
+
+    internal static InvoiceStatus CreateNullInvoiceStatus()
+    {
+        return new InvoiceStatus(
+            IsCompleteInvoice: false,
+            InvoiceHitCount: 0,
+            IsAnalyzed: false,
+            AnalyzedDate: DateTime.MinValue,
+            InvoiceCreationDate: DateTime.MinValue,
+            InvoiceLastModifiedDate: DateTime.MinValue);
+    }
+
+    internal static bool CheckInvoiceStatusStructIsNull(InvoiceStatus invoiceStatus)
+    {
+        return
+            !invoiceStatus.IsCompleteInvoice &&
+            !invoiceStatus.IsAnalyzed &&
+            invoiceStatus.InvoiceHitCount == 0 &&
+            invoiceStatus.AnalyzedDate == DateTime.MinValue &&
+            invoiceStatus.InvoiceCreationDate == DateTime.MinValue &&
+            invoiceStatus.InvoiceLastModifiedDate == DateTime.MinValue;
+    }
+}
+
