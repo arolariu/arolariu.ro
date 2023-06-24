@@ -391,7 +391,7 @@ public static partial class InvoiceEndpoints
                    "\n1. Retrieve the time information of the invoice, if present, via the SQL Broker service, based on the given identifier." +
                    "\n2. Return the request result (resource or 404) back to the caller.",
         OperationId = nameof(RetrieveInvoiceTimeInformationAsync),
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status200OK, "The invoice time information was successfully retrieved.", typeof(InvoiceTimeInformation))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice time information was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
@@ -423,7 +423,7 @@ public static partial class InvoiceEndpoints
                            "\n1. Update the time information of the invoice via the SQL Broker service, based on the given identifier." +
                            "\n2. Return the request result back to the caller.",
         OperationId = nameof(UpdateInvoiceTimeInformationAsync),
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status200OK, "The invoice time information was successfully updated.", typeof(InvoiceTimeInformation))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice time information was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
@@ -456,7 +456,7 @@ public static partial class InvoiceEndpoints
                     "\n1. Delete the time information of the invoice, if present, via the SQL Broker service, based on the given identifier." +
                     "\n2. Return the request status code result (204 or 404) back to the caller.",
         OperationId = nameof(DeleteInvoiceTimeInformationAsync),
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status204NoContent, "The invoice time information was successfully deleted.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice time information was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
