@@ -4,23 +4,20 @@ on:
   push:
     branches: [main]
     paths: ["backend/src/**"]
-  pull_request:
-    branches: [main]
-    paths: ["backend/src/**"]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout the branch inside runner environment
+      - name: 🛫 Checkout the branch inside Agent Runner environment
         uses: actions/checkout@v2
 
-      - name: Login to Azure inside runner environment
+      - name: 🔒 Login to Azure
         uses: Azure/login@v1
         with:
           creds: ${{ secrets.CONTAINERBACKEND_AZURE_CREDENTIALS }}
 
-      - name: Build and push container image to private Azure Container Registry
+      - name: 🏗️ Push container image to Azure Container Registry + Update existing container
         uses: Azure/container-apps-deploy-action@v1
         with:
           appSourcePath: ${{ github.workspace }}/backend/src
