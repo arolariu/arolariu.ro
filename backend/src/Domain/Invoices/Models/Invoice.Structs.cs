@@ -56,8 +56,8 @@ public record struct InvoiceMerchantInformation(
     internal static bool CheckInvoiceMerchantInformationStructIsNull(InvoiceMerchantInformation merchantInformation)
     {
         return
-            string.IsNullOrEmpty(merchantInformation.MerchantName) ||
-            string.IsNullOrEmpty(merchantInformation.MerchantAddress) ||
+            string.IsNullOrEmpty(merchantInformation.MerchantName) &&
+            string.IsNullOrEmpty(merchantInformation.MerchantAddress) &&
             string.IsNullOrEmpty(merchantInformation.MerchantPhoneNumber);
     }
 }
