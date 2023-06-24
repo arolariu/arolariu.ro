@@ -7,6 +7,9 @@ namespace arolariu.Backend.Domain.Invoices.Endpoints;
 /// </summary>
 public static partial class InvoiceEndpoints
 {
+    private const string SemanticVersioning = "1.0.1";
+
+
     /// <summary>
     /// The map invoice endpoints static method, called by the app builder.
     /// This method maps all the invoice endpoints for the web application.

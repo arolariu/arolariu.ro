@@ -29,7 +29,7 @@ public static partial class InvoiceEndpoints
                     "\n1. Retrieve the invoices entity entries connected to the SQL Broker service." +
                     "\n2. Return the invoices entry list as an IEnumerable<Invoice> to the caller.",
         OperationId = nameof(RetrieveAllInvoicesAsync) + "",
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status200OK, "The invoices were successfully retrieved from the underlying database.", typeof(IEnumerable<Invoice>), "application/json")]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could NOT be retrieved because of an internal server error..", typeof(ProblemDetails))]
     private static async Task<IResult> RetrieveAllInvoicesAsync(
@@ -66,7 +66,7 @@ public static partial class InvoiceEndpoints
                     "\n3. Upload the invoice data as an entry to the database via the SQL Broker." +
                     "\n4. Return the location of the created resource (invoice) to the caller.",
         OperationId = nameof(CreateNewInvoiceAsync) + "",
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status201Created, "The invoice object was successfully sent for analysis.", typeof(Invoice), "application/json")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice object could NOT be created.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
@@ -110,7 +110,7 @@ public static partial class InvoiceEndpoints
                    "\n1. The invoice will be retrieved from the SQL Broker service, based on the given identifier." +
                    "\n2. The resource (invoice) will then be returned to the caller, if found.",
         OperationId = nameof(RetrieveSpecificInvoiceAsync) + "",
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status200OK, "The invoice was successfully retrieved.", typeof(Invoice))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
@@ -148,7 +148,7 @@ public static partial class InvoiceEndpoints
                     "\n1. Delete the invoice entry, if present, via the SQL Broker service, based on the given identifier." +
                     "\n2. Return the request result back to the caller (status 204 or status 404).",
         OperationId = nameof(DeleteInvoiceAsync) + "",
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status204NoContent, "The invoice was successfully deleted from the database.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
@@ -182,7 +182,7 @@ public static partial class InvoiceEndpoints
                     "\n1. Retrieve the metadata of the invoice, if present, via the SQL Broker service, based on the given identifier." +
                     "\n2. Return the request result (resource or 404) back to the caller.",
         OperationId = nameof(RetrieveInvoiceMetadataAsync) + "",
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status200OK, "The invoice metadata was successfully retrieved.", typeof(InvoiceMetadata))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice metadata was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
@@ -213,7 +213,7 @@ public static partial class InvoiceEndpoints
                     "\n1. Update the metadata of the invoice, if present, via the SQL Broker service, based on the given identifier." +
                     "\n2. Return the request result back to the caller.",
         OperationId = nameof(PatchInvoiceMetadataAsync) + "",
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice metadata was successfully updated.", typeof(InvoiceMetadata))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice metadata was invalid.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice metadata was NOT found in the database.", typeof(ProblemDetails))]
@@ -249,7 +249,7 @@ public static partial class InvoiceEndpoints
                     "\n1. Delete the metadata key from the invoice, if present, via the SQL Broker service, based on the given identifier." +
                     "\n2. Return the request result back to the caller.",
         OperationId = nameof(DeleteInvoiceMetadataAsync),
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status200OK, "The invoice metadata was successfully deleted.", typeof(InvoiceMetadata))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice metadata was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
@@ -287,7 +287,7 @@ public static partial class InvoiceEndpoints
                     "\n1. Retrieve the merchant information of the invoice, if present, via the SQL Broker service, based on the given identifier." +
                     "\n2. Return the request result (resource or 404) back to the caller.",
         OperationId = nameof(RetrieveInvoiceMerchantInformationAsync),
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status200OK, "The invoice merchant information was successfully retrieved.", typeof(InvoiceMerchantInformation))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice merchant information was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
@@ -319,7 +319,7 @@ public static partial class InvoiceEndpoints
                     "\n1. Update the merchant information of the invoice, if present, via the SQL Broker service, based on the given identifier." +
                     "\n2. Return the request result (resource or 404) back to the caller.",
         OperationId = nameof(PutInvoiceMerchantInformationAsync),
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status200OK, "The invoice merchant information was successfully updated.", typeof(InvoiceMerchantInformation))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Please provide a valid JSON payload!", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice merchant information was NOT found in the database.", typeof(ProblemDetails))]
@@ -356,7 +356,7 @@ public static partial class InvoiceEndpoints
                     "\n1. Delete the merchant information of the invoice, if present, via the SQL Broker service, based on the given identifier." +
                     "\n2. Return the request status code result (204 or 404) back to the caller.",
         OperationId = nameof(DeleteInvoiceMerchantInformationAsync),
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status204NoContent, "The invoice merchant information was successfully deleted.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice merchant information was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
@@ -491,7 +491,7 @@ public static partial class InvoiceEndpoints
                     "\n1. Retrieve the items information of the invoice, if present, via the SQL Broker service, based on the given identifier." +
                     "\n2. Return the request result (resource or 404) back to the caller.",
         OperationId = nameof(RetrieveInvoiceItemsAsync),
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status200OK, "The invoice items information was successfully retrieved.", typeof(InvoiceItemsInformation))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice items information was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
@@ -523,7 +523,7 @@ public static partial class InvoiceEndpoints
                     "\n1. Delete the items information of the invoice, if present, via the SQL Broker service, based on the given identifier." +
                     "\n2. Return the request status code result (204 or 404) back to the caller.",
         OperationId = nameof(DeleteInvoiceItemsAsync),
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status204NoContent, "The invoice items information was successfully deleted.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice items information was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
@@ -559,7 +559,7 @@ public static partial class InvoiceEndpoints
                     "\n3. Update the invoice, if present, via the SQL Broker service, based on the given identifier." +
                     "\n4. Return the request status code result (202 or 402) back to the caller.",
         OperationId = nameof(AnalyzeInvoiceAsync),
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was successfully sent for analysis.")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
@@ -601,7 +601,7 @@ public static partial class InvoiceEndpoints
                            "\n1. Retrieve the invoice, if present, via the SQL Broker service, based on the given identifier." +
                            "\n2. Return the request result (resource or 404) back to the caller.",
         OperationId = nameof(RetrieveSpecificInvoiceStatus),
-        Tags = new string[] { "Invoices Management System" })]
+        Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status200OK, "The invoice status was successfully retrieved.", typeof(InvoiceStatus))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice status was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
