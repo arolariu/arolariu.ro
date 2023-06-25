@@ -17,15 +17,21 @@ jobs:
         with:
           dotnet-version: 7.0
 
-      - name: 🏗️ Install DocFX dependencies...
-        working-directory: ./sites/docs.arolariu.ro
+      - name: 🏗️ Install the API Backend dependencies...
+        working-directory: ./sites/api.arolariu.ro/backend/src
         run: |
           dotnet workload restore
           dotnet restore
-          dotnet tool update -g docfx
+
+      - name: 🏗️ Install the API Frontend dependencies...
+        working-directory: ./sites/api.arolariu.ro/frontend/src
+        run: |
+          dotnet workload restore
+          dotnet restore
 
       - name: ⚙️ Setup DocFX documentation platform...
         run: |
+          dotnet tool update -g docfx
           docfx metadata "./sites/docs.arolariu.ro/docfx.json"
           docfx build "./sites/docs.arolariu.ro/docfx.json"
 
