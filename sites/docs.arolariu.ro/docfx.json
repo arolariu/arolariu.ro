@@ -1,12 +1,13 @@
 {
   "metadata": [
+    # Collect metadata for the API documentation from the backend and frontend projects
     {
       "src": [
         {
-          "src": "../",
+          "src": "../api.arolariu.ro/",
           "files": [
-            "/backend/src/*.csproj",
-            "/frontend/src/*.csproj"
+            "/backend/**/*.csproj",
+            "/frontend/**/*.csproj"
           ]
         }
       ],
