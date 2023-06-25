@@ -20,8 +20,10 @@ jobs:
       - name: 🏗️ Install DocFX dependencies...
         working-directory: ./sites/
         run: |
-          dotnet workload restore
-          dotnet restore
+          dotnet workload restore api.arolariu.ro/backend
+          dotnet workload restore api.arolariu.ro/frontend
+          dotnet restore api.arolariu.ro/backend
+          dotnet restore api.arolariu.ro/frontend
           dotnet tool update -g docfx
 
       - name: ⚙️ Setup DocFX documentation platform...
