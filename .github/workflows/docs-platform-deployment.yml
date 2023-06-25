@@ -16,9 +16,9 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 7.0
-
+          
       - name: 🏗️ Install DocFX dependencies...
-        working-directory: ./sites/docs.arolariu.ro
+        working-directory: ./sites/
         run: |
           dotnet workload restore
           dotnet restore
