@@ -18,6 +18,7 @@ jobs:
           dotnet-version: 7.0
 
       - name: 🏗️ Install DocFX dependencies...
+        working-directory: ./sites/docs.arolariu.ro
         run: |
           dotnet workload restore
           dotnet restore
