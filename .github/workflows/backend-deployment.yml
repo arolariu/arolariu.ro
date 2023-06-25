@@ -1,26 +1,27 @@
-name: Backend Container Deployment
+name: API platform (api.arolari.ro) deployment
 
 on:
   push:
-    branches: [main]
-    paths: ["backend/src/**"]
+    branches: ["main"]
+    paths: ["sites/api.arolariu.ro/**"]
 
 jobs:
   build-and-deploy:
+    name: 🚀 Build and deploy the API platform (api.arolariu.ro)...
     runs-on: ubuntu-latest
     steps:
-      - name: 🛫 Checkout the branch inside Agent Runner environment
-        uses: actions/checkout@v2
+      - name: 🛫 Checkout the branch inside runner environment...
+        uses: actions/checkout@v3
 
-      - name: 🔒 Login to Azure
+      - name: 🔒 Login to Azure...
         uses: Azure/login@v1
         with:
           creds: ${{ secrets.CONTAINERBACKEND_AZURE_CREDENTIALS }}
 
-      - name: 🏗️ Push container image to Azure Container Registry + Update existing container
+      - name: 🏗️ Push container image to Azure Container Registry + Update existing container...
         uses: Azure/container-apps-deploy-action@v1
         with:
-          appSourcePath: ${{ github.workspace }}/backend/src
+          appSourcePath: ${{ github.workspace }}/sites/api.arolariu.ro/backend/src
           registryUrl: arolariu.azurecr.io
           registryUsername: ${{ secrets.CONTAINERBACKEND_REGISTRY_USERNAME }}
           registryPassword: ${{ secrets.CONTAINERBACKEND_REGISTRY_PASSWORD }}

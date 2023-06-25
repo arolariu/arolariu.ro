@@ -6,30 +6,31 @@ on:
 
 jobs:
   build-and-deploy:
+    name: 🚀 Build and deploy the docs platform (docs.arolariu.ro)...
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout the branch inside runner environment
+      - name: 🛫 Checkout the branch inside runner environment...
         uses: actions/checkout@v3
 
-      - name: Setup .NET 7.0x environment
+      - name: 📐 Setup the .NET 7.0+ environment...
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 7.0.x
+          dotnet-version: 7.0
 
-      - name: Install DocFX dependencies
+      - name: 🏗️ Install DocFX dependencies...
         run: |
           dotnet workload restore
           dotnet restore
           dotnet tool update -g docfx
 
-      - name: Setup DocFX platform
+      - name: ⚙️ Setup DocFX documentation platform...
         run: |
-          docfx metadata "./docs/docfx.json"
-          docfx build "./docs/docfx.json"
+          docfx metadata "./sites/docs.arolariu.ro/docfx.json"
+          docfx build "./sites/docs.arolariu.ro/docfx.json"
 
-      - name: Publish DocFX `_site`
+      - name: 📢 Publish DocFX `_site` folder...
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/_site
+          publish_dir: sites/docs.arolariu.ro/_site
           cname: docs.arolariu.ro
