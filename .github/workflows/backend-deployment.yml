@@ -1,4 +1,4 @@
-name: API platform (api.arolari.ro) deployment
+name: API platform (api.arolariu.ro) deployment
 
 on:
   push:
