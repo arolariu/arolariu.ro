@@ -1,9 +1,17 @@
+# GitHub Actions workflow that builds the `about.arolariu.ro` static site artifact bundle.
+# This GitHub action does four main things:
+# 1. Checks out the repository inside the runner environment.
+# 2. Installs HUGO - the static site generator framework utility.
+# 3. Builds the static site using HUGO.
+# 4. Uploads the built artifact to an Azure Static Web Application.
+
+
 name: About platform (about.arolariu.ro) deployment
 
 on:
   push:
     branches: ["main"]
-    paths: ["sites/about.arolariu.ro/"]
+    paths: ["sites/about.arolariu.ro/**"]
 
 env: # To double check we're running the build in production env.
   HUGO_ENV: production
@@ -35,7 +43,7 @@ jobs:
       - name: Deploy to Azure Static Web Apps
         uses: azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_THANKFUL_BEACH_092FE7303 }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "/sites/about.arolariu.ro/public" # App source code path
