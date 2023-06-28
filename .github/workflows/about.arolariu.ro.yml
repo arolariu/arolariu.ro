@@ -3,7 +3,7 @@ name: About platform (about.arolariu.ro) deployment
 on:
   push:
     branches: ["main"]
-    paths: ["sites/about.arolariu.ro/"]
+    #paths: ["sites/about.arolariu.ro/"]
 
 jobs:
   build-and-deploy:
@@ -12,6 +12,9 @@ jobs:
     steps:
       - name: 🛫 Checkout the branch inside runner environment...
         uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
         
       - name: Build And Deploy
         uses: Azure/static-web-apps-deploy@v1
