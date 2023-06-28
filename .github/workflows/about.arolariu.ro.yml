@@ -2,8 +2,8 @@ name: About platform (about.arolariu.ro) deployment
 
 on:
   push:
-    branches:
-      - main
+    branches: ["main"]
+    paths: ["sites/about.arolariu.ro/"]
 
 jobs:
   build-and-deploy:
