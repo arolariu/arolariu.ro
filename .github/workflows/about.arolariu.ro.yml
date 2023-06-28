@@ -18,7 +18,7 @@ env: # To double check we're running the build in production env.
 
 jobs:
   build:
-    name: Build and Deploy Job
+    name: ⚒️ Building the `about.arolariu.ro` website...
     runs-on: ubuntu-latest
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
@@ -30,7 +30,7 @@ jobs:
           echo "Outputting Hugo version..."
           hugo -v
 
-      - name: 🏗️ Building the `about.arolariu.ro` website...
+      - name: 🏭 Bundling the `about.arolariu.ro` website using HUGO...
         run: |
           cd ./sites/about.arolariu.ro
           hugo --config hugo.yaml
