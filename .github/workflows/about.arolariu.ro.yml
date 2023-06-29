@@ -28,7 +28,7 @@ jobs:
         run: |
           sudo apt install hugo
           echo "Outputting Hugo version..."
-          hugo -v
+          hugo version
 
       - name: 🏭 Bundling the `about.arolariu.ro` website using HUGO...
         run: |
