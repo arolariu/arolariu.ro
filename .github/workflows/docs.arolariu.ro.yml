@@ -1,3 +1,10 @@
+# GitHub Actions workflow that builds the `docs.arolariu.ro` static site using DocFX.
+# This GitHub action does four main things:
+# 1. Checks out the repository inside the runner environment.
+# 2. Starts to set-up the environment: install .NET and DocFX.
+# 3. Builds the artifact (static site bundle) via DocFX.
+# 4. Publishes the built website via a GitHub Pages integration. 
+
 name: Docs platform (docs.arolariu.ro) deployment
 
 on:
@@ -6,36 +13,36 @@ on:
 
 jobs:
   build-and-deploy:
-    name: 🚀 Build and deploy the docs platform (docs.arolariu.ro)...
+    name: 🚀 Building and deploying the docs platform (docs.arolariu.ro)...
     runs-on: ubuntu-latest
     steps:
-      - name: 🛫 Checkout the branch inside runner environment...
+      - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v3
 
-      - name: 📐 Setup the .NET 7.0+ environment...
+      - name: 📐 Starting set-up for the .NET 7.0+ environment...
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 7.0
 
-      - name: 🏗️ Install the API Backend dependencies...
+      - name: 🏗️ Installing the API Backend dependencies...
         working-directory: ./sites/api.arolariu.ro/backend/src
         run: |
           dotnet workload restore
           dotnet restore
 
-      - name: 🏗️ Install the API Frontend dependencies...
+      - name: 🏗️ Installing the API Frontend dependencies...
         working-directory: ./sites/api.arolariu.ro/frontend/src
         run: |
           dotnet workload restore
           dotnet restore
 
-      - name: ⚙️ Setup DocFX documentation platform...
+      - name: ⚙️ Starting setup for the DocFX documentation platform...
         run: |
           dotnet tool update -g docfx
           docfx metadata "./sites/docs.arolariu.ro/docfx.json"
           docfx build "./sites/docs.arolariu.ro/docfx.json"
 
-      - name: 📢 Publish DocFX `_site` folder...
+      - name: 📢 Publishing the DocFX `_site` folder...
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

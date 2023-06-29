@@ -1,3 +1,11 @@
+# GitHub Actions workflow that builds the `api.arolariu.ro` Public API.
+# This GitHub action does five main things:
+# 1. Checks out the repository inside the runner environment.
+# 2. Executes the auth process using a service principal AAD auth.
+# 3. Builds the API platform according to the configured Dockerfile.
+# 4. Uploads the new container image to a private Azure Container Registry.
+# 5. Sends an update event to the existing container apps to update themselves.
+
 name: API platform (api.arolariu.ro) deployment
 
 on:
@@ -7,18 +15,18 @@ on:
 
 jobs:
   build-and-deploy:
-    name: 🚀 Build and deploy the API platform (api.arolariu.ro)...
+    name: 🚀 Building the container image and deploying to Azure Container Apps...
     runs-on: ubuntu-latest
     steps:
-      - name: 🛫 Checkout the branch inside runner environment...
+      - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v3
 
-      - name: 🔒 Login to Azure...
+      - name: 🔒 Handling the auth process to Azure Public Cloud...
         uses: Azure/login@v1
         with:
           creds: ${{ secrets.CONTAINERBACKEND_AZURE_CREDENTIALS }}
 
-      - name: 🏗️ Push container image to Azure Container Registry + Update existing container...
+      - name: 🏗️ Pushing the container image to Azure Container Registry and updating existing container...
         uses: Azure/container-apps-deploy-action@v1
         with:
           appSourcePath: ${{ github.workspace }}/sites/api.arolariu.ro/backend/src
