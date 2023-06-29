@@ -26,7 +26,7 @@ jobs:
 
       - name: ⚙️ Installing HUGO...
         run: |
-          apt install hugo
+          sudo apt install hugo
           echo "Outputting Hugo version..."
           hugo -v
 
