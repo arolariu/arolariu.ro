@@ -24,9 +24,14 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v3
 
-      - name: ⚙️ Installing HUGO...
-        run: |
-          sudo apt install hugo
+      - name: 🐹 Set up Go environment
+        uses: actions/setup-go@v4
+        with:
+          go-version: '>=1.20.0'
+
+      - name: ⚙️ Installing Hugo
+        run: | 
+          go install -tags extended github.com/gohugoio/hugo@latest
           echo "Outputting Hugo version..."
           hugo version
 
