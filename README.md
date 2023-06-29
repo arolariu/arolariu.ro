@@ -1,7 +1,7 @@
 # Welcome to the `arolariu.ro` monorepo!
-[![API platform (api.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/api.arolariu.ro.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/api.arolariu.ro.yml)
-[![Docs platform (docs.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/docs.arolariu.ro.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/docs.arolariu.ro.yml)
-[![About platform (about.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/about.arolariu.ro.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/about.arolariu.ro.yml)
+[![API platform (api.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/api.arolariu.ro.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/api.arolariu.ro.yml)
+[![Docs platform (docs.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/docs.arolariu.ro.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/docs.arolariu.ro.yml)
+[![About platform (about.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/about.arolariu.ro.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/about.arolariu.ro.yml)
 
 
 The `arolariu.ro` monorepo contains the open-source code for different services and workers that are running under the domain umbrella.
