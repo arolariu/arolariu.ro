@@ -1,8 +1,7 @@
 ---
 title: "Placeholder Post"
 description: "Placeholder Description"
-date: 2020-09-15T11:30:03+00:00
-canonicalURL: "https://about.arolariu.ro/....."
+date: 2023-06-28T11:30:03+00:00
 tags: ["first"]
 showToc: true
 TocOpen: false
@@ -31,4 +30,3 @@ editPost:
   Text: "Suggest Changes" # edit text
   appendFilePath: true # to append file path to Edit link
 ---
-

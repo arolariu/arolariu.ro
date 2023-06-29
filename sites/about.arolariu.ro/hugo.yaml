@@ -8,6 +8,9 @@ enableRobotsTXT: true
 enableGitInfo: true
 copyright: "Platform built by Alexandru-Razvan Olariu."
 
+# Analytics
+googleAnalytics: G-CVGSX82MWK
+
 pluralizeListTitles: false
 
 # Header menu:
