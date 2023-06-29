@@ -17,7 +17,7 @@ env: # To double check we're running the build in production env.
   HUGO_ENV: production
 
 jobs:
-  build:
+  build-and-deploy:
     name: ⚒️ Building the `about.arolariu.ro` website...
     runs-on: ubuntu-latest
     steps:
@@ -35,12 +35,7 @@ jobs:
           cd ./sites/about.arolariu.ro
           hugo --config hugo.yaml
         
-  deploy:
-    name: 🌐 Deploying the about.arolariu.ro website...
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to Azure Static Web Apps
+      - name: 🌐 Deploying the about.arolariu.ro website...
         uses: azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
