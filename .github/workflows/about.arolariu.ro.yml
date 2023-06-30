@@ -11,14 +11,14 @@ name: About platform (about.arolariu.ro) deployment
 on:
   push:
     branches: ["main"]
-    #paths: ["sites/about.arolariu.ro/**"]
+    # paths: ["sites/about.arolariu.ro/**"]
 
 
 env: # To double check we're running the build in production env.
   HUGO_ENV: production
 
 jobs:
-  build:
+  build-and-deploy:
     name: ⚒️ Building the `about.arolariu.ro` website...
     runs-on: ubuntu-latest
     steps:
@@ -36,20 +36,6 @@ jobs:
           cd ./sites/about.arolariu.ro
           hugo --config hugo.yaml
         
-  deploy:
-    name: 🌐 Deploying the about.arolariu.ro website...
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v3
-
-      - name: ⚡️ Using cached Hugo installation...
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/hugo
-          key: ${{ runner.os }}-hugo-${{ hashFiles('sites/about.arolariu.ro/**') }}
-      
       - name: 🌐 Deploying the about.arolariu.ro website...
         uses: azure/static-web-apps-deploy@v1
         with:
@@ -57,4 +43,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "/sites/about.arolariu.ro/public" # App source code path
-          app_artifact_location: ./sites/about.arolariu.ro/public
+          app_artifact_location: .
+      
