@@ -33,7 +33,7 @@ ShowRssButtonInSectionTermList: true
 UseHugoToc: true
 author: "Alexandru-Razvan Olariu (arolariu)"
 cover:
-  image: "../Github-Logo.png" # image path/url
+  image: "../company-logos/Github-Logo.png" # image path/url
   alt: "Logo of the GitHub company." # alt text
   caption: "GitHub Accelerator Program - 2023" # display caption under cover
   relative: false # when using page bundles set this to true
