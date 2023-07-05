@@ -1,4 +1,4 @@
-﻿using arolariu.Backend.Domain.General.Services.Swagger;
+﻿using arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 using HealthChecks.UI.Client;
 
@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 using System;
 
-namespace arolariu.Backend.Domain.General.Extensions;
+namespace arolariu.Backend.Core.Domain.General.Extensions;
 
 internal static class WebApplicationExtensions
 {

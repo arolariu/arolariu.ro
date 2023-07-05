@@ -1,5 +1,5 @@
-﻿using arolariu.Backend.Domain.General.Services.KeyVault;
-using arolariu.Backend.Domain.Invoices.Models;
+﻿using arolariu.Backend.Core.Domain.General.Services.KeyVault;
+using arolariu.Backend.Core.Domain.Invoices.Models;
 using arolariu.Backend.Domain.Invoices.Services.InvoiceDetailsExtractor;
 
 using Azure;
@@ -13,7 +13,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Domain.Invoices.Services.InvoiceReader;
+namespace arolariu.Backend.Core.Domain.Invoices.Services.InvoiceReader;
 
 /// <summary>
 /// Invoice reader service.

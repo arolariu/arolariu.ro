@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Domain.General.Services.KeyVault;
+namespace arolariu.Backend.Core.Domain.General.Services.KeyVault;
 
 /// <summary>
 /// Service that handles the Azure Key Vault integration.

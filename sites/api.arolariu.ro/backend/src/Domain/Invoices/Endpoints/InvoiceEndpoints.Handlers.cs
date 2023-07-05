@@ -1,6 +1,6 @@
-﻿using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Foundation;
-using arolariu.Backend.Domain.Invoices.Models;
+﻿using arolariu.Backend.Core.Domain.Invoices.DTOs;
+using arolariu.Backend.Core.Domain.Invoices.Foundation;
+using arolariu.Backend.Core.Domain.Invoices.Models;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

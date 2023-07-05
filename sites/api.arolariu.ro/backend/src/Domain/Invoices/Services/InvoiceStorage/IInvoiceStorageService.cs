@@ -1,11 +1,11 @@
-﻿using arolariu.Backend.Domain.Invoices.Models;
+﻿using arolariu.Backend.Core.Domain.Invoices.Models;
 
 using Microsoft.AspNetCore.Http;
 
 using System;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
+namespace arolariu.Backend.Core.Domain.Invoices.Services.InvoiceStorage;
 
 /// <summary>
 /// Interface that defines the invoice storage service contract.

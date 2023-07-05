@@ -2,7 +2,7 @@
 
 using System.IO;
 
-namespace arolariu.Backend.Domain.Invoices.Services;
+namespace arolariu.Backend.Core.Domain.Invoices.Services;
 
 /// <summary>
 /// The invoice compression service.

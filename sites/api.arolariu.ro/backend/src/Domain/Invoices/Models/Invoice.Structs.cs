@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace arolariu.Backend.Domain.Invoices.Models;
+namespace arolariu.Backend.Core.Domain.Invoices.Models;
 
 /// <summary>
 /// The invoice model's time information.
@@ -155,7 +155,7 @@ public record struct InvoiceItemsInformation(
     }
 
     /// <summary>
-    /// Overrides the <see cref="Object.ToString"/> method to parse the invoice items information to a JSON string.
+    /// Overrides the <see cref="object.ToString"/> method to parse the invoice items information to a JSON string.
     /// </summary>
     /// <returns>A JSON string representing the invoice items information.</returns>
     public override readonly string ToString()

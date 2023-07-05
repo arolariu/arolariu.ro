@@ -2,7 +2,7 @@
 
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace arolariu.Backend.Domain.General.Services.Swagger;
+namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 /// <summary>
 /// The swagger filter service filters endpoints from discovery.

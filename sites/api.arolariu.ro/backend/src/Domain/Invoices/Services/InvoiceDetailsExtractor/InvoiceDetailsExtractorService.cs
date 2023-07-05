@@ -1,4 +1,4 @@
-﻿using arolariu.Backend.Domain.Invoices.Models;
+﻿using arolariu.Backend.Core.Domain.Invoices.Models;
 
 using Azure.AI.FormRecognizer.DocumentAnalysis;
 

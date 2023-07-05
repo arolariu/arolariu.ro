@@ -1,6 +1,6 @@
-﻿using arolariu.Backend.Domain.Invoices.Models;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using System;
+using arolariu.Backend.Core.Domain.Invoices.Models;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers;
 

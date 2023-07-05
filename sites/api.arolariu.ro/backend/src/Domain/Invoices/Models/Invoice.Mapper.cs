@@ -1,4 +1,4 @@
-﻿using arolariu.Backend.Domain.Invoices.DTOs;
+﻿using arolariu.Backend.Core.Domain.Invoices.DTOs;
 
 using Microsoft.AspNetCore.Http;
 
@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace arolariu.Backend.Domain.Invoices.Models;
+namespace arolariu.Backend.Core.Domain.Invoices.Models;
 
 /// <summary>
 /// Invoice mapper static helper class.

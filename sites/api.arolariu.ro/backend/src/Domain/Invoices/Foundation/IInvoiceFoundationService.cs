@@ -1,12 +1,12 @@
-﻿using arolariu.Backend.Domain.Invoices.Brokers;
-using arolariu.Backend.Domain.Invoices.Models;
-using arolariu.Backend.Domain.Invoices.Services.InvoiceReader;
-using arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
+﻿using arolariu.Backend.Core.Domain.Invoices.Models;
+using arolariu.Backend.Core.Domain.Invoices.Services.InvoiceReader;
+using arolariu.Backend.Core.Domain.Invoices.Services.InvoiceStorage;
+using arolariu.Backend.Domain.Invoices.Brokers;
 
 using System;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Domain.Invoices.Foundation;
+namespace arolariu.Backend.Core.Domain.Invoices.Foundation;
 
 /// <summary>
 /// The invoice foundation service.

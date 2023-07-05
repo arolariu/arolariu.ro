@@ -3,7 +3,7 @@
 using System;
 using System.Text.Json.Serialization;
 
-namespace arolariu.Backend.Domain.Invoices.Models;
+namespace arolariu.Backend.Core.Domain.Invoices.Models;
 
 /// <summary>
 /// The Invoice model as "represented" in the Application Domain.

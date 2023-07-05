@@ -1,10 +1,10 @@
-﻿using arolariu.Backend.Domain.Invoices.Models;
+﻿using arolariu.Backend.Core.Domain.Invoices.Models;
 
 using Azure.AI.FormRecognizer.DocumentAnalysis;
 
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Domain.Invoices.Services.InvoiceReader;
+namespace arolariu.Backend.Core.Domain.Invoices.Services.InvoiceReader;
 
 /// <summary>
 /// Interface that defines the invoice reader service contract.

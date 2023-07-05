@@ -1,5 +1,5 @@
-﻿using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Models;
+﻿using arolariu.Backend.Core.Domain.Invoices.DTOs;
+using arolariu.Backend.Core.Domain.Invoices.Models;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

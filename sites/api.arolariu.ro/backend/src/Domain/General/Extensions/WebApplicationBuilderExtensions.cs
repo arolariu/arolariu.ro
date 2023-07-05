@@ -1,10 +1,11 @@
-﻿using arolariu.Backend.Domain.General.Services.Database;
-using arolariu.Backend.Domain.General.Services.KeyVault;
-using arolariu.Backend.Domain.General.Services.Swagger;
+﻿using arolariu.Backend.Core.Domain.General.Services.Database;
+using arolariu.Backend.Core.Domain.General.Services.KeyVault;
+using arolariu.Backend.Core.Domain.General.Services.Swagger;
+using arolariu.Backend.Core.Domain.Invoices.Brokers;
+using arolariu.Backend.Core.Domain.Invoices.Foundation;
+using arolariu.Backend.Core.Domain.Invoices.Services.InvoiceReader;
+using arolariu.Backend.Core.Domain.Invoices.Services.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Brokers;
-using arolariu.Backend.Domain.Invoices.Foundation;
-using arolariu.Backend.Domain.Invoices.Services.InvoiceReader;
-using arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
 
 using Azure.Identity;
 
@@ -16,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Data;
 
-namespace arolariu.Backend.Domain.General.Extensions;
+namespace arolariu.Backend.Core.Domain.General.Extensions;
 
 /// <summary>
 /// Extension methods for the <see cref="WebApplicationBuilder"/> builder.

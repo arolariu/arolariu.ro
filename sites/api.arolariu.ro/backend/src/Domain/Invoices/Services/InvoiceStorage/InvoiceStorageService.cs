@@ -1,5 +1,5 @@
-﻿using arolariu.Backend.Domain.General.Services.KeyVault;
-using arolariu.Backend.Domain.Invoices.Models;
+﻿using arolariu.Backend.Core.Domain.General.Services.KeyVault;
+using arolariu.Backend.Core.Domain.Invoices.Models;
 
 using Azure.Storage.Blobs;
 
@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Domain.Invoices.Services.InvoiceStorage;
+namespace arolariu.Backend.Core.Domain.Invoices.Services.InvoiceStorage;
 
 /// <summary>
 /// Service that stores an invoice blob to an Azure Blob Storage container.
@@ -47,10 +47,10 @@ public class InvoiceStorageService : IInvoiceStorageService
         var blobClient = blobStorageBroker.GetBlobClient(blobName);
 
         using var stream = invoice.InvoiceImage.OpenReadStream();
-        
+
         await blobClient.UploadAsync(stream, overwrite: true);
         invoice.InvoiceImageURI = blobClient.Uri;
-        
+
         return blobClient.Uri;
     }
 

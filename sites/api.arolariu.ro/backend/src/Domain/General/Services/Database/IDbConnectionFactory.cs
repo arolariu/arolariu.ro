@@ -2,7 +2,7 @@
 
 using System.Data;
 
-namespace arolariu.Backend.Domain.General.Services.Database;
+namespace arolariu.Backend.Core.Domain.General.Services.Database;
 
 /// <summary>
 /// Interface that handles the database connection.

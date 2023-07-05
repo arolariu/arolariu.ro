@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace arolariu.Backend.Domain.Invoices.DTOs;
+namespace arolariu.Backend.Core.Domain.Invoices.DTOs;
 
 /// <summary>
 /// The posted invoice DTO, this is the invoice that is posted to the database.

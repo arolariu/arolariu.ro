@@ -2,7 +2,7 @@
 using System.Data;
 using System.Data.SqlClient;
 
-namespace arolariu.Backend.Domain.General.Services.Database;
+namespace arolariu.Backend.Core.Domain.General.Services.Database;
 
 /// <summary>
 /// The database connection factory.

@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\arolariu.Backend.csproj" />
+    <ProjectReference Include="..\..\src\arolariu.Backend.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Concurrent;
 
-namespace arolariu.Backend.Domain.General.Services.Database;
+namespace arolariu.Backend.Core.Domain.General.Services.Database;
 
 /// <summary>
 /// The NoSQL Db Connection Factory class.

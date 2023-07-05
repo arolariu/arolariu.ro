@@ -7,19 +7,19 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
-COPY ["arolariu.Backend.csproj", "."]
-RUN dotnet restore "./arolariu.Backend.csproj"
+COPY ["arolariu.Backend.Core.csproj", "."]
+RUN dotnet restore "./arolariu.Backend.Core.csproj"
 COPY . .
 WORKDIR "/src/."
-RUN dotnet build "arolariu.Backend.csproj" -c Release -o /app/build
+RUN dotnet build "arolariu.Backend.Core.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "arolariu.Backend.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "arolariu.Backend.Core.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "arolariu.Backend.dll"]
+ENTRYPOINT ["dotnet", "arolariu.Backend.Core.dll"]
 
 
 # Install additional packages

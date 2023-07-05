@@ -10,7 +10,7 @@ using System;
 using System.IO;
 using System.Reflection;
 
-namespace arolariu.Backend.Domain.General.Services.Swagger;
+namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 /// <summary>
 /// Swagger service options and configuration.

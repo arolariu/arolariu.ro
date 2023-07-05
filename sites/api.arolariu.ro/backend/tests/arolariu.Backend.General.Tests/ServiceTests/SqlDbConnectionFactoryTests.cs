@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.General.Tests
+namespace arolariu.Backend.Core.Tests.ServiceTests
 {
     [TestClass()]
     public class SqlDbConnectionFactoryTests

@@ -1,5 +1,6 @@
-﻿using arolariu.Backend.Domain.General.Services.Database;
-using arolariu.Backend.Domain.Invoices.Models;
+﻿using arolariu.Backend.Core.Domain.General.Services.Database;
+using arolariu.Backend.Core.Domain.Invoices.Models;
+using arolariu.Backend.Domain.Invoices.Brokers;
 
 using Dapper;
 
@@ -11,7 +12,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Domain.Invoices.Brokers;
+namespace arolariu.Backend.Core.Domain.Invoices.Brokers;
 
 /// <summary>
 /// The invoice SQL broker.
@@ -58,9 +59,9 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
         const string procedureName = "RetrieveSpecificInvoiceProcedure";
         var parameters = new DynamicParameters();
         parameters.Add("InvoiceIdentifier", invoiceIdentifier);
-        var databaseInvoice = 
+        var databaseInvoice =
             await DbConnection.QueryFirstOrDefaultAsync<DatabaseInvoice>(procedureName, parameters, commandType: CommandType.StoredProcedure);
-        
+
         if (databaseInvoice is not null)
         {
             var invoice = InvoiceMapper.MapDbInvoiceToDomainInvoice(databaseInvoice);

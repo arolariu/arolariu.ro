@@ -1,9 +1,9 @@
-using arolariu.Backend.Domain.General.Extensions;
+using arolariu.Backend.Core.Domain.General.Extensions;
 using arolariu.Backend.Domain.Invoices.Endpoints;
 
 using Microsoft.AspNetCore.Builder;
 
-namespace arolariu.Backend;
+namespace arolariu.Backend.Core;
 
 /// <summary>
 /// The entry point for the backend.

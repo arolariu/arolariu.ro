@@ -1,4 +1,5 @@
-﻿using arolariu.Backend.Domain.Invoices.Models;
+﻿using arolariu.Backend.Core.Domain.Invoices.Brokers;
+using arolariu.Backend.Core.Domain.Invoices.Models;
 
 using System;
 using System.Collections.Generic;

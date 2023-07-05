@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace arolariu.Backend.Domain.Invoices.Models;
+namespace arolariu.Backend.Core.Domain.Invoices.Models;
 
 /// <summary>
 /// Record that gets retrieved from the database.
