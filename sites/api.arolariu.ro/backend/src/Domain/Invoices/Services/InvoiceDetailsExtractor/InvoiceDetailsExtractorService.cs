@@ -24,8 +24,8 @@ public static partial class InvoiceDetailsExtractorService
         if (receipt.Fields.TryGetValue("Items", out DocumentField? itemsField)
             && itemsField?.FieldType == DocumentFieldType.List)
         {
-            var discountedItems = new Dictionary<string, decimal>();
-            var boughtItems = new Dictionary<string, decimal>();
+            var discountedItems = new List<KeyValuePair<string, decimal>>();
+            var boughtItems = new List<KeyValuePair<string, decimal>>();
 
             foreach (DocumentField itemField in itemsField.Value.AsList())
             {
@@ -51,13 +51,14 @@ public static partial class InvoiceDetailsExtractorService
 
                     if (key != null && value != null)
                     {
+                        var kvPair = KeyValuePair.Create(key, (decimal)value);
                         if (value < 0) // We have identified a discount.
                         {
-                            discountedItems.Add(key, (decimal)value);
+                            discountedItems.Add(kvPair);
                         }
                         else
                         {
-                            boughtItems.Add(key, (decimal)value);
+                            boughtItems.Add(kvPair);
                         }
                     }
                 }

@@ -133,8 +133,8 @@ public record struct InvoiceMetadata(
 /// The invoice model's items information.
 /// </summary>
 public record struct InvoiceItemsInformation(
-    IDictionary<string, decimal> BoughtItems,
-    IDictionary<string, decimal> DiscountedItems)
+    IList<KeyValuePair<string, decimal>> BoughtItems,
+    IList<KeyValuePair<string, decimal>> DiscountedItems)
 {
     /// <summary>
     /// Creates a null instance of <see cref="InvoiceItemsInformation"/>.
@@ -143,8 +143,8 @@ public record struct InvoiceItemsInformation(
     internal static InvoiceItemsInformation CreateNullInvoiceItemsInformation()
     {
         return new InvoiceItemsInformation(
-            BoughtItems: new Dictionary<string, decimal>(),
-            DiscountedItems: new Dictionary<string, decimal>());
+            BoughtItems: new List<KeyValuePair<string, decimal>>(),
+            DiscountedItems: new List<KeyValuePair<string, decimal>>());
     }
 
     internal static bool CheckInvoiceItemsInformationStructIsNull(InvoiceItemsInformation itemsInformation)

@@ -61,8 +61,8 @@ public class InvoiceFoundationService : IInvoiceFoundationService
             };
 
             // Step 2: Update the invoice and its status to represent the state "Analyzed".
-            await InvoiceSqlBroker.UpdateInvoiceStatus(invoice, invoiceStatus);
             await InvoiceSqlBroker.UpdateSpecificInvoice(updatedInvoice);
+            await InvoiceSqlBroker.UpdateInvoiceStatus(invoice, invoiceStatus);
         }
         catch (Exception) // If an exception occurs, update the invoice status to represent the state "Not Analyzed".
         {

@@ -264,7 +264,7 @@ public static partial class InvoiceEndpoints
             var currentMetadata = await sqlBroker.RetrieveSpecificInvoiceMetadata(id);
             var updatedMetadata = currentMetadata.RemoveMedata(key);
 
-            var invoiceMetadataWasDeleted = await sqlBroker.UpdateSpecificInvoiceMetadata(id, updatedMetadata);
+            var invoiceMetadataWasDeleted = await sqlBroker.DeleteSpecificInvoiceMetadata(id, key);
             if (invoiceMetadataWasDeleted) return Results.Ok<InvoiceMetadata>(value: updatedMetadata);
             else return Results.NotFound($"The invoice metadata associated with invoice id {id} was NOT found in the database.");
         }

@@ -113,7 +113,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
         var parameters = new DynamicParameters();
         parameters.Add("InvoiceIdentifier", invoiceIdentifier);
 
-        var kvPair = invoiceMetadata.MetadataBag.FirstOrDefault();
+        var kvPair = invoiceMetadata.MetadataBag.LastOrDefault();
         parameters.Add("MetadataKey", kvPair.Key);
         parameters.Add("MetadataValue", kvPair.Value.ToString());
         var metadataBagWasUpdated = await DbConnection.ExecuteAsync(procedureName, parameters, commandType: CommandType.StoredProcedure);
@@ -233,8 +233,8 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
 
         if (BoughtItems is not null && DiscountedItems is not null)
         {
-            var boughtItems = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(BoughtItems)!;
-            var discountedItems = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(DiscountedItems)!;
+            var boughtItems = JsonConvert.DeserializeObject<List<KeyValuePair<string, decimal>>>(BoughtItems)!;
+            var discountedItems = JsonConvert.DeserializeObject<List<KeyValuePair<string, decimal>>>(DiscountedItems)!;
 
             return new InvoiceItemsInformation()
             {

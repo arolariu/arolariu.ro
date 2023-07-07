@@ -51,8 +51,10 @@ public static class InvoiceMapper
             keyValue => keyValue["Value"])
                 ?? new Dictionary<string, object>();
 
-        var boughtItems = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(invoice.BoughtItems);
-        var discountedItems = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(invoice.DiscountedItems);
+        // Extract the bought items from the database invoice retrieved response.
+        // Since we're using Dapper, we need to manually deserialize the JSON string into a list of key-value pairs and perform the 'hard-work'.
+        var boughtItems = JsonConvert.DeserializeObject<List<KeyValuePair<string, decimal>>>(invoice.BoughtItems);
+        var discountedItems = JsonConvert.DeserializeObject<List<KeyValuePair<string, decimal>>>(invoice.DiscountedItems);
 
         return new Invoice()
         {
