@@ -2,7 +2,7 @@
 using System;
 using arolariu.Backend.Core.Domain.Invoices.Models;
 
-namespace arolariu.Backend.Domain.Invoices.Brokers;
+namespace arolariu.Backend.Core.Domain.Invoices.Brokers;
 
 public partial interface IInvoiceSqlBroker
 {

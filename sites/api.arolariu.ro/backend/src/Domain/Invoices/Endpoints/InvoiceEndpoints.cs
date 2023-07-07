@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNetCore.Routing;
 
-namespace arolariu.Backend.Domain.Invoices.Endpoints;
+namespace arolariu.Backend.Core.Domain.Invoices.Endpoints;
 
 /// <summary>
 /// The invoice endpoints.
 /// </summary>
 public static partial class InvoiceEndpoints
 {
-    private const string SemanticVersioning = "1.0.1";
+    private const string SemanticVersioning = "1.0.2";
     private const string EndpointNameTag = "Invoices Management System v" + SemanticVersioning;
 
     /// <summary>

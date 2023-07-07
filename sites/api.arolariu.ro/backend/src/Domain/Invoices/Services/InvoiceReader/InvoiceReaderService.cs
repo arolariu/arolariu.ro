@@ -1,6 +1,6 @@
 ﻿using arolariu.Backend.Core.Domain.General.Services.KeyVault;
 using arolariu.Backend.Core.Domain.Invoices.Models;
-using arolariu.Backend.Domain.Invoices.Services.InvoiceDetailsExtractor;
+using arolariu.Backend.Core.Domain.Invoices.Services.InvoiceDetailsExtractor;
 
 using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;

@@ -1,6 +1,5 @@
 ﻿using arolariu.Backend.Core.Domain.General.Services.Database;
 using arolariu.Backend.Core.Domain.Invoices.Models;
-using arolariu.Backend.Domain.Invoices.Brokers;
 
 using Dapper;
 
@@ -107,15 +106,14 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<bool> UpdateSpecificInvoiceMetadata(Guid invoiceIdentifier, InvoiceMetadata invoiceMetadata)
+    public async Task<bool> UpdateSpecificInvoiceMetadata(Guid invoiceIdentifier, string key, object value)
     {
         const string procedureName = "UpdateSpecificInvoiceMetadataProcedure";
         var parameters = new DynamicParameters();
         parameters.Add("InvoiceIdentifier", invoiceIdentifier);
 
-        var kvPair = invoiceMetadata.MetadataBag.LastOrDefault();
-        parameters.Add("MetadataKey", kvPair.Key);
-        parameters.Add("MetadataValue", kvPair.Value.ToString());
+        parameters.Add("MetadataKey", key);
+        parameters.Add("MetadataValue", value.ToString());
         var metadataBagWasUpdated = await DbConnection.ExecuteAsync(procedureName, parameters, commandType: CommandType.StoredProcedure);
         return metadataBagWasUpdated > 0;
     }

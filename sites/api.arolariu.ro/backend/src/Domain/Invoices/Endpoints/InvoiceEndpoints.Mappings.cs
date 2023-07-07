@@ -5,10 +5,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-using System.Collections;
 using System.Collections.Generic;
 
-namespace arolariu.Backend.Domain.Invoices.Endpoints;
+namespace arolariu.Backend.Core.Domain.Invoices.Endpoints;
 
 public static partial class InvoiceEndpoints
 {

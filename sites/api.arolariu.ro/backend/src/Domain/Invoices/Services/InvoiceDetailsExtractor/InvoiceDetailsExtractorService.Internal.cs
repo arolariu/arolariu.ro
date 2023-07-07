@@ -4,7 +4,7 @@ using Azure.AI.FormRecognizer.DocumentAnalysis;
 
 using System;
 
-namespace arolariu.Backend.Domain.Invoices.Services.InvoiceDetailsExtractor;
+namespace arolariu.Backend.Core.Domain.Invoices.Services.InvoiceDetailsExtractor;
 
 /// <summary>
 /// Class that handles the invoice OCR'd details validation.

@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Domain.Invoices.Endpoints;
+namespace arolariu.Backend.Core.Domain.Invoices.Endpoints;
 
 public static partial class InvoiceEndpoints
 {
@@ -85,6 +85,12 @@ public static partial class InvoiceEndpoints
 
             await storageBroker.UploadInvoicePhotoToBlobStorage(invoice);
             await sqlBroker.InsertNewInvoice(invoice);
+            foreach (var kvPair in invoice.InvoiceMetadata.MetadataBag)
+            {
+                await sqlBroker.UpdateSpecificInvoiceMetadata(invoice.InvoiceId,
+                    kvPair.Key, kvPair.Value);
+            }
+
             return Results.Created($"api/invoices/{invoice.InvoiceId}", invoice);
         }
         catch (Exception ex)
@@ -229,7 +235,7 @@ public static partial class InvoiceEndpoints
             var currentMetadata = await sqlBroker.RetrieveSpecificInvoiceMetadata(id);
             var updatedMetadata = currentMetadata.AddMetadata(metadata);
 
-            var metadataWasUpdated = await sqlBroker.UpdateSpecificInvoiceMetadata(id, updatedMetadata);
+            var metadataWasUpdated = await sqlBroker.UpdateSpecificInvoiceMetadata(id, metadata.Key, metadata.Value);
             if (metadataWasUpdated) return Results.Accepted<InvoiceMetadata>(value: updatedMetadata);
             else return Results.NotFound($"The invoice metadata associated with invoice id {id} was NOT found in the database.");
         }
@@ -251,6 +257,7 @@ public static partial class InvoiceEndpoints
         OperationId = nameof(DeleteInvoiceMetadataAsync),
         Tags = new string[] { EndpointNameTag })]
     [SwaggerResponse(StatusCodes.Status200OK, "The invoice metadata was successfully deleted.", typeof(InvoiceMetadata))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice metadata `key` attribute was not found.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice metadata was NOT found in the database.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The backend could not handle your request at this time.", typeof(ProblemDetails))]
     private static async Task<IResult> DeleteInvoiceMetadataAsync(
@@ -262,6 +269,9 @@ public static partial class InvoiceEndpoints
         {
             var sqlBroker = invoiceFoundationService.InvoiceSqlBroker;
             var currentMetadata = await sqlBroker.RetrieveSpecificInvoiceMetadata(id);
+
+            if (!currentMetadata.MetadataBag.ContainsKey(key))
+                return Results.BadRequest($"The invoice metadata associated with invoice id {id} does NOT contain the key {key}.");
             var updatedMetadata = currentMetadata.RemoveMedata(key);
 
             var invoiceMetadataWasDeleted = await sqlBroker.DeleteSpecificInvoiceMetadata(id, key);

@@ -1,8 +1,9 @@
 ﻿using System.Threading.Tasks;
 using System;
 using arolariu.Backend.Core.Domain.Invoices.Models;
+using System.Xml.Linq;
 
-namespace arolariu.Backend.Domain.Invoices.Brokers;
+namespace arolariu.Backend.Core.Domain.Invoices.Brokers;
 
 public partial interface IInvoiceSqlBroker
 {

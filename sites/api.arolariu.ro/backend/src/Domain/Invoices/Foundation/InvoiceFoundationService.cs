@@ -1,7 +1,7 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.Models;
+﻿using arolariu.Backend.Core.Domain.Invoices.Brokers;
+using arolariu.Backend.Core.Domain.Invoices.Models;
 using arolariu.Backend.Core.Domain.Invoices.Services.InvoiceReader;
 using arolariu.Backend.Core.Domain.Invoices.Services.InvoiceStorage;
-using arolariu.Backend.Domain.Invoices.Brokers;
 
 using System;
 using System.Threading.Tasks;

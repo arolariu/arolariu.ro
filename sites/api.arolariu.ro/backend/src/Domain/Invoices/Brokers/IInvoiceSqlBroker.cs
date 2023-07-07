@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Domain.Invoices.Brokers;
+namespace arolariu.Backend.Core.Domain.Invoices.Brokers;
 
 /// <summary>
 /// Interface that defines the invoice SQL broker contract.

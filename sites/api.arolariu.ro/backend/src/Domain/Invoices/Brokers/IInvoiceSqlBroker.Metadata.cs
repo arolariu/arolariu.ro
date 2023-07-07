@@ -2,7 +2,8 @@
 using System;
 using arolariu.Backend.Core.Domain.Invoices.Models;
 
-namespace arolariu.Backend.Domain.Invoices.Brokers;
+namespace arolariu.Backend.Core.Domain.Invoices.Brokers;
+
 
 public partial interface IInvoiceSqlBroker
 {
@@ -18,9 +19,10 @@ public partial interface IInvoiceSqlBroker
     /// Updates the metadata of a specific invoice in the SQL database asynchronously.
     /// </summary>
     /// <param name="invoiceIdentifier">The unique identifier of the invoice.</param>
-    /// <param name="invoiceMetadata">The updated metadata for the invoice.</param>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
     /// <returns>A task representing the asynchronous operation indicating whether the update was successful or not.</returns>
-    public Task<bool> UpdateSpecificInvoiceMetadata(Guid invoiceIdentifier, InvoiceMetadata invoiceMetadata);
+    public Task<bool> UpdateSpecificInvoiceMetadata(Guid invoiceIdentifier, string key, object value);
 
 
     /// <summary>

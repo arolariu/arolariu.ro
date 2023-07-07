@@ -1,5 +1,5 @@
 using arolariu.Backend.Core.Domain.General.Extensions;
-using arolariu.Backend.Domain.Invoices.Endpoints;
+using arolariu.Backend.Core.Domain.Invoices.Endpoints;
 
 using Microsoft.AspNetCore.Builder;
 
