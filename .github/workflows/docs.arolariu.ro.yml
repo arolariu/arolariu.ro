@@ -30,12 +30,6 @@ jobs:
           dotnet workload restore
           dotnet restore
 
-      - name: 🏗️ Installing the API Frontend dependencies...
-        working-directory: ./sites/api.arolariu.ro/frontend/src
-        run: |
-          dotnet workload restore
-          dotnet restore
-
       - name: ⚙️ Starting setup for the DocFX documentation platform...
         run: |
           dotnet tool update -g docfx
