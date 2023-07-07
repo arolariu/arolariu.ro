@@ -5,8 +5,7 @@
         {
           "src": "../api.arolariu.ro/",
           "files": [
-            "/backend/**/*.csproj",
-            "/frontend/**/*.csproj"
+            "/backend/**/*.csproj"
           ]
         }
       ],
@@ -65,7 +64,7 @@
     "sitemap": {
       "baseUrl": "https://docs.arolariu.ro/",
       "priority": 0.5,
-      "changefreq": "daily"
+      "changefreq": "weekly"
     },
     "markdownEngineName": "markdig",
     "markdownEngineProperties": {
