@@ -19,5 +19,5 @@ public class PostedInvoiceDto
     /// Additional invoice metadata to be processed.
     /// The metadata will be stored in the database as a JSON field.
     /// </summary>
-    public required IDictionary<string, object> AdditionalMetadata { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> AdditionalMetadata { get; set; } = new Dictionary<string, object>();
 }

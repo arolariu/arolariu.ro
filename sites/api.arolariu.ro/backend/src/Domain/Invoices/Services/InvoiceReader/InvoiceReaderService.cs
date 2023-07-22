@@ -34,7 +34,7 @@ public class InvoiceReaderService : IInvoiceReaderService
     }
 
     /// <inheritdoc/>
-    public async Task<AnalyzedDocument> SendInvoiceToCognitiveServices(Invoice invoice)
+    public async ValueTask<AnalyzedDocument> SendInvoiceToCognitiveServices(Invoice invoice)
     {
         var operation = await client.AnalyzeDocumentFromUriAsync(
             WaitUntil.Completed,

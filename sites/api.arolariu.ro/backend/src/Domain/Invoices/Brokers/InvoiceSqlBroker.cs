@@ -31,7 +31,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<Invoice>> RetrieveAllInvoices()
+    public async ValueTask<IEnumerable<Invoice>> RetrieveAllInvoices()
     {
         const string procedureName = "RetrieveAllInvoicesProcedure";
         var parameters = new DynamicParameters();
@@ -42,7 +42,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<bool> InsertNewInvoice(Invoice invoice)
+    public async ValueTask<bool> InsertNewInvoice(Invoice invoice)
     {
         const string procedureName = "InsertNewInvoiceProcedure";
         var parameters = new DynamicParameters();
@@ -53,7 +53,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<Invoice> RetrieveSpecificInvoice(Guid invoiceIdentifier)
+    public async ValueTask<Invoice> RetrieveSpecificInvoice(Guid invoiceIdentifier)
     {
         const string procedureName = "RetrieveSpecificInvoiceProcedure";
         var parameters = new DynamicParameters();
@@ -70,7 +70,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<bool> DeleteSpecificInvoice(Guid invoiceIdentifier)
+    public async ValueTask<bool> DeleteSpecificInvoice(Guid invoiceIdentifier)
     {
         const string procedureName = "DeleteSpecificInvoiceProcedure";
         var parameters = new DynamicParameters();
@@ -81,7 +81,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<InvoiceMetadata> RetrieveSpecificInvoiceMetadata(Guid invoiceIdentifier)
+    public async ValueTask<InvoiceMetadata> RetrieveSpecificInvoiceMetadata(Guid invoiceIdentifier)
     {
         const string procedureName = "RetrieveSpecificInvoiceMetadataProcedure";
         var parameters = new DynamicParameters();
@@ -106,7 +106,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<bool> UpdateSpecificInvoiceMetadata(Guid invoiceIdentifier, string key, object value)
+    public async ValueTask<bool> UpdateSpecificInvoiceMetadata(Guid invoiceIdentifier, string key, object value)
     {
         const string procedureName = "UpdateSpecificInvoiceMetadataProcedure";
         var parameters = new DynamicParameters();
@@ -119,7 +119,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<bool> DeleteSpecificInvoiceMetadata(Guid invoiceIdentifier, string metadataKey)
+    public async ValueTask<bool> DeleteSpecificInvoiceMetadata(Guid invoiceIdentifier, string metadataKey)
     {
         const string procedureName = "DeleteSpecificInvoiceMetadataProcedure";
         var parameters = new DynamicParameters();
@@ -131,7 +131,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<Invoice> UpdateSpecificInvoice(Invoice invoice)
+    public async ValueTask<Invoice> UpdateSpecificInvoice(Invoice invoice)
     {
         var itemsInfo = invoice.Items;
         var merchantInfo = invoice.MerchantInformation;
@@ -146,7 +146,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<bool> UpdateMerchantInformation(Guid invoiceIdentifier, InvoiceMerchantInformation merchantInformation)
+    public async ValueTask<bool> UpdateMerchantInformation(Guid invoiceIdentifier, InvoiceMerchantInformation merchantInformation)
     {
         const string procedureName = "UpdateInvoiceMerchantInformationProcedure";
         var parameters = new DynamicParameters();
@@ -160,7 +160,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<bool> UpdateTimeInformation(Guid invoiceIdentifier, InvoiceTimeInformation timeInformation)
+    public async ValueTask<bool> UpdateTimeInformation(Guid invoiceIdentifier, InvoiceTimeInformation timeInformation)
     {
         const string procedureName = "UpdateSpecificInvoiceTimeInformationProcedure";
         var parameters = new DynamicParameters();
@@ -172,7 +172,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<InvoiceMerchantInformation> RetrieveMerchantInformation(Guid invoiceIdentifier)
+    public async ValueTask<InvoiceMerchantInformation> RetrieveMerchantInformation(Guid invoiceIdentifier)
     {
         const string procedureName = "RetrieveSpecificMerchantInformationProcedure";
         var parameters = new DynamicParameters();
@@ -186,7 +186,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<bool> DeleteMerchantInformation(Guid invoiceIdentifier)
+    public async ValueTask<bool> DeleteMerchantInformation(Guid invoiceIdentifier)
     {
         const string procedureName = "DeleteSpecificInvoiceMerchantInformationProcedure";
         var parameters = new DynamicParameters();
@@ -197,7 +197,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<InvoiceTimeInformation> RetrieveTimeInformation(Guid invoiceIdentifier)
+    public async ValueTask<InvoiceTimeInformation> RetrieveTimeInformation(Guid invoiceIdentifier)
     {
         const string procedureName = "RetrieveSpecificTimeInformationProcedure";
         var parameters = new DynamicParameters();
@@ -211,7 +211,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<bool> DeleteTimeInformation(Guid invoiceIdentifier)
+    public async ValueTask<bool> DeleteTimeInformation(Guid invoiceIdentifier)
     {
         const string procedureName = "DeleteSpecificInvoiceTimeInformationProcedure";
         var parameters = new DynamicParameters();
@@ -221,7 +221,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<InvoiceItemsInformation> RetrieveInvoiceItems(Guid invoiceIdentifier)
+    public async ValueTask<InvoiceItemsInformation> RetrieveInvoiceItems(Guid invoiceIdentifier)
     {
         const string procedureName = "RetrieveSpecificInvoiceItemsProcedure";
         var parameters = new DynamicParameters();
@@ -244,7 +244,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<bool> DeleteInvoiceItems(Guid invoiceIdentifier)
+    public async ValueTask<bool> DeleteInvoiceItems(Guid invoiceIdentifier)
     {
         const string procedureName = "DeleteSpecificInvoiceItemsProcedure";
         var parameters = new DynamicParameters();
@@ -254,7 +254,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<InvoiceStatus> RetrieveInvoiceStatus(Guid invoiceIdentifier)
+    public async ValueTask<InvoiceStatus> RetrieveInvoiceStatus(Guid invoiceIdentifier)
     {
         const string procedureName = "RetrieveSpecificInvoiceStatusProcedure";
         var parameters = new DynamicParameters();
@@ -268,7 +268,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<bool> UpdateInvoiceStatus(Invoice invoice, InvoiceStatus invoiceStatus)
+    public async ValueTask<bool> UpdateInvoiceStatus(Invoice invoice, InvoiceStatus invoiceStatus)
     {
         const string procedureName = "UpdateSpecificInvoiceStatusProcedure";
         var parameters = new DynamicParameters();
@@ -281,7 +281,7 @@ public class InvoiceSqlBroker : IInvoiceSqlBroker
     }
 
     /// <inheritdoc/>
-    public async Task<bool> UpdateInvoiceItems(Guid invoiceIdentifier, InvoiceItemsInformation invoiceItemsInformation)
+    public async ValueTask<bool> UpdateInvoiceItems(Guid invoiceIdentifier, InvoiceItemsInformation invoiceItemsInformation)
     {
         const string procedureName = "UpdateSpecificInvoiceItemsProcedure";
         var parameters = new DynamicParameters();

@@ -13,7 +13,7 @@ public partial interface IInvoiceSqlBroker
     /// </summary>
     /// <param name="invoiceIdentifier">The unique identifier of the invoice.</param>
     /// <returns>A task representing the asynchronous operation with the retrieved invoice metadata object.</returns>
-    public Task<InvoiceMetadata> RetrieveSpecificInvoiceMetadata(Guid invoiceIdentifier);
+    public ValueTask<InvoiceMetadata> RetrieveSpecificInvoiceMetadata(Guid invoiceIdentifier);
 
     /// <summary>
     /// Updates the metadata of a specific invoice in the SQL database asynchronously.
@@ -22,7 +22,7 @@ public partial interface IInvoiceSqlBroker
     /// <param name="key"></param>
     /// <param name="value"></param>
     /// <returns>A task representing the asynchronous operation indicating whether the update was successful or not.</returns>
-    public Task<bool> UpdateSpecificInvoiceMetadata(Guid invoiceIdentifier, string key, object value);
+    public ValueTask<bool> UpdateSpecificInvoiceMetadata(Guid invoiceIdentifier, string key, object value);
 
 
     /// <summary>
@@ -31,6 +31,6 @@ public partial interface IInvoiceSqlBroker
     /// <param name="invoiceIdentifier">The unique identifier of the invoice.</param>
     /// <param name="metadataKey">The key of the metadata entry to delete.</param>
     /// <returns>A task representing the asynchronous operation indicating whether the deletion was successful or not.</returns>
-    public Task<bool> DeleteSpecificInvoiceMetadata(Guid invoiceIdentifier, string metadataKey);
+    public ValueTask<bool> DeleteSpecificInvoiceMetadata(Guid invoiceIdentifier, string metadataKey);
     #endregion
 }

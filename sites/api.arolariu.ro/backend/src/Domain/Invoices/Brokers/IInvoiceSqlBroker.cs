@@ -1,5 +1,4 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.Brokers;
-using arolariu.Backend.Core.Domain.Invoices.Models;
+﻿using arolariu.Backend.Core.Domain.Invoices.Models;
 
 using System;
 using System.Collections.Generic;
@@ -24,7 +23,7 @@ public partial interface IInvoiceSqlBroker
     /// Retrieves all invoices from the SQL database asynchronously.
     /// </summary>
     /// <returns>A task representing the asynchronous operation with the collection of retrieved invoices.</returns>
-    public Task<IEnumerable<Invoice>> RetrieveAllInvoices();
+    public ValueTask<IEnumerable<Invoice>> RetrieveAllInvoices();
 
 
     /// <summary>
@@ -32,7 +31,7 @@ public partial interface IInvoiceSqlBroker
     /// </summary>
     /// <param name="invoice">The invoice object to be inserted.</param>
     /// <returns>A task representing the asynchronous operation, returning a boolean indicating the success of the insertion.</returns>
-    public Task<bool> InsertNewInvoice(Invoice invoice);
+    public ValueTask<bool> InsertNewInvoice(Invoice invoice);
 
 
     /// <summary>
@@ -40,7 +39,7 @@ public partial interface IInvoiceSqlBroker
     /// </summary>
     /// <param name="invoiceIdentifier">The unique identifier of the invoice.</param>
     /// <returns>A task representing the asynchronous operation with the retrieved invoice object.</returns>
-    public Task<Invoice> RetrieveSpecificInvoice(Guid invoiceIdentifier);
+    public ValueTask<Invoice> RetrieveSpecificInvoice(Guid invoiceIdentifier);
 
 
     /// <summary>
@@ -48,7 +47,7 @@ public partial interface IInvoiceSqlBroker
     /// </summary>
     /// <param name="invoice">The updated invoice object.</param>
     /// <returns>A task representing the asynchronous operation with the updated invoice object.</returns>
-    public Task<Invoice> UpdateSpecificInvoice(Invoice invoice);
+    public ValueTask<Invoice> UpdateSpecificInvoice(Invoice invoice);
 
 
     /// <summary>
@@ -56,7 +55,7 @@ public partial interface IInvoiceSqlBroker
     /// </summary>
     /// <param name="invoiceIdentifier">The unique identifier of the invoice to be deleted.</param>
     /// <returns>A task representing the asynchronous operation. Returns `true` if the invoice was successfully deleted, or `false` otherwise.</returns>
-    public Task<bool> DeleteSpecificInvoice(Guid invoiceIdentifier);
+    public ValueTask<bool> DeleteSpecificInvoice(Guid invoiceIdentifier);
 
     #endregion
 
@@ -66,7 +65,7 @@ public partial interface IInvoiceSqlBroker
     /// </summary>
     /// <param name="invoiceIdentifier">The unique identifier of the invoice.</param>
     /// <returns>A task representing the asynchronous operation with the retrieved <see cref="InvoiceItemsInformation"/> object containing the items information.</returns>
-    public Task<InvoiceItemsInformation> RetrieveInvoiceItems(Guid invoiceIdentifier);
+    public ValueTask<InvoiceItemsInformation> RetrieveInvoiceItems(Guid invoiceIdentifier);
 
     /// <summary>
     /// Updates the items information of an invoice in the database.
@@ -74,14 +73,14 @@ public partial interface IInvoiceSqlBroker
     /// <param name="invoiceIdentifier">The identifier of the invoice.</param>
     /// <param name="invoiceItemsInformation">The updated invoice items information.</param>
     /// <returns>A task representing the asynchronous operation indicating whether the update was successful.</returns>
-    public Task<bool> UpdateInvoiceItems(Guid invoiceIdentifier, InvoiceItemsInformation invoiceItemsInformation);
+    public ValueTask<bool> UpdateInvoiceItems(Guid invoiceIdentifier, InvoiceItemsInformation invoiceItemsInformation);
 
     /// <summary>
     /// Deletes the items information for a specific invoice from the SQL database asynchronously.
     /// </summary>
     /// <param name="invoiceIdentifier">The unique identifier of the invoice.</param>
     /// <returns>A task representing the asynchronous operation. Returns <c>true</c> if the deletion was successful; otherwise, <c>false</c>.</returns>
-    public Task<bool> DeleteInvoiceItems(Guid invoiceIdentifier);
+    public ValueTask<bool> DeleteInvoiceItems(Guid invoiceIdentifier);
     #endregion
 
     #region /api/invoices/{id}/status
@@ -90,7 +89,7 @@ public partial interface IInvoiceSqlBroker
     /// </summary>
     /// <param name="invoiceIdentifier">The unique identifier of the invoice.</param>
     /// <returns>A task representing the asynchronous operation with the retrieved <see cref="InvoiceStatus"/> object.</returns>
-    public Task<InvoiceStatus> RetrieveInvoiceStatus(Guid invoiceIdentifier);
+    public ValueTask<InvoiceStatus> RetrieveInvoiceStatus(Guid invoiceIdentifier);
 
     /// <summary>
     /// Updates the status of an invoice in the database.
@@ -98,6 +97,6 @@ public partial interface IInvoiceSqlBroker
     /// <param name="invoice">The invoice object.</param>
     /// <param name="invoiceStatus">The updated invoice status.</param>
     /// <returns>A task representing the asynchronous operation with the updated invoice status.</returns>
-    public Task<bool> UpdateInvoiceStatus(Invoice invoice, InvoiceStatus invoiceStatus);
+    public ValueTask<bool> UpdateInvoiceStatus(Invoice invoice, InvoiceStatus invoiceStatus);
     #endregion
 }

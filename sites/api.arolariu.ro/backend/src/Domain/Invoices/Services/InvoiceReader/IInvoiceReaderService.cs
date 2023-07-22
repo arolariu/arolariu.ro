@@ -17,7 +17,7 @@ public interface IInvoiceReaderService
     /// </summary>
     /// <param name="invoice"></param>
     /// <returns></returns>
-    public Task<AnalyzedDocument> SendInvoiceToCognitiveServices(Invoice invoice);
+    public ValueTask<AnalyzedDocument> SendInvoiceToCognitiveServices(Invoice invoice);
 
     /// <summary>
     /// Update the invoice with the analyzed data.

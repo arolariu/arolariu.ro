@@ -18,12 +18,12 @@ public interface IInvoiceStorageService
     /// </summary>
     /// <param name="invoice"></param>
     /// <returns><see cref="Uri"/> object that contains the path to the uploaded blob object.</returns>
-    public Task<Uri> UploadInvoicePhotoToBlobStorage(Invoice invoice);
+    public ValueTask<Uri> UploadInvoicePhotoToBlobStorage(Invoice invoice);
 
     /// <summary>
     /// Retrieve a blob image (invoice photo) from an Azure Blob Storage container.
     /// </summary>
     /// <param name="invoiceIdentifier"></param>
     /// <returns></returns>
-    public Task<IFormFile> RetrieveInvoicePhotoFromBlobStorage(Guid invoiceIdentifier);
+    public ValueTask<IFormFile> RetrieveInvoicePhotoFromBlobStorage(Guid invoiceIdentifier);
 }

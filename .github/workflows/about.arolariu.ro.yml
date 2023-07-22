@@ -11,7 +11,7 @@ name: About platform (about.arolariu.ro) deployment
 on:
   push:
     branches: ["main"]
-    # paths: ["sites/about.arolariu.ro/**"]
+    paths: ["sites/about.arolariu.ro/**"]
 
 
 env: # To double check we're running the build in production env.

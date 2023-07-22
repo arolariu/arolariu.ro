@@ -7,7 +7,7 @@ namespace arolariu.Backend.Core.Domain.Invoices.Endpoints;
 /// </summary>
 public static partial class InvoiceEndpoints
 {
-    private const string SemanticVersioning = "1.0.2";
+    private const string SemanticVersioning = "1.0.3";
     private const string EndpointNameTag = "Invoices Management System v" + SemanticVersioning;
 
     /// <summary>

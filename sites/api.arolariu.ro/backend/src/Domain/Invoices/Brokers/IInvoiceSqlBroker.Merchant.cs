@@ -13,7 +13,7 @@ public partial interface IInvoiceSqlBroker
     /// </summary>
     /// <param name="invoiceIdentifier">The unique identifier of the invoice.</param>
     /// <returns>A task representing the asynchronous operation with the retrieved <see cref="InvoiceMerchantInformation"/> object.</returns>
-    public Task<InvoiceMerchantInformation> RetrieveMerchantInformation(Guid invoiceIdentifier);
+    public ValueTask<InvoiceMerchantInformation> RetrieveMerchantInformation(Guid invoiceIdentifier);
 
 
     /// <summary>
@@ -22,7 +22,7 @@ public partial interface IInvoiceSqlBroker
     /// <param name="invoiceIdentifier">The unique identifier of the invoice.</param>
     /// <param name="merchantInformation">The updated <see cref="InvoiceMerchantInformation"/> object.</param>
     /// <returns>A task representing the asynchronous operation indicating whether the update was successful.</returns>
-    public Task<bool> UpdateMerchantInformation(Guid invoiceIdentifier, InvoiceMerchantInformation merchantInformation);
+    public ValueTask<bool> UpdateMerchantInformation(Guid invoiceIdentifier, InvoiceMerchantInformation merchantInformation);
 
 
     /// <summary>
@@ -30,6 +30,6 @@ public partial interface IInvoiceSqlBroker
     /// </summary>
     /// <param name="invoiceIdentifier">The unique identifier of the invoice.</param>
     /// <returns>A task representing the asynchronous operation indicating whether the deletion was successful.</returns>
-    public Task<bool> DeleteMerchantInformation(Guid invoiceIdentifier);
+    public ValueTask<bool> DeleteMerchantInformation(Guid invoiceIdentifier);
     #endregion
 }

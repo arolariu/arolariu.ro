@@ -34,13 +34,13 @@ public class InvoiceStorageService : IInvoiceStorageService
     /// <param name="invoiceIdentifier"></param>
     /// <returns></returns>
     /// <exception cref="NotImplementedException"></exception>
-    public Task<IFormFile> RetrieveInvoicePhotoFromBlobStorage(Guid invoiceIdentifier)
+    public ValueTask<IFormFile> RetrieveInvoicePhotoFromBlobStorage(Guid invoiceIdentifier)
     {
         throw new NotImplementedException();
     }
 
     /// <inheritdoc/>
-    public async Task<Uri> UploadInvoicePhotoToBlobStorage(Invoice invoice)
+    public async ValueTask<Uri> UploadInvoicePhotoToBlobStorage(Invoice invoice)
     {
         // upload blob
         var blobName = invoice.InvoiceId.ToString() + ".jpg";

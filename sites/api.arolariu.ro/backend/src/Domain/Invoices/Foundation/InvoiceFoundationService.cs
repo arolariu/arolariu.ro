@@ -39,9 +39,10 @@ public class InvoiceFoundationService : IInvoiceFoundationService
     }
 
     /// <inheritdoc/>
-    public Task<InvoiceStatus> RetrieveInvoiceStatus(Guid invoiceIdentifier)
+    public async Task<InvoiceStatus> RetrieveInvoiceStatus(Guid invoiceIdentifier)
     {
-        throw new NotImplementedException();
+        var invoiceStatus = await InvoiceSqlBroker.RetrieveInvoiceStatus(invoiceIdentifier);
+        return invoiceStatus;
     }
 
     /// <inheritdoc/>

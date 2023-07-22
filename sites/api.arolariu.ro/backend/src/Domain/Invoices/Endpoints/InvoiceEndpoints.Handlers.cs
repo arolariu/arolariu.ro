@@ -59,7 +59,7 @@ public static partial class InvoiceEndpoints
     /// <param name="invoiceFoundationService">The <see cref="IInvoiceFoundationService"/> used for invoice processing.</param>
     /// <returns>An <see cref="IResult"/> representing the result of the operation.</returns>
     [SwaggerOperation(
-        Summary = "Post an invoice to the service." + "",
+        Summary = "Post an invoice to the service.",
         Description = "This HTTP POST request will trigger the following workflow:" +
                     "\n1. Map the given request body to an actual invoice object." +
                     "\n2. Upload the invoice photo to a storage service via the Storage Broker." +
@@ -621,8 +621,7 @@ public static partial class InvoiceEndpoints
     {
         try
         {
-            var sqlBroker = invoiceFoundationService.InvoiceSqlBroker;
-            var invoiceStatus = await sqlBroker.RetrieveInvoiceStatus(id);
+            var invoiceStatus = await invoiceFoundationService.RetrieveInvoiceStatus(id);
             if (!InvoiceStatus.CheckInvoiceStatusStructIsNull(invoiceStatus)) return Results.Ok(invoiceStatus);
             else return Results.NotFound($"The invoice status associated with invoice id {id} was NOT found in the database.");
         }
