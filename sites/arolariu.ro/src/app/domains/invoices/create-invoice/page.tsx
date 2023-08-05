@@ -18,7 +18,7 @@ export default async function CreateInvoicePage() {
 
 	return (
 		<section className="dark:text-gray-300">
-			<div className="container mx-auto flex flex-col flex-wrap px-5 py-24">
+			<div className="container flex flex-col flex-wrap px-5 py-24 mx-auto">
 				{isLoggedIn ? <RenderInvoiceScreen /> : <RenderForbiddenScreen />}
 			</div>
 		</section>
