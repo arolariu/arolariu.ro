@@ -1,0 +1,43 @@
+{
+	"compilerOptions": {
+		"allowUnreachableCode": false,
+		"allowUnusedLabels": false,
+		"checkJs": true,
+		"declaration": true,
+		"declarationDir": "./src/types",
+		"declarationMap": true,
+		"diagnostics": true,
+		"extendedDiagnostics": true,
+		"pretty": true,
+		"lib": ["dom", "dom.iterable", "esnext"],
+		"allowJs": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"forceConsistentCasingInFileNames": true,
+		"noEmit": true,
+		"incremental": true,
+		"esModuleInterop": true,
+		"module": "esnext",
+		"moduleResolution": "node",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"jsx": "preserve",
+		"plugins": [
+			{
+				"name": "next"
+			}
+		],
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	},
+	"include": [
+		"next-env.d.ts",
+		".next/types/**/*.ts",
+		"**/*.ts",
+		"**/*.tsx",
+		"src/components/my-profile/RenderProfileMenu.tsx",
+		"src/components/my-profile/RenderProfileMenuItem.tsx"
+	],
+	"exclude": ["node_modules"]
+}
