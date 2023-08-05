@@ -1,0 +1,14 @@
+name: DEV platform (dev.arolariu.ro) deployment
+
+on:
+  push:
+    branches: ["preview"]
+    paths: ["sites/arolariu.ro/**"]
+
+jobs:
+  build:
+    name: 🚀 Building the front-end Next.JS web application...
+    runs-on: [self-hosted, linux, x64]
+    steps:
+      - name: 📦 Check current working directory
+        run: pwd
