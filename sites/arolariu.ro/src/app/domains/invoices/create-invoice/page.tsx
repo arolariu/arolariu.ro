@@ -1,6 +1,6 @@
 /** @format */
 
-import RenderForbiddenScreen from "@/components/domains/RenderForbiddenScreen";
+import RenderForbiddenScreen from "@/app/domains/RenderForbiddenScreen";
 import {RenderInvoiceMenu as RenderInvoiceScreen} from "@/components/domains/invoices/create-invoice/interactive-menu/RenderMenu";
 import {Metadata} from "next";
 import {getServerSession} from "next-auth";

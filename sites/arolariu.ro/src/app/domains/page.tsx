@@ -1,7 +1,7 @@
 /** @format */
 
+import RenderDomainService from "@/app/domains/RenderDomainService";
 import invoiceManagementSystemPhoto from "@/assets/invoice-management-system.png";
-import DomainService from "@/components/domains/DomainService";
 import {Metadata} from "next";
 
 export const metadata: Metadata = {
@@ -34,7 +34,7 @@ export default async function DomainsHomepage() {
 				</div>
 
 				<div className="-mx-4 -mb-10 -mt-4 flex flex-wrap sm:-m-4">
-					<DomainService
+					<RenderDomainService
 						title="Invoice Management System"
 						description="This domain space service assists with the digital transformation of physical receipts. It allows users to upload receipts, and get carefully-crafted insights into their spending habits."
 						linkTo="/domains/invoices"

@@ -1,11 +1,9 @@
 /** @format */
 
-"use client";
-
 import CreateAccountSVG from "@/assets/CreateAccountSVG";
 import Link from "next/link";
 
-export default function RenderForbiddenScreen() {
+export default async function RenderForbiddenScreen() {
 	return (
 		<section className="container mx-auto flex flex-col items-center justify-center px-5 py-12">
 			<CreateAccountSVG className="mb-4 h-full w-full rounded object-cover object-center md:w-3/6 lg:w-2/6" />

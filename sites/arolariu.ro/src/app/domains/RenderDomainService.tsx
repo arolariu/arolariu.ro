@@ -1,11 +1,9 @@
 /** @format */
 
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
 
-export default function DomainService({
+export default async function RenderDomainService({
 	title = "Placeholder title",
 	description = "Placeholder descriptipn",
 	imageUrl = "https://dummyimage.com/1203x503",
