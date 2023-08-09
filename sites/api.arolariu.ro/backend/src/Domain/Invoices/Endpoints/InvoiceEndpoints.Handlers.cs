@@ -5,6 +5,8 @@ using arolariu.Backend.Core.Domain.Invoices.Services.Foundation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
+using Swashbuckle.AspNetCore.Annotations;
+
 using System;
 using System.Threading.Tasks;
 
