@@ -7,7 +7,8 @@ import {Inter} from "next/font/google";
 import {Metadata} from "next";
 import {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
 import {Author, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
-import {PropsWithChildren, ReactElement, Suspense} from "react";
+import {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
+import {PropsWithChildren, Suspense} from "react";
 import "./globals.css";
 import Loading from "./loading";
 
@@ -35,9 +36,19 @@ export const metadata: Metadata = {
 		follow: true,
 		index: true,
 	} as Robots,
+	openGraph: {
+		type: "website",
+		url: "https://arolariu.ro",
+		countryName: "Romania",
+		description: "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu.",
+		siteName: "arolariu.ro",
+		title: "arolariu.ro | Alexandru-Razvan Olariu",
+		alternateLocale: "ro_RO",
+	} as OpenGraph,
+	manifest: "/manifest.json",
 };
 
-export default function RootLayout({children}: PropsWithChildren<{}>): ReactElement<{}> {
+export default async function RootLayout({children}: PropsWithChildren<{}>) {
 	return (
 		<html lang="en">
 			<body className={inter.className}>

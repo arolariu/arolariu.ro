@@ -1,11 +1,12 @@
 ﻿using arolariu.Backend.Core.Domain.General.Services.Database;
 using arolariu.Backend.Core.Domain.General.Services.KeyVault;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
-using arolariu.Backend.Core.Domain.Invoices.Brokers;
-using arolariu.Backend.Core.Domain.Invoices.Foundation;
-using arolariu.Backend.Core.Domain.Invoices.Services.InvoiceReader;
-using arolariu.Backend.Core.Domain.Invoices.Services.InvoiceStorage;
+using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
+using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoicePhotoStorageBroker;
+using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceSqlBroker;
+using arolariu.Backend.Core.Domain.Invoices.Services.Foundation;
 
+using Azure.AI.FormRecognizer.DocumentAnalysis;
 using Azure.Identity;
 
 using Microsoft.AspNetCore.Builder;
@@ -127,18 +128,18 @@ internal static class WebApplicationBuilderExtensions
     /// </example>
     /// <seealso cref="WebApplicationBuilder"/>
     /// <seealso cref="IServiceCollection"/>
-    /// <seealso cref="IInvoiceSqlBroker"/>
-    /// <seealso cref="IInvoiceReaderService"/>
-    /// <seealso cref="IInvoiceStorageService"/>
-    /// <seealso cref="IInvoiceFoundationService"/>
     public static IServiceCollection AddInvoicesDomainConfiguration(this WebApplicationBuilder builder)
 
     {
         var services = builder.Services;
-        services.AddSingleton<IInvoiceSqlBroker, InvoiceSqlBroker>();
-        services.AddSingleton<IInvoiceReaderService, InvoiceReaderService>();
-        services.AddSingleton<IInvoiceStorageService, InvoiceStorageService>();
-        services.AddSingleton<IInvoiceFoundationService, InvoiceFoundationService>();
+
+        // Brokers:
+        services.AddSingleton<IInvoiceAnalysisBroker<AnalyzedDocument>, InvoiceAnalysisAzureAIBroker>();
+        services.AddSingleton<IInvoiceStorageBroker, InvoiceAzureStorageBroker>();
+        services.AddSingleton<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
+
+        // Foundation services:
+        services.AddSingleton<IInvoiceFoundationService, InvoiceFoundationService<AnalyzedDocument>>();
         return services;
     }
 }

@@ -4,10 +4,12 @@ using System.Collections.Generic;
 namespace arolariu.Backend.Core.Domain.Invoices.DTOs;
 
 /// <summary>
-/// The posted invoice DTO, this is the invoice that is posted to the database.
+/// The Invoice DTO class represents the invoice data transfer object.
+/// The invoice data transfer object is used to transfer the invoice data from the client to the server.
+/// The data is transferred as a JSON object. This object is then deserialized into the Invoice DTO class.
 /// </summary>
 [Serializable]
-public class PostedInvoiceDto
+public class CreateInvoiceDto
 {
     /// <summary>
     /// The invoice base 64 photo.
@@ -19,5 +21,5 @@ public class PostedInvoiceDto
     /// Additional invoice metadata to be processed.
     /// The metadata will be stored in the database as a JSON field.
     /// </summary>
-    public IDictionary<string, object> AdditionalMetadata { get; set; } = new Dictionary<string, object>();
+    public IEnumerable<KeyValuePair<string, string>> AdditionalMetadata { get; set; } = null!;
 }

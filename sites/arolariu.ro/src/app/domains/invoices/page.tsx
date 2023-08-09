@@ -1,8 +1,9 @@
 /** @format */
 
-import RenderInvoiceBotComponent from "@/components/domains/invoices/RenderInvoiceBotComponent";
-import RenderInvoiceTopComponent from "@/components/domains/invoices/RenderInvoiceTopComponent";
+import InvoicePageBottomSVG from "@/assets/InvoicePageBottomSVG";
+import InvoicePageTopSVG from "@/assets/InvoicePageTopSVG";
 import {Metadata} from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
 	title: "Invoice Management System",
@@ -11,10 +12,194 @@ export const metadata: Metadata = {
 };
 
 export default async function InvoicePage() {
+	/**
+	 * The first <section> represents the top section of the page: the hero and CTA areas.
+	 * The second <section> represents the bottom section of the page: the features and an illustration.
+	 */
+
 	return (
 		<main>
-			<RenderInvoiceTopComponent />
-			<RenderInvoiceBotComponent />
+			<section className="dark:text-gray-200">
+				<div className="container mx-auto flex flex-col items-center justify-center px-5 py-24">
+					<InvoicePageTopSVG className="object-cover object-center" />
+					<div className="mt-2 w-full text-center lg:w-2/3">
+						<h1 className="title-font mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-3xl font-medium text-transparent sm:text-4xl">
+							Turn your paper receipts into powerful digital knowledge.
+						</h1>
+						<p className="mb-8 leading-relaxed">
+							Receipts are great for keeping your own accounting. However, what if you could upload
+							these receipts somewhere, and get powerful insights into your habits? What if you
+							could automatically get a list of all the products you bought in the last year? <br />
+							<br />
+							Unleash the power of our platform!
+							<br />
+							Throw away the Excel tables and hop on the digital train now!
+						</p>
+						<div className="flex justify-center">
+							<Link
+								href="/domains/invoices/create-invoice"
+								className="inline-flex rounded border-0 bg-indigo-500 px-6 py-2 text-lg text-white hover:bg-indigo-600 focus:outline-none">
+								Upload receipt
+							</Link>
+							<Link
+								href="/domains/invoices/view-invoices"
+								className="ml-4 inline-flex rounded border-0 bg-gray-100 px-6 py-2 text-lg text-gray-700 hover:bg-gray-200 focus:outline-none">
+								My receipts
+							</Link>
+						</div>
+					</div>
+				</div>
+			</section>
+			<section className="dark:text-gray-200">
+				<div className="container mx-auto flex flex-wrap px-5 py-24">
+					<div className="flex w-full flex-wrap">
+						<div className="md:w-1/2 md:py-6 md:pr-10 lg:w-2/5">
+							<div className="relative flex pb-12">
+								<div className="absolute inset-0 flex h-full w-10 items-center justify-center">
+									<div className="pointer-events-none h-full w-1 bg-gray-200"></div>
+								</div>
+								<div className="relative z-10 inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500">
+									<svg
+										fill="none"
+										stroke="currentColor"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth="2"
+										className="h-5 w-5"
+										viewBox="0 0 24 24">
+										<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+									</svg>
+								</div>
+								<div className="flex-grow pl-4">
+									<h2 className="title-font mb-1 text-sm font-medium tracking-wider dark:text-gray-300">
+										STEP 1 - Onboard yourself
+									</h2>
+									<p className="leading-relaxed">
+										Create an account so that you can store your own receipts securely onto our
+										platform. We adhere to the industry standards in terms of security. Your receipt
+										information is{" "}
+										<strong
+											className="tooltip tooltip-right text-red-600"
+											data-tip="TODO: some text should go here.">
+											<span className="font-mono text-lg">safe</span>
+										</strong>
+										.
+									</p>
+								</div>
+							</div>
+							<div className="relative flex pb-12">
+								<div className="absolute inset-0 flex h-full w-10 items-center justify-center">
+									<div className="pointer-events-none h-full w-1 bg-gray-200"></div>
+								</div>
+								<div className="relative z-10 inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500">
+									<svg
+										fill="none"
+										stroke="currentColor"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth="2"
+										className="h-5 w-5"
+										viewBox="0 0 24 24">
+										<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+									</svg>
+								</div>
+								<div className="flex-grow pl-4">
+									<h2 className="title-font mb-1 text-sm font-medium tracking-wider text-gray-300">
+										STEP 2 - Start your journey
+									</h2>
+									<p className="leading-relaxed">
+										Upload your paper receipt. The system will then perform the full analysis. We
+										try as much as possible to have a fully automated process, but sometimes we may
+										need your help.
+									</p>
+								</div>
+							</div>
+							<div className="relative flex pb-12">
+								<div className="absolute inset-0 flex h-full w-10 items-center justify-center">
+									<div className="pointer-events-none h-full w-1 bg-gray-200"></div>
+								</div>
+								<div className="relative z-10 inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500">
+									<svg
+										fill="none"
+										stroke="currentColor"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth="2"
+										className="h-5 w-5"
+										viewBox="0 0 24 24">
+										<circle cx="12" cy="5" r="3"></circle>
+										<path d="M12 22V8M5 12H2a10 10 0 0020 0h-3"></path>
+									</svg>
+								</div>
+								<div className="flex-grow pl-4">
+									<h2 className="title-font mb-1 text-sm font-medium tracking-wider text-gray-300">
+										STEP 3 - Explore the digital receipt
+									</h2>
+									<p className="leading-relaxed">
+										Delve into the analysis provided by us. You can download the full analysis
+										report as a PDF file for your own records.
+									</p>
+								</div>
+							</div>
+							<div className="relative flex pb-12">
+								<div className="absolute inset-0 flex h-full w-10 items-center justify-center">
+									<div className="pointer-events-none h-full w-1 bg-gray-200"></div>
+								</div>
+								<div className="relative z-10 inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500">
+									<svg
+										fill="none"
+										stroke="currentColor"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth="2"
+										className="h-5 w-5"
+										viewBox="0 0 24 24">
+										<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
+										<circle cx="12" cy="7" r="4"></circle>
+									</svg>
+								</div>
+								<div className="flex-grow pl-4">
+									<h2 className="title-font mb-1 text-sm font-medium tracking-wider text-gray-300">
+										STEP 4 - Gather powerful knowledge
+									</h2>
+									<p className="leading-relaxed">
+										Augment your analysis with our AI-powered insights. Collect knowledge into your
+										purchase habits and discover new recipes specifically crafted from your
+										day-to-day shopping list.
+									</p>
+								</div>
+							</div>
+							<div className="relative flex">
+								<div className="relative z-10 inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500">
+									<svg
+										fill="none"
+										stroke="currentColor"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										strokeWidth="2"
+										className="h-5 w-5"
+										viewBox="0 0 24 24">
+										<path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
+										<path d="M22 4L12 14.01l-3-3"></path>
+									</svg>
+								</div>
+								<div className="flex-grow pl-4">
+									<h2 className="title-font mb-1 text-sm font-medium tracking-wider text-gray-300">
+										STEP 5 - Offer your feedback
+									</h2>
+									<p className="leading-relaxed">
+										We aim to create one of the best, open-source receipt-scanning platform. We
+										would love to hear your feedback on how we can improve our platform.
+									</p>
+								</div>
+							</div>
+						</div>
+						<div className="m-auto pt-4">
+							<InvoicePageBottomSVG className="object-cover object-center" />
+						</div>
+					</div>
+				</div>
+			</section>
 		</main>
 	);
 }

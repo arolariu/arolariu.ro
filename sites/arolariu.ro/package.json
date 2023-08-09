@@ -11,7 +11,7 @@
   "license": "MIT",
   "version": "1.0.0",
   "scripts": {
-    "dev": "next lint && next dev --turbo",
+    "dev": "next lint && next dev",
     "build": "next lint && next build",
     "start": "next start",
     "lint": "next lint"
