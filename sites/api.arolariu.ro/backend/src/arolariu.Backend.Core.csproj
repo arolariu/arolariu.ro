@@ -18,6 +18,8 @@
 		<WarningLevel>9999</WarningLevel>
 		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
 		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+		<NoWarn>S1135</NoWarn>
+	<!-- S1135 - SonarLint "Complete TODOs" -->
 	</PropertyGroup>
 
 	<!-- Treat warnings as errors for `RELEASE` deployment. -->
@@ -25,13 +27,12 @@
 		<WarningLevel>9999</WarningLevel>
 		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
 		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+		<NoWarn>S1135</NoWarn>
+	<!-- S1135 - SonarLint "Complete TODOs" -->
 	</PropertyGroup>
 
 	<!-- Other packages -->
 	<ItemGroup>
-		<PackageReference Include="Azure.AI.FormRecognizer" Version="4.0.0" />
-		<PackageReference Include="Azure.Storage.Blobs" Version="12.16.0" />
-		<PackageReference Include="Dapper" Version="2.0.123" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.34.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
@@ -57,6 +58,8 @@
 		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.0.0" />
 		<PackageReference Include="Azure.Identity" Version="1.9.0" />
 		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.5.0" />
+		<PackageReference Include="Azure.AI.FormRecognizer" Version="4.0.0" />
+		<PackageReference Include="Azure.Storage.Blobs" Version="12.16.0" />
 	</ItemGroup>
 
 	<!-- Swagger packages -->
@@ -78,7 +81,6 @@
 
 	<ItemGroup>
 		<Folder Include="Domain\General\Helpers\" />
-		<Folder Include="Domain\Invoices\Repos\" />
 	</ItemGroup>
 
 </Project>
