@@ -30,6 +30,14 @@ public static partial class InvoiceEndpoints
             .WithOpenApi();
 
         router
+            .MapGet("/rest/invoices", RetrieveAllInvoicesAsync)
+            .Produces<IEnumerable<Invoice>>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .WithName(nameof(RetrieveAllInvoicesAsync))
+            .WithOpenApi();
+
+        router
             .MapGet("/rest/invoices/{id}", RetrieveSpecificInvoiceAsync)
             .Produces<Invoice>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -40,11 +48,13 @@ public static partial class InvoiceEndpoints
             .WithOpenApi();
 
         router
-            .MapGet("/rest/invoices", RetrieveAllInvoicesAsync)
-            .Produces<IEnumerable<Invoice>>(StatusCodes.Status200OK)
+            .MapPost("/rest/invoices/{id}/analyze", AnalyzeInvoiceAsync)
+            .Produces<IResult>(StatusCodes.Status202Accepted)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
-            .WithName(nameof(RetrieveAllInvoicesAsync))
+            .WithName(nameof(AnalyzeInvoiceAsync))
             .WithOpenApi();
 
         router

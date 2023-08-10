@@ -28,7 +28,14 @@ public interface IInvoiceFoundationService
     /// </summary>
     /// <param name="invoice"></param>
     /// <returns></returns>
-    public Task CreateInvoiceObject(Invoice invoice);
+    public Task<Invoice> CreateInvoiceObject(Invoice invoice);
+
+    /// <summary>
+    /// Analyze an invoice object.
+    /// </summary>
+    /// <param name="identifier"></param>
+    /// <returns></returns>
+    public Task<Invoice> AnalyzeInvoiceObject(Guid identifier);
 
     /// <summary>
     /// Reads an invoice object.
