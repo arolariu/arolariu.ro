@@ -1,104 +1,72 @@
-/*
-Invoice object type:
-{
-    "invoiceId": "",
-    "invoiceImageURI": "",
-    "invoiceMetadata": {
-        "metadataBag": {
-            "Key": "Value",
-            "Key": "Value",
-        }
-    },
-    "merchantInformation": {
-        "merchantName": "",
-        "merchantAddress": "",
-        "merchantPhoneNumber": ""
-    },
-    "invoiceTime": {
-        "invoiceSubmittedDate": "",
-        "invoiceIdentifiedDate": ""
-    },
-    "transactionInformation": {
-        "transactionDescription": "Simple invoice made by a cool user.",
-        "transactionTotal": 100.12,
-        "transactionCalories": 340.2
-    },
-    "items": {
-        "boughtItems": [
-            {
-                "itemName": "Coca-Cola",
-                "itemPrice": 10.12,
-                "itemCalories": 100.2,
-                "itemQuantity": 100,
-                "itemTotal": 1012
-                "itemQuantityUnits": "ml",
-                "itemCaloriesUnits": "kcal",
-                "itemPriceUnits": "RON"
-            },
-        ],
-        "discountedItems": [
-            {
-                "itemName": "Coca-Cola",
-                "itemPrice": 10.12,
-                "itemCalories": 100.2,
-                "itemQuantity": 100,
-                "itemTotal": 1012
-                "itemQuantityUnits": "ml",
-                "itemCaloriesUnits": "kcal",
-                "itemPriceUnits": "RON"
-            },
-        ]
-    }
-}
- */
+/** @format */
 
+/* eslint-disable no-unused-vars */
 export default interface Invoice {
-  invoiceId: string;
-  invoiceImageURI: string;
-  invoiceMetadata: InvoiceMetadata;
-  merchantInformation: MerchantInformation;
-  invoiceTime: InvoiceTime;
-  transactionInformation: TransactionInformation;
-  items: Items;
+	id: string;
+	imageUri: string;
+	isAnalyzed: boolean;
+	uploadedDate: Date;
+	identifiedDate: Date;
+	lastModifiedDate: Date;
+	lastAnalyzedDate: Date;
+	currency: string;
+	totalAmount: number;
+	totalTax: number;
+	description: string;
+	isImportant: boolean;
+	userIdentifier: string;
+	merchant: Merchant;
+	items: Item[];
+	additionalMetadata: [
+		{
+			key: string;
+			value: string;
+		},
+	];
 }
 
-export interface InvoiceMetadata {
-  metadataBag: MetadataBag;
+export interface Merchant {
+	name: string;
+	address: string;
+	phoneNumber: string;
+	category: MerchantCategory;
+	parentCompany: string;
 }
 
-export interface MetadataBag {
-  [key: string]: string;
-}
-
-export interface MerchantInformation {
-  merchantName: string;
-  merchantAddress: string;
-  merchantPhoneNumber: string;
-}
-
-export interface InvoiceTime {
-  invoiceSubmittedDate: string;
-  invoiceIdentifiedDate: string;
-}
-
-export interface TransactionInformation {
-  transactionDescription: string;
-  transactionTotal: number;
-  transactionCalories: number;
-}
-
-export interface Items {
-  boughtItems: Item[];
-  discountedItems: Item[];
+export enum MerchantCategory {
+	NOT_DEFINED = 0,
+	LOCAL_SHOP,
+	SUPERMARKET,
+	HYPERMARKET,
+	ONLINE_SHOP,
+	OTHER,
 }
 
 export interface Item {
-  itemName: string;
-  itemPrice: number;
-  itemCalories: number;
-  itemQuantity: number;
-  itemTotal: number;
-  itemQuantityUnits: string;
-  itemCaloriesUnits: string;
-  itemPriceUnits: string;
+	rawName: string;
+	genericName: string;
+	category: ItemCategory;
+	quantity: number;
+	quantityUnit: string;
+	productCode: string;
+	price: number;
+	totalPrice: number;
+}
+
+export enum ItemCategory {
+	NOT_DEFINED = 0,
+	BAKED_GOODS,
+	GROCERIES,
+	DAIRY,
+	MEAT,
+	FISH,
+	FRUITS,
+	VEGETABLES,
+	BEVERAGES,
+	ALCOHOLIC_BEVERAGES,
+	TOBACCO,
+	CLEANING_SUPPLIES,
+	PERSONAL_CARE,
+	MEDICINE,
+	OTHER,
 }
