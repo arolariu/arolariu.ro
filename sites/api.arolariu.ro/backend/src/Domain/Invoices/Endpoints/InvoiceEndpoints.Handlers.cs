@@ -38,8 +38,42 @@ public static partial class InvoiceEndpoints
         try
         {
             var invoice = await invoiceFoundationService.ConvertDtoToEntity(invoiceDto);
-            await invoiceFoundationService.CreateInvoiceObject(invoice);
-            return Results.Created($"/rest/invoices/{invoice.id}", invoice);
+            var analyzedInvoice = await invoiceFoundationService.CreateInvoiceObject(invoice);
+            return Results.Created($"/rest/invoices/{analyzedInvoice.id}", analyzedInvoice);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                detail: ex.Message + ex.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The invoices could NOT be retrieved due to an internal service error.");
+        }
+    }
+
+    /// <summary>
+    /// Analyzes a specific invoice.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="invoiceFoundationService"></param>
+    /// <returns></returns>
+    [SwaggerOperation(
+        Summary = "Analyzes a specific invoice from the system.",
+        Description = "Analyzes a specific invoice from the system. If the invoice identifier passed to the route is valid, the invoice management system will return the invoice, given that the user is allowed to see this invoice.",
+        OperationId = nameof(AnalyzeInvoiceAsync),
+        Tags = new[] { EndpointNameTag })]
+    [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was analyzed successfully.", typeof(Invoice))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid.", typeof(ValidationProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "The invoice could not be analyzed due to insufficient permissions.", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be analyzed due to the invoice not being found.", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be analyzed due to an internal service error.", typeof(ProblemDetails))]
+    private static async Task<IResult> AnalyzeInvoiceAsync(
+        [FromRoute] Guid id,
+        [FromServices] IInvoiceFoundationService invoiceFoundationService)
+    {
+        try
+        {
+            var analyzedInvoice = await invoiceFoundationService.AnalyzeInvoiceObject(id);
+            return Results.Accepted(value: analyzedInvoice);
         }
         catch (Exception ex)
         {

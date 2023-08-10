@@ -56,11 +56,21 @@ public class InvoiceFoundationService<T> : IInvoiceFoundationService
     }
 
     /// <inheritdoc/>
-    public async Task CreateInvoiceObject(Invoice invoice)
+    public async Task<Invoice> CreateInvoiceObject(Invoice invoice)
     {
+        await invoiceNoSqlBroker.CreateInvoiceAsync(invoice);
+        return invoice;
+    }
+
+
+    /// <inheritdoc/>
+    public async Task<Invoice> AnalyzeInvoiceObject(Guid identifier)
+    {
+        var invoice = await invoiceNoSqlBroker.ReadInvoiceAsync(identifier);
         var analyzedInvoice = await invoiceAnalysisBroker.SendInvoiceToAnalysisAsync(invoice);
         var updatedInvoice = await invoiceAnalysisBroker.PopulateInvoiceWithAnalysisResultAsync(invoice, analyzedInvoice);
-        await invoiceNoSqlBroker.CreateInvoiceAsync(updatedInvoice);
+        await invoiceNoSqlBroker.UpdateInvoiceAsync(updatedInvoice);
+        return updatedInvoice;
     }
 
     /// <inheritdoc/>
