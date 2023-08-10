@@ -1,6 +1,10 @@
 /** @format */
 
+import {authOptions} from "@/lib/authOptions";
 import {Metadata} from "next";
+import {getServerSession} from "next-auth";
+import RenderForbiddenScreen from "../../RenderForbiddenScreen";
+import RenderViewInvoicesPage from "./island";
 
 export const metadata: Metadata = {
 	title: "Invoice Management System - List Invoices",
@@ -8,9 +12,11 @@ export const metadata: Metadata = {
 };
 
 export default async function ViewInvoicesPage() {
+	const session = await getServerSession(authOptions);
+
 	return (
 		<section className="dark:text-gray-300">
-			<h1> HELLO WORLD! </h1>
+			{session ? <RenderViewInvoicesPage session={session} /> : <RenderForbiddenScreen />}
 		</section>
 	);
 }
