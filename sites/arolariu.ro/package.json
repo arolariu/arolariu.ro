@@ -11,6 +11,7 @@
   "license": "MIT",
   "version": "1.0.0",
   "scripts": {
+    "predev": "npx ts-node ./src/lib/envSetup.ts && npx prisma generate --schema ./src/prisma/schema.prisma",
     "dev": "next lint && next dev",
     "build": "next lint && next build",
     "start": "next start",
@@ -28,6 +29,8 @@
     "sharp": "^0.32.4"
   },
   "devDependencies": {
+    "@azure/identity": "^3.3.0",
+    "@azure/keyvault-secrets": "^4.7.0",
     "@tailwindcss/typography": "^0.5.9",
     "@types/node": "^20.4.4",
     "@types/react": "^18.2.16",
@@ -35,9 +38,11 @@
     "autoprefixer": "^10.4.14",
     "cssnano": "^6.0.1",
     "daisyui": "^3.3.1",
+    "dotenv": "^16.3.1",
     "eslint": "^8.46.0",
     "eslint-config-next": "^13.4.12",
     "eslint-config-prettier": "^8.10.0",
+    "picocolors": "^1.0.0",
     "postcss": "^8.4.27",
     "prettier": "3.0.1",
     "prettier-plugin-organize-imports": "^3.2.3",

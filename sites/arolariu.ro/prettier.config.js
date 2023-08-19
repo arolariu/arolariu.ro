@@ -1,11 +1,11 @@
 /**
- * @type {import("prettier").Options}
  * @format
+ * @type {import("prettier").Options}
  */
 
 module.exports = {
 	arrowParens: "always",
-	insertPragma: true,
+	insertPragma: false,
 	printWidth: 100,
 	useTabs: true,
 	tabWidth: 2,
