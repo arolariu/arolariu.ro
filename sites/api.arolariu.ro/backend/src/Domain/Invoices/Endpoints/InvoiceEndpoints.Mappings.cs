@@ -22,9 +22,12 @@ public static partial class InvoiceEndpoints
             .Accepts<CreateInvoiceDto>("application/json")
             .Produces<IResult>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
-            .ProducesProblem(StatusCodes.Status409Conflict)
-            .ProducesProblem(StatusCodes.Status413PayloadTooLarge)
+            .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization
+            .ProducesProblem(StatusCodes.Status403Forbidden) // TODO: authentication
+            .ProducesProblem(StatusCodes.Status409Conflict) // TODO: implementation
+            .ProducesProblem(StatusCodes.Status413PayloadTooLarge) // TODO: implementation
+            .ProducesProblem(StatusCodes.Status415UnsupportedMediaType) // TODO: implementation
+            .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(CreateNewInvoiceAsync))
             .WithOpenApi();
@@ -32,7 +35,9 @@ public static partial class InvoiceEndpoints
         router
             .MapGet("/rest/invoices", RetrieveAllInvoicesAsync)
             .Produces<IEnumerable<Invoice>>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization
+            .ProducesProblem(StatusCodes.Status403Forbidden) // TODO: authentication
+            .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(RetrieveAllInvoicesAsync))
             .WithOpenApi();
@@ -41,18 +46,23 @@ public static partial class InvoiceEndpoints
             .MapGet("/rest/invoices/{id}", RetrieveSpecificInvoiceAsync)
             .Produces<Invoice>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization
+            .ProducesProblem(StatusCodes.Status403Forbidden) // TODO: authentication
+            .ProducesProblem(StatusCodes.Status404NotFound) // TODO: implementation
+            .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(RetrieveSpecificInvoiceAsync))
             .WithOpenApi();
 
         router
             .MapPost("/rest/invoices/{id}/analyze", AnalyzeInvoiceAsync)
+            .Accepts<InvoiceAnalysisOptionsDto>("application/json")
             .Produces<IResult>(StatusCodes.Status202Accepted)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization
+            .ProducesProblem(StatusCodes.Status403Forbidden) // TODO: authentication
+            .ProducesProblem(StatusCodes.Status404NotFound) // TODO: implementation
+            .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(AnalyzeInvoiceAsync))
             .WithOpenApi();
@@ -62,8 +72,10 @@ public static partial class InvoiceEndpoints
             .Accepts<Invoice>("application/json")
             .Produces<Invoice>(StatusCodes.Status202Accepted)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization
+            .ProducesProblem(StatusCodes.Status403Forbidden) // TODO: authentication
+            .ProducesProblem(StatusCodes.Status404NotFound) // TODO: implementation
+            .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(UpdateSpecificInvoiceAsync))
             .WithOpenApi();
@@ -72,8 +84,10 @@ public static partial class InvoiceEndpoints
             .MapDelete("/rest/invoices/{id}", DeleteInvoiceAsync)
             .Produces<IResult>(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status403Forbidden)
-            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization
+            .ProducesProblem(StatusCodes.Status403Forbidden) // TODO: authentication
+            .ProducesProblem(StatusCodes.Status404NotFound) // TODO: implementation
+            .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(DeleteInvoiceAsync))
             .WithOpenApi();

@@ -8,31 +8,25 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Services.Foundation;
+namespace arolariu.Backend.Core.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 /// <summary>
-/// The invoice foundation service.
+/// The Invoice Storage foundation service.
 /// </summary>
-/// <typeparam name="T"></typeparam>
-public class InvoiceFoundationService<T> : IInvoiceFoundationService
-    where T : class
+public class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
 {
-    private readonly IInvoiceAnalysisBroker<T> invoiceAnalysisBroker;
     private readonly IInvoiceStorageBroker invoiceStorageBroker;
     private readonly IInvoiceNoSqlBroker invoiceNoSqlBroker;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    /// <param name="invoiceAnalysisBroker"></param>
     /// <param name="invoiceStorageBroker"></param>
     /// <param name="invoiceNoSqlBroker"></param>
-    public InvoiceFoundationService(
-        IInvoiceAnalysisBroker<T> invoiceAnalysisBroker,
+    public InvoiceStorageFoundationService(
         IInvoiceStorageBroker invoiceStorageBroker,
         IInvoiceNoSqlBroker invoiceNoSqlBroker)
     {
-        this.invoiceAnalysisBroker = invoiceAnalysisBroker;
         this.invoiceStorageBroker = invoiceStorageBroker;
         this.invoiceNoSqlBroker = invoiceNoSqlBroker;
     }
@@ -53,24 +47,6 @@ public class InvoiceFoundationService<T> : IInvoiceFoundationService
             LastModifiedDate = DateTime.UtcNow,
             //TODO: add user identifier value here
         };
-    }
-
-    /// <inheritdoc/>
-    public async Task<Invoice> CreateInvoiceObject(Invoice invoice)
-    {
-        await invoiceNoSqlBroker.CreateInvoiceAsync(invoice);
-        return invoice;
-    }
-
-
-    /// <inheritdoc/>
-    public async Task<Invoice> AnalyzeInvoiceObject(Guid identifier)
-    {
-        var invoice = await invoiceNoSqlBroker.ReadInvoiceAsync(identifier);
-        var analyzedInvoice = await invoiceAnalysisBroker.SendInvoiceToAnalysisAsync(invoice);
-        var updatedInvoice = await invoiceAnalysisBroker.PopulateInvoiceWithAnalysisResultAsync(invoice, analyzedInvoice);
-        await invoiceNoSqlBroker.UpdateInvoiceAsync(updatedInvoice);
-        return updatedInvoice;
     }
 
     /// <inheritdoc/>
@@ -99,5 +75,11 @@ public class InvoiceFoundationService<T> : IInvoiceFoundationService
         await invoiceNoSqlBroker.DeleteInvoiceAsync(identifier);
     }
 
-
+    /// <inheritdoc/>
+    public async Task<Invoice> CreateInvoiceObject(Invoice invoice)
+    {
+        await invoiceNoSqlBroker.CreateInvoiceAsync(invoice);
+        var createdInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(invoice.id);
+        return createdInvoice;
+    }
 }

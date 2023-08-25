@@ -6,37 +6,37 @@ import Link from "next/link";
 
 export default async function Home() {
 	return (
-		<section className="bg-black py-12 sm:pb-16 lg:pb-20 xl:pb-24">
-			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+		<section className="py-12 bg-black sm:pb-16 lg:pb-20 xl:pb-24">
+			<div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
 				<div className="relative">
 					<div className="lg:w-2/3">
 						<h1 className="mt-6 text-4xl font-normal text-white sm:mt-10 sm:text-5xl lg:text-6xl xl:text-8xl">
-							<span className="bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent">
+							<span className="text-transparent bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text">
 								Welcome to <span className="font-bold">arolariu.ro</span>
 							</span>{" "}
 						</h1>
-						<p className="mt-4 max-w-lg text-xl font-normal text-gray-400 sm:mt-8">
+						<p className="max-w-lg mt-4 text-xl font-normal text-gray-400 sm:mt-8">
 							This platform was built by Alexandru-Razvan Olariu as a playground for new
 							technologies. The platform is built using state-of-the-art, enterprise-grade
 							technologies. <br /> <br />
 							You are welcome to explore all of the applications and services that are hosted on
 							this domain space.
 						</p>
-						<div className="group relative mt-8 inline-flex items-center justify-center sm:mt-12">
-							<div className="absolute -inset-px rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all duration-200 group-hover:shadow-lg group-hover:shadow-cyan-500/50"></div>
+						<div className="relative inline-flex items-center justify-center mt-8 group sm:mt-12">
+							<div className="absolute transition-all duration-200 rounded-full -inset-px bg-gradient-to-r from-cyan-500 to-purple-500 group-hover:shadow-lg group-hover:shadow-cyan-500/50"></div>
 							<Link
 								href="/domains"
 								title=""
-								className="relative inline-flex items-center justify-center rounded-full border border-transparent bg-black px-8 py-3 text-base font-normal text-white"
+								className="relative inline-flex items-center justify-center px-8 py-3 text-base font-normal text-white bg-black border border-transparent rounded-full"
 								role="button">
 								Start Exploring
 							</Link>
 						</div>
 
 						<div>
-							<div className="mt-8 inline-flex items-center border-t border-gray-800 pt-6 sm:mt-14 sm:pt-10">
+							<div className="inline-flex items-center pt-6 mt-8 border-t border-gray-800 sm:mt-14 sm:pt-10">
 								<svg
-									className="h-6 w-6"
+									className="w-6 h-6"
 									viewBox="0 0 24 24"
 									fill="none"
 									strokeWidth="1.5"
@@ -58,7 +58,7 @@ export default async function Home() {
 
 					<div className="mt-8 md:absolute md:right-0 md:top-32 md:mt-0 lg:top-0">
 						<Image
-							className="mx-auto w-full max-w-xs lg:max-w-lg xl:max-w-xl"
+							className="w-full max-w-xs mx-auto lg:max-w-lg xl:max-w-xl"
 							src={Illustration}
 							alt="Generated 3D image."
 							width={640}

@@ -77,6 +77,24 @@ public record class Invoice
     public bool IsImportant { get; set; } = false;
     #endregion
 
+    #region Invoice system-assigned fields
+    /// <summary>
+    /// Possible recipes for the invoice.
+    /// </summary>
+    public IList<string> PossibleRecipes { get; set;  } = null!;
+    
+    /// <summary>
+    /// Possible allergens for the invoice.
+    /// </summary>
+    public IList<string> PossibleAllergens { get; set; } = null!;
+
+    /// <summary>
+    /// How many days can you survive with the invoice items?
+    /// </summary>
+    public int EstimatedSurvivalDays { get; set; } = 0;
+
+    #endregion
+
     #region Foreign Keys
     /// <summary>
     /// The invoice 1:1? user relationship.

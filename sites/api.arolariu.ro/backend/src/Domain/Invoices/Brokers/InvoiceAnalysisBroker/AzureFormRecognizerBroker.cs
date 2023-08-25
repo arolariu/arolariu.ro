@@ -6,19 +6,18 @@ using Azure.AI.FormRecognizer.DocumentAnalysis;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Linq;
 using arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
 
 namespace arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 
 /// <summary>
-/// The <see cref="InvoiceAnalysisAzureAIBroker"/> class represents the implementation of the <see cref="IInvoiceAnalysisBroker{T}"/> interface.
+/// The <see cref="AzureFormRecognizerBroker"/> class.
 /// This class operates with the <see cref="AnalyzedDocument"/> type, from the <see cref="Azure.AI.FormRecognizer.DocumentAnalysis"/> namespace.
 /// This type is the result of the invoice analysis operation.
 /// The namespace <see cref="Azure.AI.FormRecognizer.DocumentAnalysis"/> is part of the <see cref="Azure.AI.FormRecognizer"/> package.
 /// This package is used to interact with the Azure Form Recognizer service.
 /// </summary>
-public class InvoiceAnalysisAzureAIBroker : IInvoiceAnalysisBroker<AnalyzedDocument>
+public class AzureFormRecognizerBroker
 {
     private readonly DocumentAnalysisClient client;
 
@@ -28,7 +27,7 @@ public class InvoiceAnalysisAzureAIBroker : IInvoiceAnalysisBroker<AnalyzedDocum
     /// <param name="keyVaultService"></param>
     /// TODO: this should be injected in the appsettings.json file.
     /// TODO 2: maybe it should only be instantiated for the method that uses it...?
-    public InvoiceAnalysisAzureAIBroker(IKeyVaultService keyVaultService)
+    public AzureFormRecognizerBroker(IKeyVaultService keyVaultService)
     {
         var cognitiveServicesUri = keyVaultService.GetSecret("arolariu-cognitive-services-endpoint");
         var cognitiveServicesConnString = keyVaultService.GetSecret("arolariu-cognitive-services-connString");
@@ -39,7 +38,12 @@ public class InvoiceAnalysisAzureAIBroker : IInvoiceAnalysisBroker<AnalyzedDocum
         client = new DocumentAnalysisClient(endpoint, credentials);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Populates the invoice with the analysis result.
+    /// </summary>
+    /// <param name="invoice"></param>
+    /// <param name="analyzedInvoiceResult"></param>
+    /// <returns></returns>
     public async ValueTask<Invoice> PopulateInvoiceWithAnalysisResultAsync(Invoice invoice, AnalyzedDocument analyzedInvoiceResult)
     {
         var items = await RetrieveInvoiceItemsFromAnalysisResultAsync(analyzedInvoiceResult);
@@ -91,7 +95,11 @@ public class InvoiceAnalysisAzureAIBroker : IInvoiceAnalysisBroker<AnalyzedDocum
         return invoice;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Retrieves the invoice items from the analysis result.
+    /// </summary>
+    /// <param name="analyzedInvoiceResult"></param>
+    /// <returns></returns>
     public async ValueTask<IEnumerable<InvoiceItem>> RetrieveInvoiceItemsFromAnalysisResultAsync(AnalyzedDocument analyzedInvoiceResult)
     {
         var invoiceItems = new List<InvoiceItem>();
@@ -141,7 +149,9 @@ public class InvoiceAnalysisAzureAIBroker : IInvoiceAnalysisBroker<AnalyzedDocum
                         item = item with { TotalPrice = Convert.ToDecimal(totalPriceField.Value.AsDouble()) };
                         Console.WriteLine($"Item Total Price: '{item.TotalPrice}', with confidence {totalPriceField.Confidence}");
                     }
-
+                    
+                    if (item.Quantity == -1) { item.Quantity = 1; } // Validation resets
+                    if (item.Price == -1) { item.Price = item.TotalPrice; }
                     invoiceItems.Add(item);
                 }
                 else
@@ -154,7 +164,11 @@ public class InvoiceAnalysisAzureAIBroker : IInvoiceAnalysisBroker<AnalyzedDocum
         return await ValueTask.FromResult(invoiceItems);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Retrieves the merchant information from the analysis result.
+    /// </summary>
+    /// <param name="analyzedInvoiceResult"></param>
+    /// <returns></returns>
     public async ValueTask<InvoiceMerchant> RetrieveMerchantInformationFromAnalysisResultAsync(AnalyzedDocument analyzedInvoiceResult)
     {
         var merchantName = string.Empty;
@@ -191,7 +205,11 @@ public class InvoiceAnalysisAzureAIBroker : IInvoiceAnalysisBroker<AnalyzedDocum
             });
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Sends the invoice to analysis.
+    /// </summary>
+    /// <param name="invoice"></param>
+    /// <returns></returns>
     public async ValueTask<AnalyzedDocument> SendInvoiceToAnalysisAsync(Invoice invoice)
     {
         var operation = await client.AnalyzeDocumentFromUriAsync(

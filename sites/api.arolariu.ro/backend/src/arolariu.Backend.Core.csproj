@@ -33,6 +33,8 @@
 
 	<!-- Other packages -->
 	<ItemGroup>
+		<PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.6" />
+		<PackageReference Include="Azure.AI.Translation.Text" Version="1.0.0-beta.1" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.35.2" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />

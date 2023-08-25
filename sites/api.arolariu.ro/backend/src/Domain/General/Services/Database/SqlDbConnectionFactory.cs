@@ -6,7 +6,10 @@ namespace arolariu.Backend.Core.Domain.General.Services.Database;
 
 /// <summary>
 /// The database connection factory.
+/// This factory is specific to the SQL database.
 /// This factory is used to create and release connections to the SQL database.
+/// The connections are stored in a connection pool.
+/// The connection pool is a <see cref="ConcurrentBag{T}"/> of <see cref="SqlConnection"/> instances.
 /// </summary>
 public class SqlDbConnectionFactory : IDbConnectionFactory<IDbConnection>
 {
@@ -23,7 +26,6 @@ public class SqlDbConnectionFactory : IDbConnectionFactory<IDbConnection>
     }
 
     /// <inheritdoc/>
-    /// <returns>An <see cref="IDbConnection"/> instance representing the connection to the SQL database.</returns>
     public IDbConnection CreateConnection()
     {
         if (_connectionPool.TryTake(out var connection))
@@ -41,7 +43,6 @@ public class SqlDbConnectionFactory : IDbConnectionFactory<IDbConnection>
     }
 
     /// <inheritdoc/>
-    /// <param name="connection">The <see cref="IDbConnection"/> connection to release.</param>
     public void ReleaseConnection(IDbConnection connection)
     {
         if (connection is SqlConnection sqlConnection)
@@ -61,4 +62,3 @@ public class SqlDbConnectionFactory : IDbConnectionFactory<IDbConnection>
         }
     }
 }
-

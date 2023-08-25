@@ -7,7 +7,10 @@ namespace arolariu.Backend.Core.Domain.General.Services.Database;
 
 /// <summary>
 /// The NoSQL Db Connection Factory class.
+/// This factory is specific to the NoSQL database.
 /// This factory is used to create and release connections to the NoSQL database.
+/// The connections are stored in a connection pool.
+/// The connection pool is a <see cref="ConcurrentBag{T}"/> of <see cref="CosmosClient"/> instances.
 /// </summary>
 public class NoSqlDbConnectionFactory : IDbConnectionFactory<CosmosClient>
 {
@@ -16,6 +19,8 @@ public class NoSqlDbConnectionFactory : IDbConnectionFactory<CosmosClient>
 
     /// <summary>
     /// Constructor.
+    /// This constructor initializes the connection string.
+    /// The constructor is DI-friendly and can be used with the <seealso cref="Microsoft.Extensions.DependencyInjection"/> framework.
     /// </summary>
     /// <param name="connectionString">The connection string for the NoSQL database.</param>
     /// <exception cref="ArgumentNullException">Thrown when the <paramref name="connectionString"/> is null.</exception>
@@ -25,7 +30,6 @@ public class NoSqlDbConnectionFactory : IDbConnectionFactory<CosmosClient>
     }
 
     /// <inheritdoc/>
-    /// <returns>A <see cref="CosmosClient"/> instance representing the connection to the NoSQL database.</returns>
     public CosmosClient CreateConnection()
     {
         if (_connectionPool.TryTake(out var connection))
@@ -36,10 +40,8 @@ public class NoSqlDbConnectionFactory : IDbConnectionFactory<CosmosClient>
     }
 
     /// <inheritdoc/>
-    /// <param name="connection">The <see cref="CosmosClient"/> connection to release.</param>
     public void ReleaseConnection(CosmosClient connection)
     {
         _connectionPool.Add(connection);
     }
 }
-
