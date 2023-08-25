@@ -64,10 +64,10 @@ public static class InvoiceMappings
             Quantity = -1,
             TotalPrice = -1,
             Price = -1,
-            RawName = "Unknown raw item name.",
-            ProductCode = "Unknown product code.",
-            QuantityUnit = "Unknown quantity unit.",
-            GenericName = "Unknown generic item name.",
+            RawName = "N/A",
+            ProductCode = "###",
+            QuantityUnit = "N/A",
+            GenericName = "N/A",
             Category = InvoiceItemCategory.NOT_DEFINED,
         };
     }

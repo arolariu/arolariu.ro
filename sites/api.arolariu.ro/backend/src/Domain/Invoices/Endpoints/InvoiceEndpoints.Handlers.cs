@@ -1,6 +1,6 @@
 ﻿using arolariu.Backend.Core.Domain.Invoices.DTOs;
 using arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
-using arolariu.Backend.Core.Domain.Invoices.Services.Foundation;
+using arolariu.Backend.Core.Domain.Invoices.Services.Orchestration;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +17,7 @@ public static partial class InvoiceEndpoints
     /// <summary>
     /// Creates a new invoice.
     /// </summary>
-    /// <param name="invoiceFoundationService"></param>
+    /// <param name="invoiceOrchestrationService"></param>
     /// <param name="invoiceDto"></param>
     /// <returns></returns>
     [SwaggerOperation(
@@ -32,21 +32,20 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The invoice could not be created due to the payload (photo field) being too large.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be created due to an internal service error.", typeof(ProblemDetails))]
     private static async Task<IResult> CreateNewInvoiceAsync(
-        [FromServices] IInvoiceFoundationService invoiceFoundationService,
+        [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
         [FromBody] CreateInvoiceDto invoiceDto)
     {
         try
         {
-            var invoice = await invoiceFoundationService.ConvertDtoToEntity(invoiceDto);
-            var analyzedInvoice = await invoiceFoundationService.CreateInvoiceObject(invoice);
-            return Results.Created($"/rest/invoices/{analyzedInvoice.id}", analyzedInvoice);
+            var invoice = await invoiceOrchestrationService.CreateInvoiceObjectFromDto(invoiceDto);
+            return Results.Created($"/rest/invoices/{invoice.id}", invoice);
         }
         catch (Exception ex)
         {
             return Results.Problem(
                 detail: ex.Message + ex.Source,
                 statusCode: StatusCodes.Status500InternalServerError,
-                title: "The invoices could NOT be retrieved due to an internal service error.");
+                title: "The invoices could NOT be created due to an internal service error.");
         }
     }
 
@@ -54,7 +53,8 @@ public static partial class InvoiceEndpoints
     /// Analyzes a specific invoice.
     /// </summary>
     /// <param name="id"></param>
-    /// <param name="invoiceFoundationService"></param>
+    /// <param name="options"></param>
+    /// <param name="invoiceOrchestrationService"></param>
     /// <returns></returns>
     [SwaggerOperation(
         Summary = "Analyzes a specific invoice from the system.",
@@ -68,12 +68,13 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be analyzed due to an internal service error.", typeof(ProblemDetails))]
     private static async Task<IResult> AnalyzeInvoiceAsync(
         [FromRoute] Guid id,
-        [FromServices] IInvoiceFoundationService invoiceFoundationService)
+        [FromBody] InvoiceAnalysisOptionsDto options,
+        [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService)
     {
         try
         {
-            var analyzedInvoice = await invoiceFoundationService.AnalyzeInvoiceObject(id);
-            return Results.Accepted(value: analyzedInvoice);
+            await invoiceOrchestrationService.AnalyzeInvoiceWithOptions(id, options);
+            return Results.Accepted(value: $"Invoice with id: {id} sent for analysis.");
         }
         catch (Exception ex)
         {
@@ -87,7 +88,7 @@ public static partial class InvoiceEndpoints
     /// <summary>
     /// Retrieves a specific invoice.
     /// </summary>
-    /// <param name="invoiceFoundationService"></param>
+    /// <param name="invoiceOrchestrationService"></param>
     /// <param name="id"></param>
     /// <returns></returns>
     [SwaggerOperation(
@@ -101,12 +102,12 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be retrieved due to the invoice not being found.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
     private static async Task<IResult> RetrieveSpecificInvoiceAsync(
-        [FromServices] IInvoiceFoundationService invoiceFoundationService,
+        [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
         [FromRoute] Guid id)
     {
         try
         {
-            var invoice = await invoiceFoundationService.ReadInvoiceObject(id);
+            var invoice = await invoiceOrchestrationService.ReadInvoiceObject(id);
             return Results.Ok(invoice);
         }
         catch (Exception ex)
@@ -121,7 +122,7 @@ public static partial class InvoiceEndpoints
     /// <summary>
     /// Retrieves all invoices.
     /// </summary>
-    /// <param name="invoiceFoundationService"></param>
+    /// <param name="invoiceOrchestrationService"></param>
     /// <returns></returns>
     [SwaggerOperation(
         Summary = "Retrieves all invoices from the system.",
@@ -132,11 +133,11 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status403Forbidden, "The invoices could not be retrieved due to insufficient permissions.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
     private static async Task<IResult> RetrieveAllInvoicesAsync(
-        [FromServices] IInvoiceFoundationService invoiceFoundationService)
+        [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService)
     {
         try
         {
-            var invoices = await invoiceFoundationService.ReadAllInvoiceObjects();
+            var invoices = await invoiceOrchestrationService.ReadAllInvoiceObjects();
             return Results.Ok(invoices);
         }
         catch (Exception ex)
@@ -151,7 +152,7 @@ public static partial class InvoiceEndpoints
     /// <summary>
     /// Updates a specific invoice.
     /// </summary>
-    /// <param name="invoiceFoundationService"></param>
+    /// <param name="invoiceOrchestrationService"></param>
     /// <param name="id"></param>
     /// <param name="invoicePayload"></param>
     /// <returns></returns>
@@ -166,7 +167,7 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be updated due to the invoice not being found.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be updated due to an internal service error.", typeof(ProblemDetails))]
     private static async Task<IResult> UpdateSpecificInvoiceAsync(
-        [FromServices] IInvoiceFoundationService invoiceFoundationService,
+        [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
         [FromRoute] Guid id,
         [FromBody] Invoice invoicePayload)
     {
@@ -174,7 +175,7 @@ public static partial class InvoiceEndpoints
         {
             // TODO: make this route RESTful.
             Console.WriteLine("Updating invoice with identifier: " + id);
-            await invoiceFoundationService.UpdateInvoiceObject(invoicePayload);
+            await invoiceOrchestrationService.UpdateInvoiceObject(invoicePayload);
             return Results.Accepted();
         }
         catch (Exception ex)
@@ -189,7 +190,7 @@ public static partial class InvoiceEndpoints
     /// <summary>
     /// Deletes a specific invoice.
     /// </summary>
-    /// <param name="invoiceFoundationService"></param>
+    /// <param name="invoiceOrchestrationService"></param>
     /// <param name="id"></param>
     /// <returns></returns>
     [SwaggerOperation(
@@ -203,12 +204,12 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be deleted due to the invoice not being found.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be deleted due to an internal service error.", typeof(ProblemDetails))]
     private static async Task<IResult> DeleteInvoiceAsync(
-        [FromServices] IInvoiceFoundationService invoiceFoundationService,
+        [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
         [FromRoute] Guid id)
     {
         try
         {
-            await invoiceFoundationService.DeleteInvoiceObject(id);
+            await invoiceOrchestrationService.DeleteInvoiceObject(id);
             return Results.NoContent();
         }
         catch (Exception ex)

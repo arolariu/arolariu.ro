@@ -1,12 +1,12 @@
 ﻿using arolariu.Backend.Core.Domain.General.Services.Database;
 using arolariu.Backend.Core.Domain.General.Services.KeyVault;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
-using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoicePhotoStorageBroker;
 using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceSqlBroker;
-using arolariu.Backend.Core.Domain.Invoices.Services.Foundation;
+using arolariu.Backend.Core.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
+using arolariu.Backend.Core.Domain.Invoices.Services.Foundation.InvoiceStorage;
+using arolariu.Backend.Core.Domain.Invoices.Services.Orchestration;
 
-using Azure.AI.FormRecognizer.DocumentAnalysis;
 using Azure.Identity;
 
 using Microsoft.AspNetCore.Builder;
@@ -133,13 +133,17 @@ internal static class WebApplicationBuilderExtensions
     {
         var services = builder.Services;
 
-        // Brokers:
-        services.AddSingleton<IInvoiceAnalysisBroker<AnalyzedDocument>, InvoiceAnalysisAzureAIBroker>();
-        services.AddSingleton<IInvoiceStorageBroker, InvoiceAzureStorageBroker>();
-        services.AddSingleton<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
+        // Broker services:
+        services.AddScoped<IInvoiceStorageBroker, InvoiceAzureStorageBroker>();
+        services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
 
         // Foundation services:
-        services.AddSingleton<IInvoiceFoundationService, InvoiceFoundationService<AnalyzedDocument>>();
+        services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
+        services.AddScoped<IInvoiceAnalysisFoundationService, InvoiceAnalysisFoundationService>();
+
+        // Orchestration services:
+        services.AddScoped<IInvoiceOrchestrationService, InvoiceOrchestrationService>();
+
         return services;
     }
 }

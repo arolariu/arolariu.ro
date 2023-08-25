@@ -2,6 +2,9 @@
 
 using Swashbuckle.AspNetCore.SwaggerGen;
 
+using System;
+using System.Collections.Generic;
+
 namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 /// <summary>
@@ -17,6 +20,7 @@ public class SwaggerFilterService : IDocumentFilter
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
         FilterEndpointsFromDiscovery(swaggerDoc);
+        AddExternalDocumentation(swaggerDoc);
     }
 
     /// <summary>
@@ -33,5 +37,18 @@ public class SwaggerFilterService : IDocumentFilter
 
         foreach (var endpoint in ignoredEndpoints)
             swaggerDoc.Paths.Remove(endpoint);
+    }
+
+    /// <summary>
+    /// Adds the API external documentation to the Swagger document.
+    /// </summary>
+    /// <param name="swaggerDoc"></param>
+    private static void AddExternalDocumentation(OpenApiDocument swaggerDoc)
+    {
+        swaggerDoc.ExternalDocs = new OpenApiExternalDocs()
+        {
+            Description = "Check the API docs here!",
+            Url = new Uri("https://docs.arolariu.ro"),
+        };
     }
 }

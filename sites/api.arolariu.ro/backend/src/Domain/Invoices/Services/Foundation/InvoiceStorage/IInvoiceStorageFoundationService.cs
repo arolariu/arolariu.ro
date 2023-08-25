@@ -1,19 +1,16 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.Brokers;
-using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
-using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoicePhotoStorageBroker;
-using arolariu.Backend.Core.Domain.Invoices.DTOs;
+﻿using arolariu.Backend.Core.Domain.Invoices.DTOs;
 using arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
 
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Services.Foundation;
+namespace arolariu.Backend.Core.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 /// <summary>
-/// The invoice foundation service interface represents the base service for the invoice domain.
+/// The invoice storage foundation service interface represents the foundation storage service for the invoice domain.
 /// </summary>
-public interface IInvoiceFoundationService
+public interface IInvoiceStorageFoundationService
 {
     /// <summary>
     /// Converts the invoice DTO to an invoice entity.
@@ -29,13 +26,6 @@ public interface IInvoiceFoundationService
     /// <param name="invoice"></param>
     /// <returns></returns>
     public Task<Invoice> CreateInvoiceObject(Invoice invoice);
-
-    /// <summary>
-    /// Analyze an invoice object.
-    /// </summary>
-    /// <param name="identifier"></param>
-    /// <returns></returns>
-    public Task<Invoice> AnalyzeInvoiceObject(Guid identifier);
 
     /// <summary>
     /// Reads an invoice object.

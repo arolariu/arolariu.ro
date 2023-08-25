@@ -1,15 +1,22 @@
 {
   "profiles": {
-    "Docker": {
-      "commandName": "Docker",
-      "launchBrowser": true,
+    "Console App": {
+      "commandName": "Project",
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/",
+      "hotReloadEnabled": true,
+      "nativeDebugging": true,
+      "use64Bit": true,
+      "useSSL": true
+    },
+    "Docker App": {
+      "commandName": "Docker",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/",
+      "hotReloadEnabled": true,
       "publishAllPorts": true,
-      "useSSL": true,
-      "environmentVariables": {
-        "azKeyVault": "https://arolariukv.vault.azure.net/"
-      }
+      "launchBrowser": true,
+      "use64Bit": true,
+      "useSSL": true
     }
   },
-  "$schema": "https://json.schemastore.org/launchsettings.json"
+  "$schema": "https://json.schemastore.org/launchsettings.json",
 }
