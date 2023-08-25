@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace arolariu.Backend.Core.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 /// <summary>
-/// The createdInvoice foundation service.
+/// The Invoice Storage foundation service.
 /// </summary>
 public class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
 {

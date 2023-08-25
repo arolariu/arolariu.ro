@@ -17,12 +17,15 @@ namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 /// <summary>
 /// Swagger service options and configuration.
+/// This class is used to configure the swagger service, and to provide the options for the swagger UI.
+/// The swagger UI is available at the following URL: https://api.arolariu.ro/index.html
+/// Swagger JSON is available at the following URL: https://api.arolariu.ro/swagger/v1/swagger.json
 /// </summary>
 internal static class SwaggerConfigurationService
 {
-
     /// <summary>
     /// Get the swagger UI options.
+    /// This method is used to configure the swagger UI.
     /// </summary>
     /// <returns>An instance of <see cref="SwaggerUIOptions"/>.</returns>
     internal static SwaggerUIOptions GetSwaggerUIOptions()
@@ -62,6 +65,9 @@ internal static class SwaggerConfigurationService
 
     /// <summary>
     /// Get the swagger generator options.
+    /// This method is used to configure the swagger generator.
+    /// The swagger generator is used to generate the swagger JSON file.
+    /// The swagger JSON file is then used by the swagger UI to display the API documentation.
     /// </summary>
     /// <returns>An instance of <see cref="Action{SwaggerGenOptions}"/>.</returns>
     internal static Action<SwaggerGenOptions> GetSwaggerGenOptions()

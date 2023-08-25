@@ -8,7 +8,9 @@ using System.Collections.Generic;
 namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 /// <summary>
-/// The swagger filter service filters endpoints from discovery.
+/// The swagger filter service represents the service that filters the swagger document.
+/// This service is used to filter the swagger document and remove the endpoints that are not needed.
+/// This service is also used to add external documentation to the swagger document.
 /// </summary>
 public class SwaggerFilterService : IDocumentFilter
 {
