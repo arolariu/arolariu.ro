@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace arolariu.Backend.Core.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 /// <summary>
-/// The invoice foundation service.
+/// The createdInvoice foundation service.
 /// </summary>
 public class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
 {
@@ -50,13 +50,6 @@ public class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
     }
 
     /// <inheritdoc/>
-    public async Task<Invoice> CreateInvoiceObject(Invoice invoice)
-    {
-        await invoiceNoSqlBroker.CreateInvoiceAsync(invoice);
-        return invoice;
-    }
-
-    /// <inheritdoc/>
     public async Task<Invoice> ReadInvoiceObject(Guid identifier)
     {
         var invoice = await invoiceNoSqlBroker.ReadInvoiceAsync(identifier);
@@ -82,5 +75,11 @@ public class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
         await invoiceNoSqlBroker.DeleteInvoiceAsync(identifier);
     }
 
-
+    /// <inheritdoc/>
+    public async Task<Invoice> CreateInvoiceObject(Invoice invoice)
+    {
+        await invoiceNoSqlBroker.CreateInvoiceAsync(invoice);
+        var createdInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(invoice.id);
+        return createdInvoice;
+    }
 }

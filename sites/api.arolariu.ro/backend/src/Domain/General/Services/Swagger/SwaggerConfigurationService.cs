@@ -142,20 +142,25 @@ internal static class SwaggerConfigurationService
                     },
                 },
             });
+
             options.MapType<IEnumerable<KeyValuePair<string, string>>>(() => new OpenApiSchema()
             {
-                Type = "object",
-                Properties = new Dictionary<string, OpenApiSchema>()
+                Type = "array",
+                Items = new OpenApiSchema()
                 {
-                    ["key"] = new OpenApiSchema()
+                    Type = "object",
+                    Properties = new Dictionary<string, OpenApiSchema>()
                     {
-                        Type = "string",
-                        Description = "The key of the pair.",
-                    },
-                    ["value"] = new OpenApiSchema()
-                    {
-                        Type = "string",
-                        Description = "The value of the pair.",
+                        ["key"] = new OpenApiSchema()
+                        {
+                            Type = "string",
+                            Description = "The key of the pair.",
+                        },
+                        ["value"] = new OpenApiSchema()
+                        {
+                            Type = "string",
+                            Description = "The value of the pair.",
+                        },
                     },
                 },
             });
