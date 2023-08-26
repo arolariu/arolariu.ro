@@ -131,28 +131,28 @@ export default async function Footer() {
 							<ul className="mt-2 space-y-2">
 								<li>
 									<a
-										href="/"
+										href="https://api.arolariu.ro"
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										<code>api.arolariu.ro</code>
 									</a>
 								</li>
 								<li>
 									<a
-										href="/"
+										href="https://about.arolariu.ro"
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										<code>about.arolariu.ro</code>
 									</a>
 								</li>
 								<li>
 									<a
-										href="/"
+										href="https://dev.arolariu.ro"
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										<code>dev.arolariu.ro</code>
 									</a>
 								</li>
 								<li>
 									<a
-										href="/"
+										href="https://docs.arolariu.ro"
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										<code>docs.arolariu.ro</code>
 									</a>

@@ -1,6 +1,10 @@
 /** @format */
 
+import RenderForbiddenScreen from "@/app/domains/RenderForbiddenScreen";
+import {authOptions} from "@/lib/authOptions";
 import {Metadata} from "next";
+import {getServerSession} from "next-auth";
+import {RenderViewInvoicePage} from "./island";
 
 interface Props {
 	params: {id: string};
@@ -12,10 +16,14 @@ export const metadata: Metadata = {
 };
 
 export default async function ViewInvoicePage({params}: Props) {
-	console.log(params);
+	const session = await getServerSession(authOptions);
 	return (
 		<section className="overflow-hidden dark:text-gray-300">
-			<h1> HELLO WORLD! </h1>
+			{session ? (
+				<RenderViewInvoicePage session={session} id={params.id} />
+			) : (
+				<RenderForbiddenScreen />
+			)}
 		</section>
 	);
 }

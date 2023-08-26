@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 
 export default async function DomainsHomepage() {
 	return (
-		<section className="dark:text-gray-300">
-			<div className="container px-5 py-24 mx-auto">
+		<main className="dark:text-gray-300">
+			<section className="container px-5 py-24 mx-auto">
 				<div className="flex flex-col">
 					<div className="h-1 overflow-hidden bg-gray-200 rounded">
 						<div className="w-24 h-full bg-indigo-500"></div>
@@ -41,7 +41,7 @@ export default async function DomainsHomepage() {
 						imageUrl={invoiceManagementSystemPhoto.src}
 					/>
 				</div>
-			</div>
-		</section>
+			</section>
+		</main>
 	);
 }

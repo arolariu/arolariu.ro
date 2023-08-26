@@ -1,9 +1,7 @@
-/** @format */
-
 "use client";
 
+import useSendInvoiceToAnalysis from "@/hooks/useSendInvoiceToAnalysis";
 import Link from "next/link";
-import {useEffect, useState} from "react";
 
 interface Props {
 	invoiceIdentifier: string;
@@ -12,50 +10,40 @@ interface Props {
 }
 
 export default function AnalyzeInvoiceProcess({invoiceIdentifier, setCurrentStep}: Props) {
-	const [invoice, setInvoice] = useState(null);
+	const invoiceWasSentToAnalysis = useSendInvoiceToAnalysis(invoiceIdentifier);
 
-	useEffect(() => {
-		const getInvoice = async () => {
-			const response = await fetch(`https://api.arolariu.ro/rest/invoices/${invoiceIdentifier}`);
-			const invoice = await response.json();
-			setInvoice(invoice);
-		};
-		getInvoice();
-	}, [invoiceIdentifier]);
-
-	if (invoice != null) {
+	if (invoiceWasSentToAnalysis) {
 		return (
-			<section className="mx-auto flex flex-col items-center">
-				<div className="mb-6 w-full px-4 sm:p-4">
-					<h1 className="mb-2 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-center text-3xl font-medium text-transparent">
-						Analysis was completed! 🪄
+			<section className="flex flex-col items-center mx-auto">
+				<div className="w-full px-4 mb-6 sm:p-4">
+					<h1 className="mb-2 text-3xl font-medium text-center text-transparent bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text">
+						Invoice was sent for analysis! 🪄
 					</h1>
-					<p className="text-center leading-relaxed">
-						Head over to the generated invoice page to view the full details of the analysis.
+					<p className="leading-relaxed text-center">
+						Head over to the generated invoice page to view the full details of the analysis. <br />
+						Please bear in mind that the analysis may take up to 3 minutes to complete.
 					</p>
 					<br />
-					<p className="text-center leading-relaxed">
+					<p className="leading-relaxed text-center">
 						Thank you for using our service! 🎊🎊
 						<br />
 						<small>
-							Identifier: <em>{invoice.id}</em>
+							Identifier: <em>{invoiceIdentifier}</em>
 						</small>
 					</p>
 				</div>
-				<div className="flex w-full flex-row items-center justify-center p-4 sm:w-1/2 lg:w-1/4">
-					<Link href={`./view-invoice/${invoice.id}`} className="btn btn-primary mr-4">
+				<div className="flex flex-row items-center justify-center w-full p-4 sm:w-1/2 lg:w-1/4">
+					<Link href={`./view-invoice/${invoiceIdentifier}`} className="mr-4 btn btn-primary">
 						View analysis
 					</Link>
 					<Link
 						href="./create-invoice"
-						className="btn btn-secondary ml-4"
+						className="ml-4 btn btn-secondary"
 						onClick={() => setCurrentStep(1)}>
-						Upload new invoice
+						Upload another invoice
 					</Link>
 				</div>
 			</section>
 		);
-	} else {
-		return null;
 	}
 }

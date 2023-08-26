@@ -14,17 +14,19 @@ export default interface Invoice {
 	totalTax: number;
 	description: string;
 	isImportant: boolean;
+	possibleRecipes: string[];
+	possibleAllergens: string[];
+	estimatedSurvivalDays: number;
 	userIdentifier: string;
 	merchant: Merchant;
 	items: Item[];
-	additionalMetadata: [
-		{
-			key: string;
-			value: string;
-		},
-	];
+	additionalMetadata: KeyValuePair<string, string>[];
 }
 
+export type KeyValuePair<TKey, TValue> = {
+	key: TKey;
+	value: TValue;
+};
 export interface Merchant {
 	name: string;
 	address: string;
@@ -69,4 +71,10 @@ export enum ItemCategory {
 	PERSONAL_CARE,
 	MEDICINE,
 	OTHER,
+}
+
+export interface InvoiceAnalysisOptions {
+	completeAnalysis: boolean;
+	invoiceOnly: boolean;
+	invoiceItemsOnly: boolean;
 }

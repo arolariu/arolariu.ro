@@ -15,8 +15,8 @@ export default async function ViewInvoicesPage() {
 	const session = await getServerSession(authOptions);
 
 	return (
-		<section className="dark:text-gray-300">
+		<main className="dark:text-gray-300">
 			{session ? <RenderViewInvoicesPage session={session} /> : <RenderForbiddenScreen />}
-		</section>
+		</main>
 	);
 }

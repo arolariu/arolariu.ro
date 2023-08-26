@@ -37,7 +37,9 @@
 		"**/*.ts",
 		"**/*.tsx",
 		"src/components/my-profile/RenderProfileMenu.tsx",
-		"src/components/my-profile/RenderProfileMenuItem.tsx"
+		"src/components/my-profile/RenderProfileMenuItem.tsx",
+		"src/components/domains/invoices/view-invoice/ViewInvoiceImageModal.jsx",
+		"src/components/domains/invoices/edit-invoice/EditInvoiceItemCard.tsx"
 	],
 	"exclude": ["node_modules"]
 }
