@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 
 /// <summary>
-/// The Azure OpenAI broker service.
+/// The Azure OpenAI broker service
 /// </summary>
 public class AzureOpenAiBroker
 {
