@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /** @format */
 
 import type {NextAuthOptions} from "next-auth";
@@ -14,6 +15,13 @@ const prisma = new PrismaClient();
 
 export const authOptions: NextAuthOptions = {
 	secret: process.env.NEXTAUTH_SECRET ?? "test-environment",
+	callbacks: {
+		session({session, token, user}) {
+			session.user.identifier = user.id;
+			return session;
+		},
+	},
+
 	adapter: PrismaAdapter(prisma) as Adapter,
 	providers: [
 		GitHubProvider({

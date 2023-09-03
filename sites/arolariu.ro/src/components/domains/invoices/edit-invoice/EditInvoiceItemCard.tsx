@@ -29,14 +29,10 @@ export default function EditInvoiceItemCard({item}: Props) {
 					<span className="text-sm font-semibold">Product Code</span>
 				</div>
 				<div className="flex flex-col mx-auto text-center">
-					<span
-						className="text-sm font-semibold tooltip tooltip-top"
-						data-tip={itemState.rawName as string}>
+					<span className="text-sm font-semibold tooltip tooltip-top" data-tip={itemState.rawName}>
 						{capitalizeWords(first15(itemState.rawName))}
 					</span>
-					<span
-						className="text-sm font-semibold tooltip tooltip-bottom"
-						data-tip={itemState.genericName as string}>
+					<span className="text-sm font-semibold tooltip tooltip-bottom" data-tip={itemState.genericName}>
 						{capitalizeWords(first15(itemState.genericName))}
 					</span>
 					<span className="text-sm font-semibold">{ItemCategory[itemState.category]}</span>
@@ -48,9 +44,7 @@ export default function EditInvoiceItemCard({item}: Props) {
 				</div>
 			</div>
 			<div className="hidden gap-2 mt-2 group-hover:flex group-hover:flex-col group-hover:transition group-hover:delay-1000 group-hover:duration-1000 group-hover:ease-in lg:flex lg:flex-col">
-				<dialog
-					className="modal modal-bottom backdrop-blur-sm sm:modal-middle"
-					ref={editItemDialogRef}>
+				<dialog className="modal modal-bottom backdrop-blur-sm sm:modal-middle" ref={editItemDialogRef}>
 					<form method="dialog" className="form-control modal-box">
 						<center className="mb-4 font-black">⚙️ Item Editor</center>
 						<label htmlFor="rawName">Raw Name</label>
@@ -143,9 +137,7 @@ export default function EditInvoiceItemCard({item}: Props) {
 						</div>
 					</form>
 				</dialog>
-				<dialog
-					className="modal modal-bottom backdrop-blur-sm sm:modal-middle"
-					ref={deleteItemDialogref}>
+				<dialog className="modal modal-bottom backdrop-blur-sm sm:modal-middle" ref={deleteItemDialogref}>
 					<form method="dialog" className="modal-box">
 						<center className="mb-2 font-black">⚠️ Delete item: {itemState.rawName} ?</center>
 						<center className="mb-2">

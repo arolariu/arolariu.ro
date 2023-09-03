@@ -18,7 +18,7 @@ export default async function ProfilePage() {
 		return redirect("/");
 	} else {
 		return (
-			<main className="container mx-auto flex">
+			<main className="container flex mx-auto">
 				<RenderDynamicProfilePage session={session} />
 			</main>
 		);

@@ -1,17 +1,19 @@
+import {useStore} from "@/hooks/stateStore";
 import Image from "next/image";
-import {useState} from "react";
+import {useRef, useState} from "react";
 
 // TODO: fix the preview zoom having weird behavior when the mouse hovers near the edges of the image.
-// TODO: convert this file to TSX (typescript).
 
-export const ViewInvoiceImageModal = ({invoice}) => {
-	const [isFrozen, setIsFrozen] = useState(false);
+export const ViewInvoiceImageModal = () => {
+	const modalReference = useRef<HTMLDialogElement | null>(null);
+	const [invoice] = useStore((state) => [state.selectedInvoice]);
+	const [isFrozen, setIsFrozen] = useState<boolean>(false);
 	const [zoomStyle, setZoomStyle] = useState({
 		transform: "scale(1)",
 		transformOrigin: "0 0",
 	});
 
-	const handleMouseMove = (event) => {
+	const handleMouseMove = (event: any) => {
 		if (isFrozen) return;
 
 		const containerRect = event.currentTarget.getBoundingClientRect();
@@ -44,11 +46,11 @@ export const ViewInvoiceImageModal = ({invoice}) => {
 		}
 	};
 
-	const handleImageClick = (event) => {
+	const handleImageClick = (event: any) => {
 		if (event.target.tagName === "IMG") {
 			setIsFrozen(!isFrozen);
 		} else if (event.target.tagName === "DIALOG") {
-			window.invoiceModal.close();
+			modalReference.current?.close();
 			setIsFrozen(false);
 		}
 	};
@@ -56,11 +58,12 @@ export const ViewInvoiceImageModal = ({invoice}) => {
 	if (invoice) {
 		return (
 			<div className="flex flex-wrap justify-center mx-auto mt-4">
-				<button className="btn btn-secondary" onClick={() => window.invoiceModal.showModal()}>
+				<button className="btn btn-secondary" onClick={() => modalReference.current?.showModal()}>
 					Preview uploaded receipt photo
 				</button>
 				<dialog
 					id="invoiceModal"
+					ref={modalReference}
 					className="modal modal-bottom backdrop-blur-sm sm:modal-middle"
 					onClick={handleImageClick}>
 					<form method="dialog" className="modal-box">

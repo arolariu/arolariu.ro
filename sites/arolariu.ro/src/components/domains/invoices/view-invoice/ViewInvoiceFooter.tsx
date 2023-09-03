@@ -1,16 +1,13 @@
 "use client";
 
-import Invoice from "@/types/Invoice";
+import {useStore} from "@/hooks/stateStore";
 import Link from "next/link";
 import {useState} from "react";
 
-interface Props {
-	invoice: Invoice;
-}
-
-export default function ViewInvoiceFooter({invoice}: Props) {
-	const {totalAmount, currency, id} = invoice;
+export default function ViewInvoiceFooter() {
+	const [invoice] = useStore((state) => [state.selectedInvoice]);
 	const [isImportant, setIsImportant] = useState<boolean>(false);
+	const {totalAmount, currency, id} = invoice;
 
 	return (
 		<div className="flex">

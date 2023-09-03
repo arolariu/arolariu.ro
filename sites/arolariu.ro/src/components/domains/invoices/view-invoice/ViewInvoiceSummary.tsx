@@ -1,10 +1,7 @@
-import Invoice from "@/types/Invoice";
+import {useStore} from "@/hooks/stateStore";
 
-interface Props {
-	invoice: Invoice;
-}
-
-export const ViewInvoiceSummary = ({invoice}: Props) => {
+export const ViewInvoiceSummary = () => {
+	const [invoice] = useStore((state) => [state.selectedInvoice]);
 	const {
 		possibleAllergens,
 		uploadedDate,
@@ -37,9 +34,7 @@ export const ViewInvoiceSummary = ({invoice}: Props) => {
 				💚 ESTIMATED SURVIVAL (<strong>1 adult</strong>): <em>{estimatedSurvivalDays} days</em>
 			</p>
 			<center className="mx-auto mt-4 mb-2">
-				<em>
-					If you feel that some of the details are not correct, feel free to edit the invoice.
-				</em>
+				<em>If you feel that some of the details are not correct, feel free to edit the invoice.</em>
 			</center>
 			<div className="flex py-2 border-t border-b border-gray-200">
 				<span>Items Purchased</span>
@@ -53,9 +48,7 @@ export const ViewInvoiceSummary = ({invoice}: Props) => {
 			</div>
 			<div className="flex py-2 border-b border-gray-200">
 				<span>Invoice Last Analysis</span>
-				<span className="ml-auto dark:text-gray-300">
-					{new Date(lastAnalyzedDate).toUTCString()}
-				</span>
+				<span className="ml-auto dark:text-gray-300">{new Date(lastAnalyzedDate).toUTCString()}</span>
 			</div>
 			<div className="flex py-2 border-b border-gray-200">
 				<span>Invoice Uploaded Date</span>

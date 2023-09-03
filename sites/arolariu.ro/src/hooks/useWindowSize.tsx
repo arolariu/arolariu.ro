@@ -1,24 +1,31 @@
-import {useLayoutEffect, useState} from "react";
+import {useEffect, useState} from "react";
 
-const useWindowSize = () => {
-	const [windowSize, setWindowSize] = useState({width: 0, height: 0});
+export default function useWindowSize() {
+	const [windowSize, setWindowSize] = useState<{
+		width: number | undefined;
+		height: number | undefined;
+	}>({
+		width: undefined,
+		height: undefined,
+	});
 
-	const handleSize = () => {
-		setWindowSize({
-			width: window.innerWidth,
-			height: window.innerHeight,
-		});
+	useEffect(() => {
+		function handleResize() {
+			setWindowSize({
+				width: window.innerWidth,
+				height: window.innerHeight,
+			});
+		}
+
+		window.addEventListener("resize", handleResize);
+		handleResize();
+
+		return () => window.removeEventListener("resize", handleResize);
+	}, []); // Empty array ensures that effect is only run on mount
+
+	return {
+		windowSize,
+		isMobile: typeof windowSize?.width === "number" && windowSize?.width < 768,
+		isDesktop: typeof windowSize?.width === "number" && windowSize?.width >= 768,
 	};
-
-	useLayoutEffect(() => {
-		handleSize();
-
-		window.addEventListener("resize", handleSize);
-
-		return () => window.removeEventListener("resize", handleSize);
-	}, []);
-
-	return windowSize;
-};
-
-export default useWindowSize;
+}

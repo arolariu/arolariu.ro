@@ -13,12 +13,12 @@ interface Props {
 
 export default function RenderDynamicProfilePage({session}: Props) {
 	const [currentTab, setCurrentTab] = useState(1);
-	const windowSize = useWindowSize();
+	const {windowSize} = useWindowSize();
 
 	// TODO: create overlay for small screen;
 	// TODO: populate overlays with options;
 
-	if (windowSize.width > 1280 /* We have a big screen, overlay for big screen */) {
+	if (windowSize.width! > 1280 /* We have a big screen, overlay for big screen */) {
 		return (
 			<section className="container grid grid-cols-5">
 				<RenderProfileMenuScreen
@@ -29,7 +29,7 @@ export default function RenderDynamicProfilePage({session}: Props) {
 				<RenderProfileMenuContent session={session} currentStep={currentTab} />
 			</section>
 		);
-	} else if (windowSize.width < 1280 /* We have a small screen, overlay for small screen  */) {
+	} else if (windowSize.width! < 1280 /* We have a small screen, overlay for small screen  */) {
 		return (
 			<section>
 				<h1 className="mx-auto text-3xl font-black"> Hello world!</h1>

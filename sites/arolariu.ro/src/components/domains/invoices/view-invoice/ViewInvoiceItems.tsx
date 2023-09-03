@@ -1,9 +1,8 @@
-import Invoice, {Item} from "@/types/Invoice";
+import {useStore} from "@/hooks/stateStore";
+import {Item} from "@/types/Invoice";
 
-interface Props {
-	invoice: Invoice;
-}
-export default function ViewInvoiceItems({invoice}: Props) {
+export default function ViewInvoiceItems() {
+	const [invoice] = useStore((state) => [state.selectedInvoice]);
 	const items: Item[] = invoice.items;
 
 	if (items) {
@@ -19,7 +18,7 @@ export default function ViewInvoiceItems({invoice}: Props) {
 				</thead>
 				<tbody>
 					{items.map((item, index) => (
-						<tr key={index} className={`${index % 2 ? "bg-gray-900" : ""} text-center`}>
+						<tr key={index} className="text-center odd:bg-gray-900">
 							<td>{item.rawName}</td>
 							<td>{item.price}</td>
 							<td>{item.quantity}</td>

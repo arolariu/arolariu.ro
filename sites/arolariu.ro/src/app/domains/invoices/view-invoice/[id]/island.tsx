@@ -7,8 +7,7 @@ import {ViewInvoiceHeader} from "@/components/domains/invoices/view-invoice/View
 import {ViewInvoiceImageModal} from "@/components/domains/invoices/view-invoice/ViewInvoiceImageModal";
 import ViewInvoiceItems from "@/components/domains/invoices/view-invoice/ViewInvoiceItems";
 import {ViewInvoiceSummary} from "@/components/domains/invoices/view-invoice/ViewInvoiceSummary";
-import useFetchInvoiceWithIdForUser from "@/hooks/useFetchInvoiceWithIdForUser";
-import Invoice from "@/types/Invoice";
+import useFetchInvoiceForUser from "@/hooks/useFetchInvoiceForUser";
 import {Player} from "@lottiefiles/react-lottie-player";
 import {Session, User} from "next-auth";
 import {useState} from "react";
@@ -18,29 +17,11 @@ interface IslandProps {
 	id: string;
 }
 
-interface ComponentProps {
-	invoice: Invoice;
-	currentStep: number;
-}
-
-const ViewInvoiceInformation = ({invoice, currentStep}: ComponentProps) => {
-	switch (currentStep) {
-		case 1:
-			return <ViewInvoiceSummary invoice={invoice} />;
-		case 2:
-			return <ViewInvoiceItems invoice={invoice} />;
-		case 3:
-			return <ViewInvoiceAdditionalInformation invoice={invoice} />;
-		default:
-			return null; // TODO: we might want to add a default error component here
-	}
-};
-
 export function RenderViewInvoicePage({session, id}: IslandProps) {
-	const invoice = useFetchInvoiceWithIdForUser(id, session.user as User);
+	const {invoice, isLoading} = useFetchInvoiceForUser(session.user as User, id);
 	const [currentStep, setCurrentStep] = useState<number>(1);
 
-	if (invoice) {
+	if (invoice && !isLoading) {
 		return (
 			<div className="container py-12 mx-auto">
 				<div className="flex flex-wrap justify-center mx-auto">
@@ -52,23 +33,19 @@ export function RenderViewInvoicePage({session, id}: IslandProps) {
 							{invoice.description}
 						</h1>
 						<ViewInvoiceHeader currentStep={currentStep} setCurrentStep={setCurrentStep} />
-						<ViewInvoiceInformation currentStep={currentStep} invoice={invoice} />
-						<ViewInvoiceFooter invoice={invoice} />
+						{currentStep === 1 && <ViewInvoiceSummary />}
+						{currentStep === 2 && <ViewInvoiceItems />}
+						{currentStep === 3 && <ViewInvoiceAdditionalInformation />}
+						<ViewInvoiceFooter />
 					</div>
 				</div>
-				<ViewInvoiceImageModal invoice={invoice} />
+				<ViewInvoiceImageModal />
 			</div>
 		);
 	} else {
 		return (
 			<div className="container flex flex-col mx-auto">
-				<Player
-					autoplay
-					loop
-					src={animationData}
-					speed={0.4}
-					className="container mx-auto flex w-[45%]"
-				/>
+				<Player autoplay loop src={animationData} speed={0.4} className="container mx-auto flex w-[45%]" />
 				<h1 className="items-center justify-center mx-auto mb-8 text-3xl font-medium text-center text-transparent bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text">
 					Trying to find invoice with id:
 					<strong className="block">{id}</strong>
