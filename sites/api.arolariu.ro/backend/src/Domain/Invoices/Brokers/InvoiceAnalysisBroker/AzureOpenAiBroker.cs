@@ -1,8 +1,9 @@
-﻿using arolariu.Backend.Core.Domain.General.Services.KeyVault;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
+﻿using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
 
 using Azure;
 using Azure.AI.OpenAI;
+
+using Microsoft.Extensions.Configuration;
 
 using System;
 using System.Collections.Generic;
@@ -22,11 +23,14 @@ public class AzureOpenAiBroker
     /// <summary>
     /// Constructor.
     /// </summary>
-    /// <param name="keyVaultService"></param>
-    public AzureOpenAiBroker(IKeyVaultService keyVaultService)
+    /// <param name="configuration"></param>
+    public AzureOpenAiBroker(IConfiguration configuration)
     {
-        var openAiKey = keyVaultService.GetSecret("OpenAiKey");
-        var openAiEndpoint = keyVaultService.GetSecret("OpenAiEndpoint");
+        var openAiEndpoint = configuration["Azure:OpenAI:EndpointName"]
+            ?? throw new ArgumentNullException(nameof(configuration));
+
+        var openAiKey = configuration["Azure:OpenAI:EndpointKey"]
+            ?? throw new ArgumentNullException(nameof(configuration));
 
         openAIClient = new OpenAIClient(
             new Uri(openAiEndpoint),

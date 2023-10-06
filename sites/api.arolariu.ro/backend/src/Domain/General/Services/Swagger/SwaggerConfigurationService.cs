@@ -10,6 +10,7 @@ using Swashbuckle.AspNetCore.SwaggerUI;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 
@@ -21,6 +22,7 @@ namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
 /// The swagger UI is available at the following URL: https://api.arolariu.ro/index.html
 /// Swagger JSON is available at the following URL: https://api.arolariu.ro/swagger/v1/swagger.json
 /// </summary>
+[ExcludeFromCodeCoverage] // Infrastructure code is not tested currently.
 internal static class SwaggerConfigurationService
 {
     /// <summary>
@@ -79,6 +81,7 @@ internal static class SwaggerConfigurationService
             const string licenseInformation = "<hr/>\r\n\r\n <em>Copyright © 2023 ALEXANDRU-RAZVAN OLARIU</em>\r\n\r\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\r\n\r\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\r\n\r\nTHE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.";
 
             const string swaggerDocDescription = welcomeInformaiton + generalInformation + licenseInformation;
+#pragma warning disable S1075 // URIs should not be hardcoded
             options.SwaggerDoc("v1", new OpenApiInfo()
             {
                 Title = "Public API — AROLARIU.RO",
@@ -91,6 +94,7 @@ internal static class SwaggerConfigurationService
                 },
                 TermsOfService = new Uri("https://api.arolariu.ro/terms"),
             });
+#pragma warning restore S1075 // URIs should not be hardcoded
             options.EnableAnnotations();
             options.UseInlineDefinitionsForEnums();
             options.DocumentFilter<SwaggerFilterService>();

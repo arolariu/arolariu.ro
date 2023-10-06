@@ -3,7 +3,7 @@
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 using System;
-using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
 
@@ -12,6 +12,7 @@ namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
 /// This service is used to filter the swagger document and remove the endpoints that are not needed.
 /// This service is also used to add external documentation to the swagger document.
 /// </summary>
+[ExcludeFromCodeCoverage] // Infrastructure code is not tested currently.
 public class SwaggerFilterService : IDocumentFilter
 {
     /// <summary>
@@ -47,10 +48,12 @@ public class SwaggerFilterService : IDocumentFilter
     /// <param name="swaggerDoc"></param>
     private static void AddExternalDocumentation(OpenApiDocument swaggerDoc)
     {
+#pragma warning disable S1075 // URIs should not be hardcoded
         swaggerDoc.ExternalDocs = new OpenApiExternalDocs()
         {
             Description = "Check the API docs here!",
             Url = new Uri("https://docs.arolariu.ro"),
         };
+#pragma warning restore S1075 // URIs should not be hardcoded
     }
 }

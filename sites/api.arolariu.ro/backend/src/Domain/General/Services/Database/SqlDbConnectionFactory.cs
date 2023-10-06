@@ -1,4 +1,7 @@
-﻿using System.Collections.Concurrent;
+﻿using Microsoft.Extensions.Configuration;
+
+using System;
+using System.Collections.Concurrent;
 using System.Data;
 using System.Data.SqlClient;
 
@@ -19,9 +22,12 @@ public class SqlDbConnectionFactory : IDbConnectionFactory<IDbConnection>
     /// <summary>
     /// DbConnectionFactory constructor.
     /// </summary>
-    /// <param name="connectionString">The connection string for the SQL database.</param>
-    public SqlDbConnectionFactory(string connectionString)
+    /// <param name="configuration">The configuration object.</param>
+    public SqlDbConnectionFactory(IConfiguration configuration)
     {
+        var connectionString = configuration["Azure:SQL-DB:ConnectionString"]
+            ?? throw new ArgumentNullException(nameof(configuration));
+
         _sqlConnectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
     }
 

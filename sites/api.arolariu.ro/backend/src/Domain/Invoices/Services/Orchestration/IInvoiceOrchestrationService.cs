@@ -1,9 +1,9 @@
 ﻿using arolariu.Backend.Core.Domain.Invoices.DTOs;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
 
 using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
+using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
 
 namespace arolariu.Backend.Core.Domain.Invoices.Services.Orchestration;
 

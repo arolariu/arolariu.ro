@@ -1,8 +1,7 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
-using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoicePhotoStorageBroker;
+﻿using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoicePhotoStorageBroker;
 using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceSqlBroker;
 using arolariu.Backend.Core.Domain.Invoices.DTOs;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
+using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
 
 using System;
 using System.Collections.Generic;
@@ -34,15 +33,15 @@ public class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
     /// <inheritdoc/>
     public async Task<Invoice> ConvertDtoToEntity(CreateInvoiceDto invoiceDto)
     {
-        var invoice = InvoiceMappings.CreateDefaultInvoice();
+        var invoice = Invoice.CreateNullInvoice();
+
+        invoice.id = Guid.NewGuid(); // create a new invoice.
         var invoicePhotoUri = await invoiceStorageBroker
             .UploadInvoicePhotoToStorage(invoiceDto.InvoiceBase64Photo, invoice.id);
 
-
         return invoice with
         {
-            AdditionalMetadata = invoiceDto.AdditionalMetadata,
-            ImageUri = invoicePhotoUri,
+            ImageLocation = invoicePhotoUri,
             UploadedDate = DateTime.UtcNow,
             LastModifiedDate = DateTime.UtcNow,
             //TODO: add user identifier value here

@@ -2,7 +2,10 @@
 using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceSqlBroker;
 using arolariu.Backend.Core.Domain.Invoices.DTOs;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
+using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
+using arolariu.Backend.Core.Domain.Invoices.Entities.Products;
+
+using Microsoft.Extensions.Configuration;
 
 using System;
 using System.Collections.Generic;
@@ -23,14 +26,13 @@ public class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationServic
     /// <summary>
     /// Constructor.
     /// </summary>
-    /// <param name="keyVaultService"></param>
-    public InvoiceAnalysisFoundationService(IKeyVaultService keyVaultService)
+    /// <param name="configuration"></param>
+    public InvoiceAnalysisFoundationService(IConfiguration configuration)
     {
-        azureOpenAiBroker = new AzureOpenAiBroker(keyVaultService);
-        azureTranslatorBroker = new AzureTranslatorBroker(keyVaultService);
-        azureFormRecognizerBroker = new AzureFormRecognizerBroker(keyVaultService);
+        azureOpenAiBroker = new AzureOpenAiBroker(configuration);
+        azureTranslatorBroker = new AzureTranslatorBroker(configuration);
+        azureFormRecognizerBroker = new AzureFormRecognizerBroker(configuration);
     }
-
 
     /// <inheritdoc/>
     public async Task<Invoice> AnalyzeInvoiceWithOptions(Invoice invoice, InvoiceAnalysisOptionsDto options)
@@ -38,7 +40,7 @@ public class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationServic
         if (options.CompleteAnalysis)
         {
             invoice = await AnalyzeInvoicePhoto(invoice);
-            var updatedInvoiceItems = new List<InvoiceItem>();
+            var updatedInvoiceItems = new List<Product>();
             foreach (var invoiceItem in invoice.Items)
             {
                 var updatedItem = await AnalyzeInvoiceItemGenericName(invoiceItem);
@@ -63,7 +65,7 @@ public class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationServic
 
         if (options.InvoiceItemsOnly)
         {
-            var updatedInvoiceItems = new List<InvoiceItem>();
+            var updatedInvoiceItems = new List<Product>();
             foreach (var invoiceItem in invoice.Items)
             {
                 var updatedItem = await AnalyzeInvoiceItemGenericName(invoiceItem);
@@ -89,7 +91,7 @@ public class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationServic
         return updatedInvoice;
     }
 
-    private async Task<InvoiceItem> AnalyzeInvoiceItemGenericName(InvoiceItem invoiceItem)
+    private async Task<Product> AnalyzeInvoiceItemGenericName(Product invoiceItem)
     {
         var translatedInvoiceItemName = await azureTranslatorBroker.Translate(invoiceItem.RawName);
         var analyzedInvoiceItemResult = await azureOpenAiBroker.GenerateItemGenericName(translatedInvoiceItemName);
@@ -172,7 +174,7 @@ public class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationServic
         }
     }
 
-    private async Task<InvoiceItem> AnalyzeInvoiceItemCategory(InvoiceItem invoiceItem)
+    private async Task<Product> AnalyzeInvoiceItemCategory(Product invoiceItem)
     {
         var analyzedInvoiceItemResult = await azureOpenAiBroker.GenerateItemCategory(invoiceItem.GenericName);
         if (analyzedInvoiceItemResult is null)
@@ -181,7 +183,7 @@ public class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationServic
         }
         else
         {
-            if (Enum.TryParse(analyzedInvoiceItemResult.Choices[0].Message.Content, out InvoiceItemCategory itemCategory))
+            if (Enum.TryParse(analyzedInvoiceItemResult.Choices[0].Message.Content, out ProductCategory itemCategory))
             {
                 return invoiceItem with { Category = itemCategory };
             }

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
+namespace arolariu.Backend.Core.Domain.Invoices.Entities.Merchants;
 
 /// <summary>
 /// The invoice merchant category enum represents the available categories for an invoice merchant.
@@ -8,14 +8,14 @@ namespace arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
 /// The categories are used to generate the invoice statistics.
 /// </summary>
 [Serializable]
-public enum InvoiceMerchantCategory
+public enum MerchantCategory
 {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     NOT_DEFINED = 0,
-    LOCAL_SHOP,
-    SUPERMARKET,
-    HYPERMARKET,
-    ONLINE_SHOP,
-    OTHER,
+    LOCAL_SHOP = 10,
+    SUPERMARKET = 20,
+    HYPERMARKET = 30,
+    ONLINE_SHOP = 40,
+    OTHER = 9999,
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }

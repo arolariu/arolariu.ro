@@ -1,5 +1,5 @@
 ﻿using arolariu.Backend.Core.Domain.General.Services.Database;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
+using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
 
 using Microsoft.Azure.Cosmos;
 

@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
+namespace arolariu.Backend.Core.Domain.Invoices.Entities.Products;
 
 /// <summary>
 /// The invoice item record represents a single item from the invoice.
@@ -8,13 +9,13 @@ namespace arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
 /// The invoice item information is extracted from the invoice image using the OCR service.
 /// </summary>
 [Serializable]
-public record class InvoiceItem
+public record class Product
 {
     /// <summary>
     /// The invoice item raw name (as seen on the digital invoice).
     /// The raw name is the name of the item as seen on the invoice.
     /// </summary>
-    public required string RawName { get; set; } = string.Empty;
+    public string RawName { get; set; } = string.Empty;
 
     /// <summary>
     /// The invoice item generic name (from "MONSTER ENERGY DRINK 50ML" to "ENERGY DRINK").
@@ -24,14 +25,14 @@ public record class InvoiceItem
 
     /// <summary>
     /// The invoice item category.
-    /// See <see cref="InvoiceItemCategory"/> for the available categories.
+    /// See <see cref="ProductCategory"/> for the available categories.
     /// </summary>
-    public InvoiceItemCategory Category { get; set; } = InvoiceItemCategory.OTHER;
+    public ProductCategory Category { get; set; } = ProductCategory.OTHER;
 
     /// <summary>
     /// The item quantity.
     /// </summary>
-    public required int Quantity { get; set; } = 0;
+    public int Quantity { get; set; } = 0;
 
     /// <summary>
     /// The item quantity unit (e.g. kg, ml).
@@ -51,11 +52,20 @@ public record class InvoiceItem
     /// The item's price; this field is marked as string since some items can have a price range (e.g. 1.99 - 2.99) or a pricer per unit (e.g. 1.99 / kg).
     /// The price is represents the price of a single item.
     /// </summary>
-    public required decimal Price { get; set; } = 0.0M;
+    public decimal Price { get; set; } = 0.0M;
 
     /// <summary>
     /// The total price of the item, (Total = quantity x price).
     /// </summary>
-    public required decimal TotalPrice { get; set; } = 0.0M;
+    public decimal TotalPrice { get; set; } = 0.0M;
 
+    /// <summary>
+    /// The product's detected allergens.
+    /// </summary>
+    public IEnumerable<string> DetectedAllergens { get; set; } = new List<string>();
+    
+    /// <summary>
+    /// Product metadata.
+    /// </summary>
+    public ProductMetadata Metadata { get; set; } = new ProductMetadata();
 }

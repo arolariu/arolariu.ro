@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
+namespace arolariu.Backend.Core.Domain.Invoices.Entities.Merchants;
 
 /// <summary>
 /// The invoice merchant record class represents the merchant information from the invoice.
@@ -8,27 +8,27 @@ namespace arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
 /// This record is used to store the merchant information in the database.
 /// </summary>
 [Serializable]
-public record class InvoiceMerchant
+public record class Merchant
 {
     /// <summary>
     /// The merchant name.
     /// </summary>
-    public required string Name { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// The merchant address.
     /// </summary>
-    public required string Address { get; set; } = string.Empty;
+    public string Address { get; set; } = string.Empty;
 
     /// <summary>
     /// The merchant phone number.
     /// </summary>
-    public required string PhoneNumber { get; set; } = string.Empty;
+    public string PhoneNumber { get; set; } = string.Empty;
 
     /// <summary>
     /// The merchant category.
     /// </summary>
-    public InvoiceMerchantCategory Category { get; set; } = InvoiceMerchantCategory.OTHER;
+    public MerchantCategory Category { get; set; } = MerchantCategory.OTHER;
 
     /// <summary>
     /// The merchant parent company.

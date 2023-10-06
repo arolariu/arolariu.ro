@@ -5,6 +5,7 @@ using Azure.Security.KeyVault.Secrets;
 using Microsoft.Extensions.Configuration;
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace arolariu.Backend.Core.Domain.General.Services.KeyVault;
@@ -13,6 +14,7 @@ namespace arolariu.Backend.Core.Domain.General.Services.KeyVault;
 /// Service that handles the Azure Key Vault integration.
 /// A singleton instance of this class is registered in the service collection.
 /// </summary>
+[ExcludeFromCodeCoverage] // Infrastructure code is not tested currently.
 public class KeyVaultService : IKeyVaultService
 {
     private readonly SecretClient _secretClient;
@@ -24,7 +26,9 @@ public class KeyVaultService : IKeyVaultService
     /// <exception cref="ArgumentNullException">Thrown when the configuration is null.</exception>
     public KeyVaultService(IConfiguration configuration)
     {
-        var kvUri = configuration["Azure:KeyVault:Uri"] ?? throw new ArgumentNullException(nameof(configuration));
+        var kvUri = configuration["Azure:KeyVault:Uri"]
+            ?? throw new ArgumentNullException(nameof(configuration));
+
         _secretClient = new SecretClient(
             new Uri(kvUri),
             new DefaultAzureCredential());
@@ -41,9 +45,11 @@ public class KeyVaultService : IKeyVaultService
             var secret = _secretClient.GetSecret(secretName);
             return secret.Value.Value;
         }
-        catch (RequestFailedException ex)
+        catch (RequestFailedException)
         {
-            throw new Exception($"Failed to get secret '{secretName}' from Key Vault: {ex.Message}");
+#pragma warning disable S112 // General exceptions should never be thrown
+            throw new Exception($"Failed to get secret '{secretName}' from Key Vault: {_secretClient.VaultUri}");
+#pragma warning restore S112 // General exceptions should never be thrown
         }
     }
 
@@ -58,9 +64,11 @@ public class KeyVaultService : IKeyVaultService
             var secret = await _secretClient.GetSecretAsync(secretName);
             return secret.Value.Value;
         }
-        catch (RequestFailedException ex)
+        catch (RequestFailedException)
         {
-            throw new Exception($"Failed to get secret '{secretName}' from Key Vault: {ex.Message}");
+#pragma warning disable S112 // General exceptions should never be thrown
+            throw new Exception($"Failed to get secret '{secretName}' from Key Vault: {_secretClient.VaultUri}");
+#pragma warning restore S112 // General exceptions should never be thrown
         }
     }
 }

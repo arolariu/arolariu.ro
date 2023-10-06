@@ -6,10 +6,16 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace arolariu.Backend.Core.Domain.General.Extensions;
 
-internal static class WebApplicationExtensions
+/// <summary>
+/// Extension methods for the <see cref="WebApplication"/> web application.
+/// This extension class builds the Web Application.
+/// </summary>
+[ExcludeFromCodeCoverage] // Infrastructure code is not tested currently.
+internal static partial class WebApplicationExtensions
 {
     /// <summary>
     /// Adds general application configurations to the WebApplication instance.

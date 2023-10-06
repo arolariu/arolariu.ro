@@ -1,5 +1,5 @@
 ﻿using arolariu.Backend.Core.Domain.Invoices.DTOs;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
+using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
 using arolariu.Backend.Core.Domain.Invoices.Services.Orchestration;
 
 using Microsoft.AspNetCore.Http;

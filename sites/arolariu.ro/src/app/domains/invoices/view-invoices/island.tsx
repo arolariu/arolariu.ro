@@ -2,7 +2,7 @@
 
 import {ViewInvoiceCard} from "@/components/domains/invoices/view-invoices/ViewInvoiceCard";
 import useFetchInvoiceForUser from "@/hooks/useFetchInvoiceForUser";
-import {Session, User} from "next-auth";
+import {Session} from "next-auth";
 import Link from "next/link";
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function RenderViewInvoicesPage({session}: Props) {
-	const {invoices, isLoading} = useFetchInvoiceForUser(session.user as User, "");
+	const {invoices, isLoading} = useFetchInvoiceForUser(session as any, "test");
 
 	if (invoices.length > 0 && !isLoading) {
 		const calculateInvoiceTotalCost = (): number => {

@@ -1,12 +1,11 @@
-﻿using arolariu.Backend.Core.Domain.General.Services.KeyVault;
-
-using Azure;
+﻿using Azure;
 using Azure.AI.Translation.Text;
+
+using Microsoft.Extensions.Configuration;
 
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Transactions;
 
 namespace arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 
@@ -20,11 +19,14 @@ public class AzureTranslatorBroker
     /// <summary>
     /// Constructor.
     /// </summary>
-    /// <param name="keyVaultService"></param>
-    public AzureTranslatorBroker(IKeyVaultService keyVaultService)
+    /// <param name="configuration"></param>
+    public AzureTranslatorBroker(IConfiguration configuration)
     {
-        var azureTranslatorEndpoint = keyVaultService.GetSecret("arolariu-cognitive-services-endpoint");
-        var azureTranslatorApiKey = keyVaultService.GetSecret("arolariu-cognitive-services-connString");
+        var azureTranslatorEndpoint = configuration["Azure:CognitiveServices:EndpointName"]
+            ?? throw new ArgumentNullException(nameof(configuration));
+
+        var azureTranslatorApiKey = configuration["Azure:CognitiveServices:EndpointKey"]
+            ?? throw new ArgumentNullException(nameof(configuration));
 
         textTranslationClient = new TextTranslationClient(
             new AzureKeyCredential(azureTranslatorApiKey),
@@ -42,9 +44,10 @@ public class AzureTranslatorBroker
         var response = await textTranslationClient.TranslateAsync(language, text);
         var translation = response.Value.FirstOrDefault();
 
-        Console.WriteLine($"Detected languages of the input text: {translation?.DetectedLanguage?.Language} with score: {translation?.DetectedLanguage?.Score}.");
+        Console.WriteLine($"Detected languages of the input text:" +
+            $" {translation?.DetectedLanguage?.Language} with score: {translation?.DetectedLanguage?.Score}.");
 
-        var result = translation?.Translations.FirstOrDefault()?.Text ?? string.Empty;
+        var result = translation?.Translations[0]?.Text ?? string.Empty;
         return result;
     }
 }

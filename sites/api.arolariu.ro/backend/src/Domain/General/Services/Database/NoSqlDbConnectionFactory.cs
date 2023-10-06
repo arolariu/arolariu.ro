@@ -1,4 +1,5 @@
 ﻿using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.Configuration;
 
 using System;
 using System.Collections.Concurrent;
@@ -22,11 +23,14 @@ public class NoSqlDbConnectionFactory : IDbConnectionFactory<CosmosClient>
     /// This constructor initializes the connection string.
     /// The constructor is DI-friendly and can be used with the <seealso cref="Microsoft.Extensions.DependencyInjection"/> framework.
     /// </summary>
-    /// <param name="connectionString">The connection string for the NoSQL database.</param>
-    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="connectionString"/> is null.</exception>
-    public NoSqlDbConnectionFactory(string connectionString)
+    /// <param name="configuration">The configuration object.</param>
+    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/> is null.</exception>
+    public NoSqlDbConnectionFactory(IConfiguration configuration)
     {
-        _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+        var connectionString = configuration["Azure:NoSQL-DB:ConnectionString"]
+            ?? throw new ArgumentNullException(nameof(configuration));
+
+        _connectionString ??= connectionString;
     }
 
     /// <inheritdoc/>

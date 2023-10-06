@@ -1,4 +1,4 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.Entities.Invoice;
+﻿using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
 
 using System;
 using System.Collections.Generic;

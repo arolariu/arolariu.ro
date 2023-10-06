@@ -1,8 +1,7 @@
-﻿using arolariu.Backend.Core.Domain.General.Services.KeyVault;
-
-using Azure.Storage.Blobs;
+﻿using Azure.Storage.Blobs;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 
 using System;
 using System.IO;
@@ -23,10 +22,12 @@ public class InvoiceAzureStorageBroker : IInvoiceStorageBroker
     /// <summary>
     /// Constructor.
     /// </summary>
-    /// <param name="keyVaultService"></param>
-    public InvoiceAzureStorageBroker(IKeyVaultService keyVaultService)
+    /// <param name="configuration"></param>
+    public InvoiceAzureStorageBroker(IConfiguration configuration)
     {
-        var connString = keyVaultService.GetSecret("arolariu-storage-connstring");
+        var connString = configuration["Azure:Storage:ConnectionString"]
+            ?? throw new ArgumentNullException(nameof(configuration));
+
         blobContainerClient = new BlobContainerClient(connString, "invoices");
         blobContainerClient.CreateIfNotExists();
     }
