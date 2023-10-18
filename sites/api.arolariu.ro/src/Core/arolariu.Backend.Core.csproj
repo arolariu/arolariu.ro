@@ -1,0 +1,93 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<UserSecretsId>8d2be4c1-22f6-41dc-a442-4ff2882d22e2</UserSecretsId>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<DockerfileContext>.</DockerfileContext>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<SignAssembly>False</SignAssembly>
+		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+		<AnalysisLevel>latest</AnalysisLevel>
+	</PropertyGroup>
+
+	<!-- Treat warnings as errors for `DEBUG` deployment. -->
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<WarningLevel>9999</WarningLevel>
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+		<NoWarn>S1135</NoWarn>
+	<!-- S1135 - SonarLint "Complete TODOs" -->
+	</PropertyGroup>
+
+	<!-- Treat warnings as errors for `RELEASE` deployment. -->
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<WarningLevel>9999</WarningLevel>
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+		<NoWarn>S1135</NoWarn>
+	<!-- S1135 - SonarLint "Complete TODOs" -->
+	</PropertyGroup>
+	<ItemGroup>
+	  <Compile Remove="Domain\General\Helpers\**" />
+	  <Content Remove="Domain\General\Helpers\**" />
+	  <EmbeddedResource Remove="Domain\General\Helpers\**" />
+	  <None Remove="Domain\General\Helpers\**" />
+	</ItemGroup>
+
+	<!-- Other packages -->
+	<ItemGroup>
+		<PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.6" />
+		<PackageReference Include="Azure.AI.Translation.Text" Version="1.0.0-beta.1" />
+		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.35.2" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+		<PackageReference Include="System.Drawing.Common" Version="7.0.0" />
+	</ItemGroup>
+	
+	<!-- Health checks packages -->
+	<ItemGroup> 
+		<PackageReference Include="AspNetCore.HealthChecks.AzureKeyVault" Version="7.0.0" />
+		<PackageReference Include="AspNetCore.HealthChecks.CosmosDb" Version="7.0.0" />
+		<PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="7.0.0" />
+		<PackageReference Include="AspNetCore.HealthChecks.AzureStorage" Version="7.0.0" />
+		<PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="7.1.0" />
+		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="7.0.10" />
+		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="7.0.10" />
+	</ItemGroup>
+
+	<!-- Azure packages-->
+	<ItemGroup>
+		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.2.2" />
+		<PackageReference Include="Azure.Identity" Version="1.9.0" />
+		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.5.0" />
+		<PackageReference Include="Azure.AI.FormRecognizer" Version="4.0.0" />
+		<PackageReference Include="Azure.Storage.Blobs" Version="12.17.0" />
+	</ItemGroup>
+
+	<!-- Swagger packages -->
+	<ItemGroup>
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.5.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="6.5.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.5.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.5.0" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.10" />
+	</ItemGroup>
+
+	<!-- Invoices domain-related packages -->
+	<ItemGroup>
+		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="13.2.0" />
+		<PackageReference Include="Magick.NET.Core" Version="13.2.0" />
+		<PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" Version="7.0.1" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\Core.DAL\arolariu.Backend.Core.DAL.csproj" />
+	</ItemGroup>
+
+</Project>

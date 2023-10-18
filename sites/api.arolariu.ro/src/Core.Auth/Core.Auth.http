@@ -1,0 +1,11 @@
+@Core.Auth_HostAddress = http://localhost:5294
+
+GET {{Core.Auth_HostAddress}}/todos/
+Accept: application/json
+
+###
+
+GET {{Core.Auth_HostAddress}}/todos/1
+Accept: application/json
+
+###
