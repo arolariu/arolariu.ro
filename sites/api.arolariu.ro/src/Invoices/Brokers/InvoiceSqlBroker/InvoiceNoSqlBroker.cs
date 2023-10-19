@@ -1,11 +1,14 @@
 ﻿using arolariu.Backend.Core.DAL.Database;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
+using arolariu.Backend.Domain.Invoices.Entities.Invoices;
 
 using Microsoft.Azure.Cosmos;
 
+using System;
+using System.Collections.Generic;
 using System.Net;
+using System.Threading.Tasks;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceSqlBroker;
+namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
 
 /// <summary>
 /// The Invoice NoSQL broker class represents the invoice NoSQL broker.

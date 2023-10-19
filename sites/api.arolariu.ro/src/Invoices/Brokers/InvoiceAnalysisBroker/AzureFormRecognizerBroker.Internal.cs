@@ -1,11 +1,12 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.Entities.Merchants;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Products;
+﻿using arolariu.Backend.Domain.Invoices.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.Entities.Products;
 
 using Azure.AI.FormRecognizer.DocumentAnalysis;
+
 using System;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
+namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 
 public partial class AzureFormRecognizerBroker
 {

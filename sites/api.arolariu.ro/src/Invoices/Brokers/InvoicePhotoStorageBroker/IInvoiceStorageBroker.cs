@@ -1,4 +1,9 @@
-﻿namespace arolariu.Backend.Core.Domain.Invoices.Brokers.InvoicePhotoStorageBroker
+﻿using Microsoft.AspNetCore.Http;
+
+using System;
+using System.Threading.Tasks;
+
+namespace arolariu.Backend.Domain.Invoices.Brokers.InvoicePhotoStorageBroker
 {
     /// <summary>
     /// This interface is used to interact with the invoice photo storage.
@@ -22,7 +27,7 @@
         /// </summary>
         /// <param name="photoLocation"></param>
         /// <returns></returns>
-        public Task<FormFile> RetrieveInvoicePhotoFromStorage(Uri photoLocation);
+        public Task<IFormFile> RetrieveInvoicePhotoFromStorage(Uri photoLocation);
 
         /// <summary>
         /// This method validates the base64 photo representation.

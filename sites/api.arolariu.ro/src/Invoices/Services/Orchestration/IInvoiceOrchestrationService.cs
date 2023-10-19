@@ -1,11 +1,10 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.DTOs;
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
+using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.Entities.Invoices;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Services.Orchestration;
+namespace arolariu.Backend.Domain.Invoices.Services.Orchestration;
 
 /// <summary>
 /// The invoice orchestration service interface represents the orchestration service for the invoice domain.

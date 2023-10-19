@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
+namespace arolariu.Backend.Domain.Invoices.Entities.Invoices;
 
 /// <summary>
 /// This struct represents the invoice metadata.

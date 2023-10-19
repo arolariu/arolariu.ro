@@ -1,13 +1,13 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.DTOs;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
-using arolariu.Backend.Core.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
-using arolariu.Backend.Core.Domain.Invoices.Services.Foundation.InvoiceStorage;
+﻿using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.Entities.Invoices;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Services.Orchestration;
+namespace arolariu.Backend.Domain.Invoices.Services.Orchestration;
 
 /// <summary>
 /// The invoice orchestration service interface represents the orchestration service for the invoice domain.

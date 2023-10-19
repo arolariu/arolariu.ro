@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Entities.Merchants;
+namespace arolariu.Backend.Domain.Invoices.Entities.Merchants;
 
 /// <summary>
 /// The invoice merchant record class represents the merchant information from the invoice.

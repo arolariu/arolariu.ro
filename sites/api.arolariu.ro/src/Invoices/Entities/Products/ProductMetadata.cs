@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Entities.Products;
+namespace arolariu.Backend.Domain.Invoices.Entities.Products;
 
 /// <summary>
 /// Product metadata.

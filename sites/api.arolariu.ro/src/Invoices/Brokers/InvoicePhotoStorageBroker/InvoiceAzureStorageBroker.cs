@@ -1,6 +1,14 @@
 ﻿using Azure.Storage.Blobs;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Brokers.InvoicePhotoStorageBroker;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+
+using System;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
+
+namespace arolariu.Backend.Domain.Invoices.Brokers.InvoicePhotoStorageBroker;
 
 /// <summary>
 /// The <see cref="InvoiceAzureStorageBroker"/> class implements the <see cref="IInvoiceStorageBroker"/> interface.
@@ -26,7 +34,7 @@ public class InvoiceAzureStorageBroker : IInvoiceStorageBroker
 
 
     /// <inheritdoc/>
-    public async Task<FormFile> RetrieveInvoicePhotoFromStorage(Uri photoLocation)
+    public async Task<IFormFile> RetrieveInvoicePhotoFromStorage(Uri photoLocation)
     {
         using var httpClient = new HttpClient();
         using var response = await httpClient.GetAsync(photoLocation);

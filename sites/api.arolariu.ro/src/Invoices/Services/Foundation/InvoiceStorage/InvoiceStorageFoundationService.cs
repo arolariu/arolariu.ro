@@ -1,13 +1,13 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoicePhotoStorageBroker;
-using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceSqlBroker;
-using arolariu.Backend.Core.Domain.Invoices.DTOs;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
+﻿using arolariu.Backend.Domain.Invoices.Brokers.InvoicePhotoStorageBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
+using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.Entities.Invoices;
 
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Services.Foundation.InvoiceStorage;
+namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 /// <summary>
 /// The Invoice Storage foundation service.

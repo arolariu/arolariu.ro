@@ -1,10 +1,11 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.Entities.Merchants;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Products;
+﻿using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
+using arolariu.Backend.Domain.Invoices.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.Entities.Products;
 
 using System;
 using System.Collections.Generic;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
+namespace arolariu.Backend.Domain.Invoices.Entities.Invoices;
 
 /// <summary>
 /// The Invoice model as "represented" in the Application Domain.
@@ -15,10 +16,10 @@ public record class Invoice
     /// <summary>
     /// The invoice id.
     /// </summary>
-    #pragma warning disable IDE1006 // Naming Styles - CosmosDB requires this field to be lowercase.
+#pragma warning disable IDE1006 // Naming Styles - CosmosDB requires this field to be lowercase.
     // TODO: need to investigate why CosmosDB requires this field to be lowercase.
     public required Guid id { get; set; } = Guid.NewGuid();
-    #pragma warning restore IDE1006 // Naming Styles
+#pragma warning restore IDE1006 // Naming Styles
 
     /// <summary>
     /// The invoice image URI.
@@ -114,7 +115,7 @@ public record class Invoice
     /// <returns></returns>
     public static Invoice CreateNullInvoice()
     {
-        #pragma warning disable S1075 // URIs should not be hardcoded
+#pragma warning disable S1075 // URIs should not be hardcoded
         return new Invoice
         {
             id = Guid.Empty,
@@ -134,7 +135,7 @@ public record class Invoice
             DateOfAnalysis = DateTimeOffset.MinValue,
             AdditionalMetadata = new List<KeyValuePair<string, object>>()
         };
-        #pragma warning restore S1075 // URIs should not be hardcoded
+#pragma warning restore S1075 // URIs should not be hardcoded
     }
 
     /// <summary>

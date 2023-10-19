@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Entities.Products;
+namespace arolariu.Backend.Domain.Invoices.Entities.Products;
 
 /// <summary>
 /// The invoice item category enum represents the available categories for an invoice item.
@@ -10,7 +10,7 @@ namespace arolariu.Backend.Core.Domain.Invoices.Entities.Products;
 [Serializable]
 public enum ProductCategory
 {
-    #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     NOT_DEFINED = 0,
     BAKED_GOODS = 10,
     GROCERIES = 20,
@@ -26,5 +26,5 @@ public enum ProductCategory
     PERSONAL_CARE = 120,
     MEDICINE = 130,
     OTHER = 9999,
-    #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }

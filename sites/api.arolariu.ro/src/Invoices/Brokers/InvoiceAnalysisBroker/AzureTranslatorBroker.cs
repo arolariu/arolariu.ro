@@ -1,7 +1,13 @@
 ﻿using Azure;
 using Azure.AI.Translation.Text;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
+using Microsoft.Extensions.Configuration;
+
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 
 /// <summary>
 /// This class represents the Azure translator broker.
@@ -33,7 +39,7 @@ public class AzureTranslatorBroker
     /// <param name="text"></param>
     /// <param name="language"></param>
     /// <returns></returns>
-    public async Task<string> Translate(string text, string language="en")
+    public async Task<string> Translate(string text, string language = "en")
     {
         var response = await textTranslationClient.TranslateAsync(language, text);
         var translation = response.Value.FirstOrDefault();

@@ -1,9 +1,13 @@
 ﻿using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Products;
+using arolariu.Backend.Domain.Invoices.Entities.Products;
+using arolariu.Backend.Domain.Invoices.Entities.Invoices;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
+namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 
 /// <summary>
 /// The <see cref="AzureFormRecognizerBroker"/> class.

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace arolariu.Backend.Core.Domain.Invoices.DTOs;
+namespace arolariu.Backend.Domain.Invoices.DTOs;
 
 /// <summary>
 /// The Invoice DTO class represents the invoice data transfer object.

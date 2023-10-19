@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Entities.Products;
+namespace arolariu.Backend.Domain.Invoices.Entities.Products;
 
 /// <summary>
 /// The invoice item record represents a single item from the invoice.
@@ -63,7 +63,7 @@ public record class Product
     /// The product's detected allergens.
     /// </summary>
     public IEnumerable<string> DetectedAllergens { get; set; } = new List<string>();
-    
+
     /// <summary>
     /// Product metadata.
     /// </summary>

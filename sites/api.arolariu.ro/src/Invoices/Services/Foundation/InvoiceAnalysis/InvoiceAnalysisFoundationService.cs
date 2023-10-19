@@ -1,9 +1,16 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
-using arolariu.Backend.Core.Domain.Invoices.DTOs;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
-using arolariu.Backend.Core.Domain.Invoices.Entities.Products;
+﻿using arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
+using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.Entities.Invoices;
+using arolariu.Backend.Domain.Invoices.Entities.Products;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
+using Microsoft.Extensions.Configuration;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 
 /// <summary>
 /// The invoice analysis foundation service interface represents the foundation analysis service for the invoice domain.

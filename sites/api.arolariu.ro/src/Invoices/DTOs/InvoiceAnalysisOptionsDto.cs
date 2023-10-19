@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace arolariu.Backend.Core.Domain.Invoices.DTOs;
+namespace arolariu.Backend.Domain.Invoices.DTOs;
 
 /// <summary>
 /// This class represents the invoice analysis options DTO.
@@ -21,5 +21,5 @@ public sealed class InvoiceAnalysisOptionsDto
     /// <summary>
     /// Analyze the invoice items only.
     /// </summary>
-    public bool InvoiceItemsOnly { get;set; } = false;
+    public bool InvoiceItemsOnly { get; set; } = false;
 }

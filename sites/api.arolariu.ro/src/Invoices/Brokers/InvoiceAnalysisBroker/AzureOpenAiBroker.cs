@@ -1,9 +1,16 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
+﻿using arolariu.Backend.Domain.Invoices.Entities.Invoices;
 
 using Azure;
 using Azure.AI.OpenAI;
 
-namespace arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
+using Microsoft.Extensions.Configuration;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 
 /// <summary>
 /// The Azure OpenAI broker service.
@@ -363,7 +370,7 @@ public class AzureOpenAiBroker
 
         var chatOptions = new ChatCompletionsOptions(chatMessages)
         {
-            Temperature = (float)1,
+            Temperature = 1,
             MaxTokens = 10000,
             FrequencyPenalty = 0,
             PresencePenalty = 0,
@@ -427,7 +434,7 @@ public class AzureOpenAiBroker
 
         var chatOptions = new ChatCompletionsOptions(chatMessages)
         {
-            Temperature = (float)1,
+            Temperature = 1,
             MaxTokens = 10000,
             FrequencyPenalty = 0,
             PresencePenalty = 0,

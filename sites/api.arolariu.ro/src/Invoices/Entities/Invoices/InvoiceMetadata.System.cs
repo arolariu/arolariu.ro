@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
+﻿namespace arolariu.Backend.Domain.Invoices.Entities.Invoices;
 
 public partial record struct InvoiceMetadata
 {
