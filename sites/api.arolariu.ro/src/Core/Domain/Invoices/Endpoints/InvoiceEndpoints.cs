@@ -2,7 +2,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-namespace arolariu.Backend.Domain.Invoices.Endpoints;
+namespace arolariu.Backend.Core.Domain.Invoices.Endpoints;
 
 /// <summary>
 /// The invoice endpoints.

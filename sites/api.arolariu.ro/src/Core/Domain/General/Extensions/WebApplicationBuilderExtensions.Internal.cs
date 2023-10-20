@@ -1,4 +1,4 @@
-﻿using arolariu.Backend.Core.Domain.General.Services.Database;
+﻿using arolariu.Backend.Core.DAL.Database;
 using arolariu.Backend.Core.Domain.General.Services.KeyVault;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
 using Azure.Identity;
@@ -78,7 +78,6 @@ internal static partial class WebApplicationBuilderExtensions
         services
             .AddHealthChecks()
             .AddSqlServer(config["Azure:SQL-DB:ConnectionString"]!)
-            .AddCosmosDb(config["Azure:NoSQL-DB:ConnectionString"]!)
             .AddAzureBlobStorage(config["Azure:Storage:ConnectionString"]!)
             .AddAzureKeyVault(
                 new Uri(config["Azure:KeyVault:Uri"]!),

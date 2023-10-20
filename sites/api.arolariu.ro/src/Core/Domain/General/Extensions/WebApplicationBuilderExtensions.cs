@@ -1,8 +1,8 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoicePhotoStorageBroker;
-using arolariu.Backend.Core.Domain.Invoices.Brokers.InvoiceSqlBroker;
-using arolariu.Backend.Core.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
-using arolariu.Backend.Core.Domain.Invoices.Services.Foundation.InvoiceStorage;
-using arolariu.Backend.Core.Domain.Invoices.Services.Orchestration;
+﻿using arolariu.Backend.Domain.Invoices.Brokers.InvoicePhotoStorageBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
+using arolariu.Backend.Domain.Invoices.Services.Orchestration;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;

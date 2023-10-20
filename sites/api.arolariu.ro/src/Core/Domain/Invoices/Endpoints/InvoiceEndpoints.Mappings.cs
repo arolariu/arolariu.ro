@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Routing;
 
 using System.Collections.Generic;
 
-namespace arolariu.Backend.Domain.Invoices.Endpoints;
+namespace arolariu.Backend.Core.Domain.Invoices.Endpoints;
 
 public static partial class InvoiceEndpoints
 {

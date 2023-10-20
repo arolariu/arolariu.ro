@@ -1,5 +1,4 @@
-﻿using arolariu.Backend.Core.Domain.Invoices.Entities.Invoices;
-using arolariu.Backend.Domain.Invoices.Entities.Merchants;
+﻿using arolariu.Backend.Domain.Invoices.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.Entities.Products;
 
 using System;

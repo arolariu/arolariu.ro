@@ -10,7 +10,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Domain.Invoices.Endpoints;
+namespace arolariu.Backend.Core.Domain.Invoices.Endpoints;
 
 public static partial class InvoiceEndpoints
 {

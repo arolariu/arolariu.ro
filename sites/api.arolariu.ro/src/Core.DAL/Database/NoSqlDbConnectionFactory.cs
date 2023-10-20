@@ -1,6 +1,7 @@
 ﻿using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 
+using System;
 using System.Collections.Concurrent;
 
 namespace arolariu.Backend.Core.DAL.Database;
