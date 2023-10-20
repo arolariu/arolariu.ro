@@ -78,7 +78,10 @@ public class InvoiceOrchestrationService : IInvoiceOrchestrationService
     /// <inheritdoc/>
     public async Task<Invoice> ReadInvoiceObject(Guid identifier)
     {
-        var invoice = await invoiceStorageFoundationService.ReadInvoiceObject(identifier).ConfigureAwait(false);
+        var invoice = await invoiceStorageFoundationService
+            .ReadInvoiceObject(identifier)
+            .ConfigureAwait(false);
+
         return invoice;
     }
 
@@ -87,6 +90,9 @@ public class InvoiceOrchestrationService : IInvoiceOrchestrationService
     {
         ArgumentNullException.ThrowIfNull(invoice);
         var updatedInvoice = invoice with { LastModifiedDate = DateTime.UtcNow };
-        await invoiceStorageFoundationService.UpdateInvoiceObject(updatedInvoice).ConfigureAwait(false);
+
+        await invoiceStorageFoundationService
+            .UpdateInvoiceObject(updatedInvoice)
+            .ConfigureAwait(false);
     }
 }

@@ -24,8 +24,16 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Domain.Invoices", "sites\api.arolariu.ro\src\Invoices\arolariu.Backend.Domain.Invoices.csproj", "{E85B9224-1256-4396-BF99-B94F8359F3E1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Core.Tests", "sites\api.arolariu.ro\tests\arolariu.Backend.Core.Tests\arolariu.Backend.Core.Tests.csproj", "{3C562B2D-B1CB-4B86-B2E5-0FE29D37BCAA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4} = {BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4}
+		{C111946D-40FF-4A5E-97DC-904D60834294} = {C111946D-40FF-4A5E-97DC-904D60834294}
+		{E6984367-2B9A-48AA-9D45-8BA72871153E} = {E6984367-2B9A-48AA-9D45-8BA72871153E}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Domain.Tests", "sites\api.arolariu.ro\tests\arolariu.Backend.Domain.Tests\arolariu.Backend.Domain.Tests.csproj", "{119ABED5-14E7-46C1-A8E9-C2FAFAFFE6C2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E85B9224-1256-4396-BF99-B94F8359F3E1} = {E85B9224-1256-4396-BF99-B94F8359F3E1}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
