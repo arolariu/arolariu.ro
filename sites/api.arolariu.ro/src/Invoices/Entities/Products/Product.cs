@@ -32,7 +32,7 @@ public record class Product
     /// <summary>
     /// The item quantity.
     /// </summary>
-    public int Quantity { get; set; } = 0;
+    public int Quantity { get; set; } = int.MinValue;
 
     /// <summary>
     /// The item quantity unit (e.g. kg, ml).

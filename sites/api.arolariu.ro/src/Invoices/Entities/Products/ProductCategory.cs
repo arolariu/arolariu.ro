@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace arolariu.Backend.Domain.Invoices.Entities.Products;
 
@@ -8,6 +9,7 @@ namespace arolariu.Backend.Domain.Invoices.Entities.Products;
 /// The categories are used to generate the invoice statistics.
 /// </summary>
 [Serializable]
+[SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification = "<Pending>")]
 public enum ProductCategory
 {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member

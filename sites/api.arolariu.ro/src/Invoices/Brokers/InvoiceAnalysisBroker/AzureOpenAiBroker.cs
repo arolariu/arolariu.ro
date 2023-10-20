@@ -26,15 +26,19 @@ public class AzureOpenAiBroker
     /// <param name="configuration"></param>
     public AzureOpenAiBroker(IConfiguration configuration)
     {
-        var openAiEndpoint = configuration["Azure:OpenAI:EndpointName"]
-            ?? throw new ArgumentNullException(nameof(configuration));
+        if (configuration is not null)
+        {
+            var openAiEndpoint = configuration["Azure:OpenAI:EndpointName"]
+                ?? throw new ArgumentNullException(nameof(configuration));
 
-        var openAiKey = configuration["Azure:OpenAI:EndpointKey"]
-            ?? throw new ArgumentNullException(nameof(configuration));
+            var openAiKey = configuration["Azure:OpenAI:EndpointKey"]
+                ?? throw new ArgumentNullException(nameof(configuration));
 
-        openAIClient = new OpenAIClient(
-            new Uri(openAiEndpoint),
-            new AzureKeyCredential(openAiKey));
+            openAIClient = new OpenAIClient(
+                new Uri(openAiEndpoint),
+                new AzureKeyCredential(openAiKey));
+        }
+        else throw new ArgumentNullException(nameof(configuration));
     }
 
     /// <summary>
@@ -98,8 +102,9 @@ public class AzureOpenAiBroker
             ChoiceCount = 1,
         };
 
-        var invoiceDescriptionCompletion =
-            await openAIClient.GetChatCompletionsAsync(model, chatOptions);
+        var invoiceDescriptionCompletion = await openAIClient
+            .GetChatCompletionsAsync(model, chatOptions)
+            .ConfigureAwait(false);
 
         return invoiceDescriptionCompletion.Value;
     }
@@ -169,8 +174,9 @@ public class AzureOpenAiBroker
             ChoiceCount = 1,
         };
 
-        var invoicePossibleReceiptsCompletion =
-            await openAIClient.GetChatCompletionsAsync(model, chatOptions);
+        var invoicePossibleReceiptsCompletion = await openAIClient
+            .GetChatCompletionsAsync(model, chatOptions)
+            .ConfigureAwait(false);
 
         return invoicePossibleReceiptsCompletion.Value;
     }
@@ -250,8 +256,9 @@ public class AzureOpenAiBroker
         };
 
 
-        var invoicePossibleAllergensCompletion =
-            await openAIClient.GetChatCompletionsAsync(model, chatOptions);
+        var invoicePossibleAllergensCompletion = await openAIClient
+            .GetChatCompletionsAsync(model, chatOptions)
+            .ConfigureAwait(false);
 
         return invoicePossibleAllergensCompletion.Value;
     }
@@ -321,8 +328,9 @@ public class AzureOpenAiBroker
             ChoiceCount = 1,
         };
 
-        var invoicePossibleSurvivalDaysCompletion =
-            await openAIClient.GetChatCompletionsAsync(model, chatOptions);
+        var invoicePossibleSurvivalDaysCompletion = await openAIClient
+            .GetChatCompletionsAsync(model, chatOptions)
+            .ConfigureAwait(false);
 
         return invoicePossibleSurvivalDaysCompletion.Value;
     }
@@ -377,8 +385,10 @@ public class AzureOpenAiBroker
             ChoiceCount = 1,
         };
 
-        var itemGenericNameCompletion =
-            await openAIClient.GetChatCompletionsAsync(model, chatOptions);
+        var itemGenericNameCompletion = await openAIClient
+            .GetChatCompletionsAsync(model, chatOptions)
+            .ConfigureAwait(false);
+
         return itemGenericNameCompletion.Value;
     }
 
@@ -441,9 +451,10 @@ public class AzureOpenAiBroker
             ChoiceCount = 1,
         };
 
-        var itemGenericNameCompletion =
-            await openAIClient.GetChatCompletionsAsync(model, chatOptions);
-        return itemGenericNameCompletion.Value;
+        var itemGenericNameCompletion = await openAIClient
+            .GetChatCompletionsAsync(model, chatOptions)
+            .ConfigureAwait(false);
 
+        return itemGenericNameCompletion.Value;
     }
 }

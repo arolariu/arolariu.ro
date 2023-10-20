@@ -11,15 +11,15 @@ public sealed class InvoiceAnalysisOptionsDto
     /// <summary>
     /// Do a complete analysis of the invoice.
     /// </summary>
-    public bool CompleteAnalysis { get; set; } = false;
+    public bool CompleteAnalysis { get; set; }
 
     /// <summary>
     /// Analyze the invoice description.
     /// </summary>
-    public bool InvoiceOnly { get; set; } = false;
+    public bool InvoiceOnly { get; set; }
 
     /// <summary>
     /// Analyze the invoice items only.
     /// </summary>
-    public bool InvoiceItemsOnly { get; set; } = false;
+    public bool InvoiceItemsOnly { get; set; }
 }

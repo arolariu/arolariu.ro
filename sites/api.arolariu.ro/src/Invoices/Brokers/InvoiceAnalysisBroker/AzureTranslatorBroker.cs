@@ -22,15 +22,19 @@ public class AzureTranslatorBroker
     /// <param name="configuration"></param>
     public AzureTranslatorBroker(IConfiguration configuration)
     {
-        var azureTranslatorEndpoint = configuration["Azure:CognitiveServices:EndpointName"]
-            ?? throw new ArgumentNullException(nameof(configuration));
+        if (configuration is not null)
+        {
+            var azureTranslatorEndpoint = configuration["Azure:CognitiveServices:EndpointName"]
+                ?? throw new ArgumentNullException(nameof(configuration));
 
-        var azureTranslatorApiKey = configuration["Azure:CognitiveServices:EndpointKey"]
-            ?? throw new ArgumentNullException(nameof(configuration));
+            var azureTranslatorApiKey = configuration["Azure:CognitiveServices:EndpointKey"]
+                ?? throw new ArgumentNullException(nameof(configuration));
 
-        textTranslationClient = new TextTranslationClient(
-            new AzureKeyCredential(azureTranslatorApiKey),
-            new Uri(azureTranslatorEndpoint));
+            textTranslationClient = new TextTranslationClient(
+                new AzureKeyCredential(azureTranslatorApiKey),
+                new Uri(azureTranslatorEndpoint));
+        }
+        else throw new ArgumentNullException(nameof(configuration));
     }
 
     /// <summary>
@@ -41,8 +45,11 @@ public class AzureTranslatorBroker
     /// <returns></returns>
     public async Task<string> Translate(string text, string language = "en")
     {
-        var response = await textTranslationClient.TranslateAsync(language, text);
-        var translation = response.Value.FirstOrDefault();
+        var response = await textTranslationClient
+            .TranslateAsync(language, text)
+            .ConfigureAwait(false);
+
+        var translation = response.Value[0];
 
         Console.WriteLine($"Detected languages of the input text:" +
             $" {translation?.DetectedLanguage?.Language} with score: {translation?.DetectedLanguage?.Score}.");

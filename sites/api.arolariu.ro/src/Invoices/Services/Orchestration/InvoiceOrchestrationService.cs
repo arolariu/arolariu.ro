@@ -34,37 +34,51 @@ public class InvoiceOrchestrationService : IInvoiceOrchestrationService
     /// <inheritdoc/>
     public async Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, InvoiceAnalysisOptionsDto options)
     {
-        var invoice = await ReadInvoiceObject(invoiceIdentifier);
-        var updatedInvoice = await invoiceAnalysisFoundationService.AnalyzeInvoiceWithOptions(invoice, options);
-        await UpdateInvoiceObject(updatedInvoice);
+        var invoice = await ReadInvoiceObject(invoiceIdentifier).ConfigureAwait(false);
+        var updatedInvoice = await invoiceAnalysisFoundationService
+            .AnalyzeInvoiceWithOptions(invoice, options)
+            .ConfigureAwait(false);
+
+        await UpdateInvoiceObject(updatedInvoice).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
     public async Task<Invoice> CreateInvoiceObjectFromDto(CreateInvoiceDto invoiceDto)
     {
-        var invoice = await invoiceStorageFoundationService.ConvertDtoToEntity(invoiceDto);
-        await invoiceStorageFoundationService.CreateInvoiceObject(invoice);
+        var invoice = await invoiceStorageFoundationService
+            .ConvertDtoToEntity(invoiceDto)
+            .ConfigureAwait(false);
+
+        await invoiceStorageFoundationService
+            .CreateInvoiceObject(invoice)
+            .ConfigureAwait(false);
+
         return invoice;
     }
 
     /// <inheritdoc/>
     public async Task DeleteInvoiceObject(Guid identifier)
     {
-        var invoice = await ReadInvoiceObject(identifier);
-        await invoiceStorageFoundationService.DeleteInvoiceObject(invoice.id);
+        var invoice = await ReadInvoiceObject(identifier).ConfigureAwait(false);
+        await invoiceStorageFoundationService
+            .DeleteInvoiceObject(invoice.id)
+            .ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
     public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects()
     {
-        var invoices = await invoiceStorageFoundationService.ReadAllInvoiceObjects();
+        var invoices = await invoiceStorageFoundationService
+            .ReadAllInvoiceObjects()
+            .ConfigureAwait(false);
+
         return invoices;
     }
 
     /// <inheritdoc/>
     public async Task<Invoice> ReadInvoiceObject(Guid identifier)
     {
-        var invoice = await invoiceStorageFoundationService.ReadInvoiceObject(identifier);
+        var invoice = await invoiceStorageFoundationService.ReadInvoiceObject(identifier).ConfigureAwait(false);
         return invoice;
     }
 
@@ -72,6 +86,6 @@ public class InvoiceOrchestrationService : IInvoiceOrchestrationService
     public async Task UpdateInvoiceObject(Invoice invoice)
     {
         var updatedInvoice = invoice with { LastModifiedDate = DateTime.UtcNow };
-        await invoiceStorageFoundationService.UpdateInvoiceObject(updatedInvoice);
+        await invoiceStorageFoundationService.UpdateInvoiceObject(updatedInvoice).ConfigureAwait(false);
     }
 }

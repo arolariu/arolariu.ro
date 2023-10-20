@@ -27,10 +27,14 @@ public class NoSqlDbConnectionFactory : IDbConnectionFactory<CosmosClient>
     /// <exception cref="ArgumentNullException">Thrown when the <paramref name="configuration"/> is null.</exception>
     public NoSqlDbConnectionFactory(IConfiguration configuration)
     {
-        var connectionString = configuration["Azure:NoSQL-DB:ConnectionString"]
-            ?? throw new ArgumentNullException(nameof(configuration));
+        if (configuration is not null)
+        {
+            var connectionString = configuration["Azure:NoSQL-DB:ConnectionString"]
+                ?? throw new ArgumentNullException(nameof(configuration));
 
-        _connectionString ??= connectionString;
+            _connectionString ??= connectionString;
+        }
+        else throw new ArgumentNullException(nameof(configuration));
     }
 
     /// <inheritdoc/>

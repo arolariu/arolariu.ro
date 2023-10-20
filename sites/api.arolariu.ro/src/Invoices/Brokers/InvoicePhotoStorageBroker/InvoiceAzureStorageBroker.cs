@@ -25,20 +25,28 @@ public class InvoiceAzureStorageBroker : IInvoiceStorageBroker
     /// <param name="configuration"></param>
     public InvoiceAzureStorageBroker(IConfiguration configuration)
     {
-        var connString = configuration["Azure:Storage:ConnectionString"]
-            ?? throw new ArgumentNullException(nameof(configuration));
+        if (configuration is not null)
+        {
+            var connString = configuration["Azure:Storage:ConnectionString"]
+                ?? throw new ArgumentNullException(nameof(configuration));
 
-        blobContainerClient = new BlobContainerClient(connString, "invoices");
-        blobContainerClient.CreateIfNotExists();
+            blobContainerClient = new BlobContainerClient(connString, "invoices");
+            blobContainerClient.CreateIfNotExists();
+        }
+        else throw new ArgumentNullException(nameof(configuration));
     }
-
 
     /// <inheritdoc/>
     public async Task<IFormFile> RetrieveInvoicePhotoFromStorage(Uri photoLocation)
     {
         using var httpClient = new HttpClient();
-        using var response = await httpClient.GetAsync(photoLocation);
-        using var content = await response.Content.ReadAsStreamAsync();
+        using var response = await httpClient
+            .GetAsync(photoLocation)
+            .ConfigureAwait(false);
+
+        using var content = await response.Content
+            .ReadAsStreamAsync()
+            .ConfigureAwait(false);
 
         var photoName = photoLocation.ToString().Split('/')[^1];
         return new FormFile(content, 0, content.Length, photoName, photoName);
@@ -47,7 +55,9 @@ public class InvoiceAzureStorageBroker : IInvoiceStorageBroker
     /// <inheritdoc/>
     public async Task<Uri> UploadInvoicePhotoToStorage(string base64InvoicePhoto, Guid photoIdentifier)
     {
-        var isValid = await ValidateBase64PhotoRepresentation(base64InvoicePhoto);
+        var isValid = await ValidateBase64PhotoRepresentation(base64InvoicePhoto)
+            .ConfigureAwait(false);
+
         if (isValid)
         {
             var photoExtension = base64InvoicePhoto.Substring(base64InvoicePhoto.IndexOf('/') + 1, base64InvoicePhoto.IndexOf(';') - base64InvoicePhoto.IndexOf('/') - 1);
@@ -55,7 +65,10 @@ public class InvoiceAzureStorageBroker : IInvoiceStorageBroker
 
             var blobClient = blobContainerClient.GetBlobClient(photoName);
             var photoBytes = Convert.FromBase64String(base64InvoicePhoto.Substring(base64InvoicePhoto.IndexOf(',') + 1));
-            await blobClient.UploadAsync(new MemoryStream(photoBytes));
+
+            await blobClient
+                .UploadAsync(new MemoryStream(photoBytes))
+                .ConfigureAwait(false);
 
             return blobClient.Uri;
         }

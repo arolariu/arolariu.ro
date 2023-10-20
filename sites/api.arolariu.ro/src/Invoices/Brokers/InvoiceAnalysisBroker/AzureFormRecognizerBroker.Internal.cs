@@ -58,7 +58,7 @@ public partial class AzureFormRecognizerBroker
         return identifiedDateTime;
     }
 
-    private async ValueTask<Merchant> RetrieveMerchantInformation(AnalyzedDocument analyzedInvoiceResult)
+    private static Merchant RetrieveMerchantInformation(AnalyzedDocument analyzedInvoiceResult)
     {
         var merchantName = string.Empty;
         var merchantAddress = string.Empty;
@@ -85,13 +85,12 @@ public partial class AzureFormRecognizerBroker
             Console.WriteLine($"Merchant Phone Number: '{merchantPhoneNumber}', with confidence {merchantPhoneField.Confidence}");
         }
 
-        return await ValueTask.FromResult(
-            new Merchant()
-            {
-                Name = merchantName,
-                Address = merchantAddress,
-                PhoneNumber = merchantPhoneNumber
-            });
+        return new Merchant()
+        {
+            Name = merchantName,
+            Address = merchantAddress,
+            PhoneNumber = merchantPhoneNumber
+        };
     }
 
     private static Product RetrieveItem(DocumentField itemField)

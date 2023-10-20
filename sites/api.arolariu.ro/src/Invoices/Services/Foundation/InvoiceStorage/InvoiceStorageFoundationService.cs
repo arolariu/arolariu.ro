@@ -37,7 +37,8 @@ public class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
 
         invoice.id = Guid.NewGuid(); // create a new invoice.
         var invoicePhotoUri = await invoiceStorageBroker
-            .UploadInvoicePhotoToStorage(invoiceDto.InvoiceBase64Photo, invoice.id);
+            .UploadInvoicePhotoToStorage(invoiceDto.InvoiceBase64Photo, invoice.id)
+            .ConfigureAwait(false);
 
         return invoice with
         {
@@ -51,34 +52,47 @@ public class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
     /// <inheritdoc/>
     public async Task<Invoice> ReadInvoiceObject(Guid identifier)
     {
-        var invoice = await invoiceNoSqlBroker.ReadInvoiceAsync(identifier);
+        var invoice = await invoiceNoSqlBroker
+            .ReadInvoiceAsync(identifier)
+            .ConfigureAwait(false);
         return invoice;
     }
 
     /// <inheritdoc/>
     public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects()
     {
-        var invoices = await invoiceNoSqlBroker.ReadInvoicesAsync();
+        var invoices = await invoiceNoSqlBroker
+            .ReadInvoicesAsync()
+            .ConfigureAwait(false);
         return invoices;
     }
 
     /// <inheritdoc/>
     public async Task UpdateInvoiceObject(Invoice invoice)
     {
-        await invoiceNoSqlBroker.UpdateInvoiceAsync(invoice);
+        await invoiceNoSqlBroker
+            .UpdateInvoiceAsync(invoice)
+            .ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
     public async Task DeleteInvoiceObject(Guid identifier)
     {
-        await invoiceNoSqlBroker.DeleteInvoiceAsync(identifier);
+        await invoiceNoSqlBroker
+            .DeleteInvoiceAsync(identifier)
+            .ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
     public async Task<Invoice> CreateInvoiceObject(Invoice invoice)
     {
-        await invoiceNoSqlBroker.CreateInvoiceAsync(invoice);
-        var createdInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(invoice.id);
+        await invoiceNoSqlBroker
+            .CreateInvoiceAsync(invoice)
+            .ConfigureAwait(false);
+
+        var createdInvoice = await invoiceNoSqlBroker
+            .ReadInvoiceAsync(invoice.id)
+            .ConfigureAwait(false);
         return createdInvoice;
     }
 }

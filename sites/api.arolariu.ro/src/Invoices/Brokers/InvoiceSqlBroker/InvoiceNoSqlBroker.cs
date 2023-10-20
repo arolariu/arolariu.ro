@@ -25,15 +25,22 @@ public class InvoiceNoSqlBroker : IInvoiceNoSqlBroker
     /// <param name="dbConnectionFactory"></param>
     public InvoiceNoSqlBroker(IDbConnectionFactory<CosmosClient> dbConnectionFactory)
     {
-        var cosmosClient = dbConnectionFactory.CreateConnection();
-        invoiceContainer = cosmosClient.GetContainer("arolariu", "invoices");
+        if (dbConnectionFactory is not null)
+        {
+            var cosmosClient = dbConnectionFactory.CreateConnection();
+            invoiceContainer = cosmosClient.GetContainer("arolariu", "invoices");
+        }
+        else throw new ArgumentNullException(nameof(dbConnectionFactory));
     }
 
     /// <inheritdoc/>
     public async ValueTask CreateInvoiceAsync(Invoice invoice)
     {
         Console.WriteLine(invoice);
-        var transactionResponse = await invoiceContainer.CreateItemAsync(invoice);
+        var transactionResponse = await invoiceContainer
+            .CreateItemAsync(invoice)
+            .ConfigureAwait(false);
+
         ValidateTransactionResponseStatusCodeWas(transactionResponse, HttpStatusCode.Created);
     }
 
@@ -42,10 +49,11 @@ public class InvoiceNoSqlBroker : IInvoiceNoSqlBroker
     {
         var invoiceIdentifierAsString = invoiceIdentifier.ToString();
 
-        var transactionResponse =
-            await invoiceContainer.DeleteItemAsync<Invoice>(
+        var transactionResponse = await invoiceContainer
+            .DeleteItemAsync<Invoice>(
                 invoiceIdentifierAsString,
-                new(Guid.Empty.ToString()));
+                new(Guid.Empty.ToString()))
+            .ConfigureAwait(false);
         //TODO: this needs to have as the partition key the user identifier.
 
         ValidateTransactionResponseStatusCodeWas(transactionResponse, HttpStatusCode.NoContent);
@@ -55,10 +63,11 @@ public class InvoiceNoSqlBroker : IInvoiceNoSqlBroker
     public async ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier)
     {
         var invoiceIdentifierAsString = invoiceIdentifier.ToString();
-        var transactionResponse =
-           await invoiceContainer.ReadItemAsync<Invoice>(
+        var transactionResponse = await invoiceContainer
+            .ReadItemAsync<Invoice>(
                invoiceIdentifierAsString,
-                new(Guid.Empty.ToString()));
+                new(Guid.Empty.ToString()))
+           .ConfigureAwait(false);
         //TODO: this needs to have as the partition key the user identifier.
 
         ValidateTransactionResponseStatusCodeWas(transactionResponse, HttpStatusCode.OK);
@@ -75,7 +84,10 @@ public class InvoiceNoSqlBroker : IInvoiceNoSqlBroker
 
         while (iterator.HasMoreResults)
         {
-            var response = await iterator.ReadNextAsync();
+            var response = await iterator.
+                ReadNextAsync()
+                .ConfigureAwait(false);
+
             var invoiceEnumerable = response.Resource;
             invoices.AddRange(invoiceEnumerable);
         }
@@ -86,7 +98,10 @@ public class InvoiceNoSqlBroker : IInvoiceNoSqlBroker
     /// <inheritdoc/>
     public async ValueTask<Invoice> UpdateInvoiceAsync(Invoice invoice)
     {
-        var transactionResponse = await invoiceContainer.UpsertItemAsync(invoice);
+        var transactionResponse = await invoiceContainer
+            .UpsertItemAsync(invoice)
+            .ConfigureAwait(false);
+
         ValidateTransactionResponseStatusCodeWas(transactionResponse, HttpStatusCode.OK);
         var updatedInvoice = transactionResponse.Resource;
         return updatedInvoice;

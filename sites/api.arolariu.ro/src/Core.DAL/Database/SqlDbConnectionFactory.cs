@@ -25,10 +25,14 @@ public class SqlDbConnectionFactory : IDbConnectionFactory<IDbConnection>
     /// <param name="configuration">The configuration object.</param>
     public SqlDbConnectionFactory(IConfiguration configuration)
     {
-        var connectionString = configuration["Azure:SQL-DB:ConnectionString"]
-            ?? throw new ArgumentNullException(nameof(configuration));
+        if (configuration is not null)
+        {
+            var connectionString = configuration["Azure:SQL-DB:ConnectionString"]
+                ?? throw new ArgumentNullException(nameof(configuration));
 
-        _sqlConnectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
+            _sqlConnectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
+        }
+        else throw new ArgumentNullException(nameof(configuration));
     }
 
     /// <inheritdoc/>
@@ -64,7 +68,7 @@ public class SqlDbConnectionFactory : IDbConnectionFactory<IDbConnection>
         }
         else
         {
-            connection.Dispose();
+            connection?.Dispose();
         }
     }
 }
