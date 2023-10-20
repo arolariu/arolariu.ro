@@ -15,7 +15,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 /// <summary>
 /// The invoice analysis foundation service interface represents the foundation analysis service for the invoice domain.
 /// </summary>
-public class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationService
+public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationService
 {
     private readonly AzureOpenAiBroker azureOpenAiBroker;
     private readonly AzureTranslatorBroker azureTranslatorBroker;
@@ -27,15 +27,22 @@ public class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationServic
     /// <param name="configuration"></param>
     public InvoiceAnalysisFoundationService(IConfiguration configuration)
     {
-        azureOpenAiBroker = new AzureOpenAiBroker(configuration);
-        azureTranslatorBroker = new AzureTranslatorBroker(configuration);
-        azureFormRecognizerBroker = new AzureFormRecognizerBroker(configuration);
+        if (configuration is not null)
+        {
+            azureOpenAiBroker = new AzureOpenAiBroker(configuration);
+            azureTranslatorBroker = new AzureTranslatorBroker(configuration);
+            azureFormRecognizerBroker = new AzureFormRecognizerBroker(configuration);
+        }
+        else throw new ArgumentNullException(nameof(configuration));
     }
 
     /// <inheritdoc/>
     public async Task<Invoice> AnalyzeInvoiceWithOptions(Invoice invoice, InvoiceAnalysisOptionsDto options)
     {
-        if (options.CompleteAnalysis)
+        ValidateInvoiceExists(invoice);
+        ValidateInvoiceFieldsArePopulated(invoice);
+
+        if (InvoiceAnalysisOptionsDto.CompleteAnalysis == options)
         {
             invoice = await AnalyzeInvoicePhoto(invoice).ConfigureAwait(false);
             var updatedInvoiceItems = new List<Product>();
@@ -54,14 +61,14 @@ public class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationServic
             return invoice;
         }
 
-        if (options.InvoiceOnly)
+        if (InvoiceAnalysisOptionsDto.InvoiceOnly == options)
         {
             invoice = await AnalyzeInvoiceDescription(invoice).ConfigureAwait(false);
             invoice = await AnalyzeEstimatedSurvivalDays(invoice).ConfigureAwait(false);
             return invoice;
         }
 
-        if (options.InvoiceItemsOnly)
+        if (InvoiceAnalysisOptionsDto.InvoiceItemsOnly == options)
         {
             var updatedInvoiceItems = new List<Product>();
             foreach (var invoiceItem in invoice.Items)
@@ -114,9 +121,8 @@ public class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationServic
             .SendInvoiceToAnalysisAsync(invoice)
             .ConfigureAwait(false);
 
-        var updatedInvoice = await azureFormRecognizerBroker
-            .PopulateInvoiceWithAnalysisResultAsync(invoice, analyzedInvoiceResult)
-            .ConfigureAwait(false);
+        var updatedInvoice = azureFormRecognizerBroker
+            .PopulateInvoiceWithAnalysisResult(invoice, analyzedInvoiceResult);
 
         return updatedInvoice;
     }
@@ -136,7 +142,9 @@ public class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationServic
             var invoiceAllergensAsString = analyzedInvoiceResult.Choices[0].Message.Content;
             try
             {
+#pragma warning disable S1481 // Unused local variables should be removed
                 var invoiceAllergensAsList = invoiceAllergensAsString.Split(',').ToList();
+#pragma warning restore S1481 // Unused local variables should be removed
                 return invoice; // TODO: fix this
             }
             catch (ArgumentNullException ex)

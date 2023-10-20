@@ -26,19 +26,16 @@ public class AzureOpenAiBroker
     /// <param name="configuration"></param>
     public AzureOpenAiBroker(IConfiguration configuration)
     {
-        if (configuration is not null)
-        {
-            var openAiEndpoint = configuration["Azure:OpenAI:EndpointName"]
-                ?? throw new ArgumentNullException(nameof(configuration));
+        ArgumentNullException.ThrowIfNull(configuration);
+        var openAiEndpoint = configuration["Azure:OpenAI:EndpointName"]
+            ?? throw new ArgumentNullException(nameof(configuration));
 
-            var openAiKey = configuration["Azure:OpenAI:EndpointKey"]
-                ?? throw new ArgumentNullException(nameof(configuration));
+        var openAiKey = configuration["Azure:OpenAI:EndpointKey"]
+            ?? throw new ArgumentNullException(nameof(configuration));
 
-            openAIClient = new OpenAIClient(
-                new Uri(openAiEndpoint),
-                new AzureKeyCredential(openAiKey));
-        }
-        else throw new ArgumentNullException(nameof(configuration));
+        openAIClient = new OpenAIClient(
+            new Uri(openAiEndpoint),
+            new AzureKeyCredential(openAiKey));
     }
 
     /// <summary>
@@ -48,6 +45,7 @@ public class AzureOpenAiBroker
     /// <returns></returns>
     public async Task<ChatCompletions> GenerateInvoiceDescription(Invoice invoice)
     {
+        ArgumentNullException.ThrowIfNull(invoice);
         IList<string> invoiceItemsNamesAsList;
         if (invoice.Items.Select(item => item.GenericName).Any(name => string.IsNullOrEmpty(name)))
         {
@@ -116,6 +114,7 @@ public class AzureOpenAiBroker
     /// <returns></returns>
     public async Task<ChatCompletions> GeneratePossibleRecipes(Invoice invoice)
     {
+        ArgumentNullException.ThrowIfNull(invoice);
         IList<string> invoiceItemsNamesAsList;
         if (invoice.Items.Select(item => item.GenericName).Any(name => string.IsNullOrEmpty(name)))
         {
@@ -188,6 +187,7 @@ public class AzureOpenAiBroker
     /// <returns></returns>
     public async Task<ChatCompletions> GeneratePossibleAllergens(Invoice invoice)
     {
+        ArgumentNullException.ThrowIfNull(invoice);
         IList<string> invoiceItemsNamesAsList;
         if (invoice.Items.Select(item => item.GenericName).Any(name => string.IsNullOrEmpty(name)))
         {
@@ -270,6 +270,7 @@ public class AzureOpenAiBroker
     /// <returns></returns>
     public async Task<ChatCompletions> GeneratePossibleSurvivalDays(Invoice invoice)
     {
+        ArgumentNullException.ThrowIfNull(invoice);
         IList<string> invoiceItemsNamesAsList;
         if (invoice.Items.Select(item => item.GenericName).Any(name => string.IsNullOrEmpty(name)))
         {

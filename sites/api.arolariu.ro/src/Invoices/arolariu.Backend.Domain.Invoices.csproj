@@ -47,4 +47,13 @@
     <ProjectReference Include="..\Core.DAL\arolariu.Backend.Core.DAL.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Entities\Invoices\Exceptions\Inner\" />
+    <Folder Include="Entities\Invoices\Exceptions\Outer\" />
+    <Folder Include="Entities\Merchants\Exceptions\Inner\" />
+    <Folder Include="Entities\Merchants\Exceptions\Outer\" />
+    <Folder Include="Entities\Products\Exceptions\Inner\" />
+    <Folder Include="Entities\Products\Exceptions\Outer\" />
+  </ItemGroup>
+
 </Project>

@@ -48,8 +48,8 @@ public class InvoiceAzureStorageBroker : IInvoiceStorageBroker
             .ReadAsStreamAsync()
             .ConfigureAwait(false);
 
-        var photoName = photoLocation.ToString().Split('/')[^1];
-        return new FormFile(content, 0, content.Length, photoName, photoName);
+        var photoName = photoLocation?.ToString().Split('/')[^1];
+        return new FormFile(content, 0, content.Length, photoName!, photoName!);
     }
 
     /// <inheritdoc/>
@@ -60,11 +60,17 @@ public class InvoiceAzureStorageBroker : IInvoiceStorageBroker
 
         if (isValid)
         {
-            var photoExtension = base64InvoicePhoto.Substring(base64InvoicePhoto.IndexOf('/') + 1, base64InvoicePhoto.IndexOf(';') - base64InvoicePhoto.IndexOf('/') - 1);
+            var photoExtension = base64InvoicePhoto?
+                .Substring(
+                    base64InvoicePhoto.IndexOf('/', StringComparison.InvariantCultureIgnoreCase) + 1,
+                        base64InvoicePhoto.IndexOf(';', StringComparison.InvariantCultureIgnoreCase) - base64InvoicePhoto.IndexOf('/', StringComparison.InvariantCultureIgnoreCase) - 1);
+
             var photoName = photoIdentifier.ToString() + "." + photoExtension;
 
             var blobClient = blobContainerClient.GetBlobClient(photoName);
-            var photoBytes = Convert.FromBase64String(base64InvoicePhoto.Substring(base64InvoicePhoto.IndexOf(',') + 1));
+            var photoBytes = Convert.FromBase64String(
+                base64InvoicePhoto!.Substring(
+                    base64InvoicePhoto.IndexOf(',', StringComparison.InvariantCultureIgnoreCase) + 1));
 
             await blobClient
                 .UploadAsync(new MemoryStream(photoBytes))
@@ -81,8 +87,11 @@ public class InvoiceAzureStorageBroker : IInvoiceStorageBroker
     /// <inheritdoc/>
     public ValueTask<bool> ValidateBase64PhotoRepresentation(string base64PhotoRepresentation)
     {
-        var photoExtension = base64PhotoRepresentation.Substring(base64PhotoRepresentation.IndexOf('/') + 1, base64PhotoRepresentation.IndexOf(';') - base64PhotoRepresentation.IndexOf('/') - 1);
-        var photoBytes = Convert.FromBase64String(base64PhotoRepresentation.Substring(base64PhotoRepresentation.IndexOf(',') + 1));
+        var photoExtension = base64PhotoRepresentation?
+            .Substring(
+                base64PhotoRepresentation.IndexOf('/', StringComparison.InvariantCultureIgnoreCase) + 1,
+                base64PhotoRepresentation.IndexOf(';', StringComparison.InvariantCultureIgnoreCase) - base64PhotoRepresentation.IndexOf('/', StringComparison.InvariantCultureIgnoreCase) - 1);
+        var photoBytes = Convert.FromBase64String(base64PhotoRepresentation!.Substring(base64PhotoRepresentation.IndexOf(',', StringComparison.InvariantCultureIgnoreCase) + 1));
 
         if (photoExtension == "png" ||
             photoExtension == "jpg" ||

@@ -12,7 +12,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 /// <summary>
 /// The Invoice Storage foundation service.
 /// </summary>
-public class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
+public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
 {
     private readonly IInvoiceStorageBroker invoiceStorageBroker;
     private readonly IInvoiceNoSqlBroker invoiceNoSqlBroker;
@@ -26,13 +26,17 @@ public class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
         IInvoiceStorageBroker invoiceStorageBroker,
         IInvoiceNoSqlBroker invoiceNoSqlBroker)
     {
-        this.invoiceStorageBroker = invoiceStorageBroker;
-        this.invoiceNoSqlBroker = invoiceNoSqlBroker;
+        this.invoiceStorageBroker = invoiceStorageBroker
+            ?? throw new ArgumentNullException(nameof(invoiceStorageBroker));
+
+        this.invoiceNoSqlBroker = invoiceNoSqlBroker
+            ?? throw new ArgumentNullException(nameof(invoiceNoSqlBroker));
     }
 
     /// <inheritdoc/>
     public async Task<Invoice> ConvertDtoToEntity(CreateInvoiceDto invoiceDto)
     {
+        ValidateInvoiceDto(invoiceDto);
         var invoice = Invoice.CreateNullInvoice();
 
         invoice.id = Guid.NewGuid(); // create a new invoice.
@@ -86,6 +90,8 @@ public class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
     /// <inheritdoc/>
     public async Task<Invoice> CreateInvoiceObject(Invoice invoice)
     {
+        ArgumentNullException.ThrowIfNull(invoice);
+
         await invoiceNoSqlBroker
             .CreateInvoiceAsync(invoice)
             .ConfigureAwait(false);

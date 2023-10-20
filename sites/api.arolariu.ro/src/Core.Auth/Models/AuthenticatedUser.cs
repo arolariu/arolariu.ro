@@ -9,5 +9,7 @@ namespace arolariu.Backend.Core.Auth.Models;
 /// </summary>
 public class AuthenticatedUser: IdentityUser
 {
+#pragma warning disable S1144 // Unused private types or members should be removed
     private DateTimeOffset CreatedAt { get; set; }
+#pragma warning restore S1144 // Unused private types or members should be removed
 }

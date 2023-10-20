@@ -48,7 +48,7 @@ public record class Invoice
     /// <summary>
     /// How many days can you survive with the invoice items?
     /// </summary>
-    public int EstimatedSurvivalDays { get; set; } = 0;
+    public int EstimatedSurvivalDays { get; set; } = int.MinValue;
 
     /// <summary>
     /// Possible recipes for the invoice.
@@ -98,7 +98,7 @@ public record class Invoice
     /// The invoice metadata.
     /// This metadata is used to store system-assigned and user-assigned metadata.
     /// </summary>
-    public InvoiceMetadata Metadata { get; set; } = default;
+    public InvoiceMetadata Metadata { get; set; }
 
     /// <summary>
     /// The invoice additional metadata.

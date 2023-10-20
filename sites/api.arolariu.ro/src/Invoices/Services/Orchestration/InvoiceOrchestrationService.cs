@@ -85,6 +85,7 @@ public class InvoiceOrchestrationService : IInvoiceOrchestrationService
     /// <inheritdoc/>
     public async Task UpdateInvoiceObject(Invoice invoice)
     {
+        ArgumentNullException.ThrowIfNull(invoice);
         var updatedInvoice = invoice with { LastModifiedDate = DateTime.UtcNow };
         await invoiceStorageFoundationService.UpdateInvoiceObject(updatedInvoice).ConfigureAwait(false);
     }
