@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace arolariu.Backend.Domain.Invoices.Entities.Merchants;
 
@@ -8,6 +9,7 @@ namespace arolariu.Backend.Domain.Invoices.Entities.Merchants;
 /// This record is used to store the merchant information in the database.
 /// </summary>
 [Serializable]
+[ExcludeFromCodeCoverage]
 public record class Merchant
 {
     /// <summary>

@@ -1,6 +1,9 @@
-﻿using arolariu.Backend.Domain.Invoices.Entities.Invoices;
+﻿using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.Entities.Invoices;
+using arolariu.Backend.Domain.Invoices.Entities.Products;
 
 using System;
+using System.Linq;
 
 namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 
@@ -11,13 +14,27 @@ public partial class InvoiceAnalysisFoundationService
         ArgumentNullException.ThrowIfNull(invoice);
     }
 
-    private static void ValidateInvoiceFieldsArePopulated(Invoice invoice)
+    private static void ValidateInvoiceHasProducts(Invoice invoice)
     {
-        ValidateInvoiceExists(invoice);
-        ArgumentNullException.ThrowIfNull(invoice.AdditionalMetadata);
-        ArgumentNullException.ThrowIfNull(invoice.Description);
         ArgumentNullException.ThrowIfNull(invoice.Items);
-        ArgumentNullException.ThrowIfNull(invoice.DateOfPurchase);
-        ArgumentNullException.ThrowIfNull(invoice.ImageLocation);
+        if (invoice.Items.ToList().Count == 0)
+        {
+            throw new ArgumentException("The invoice has no products.");
+        }
+    }
+
+    private static void ValidateProductExists(Product product)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+    }
+
+    private static void ValidateProductNameExists(Product product)
+    {
+        ArgumentNullException.ThrowIfNull(product.RawName);
+        ArgumentNullException.ThrowIfNull(product.GenericName);
+    }
+    private static void ValidateAnalysisOptionsAreSet(AnalysisOptionsDto options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
     }
 }

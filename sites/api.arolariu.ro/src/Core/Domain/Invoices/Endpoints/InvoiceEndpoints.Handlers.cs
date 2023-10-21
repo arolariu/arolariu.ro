@@ -68,7 +68,7 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be analyzed due to an internal service error.", typeof(ProblemDetails))]
     private static async Task<IResult> AnalyzeInvoiceAsync(
         [FromRoute] Guid id,
-        [FromBody] InvoiceAnalysisOptionsDto options,
+        [FromBody] AnalysisOptionsDto options,
         [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService)
     {
         try

@@ -1,5 +1,8 @@
-﻿using System;
+﻿using arolariu.Backend.Domain.Invoices.Models;
+
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace arolariu.Backend.Domain.Invoices.Entities.Products;
 
@@ -9,6 +12,7 @@ namespace arolariu.Backend.Domain.Invoices.Entities.Products;
 /// The invoice item information is extracted from the invoice image using the OCR service.
 /// </summary>
 [Serializable]
+[ExcludeFromCodeCoverage]
 public record class Product
 {
     /// <summary>
@@ -52,17 +56,17 @@ public record class Product
     /// The item's price; this field is marked as string since some items can have a price range (e.g. 1.99 - 2.99) or a pricer per unit (e.g. 1.99 / kg).
     /// The price is represents the price of a single item.
     /// </summary>
-    public decimal Price { get; set; } = 0.0M;
+    public decimal Price { get; set; } = decimal.MinValue;
 
     /// <summary>
     /// The total price of the item, (Total = quantity x price).
     /// </summary>
-    public decimal TotalPrice { get; set; } = 0.0M;
+    public decimal TotalPrice { get; set; } = decimal.MinValue;
 
     /// <summary>
     /// The product's detected allergens.
     /// </summary>
-    public IEnumerable<string> DetectedAllergens { get; set; } = new List<string>();
+    public IEnumerable<Allergen> DetectedAllergens { get; set; } = new List<Allergen>();
 
     /// <summary>
     /// Product metadata.

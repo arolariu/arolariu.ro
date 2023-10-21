@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace arolariu.Backend.Domain.Invoices.Entities.Products;
 
@@ -6,7 +7,8 @@ namespace arolariu.Backend.Domain.Invoices.Entities.Products;
 /// Product metadata.
 /// </summary>
 [Serializable]
-public record class ProductMetadata
+[ExcludeFromCodeCoverage]
+public record struct ProductMetadata
 {
     /// <summary>
     /// Flag indicating if the item has been edited by the user.

@@ -1,6 +1,4 @@
-﻿using arolariu.Backend.Domain.Invoices.Brokers.InvoicePhotoStorageBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
-using arolariu.Backend.Domain.Invoices.DTOs;
+﻿using arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
 using arolariu.Backend.Domain.Invoices.Entities.Invoices;
 
 using System;
@@ -14,81 +12,66 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 /// </summary>
 public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
 {
-    private readonly IInvoiceStorageBroker invoiceStorageBroker;
     private readonly IInvoiceNoSqlBroker invoiceNoSqlBroker;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    /// <param name="invoiceStorageBroker"></param>
     /// <param name="invoiceNoSqlBroker"></param>
     public InvoiceStorageFoundationService(
-        IInvoiceStorageBroker invoiceStorageBroker,
         IInvoiceNoSqlBroker invoiceNoSqlBroker)
     {
-        this.invoiceStorageBroker = invoiceStorageBroker
-            ?? throw new ArgumentNullException(nameof(invoiceStorageBroker));
-
         this.invoiceNoSqlBroker = invoiceNoSqlBroker
             ?? throw new ArgumentNullException(nameof(invoiceNoSqlBroker));
     }
 
     /// <inheritdoc/>
-    public async Task<Invoice> ConvertDtoToEntity(CreateInvoiceDto invoiceDto)
-    {
-        ValidateInvoiceDto(invoiceDto);
-        var invoice = Invoice.CreateNullInvoice();
-
-        invoice.id = Guid.NewGuid(); // create a new invoice.
-        var invoicePhotoUri = await invoiceStorageBroker
-            .UploadInvoicePhotoToStorage(invoiceDto.InvoiceBase64Photo, invoice.id)
-            .ConfigureAwait(false);
-
-        return invoice with
-        {
-            ImageLocation = invoicePhotoUri,
-            UploadedDate = DateTime.UtcNow,
-            LastModifiedDate = DateTime.UtcNow,
-            //TODO: add user identifier value here
-        };
-    }
-
-    /// <inheritdoc/>
-    public async Task<Invoice> ReadInvoiceObject(Guid identifier)
+    public async Task<Invoice> ReadInvoiceObject(Guid identifier) =>
+    await TryCatchAsync(async () =>
     {
         var invoice = await invoiceNoSqlBroker
             .ReadInvoiceAsync(identifier)
             .ConfigureAwait(false);
+
         return invoice;
-    }
+    }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects()
+    public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects() =>
+    await TryCatchAsync(async () =>
     {
         var invoices = await invoiceNoSqlBroker
             .ReadInvoicesAsync()
             .ConfigureAwait(false);
+
         return invoices;
-    }
+    }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task UpdateInvoiceObject(Invoice invoice)
+    public async Task<Invoice> UpdateInvoiceObject(Invoice invoice) =>
+    await TryCatchAsync(async () =>
     {
-        await invoiceNoSqlBroker
+        var updatedInvoice = await invoiceNoSqlBroker
             .UpdateInvoiceAsync(invoice)
             .ConfigureAwait(false);
-    }
+
+        return updatedInvoice;
+    }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task DeleteInvoiceObject(Guid identifier)
+    public async Task<Invoice> DeleteInvoiceObject(Guid identifier) =>
+    await TryCatchAsync(async () =>
     {
-        await invoiceNoSqlBroker
+        var deletedInvoice = await invoiceNoSqlBroker
             .DeleteInvoiceAsync(identifier)
             .ConfigureAwait(false);
-    }
+
+        return deletedInvoice;
+    }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task<Invoice> CreateInvoiceObject(Invoice invoice)
+    public async Task<Invoice> CreateInvoiceObject(Invoice invoice) =>
+    await TryCatchAsync(async () =>
     {
         ArgumentNullException.ThrowIfNull(invoice);
 
@@ -99,6 +82,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
         var createdInvoice = await invoiceNoSqlBroker
             .ReadInvoiceAsync(invoice.id)
             .ConfigureAwait(false);
+
         return createdInvoice;
-    }
+    }).ConfigureAwait(false);
 }

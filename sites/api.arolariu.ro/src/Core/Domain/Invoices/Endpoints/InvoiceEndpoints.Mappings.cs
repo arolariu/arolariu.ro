@@ -56,7 +56,7 @@ public static partial class InvoiceEndpoints
 
         router
             .MapPost("/rest/invoices/{id}/analyze", AnalyzeInvoiceAsync)
-            .Accepts<InvoiceAnalysisOptionsDto>("application/json")
+            .Accepts<AnalysisOptionsDto>("application/json")
             .Produces<IResult>(StatusCodes.Status202Accepted)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization

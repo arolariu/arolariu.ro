@@ -1,8 +1,10 @@
 ﻿using arolariu.Backend.Domain.Invoices.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.Entities.Products;
+using arolariu.Backend.Domain.Invoices.Models;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace arolariu.Backend.Domain.Invoices.Entities.Invoices;
 
@@ -10,7 +12,8 @@ namespace arolariu.Backend.Domain.Invoices.Entities.Invoices;
 /// The Invoice model as "represented" in the Application Domain.
 /// </summary>
 [Serializable]
-public record class Invoice
+[ExcludeFromCodeCoverage] // Entities are not tested - they are used to represent the data in the application domain.
+public sealed record class Invoice
 {
     /// <summary>
     /// The invoice id.
@@ -21,14 +24,9 @@ public record class Invoice
 #pragma warning restore IDE1006 // Naming Styles
 
     /// <summary>
-    /// The invoice image URI.
-    /// </summary>
-    public required Uri ImageLocation { get; set; } = null!;
-
-    /// <summary>
     /// The invoice currency code - 3 letters - EUR, RON, SEK.
     /// </summary>
-    public required string Currency { get; set; } = string.Empty;
+    public required Currency Currency { get; set; }
 
     /// <summary>
     /// The invoice total amount (TOTAL = SUM(boughtItems) - SUM(discountedItems)).
@@ -53,7 +51,7 @@ public record class Invoice
     /// <summary>
     /// Possible recipes for the invoice.
     /// </summary>
-    public IEnumerable<string> PossibleRecipes { get; set; } = null!;
+    public IEnumerable<Recipe> PossibleRecipes { get; set; } = null!;
 
     #region Foreign Keys
     /// <summary>
@@ -72,27 +70,10 @@ public record class Invoice
     public IEnumerable<Product> Items { get; set; } = null!;
     #endregion
 
-    #region Invoice time information
     /// <summary>
-    /// The invoice uploaded date (in the system).
+    /// The invoice time information.
     /// </summary>
-    public required DateTimeOffset UploadedDate { get; set; } = DateTimeOffset.MinValue;
-
-    /// <summary>
-    /// The invoice identified date (from OCR service).
-    /// </summary>
-    public required DateTimeOffset DateOfPurchase { get; set; } = DateTimeOffset.MinValue;
-
-    /// <summary>
-    /// The invoice last modified date.
-    /// </summary>
-    public required DateTimeOffset LastModifiedDate { get; set; } = DateTimeOffset.MinValue;
-
-    /// <summary>
-    /// The invoice last analyzed date.
-    /// </summary>
-    public required DateTimeOffset DateOfAnalysis { get; set; } = DateTimeOffset.MinValue;
-    #endregion
+    public InvoiceTimeInformation TimeInformation { get; set; }
 
     /// <summary>
     /// The invoice metadata.

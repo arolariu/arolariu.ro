@@ -1,4 +1,6 @@
 ﻿using arolariu.Backend.Domain.Invoices.Entities.Invoices;
+using arolariu.Backend.Domain.Invoices.Entities.Products;
+using arolariu.Backend.Domain.Invoices.Models;
 
 using Azure;
 using Azure.AI.OpenAI;
@@ -7,6 +9,8 @@ using Microsoft.Extensions.Configuration;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -15,6 +19,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 /// <summary>
 /// The Azure OpenAI broker service.
 /// </summary>
+[ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
 public class AzureOpenAiBroker
 {
     private readonly string model = "gpt-turbo";
@@ -43,7 +48,7 @@ public class AzureOpenAiBroker
     /// </summary>
     /// <param name="invoice"></param>
     /// <returns></returns>
-    public async Task<ChatCompletions> GenerateInvoiceDescription(Invoice invoice)
+    public async Task<string> GenerateInvoiceDescription(Invoice invoice)
     {
         ArgumentNullException.ThrowIfNull(invoice);
         IList<string> invoiceItemsNamesAsList;
@@ -104,7 +109,8 @@ public class AzureOpenAiBroker
             .GetChatCompletionsAsync(model, chatOptions)
             .ConfigureAwait(false);
 
-        return invoiceDescriptionCompletion.Value;
+        var description = invoiceDescriptionCompletion.Value.Choices[0].Message.Content;
+        return description;
     }
 
     /// <summary>
@@ -112,7 +118,7 @@ public class AzureOpenAiBroker
     /// </summary>
     /// <param name="invoice"></param>
     /// <returns></returns>
-    public async Task<ChatCompletions> GeneratePossibleRecipes(Invoice invoice)
+    public async Task<IEnumerable<Recipe>> GeneratePossibleRecipes(Invoice invoice)
     {
         ArgumentNullException.ThrowIfNull(invoice);
         IList<string> invoiceItemsNamesAsList;
@@ -177,7 +183,12 @@ public class AzureOpenAiBroker
             .GetChatCompletionsAsync(model, chatOptions)
             .ConfigureAwait(false);
 
-        return invoicePossibleReceiptsCompletion.Value;
+        var recipes = invoicePossibleReceiptsCompletion.Value.Choices[0].Message.Content
+            .Split(',')
+            .Select(recipe => new Recipe(recipe, TimeOnly.MinValue, 0, null!,null!))
+            .ToList();
+
+        return recipes;
     }
 
     /// <summary>
@@ -185,7 +196,7 @@ public class AzureOpenAiBroker
     /// </summary>
     /// <param name="invoice"></param>
     /// <returns></returns>
-    public async Task<ChatCompletions> GeneratePossibleAllergens(Invoice invoice)
+    public async Task<IEnumerable<Allergen>> GeneratePossibleAllergens(Invoice invoice)
     {
         ArgumentNullException.ThrowIfNull(invoice);
         IList<string> invoiceItemsNamesAsList;
@@ -260,7 +271,13 @@ public class AzureOpenAiBroker
             .GetChatCompletionsAsync(model, chatOptions)
             .ConfigureAwait(false);
 
-        return invoicePossibleAllergensCompletion.Value;
+        var allergens = invoicePossibleAllergensCompletion.Value.Choices[0].Message.Content;
+        var allergensList = allergens
+            .Split(',')
+            .Select(allergen => new Allergen(allergen))
+            .ToList();
+
+        return allergensList;
     }
 
     /// <summary>
@@ -268,7 +285,7 @@ public class AzureOpenAiBroker
     /// </summary>
     /// <param name="invoice"></param>
     /// <returns></returns>
-    public async Task<ChatCompletions> GeneratePossibleSurvivalDays(Invoice invoice)
+    public async Task<int> GeneratePossibleSurvivalDays(Invoice invoice)
     {
         ArgumentNullException.ThrowIfNull(invoice);
         IList<string> invoiceItemsNamesAsList;
@@ -304,7 +321,7 @@ public class AzureOpenAiBroker
                 PARMIGIANO REGGIANO 250G
                 SAN MARZANO TOMATOES 400G
                 PASTA FETTUCINI 500G
-                SPAGHETTI 
+                SPAGHETTI
                 BREAD WITH SEEDS
 
                 If you are a normal human being, how many days do you think you can survive with this invoice? Output ONLY the generated number."),
@@ -333,7 +350,8 @@ public class AzureOpenAiBroker
             .GetChatCompletionsAsync(model, chatOptions)
             .ConfigureAwait(false);
 
-        return invoicePossibleSurvivalDaysCompletion.Value;
+        var survivalDays = invoicePossibleSurvivalDaysCompletion.Value.Choices[0].Message.Content;
+        return int.Parse(survivalDays, CultureInfo.InvariantCulture);
     }
 
     /// <summary>
@@ -341,7 +359,7 @@ public class AzureOpenAiBroker
     /// </summary>
     /// <param name="itemName"></param>
     /// <returns></returns>
-    public async Task<ChatCompletions> GenerateItemGenericName(string itemName)
+    public async Task<string> GenerateItemGenericName(string itemName)
     {
         var itemGenericNamePrompt = $"This item is locally called as `{itemName}`." +
             "Please try, as much as possible, to find a generic name for this item. Output ONLY the generated name.";
@@ -390,7 +408,8 @@ public class AzureOpenAiBroker
             .GetChatCompletionsAsync(model, chatOptions)
             .ConfigureAwait(false);
 
-        return itemGenericNameCompletion.Value;
+        var genericName = itemGenericNameCompletion.Value.Choices[0].Message.Content;
+        return genericName;
     }
 
     /// <summary>
@@ -398,7 +417,7 @@ public class AzureOpenAiBroker
     /// </summary>
     /// <param name="itemName"></param>
     /// <returns></returns>
-    public async Task<ChatCompletions> GenerateItemCategory(string itemName)
+    public async Task<ProductCategory> GenerateItemCategory(string itemName)
     {
         var itemCategoryPrompt = $"This item is locally called as `{itemName}`." +
             "From the given list of item categories, please try, as much as possible, to find an adequate category for this item. Output ONLY the generated category.";
@@ -452,10 +471,11 @@ public class AzureOpenAiBroker
             ChoiceCount = 1,
         };
 
-        var itemGenericNameCompletion = await openAIClient
+        var itemCategoryCompletion = await openAIClient
             .GetChatCompletionsAsync(model, chatOptions)
             .ConfigureAwait(false);
 
-        return itemGenericNameCompletion.Value;
+        var productCategory = itemCategoryCompletion.Value.Choices[0].Message.Content;
+        return Enum.Parse<ProductCategory>(productCategory);
     }
 }

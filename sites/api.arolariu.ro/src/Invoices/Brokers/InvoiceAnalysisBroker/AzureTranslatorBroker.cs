@@ -4,7 +4,7 @@ using Azure.AI.Translation.Text;
 using Microsoft.Extensions.Configuration;
 
 using System;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
@@ -12,6 +12,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 /// <summary>
 /// This class represents the Azure translator broker.
 /// </summary>
+[ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
 public class AzureTranslatorBroker
 {
     private readonly TextTranslationClient textTranslationClient;
@@ -22,19 +23,16 @@ public class AzureTranslatorBroker
     /// <param name="configuration"></param>
     public AzureTranslatorBroker(IConfiguration configuration)
     {
-        if (configuration is not null)
-        {
-            var azureTranslatorEndpoint = configuration["Azure:CognitiveServices:EndpointName"]
-                ?? throw new ArgumentNullException(nameof(configuration));
+        ArgumentNullException.ThrowIfNull(configuration);
+        var azureTranslatorEndpoint = configuration["Azure:CognitiveServices:EndpointName"]
+            ?? throw new ArgumentNullException(nameof(configuration));
 
-            var azureTranslatorApiKey = configuration["Azure:CognitiveServices:EndpointKey"]
-                ?? throw new ArgumentNullException(nameof(configuration));
+        var azureTranslatorApiKey = configuration["Azure:CognitiveServices:EndpointKey"]
+            ?? throw new ArgumentNullException(nameof(configuration));
 
-            textTranslationClient = new TextTranslationClient(
-                new AzureKeyCredential(azureTranslatorApiKey),
-                new Uri(azureTranslatorEndpoint));
-        }
-        else throw new ArgumentNullException(nameof(configuration));
+        textTranslationClient = new TextTranslationClient(
+            new AzureKeyCredential(azureTranslatorApiKey),
+            new Uri(azureTranslatorEndpoint));
     }
 
     /// <summary>

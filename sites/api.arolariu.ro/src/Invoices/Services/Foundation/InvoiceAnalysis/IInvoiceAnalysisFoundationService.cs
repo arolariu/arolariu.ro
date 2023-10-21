@@ -1,7 +1,6 @@
 ﻿using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Entities.Invoices;
 
-using System;
 using System.Threading.Tasks;
 
 namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
@@ -17,5 +16,5 @@ public interface IInvoiceAnalysisFoundationService
     /// <param name="invoice"></param>
     /// <param name="options"></param>
     /// <returns></returns>
-    public Task<Invoice> AnalyzeInvoiceWithOptions(Invoice invoice, InvoiceAnalysisOptionsDto options);
+    public Task AnalyzeInvoiceAsync(Invoice invoice, AnalysisOptionsDto options);
 }

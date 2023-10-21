@@ -5,6 +5,7 @@ using Microsoft.Azure.Cosmos;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -15,6 +16,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
 /// This class is used to interact with the database.
 /// The broker is used to perform CRUD operations on the database.
 /// </summary>
+[ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
 public class InvoiceNoSqlBroker : IInvoiceNoSqlBroker
 {
     private readonly Container invoiceContainer;
@@ -25,12 +27,9 @@ public class InvoiceNoSqlBroker : IInvoiceNoSqlBroker
     /// <param name="dbConnectionFactory"></param>
     public InvoiceNoSqlBroker(IDbConnectionFactory<CosmosClient> dbConnectionFactory)
     {
-        if (dbConnectionFactory is not null)
-        {
-            var cosmosClient = dbConnectionFactory.CreateConnection();
-            invoiceContainer = cosmosClient.GetContainer("arolariu", "invoices");
-        }
-        else throw new ArgumentNullException(nameof(dbConnectionFactory));
+        ArgumentNullException.ThrowIfNull(dbConnectionFactory);
+        var cosmosClient = dbConnectionFactory.CreateConnection();
+        invoiceContainer = cosmosClient.GetContainer("arolariu", "invoices");
     }
 
     /// <inheritdoc/>
@@ -45,9 +44,12 @@ public class InvoiceNoSqlBroker : IInvoiceNoSqlBroker
     }
 
     /// <inheritdoc/>
-    public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier)
+    public async ValueTask<Invoice> DeleteInvoiceAsync(Guid invoiceIdentifier)
     {
         var invoiceIdentifierAsString = invoiceIdentifier.ToString();
+
+        var deletedInvoice = await ReadInvoiceAsync(invoiceIdentifier)
+            .ConfigureAwait(false);
 
         var transactionResponse = await invoiceContainer
             .DeleteItemAsync<Invoice>(
@@ -57,6 +59,7 @@ public class InvoiceNoSqlBroker : IInvoiceNoSqlBroker
         //TODO: this needs to have as the partition key the user identifier.
 
         ValidateTransactionResponseStatusCodeWas(transactionResponse, HttpStatusCode.NoContent);
+        return deletedInvoice;
     }
 
     /// <inheritdoc/>

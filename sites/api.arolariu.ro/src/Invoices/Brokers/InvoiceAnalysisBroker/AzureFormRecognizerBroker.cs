@@ -17,6 +17,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 /// The namespace <see cref="Azure.AI.FormRecognizer.DocumentAnalysis"/> is part of the <see cref="Azure.AI.FormRecognizer"/> package.
 /// This package is used to interact with the Azure Form Recognizer service.
 /// </summary>
+[ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
 public partial class AzureFormRecognizerBroker
 {
     private readonly DocumentAnalysisClient client;

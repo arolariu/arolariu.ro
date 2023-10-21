@@ -1,5 +1,4 @@
-﻿using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Entities.Invoices;
+﻿using arolariu.Backend.Domain.Invoices.Entities.Invoices;
 
 using System;
 using System.Collections.Generic;
@@ -12,14 +11,6 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 /// </summary>
 public interface IInvoiceStorageFoundationService
 {
-    /// <summary>
-    /// Converts the invoice DTO to an invoice entity.
-    /// This method is used to convert the invoice DTO received from the API to an invoice entity that can be stored in the NoSQL database.
-    /// </summary>
-    /// <param name="invoiceDto"></param>
-    /// <returns></returns>
-    public Task<Invoice> ConvertDtoToEntity(CreateInvoiceDto invoiceDto);
-
     /// <summary>
     /// Creates an invoice object.
     /// </summary>
@@ -45,12 +36,12 @@ public interface IInvoiceStorageFoundationService
     /// </summary>
     /// <param name="invoice"></param>
     /// <returns></returns>
-    public Task UpdateInvoiceObject(Invoice invoice);
+    public Task<Invoice> UpdateInvoiceObject(Invoice invoice);
 
     /// <summary>
     /// Deletes an invoice object.
     /// </summary>
     /// <param name="identifier"></param>
     /// <returns></returns>
-    public Task DeleteInvoiceObject(Guid identifier);
+    public Task<Invoice> DeleteInvoiceObject(Guid identifier);
 }

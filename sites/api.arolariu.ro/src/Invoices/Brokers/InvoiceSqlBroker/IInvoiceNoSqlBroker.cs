@@ -54,6 +54,6 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker
         /// </summary>
         /// <param name="invoiceIdentifier"></param>
         /// <returns></returns>
-        public ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier);
+        public ValueTask<Invoice> DeleteInvoiceAsync(Guid invoiceIdentifier);
     }
 }

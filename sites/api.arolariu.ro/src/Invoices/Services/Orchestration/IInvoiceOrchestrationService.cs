@@ -18,17 +18,10 @@ public interface IInvoiceOrchestrationService
     /// <param name="invoiceIdentifier"></param>
     /// <param name="options"></param>
     /// <returns></returns>
-    public Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, InvoiceAnalysisOptionsDto options);
+    public Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, AnalysisOptionsDto options);
     #endregion
 
     #region Implements the Invoice Storage Foundation Service
-    /// <summary>
-    /// Creates an invoice object.
-    /// </summary>
-    /// <param name="invoiceDto"></param>
-    /// <returns></returns>
-    public Task<Invoice> CreateInvoiceObjectFromDto(CreateInvoiceDto invoiceDto);
-
     /// <summary>
     /// Reads an invoice object.
     /// </summary>
@@ -47,13 +40,13 @@ public interface IInvoiceOrchestrationService
     /// </summary>
     /// <param name="invoice"></param>
     /// <returns></returns>
-    public Task UpdateInvoiceObject(Invoice invoice);
+    public Task<Invoice> UpdateInvoiceObject(Invoice invoice);
 
     /// <summary>
     /// Deletes an invoice object.
     /// </summary>
     /// <param name="identifier"></param>
     /// <returns></returns>
-    public Task DeleteInvoiceObject(Guid identifier);
+    public Task<Invoice> DeleteInvoiceObject(Guid identifier);
     #endregion
 }

@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 
 namespace arolariu.Backend.Domain.Invoices.Entities.Invoices;
 
@@ -10,35 +10,10 @@ namespace arolariu.Backend.Domain.Invoices.Entities.Invoices;
 /// Thus, the struct is divided into two parts: system-assigned and user-assigned.
 /// </summary>
 [Serializable]
-[StructLayout(LayoutKind.Auto)]
-public partial record struct InvoiceMetadata
-{
-    /// <summary>
-    /// Parametrized constructor.
-    /// </summary>
-    /// <param name="isAnalyzed"></param>
-    /// <param name="isEdited"></param>
-    /// <param name="isComplete"></param>
-    /// <param name="isSoftDeleted"></param>
-    /// <param name="isImportant"></param>
-    public InvoiceMetadata(
-        bool isAnalyzed,
-        bool isEdited,
-        bool isComplete,
-        bool isSoftDeleted,
-        bool isImportant) : this()
-    {
-        IsAnalyzed = isAnalyzed;
-        IsEdited = isEdited;
-        IsComplete = isComplete;
-        IsSoftDeleted = isSoftDeleted;
-        IsImportant = isImportant;
-    }
-
-    /// <summary>
-    /// Basic constructor.
-    /// </summary>
-    public InvoiceMetadata()
-    {
-    }
-}
+[ExcludeFromCodeCoverage]
+public record struct InvoiceMetadata(
+    bool IsAnalyzed,
+    bool IsEdited,
+    bool IsComplete,
+    bool IsSoftDeleted,
+    bool IsImportant);

@@ -6,7 +6,7 @@ namespace arolariu.Backend.Domain.Invoices.DTOs;
 /// This class represents the invoice analysis options DTO.
 /// </summary>
 [Serializable]
-public enum InvoiceAnalysisOptionsDto
+public enum AnalysisOptionsDto
 {
     /// <summary>
     /// No analysis.

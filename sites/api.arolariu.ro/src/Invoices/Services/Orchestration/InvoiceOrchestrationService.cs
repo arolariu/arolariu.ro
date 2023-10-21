@@ -12,7 +12,7 @@ namespace arolariu.Backend.Domain.Invoices.Services.Orchestration;
 /// <summary>
 /// The invoice orchestration service interface represents the orchestration service for the invoice domain.
 /// </summary>
-public class InvoiceOrchestrationService : IInvoiceOrchestrationService
+public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 {
     private readonly IInvoiceAnalysisFoundationService invoiceAnalysisFoundationService;
     private readonly IInvoiceStorageFoundationService invoiceStorageFoundationService;
@@ -32,67 +32,60 @@ public class InvoiceOrchestrationService : IInvoiceOrchestrationService
 
 
     /// <inheritdoc/>
-    public async Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, InvoiceAnalysisOptionsDto options)
+    public async Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, AnalysisOptionsDto options) =>
+    await TryCatchAsync(async () =>
     {
         var invoice = await ReadInvoiceObject(invoiceIdentifier).ConfigureAwait(false);
-        var updatedInvoice = await invoiceAnalysisFoundationService
-            .AnalyzeInvoiceWithOptions(invoice, options)
+        await invoiceAnalysisFoundationService
+            .AnalyzeInvoiceAsync(invoice, options)
             .ConfigureAwait(false);
 
-        await UpdateInvoiceObject(updatedInvoice).ConfigureAwait(false);
-    }
+        await UpdateInvoiceObject(invoice).ConfigureAwait(false);
+    }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task<Invoice> CreateInvoiceObjectFromDto(CreateInvoiceDto invoiceDto)
-    {
-        var invoice = await invoiceStorageFoundationService
-            .ConvertDtoToEntity(invoiceDto)
-            .ConfigureAwait(false);
-
-        await invoiceStorageFoundationService
-            .CreateInvoiceObject(invoice)
-            .ConfigureAwait(false);
-
-        return invoice;
-    }
-
-    /// <inheritdoc/>
-    public async Task DeleteInvoiceObject(Guid identifier)
+    public async Task<Invoice> DeleteInvoiceObject(Guid identifier) =>
+    await TryCatchAsync(async () =>
     {
         var invoice = await ReadInvoiceObject(identifier).ConfigureAwait(false);
-        await invoiceStorageFoundationService
+        var deletedInvoice = await invoiceStorageFoundationService
             .DeleteInvoiceObject(invoice.id)
             .ConfigureAwait(false);
-    }
+
+        return deletedInvoice;
+    }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects()
+    public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects() =>
+    await TryCatchAsync(async () =>
     {
         var invoices = await invoiceStorageFoundationService
             .ReadAllInvoiceObjects()
             .ConfigureAwait(false);
 
         return invoices;
-    }
+    }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task<Invoice> ReadInvoiceObject(Guid identifier)
+    public async Task<Invoice> ReadInvoiceObject(Guid identifier) =>
+    await TryCatchAsync(async () =>
     {
         var invoice = await invoiceStorageFoundationService
             .ReadInvoiceObject(identifier)
             .ConfigureAwait(false);
 
         return invoice;
-    }
+    }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task UpdateInvoiceObject(Invoice invoice)
+    public async Task<Invoice> UpdateInvoiceObject(Invoice invoice) =>
+    await TryCatchAsync(async () =>
     {
         ArgumentNullException.ThrowIfNull(invoice);
-        var updatedInvoice = invoice with { LastModifiedDate = DateTime.UtcNow };
-
-        await invoiceStorageFoundationService
-            .UpdateInvoiceObject(updatedInvoice)
+        var updatedInvoice = await invoiceStorageFoundationService
+            .UpdateInvoiceObject(invoice)
             .ConfigureAwait(false);
-    }
+
+        return updatedInvoice;
+    }).ConfigureAwait(false);
 }

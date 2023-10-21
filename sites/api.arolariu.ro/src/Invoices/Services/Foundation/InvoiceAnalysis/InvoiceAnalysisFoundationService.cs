@@ -7,7 +7,6 @@ using Microsoft.Extensions.Configuration;
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
@@ -27,24 +26,38 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
     /// <param name="configuration"></param>
     public InvoiceAnalysisFoundationService(IConfiguration configuration)
     {
-        if (configuration is not null)
-        {
-            azureOpenAiBroker = new AzureOpenAiBroker(configuration);
-            azureTranslatorBroker = new AzureTranslatorBroker(configuration);
-            azureFormRecognizerBroker = new AzureFormRecognizerBroker(configuration);
-        }
-        else throw new ArgumentNullException(nameof(configuration));
+        ArgumentNullException.ThrowIfNull(configuration);
+        azureOpenAiBroker = new AzureOpenAiBroker(configuration);
+        azureTranslatorBroker = new AzureTranslatorBroker(configuration);
+        azureFormRecognizerBroker = new AzureFormRecognizerBroker(configuration);
     }
 
     /// <inheritdoc/>
-    public async Task<Invoice> AnalyzeInvoiceWithOptions(Invoice invoice, InvoiceAnalysisOptionsDto options)
+    public async Task AnalyzeInvoiceAsync(Invoice invoice, AnalysisOptionsDto options) =>
+    await TryCatchAsync(async () =>
     {
         ValidateInvoiceExists(invoice);
-        ValidateInvoiceFieldsArePopulated(invoice);
+        ValidateAnalysisOptionsAreSet(options);
 
-        if (InvoiceAnalysisOptionsDto.CompleteAnalysis == options)
+        switch (options)
         {
-            invoice = await AnalyzeInvoicePhoto(invoice).ConfigureAwait(false);
+            case AnalysisOptionsDto.CompleteAnalysis:
+                await PerformFullAnalysis().ConfigureAwait(false);
+                break;
+            case AnalysisOptionsDto.InvoiceOnly:
+                await PerformInvoiceOnlyAnalysis().ConfigureAwait(false);
+                break;
+            case AnalysisOptionsDto.InvoiceItemsOnly:
+                await PerformInvoiceItemsOnlyAnalysis().ConfigureAwait(false);
+                break;
+            case AnalysisOptionsDto.NoAnalysis:
+            default:
+                break;
+        }
+
+        async Task PerformFullAnalysis()
+        {
+            await AnalyzeInvoicePhoto(invoice).ConfigureAwait(false);
             var updatedInvoiceItems = new List<Product>();
             foreach (var invoiceItem in invoice.Items)
             {
@@ -54,21 +67,25 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
             }
 
             invoice.Items = updatedInvoiceItems;
-            invoice = await AnalyzeInvoicePossibleAllergens(invoice).ConfigureAwait(false);
-            invoice = await AnalyzeInvoicePossibleRecipes(invoice).ConfigureAwait(false);
-            invoice = await AnalyzeInvoiceDescription(invoice).ConfigureAwait(false);
-            invoice = await AnalyzeEstimatedSurvivalDays(invoice).ConfigureAwait(false);
-            return invoice;
-        }
 
-        if (InvoiceAnalysisOptionsDto.InvoiceOnly == options)
+            await AnalyzeInvoicePossibleAllergens(invoice)
+                .ConfigureAwait(false);
+
+            await AnalyzeInvoicePossibleRecipes(invoice)
+                .ConfigureAwait(false);
+
+            await AnalyzeInvoiceDescription(invoice)
+                .ConfigureAwait(false);
+
+            await AnalyzeEstimatedSurvivalDays(invoice)
+                .ConfigureAwait(false);
+        }
+        async Task PerformInvoiceOnlyAnalysis()
         {
-            invoice = await AnalyzeInvoiceDescription(invoice).ConfigureAwait(false);
-            invoice = await AnalyzeEstimatedSurvivalDays(invoice).ConfigureAwait(false);
-            return invoice;
+            await AnalyzeInvoiceDescription(invoice).ConfigureAwait(false);
+            await AnalyzeEstimatedSurvivalDays(invoice).ConfigureAwait(false);
         }
-
-        if (InvoiceAnalysisOptionsDto.InvoiceItemsOnly == options)
+        async Task PerformInvoiceItemsOnlyAnalysis()
         {
             var updatedInvoiceItems = new List<Product>();
             foreach (var invoiceItem in invoice.Items)
@@ -79,44 +96,50 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
             }
 
             invoice.Items = updatedInvoiceItems;
-            invoice = await AnalyzeInvoicePossibleAllergens(invoice).ConfigureAwait(false);
-            invoice = await AnalyzeInvoicePossibleRecipes(invoice).ConfigureAwait(false);
-            return invoice;
+            await AnalyzeInvoicePossibleAllergens(invoice).ConfigureAwait(false);
+            await AnalyzeInvoicePossibleRecipes(invoice).ConfigureAwait(false);
         }
-
-        return invoice;
-    }
+    }).ConfigureAwait(false);
 
     private async Task<Invoice> AnalyzeInvoiceDescription(Invoice invoice)
     {
-        var analyzedInvoiceResult = await azureOpenAiBroker
+        ValidateInvoiceExists(invoice);
+        ValidateInvoiceHasProducts(invoice);
+
+        var description = await azureOpenAiBroker
             .GenerateInvoiceDescription(invoice)
             .ConfigureAwait(false);
 
-        var updatedInvoice = analyzedInvoiceResult is null
+        var updatedInvoice = description is null
             ? invoice
-            : invoice with { Description = analyzedInvoiceResult.Choices[0].Message.Content };
+            : invoice with { Description = description };
+
         return updatedInvoice;
     }
 
     private async Task<Product> AnalyzeInvoiceItemGenericName(Product invoiceItem)
     {
-        var translatedInvoiceItemName = await azureTranslatorBroker
+        ValidateProductExists(invoiceItem);
+
+        var translatedName = await azureTranslatorBroker
             .Translate(invoiceItem.RawName)
             .ConfigureAwait(false);
 
-        var analyzedInvoiceItemResult = await azureOpenAiBroker
-            .GenerateItemGenericName(translatedInvoiceItemName)
+        var genericName = await azureOpenAiBroker
+            .GenerateItemGenericName(translatedName)
             .ConfigureAwait(false);
 
-        var updatedInvoiceItem = analyzedInvoiceItemResult is null
-            ? invoiceItem with { GenericName = translatedInvoiceItemName }
-            : invoiceItem with { GenericName = analyzedInvoiceItemResult.Choices[0].Message.Content };
+        var updatedInvoiceItem = genericName is null
+            ? invoiceItem with { GenericName = translatedName }
+            : invoiceItem with { GenericName = genericName };
+
         return updatedInvoiceItem;
     }
 
     private async Task<Invoice> AnalyzeInvoicePhoto(Invoice invoice)
     {
+        ValidateInvoiceExists(invoice);
+
         var analyzedInvoiceResult = await azureFormRecognizerBroker
             .SendInvoiceToAnalysisAsync(invoice)
             .ConfigureAwait(false);
@@ -129,102 +152,49 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
 
     private async Task<Invoice> AnalyzeInvoicePossibleAllergens(Invoice invoice)
     {
-        var analyzedInvoiceResult = await azureOpenAiBroker
+        ValidateInvoiceExists(invoice);
+
+        var allergensList = await azureOpenAiBroker
             .GeneratePossibleAllergens(invoice)
             .ConfigureAwait(false);
 
-        if (analyzedInvoiceResult is null)
-        {
-            return invoice;
-        }
-        else
-        {
-            var invoiceAllergensAsString = analyzedInvoiceResult.Choices[0].Message.Content;
-            try
-            {
-#pragma warning disable S1481 // Unused local variables should be removed
-                var invoiceAllergensAsList = invoiceAllergensAsString.Split(',').ToList();
-#pragma warning restore S1481 // Unused local variables should be removed
-                return invoice; // TODO: fix this
-            }
-            catch (ArgumentNullException ex)
-            {
-                Console.WriteLine(ex.Message);
-                return invoice;
-            }
-        }
+        // TODO: fix this.
+        return invoice;
     }
 
     private async Task<Invoice> AnalyzeInvoicePossibleRecipes(Invoice invoice)
     {
-        var analyzedInvoiceResult = await azureOpenAiBroker
+        ValidateInvoiceExists(invoice);
+
+        var recipesList = await azureOpenAiBroker
             .GeneratePossibleRecipes(invoice)
             .ConfigureAwait(false);
 
-        if (analyzedInvoiceResult is null)
-        {
-            return invoice;
-        }
-        else
-        {
-            var invoiceRecipesAsString = analyzedInvoiceResult.Choices[0].Message.Content;
-            try
-            {
-                var invoiceRecipesAsList = invoiceRecipesAsString.Split(',').ToList();
-                return invoice with { PossibleRecipes = invoiceRecipesAsList };
-            }
-            catch (ArgumentNullException ex)
-            {
-                Console.WriteLine(ex.Message);
-                return invoice;
-            }
-        }
+        return recipesList is null
+            ? invoice
+            : invoice with { PossibleRecipes = recipesList };
     }
 
     private async Task<Invoice> AnalyzeEstimatedSurvivalDays(Invoice invoice)
     {
-        var analyzedInvoiceResult = await azureOpenAiBroker
+        ValidateInvoiceExists(invoice);
+
+        var survivalDays = await azureOpenAiBroker
             .GeneratePossibleSurvivalDays(invoice)
             .ConfigureAwait(false);
 
-        if (analyzedInvoiceResult is null)
-        {
-            return invoice;
-        }
-        else
-        {
-            if (int.TryParse(analyzedInvoiceResult.Choices[0].Message.Content, out int estimatedSurvivalDays))
-            {
-                return invoice with { EstimatedSurvivalDays = estimatedSurvivalDays };
-            }
-            else
-            {
-                return invoice;
-            }
-        }
+        return invoice with { EstimatedSurvivalDays = survivalDays };
     }
 
     private async Task<Product> AnalyzeInvoiceItemCategory(Product invoiceItem)
     {
-        var analyzedInvoiceItemResult = await azureOpenAiBroker
+        ValidateProductExists(invoiceItem);
+        ValidateProductNameExists(invoiceItem);
+
+        var productCategory = await azureOpenAiBroker
             .GenerateItemCategory(invoiceItem.GenericName)
             .ConfigureAwait(false);
 
-        if (analyzedInvoiceItemResult is null)
-        {
-            return invoiceItem;
-        }
-        else
-        {
-            if (Enum.TryParse(analyzedInvoiceItemResult.Choices[0].Message.Content, out ProductCategory itemCategory))
-            {
-                return invoiceItem with { Category = itemCategory };
-            }
-            else
-            {
-                return invoiceItem;
-            }
-        }
+        return invoiceItem with { Category = productCategory };
     }
-
 }
