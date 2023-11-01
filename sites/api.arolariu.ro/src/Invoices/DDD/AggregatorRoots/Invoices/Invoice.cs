@@ -1,19 +1,18 @@
-﻿using arolariu.Backend.Domain.Invoices.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.Entities.Products;
-using arolariu.Backend.Domain.Invoices.Models;
-
+﻿using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace arolariu.Backend.Domain.Invoices.Entities.Invoices;
+namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 /// <summary>
 /// The Invoice model as "represented" in the Application Domain.
 /// </summary>
 [Serializable]
 [ExcludeFromCodeCoverage] // Entities are not tested - they are used to represent the data in the application domain.
-public sealed record class Invoice
+public sealed class Invoice
 {
     /// <summary>
     /// The invoice id.
@@ -95,27 +94,21 @@ public sealed record class Invoice
     /// <returns></returns>
     public static Invoice CreateNullInvoice()
     {
-#pragma warning disable S1075 // URIs should not be hardcoded
         return new Invoice
         {
             id = Guid.Empty,
-            ImageLocation = new Uri("https://www.arolariu.ro/null"),
-            Currency = "###",
+            Currency = new Currency(),
             TotalAmount = decimal.MinValue,
             TotalTax = decimal.MinValue,
             Description = "This is a null invoice; please correct/delete.",
             EstimatedSurvivalDays = int.MinValue,
-            PossibleRecipes = new List<string>(),
+            PossibleRecipes = new List<Recipe>(),
             UserIdentifier = Guid.Empty,
             Merchant = new Merchant(),
             Items = new List<Product>(),
-            UploadedDate = DateTimeOffset.MinValue,
-            DateOfPurchase = DateTimeOffset.MinValue,
-            LastModifiedDate = DateTimeOffset.MinValue,
-            DateOfAnalysis = DateTimeOffset.MinValue,
+            TimeInformation = new InvoiceTimeInformation(),
             AdditionalMetadata = new List<KeyValuePair<string, object>>()
         };
-#pragma warning restore S1075 // URIs should not be hardcoded
     }
 
     /// <summary>
@@ -125,4 +118,17 @@ public sealed record class Invoice
     /// <returns>`True` if the object is null; otherwise `False`.</returns>
     public static bool CheckForNullObject(Invoice invoice)
         => invoice == null || invoice.id == Guid.Empty;
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj)
+    {
+        if (obj is not Invoice invoice) return false;
+        return id.Equals(invoice.id);
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(id);
+    }
 }

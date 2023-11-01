@@ -1,5 +1,6 @@
 ﻿using arolariu.Backend.Core.DAL.Database;
-using arolariu.Backend.Domain.Invoices.Entities.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Microsoft.Azure.Cosmos;
 
@@ -33,9 +34,11 @@ public class InvoiceNoSqlBroker : IInvoiceNoSqlBroker
     }
 
     /// <inheritdoc/>
-    public async ValueTask CreateInvoiceAsync(Invoice invoice)
+    public async ValueTask CreateInvoiceAsync(CreateInvoiceDto invoiceDto)
     {
-        Console.WriteLine(invoice);
+        Console.WriteLine(invoiceDto);
+        var invoice = Invoice.CreateNullInvoice(); // TODO: map the invoice dto to the invoice entity.
+
         var transactionResponse = await invoiceContainer
             .CreateItemAsync(invoice)
             .ConfigureAwait(false);

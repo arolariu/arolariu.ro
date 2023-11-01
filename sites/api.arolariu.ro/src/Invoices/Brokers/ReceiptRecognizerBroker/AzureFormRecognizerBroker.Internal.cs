@@ -1,6 +1,5 @@
-﻿using arolariu.Backend.Domain.Invoices.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.Entities.Products;
-
+﻿using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
 
 using System;

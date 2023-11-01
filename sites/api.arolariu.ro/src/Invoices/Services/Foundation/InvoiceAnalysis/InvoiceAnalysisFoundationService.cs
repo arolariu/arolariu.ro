@@ -1,7 +1,7 @@
 ﻿using arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Entities.Invoices;
-using arolariu.Backend.Domain.Invoices.Entities.Products;
 
 using Microsoft.Extensions.Configuration;
 
@@ -68,10 +68,10 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
 
             invoice.Items = updatedInvoiceItems;
 
-            await AnalyzeInvoicePossibleAllergens(invoice)
+            await AnalyzePossibleAllergensFor(invoice)
                 .ConfigureAwait(false);
 
-            await AnalyzeInvoicePossibleRecipes(invoice)
+            await AnalyzePossibleRecipesFor(invoice)
                 .ConfigureAwait(false);
 
             await AnalyzeInvoiceDescription(invoice)
@@ -96,25 +96,20 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
             }
 
             invoice.Items = updatedInvoiceItems;
-            await AnalyzeInvoicePossibleAllergens(invoice).ConfigureAwait(false);
-            await AnalyzeInvoicePossibleRecipes(invoice).ConfigureAwait(false);
+            await AnalyzePossibleAllergensFor(invoice).ConfigureAwait(false);
+            await AnalyzePossibleRecipesFor(invoice).ConfigureAwait(false);
         }
     }).ConfigureAwait(false);
 
     private async Task<Invoice> AnalyzeInvoiceDescription(Invoice invoice)
     {
-        ValidateInvoiceExists(invoice);
-        ValidateInvoiceHasProducts(invoice);
-
         var description = await azureOpenAiBroker
             .GenerateInvoiceDescription(invoice)
             .ConfigureAwait(false);
 
-        var updatedInvoice = description is null
-            ? invoice
-            : invoice with { Description = description };
-
-        return updatedInvoice;
+        return description is not null
+            ? invoice with { Description = description }
+            : invoice;
     }
 
     private async Task<Product> AnalyzeInvoiceItemGenericName(Product invoiceItem)
@@ -138,8 +133,6 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
 
     private async Task<Invoice> AnalyzeInvoicePhoto(Invoice invoice)
     {
-        ValidateInvoiceExists(invoice);
-
         var analyzedInvoiceResult = await azureFormRecognizerBroker
             .SendInvoiceToAnalysisAsync(invoice)
             .ConfigureAwait(false);
@@ -150,35 +143,30 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
         return updatedInvoice;
     }
 
-    private async Task<Invoice> AnalyzeInvoicePossibleAllergens(Invoice invoice)
+    private async Task<Product> AnalyzePossibleAllergensFor(Product product)
     {
-        ValidateInvoiceExists(invoice);
-
         var allergensList = await azureOpenAiBroker
-            .GeneratePossibleAllergens(invoice)
+            .GeneratePossibleAllergens(product)
             .ConfigureAwait(false);
 
-        // TODO: fix this.
-        return invoice;
+        return allergensList is not null
+            ? product with { DetectedAllergens = allergensList }
+            : product;
     }
 
-    private async Task<Invoice> AnalyzeInvoicePossibleRecipes(Invoice invoice)
+    private async Task<Invoice> AnalyzePossibleRecipesFor(Invoice invoice)
     {
-        ValidateInvoiceExists(invoice);
-
         var recipesList = await azureOpenAiBroker
             .GeneratePossibleRecipes(invoice)
             .ConfigureAwait(false);
 
-        return recipesList is null
-            ? invoice
-            : invoice with { PossibleRecipes = recipesList };
+        return recipesList is not null
+            ? invoice with { PossibleRecipes = recipesList }
+            : invoice;
     }
 
     private async Task<Invoice> AnalyzeEstimatedSurvivalDays(Invoice invoice)
     {
-        ValidateInvoiceExists(invoice);
-
         var survivalDays = await azureOpenAiBroker
             .GeneratePossibleSurvivalDays(invoice)
             .ConfigureAwait(false);
@@ -188,9 +176,6 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
 
     private async Task<Product> AnalyzeInvoiceItemCategory(Product invoiceItem)
     {
-        ValidateProductExists(invoiceItem);
-        ValidateProductNameExists(invoiceItem);
-
         var productCategory = await azureOpenAiBroker
             .GenerateItemCategory(invoiceItem.GenericName)
             .ConfigureAwait(false);

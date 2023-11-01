@@ -1,5 +1,5 @@
-﻿using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Entities.Invoices;
+﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DTOs;
 
 using System.Threading.Tasks;
 

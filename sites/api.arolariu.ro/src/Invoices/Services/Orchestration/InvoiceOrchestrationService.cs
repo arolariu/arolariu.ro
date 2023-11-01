@@ -1,5 +1,5 @@
-﻿using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Entities.Invoices;
+﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
@@ -41,6 +41,17 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
             .ConfigureAwait(false);
 
         await UpdateInvoiceObject(invoice).ConfigureAwait(false);
+    }).ConfigureAwait(false);
+
+    /// <inheritdoc/>
+    public async Task<Invoice> CreateInvoiceObject(CreateInvoiceDto createInvoiceDto) =>
+    await TryCatchAsync(async () =>
+    {
+        var invoice = await invoiceStorageFoundationService
+            .CreateInvoiceObject(createInvoiceDto)
+            .ConfigureAwait(false);
+
+        return invoice;
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>

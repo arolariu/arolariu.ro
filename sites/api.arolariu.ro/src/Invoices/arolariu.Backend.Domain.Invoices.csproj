@@ -39,21 +39,18 @@
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
   </ItemGroup>
 
-	<ItemGroup>
-		<FrameworkReference Include="Microsoft.AspNetCore.App" />
-	</ItemGroup>
-
   <ItemGroup>
+    <ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
     <ProjectReference Include="..\Core.DAL\arolariu.Backend.Core.DAL.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Entities\Invoices\Exceptions\Inner\" />
-    <Folder Include="Entities\Invoices\Exceptions\Outer\" />
-    <Folder Include="Entities\Merchants\Exceptions\Inner\" />
-    <Folder Include="Entities\Merchants\Exceptions\Outer\" />
-    <Folder Include="Entities\Products\Exceptions\Inner\" />
-    <Folder Include="Entities\Products\Exceptions\Outer\" />
+    <Folder Include="DDD\AggregatorRoots\Invoices\Exceptions\Inner\" />
+    <Folder Include="DDD\AggregatorRoots\Invoices\Exceptions\Outer\" />
+    <Folder Include="DDD\Entities\Merchants\Exceptions\Inner\" />
+    <Folder Include="DDD\Entities\Merchants\Exceptions\Outer\" />
+    <Folder Include="DDD\Entities\Products\Exceptions\Inner\" />
+    <Folder Include="DDD\Entities\Products\Exceptions\Outer\" />
   </ItemGroup>
 
 </Project>

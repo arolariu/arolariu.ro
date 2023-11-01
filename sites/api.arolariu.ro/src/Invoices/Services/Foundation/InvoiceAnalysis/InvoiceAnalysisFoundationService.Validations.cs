@@ -1,6 +1,6 @@
-﻿using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Entities.Invoices;
-using arolariu.Backend.Domain.Invoices.Entities.Products;
+﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
+using arolariu.Backend.Domain.Invoices.DTOs;
 
 using System;
 using System.Linq;

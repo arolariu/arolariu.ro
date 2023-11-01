@@ -1,7 +1,6 @@
-﻿using arolariu.Backend.Domain.Invoices.Entities.Invoices;
-using arolariu.Backend.Domain.Invoices.Entities.Products;
-using arolariu.Backend.Domain.Invoices.Models;
-
+﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using Azure;
 using Azure.AI.OpenAI;
 
@@ -194,22 +193,13 @@ public class AzureOpenAiBroker
     /// <summary>
     /// This method will generate and populate the Invoice `PossibleAllergens` property.
     /// </summary>
-    /// <param name="invoice"></param>
+    /// <param name="product"></param>
     /// <returns></returns>
-    public async Task<IEnumerable<Allergen>> GeneratePossibleAllergens(Invoice invoice)
+    public async Task<IEnumerable<Allergen>> GeneratePossibleAllergens(Product product)
     {
-        ArgumentNullException.ThrowIfNull(invoice);
-        IList<string> invoiceItemsNamesAsList;
-        if (invoice.Items.Select(item => item.GenericName).Any(name => string.IsNullOrEmpty(name)))
-        {
-            invoiceItemsNamesAsList = invoice.Items.Select(item => item.RawName).ToList();
-        }
-        else
-        {
-            invoiceItemsNamesAsList = invoice.Items.Select(item => item.GenericName).ToList();
-        }
+        ArgumentNullException.ThrowIfNull(product);
 
-        var invoiceItemsNamesAsString = string.Join("\n", invoiceItemsNamesAsList);
+        var invoiceItemsNamesAsString = string.Join("\n", product.GenericName);
         var invoicePossibleAllergensPrompt = $"This invoice consists of the following items: {invoiceItemsNamesAsString}." +
             "Generate a list of all the allergens that POSSIBLY can be in this invoice. Output ONLY the generated allergens.";
 

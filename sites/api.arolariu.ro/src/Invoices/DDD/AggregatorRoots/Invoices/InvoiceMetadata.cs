@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace arolariu.Backend.Domain.Invoices.Entities.Invoices;
+namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 /// <summary>
 /// This struct represents the invoice metadata.

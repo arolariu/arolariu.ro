@@ -1,10 +1,9 @@
-﻿using arolariu.Backend.Domain.Invoices.Models;
-
+﻿using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace arolariu.Backend.Domain.Invoices.Entities.Products;
+namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 
 /// <summary>
 /// The invoice item record represents a single item from the invoice.
@@ -71,5 +70,5 @@ public record class Product
     /// <summary>
     /// Product metadata.
     /// </summary>
-    public ProductMetadata Metadata { get; set; } = new ProductMetadata();
+    public ProductMetadata Metadata { get; set; }
 }

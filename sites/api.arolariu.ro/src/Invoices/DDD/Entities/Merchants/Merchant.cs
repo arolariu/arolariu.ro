@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace arolariu.Backend.Domain.Invoices.Entities.Merchants;
+namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 /// <summary>
 /// The invoice merchant record class represents the merchant information from the invoice.
@@ -10,22 +10,12 @@ namespace arolariu.Backend.Domain.Invoices.Entities.Merchants;
 /// </summary>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public record class Merchant
+public sealed class Merchant
 {
     /// <summary>
-    /// The merchant name.
+    /// The merchant information.
     /// </summary>
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>
-    /// The merchant address.
-    /// </summary>
-    public string Address { get; set; } = string.Empty;
-
-    /// <summary>
-    /// The merchant phone number.
-    /// </summary>
-    public string PhoneNumber { get; set; } = string.Empty;
+    public MerchantInformation MerchantInformation { get; set; }
 
     /// <summary>
     /// The merchant category.
@@ -34,7 +24,6 @@ public record class Merchant
 
     /// <summary>
     /// The merchant parent company.
-    /// For example, the parent company for Carrefour Romania is Carrefour.
     /// The parent company is used to generate the invoice statistics.
     /// </summary>
     public string ParentCompany { get; set; } = string.Empty;

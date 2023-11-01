@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace arolariu.Backend.Domain.Invoices.Entities.Products;
+namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 
 /// <summary>
 /// Product metadata.

@@ -1,5 +1,6 @@
 ﻿using arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
-using arolariu.Backend.Domain.Invoices.Entities.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DTOs;
 
 using System;
 using System.Collections.Generic;
@@ -70,17 +71,17 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task<Invoice> CreateInvoiceObject(Invoice invoice) =>
+    public async Task<Invoice> CreateInvoiceObject(CreateInvoiceDto invoiceDto) =>
     await TryCatchAsync(async () =>
     {
-        ArgumentNullException.ThrowIfNull(invoice);
+        ArgumentNullException.ThrowIfNull(invoiceDto);
 
         await invoiceNoSqlBroker
-            .CreateInvoiceAsync(invoice)
+            .CreateInvoiceAsync(invoiceDto)
             .ConfigureAwait(false);
 
         var createdInvoice = await invoiceNoSqlBroker
-            .ReadInvoiceAsync(invoice.id)
+            .ReadInvoiceAsync(invoiceDto.id)
             .ConfigureAwait(false);
 
         return createdInvoice;

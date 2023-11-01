@@ -1,12 +1,12 @@
 ﻿using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
-using arolariu.Backend.Domain.Invoices.Entities.Products;
-using arolariu.Backend.Domain.Invoices.Entities.Invoices;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 
@@ -65,9 +65,7 @@ public partial class AzureFormRecognizerBroker
             Items = items,
             Metadata = invoice.Metadata with { IsAnalyzed = true },
             Merchant = merchant,
-            DateOfPurchase = identifiedDateTime,
-            DateOfAnalysis = DateTime.UtcNow,
-            LastModifiedDate = DateTime.UtcNow,
+            TimeInformation = invoice.TimeInformation with { DateOfPurchase = identifiedDateTime },
             TotalAmount = totalAmount,
             TotalTax = totalTax
         };
@@ -111,7 +109,7 @@ public partial class AzureFormRecognizerBroker
             .AnalyzeDocumentFromUriAsync(
             WaitUntil.Completed,
             "prebuilt-receipt",
-            invoice.ImageLocation)
+            invoice.ImageLocation) // TODO: fix this.
             .ConfigureAwait(false);
 
         var result = operation.Value;

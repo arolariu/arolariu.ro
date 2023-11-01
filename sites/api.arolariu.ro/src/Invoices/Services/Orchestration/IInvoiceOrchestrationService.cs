@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Entities.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 namespace arolariu.Backend.Domain.Invoices.Services.Orchestration;
 
@@ -22,6 +22,14 @@ public interface IInvoiceOrchestrationService
     #endregion
 
     #region Implements the Invoice Storage Foundation Service
+
+    /// <summary>
+    /// Creates an invoice object.
+    /// </summary>
+    /// <param name="createInvoiceDto"></param>
+    /// <returns></returns>
+    public Task<Invoice> CreateInvoiceObject(CreateInvoiceDto createInvoiceDto);
+
     /// <summary>
     /// Reads an invoice object.
     /// </summary>

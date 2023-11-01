@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace arolariu.Backend.Domain.Invoices.Entities.Merchants;
+namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 /// <summary>
 /// The invoice merchant category enum represents the available categories for an invoice merchant.

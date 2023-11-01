@@ -1,5 +1,4 @@
-﻿using arolariu.Backend.Domain.Invoices.Entities.Invoices;
-
+﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -24,7 +23,7 @@ public partial class InvoiceOrchestrationService
         }
         catch (Exception exception)
         {
-            throw CreateAndLogServiceException(exception);
+            throw new Exception(message: "test", exception);
         }
     }
 
@@ -37,7 +36,7 @@ public partial class InvoiceOrchestrationService
         }
         catch (Exception exception)
         {
-            throw CreateAndLogServiceException(exception);
+            throw new Exception(message: "test", exception);
         }
     }
 
@@ -50,7 +49,7 @@ public partial class InvoiceOrchestrationService
         }
         catch (Exception exception)
         {
-            throw CreateAndLogServiceException(exception);
+            throw new Exception(message: "test", exception);
         }
     }
 }
