@@ -1,6 +1,4 @@
 using arolariu.Backend.Core.Domain.General.Extensions;
-using arolariu.Backend.Core.Domain.Invoices.Endpoints;
-
 using Microsoft.AspNetCore.Builder;
 
 namespace arolariu.Backend.Core;
@@ -26,7 +24,6 @@ public static class Program
         var app = builder.Build();
         app.AddGeneralApplicationConfiguration();
         app.AddGeneralApplicationEndpoints();
-        app.MapInvoiceEndpoints();
         app.Run();
     }
 }

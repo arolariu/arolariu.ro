@@ -7,13 +7,13 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
+namespace arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
 
 /// <summary>
 /// This class represents the Azure translator broker.
 /// </summary>
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
-public class AzureTranslatorBroker
+public class AzureTranslatorBroker : ITranslatorBroker
 {
     private readonly TextTranslationClient textTranslationClient;
 
@@ -35,12 +35,7 @@ public class AzureTranslatorBroker
             new Uri(azureTranslatorEndpoint));
     }
 
-    /// <summary>
-    /// Translates the given text to the given language.
-    /// </summary>
-    /// <param name="text"></param>
-    /// <param name="language"></param>
-    /// <returns></returns>
+    /// <inheritdoc/>
     public async Task<string> Translate(string text, string language = "en")
     {
         var response = await textTranslationClient

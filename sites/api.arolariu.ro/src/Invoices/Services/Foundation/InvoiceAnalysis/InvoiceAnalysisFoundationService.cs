@@ -1,4 +1,5 @@
 ﻿using arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DTOs;
