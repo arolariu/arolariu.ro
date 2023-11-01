@@ -30,8 +30,10 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.35.4" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0-rc.2.23479.6" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-rc.2.23479.6" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0-rc.2.23479.6" />
 		<PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
 	</ItemGroup>
 </Project>

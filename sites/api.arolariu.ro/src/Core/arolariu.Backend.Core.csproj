@@ -39,8 +39,6 @@
 
 	<!-- Other packages -->
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0-rc.2.23479.6" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0-rc.2.23479.6" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
@@ -65,13 +63,8 @@
 		<PackageReference Include="Azure.Storage.Blobs" Version="12.19.0-beta.1" />
 	</ItemGroup>
 
-	<!-- Invoices domain-related packages -->
 	<ItemGroup>
-		<PackageReference Include="Magick.NET-Q8-AnyCPU" Version="13.3.0" />
-		<PackageReference Include="Magick.NET.Core" Version="13.3.0" />
-		<PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" Version="7.0.1" />
-	</ItemGroup>
-	<ItemGroup>
+	  <ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
 	  <ProjectReference Include="..\Core.Auth\arolariu.Backend.Core.Auth.csproj" />
 	  <ProjectReference Include="..\Core.DAL\arolariu.Backend.Core.DAL.csproj" />
 	  <ProjectReference Include="..\Invoices\arolariu.Backend.Domain.Invoices.csproj" />
