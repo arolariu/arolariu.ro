@@ -73,7 +73,10 @@ public static partial class InvoiceEndpoints
     {
         try
         {
-            await invoiceOrchestrationService.AnalyzeInvoiceWithOptions(id, options);
+            await invoiceOrchestrationService
+                .AnalyzeInvoiceWithOptions(id, options)
+                .ConfigureAwait(false);
+
             return Results.Accepted(value: $"Invoice with id: {id} sent for analysis.");
         }
         catch (Exception ex)
@@ -107,7 +110,10 @@ public static partial class InvoiceEndpoints
     {
         try
         {
-            var invoice = await invoiceOrchestrationService.ReadInvoiceObject(id);
+            var invoice = await invoiceOrchestrationService
+                .ReadInvoiceObject(id)
+                .ConfigureAwait(false);
+
             return Results.Ok(invoice);
         }
         catch (Exception ex)
@@ -137,7 +143,10 @@ public static partial class InvoiceEndpoints
     {
         try
         {
-            var invoices = await invoiceOrchestrationService.ReadAllInvoiceObjects();
+            var invoices = await invoiceOrchestrationService
+                .ReadAllInvoiceObjects()
+                .ConfigureAwait(false);
+
             return Results.Ok(invoices);
         }
         catch (Exception ex)
@@ -175,7 +184,10 @@ public static partial class InvoiceEndpoints
         {
             // TODO: make this route RESTful.
             Console.WriteLine("Updating invoice with identifier: " + id);
-            await invoiceOrchestrationService.UpdateInvoiceObject(invoicePayload);
+            await invoiceOrchestrationService
+                .UpdateInvoiceObject(invoicePayload)
+                .ConfigureAwait(false);
+
             return Results.Accepted();
         }
         catch (Exception ex)
@@ -209,7 +221,10 @@ public static partial class InvoiceEndpoints
     {
         try
         {
-            await invoiceOrchestrationService.DeleteInvoiceObject(id);
+            await invoiceOrchestrationService
+                .DeleteInvoiceObject(id)
+                .ConfigureAwait(false);
+
             return Results.NoContent();
         }
         catch (Exception ex)

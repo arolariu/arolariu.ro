@@ -1,3 +1,4 @@
+using arolariu.Backend.Core.Auth.Endpoints;
 using arolariu.Backend.Core.Domain.General.Extensions;
 using Microsoft.AspNetCore.Builder;
 
