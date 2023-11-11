@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+
+using Microsoft.AspNetCore.Http;
 
 using System;
 using System.Collections.Generic;
@@ -13,6 +15,25 @@ namespace arolariu.Backend.Domain.Invoices.DTOs;
 /// </summary>
 [Serializable]
 [ExcludeFromCodeCoverage] // DTOs are not tested - they are used to transfer data between the client and the server.
-public record struct CreateInvoiceDto(
-    IFormFile InvoicePhoto,
-    IEnumerable<KeyValuePair<string, string>> AdditionalMetadata);
+public readonly record struct CreateInvoiceDto(
+    Uri PhotoLocation,
+    IFormFile PhotoFile,
+    IEnumerable<KeyValuePair<string, object>> PhotoMetadata)
+{
+    /// <summary>
+    /// Method used to convert the DTO to an invoice.
+    /// </summary>
+    /// <returns></returns>
+    public Invoice ToInvoice()
+    {
+        var invoice = Invoice.CreateNullInvoice();
+        invoice.AdditionalMetadata = this.PhotoMetadata;
+
+        // Given `https://api.arolariu.ro/invoices/58c130ea-f767-4d4e-b1f6-5d514776cb3d.jpg`
+        // Retrieve the `58c130ea-f767-4d4e-b1f6-5d514776cb3d` part.
+        var invoiceId = this.PhotoLocation.Segments[^1].Split('.')[0];
+        invoice.Id = Guid.Parse(invoiceId);
+
+        return invoice;
+    }
+}

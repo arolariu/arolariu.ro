@@ -8,8 +8,7 @@ public partial class InvoiceAnalysisFoundationService
 {
     private delegate Task ReturningAnalysisFunction();
 
-    [SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
-    private async Task TryCatchAsync(ReturningAnalysisFunction returningAnalysisFunction)
+    private static async Task TryCatchAsync(ReturningAnalysisFunction returningAnalysisFunction)
     {
         try
         {

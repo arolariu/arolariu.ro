@@ -46,15 +46,16 @@ public interface IInvoiceOrchestrationService
     /// <summary>
     /// Updates an invoice object.
     /// </summary>
-    /// <param name="invoice"></param>
+    /// <param name="currentInvoice"></param>
+    /// <param name="updatedInvoice"></param>
     /// <returns></returns>
-    public Task<Invoice> UpdateInvoiceObject(Invoice invoice);
+    public Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice);
 
     /// <summary>
     /// Deletes an invoice object.
     /// </summary>
     /// <param name="identifier"></param>
     /// <returns></returns>
-    public Task<Invoice> DeleteInvoiceObject(Guid identifier);
+    public Task DeleteInvoiceObject(Guid identifier);
     #endregion
 }

@@ -1,9 +1,12 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DTOs;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
@@ -17,30 +20,18 @@ public sealed class Invoice
     /// <summary>
     /// The invoice id.
     /// </summary>
-#pragma warning disable IDE1006 // Naming Styles - CosmosDB requires this field to be lowercase.
-    // TODO: need to investigate why CosmosDB requires this field to be lowercase.
-    public required Guid id { get; set; } = Guid.NewGuid();
-#pragma warning restore IDE1006 // Naming Styles
-
-    /// <summary>
-    /// The invoice currency code - 3 letters - EUR, RON, SEK.
-    /// </summary>
-    public required Currency Currency { get; set; }
-
-    /// <summary>
-    /// The invoice total amount (TOTAL = SUM(boughtItems) - SUM(discountedItems)).
-    /// </summary>
-    public required decimal TotalAmount { get; set; } = 0.0M;
-
-    /// <summary>
-    /// The invoice total tax.
-    /// </summary>
-    public required decimal TotalTax { get; set; } = 0.0M;
+    [JsonIgnore] // we hide this field from the JSON serialization, because we don't want to expose it to the outside world.
+    public required Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>
     /// The invoice description, as suggested by the user.
     /// </summary>
     public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Payment information (currency, total amount, total tax).
+    /// </summary>
+    public required PaymentInformation PaymentInformation { get; set; }
 
     /// <summary>
     /// How many days can you survive with the invoice items?
@@ -96,19 +87,40 @@ public sealed class Invoice
     {
         return new Invoice
         {
-            id = Guid.Empty,
-            Currency = new Currency(),
-            TotalAmount = decimal.MinValue,
-            TotalTax = decimal.MinValue,
+            Id = Guid.Empty,
+            UserIdentifier = Guid.Empty,
+            PaymentInformation = new PaymentInformation(),
             Description = "This is a null invoice; please correct/delete.",
             EstimatedSurvivalDays = int.MinValue,
             PossibleRecipes = new List<Recipe>(),
-            UserIdentifier = Guid.Empty,
             Merchant = new Merchant(),
             Items = new List<Product>(),
             TimeInformation = new InvoiceTimeInformation(),
+            Metadata = new InvoiceMetadata(),
             AdditionalMetadata = new List<KeyValuePair<string, object>>()
         };
+    }
+
+    /// <summary>
+    /// Method used to update the invoice with the data from another invoice.
+    /// </summary>
+    /// <param name="other"></param>
+    /// <returns></returns>
+    public Invoice Update(Invoice other)
+    {
+        ArgumentNullException.ThrowIfNull(other);
+
+        this.Description = other.Description;
+        this.PaymentInformation = other.PaymentInformation;
+        this.EstimatedSurvivalDays = other.EstimatedSurvivalDays;
+        this.PossibleRecipes = other.PossibleRecipes;
+        this.Merchant = other.Merchant;
+        this.Items = other.Items;
+        this.TimeInformation = other.TimeInformation;
+        this.Metadata = other.Metadata;
+        this.AdditionalMetadata = other.AdditionalMetadata;
+
+        return this;
     }
 
     /// <summary>
@@ -116,19 +128,19 @@ public sealed class Invoice
     /// </summary>
     /// <param name="invoice"></param>
     /// <returns>`True` if the object is null; otherwise `False`.</returns>
-    public static bool CheckForNullObject(Invoice invoice)
-        => invoice == null || invoice.id == Guid.Empty;
+    public static bool CheckForNullObject(Invoice invoice) =>
+        invoice == null || invoice.Id == Guid.Empty;
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)
     {
         if (obj is not Invoice invoice) return false;
-        return id.Equals(invoice.id);
+        return Id.Equals(invoice.Id);
     }
 
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        return HashCode.Combine(id);
+        return HashCode.Combine(Id);
     }
 }

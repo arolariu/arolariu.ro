@@ -14,8 +14,7 @@ public partial class InvoiceOrchestrationService
 
     private delegate Task<IEnumerable<Invoice>> ReturningInvoicesFunction();
 
-    [SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
-    private async Task TryCatchAsync(ReturningAnalysisFunction returningAnalysisFunction)
+    private static async Task TryCatchAsync(ReturningAnalysisFunction returningAnalysisFunction)
     {
         try
         {
@@ -27,8 +26,7 @@ public partial class InvoiceOrchestrationService
         }
     }
 
-    [SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
-    private async Task<Invoice> TryCatchAsync(ReturningInvoiceFunction returningInvoiceFunction)
+    private static async Task<Invoice> TryCatchAsync(ReturningInvoiceFunction returningInvoiceFunction)
     {
         try
         {
@@ -40,8 +38,7 @@ public partial class InvoiceOrchestrationService
         }
     }
 
-    [SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
-    private async Task<IEnumerable<Invoice>> TryCatchAsync(ReturningInvoicesFunction returningInvoicesFunction)
+    private static async Task<IEnumerable<Invoice>> TryCatchAsync(ReturningInvoicesFunction returningInvoicesFunction)
     {
         try
         {

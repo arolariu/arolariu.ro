@@ -7,6 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+
+
 namespace arolariu.Backend.Domain.Invoices.Services.Orchestration;
 
 /// <summary>
@@ -26,6 +29,8 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
         IInvoiceAnalysisFoundationService invoiceAnalysisFoundationService,
         IInvoiceStorageFoundationService invoiceStorageFoundationService)
     {
+        ArgumentNullException.ThrowIfNull(invoiceAnalysisFoundationService);
+        ArgumentNullException.ThrowIfNull(invoiceStorageFoundationService);
         this.invoiceAnalysisFoundationService = invoiceAnalysisFoundationService;
         this.invoiceStorageFoundationService = invoiceStorageFoundationService;
     }
@@ -35,11 +40,9 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
     public async Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, AnalysisOptionsDto options) =>
     await TryCatchAsync(async () =>
     {
+        using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceWithOptions));
         var invoice = await ReadInvoiceObject(invoiceIdentifier).ConfigureAwait(false);
-        await invoiceAnalysisFoundationService
-            .AnalyzeInvoiceAsync(invoice, options)
-            .ConfigureAwait(false);
-
+        await invoiceAnalysisFoundationService.AnalyzeInvoiceAsync(invoice, options).ConfigureAwait(false);
         await UpdateInvoiceObject(invoice).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
@@ -47,6 +50,7 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
     public async Task<Invoice> CreateInvoiceObject(CreateInvoiceDto createInvoiceDto) =>
     await TryCatchAsync(async () =>
     {
+        using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
         var invoice = await invoiceStorageFoundationService
             .CreateInvoiceObject(createInvoiceDto)
             .ConfigureAwait(false);
@@ -55,21 +59,19 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task<Invoice> DeleteInvoiceObject(Guid identifier) =>
+    public async Task DeleteInvoiceObject(Guid identifier) =>
     await TryCatchAsync(async () =>
     {
+        using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
         var invoice = await ReadInvoiceObject(identifier).ConfigureAwait(false);
-        var deletedInvoice = await invoiceStorageFoundationService
-            .DeleteInvoiceObject(invoice.id)
-            .ConfigureAwait(false);
-
-        return deletedInvoice;
+        await invoiceStorageFoundationService.DeleteInvoiceObject(invoice.Id).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>
     public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects() =>
     await TryCatchAsync(async () =>
     {
+        using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
         var invoices = await invoiceStorageFoundationService
             .ReadAllInvoiceObjects()
             .ConfigureAwait(false);
@@ -81,6 +83,7 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
     public async Task<Invoice> ReadInvoiceObject(Guid identifier) =>
     await TryCatchAsync(async () =>
     {
+        using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
         var invoice = await invoiceStorageFoundationService
             .ReadInvoiceObject(identifier)
             .ConfigureAwait(false);
@@ -89,14 +92,14 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task<Invoice> UpdateInvoiceObject(Invoice invoice) =>
+    public async Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice) =>
     await TryCatchAsync(async () =>
     {
-        ArgumentNullException.ThrowIfNull(invoice);
-        var updatedInvoice = await invoiceStorageFoundationService
-            .UpdateInvoiceObject(invoice)
+        using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
+        var invoice = await invoiceStorageFoundationService
+            .UpdateInvoiceObject(currentInvoice, updatedInvoice)
             .ConfigureAwait(false);
 
-        return updatedInvoice;
+        return invoice;
     }).ConfigureAwait(false);
 }

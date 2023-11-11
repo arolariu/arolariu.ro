@@ -1,130 +1,78 @@
-﻿using arolariu.Backend.Core.DAL.Database;
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
-using Microsoft.Azure.Cosmos;
+using Microsoft.EntityFrameworkCore;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Net;
 using System.Threading.Tasks;
+
+using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
 
 /// <summary>
-/// The Invoice NoSQL broker class represents the invoice NoSQL broker.
-/// This class is used to interact with the database.
-/// The broker is used to perform CRUD operations on the database.
+/// The Entity Framework Invoice SQL broker.
 /// </summary>
-[ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
-public class InvoiceNoSqlBroker : IInvoiceNoSqlBroker
+public partial class InvoiceNoSqlBroker(DbContextOptions options) : DbContext(options), IInvoiceNoSqlBroker
 {
-    private readonly Container invoiceContainer;
+    /// <summary>
+    /// The create invoice method.
+    /// </summary>
+    /// <param name="invoiceDto"></param>
+    /// <returns></returns>
+    public async ValueTask<Invoice> CreateInvoiceAsync(CreateInvoiceDto invoiceDto)
+    {
+        using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceAsync));
+        var invoice = invoiceDto.ToInvoice();
+        return await InsertAsync(invoice).ConfigureAwait(false);
+    }
 
     /// <summary>
-    /// Constructor.
+    /// The read invoice method.
     /// </summary>
-    /// <param name="dbConnectionFactory"></param>
-    public InvoiceNoSqlBroker(IDbConnectionFactory<CosmosClient> dbConnectionFactory)
-    {
-        ArgumentNullException.ThrowIfNull(dbConnectionFactory);
-        var cosmosClient = dbConnectionFactory.CreateConnection();
-        invoiceContainer = cosmosClient.GetContainer("arolariu", "invoices");
-    }
-
-    /// <inheritdoc/>
-    public async ValueTask CreateInvoiceAsync(CreateInvoiceDto invoiceDto)
-    {
-        Console.WriteLine(invoiceDto);
-        var invoice = Invoice.CreateNullInvoice(); // TODO: map the invoice dto to the invoice entity.
-
-        var transactionResponse = await invoiceContainer
-            .CreateItemAsync(invoice)
-            .ConfigureAwait(false);
-
-        ValidateTransactionResponseStatusCodeWas(transactionResponse, HttpStatusCode.Created);
-    }
-
-    /// <inheritdoc/>
-    public async ValueTask<Invoice> DeleteInvoiceAsync(Guid invoiceIdentifier)
-    {
-        var invoiceIdentifierAsString = invoiceIdentifier.ToString();
-
-        var deletedInvoice = await ReadInvoiceAsync(invoiceIdentifier)
-            .ConfigureAwait(false);
-
-        var transactionResponse = await invoiceContainer
-            .DeleteItemAsync<Invoice>(
-                invoiceIdentifierAsString,
-                new(Guid.Empty.ToString()))
-            .ConfigureAwait(false);
-        //TODO: this needs to have as the partition key the user identifier.
-
-        ValidateTransactionResponseStatusCodeWas(transactionResponse, HttpStatusCode.NoContent);
-        return deletedInvoice;
-    }
-
-    /// <inheritdoc/>
+    /// <param name="invoiceIdentifier"></param>
+    /// <returns></returns>
     public async ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier)
     {
-        var invoiceIdentifierAsString = invoiceIdentifier.ToString();
-        var transactionResponse = await invoiceContainer
-            .ReadItemAsync<Invoice>(
-               invoiceIdentifierAsString,
-                new(Guid.Empty.ToString()))
-           .ConfigureAwait(false);
-        //TODO: this needs to have as the partition key the user identifier.
-
-        ValidateTransactionResponseStatusCodeWas(transactionResponse, HttpStatusCode.OK);
-        var invoice = transactionResponse.Resource;
-        return invoice;
+        using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceAsync));
+        var invoice = await SelectAsync<Invoice>(invoiceIdentifier).ConfigureAwait(false);
+        return invoice!;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// The read invoices method.
+    /// </summary>
+    /// <returns></returns>
     public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync()
     {
-        var invoices = new List<Invoice>();
-        var query = new QueryDefinition("SELECT * FROM invoices");
-        using var iterator = invoiceContainer.GetItemQueryIterator<Invoice>(query);
-
-        while (iterator.HasMoreResults)
-        {
-            var response = await iterator.
-                ReadNextAsync()
-                .ConfigureAwait(false);
-
-            var invoiceEnumerable = response.Resource;
-            invoices.AddRange(invoiceEnumerable);
-        }
-
+        using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));
+        var invoices = await SelectAll<Invoice>().ToListAsync().ConfigureAwait(false);
         return invoices;
     }
 
-    /// <inheritdoc/>
-    public async ValueTask<Invoice> UpdateInvoiceAsync(Invoice invoice)
+    /// <summary>
+    /// The update invoice method.
+    /// </summary>
+    /// <param name="currentInvoice"></param>
+    /// <param name="updatedInvoice"></param>
+    /// <returns></returns>
+    public async ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice)
     {
-        var transactionResponse = await invoiceContainer
-            .UpsertItemAsync(invoice)
-            .ConfigureAwait(false);
-
-        ValidateTransactionResponseStatusCodeWas(transactionResponse, HttpStatusCode.OK);
-        var updatedInvoice = transactionResponse.Resource;
-        return updatedInvoice;
+        using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
+        var newInvoice = currentInvoice?.Update(updatedInvoice);
+        return await UpdateAsync(newInvoice!).ConfigureAwait(false);
     }
 
-    private static void ValidateTransactionResponseStatusCodeWas(
-        ItemResponse<Invoice> transactionResponse,
-        HttpStatusCode statusCode)
+    /// <summary>
+    /// The delete invoice method.
+    /// </summary>
+    /// <param name="invoiceIdentifier"></param>
+    /// <returns></returns>
+    public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier)
     {
-        if (transactionResponse.StatusCode != statusCode)
-        {
-            throw new CosmosException(
-                transactionResponse.ToString(),
-                transactionResponse.StatusCode,
-                0,
-                transactionResponse.ActivityId,
-                transactionResponse.RequestCharge);
-        }
+        using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync));
+        var invoice = await SelectAsync<Invoice>(invoiceIdentifier).ConfigureAwait(false);
+        await DeleteAsync(invoice!).ConfigureAwait(false);
     }
 }

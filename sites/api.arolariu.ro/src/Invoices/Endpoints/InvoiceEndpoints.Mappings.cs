@@ -20,7 +20,7 @@ public static partial class InvoiceEndpoints
         router
             .MapPost("/rest/invoices", CreateNewInvoiceAsync)
             .Accepts<CreateInvoiceDto>("application/json")
-            .Produces<IResult>(StatusCodes.Status201Created)
+            .Produces<Invoice>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization
             .ProducesProblem(StatusCodes.Status403Forbidden) // TODO: authentication
@@ -37,6 +37,7 @@ public static partial class InvoiceEndpoints
             .Produces<IEnumerable<Invoice>>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization
             .ProducesProblem(StatusCodes.Status403Forbidden) // TODO: authentication
+            .ProducesProblem(StatusCodes.Status404NotFound) // TODO: implementation
             .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(RetrieveAllInvoicesAsync))
@@ -55,19 +56,6 @@ public static partial class InvoiceEndpoints
             .WithOpenApi();
 
         router
-            .MapPost("/rest/invoices/{id}/analyze", AnalyzeInvoiceAsync)
-            .Accepts<AnalysisOptionsDto>("application/json")
-            .Produces<IResult>(StatusCodes.Status202Accepted)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization
-            .ProducesProblem(StatusCodes.Status403Forbidden) // TODO: authentication
-            .ProducesProblem(StatusCodes.Status404NotFound) // TODO: implementation
-            .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
-            .ProducesProblem(StatusCodes.Status500InternalServerError)
-            .WithName(nameof(AnalyzeInvoiceAsync))
-            .WithOpenApi();
-
-        router
             .MapPut("/rest/invoices/{id}", UpdateSpecificInvoiceAsync)
             .Accepts<Invoice>("application/json")
             .Produces<Invoice>(StatusCodes.Status202Accepted)
@@ -82,7 +70,7 @@ public static partial class InvoiceEndpoints
 
         router
             .MapDelete("/rest/invoices/{id}", DeleteInvoiceAsync)
-            .Produces<IResult>(StatusCodes.Status204NoContent)
+            .Produces<Invoice>(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization
             .ProducesProblem(StatusCodes.Status403Forbidden) // TODO: authentication
@@ -90,6 +78,26 @@ public static partial class InvoiceEndpoints
             .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(DeleteInvoiceAsync))
+            .WithOpenApi();
+    }
+
+    /// <summary>
+    /// The invoice analysis endpoints.
+    /// </summary>
+    /// <param name="router">The <see cref="IEndpointRouteBuilder"/> used for mapping the endpoints.</param>
+    private static void MapInvoiceAnalysisEndpoints(IEndpointRouteBuilder router)
+    {
+        router
+            .MapPost("/rest/invoices/{id}/analyze", AnalyzeInvoiceAsync)
+            .Accepts<AnalysisOptionsDto>("application/json")
+            .Produces<InvoiceAnalysisResultDto>(StatusCodes.Status202Accepted)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization
+            .ProducesProblem(StatusCodes.Status403Forbidden) // TODO: authentication
+            .ProducesProblem(StatusCodes.Status404NotFound) // TODO: implementation
+            .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .WithName(nameof(AnalyzeInvoiceAsync))
             .WithOpenApi();
     }
 }

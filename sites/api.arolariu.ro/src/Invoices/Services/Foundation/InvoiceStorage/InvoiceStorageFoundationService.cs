@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
+
 namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 /// <summary>
@@ -22,14 +24,15 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     public InvoiceStorageFoundationService(
         IInvoiceNoSqlBroker invoiceNoSqlBroker)
     {
-        this.invoiceNoSqlBroker = invoiceNoSqlBroker
-            ?? throw new ArgumentNullException(nameof(invoiceNoSqlBroker));
+        ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);
+        this.invoiceNoSqlBroker = invoiceNoSqlBroker;
     }
 
     /// <inheritdoc/>
     public async Task<Invoice> ReadInvoiceObject(Guid identifier) =>
     await TryCatchAsync(async () =>
     {
+        using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
         var invoice = await invoiceNoSqlBroker
             .ReadInvoiceAsync(identifier)
             .ConfigureAwait(false);
@@ -41,6 +44,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects() =>
     await TryCatchAsync(async () =>
     {
+        using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
         var invoices = await invoiceNoSqlBroker
             .ReadInvoicesAsync()
             .ConfigureAwait(false);
@@ -49,41 +53,31 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task<Invoice> UpdateInvoiceObject(Invoice invoice) =>
+    public async Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice) =>
     await TryCatchAsync(async () =>
     {
-        var updatedInvoice = await invoiceNoSqlBroker
-            .UpdateInvoiceAsync(invoice)
+        using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
+        var invoice = await invoiceNoSqlBroker
+            .UpdateInvoiceAsync(currentInvoice, updatedInvoice)
             .ConfigureAwait(false);
 
-        return updatedInvoice;
+        return invoice;
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task<Invoice> DeleteInvoiceObject(Guid identifier) =>
+    public async Task DeleteInvoiceObject(Guid identifier) =>
     await TryCatchAsync(async () =>
     {
-        var deletedInvoice = await invoiceNoSqlBroker
-            .DeleteInvoiceAsync(identifier)
-            .ConfigureAwait(false);
-
-        return deletedInvoice;
+        using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
+        await invoiceNoSqlBroker.DeleteInvoiceAsync(identifier).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>
     public async Task<Invoice> CreateInvoiceObject(CreateInvoiceDto invoiceDto) =>
     await TryCatchAsync(async () =>
     {
-        ArgumentNullException.ThrowIfNull(invoiceDto);
-
-        await invoiceNoSqlBroker
-            .CreateInvoiceAsync(invoiceDto)
-            .ConfigureAwait(false);
-
-        var createdInvoice = await invoiceNoSqlBroker
-            .ReadInvoiceAsync(invoiceDto.id)
-            .ConfigureAwait(false);
-
-        return createdInvoice;
+        using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
+        var invoice = await invoiceNoSqlBroker.CreateInvoiceAsync(invoiceDto).ConfigureAwait(false);
+        return invoice;
     }).ConfigureAwait(false);
 }

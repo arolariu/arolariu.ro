@@ -42,6 +42,7 @@ public class KeyVaultService : IKeyVaultService
     {
         try
         {
+            using var activity = Program.ActivitySource.StartActivity("GetSecret");
             var secret = _secretClient.GetSecret(secretName);
             return secret.Value.Value;
         }
@@ -61,6 +62,7 @@ public class KeyVaultService : IKeyVaultService
     {
         try
         {
+            using var activity = Program.ActivitySource.StartActivity("GetSecretAsync");
             var secret = await _secretClient.GetSecretAsync(secretName);
             return secret.Value.Value;
         }

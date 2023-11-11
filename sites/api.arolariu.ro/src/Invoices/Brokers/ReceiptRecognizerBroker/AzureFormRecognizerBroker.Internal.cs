@@ -3,12 +3,14 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 
 public partial class AzureFormRecognizerBroker
 {
+    [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>")]
     private static decimal RetrieveTotalTax(AnalyzedDocument analyzedInvoiceResult)
     {
         var totalTax = decimal.MinValue;
@@ -22,6 +24,7 @@ public partial class AzureFormRecognizerBroker
         return totalTax;
     }
 
+    [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>")]
     private static decimal RetrieveTotalAmount(AnalyzedDocument analyzedInvoiceResult)
     {
         var totalAmount = decimal.MinValue;
@@ -35,6 +38,7 @@ public partial class AzureFormRecognizerBroker
         return totalAmount;
     }
 
+    [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>")]
     private static DateTimeOffset RetrieveIdentifiedDate(AnalyzedDocument analyzedInvoiceResult)
     {
         var identifiedDateTime = new DateTimeOffset();
@@ -57,6 +61,7 @@ public partial class AzureFormRecognizerBroker
         return identifiedDateTime;
     }
 
+    [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>")]
     private static Merchant RetrieveMerchantInformation(AnalyzedDocument analyzedInvoiceResult)
     {
         var merchantName = string.Empty;
@@ -86,12 +91,16 @@ public partial class AzureFormRecognizerBroker
 
         return new Merchant()
         {
-            Name = merchantName,
-            Address = merchantAddress,
-            PhoneNumber = merchantPhoneNumber
+            MerchantInformation = new MerchantInformation()
+            {
+                Name = merchantName,
+                Address = merchantAddress,
+                PhoneNumber = merchantPhoneNumber,
+            },
         };
     }
 
+    [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>")]
     private static Product RetrieveItem(DocumentField itemField)
     {
         var item = new Product();

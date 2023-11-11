@@ -27,5 +27,8 @@ public static partial class InvoiceEndpoints
         // Endpoints group: /api/invoices
         // This group contains the standard invoice endpoints (CRUD operations)
         MapStandardInvoiceEndpoints(router);
+
+        // This group contains the invoice analysis endpoints
+        MapInvoiceAnalysisEndpoints(router);
     }
 }

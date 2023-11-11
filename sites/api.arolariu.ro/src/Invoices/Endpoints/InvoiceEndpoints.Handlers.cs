@@ -8,12 +8,17 @@ using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
+
+using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 namespace arolariu.Backend.Domain.Invoices.Endpoints;
 
 public static partial class InvoiceEndpoints
 {
+    #region CRUD operations
+
     /// <summary>
     /// Creates a new invoice.
     /// </summary>
@@ -37,8 +42,12 @@ public static partial class InvoiceEndpoints
     {
         try
         {
-            var invoice = await invoiceOrchestrationService.CreateInvoiceObjectFromDto(invoiceDto);
-            return Results.Created($"/rest/invoices/{invoice.id}", invoice);
+            using var activity = InvoicePackageTracing.StartActivity(nameof(CreateNewInvoiceAsync), ActivityKind.Server);
+            var invoice = await invoiceOrchestrationService
+                .CreateInvoiceObject(invoiceDto)
+                .ConfigureAwait(false);
+
+            return Results.Created($"/rest/invoices/{invoice.Id}", invoice);
         }
         catch (Exception ex)
         {
@@ -46,45 +55,6 @@ public static partial class InvoiceEndpoints
                 detail: ex.Message + ex.Source,
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "The invoices could NOT be created due to an internal service error.");
-        }
-    }
-
-    /// <summary>
-    /// Analyzes a specific invoice.
-    /// </summary>
-    /// <param name="id"></param>
-    /// <param name="options"></param>
-    /// <param name="invoiceOrchestrationService"></param>
-    /// <returns></returns>
-    [SwaggerOperation(
-        Summary = "Analyzes a specific invoice from the system.",
-        Description = "Analyzes a specific invoice from the system. If the invoice identifier passed to the route is valid, the invoice management system will return the invoice, given that the user is allowed to see this invoice.",
-        OperationId = nameof(AnalyzeInvoiceAsync),
-        Tags = new[] { EndpointNameTag })]
-    [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was analyzed successfully.", typeof(Invoice))]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid.", typeof(ValidationProblemDetails))]
-    [SwaggerResponse(StatusCodes.Status403Forbidden, "The invoice could not be analyzed due to insufficient permissions.", typeof(ProblemDetails))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be analyzed due to the invoice not being found.", typeof(ProblemDetails))]
-    [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be analyzed due to an internal service error.", typeof(ProblemDetails))]
-    private static async Task<IResult> AnalyzeInvoiceAsync(
-        [FromRoute] Guid id,
-        [FromBody] AnalysisOptionsDto options,
-        [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService)
-    {
-        try
-        {
-            await invoiceOrchestrationService
-                .AnalyzeInvoiceWithOptions(id, options)
-                .ConfigureAwait(false);
-
-            return Results.Accepted(value: $"Invoice with id: {id} sent for analysis.");
-        }
-        catch (Exception ex)
-        {
-            return Results.Problem(
-                detail: ex.Message + ex.Source,
-                statusCode: StatusCodes.Status500InternalServerError,
-                title: "The invoices could NOT be retrieved due to an internal service error.");
         }
     }
 
@@ -110,6 +80,7 @@ public static partial class InvoiceEndpoints
     {
         try
         {
+            using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificInvoiceAsync), ActivityKind.Server);
             var invoice = await invoiceOrchestrationService
                 .ReadInvoiceObject(id)
                 .ConfigureAwait(false);
@@ -143,6 +114,7 @@ public static partial class InvoiceEndpoints
     {
         try
         {
+            using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveAllInvoicesAsync), ActivityKind.Server);
             var invoices = await invoiceOrchestrationService
                 .ReadAllInvoiceObjects()
                 .ConfigureAwait(false);
@@ -182,13 +154,17 @@ public static partial class InvoiceEndpoints
     {
         try
         {
-            // TODO: make this route RESTful.
-            Console.WriteLine("Updating invoice with identifier: " + id);
-            await invoiceOrchestrationService
-                .UpdateInvoiceObject(invoicePayload)
+            using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateSpecificInvoiceAsync), ActivityKind.Server);
+
+            var invoice = await invoiceOrchestrationService
+                .ReadInvoiceObject(id)
                 .ConfigureAwait(false);
 
-            return Results.Accepted();
+            var updatedInvoice = await invoiceOrchestrationService
+                .UpdateInvoiceObject(invoice, invoicePayload)
+                .ConfigureAwait(false);
+
+            return Results.Accepted(value: updatedInvoice);
         }
         catch (Exception ex)
         {
@@ -221,6 +197,8 @@ public static partial class InvoiceEndpoints
     {
         try
         {
+            using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync), ActivityKind.Server);
+
             await invoiceOrchestrationService
                 .DeleteInvoiceObject(id)
                 .ConfigureAwait(false);
@@ -236,4 +214,50 @@ public static partial class InvoiceEndpoints
         }
     }
 
+    #endregion
+
+    #region Analysis operations
+
+    /// <summary>
+    /// Analyzes a specific invoice.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="options"></param>
+    /// <param name="invoiceOrchestrationService"></param>
+    /// <returns></returns>
+    [SwaggerOperation(
+        Summary = "Analyzes a specific invoice from the system.",
+        Description = "Analyzes a specific invoice from the system. If the invoice identifier passed to the route is valid, the invoice management system will return the invoice, given that the user is allowed to see this invoice.",
+        OperationId = nameof(AnalyzeInvoiceAsync),
+        Tags = new[] { EndpointNameTag })]
+    [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was analyzed successfully.", typeof(Invoice))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid.", typeof(ValidationProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "The invoice could not be analyzed due to insufficient permissions.", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be analyzed due to the invoice not being found.", typeof(ProblemDetails))]
+    [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be analyzed due to an internal service error.", typeof(ProblemDetails))]
+    private static async Task<IResult> AnalyzeInvoiceAsync(
+        [FromRoute] Guid id,
+        [FromBody] AnalysisOptionsDto options,
+        [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService)
+    {
+        try
+        {
+            using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceAsync), ActivityKind.Server);
+
+            await invoiceOrchestrationService
+                .AnalyzeInvoiceWithOptions(id, options)
+                .ConfigureAwait(false);
+
+            return Results.Accepted(value: $"Invoice with id: {id} sent for analysis.");
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(
+                detail: ex.Message + ex.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The invoices could NOT be retrieved due to an internal service error.");
+        }
+    }
+
+    #endregion
 }

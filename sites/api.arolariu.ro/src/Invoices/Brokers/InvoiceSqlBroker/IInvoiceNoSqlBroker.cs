@@ -20,7 +20,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker
         /// </summary>
         /// <param name="invoiceDto"></param>
         /// <returns></returns>
-        public ValueTask CreateInvoiceAsync(CreateInvoiceDto invoiceDto);
+        public ValueTask<Invoice> CreateInvoiceAsync(CreateInvoiceDto invoiceDto);
 
         /// <summary>
         /// Reads an invoice.
@@ -44,9 +44,10 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker
         /// This method is used to update an invoice in the database.
         /// The invoice is identified by the invoice identifier.
         /// </summary>
-        /// <param name="invoice"></param>
+        /// <param name="currentInvoice"></param>
+        /// <param name="updatedInvoice"></param>
         /// <returns></returns>
-        public ValueTask<Invoice> UpdateInvoiceAsync(Invoice invoice);
+        public ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice);
 
         /// <summary>
         /// Deletes an invoice.
@@ -55,6 +56,6 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker
         /// </summary>
         /// <param name="invoiceIdentifier"></param>
         /// <returns></returns>
-        public ValueTask<Invoice> DeleteInvoiceAsync(Guid invoiceIdentifier);
+        public ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier);
     }
 }

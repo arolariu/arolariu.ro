@@ -7,6 +7,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.Brokers.ReceiptRecognizerBroker;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 
@@ -18,7 +21,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 /// This package is used to interact with the Azure Form Recognizer service.
 /// </summary>
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
-public partial class AzureFormRecognizerBroker
+public partial class AzureFormRecognizerBroker : IReceiptRecognizerBroker
 {
     private readonly DocumentAnalysisClient client;
 
@@ -42,62 +45,6 @@ public partial class AzureFormRecognizerBroker
     }
 
     /// <summary>
-    /// Populates the invoice with the analysis result.
-    /// </summary>
-    /// <param name="invoice"></param>
-    /// <param name="analyzedInvoiceResult"></param>
-    /// <returns></returns>
-    [SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "<Pending>")]
-    public Invoice PopulateInvoiceWithAnalysisResult(Invoice invoice, AnalyzedDocument analyzedInvoiceResult)
-    {
-        ArgumentNullException.ThrowIfNull(invoice);
-        ArgumentNullException.ThrowIfNull(analyzedInvoiceResult);
-
-        var items = RetrieveFoundProducts(analyzedInvoiceResult);
-        var merchant = RetrieveMerchantInformation(analyzedInvoiceResult);
-
-        var identifiedDateTime = RetrieveIdentifiedDate(analyzedInvoiceResult);
-        var totalAmount = RetrieveTotalAmount(analyzedInvoiceResult);
-        var totalTax = RetrieveTotalTax(analyzedInvoiceResult);
-
-        return invoice with
-        {
-            Items = items,
-            Metadata = invoice.Metadata with { IsAnalyzed = true },
-            Merchant = merchant,
-            TimeInformation = invoice.TimeInformation with { DateOfPurchase = identifiedDateTime },
-            TotalAmount = totalAmount,
-            TotalTax = totalTax
-        };
-    }
-
-    /// <summary>
-    /// Retrieves the invoice items from the analysis result.
-    /// </summary>
-    /// <param name="analyzedInvoiceResult"></param>
-    /// <returns></returns>
-    public static IEnumerable<Product> RetrieveFoundProducts(AnalyzedDocument analyzedInvoiceResult)
-    {
-        ArgumentNullException.ThrowIfNull(analyzedInvoiceResult);
-        var products = new List<Product>();
-
-        if (analyzedInvoiceResult.Fields.TryGetValue("Items", out DocumentField? itemsField)
-            && itemsField.FieldType == DocumentFieldType.List)
-        {
-            foreach (var itemField in itemsField.Value.AsList())
-            {
-                if (itemField.FieldType == DocumentFieldType.Dictionary)
-                {
-                    var item = RetrieveItem(itemField);
-                    products.Add(item);
-                }
-            }
-        }
-
-        return products;
-    }
-
-    /// <summary>
     /// Sends the invoice to analysis.
     /// </summary>
     /// <param name="invoice"></param>
@@ -115,5 +62,23 @@ public partial class AzureFormRecognizerBroker
         var result = operation.Value;
         var receipt = result.Documents[0];
         return receipt;
+    }
+
+    /// <inheritdoc/>
+    public Task<Merchant> RecognizeMerchantFromPhotoContentAsync<T>(T photoContent)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <inheritdoc/>
+    public Task<PaymentInformation> RecognizePaymentInformationAsync<T>(T photoContent)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <inheritdoc/>
+    public Task<IEnumerable<Product>> RecognizeProductsFromPhotoContentAsync<T>(T photoContent)
+    {
+        throw new NotImplementedException();
     }
 }
