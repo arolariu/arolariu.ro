@@ -3,7 +3,7 @@
     /// <summary>
     /// The invoice analysis broker interface.
     /// </summary>
-    internal partial interface IAnalysisBroker
+    public partial interface IAnalysisBroker
     {
     }
 }

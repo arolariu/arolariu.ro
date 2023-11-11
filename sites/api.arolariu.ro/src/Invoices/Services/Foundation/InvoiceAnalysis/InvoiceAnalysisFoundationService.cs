@@ -1,10 +1,12 @@
 ﻿using arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.ReceiptRecognizerBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 using System;
 using System.Collections.Generic;
@@ -17,20 +19,28 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 /// </summary>
 public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationService
 {
-    private readonly AzureOpenAiBroker azureOpenAiBroker;
-    private readonly AzureTranslatorBroker azureTranslatorBroker;
-    private readonly AzureFormRecognizerBroker azureFormRecognizerBroker;
+    private readonly IAnalysisBroker analysisBroker;
+    private readonly ITranslatorBroker translatorBroker;
+    private readonly IReceiptRecognizerBroker receiptRecognizerBroker;
+    private readonly ILogger<IInvoiceAnalysisFoundationService> logger;
 
     /// <summary>
-    /// Constructor.
+    /// DI Constructor.
     /// </summary>
-    /// <param name="configuration"></param>
-    public InvoiceAnalysisFoundationService(IConfiguration configuration)
+    /// <param name="analysisBroker"></param>
+    /// <param name="translatorBroker"></param>
+    /// <param name="receiptRecognizerBroker"></param>
+    /// <param name="loggerFactory"></param>
+    public InvoiceAnalysisFoundationService(
+        IAnalysisBroker analysisBroker,
+        ITranslatorBroker translatorBroker,
+        IReceiptRecognizerBroker receiptRecognizerBroker,
+        ILoggerFactory loggerFactory)
     {
-        ArgumentNullException.ThrowIfNull(configuration);
-        azureOpenAiBroker = new AzureOpenAiBroker(configuration);
-        azureTranslatorBroker = new AzureTranslatorBroker(configuration);
-        azureFormRecognizerBroker = new AzureFormRecognizerBroker(configuration);
+        this.analysisBroker = analysisBroker;
+        this.translatorBroker = translatorBroker;
+        this.receiptRecognizerBroker = receiptRecognizerBroker;
+        logger = loggerFactory.CreateLogger<IInvoiceAnalysisFoundationService>();
     }
 
     /// <inheritdoc/>

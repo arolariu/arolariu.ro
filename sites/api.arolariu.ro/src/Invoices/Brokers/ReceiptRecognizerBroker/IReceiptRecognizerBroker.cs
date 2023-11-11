@@ -13,7 +13,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.ReceiptRecognizerBroker
     /// Interface for the receipt recognizer broker.
     /// This interface is used to recognize the merchant, payment information and products from an invoice photo.
     /// </summary>
-    internal interface IReceiptRecognizerBroker
+    public interface IReceiptRecognizerBroker
     {
         /// <summary>
         /// Recognize the merchant from an invoice photo.

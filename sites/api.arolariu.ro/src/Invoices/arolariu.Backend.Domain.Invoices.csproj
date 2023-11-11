@@ -45,8 +45,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="DDD\AggregatorRoots\Invoices\Exceptions\Inner\" />
-    <Folder Include="DDD\AggregatorRoots\Invoices\Exceptions\Outer\Foundation\" />
     <Folder Include="DDD\Entities\Merchants\Exceptions\Inner\" />
     <Folder Include="DDD\Entities\Merchants\Exceptions\Outer\" />
     <Folder Include="DDD\Entities\Products\Exceptions\Inner\" />

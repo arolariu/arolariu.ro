@@ -1,4 +1,5 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration;
 
@@ -9,6 +10,7 @@ using Swashbuckle.AspNetCore.Annotations;
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
@@ -36,6 +38,7 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status409Conflict, "The invoice could not be created due to a conflict (there's another invoice with the same id).", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The invoice could not be created due to the payload (photo field) being too large.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be created due to an internal service error.", typeof(ProblemDetails))]
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
     private static async Task<IResult> CreateNewInvoiceAsync(
         [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
         [FromBody] CreateInvoiceDto invoiceDto)
@@ -49,12 +52,40 @@ public static partial class InvoiceEndpoints
 
             return Results.Created($"/rest/invoices/{invoice.Id}", invoice);
         }
-        catch (Exception ex)
+        catch (InvoiceOrchestrationValidationException exception)
         {
             return Results.Problem(
-                detail: ex.Message + ex.Source,
+                detail: exception.Message + exception.Source,
                 statusCode: StatusCodes.Status500InternalServerError,
-                title: "The invoices could NOT be created due to an internal service error.");
+                title: "The service encountered an orchestration validation error.");
+        }
+        catch (InvoiceOrchestrationDependencyException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration dependency error.");
+        }
+        catch (InvoiceOrchestrationDependencyValidationException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration dependency validation error.");
+        }
+        catch (InvoiceOrchestrationServiceException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration service error.");
+        }
+        catch (Exception exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an unexpected internal service error.");
         }
     }
 
@@ -74,6 +105,7 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status403Forbidden, "The invoice could not be retrieved due to insufficient permissions.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be retrieved due to the invoice not being found.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
     private static async Task<IResult> RetrieveSpecificInvoiceAsync(
         [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
         [FromRoute] Guid id)
@@ -87,12 +119,40 @@ public static partial class InvoiceEndpoints
 
             return Results.Ok(invoice);
         }
-        catch (Exception ex)
+        catch (InvoiceOrchestrationValidationException exception)
         {
             return Results.Problem(
-                detail: ex.Message + ex.Source,
+                detail: exception.Message + exception.Source,
                 statusCode: StatusCodes.Status500InternalServerError,
-                title: "The invoices could NOT be retrieved due to an internal service error.");
+                title: "The service encountered an orchestration validation error.");
+        }
+        catch (InvoiceOrchestrationDependencyException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration dependency error.");
+        }
+        catch (InvoiceOrchestrationDependencyValidationException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration dependency validation error.");
+        }
+        catch (InvoiceOrchestrationServiceException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration service error.");
+        }
+        catch (Exception exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an unexpected internal service error.");
         }
     }
 
@@ -109,6 +169,7 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status200OK, "The invoices were retrieved successfully.", typeof(Invoice[]))]
     [SwaggerResponse(StatusCodes.Status403Forbidden, "The invoices could not be retrieved due to insufficient permissions.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
     private static async Task<IResult> RetrieveAllInvoicesAsync(
         [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService)
     {
@@ -121,12 +182,40 @@ public static partial class InvoiceEndpoints
 
             return Results.Ok(invoices);
         }
-        catch (Exception ex)
+        catch (InvoiceOrchestrationValidationException exception)
         {
             return Results.Problem(
-                detail: ex.Message + ex.Source,
+                detail: exception.Message + exception.Source,
                 statusCode: StatusCodes.Status500InternalServerError,
-                title: "The invoices could NOT be retrieved due to an internal service error.");
+                title: "The service encountered an orchestration validation error.");
+        }
+        catch (InvoiceOrchestrationDependencyException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration dependency error.");
+        }
+        catch (InvoiceOrchestrationDependencyValidationException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration dependency validation error.");
+        }
+        catch (InvoiceOrchestrationServiceException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration service error.");
+        }
+        catch (Exception exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an unexpected internal service error.");
         }
     }
 
@@ -147,6 +236,7 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status403Forbidden, "The invoice could not be updated due to insufficient permissions.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be updated due to the invoice not being found.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be updated due to an internal service error.", typeof(ProblemDetails))]
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
     private static async Task<IResult> UpdateSpecificInvoiceAsync(
         [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
         [FromRoute] Guid id,
@@ -166,12 +256,40 @@ public static partial class InvoiceEndpoints
 
             return Results.Accepted(value: updatedInvoice);
         }
-        catch (Exception ex)
+        catch (InvoiceOrchestrationValidationException exception)
         {
             return Results.Problem(
-                detail: ex.Message + ex.Source,
+                detail: exception.Message + exception.Source,
                 statusCode: StatusCodes.Status500InternalServerError,
-                title: "The invoices could NOT be retrieved due to an internal service error.");
+                title: "The service encountered an orchestration validation error.");
+        }
+        catch (InvoiceOrchestrationDependencyException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration dependency error.");
+        }
+        catch (InvoiceOrchestrationDependencyValidationException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration dependency validation error.");
+        }
+        catch (InvoiceOrchestrationServiceException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration service error.");
+        }
+        catch (Exception exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an unexpected internal service error.");
         }
     }
 
@@ -191,6 +309,7 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status403Forbidden, "The invoice could not be deleted due to insufficient permissions.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be deleted due to the invoice not being found.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be deleted due to an internal service error.", typeof(ProblemDetails))]
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
     private static async Task<IResult> DeleteInvoiceAsync(
         [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
         [FromRoute] Guid id)
@@ -205,12 +324,40 @@ public static partial class InvoiceEndpoints
 
             return Results.NoContent();
         }
-        catch (Exception ex)
+        catch (InvoiceOrchestrationValidationException exception)
         {
             return Results.Problem(
-                detail: ex.Message + ex.Source,
+                detail: exception.Message + exception.Source,
                 statusCode: StatusCodes.Status500InternalServerError,
-                title: "The invoices could NOT be retrieved due to an internal service error.");
+                title: "The service encountered an orchestration validation error.");
+        }
+        catch (InvoiceOrchestrationDependencyException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration dependency error.");
+        }
+        catch (InvoiceOrchestrationDependencyValidationException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration dependency validation error.");
+        }
+        catch (InvoiceOrchestrationServiceException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration service error.");
+        }
+        catch (Exception exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an unexpected internal service error.");
         }
     }
 
@@ -235,6 +382,7 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status403Forbidden, "The invoice could not be analyzed due to insufficient permissions.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be analyzed due to the invoice not being found.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be analyzed due to an internal service error.", typeof(ProblemDetails))]
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
     private static async Task<IResult> AnalyzeInvoiceAsync(
         [FromRoute] Guid id,
         [FromBody] AnalysisOptionsDto options,
@@ -250,12 +398,40 @@ public static partial class InvoiceEndpoints
 
             return Results.Accepted(value: $"Invoice with id: {id} sent for analysis.");
         }
-        catch (Exception ex)
+        catch (InvoiceOrchestrationValidationException exception)
         {
             return Results.Problem(
-                detail: ex.Message + ex.Source,
+                detail: exception.Message + exception.Source,
                 statusCode: StatusCodes.Status500InternalServerError,
-                title: "The invoices could NOT be retrieved due to an internal service error.");
+                title: "The service encountered an orchestration validation error.");
+        }
+        catch (InvoiceOrchestrationDependencyException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration dependency error.");
+        }
+        catch (InvoiceOrchestrationDependencyValidationException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration dependency validation error.");
+        }
+        catch (InvoiceOrchestrationServiceException exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an orchestration service error.");
+        }
+        catch (Exception exception)
+        {
+            return Results.Problem(
+                detail: exception.Message + exception.Source,
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "The service encountered an unexpected internal service error.");
         }
     }
 

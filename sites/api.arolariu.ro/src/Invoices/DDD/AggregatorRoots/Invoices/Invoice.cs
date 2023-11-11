@@ -24,6 +24,11 @@ public sealed class Invoice
     public required Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>
+    /// The invoice photo location.
+    /// </summary>
+    public required Uri PhotoLocation { get; set; } = null!;
+
+    /// <summary>
     /// The invoice description, as suggested by the user.
     /// </summary>
     public string Description { get; set; } = string.Empty;
@@ -83,12 +88,14 @@ public sealed class Invoice
     /// Null Object design pattern implementation for the <see cref="Invoice"/> class.
     /// </summary>
     /// <returns></returns>
+    [SuppressMessage("Minor Code Smell", "S1075:URIs should not be hardcoded", Justification = "Null Object pattern")]
     public static Invoice CreateNullInvoice()
     {
         return new Invoice
         {
             Id = Guid.Empty,
             UserIdentifier = Guid.Empty,
+            PhotoLocation = new Uri("https://arolariu.ro/404"),
             PaymentInformation = new PaymentInformation(),
             Description = "This is a null invoice; please correct/delete.",
             EstimatedSurvivalDays = int.MinValue,
@@ -110,6 +117,7 @@ public sealed class Invoice
     {
         ArgumentNullException.ThrowIfNull(other);
 
+        this.PhotoLocation = other.PhotoLocation;
         this.Description = other.Description;
         this.PaymentInformation = other.PaymentInformation;
         this.EstimatedSurvivalDays = other.EstimatedSurvivalDays;

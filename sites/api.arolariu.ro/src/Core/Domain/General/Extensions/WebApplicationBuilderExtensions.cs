@@ -1,9 +1,4 @@
-﻿using arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
-using arolariu.Backend.Domain.Invoices.Services.Orchestration;
-
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics.CodeAnalysis;
 
@@ -50,37 +45,5 @@ internal static partial class WebApplicationBuilderExtensions
         PopulateConfigurationWithCorrectValues(builder);
         ConfigureDataLayer(builder);
         ConfigureHealthChecks(builder);
-    }
-
-    /// <summary>
-    /// Adds invoices domain configurations to the WebApplicationBuilder instance.
-    /// </summary>
-    /// <param name="builder">The WebApplicationBuilder instance.</param>
-    /// <returns>The modified IServiceCollection instance.</returns>
-    /// <remarks>
-    /// This method configures services related to the invoices domain.
-    /// It adds singleton instances of the invoice SQL broker, invoice reader service,
-    /// invoice storage service, and invoice foundation service.
-    /// </remarks>
-    /// <example>
-    /// <code>
-    /// // Configure invoices domain configurations
-    /// services.AddInvoicesDomainConfiguration(builder);
-    /// </code>
-    /// </example>
-    /// <seealso cref="WebApplicationBuilder"/>
-    /// <seealso cref="IServiceCollection"/>
-    public static void AddInvoicesDomainConfiguration(this WebApplicationBuilder builder)
-    {
-        // Broker services:
-        builder.Services.AddScoped<IInvoiceStorageBroker, InvoiceAzureStorageBroker>();
-        builder.Services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
-
-        // Foundation services:
-        builder.Services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
-        builder.Services.AddScoped<IInvoiceAnalysisFoundationService, InvoiceAnalysisFoundationService>();
-
-        // Orchestration services:
-        builder.Services.AddScoped<IInvoiceOrchestrationService, InvoiceOrchestrationService>();
     }
 }

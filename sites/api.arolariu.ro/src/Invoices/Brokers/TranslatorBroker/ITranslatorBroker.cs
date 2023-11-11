@@ -6,7 +6,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker
     /// The translator broker interface.
     /// This interface is used to translate text.
     /// </summary>
-    internal interface ITranslatorBroker
+    public interface ITranslatorBroker
     {
         /// <summary>
         /// Translates the given text to the given language.

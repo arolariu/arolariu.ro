@@ -42,15 +42,14 @@ public class KeyVaultService : IKeyVaultService
     {
         try
         {
-            using var activity = Program.ActivitySource.StartActivity("GetSecret");
             var secret = _secretClient.GetSecret(secretName);
             return secret.Value.Value;
         }
         catch (RequestFailedException)
         {
-#pragma warning disable S112 // General exceptions should never be thrown
+            #pragma warning disable S112 // General exceptions should never be thrown
             throw new Exception($"Failed to get secret '{secretName}' from Key Vault: {_secretClient.VaultUri}");
-#pragma warning restore S112 // General exceptions should never be thrown
+            #pragma warning restore S112 // General exceptions should never be thrown
         }
     }
 
@@ -62,15 +61,14 @@ public class KeyVaultService : IKeyVaultService
     {
         try
         {
-            using var activity = Program.ActivitySource.StartActivity("GetSecretAsync");
             var secret = await _secretClient.GetSecretAsync(secretName);
             return secret.Value.Value;
         }
         catch (RequestFailedException)
         {
-#pragma warning disable S112 // General exceptions should never be thrown
+            #pragma warning disable S112 // General exceptions should never be thrown
             throw new Exception($"Failed to get secret '{secretName}' from Key Vault: {_secretClient.VaultUri}");
-#pragma warning restore S112 // General exceptions should never be thrown
+            #pragma warning restore S112 // General exceptions should never be thrown
         }
     }
 }

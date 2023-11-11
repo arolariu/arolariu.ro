@@ -56,7 +56,7 @@ public partial class AzureFormRecognizerBroker : IReceiptRecognizerBroker
             .AnalyzeDocumentFromUriAsync(
             WaitUntil.Completed,
             "prebuilt-receipt",
-            invoice.ImageLocation) // TODO: fix this.
+            invoice.PhotoLocation)
             .ConfigureAwait(false);
 
         var result = operation.Value;

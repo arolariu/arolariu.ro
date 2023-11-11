@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>net8.0</TargetFramework>
+	<Nullable>enable</Nullable>
   </PropertyGroup>
 
 	<!-- Dependency Injection packages -->
@@ -40,5 +41,9 @@
 
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Telemetry\Logging\" />
 	</ItemGroup>
 </Project>

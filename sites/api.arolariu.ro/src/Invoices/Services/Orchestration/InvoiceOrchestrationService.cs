@@ -3,6 +3,8 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
+using Microsoft.Extensions.Logging;
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -19,22 +21,25 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 {
     private readonly IInvoiceAnalysisFoundationService invoiceAnalysisFoundationService;
     private readonly IInvoiceStorageFoundationService invoiceStorageFoundationService;
+    private readonly ILogger<IInvoiceOrchestrationService> logger;
 
     /// <summary>
     /// Constructor.
     /// </summary>
     /// <param name="invoiceAnalysisFoundationService"></param>
     /// <param name="invoiceStorageFoundationService"></param>
+    /// <param name="loggerFactory"></param>
     public InvoiceOrchestrationService(
         IInvoiceAnalysisFoundationService invoiceAnalysisFoundationService,
-        IInvoiceStorageFoundationService invoiceStorageFoundationService)
+        IInvoiceStorageFoundationService invoiceStorageFoundationService,
+        ILoggerFactory loggerFactory)
     {
         ArgumentNullException.ThrowIfNull(invoiceAnalysisFoundationService);
         ArgumentNullException.ThrowIfNull(invoiceStorageFoundationService);
         this.invoiceAnalysisFoundationService = invoiceAnalysisFoundationService;
         this.invoiceStorageFoundationService = invoiceStorageFoundationService;
+        logger = loggerFactory.CreateLogger<IInvoiceOrchestrationService>();
     }
-
 
     /// <inheritdoc/>
     public async Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, AnalysisOptionsDto options) =>
@@ -43,7 +48,6 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
         using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceWithOptions));
         var invoice = await ReadInvoiceObject(invoiceIdentifier).ConfigureAwait(false);
         await invoiceAnalysisFoundationService.AnalyzeInvoiceAsync(invoice, options).ConfigureAwait(false);
-        await UpdateInvoiceObject(invoice).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker
 {
-    internal partial interface IAnalysisBroker
+    public partial interface IAnalysisBroker
     {
         /// <summary>
         /// This method will generate and populate the InvoiceItem `PossibleSurvivalDays` property.

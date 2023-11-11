@@ -2,6 +2,8 @@
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
+using Microsoft.Extensions.Logging;
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -16,16 +18,20 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
 {
     private readonly IInvoiceNoSqlBroker invoiceNoSqlBroker;
+    private readonly ILogger<IInvoiceStorageFoundationService> logger;
 
     /// <summary>
     /// Constructor.
     /// </summary>
     /// <param name="invoiceNoSqlBroker"></param>
+    /// <param name="loggerFactory"></param>
     public InvoiceStorageFoundationService(
-        IInvoiceNoSqlBroker invoiceNoSqlBroker)
+        IInvoiceNoSqlBroker invoiceNoSqlBroker,
+        ILoggerFactory loggerFactory)
     {
         ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);
         this.invoiceNoSqlBroker = invoiceNoSqlBroker;
+        this.logger = loggerFactory.CreateLogger<IInvoiceStorageFoundationService>();
     }
 
     /// <inheritdoc/>
@@ -33,6 +39,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     await TryCatchAsync(async () =>
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
+        ValidateIdentifierIsSet(identifier);
         var invoice = await invoiceNoSqlBroker
             .ReadInvoiceAsync(identifier)
             .ConfigureAwait(false);
@@ -57,6 +64,8 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     await TryCatchAsync(async () =>
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
+        ValidateInvoiceInformationIsCorrect(currentInvoice);
+        ValidateInvoiceInformationIsCorrect(updatedInvoice);
         var invoice = await invoiceNoSqlBroker
             .UpdateInvoiceAsync(currentInvoice, updatedInvoice)
             .ConfigureAwait(false);
@@ -69,6 +78,7 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     await TryCatchAsync(async () =>
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
+        ValidateIdentifierIsSet(identifier);
         await invoiceNoSqlBroker.DeleteInvoiceAsync(identifier).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
@@ -77,7 +87,11 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     await TryCatchAsync(async () =>
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
+        ValidateDtoIsValid(invoiceDto);
+
         var invoice = await invoiceNoSqlBroker.CreateInvoiceAsync(invoiceDto).ConfigureAwait(false);
+        ValidateInvoiceInformationIsCorrect(invoice);
+
         return invoice;
     }).ConfigureAwait(false);
 }
