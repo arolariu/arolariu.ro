@@ -17,7 +17,6 @@ namespace arolariu.Backend.Domain.Invoices.DTOs;
 [ExcludeFromCodeCoverage] // DTOs are not tested - they are used to transfer data between the client and the server.
 public readonly record struct CreateInvoiceDto(
     Uri PhotoLocation,
-    IFormFile PhotoFile,
     IEnumerable<KeyValuePair<string, object>> PhotoMetadata)
 {
     /// <summary>

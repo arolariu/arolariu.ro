@@ -6,12 +6,13 @@ using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace arolariu.Backend.Domain.Invoices;
+namespace arolariu.Backend.Domain.Invoices.Modules;
 
 /// <summary>
 /// Extension methods for the <see cref="WebApplicationBuilder"/> builder.
@@ -40,6 +41,14 @@ public static class WebApplicationBuilderExtensions
     public static void AddInvoicesDomainConfiguration(this WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
+
+        // Add Entity Framework Core services.
+        builder.Services.AddDbContext<InvoiceNoSqlBroker>(options =>
+        {
+            options.UseCosmos(
+                connectionString: builder.Configuration["Azure:NoSQL-DB:ConnectionString"]!,
+                databaseName: "arolariu");
+        });
 
         // Broker services:
         builder.Services.AddScoped<IAnalysisBroker, AzureOpenAiBroker>();

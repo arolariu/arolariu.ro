@@ -1,8 +1,7 @@
 ﻿using arolariu.Backend.Domain.Invoices.Endpoints;
-
 using Microsoft.AspNetCore.Builder;
 
-namespace arolariu.Backend.Domain.Invoices;
+namespace arolariu.Backend.Domain.Invoices.Modules;
 
 /// <summary>
 /// Extensions for the web application.

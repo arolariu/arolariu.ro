@@ -1,6 +1,5 @@
 using arolariu.Backend.Core.Domain.General.Extensions;
-using arolariu.Backend.Domain.Invoices;
-
+using arolariu.Backend.Domain.Invoices.Modules;
 using Microsoft.AspNetCore.Builder;
 
 using System.Diagnostics.CodeAnalysis;

@@ -23,10 +23,6 @@ public sealed class Invoice
     public required Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>
-    /// The tracking number used by Cosmos DB.
-    /// </summary>
-    public int? TrackingNumber { get; set; }
-    /// <summary>
     /// The invoice photo location.
     /// </summary>
     public required Uri PhotoLocation { get; set; } = null!;
