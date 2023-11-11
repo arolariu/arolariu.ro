@@ -20,9 +20,12 @@ public sealed class Invoice
     /// <summary>
     /// The invoice id.
     /// </summary>
-    [JsonIgnore] // we hide this field from the JSON serialization, because we don't want to expose it to the outside world.
     public required Guid Id { get; set; } = Guid.NewGuid();
 
+    /// <summary>
+    /// The tracking number used by Cosmos DB.
+    /// </summary>
+    public int? TrackingNumber { get; set; }
     /// <summary>
     /// The invoice photo location.
     /// </summary>
