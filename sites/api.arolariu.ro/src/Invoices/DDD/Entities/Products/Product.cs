@@ -1,4 +1,7 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+
+using Microsoft.EntityFrameworkCore;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -10,6 +13,7 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 /// This record is used to store the invoice item information in the database.
 /// The invoice item information is extracted from the invoice image using the OCR service.
 /// </summary>
+[Owned]
 [Serializable]
 [ExcludeFromCodeCoverage]
 public record class Product

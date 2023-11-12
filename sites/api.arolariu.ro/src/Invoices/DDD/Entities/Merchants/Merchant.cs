@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+
+using System;
 using System.Diagnostics.CodeAnalysis;
 
 namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -10,8 +12,19 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// </summary>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public record class Merchant
+public class Merchant
 {
+    /// <summary>
+    /// The merchant identifier.
+    /// </summary>
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    /// <summary>
+    /// The merchant parent company.
+    /// The parent company is used to generate the invoice statistics.
+    /// </summary>
+    public Guid ParentCompanyId { get; set; } = Guid.Empty;
+
     /// <summary>
     /// The merchant information.
     /// </summary>
@@ -21,10 +34,4 @@ public record class Merchant
     /// The merchant category.
     /// </summary>
     public MerchantCategory Category { get; set; } = MerchantCategory.OTHER;
-
-    /// <summary>
-    /// The merchant parent company.
-    /// The parent company is used to generate the invoice statistics.
-    /// </summary>
-    public string ParentCompany { get; set; } = string.Empty;
 }

@@ -96,7 +96,13 @@ public sealed class Invoice
             EstimatedSurvivalDays = int.MinValue,
             PossibleRecipes = new List<Recipe>(),
             Merchant = new Merchant(),
-            Items = new List<Product>(),
+            Items = new List<Product>()
+            {
+                new Product(),
+                new Product(),
+                new Product(),
+                new Product(),
+            },
             TimeInformation = new InvoiceTimeInformation(),
             Metadata = new InvoiceMetadata(),
             AdditionalMetadata = new List<KeyValuePair<string, object>>()

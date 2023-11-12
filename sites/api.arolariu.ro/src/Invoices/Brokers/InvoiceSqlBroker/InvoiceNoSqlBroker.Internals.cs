@@ -7,16 +7,13 @@ using arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
 
 public partial class InvoiceNoSqlBroker
 {
-    /// <summary>
-    /// The invoices DbSet.
-    /// </summary>
-    public DbSet<Invoice> Invoices => Set<Invoice>();
-
     internal async ValueTask<T> InsertAsync<T>(T @object) =>
     await ChangeEntityStateAndSaveChangesAsync(@object, EntityState.Added)
             .ConfigureAwait(false);
@@ -38,13 +35,51 @@ public partial class InvoiceNoSqlBroker
     {
         ArgumentNullException.ThrowIfNull(@object);
         this.Entry(@object).State = entityState;
-        await SaveChangesAsync().ConfigureAwait(false);
+        await this.SaveChangesAsync().ConfigureAwait(false);
+
+        // Add the attached merchant to the database if it does not exist.
+        if (@object is Invoice && entityState == EntityState.Added)
+        {
+            var merchant = (@object as Invoice)!.Merchant;
+            var merchantExists = await FindAsync<Merchant>(merchant.Id, merchant.ParentCompanyId)
+                .ConfigureAwait(false) != null;
+
+            if (!merchantExists)
+            {
+                this.Entry(merchant).State = entityState;
+                await this.SaveChangesAsync().ConfigureAwait(false);
+            }
+        }
         return @object;
     }
 
     private static void SetModelReferences(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
+
+        // Map the merchant entity to the merchants container.
+        modelBuilder.Entity<Merchant>(entity =>
+        {
+            entity.ToContainer("merchants");
+
+            entity.Property(merchant => merchant.Id)
+                .HasConversion<string>();
+
+            entity.Property(merchant => merchant.ParentCompanyId)
+                .HasConversion<string>();
+
+            entity.Property(merchant => merchant.MerchantInformation)
+                .IsRequired(true);
+
+            entity.Property(merchant => merchant.Category)
+                .IsRequired(true);
+
+            entity.HasIndex(merchant => merchant.Id);
+            entity.HasPartitionKey(merchant => merchant.ParentCompanyId);
+            entity.HasNoDiscriminator();
+        });
+
+        // Map the invoice entity to the invoices container.
         modelBuilder.Entity<Invoice>(entity =>
         {
             entity.ToContainer("invoices");
@@ -70,13 +105,6 @@ public partial class InvoiceNoSqlBroker
             entity.Property(invoice => invoice.Merchant)
                 .HasConversion(new MerchantValueConverter());
 
-            entity.OwnsMany(invoice => invoice.Items,
-            items =>
-            {
-                items.Property(item => item.DetectedAllergens)
-                    .HasConversion(new IEnumerableOfStructTypeValueConverter<Allergen>());
-            });
-
             entity.Property(invoice => invoice.PossibleRecipes)
                 .HasConversion(new IEnumerableOfStructTypeValueConverter<Recipe>());
 
@@ -91,9 +119,47 @@ public partial class InvoiceNoSqlBroker
 
             entity.HasIndex(invoice => invoice.Id);
             entity.HasPartitionKey(invoice => invoice.UserIdentifier);
-            entity.HasNoDiscriminator();
+        });
+
+        // Embed the product entity into the invoice entity:
+        modelBuilder.Entity<Invoice>().OwnsMany<Product>(invoice => invoice.Items,
+        items =>
+        {
+            items.ToJsonProperty("Items");
+
+            items.Property(item => item.RawName)
+                .ToJsonProperty("RawName");
+
+            items.Property(item => item.GenericName)
+                .ToJsonProperty("GenericName");
+
+            items.Property(item => item.Category)
+                .ToJsonProperty("Category");
+
+            items.Property(item => item.Quantity)
+                .ToJsonProperty("Quantity");
+
+            items.Property(item => item.QuantityUnit)
+                .ToJsonProperty("QuantityUnit");
+
+            items.Property(item => item.ProductCode)
+                .ToJsonProperty("ProductCode");
+
+            items.Property(item => item.Price)
+                .ToJsonProperty("Price");
+
+            items.Property(item => item.TotalPrice)
+                .ToJsonProperty("TotalPrice");
+
+            items.Property(item => item.DetectedAllergens)
+                .ToJsonProperty("DetectedAllergens")
+                .HasConversion(new IEnumerableOfStructTypeValueConverter<Allergen>());
+
+            items.Property(item => item.Metadata)
+                .ToJsonProperty("Metadata");
         });
     }
+
     /// <inheritdoc/>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
