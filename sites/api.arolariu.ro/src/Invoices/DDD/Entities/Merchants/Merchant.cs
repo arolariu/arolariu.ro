@@ -10,7 +10,7 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// </summary>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public sealed class Merchant
+public record class Merchant
 {
     /// <summary>
     /// The merchant information.

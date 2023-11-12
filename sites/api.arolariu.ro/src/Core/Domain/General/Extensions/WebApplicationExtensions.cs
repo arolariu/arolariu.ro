@@ -38,7 +38,6 @@ internal static partial class WebApplicationExtensions
     {
         ArgumentNullException.ThrowIfNull(app);
         app.UseStaticFiles();
-        app.UseAuthorization();
         app.UseHttpsRedirection();
         app.UseRequestLocalization();
         app.UseCors("AllowAllOrigins");

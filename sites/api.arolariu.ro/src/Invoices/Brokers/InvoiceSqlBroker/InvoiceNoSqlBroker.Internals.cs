@@ -4,6 +4,9 @@ using System.Threading.Tasks;
 using System;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
 
@@ -49,23 +52,20 @@ public partial class InvoiceNoSqlBroker
             entity.Property(invoice => invoice.Id)
                 .HasConversion<string>();
 
+            entity.Property(invoice => invoice.UserIdentifier)
+                .HasConversion<string>();
+
             entity.Property(invoice => invoice.PhotoLocation)
                 .HasConversion<string>();
 
             entity.Property(invoice => invoice.Description)
                 .IsRequired();
 
+            entity.Property(invoice => invoice.TimeInformation)
+                .HasConversion(new TimeInformationValueConverter());
+
             entity.Property(invoice => invoice.PaymentInformation)
                 .HasConversion(new PaymentInformationValueConverter());
-
-            entity.Property(invoice => invoice.EstimatedSurvivalDays)
-                .HasDefaultValue(int.MinValue);
-
-            entity.Property(invoice => invoice.PossibleRecipes)
-                .HasConversion(new IEnumerableOfRecipeValueConverter());
-
-            entity.Property(invoice => invoice.UserIdentifier)
-                .HasConversion<string>();
 
             entity.Property(invoice => invoice.Merchant)
                 .HasConversion(new MerchantValueConverter());
@@ -74,17 +74,20 @@ public partial class InvoiceNoSqlBroker
             items =>
             {
                 items.Property(item => item.DetectedAllergens)
-                    .HasConversion(new IEnumerableOfAllergenValueConverter());
+                    .HasConversion(new IEnumerableOfStructTypeValueConverter<Allergen>());
             });
 
-            entity.Property(invoice => invoice.TimeInformation)
-                .HasConversion(new TimeInformationValueConverter());
+            entity.Property(invoice => invoice.PossibleRecipes)
+                .HasConversion(new IEnumerableOfStructTypeValueConverter<Recipe>());
+
+            entity.Property(invoice => invoice.EstimatedSurvivalDays)
+                .HasDefaultValue(int.MinValue);
 
             entity.Property(invoice => invoice.Metadata)
                 .HasConversion(new MetadataValueConverter());
 
             entity.Property(invoice => invoice.AdditionalMetadata)
-                .HasConversion(new IEnumerableOfKVPairValueConverter());
+                .HasConversion(new IEnumerableOfStructTypeValueConverter<KeyValuePair<string, object>>());
 
             entity.HasIndex(invoice => invoice.Id);
             entity.HasPartitionKey(invoice => invoice.UserIdentifier);

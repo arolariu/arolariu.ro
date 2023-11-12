@@ -2,6 +2,8 @@
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 
+using Microsoft.EntityFrameworkCore;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -22,6 +24,18 @@ public partial class InvoiceStorageFoundationService
         {
             await returningTaskFunction().ConfigureAwait(false);
         }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw CreateAndLogDependencyException(exception);
+        }
+        catch (DbUpdateException exception)
+        {
+            throw CreateAndLogDependencyException(exception);
+        }
+        catch (OperationCanceledException exception)
+        {
+            throw CreateAndLogDependencyException(exception);
+        }
         catch (Exception exception)
         {
             throw CreateAndLogServiceException(exception);
@@ -37,6 +51,34 @@ public partial class InvoiceStorageFoundationService
         {
             throw CreateAndLogValidationException(exception);
         }
+        catch (InvoiceDescriptionNotSetException exception)
+        {
+            throw CreateAndLogValidationException(exception);
+        }
+        catch (InvoicePaymentInformationNotCorrectException exception)
+        {
+            throw CreateAndLogValidationException(exception);
+        }
+        catch (InvoiceTimeInformationNotCorrectException exception)
+        {
+            throw CreateAndLogValidationException(exception);
+        }
+        catch (InvoicePhotoLocationNotCorrectException exception)
+        {
+            throw CreateAndLogValidationException(exception);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw CreateAndLogDependencyException(exception);
+        }
+        catch (DbUpdateException exception)
+        {
+            throw CreateAndLogDependencyException(exception);
+        }
+        catch (OperationCanceledException exception)
+        {
+            throw CreateAndLogDependencyException(exception);
+        }
         catch (Exception exception)
         {
             throw CreateAndLogServiceException(exception);
@@ -48,6 +90,14 @@ public partial class InvoiceStorageFoundationService
         try
         {
             return await returningInvoicesFunction().ConfigureAwait(false);
+        }
+        catch (OperationCanceledException exception)
+        {
+            throw CreateAndLogDependencyException(exception);
+        }
+        catch (ArgumentNullException exception)
+        {
+            throw CreateAndLogDependencyValidationException(exception);
         }
         catch (Exception exception)
         {
@@ -63,7 +113,6 @@ public partial class InvoiceStorageFoundationService
         return invoiceFoundationValidationException;
     }
 
-    [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>")]
     private InvoiceFoundationDependencyException CreateAndLogDependencyException(Exception exception)
     {
         var invoiceFoundationDependencyException = new InvoiceFoundationDependencyException(exception);
@@ -72,7 +121,6 @@ public partial class InvoiceStorageFoundationService
         return invoiceFoundationDependencyException;
     }
 
-    [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>")]
     private InvoiceFoundationDependencyValidationException CreateAndLogDependencyValidationException(Exception exception)
     {
         var invoiceFoundationDependencyValidationException = new InvoiceFoundationDependencyValidationException(exception);

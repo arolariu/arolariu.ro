@@ -35,13 +35,13 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     }
 
     /// <inheritdoc/>
-    public async Task<Invoice> ReadInvoiceObject(Guid identifier) =>
+    public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid userIdentifier) =>
     await TryCatchAsync(async () =>
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
         ValidateIdentifierIsSet(identifier);
         var invoice = await invoiceNoSqlBroker
-            .ReadInvoiceAsync(identifier)
+            .ReadInvoiceAsync(identifier, userIdentifier)
             .ConfigureAwait(false);
 
         return invoice;
@@ -74,12 +74,12 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task DeleteInvoiceObject(Guid identifier) =>
+    public async Task DeleteInvoiceObject(Guid identifier, Guid userIdentifier) =>
     await TryCatchAsync(async () =>
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
         ValidateIdentifierIsSet(identifier);
-        await invoiceNoSqlBroker.DeleteInvoiceAsync(identifier).ConfigureAwait(false);
+        await invoiceNoSqlBroker.DeleteInvoiceAsync(identifier, userIdentifier).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>
@@ -90,8 +90,6 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
         ValidateDtoIsValid(invoiceDto);
 
         var invoice = await invoiceNoSqlBroker.CreateInvoiceAsync(invoiceDto).ConfigureAwait(false);
-        ValidateInvoiceInformationIsCorrect(invoice);
-
         return invoice;
     }).ConfigureAwait(false);
 }

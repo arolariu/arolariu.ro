@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
@@ -14,13 +15,10 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
 /// <summary>
 /// The Entity Framework Invoice SQL broker.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public partial class InvoiceNoSqlBroker(DbContextOptions options) : DbContext(options), IInvoiceNoSqlBroker
 {
-    /// <summary>
-    /// The create invoice method.
-    /// </summary>
-    /// <param name="invoiceDto"></param>
-    /// <returns></returns>
+    /// <inheritdoc/>
     public async ValueTask<Invoice> CreateInvoiceAsync(CreateInvoiceDto invoiceDto)
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceAsync));
@@ -28,22 +26,15 @@ public partial class InvoiceNoSqlBroker(DbContextOptions options) : DbContext(op
         return await InsertAsync(invoice).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// The read invoice method.
-    /// </summary>
-    /// <param name="invoiceIdentifier"></param>
-    /// <returns></returns>
-    public async ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier)
+    /// <inheritdoc/>
+    public async ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier)
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceAsync));
-        var invoice = await SelectAsync<Invoice>(invoiceIdentifier).ConfigureAwait(false);
+        var invoice = await SelectAsync<Invoice>(invoiceIdentifier, userIdentifier).ConfigureAwait(false);
         return invoice!;
     }
 
-    /// <summary>
-    /// The read invoices method.
-    /// </summary>
-    /// <returns></returns>
+    /// <inheritdoc/>
     public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync()
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));
@@ -51,12 +42,7 @@ public partial class InvoiceNoSqlBroker(DbContextOptions options) : DbContext(op
         return invoices;
     }
 
-    /// <summary>
-    /// The update invoice method.
-    /// </summary>
-    /// <param name="currentInvoice"></param>
-    /// <param name="updatedInvoice"></param>
-    /// <returns></returns>
+    /// <inheritdoc/>
     public async ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice)
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
@@ -64,15 +50,11 @@ public partial class InvoiceNoSqlBroker(DbContextOptions options) : DbContext(op
         return await UpdateAsync(newInvoice!).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// The delete invoice method.
-    /// </summary>
-    /// <param name="invoiceIdentifier"></param>
-    /// <returns></returns>
-    public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier)
+    /// <inheritdoc/>
+    public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier)
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync));
-        var invoice = await SelectAsync<Invoice>(invoiceIdentifier).ConfigureAwait(false);
+        var invoice = await SelectAsync<Invoice>(invoiceIdentifier, userIdentifier).ConfigureAwait(false);
         await DeleteAsync(invoice!).ConfigureAwait(false);
     }
 }

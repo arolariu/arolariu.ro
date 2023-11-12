@@ -12,9 +12,11 @@ public static partial class AuthEndpoints
     /// Method that maps the already built-in identity auth endpoints.
     /// </summary>
     /// <param name="router"></param>
-    private static void MapIdentityBuiltinEndpoints(IEndpointRouteBuilder router) =>
+    private static void MapIdentityBuiltinEndpoints(IEndpointRouteBuilder router)
+    {
         router.MapGroup("/auth")
               .MapIdentityApi<AuthenticatedUser>()
               .WithTags(EndpointNameTag)
               .WithOpenApi();
+    }
 }

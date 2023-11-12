@@ -42,11 +42,11 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
     }
 
     /// <inheritdoc/>
-    public async Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, AnalysisOptionsDto options) =>
+    public async Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, Guid userIdentifier, AnalysisOptionsDto options) =>
     await TryCatchAsync(async () =>
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceWithOptions));
-        var invoice = await ReadInvoiceObject(invoiceIdentifier).ConfigureAwait(false);
+        var invoice = await ReadInvoiceObject(invoiceIdentifier, userIdentifier).ConfigureAwait(false);
         await invoiceAnalysisFoundationService.AnalyzeInvoiceAsync(invoice, options).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
@@ -63,12 +63,12 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task DeleteInvoiceObject(Guid identifier) =>
+    public async Task DeleteInvoiceObject(Guid identifier, Guid userIdentifier) =>
     await TryCatchAsync(async () =>
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
-        var invoice = await ReadInvoiceObject(identifier).ConfigureAwait(false);
-        await invoiceStorageFoundationService.DeleteInvoiceObject(invoice.Id).ConfigureAwait(false);
+        var invoice = await ReadInvoiceObject(identifier, userIdentifier).ConfigureAwait(false);
+        await invoiceStorageFoundationService.DeleteInvoiceObject(invoice.Id, userIdentifier).ConfigureAwait(false);
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>
@@ -84,12 +84,12 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
     }).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public async Task<Invoice> ReadInvoiceObject(Guid identifier) =>
+    public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid userIdentifier) =>
     await TryCatchAsync(async () =>
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
         var invoice = await invoiceStorageFoundationService
-            .ReadInvoiceObject(identifier)
+            .ReadInvoiceObject(identifier, userIdentifier)
             .ConfigureAwait(false);
 
         return invoice;

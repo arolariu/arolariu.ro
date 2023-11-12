@@ -23,8 +23,9 @@ public interface IInvoiceStorageFoundationService
     /// Reads an invoice object.
     /// </summary>
     /// <param name="identifier"></param>
+    /// <param name="userIdentifier"></param>
     /// <returns></returns>
-    public Task<Invoice> ReadInvoiceObject(Guid identifier);
+    public Task<Invoice> ReadInvoiceObject(Guid identifier, Guid userIdentifier);
 
     /// <summary>
     /// Reads all invoice objects.
@@ -44,6 +45,7 @@ public interface IInvoiceStorageFoundationService
     /// Deletes an invoice object.
     /// </summary>
     /// <param name="identifier"></param>
+    /// <param name="userIdentifier"></param>
     /// <returns></returns>
-    public Task DeleteInvoiceObject(Guid identifier);
+    public Task DeleteInvoiceObject(Guid identifier, Guid userIdentifier);
 }

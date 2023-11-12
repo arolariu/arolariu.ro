@@ -11,30 +11,30 @@ namespace arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
 /// </summary>
 [ExcludeFromCodeCoverage]
 [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Not applicable.")]
-public class IEnumerableOfAllergenValueConverter : ValueConverter<IEnumerable<Allergen>, string>
+public class IEnumerableOfStructTypeValueConverter<T> : ValueConverter<IEnumerable<T>, string> where T: struct
 {
     /// <summary>
-    /// The constructor for <see cref="IEnumerableOfAllergenValueConverter"/>
+    /// The constructor for <see cref="IEnumerableOfStructTypeValueConverter{T}"/>
     /// </summary>
-    public IEnumerableOfAllergenValueConverter() : base(
-    enumerable => ConvertToString(enumerable),
-    enumerableAsString => ConvertFromString(enumerableAsString))
+    public IEnumerableOfStructTypeValueConverter() : base(
+    fromEnumerableOfT => ConvertToString(fromEnumerableOfT),
+    toEnumerableOfT => ConvertFromString(toEnumerableOfT))
     {
     }
 
-    private static string ConvertToString(IEnumerable<Allergen> @object)
+    private static string ConvertToString(IEnumerable<T> @object)
     {
-        @object ??= new List<Allergen>();
+        @object ??= new List<T>();
         var json = JsonSerializer.Serialize(@object);
         return json;
     }
 
-    private static IEnumerable<Allergen> ConvertFromString(string @object)
+    private static IEnumerable<T> ConvertFromString(string @object)
     {
-        IEnumerable<Allergen>? result = new List<Allergen>();
+        IEnumerable<T>? result = new List<T>();
         try
         {
-            result = JsonSerializer.Deserialize<IEnumerable<Allergen>>(@object);
+            result = JsonSerializer.Deserialize<IEnumerable<T>>(@object);
         }
         catch (JsonException)
         {

@@ -30,6 +30,7 @@ public static partial class InvoiceEndpoints
             .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(CreateNewInvoiceAsync))
+            .RequireAuthorization()
             .WithOpenApi();
 
         router
@@ -41,10 +42,11 @@ public static partial class InvoiceEndpoints
             .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(RetrieveAllInvoicesAsync))
+            .RequireAuthorization()
             .WithOpenApi();
 
         router
-            .MapGet("/rest/invoices/{id}", RetrieveSpecificInvoiceAsync)
+            .MapGet("/rest/user/{userIdentifier}/invoices/{id}", RetrieveSpecificInvoiceAsync)
             .Produces<Invoice>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization
@@ -53,10 +55,11 @@ public static partial class InvoiceEndpoints
             .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(RetrieveSpecificInvoiceAsync))
+            .RequireAuthorization()
             .WithOpenApi();
 
         router
-            .MapPut("/rest/invoices/{id}", UpdateSpecificInvoiceAsync)
+            .MapPut("/rest/user/{userIdentifier}/invoices/{id}", UpdateSpecificInvoiceAsync)
             .Accepts<Invoice>("application/json")
             .Produces<Invoice>(StatusCodes.Status202Accepted)
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -66,10 +69,11 @@ public static partial class InvoiceEndpoints
             .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(UpdateSpecificInvoiceAsync))
+            .RequireAuthorization()
             .WithOpenApi();
 
         router
-            .MapDelete("/rest/invoices/{id}", DeleteInvoiceAsync)
+            .MapDelete("/rest/user/{userIdentifier}/invoices/{id}", DeleteInvoiceAsync)
             .Produces<Invoice>(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized) // TODO: authorization
@@ -78,6 +82,7 @@ public static partial class InvoiceEndpoints
             .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(DeleteInvoiceAsync))
+            .RequireAuthorization()
             .WithOpenApi();
     }
 
@@ -88,7 +93,7 @@ public static partial class InvoiceEndpoints
     private static void MapInvoiceAnalysisEndpoints(IEndpointRouteBuilder router)
     {
         router
-            .MapPost("/rest/invoices/{id}/analyze", AnalyzeInvoiceAsync)
+            .MapPost("/rest/user/{userIdentifier}/invoices/{id}/analyze", AnalyzeInvoiceAsync)
             .Accepts<AnalysisOptionsDto>("application/json")
             .Produces<InvoiceAnalysisResultDto>(StatusCodes.Status202Accepted)
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -98,6 +103,7 @@ public static partial class InvoiceEndpoints
             .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(AnalyzeInvoiceAsync))
+            .RequireAuthorization()
             .WithOpenApi();
     }
 }

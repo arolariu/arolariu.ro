@@ -3,6 +3,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.O
 using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,6 +26,7 @@ public static partial class InvoiceEndpoints
     /// Creates a new invoice.
     /// </summary>
     /// <param name="invoiceOrchestrationService"></param>
+    /// <param name="httpContext"></param>
     /// <param name="invoiceDto"></param>
     /// <returns></returns>
     [SwaggerOperation(
@@ -39,8 +41,10 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The invoice could not be created due to the payload (photo field) being too large.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be created due to an internal service error.", typeof(ProblemDetails))]
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+    [Authorize]
     private static async Task<IResult> CreateNewInvoiceAsync(
         [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
+        [FromServices] IHttpContextAccessor httpContext,
         [FromBody] CreateInvoiceDto invoiceDto)
     {
         try
@@ -93,6 +97,8 @@ public static partial class InvoiceEndpoints
     /// Retrieves a specific invoice.
     /// </summary>
     /// <param name="invoiceOrchestrationService"></param>
+    /// <param name="httpContext"></param>
+    /// <param name="userIdentifier"></param>
     /// <param name="id"></param>
     /// <returns></returns>
     [SwaggerOperation(
@@ -106,15 +112,18 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be retrieved due to the invoice not being found.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+    [Authorize]
     private static async Task<IResult> RetrieveSpecificInvoiceAsync(
         [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid userIdentifier,
         [FromRoute] Guid id)
     {
         try
         {
             using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificInvoiceAsync), ActivityKind.Server);
             var invoice = await invoiceOrchestrationService
-                .ReadInvoiceObject(id)
+                .ReadInvoiceObject(id, userIdentifier)
                 .ConfigureAwait(false);
 
             return Results.Ok(invoice);
@@ -160,6 +169,7 @@ public static partial class InvoiceEndpoints
     /// Retrieves all invoices.
     /// </summary>
     /// <param name="invoiceOrchestrationService"></param>
+    /// <param name="httpContext"></param>
     /// <returns></returns>
     [SwaggerOperation(
         Summary = "Retrieves all invoices from the system.",
@@ -170,8 +180,10 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status403Forbidden, "The invoices could not be retrieved due to insufficient permissions.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+    [Authorize]
     private static async Task<IResult> RetrieveAllInvoicesAsync(
-        [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService)
+        [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
+        [FromServices] IHttpContextAccessor httpContext)
     {
         try
         {
@@ -223,6 +235,8 @@ public static partial class InvoiceEndpoints
     /// Updates a specific invoice.
     /// </summary>
     /// <param name="invoiceOrchestrationService"></param>
+    /// <param name="httpContext"></param>
+    /// <param name="userIdentifier"></param>
     /// <param name="id"></param>
     /// <param name="invoicePayload"></param>
     /// <returns></returns>
@@ -237,8 +251,11 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be updated due to the invoice not being found.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be updated due to an internal service error.", typeof(ProblemDetails))]
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+    [Authorize]
     private static async Task<IResult> UpdateSpecificInvoiceAsync(
         [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid userIdentifier,
         [FromRoute] Guid id,
         [FromBody] Invoice invoicePayload)
     {
@@ -247,7 +264,7 @@ public static partial class InvoiceEndpoints
             using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateSpecificInvoiceAsync), ActivityKind.Server);
 
             var invoice = await invoiceOrchestrationService
-                .ReadInvoiceObject(id)
+                .ReadInvoiceObject(id, userIdentifier)
                 .ConfigureAwait(false);
 
             var updatedInvoice = await invoiceOrchestrationService
@@ -297,6 +314,8 @@ public static partial class InvoiceEndpoints
     /// Deletes a specific invoice.
     /// </summary>
     /// <param name="invoiceOrchestrationService"></param>
+    /// <param name="httpContext"></param>
+    /// <param name="userIdentifier"></param>
     /// <param name="id"></param>
     /// <returns></returns>
     [SwaggerOperation(
@@ -310,8 +329,11 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be deleted due to the invoice not being found.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be deleted due to an internal service error.", typeof(ProblemDetails))]
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+    [Authorize]
     private static async Task<IResult> DeleteInvoiceAsync(
         [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid userIdentifier,
         [FromRoute] Guid id)
     {
         try
@@ -319,7 +341,7 @@ public static partial class InvoiceEndpoints
             using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync), ActivityKind.Server);
 
             await invoiceOrchestrationService
-                .DeleteInvoiceObject(id)
+                .DeleteInvoiceObject(id, userIdentifier)
                 .ConfigureAwait(false);
 
             return Results.NoContent();
@@ -368,9 +390,11 @@ public static partial class InvoiceEndpoints
     /// <summary>
     /// Analyzes a specific invoice.
     /// </summary>
+    /// <param name="invoiceOrchestrationService"></param>
+    /// <param name="httpContext"></param>
+    /// <param name="userIdentifier"></param>
     /// <param name="id"></param>
     /// <param name="options"></param>
-    /// <param name="invoiceOrchestrationService"></param>
     /// <returns></returns>
     [SwaggerOperation(
         Summary = "Analyzes a specific invoice from the system.",
@@ -383,17 +407,20 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be analyzed due to the invoice not being found.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be analyzed due to an internal service error.", typeof(ProblemDetails))]
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+    [Authorize]
     private static async Task<IResult> AnalyzeInvoiceAsync(
+        [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid userIdentifier,
         [FromRoute] Guid id,
-        [FromBody] AnalysisOptionsDto options,
-        [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService)
+        [FromBody] AnalysisOptionsDto options)
     {
         try
         {
             using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceAsync), ActivityKind.Server);
 
             await invoiceOrchestrationService
-                .AnalyzeInvoiceWithOptions(id, options)
+                .AnalyzeInvoiceWithOptions(id, userIdentifier, options)
                 .ConfigureAwait(false);
 
             return Results.Accepted(value: $"Invoice with id: {id} sent for analysis.");

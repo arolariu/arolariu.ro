@@ -1,12 +1,10 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DTOs;
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
 
 namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
@@ -23,14 +21,24 @@ public sealed class Invoice
     public required Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>
+    /// The invoice 1:1 user relationship.
+    /// </summary>
+    public required Guid UserIdentifier { get; set; }
+
+    /// <summary>
     /// The invoice photo location.
     /// </summary>
-    public required Uri PhotoLocation { get; set; } = null!;
+    public required Uri PhotoLocation { get; set; }
 
     /// <summary>
     /// The invoice description, as suggested by the user.
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public required string Description { get; set; }
+
+    /// <summary>
+    /// The invoice time information.
+    /// </summary>
+    public required InvoiceTimeInformation TimeInformation { get; set; }
 
     /// <summary>
     /// Payment information (currency, total amount, total tax).
@@ -38,56 +46,44 @@ public sealed class Invoice
     public required PaymentInformation PaymentInformation { get; set; }
 
     /// <summary>
-    /// How many days can you survive with the invoice items?
-    /// </summary>
-    public int EstimatedSurvivalDays { get; set; } = int.MinValue;
-
-    /// <summary>
-    /// Possible recipes for the invoice.
-    /// </summary>
-    public IEnumerable<Recipe> PossibleRecipes { get; set; } = null!;
-
-    #region Foreign Keys
-    /// <summary>
-    /// The invoice 1:1? user relationship.
-    /// </summary>
-    public Guid UserIdentifier { get; set; } = Guid.Empty;
-
-    /// <summary>
     /// The invoice 1:1? merchant relationship.
     /// </summary>
-    public Merchant Merchant { get; set; } = null!;
+    public required Merchant Merchant { get; set; }
 
     /// <summary>
     /// The invoice 1:*? - item relationship.
     /// </summary>
-    public IEnumerable<Product> Items { get; set; } = null!;
-    #endregion
+    public required IEnumerable<Product> Items { get; set; }
 
     /// <summary>
-    /// The invoice time information.
+    /// Possible recipes for the invoice.
     /// </summary>
-    public InvoiceTimeInformation TimeInformation { get; set; }
+    public required IEnumerable<Recipe> PossibleRecipes { get; set; }
+
+    /// <summary>
+    /// How many days can you survive with the invoice items?
+    /// </summary>
+    public required int EstimatedSurvivalDays { get; set; }
 
     /// <summary>
     /// The invoice metadata.
     /// This metadata is used to store system-assigned and user-assigned metadata.
     /// </summary>
-    public InvoiceMetadata Metadata { get; set; }
+    public required InvoiceMetadata Metadata { get; set; }
 
     /// <summary>
     /// The invoice additional metadata.
     /// This metadata is used to store additional information about the invoice.
     /// Metadata is used to generate the invoice statistics.
     /// </summary>
-    public IEnumerable<KeyValuePair<string, object>> AdditionalMetadata { get; set; } = null!;
+    public IEnumerable<KeyValuePair<string, object>> AdditionalMetadata { get; set; } = new List<KeyValuePair<string, object>>();
 
 
     /// <summary>
     /// Null Object design pattern implementation for the <see cref="Invoice"/> class.
     /// </summary>
     /// <returns></returns>
-    [SuppressMessage("Minor Code Smell", "S1075:URIs should not be hardcoded", Justification = "Null Object pattern")]
+    [SuppressMessage("Minor Code Smell", "S1075:URIs should not be hardcoded", Justification = "Requirement for Null Object pattern")]
     public static Invoice CreateNullInvoice()
     {
         return new Invoice
@@ -129,14 +125,6 @@ public sealed class Invoice
 
         return this;
     }
-
-    /// <summary>
-    /// Method that takes an invoice and checks if it is a null object.
-    /// </summary>
-    /// <param name="invoice"></param>
-    /// <returns>`True` if the object is null; otherwise `False`.</returns>
-    public static bool CheckForNullObject(Invoice invoice) =>
-        invoice == null || invoice.Id == Guid.Empty;
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)

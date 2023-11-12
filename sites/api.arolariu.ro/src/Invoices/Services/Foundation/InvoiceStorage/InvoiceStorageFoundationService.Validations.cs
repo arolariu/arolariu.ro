@@ -20,11 +20,20 @@ public partial class InvoiceStorageFoundationService
     {
         Validator.ValidateAndThrow<Invoice?, InvoiceDescriptionNotSetException>(invoice, invoice => string.IsNullOrEmpty(invoice?.Description), "Invoice description not set!");
 
-        // TODO: complete all other cases.
+        // Validate invoice payment information.
+        Validator.ValidateAndThrow<Invoice?, InvoicePaymentInformationNotCorrectException>(invoice, invoice => invoice?.PaymentInformation is not null, "Invoice payment information not set!");
+
+        // Validate invoice time information.
+        Validator.ValidateAndThrow<Invoice?, InvoiceTimeInformationNotCorrectException>(invoice, invoice => invoice?.TimeInformation is null, "Invoice time information not set!");
+
+        // Validate invoice photo location.
+        Validator.ValidateAndThrow<Invoice?, InvoicePhotoLocationNotCorrectException>(invoice, invoice => invoice?.PhotoLocation is null, "Invoice photo location not set!");
+
+        // TODO: complete all other cases if needed.
     }
 
     private static void ValidateDtoIsValid(CreateInvoiceDto? invoiceDto)
     {
-        // TO complete.
+        // TODO: complete in the future, if needed.
     }
 }

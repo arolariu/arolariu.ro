@@ -34,9 +34,6 @@ internal static partial class WebApplicationBuilderExtensions
     /// <seealso cref="IServiceCollection"/>
     public static void AddGeneralDomainConfiguration(this WebApplicationBuilder builder)
     {
-        ConfigureAuthN(builder);
-        ConfigureAuthZ(builder);
-
         ConfigureKeyVaultIntegration(builder);
         ConfigureHttpSettings(builder);
         ConfigureLocalization(builder);

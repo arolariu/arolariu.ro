@@ -28,8 +28,9 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker
         /// The invoice is identified by the invoice identifier.
         /// </summary>
         /// <param name="invoiceIdentifier"></param>
+        /// <param name="userIdentifier"></param>
         /// <returns></returns>
-        public ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier);
+        public ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
 
         /// <summary>
         /// Reads all the invoices.
@@ -55,7 +56,8 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker
         /// The invoice is identified by the invoice identifier.
         /// </summary>
         /// <param name="invoiceIdentifier"></param>
+        /// <param name="userIdentifier"></param>
         /// <returns></returns>
-        public ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier);
+        public ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
     }
 }

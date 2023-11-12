@@ -14,16 +14,6 @@ namespace arolariu.Backend.Core.Domain.General.Extensions;
 
 internal static partial class WebApplicationBuilderExtensions
 {
-    private static void ConfigureAuthN(WebApplicationBuilder builder)
-    {
-        builder.Services.AddAuthentication();
-    }
-
-    private static void ConfigureAuthZ(WebApplicationBuilder builder)
-    {
-        builder.Services.AddAuthorization();
-    }
-
     private static void ConfigureLocalization(WebApplicationBuilder builder)
     {
         builder.Services.AddLocalization();
@@ -120,6 +110,12 @@ internal static partial class WebApplicationBuilderExtensions
         #region Storage configuration
         builder.Configuration["Azure:Storage:ConnectionString"] =
             keyVaultService.GetSecret("arolariu-storage-connstring");
+        #endregion
+
+        #region JWT configuration
+        builder.Configuration["JWT:Secret"] = keyVaultService.GetSecret("jwt-secret");
+        builder.Configuration["JWT:Issuer"] = keyVaultService.GetSecret("jwt-issuer");
+        builder.Configuration["JWT:Audience"] = keyVaultService.GetSecret("jwt-audience");
         #endregion
 
         #endregion
