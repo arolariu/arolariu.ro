@@ -34,22 +34,24 @@ public partial class InvoiceNoSqlBroker
     internal async ValueTask<T> ChangeEntityStateAndSaveChangesAsync<T>(T @object, EntityState entityState)
     {
         ArgumentNullException.ThrowIfNull(@object);
-        this.Entry(@object).State = entityState;
-        await this.SaveChangesAsync().ConfigureAwait(false);
-
-        // Add the attached merchant to the database if it does not exist.
-        if (@object is Invoice && entityState == EntityState.Added)
+        switch(entityState)
         {
-            var merchant = (@object as Invoice)!.Merchant;
-            var merchantExists = await FindAsync<Merchant>(merchant.Id, merchant.ParentCompanyId)
-                .ConfigureAwait(false) != null;
-
-            if (!merchantExists)
-            {
-                this.Entry(merchant).State = entityState;
-                await this.SaveChangesAsync().ConfigureAwait(false);
-            }
+            case EntityState.Added:
+                if (@object is Invoice invoice)
+                {
+                    var merchant = invoice.Merchant;
+                    await this.AddAsync(merchant).ConfigureAwait(false);
+                }
+                await this.AddAsync(@object).ConfigureAwait(false);
+                break;
+            case EntityState.Modified:
+                await this.UpdateAsync(@object).ConfigureAwait(false);
+                break;
+            case EntityState.Deleted:
+                await this.DeleteAsync(@object).ConfigureAwait(false);
+                break;
         }
+        await SaveChangesAsync().ConfigureAwait(false);
         return @object;
     }
 

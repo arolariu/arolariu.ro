@@ -16,7 +16,7 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 [Owned]
 [Serializable]
 [ExcludeFromCodeCoverage]
-public record class Product
+public class Product
 {
     /// <summary>
     /// The invoice item raw name (as seen on the digital invoice).

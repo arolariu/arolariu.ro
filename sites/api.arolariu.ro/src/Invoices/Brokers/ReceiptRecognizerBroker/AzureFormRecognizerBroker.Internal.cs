@@ -109,35 +109,35 @@ public partial class AzureFormRecognizerBroker
         if (itemFields.TryGetValue("Description", out DocumentField? nameField)
             && nameField?.FieldType == DocumentFieldType.String)
         {
-            item = item with { RawName = nameField.Value.AsString() };
+            item.RawName = nameField.Value.AsString();
             Console.WriteLine($"Item Name: '{item.RawName}', with confidence {nameField.Confidence}");
         }
 
         if (itemFields.TryGetValue("Quantity", out DocumentField? quantityField)
             && quantityField?.FieldType == DocumentFieldType.Double)
         {
-            item = item with { Quantity = Convert.ToInt32(quantityField.Value.AsDouble()) };
+            item.Quantity = Convert.ToInt32(quantityField.Value.AsDouble());
             Console.WriteLine($"Item Quantity: '{item.Quantity}', with confidence {quantityField.Confidence}");
         }
 
         if (itemFields.TryGetValue("QuantityUnit", out DocumentField? quantityUnitField)
             && quantityUnitField?.FieldType == DocumentFieldType.String)
         {
-            item = item with { QuantityUnit = quantityUnitField.Value.AsString() };
+            item.QuantityUnit = quantityUnitField.Value.AsString();
             Console.WriteLine($"Item Quantity: '{item.QuantityUnit}', with confidence {quantityUnitField.Confidence}");
         }
 
         if (itemFields.TryGetValue("Price", out DocumentField? priceField)
             && priceField?.FieldType == DocumentFieldType.Double)
         {
-            item = item with { Price = Convert.ToDecimal(priceField.Value.AsDouble()) };
+            item.Price = Convert.ToDecimal(priceField.Value.AsDouble());
             Console.WriteLine($"Item Price: '{item.Price}', with confidence {priceField.Confidence}");
         }
 
         if (itemFields.TryGetValue("TotalPrice", out DocumentField? totalPriceField)
             && totalPriceField?.FieldType == DocumentFieldType.Double)
         {
-            item = item with { TotalPrice = Convert.ToDecimal(totalPriceField.Value.AsDouble()) };
+            item.TotalPrice = Convert.ToDecimal(totalPriceField.Value.AsDouble());
             Console.WriteLine($"Item Total Price: '{item.TotalPrice}', with confidence {totalPriceField.Confidence}");
         }
 
