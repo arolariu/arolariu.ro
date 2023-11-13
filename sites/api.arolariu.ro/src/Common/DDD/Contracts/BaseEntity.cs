@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace arolariu.Backend.Common.DDD.Contracts;
@@ -17,24 +16,28 @@ public abstract class BaseEntity<T> : IAuditable
     public T Id { get; init; }
 
     /// <inheritdoc/>
-    [JsonPropertyOrder(995)]
+    [JsonPropertyOrder(994)]
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 
     /// <inheritdoc/>
-    [JsonPropertyOrder(996)]
+    [JsonPropertyOrder(995)]
     public Guid CreatedBy { get; init; }
 
     /// <inheritdoc/>
-    [JsonPropertyOrder(997)]
+    [JsonPropertyOrder(996)]
     public DateTimeOffset LastUpdatedAt { get; protected set; } = DateTimeOffset.UtcNow;
 
     /// <inheritdoc/>
-    [JsonPropertyOrder(998)]
+    [JsonPropertyOrder(997)]
     public Guid LastUpdatedBy { get; protected set; }
 
     /// <inheritdoc/>
-    [JsonPropertyOrder(999)]
+    [JsonPropertyOrder(998)]
     public int NumberOfUpdates { get; protected set; } = 0;
+
+    /// <inheritdoc/>
+    [JsonPropertyOrder(999)]
+    public bool IsImportant { get; set; } = false;
 
     /// <inheritdoc/>
     [JsonPropertyOrder(1000)]

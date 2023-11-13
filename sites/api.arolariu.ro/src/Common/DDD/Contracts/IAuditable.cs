@@ -36,4 +36,9 @@ public interface IAuditable
     /// Is the entity soft deleted?
     /// </summary>
     public bool IsSoftDeleted { get; }
+
+    /// <summary>
+    /// Is the entity important to the user / system?
+    /// </summary>
+    public bool IsImportant { get; set; }
 }

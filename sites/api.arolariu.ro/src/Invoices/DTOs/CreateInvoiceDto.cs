@@ -1,4 +1,7 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Contracts;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 
 using Microsoft.AspNetCore.Http;
 
@@ -23,14 +26,27 @@ public readonly record struct CreateInvoiceDto(
     /// <summary>
     /// Method used to convert the DTO to an invoice.
     /// </summary>
+    /// <param name="userIdentifier"></param>
     /// <returns></returns>
-    public Invoice ToInvoice()
+    public Invoice ToInvoice(Guid? userIdentifier = null)
     {
         // Given `https://api.arolariu.ro/invoices/58c130ea-f767-4d4e-b1f6-5d514776cb3d.jpg`
         // Retrieve the `58c130ea-f767-4d4e-b1f6-5d514776cb3d` part.
         var invoiceId = this.PhotoLocation.Segments[^1].Split('.')[0];
-        var invoice = Invoice.CreateNullInvoiceWithId(Guid.Parse(invoiceId));
-        invoice.AdditionalMetadata = this.PhotoMetadata;
+        var invoice = new Invoice()
+        {
+            Id = Guid.Parse(invoiceId),
+            Category = InvoiceCategory.NOT_DEFINED,
+            AdditionalMetadata = this.PhotoMetadata,
+            EstimatedSurvivalDays = 0,
+            Items = new List<Product>(),
+            Merchant = null!, // defer initialization to the OCR service
+            PaymentInformation = new PaymentInformation(),
+            PhotoLocation = this.PhotoLocation,
+            PossibleRecipes = new List<Recipe>(),
+            UserIdentifier = userIdentifier ?? Guid.Empty,
+            CreatedBy = userIdentifier ?? Guid.Empty,
+        };
         return invoice;
     }
 }

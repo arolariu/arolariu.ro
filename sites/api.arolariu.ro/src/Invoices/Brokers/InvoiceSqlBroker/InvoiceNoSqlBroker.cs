@@ -1,14 +1,17 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.DDD.Contracts;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
+using arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
 
 using Microsoft.EntityFrameworkCore;
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading.Tasks;
 
-using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
 
@@ -18,43 +21,115 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
 [ExcludeFromCodeCoverage]
 public partial class InvoiceNoSqlBroker(DbContextOptions options) : DbContext(options), IInvoiceNoSqlBroker
 {
-    /// <inheritdoc/>
-    public async ValueTask<Invoice> CreateInvoiceAsync(CreateInvoiceDto invoiceDto)
+    internal async ValueTask<T> InsertAsync<T>(T @object) =>
+    await ChangeEntityStateAndSaveChangesAsync(@object, EntityState.Added)
+            .ConfigureAwait(false);
+
+    internal async ValueTask<T> UpdateAsync<T>(T @object) =>
+    await ChangeEntityStateAndSaveChangesAsync(@object, EntityState.Modified)
+            .ConfigureAwait(false);
+
+    internal async ValueTask<T> DeleteAsync<T>(T @object) =>
+    await ChangeEntityStateAndSaveChangesAsync(@object, EntityState.Deleted)
+            .ConfigureAwait(false);
+
+    internal IQueryable<T> SelectAll<T>() where T : class => this.Set<T>();
+
+    internal async ValueTask<T?> SelectAsync<T>(params object[] @objectIds) where T : class =>
+    await this.FindAsync<T>(objectIds).ConfigureAwait(false);
+
+    internal async ValueTask<T> ChangeEntityStateAndSaveChangesAsync<T>(T @object, EntityState entityState)
     {
-        using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceAsync));
-        var invoice = invoiceDto.ToInvoice();
-        return await InsertAsync(invoice).ConfigureAwait(false);
+        ArgumentNullException.ThrowIfNull(@object);
+
+        switch (entityState)
+        {
+            case EntityState.Added:
+                Add(@object);
+                break;
+            case EntityState.Modified:
+                Update(@object);
+                break;
+            case EntityState.Deleted:
+                Remove(@object);
+                break;
+        }
+
+        await SaveChangesAsync().ConfigureAwait(false);
+        return @object;
+    }
+
+    private static void SetModelReferences(ModelBuilder modelBuilder)
+    {
+        ArgumentNullException.ThrowIfNull(modelBuilder);
+
+        // Map the merchant entity to the merchants container.
+        modelBuilder.Entity<Merchant>(entity =>
+        {
+            entity.ToContainer("merchants");
+
+            entity.Property(merchant => merchant.Id)
+                .HasConversion<string>();
+
+            entity.Property(merchant => merchant.ParentCompanyId)
+                .HasConversion<string>();
+
+            entity.HasIndex(merchant => merchant.Id);
+            entity.HasPartitionKey(merchant => merchant.ParentCompanyId);
+            entity.HasNoDiscriminator();
+        });
+
+        // Map the invoice entity to the invoices container.
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.ToContainer("invoices");
+
+            entity.Property(invoice => invoice.Id)
+                .HasConversion<string>();
+
+            entity.Property(invoice => invoice.UserIdentifier)
+                .HasConversion<string>();
+
+            entity.Property(invoice => invoice.PhotoLocation)
+                .HasConversion<string>();
+
+            entity.Property(invoice => invoice.PaymentInformation)
+                .HasConversion(new PaymentInformationValueConverter());
+
+            entity.Property(invoice => invoice.PossibleRecipes)
+                .HasConversion(new IEnumerableOfStructTypeValueConverter<Recipe>());
+
+            entity.Property(invoice => invoice.AdditionalMetadata)
+                .HasConversion(new IEnumerableOfStructTypeValueConverter<KeyValuePair<string, object>>());
+
+            entity.HasIndex(invoice => invoice.Id);
+            entity.HasPartitionKey(invoice => invoice.UserIdentifier);
+            entity.HasNoDiscriminator();
+        });
+
+        // Embed the merchant entity into the invoice entity:
+        modelBuilder.Entity<Invoice>()
+            .HasOne(invoice => invoice.Merchant)
+            .WithMany(merchant => merchant.Invoices)
+            .HasForeignKey("MerchantId", "MerchantParentCompanyId")
+            .OnDelete(DeleteBehavior.NoAction);
+
+        // Embed the product entity into the invoice entity:
+        modelBuilder.Entity<Invoice>().OwnsMany<Product>(invoice => invoice.Items,
+        items =>
+        {
+            items.ToJsonProperty("Items");
+
+            items.Property(item => item.DetectedAllergens)
+                .ToJsonProperty("DetectedAllergens")
+                .HasConversion(new IEnumerableOfStructTypeValueConverter<Allergen>());
+        });
     }
 
     /// <inheritdoc/>
-    public async ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceAsync));
-        var invoice = await SelectAsync<Invoice>(invoiceIdentifier, userIdentifier).ConfigureAwait(false);
-        return invoice!;
-    }
-
-    /// <inheritdoc/>
-    public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync()
-    {
-        using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));
-        var invoices = await SelectAll<Invoice>().ToListAsync().ConfigureAwait(false);
-        return invoices;
-    }
-
-    /// <inheritdoc/>
-    public async ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice)
-    {
-        using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
-        var newInvoice = currentInvoice?.Update(updatedInvoice);
-        return await UpdateAsync(newInvoice!).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc/>
-    public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier)
-    {
-        using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync));
-        var invoice = await SelectAsync<Invoice>(invoiceIdentifier, userIdentifier).ConfigureAwait(false);
-        await DeleteAsync(invoice!).ConfigureAwait(false);
+        base.OnModelCreating(modelBuilder);
+        SetModelReferences(modelBuilder);
     }
 }

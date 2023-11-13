@@ -1,6 +1,8 @@
 ﻿using arolariu.Backend.Common.DDD.Contracts;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
@@ -12,14 +14,13 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// This record is used to store the merchant information in the database.
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class Merchant : NamedEntity<Guid>
+public sealed class Merchant : NamedEntity<Guid>
 {
     /// <summary>
-    /// The merchant parent company.
-    /// The parent company is used to generate the invoice statistics.
+    /// The merchant category.
     /// </summary>
     [JsonPropertyOrder(3)]
-    public Guid ParentCompanyId { get; set; }
+    public MerchantCategory Category { get; set; } = MerchantCategory.OTHER;
 
     /// <summary>
     /// The merchant address.
@@ -34,8 +35,15 @@ public class Merchant : NamedEntity<Guid>
     public string PhoneNumber { get; set; } = string.Empty;
 
     /// <summary>
-    /// The merchant category.
+    /// The merchant parent company.
+    /// The parent company is used to generate the invoice statistics.
     /// </summary>
     [JsonPropertyOrder(6)]
-    public MerchantCategory Category { get; set; } = MerchantCategory.OTHER;
+    public Guid ParentCompanyId { get; set; }
+
+    /// <summary>
+    /// Navigation property for invoices.
+    /// </summary>
+    [JsonIgnore]
+    public ICollection<Invoice> Invoices { get; } = new List<Invoice>();
 }

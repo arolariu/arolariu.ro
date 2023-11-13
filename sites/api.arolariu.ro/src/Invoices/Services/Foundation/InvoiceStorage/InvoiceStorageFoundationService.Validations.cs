@@ -24,7 +24,7 @@ public partial class InvoiceStorageFoundationService
         Validator.ValidateAndThrow<Invoice?, InvoicePaymentInformationNotCorrectException>(invoice, invoice => invoice?.PaymentInformation is not null, "Invoice payment information not set!");
 
         // Validate invoice time information.
-        Validator.ValidateAndThrow<Invoice?, InvoiceTimeInformationNotCorrectException>(invoice, invoice => invoice?.TimeInformation is null, "Invoice time information not set!");
+        Validator.ValidateAndThrow<Invoice?, InvoiceTimeInformationNotCorrectException>(invoice, invoice => invoice?.PaymentInformation.DateOfPurchase is null, "Invoice time information not set!");
 
         // Validate invoice photo location.
         Validator.ValidateAndThrow<Invoice?, InvoicePhotoLocationNotCorrectException>(invoice, invoice => invoice?.PhotoLocation is null, "Invoice photo location not set!");
