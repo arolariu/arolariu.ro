@@ -91,12 +91,10 @@ public partial class AzureFormRecognizerBroker
 
         return new Merchant()
         {
-            MerchantInformation = new MerchantInformation()
-            {
-                Name = merchantName,
-                Address = merchantAddress,
-                PhoneNumber = merchantPhoneNumber,
-            },
+
+            Name = merchantName,
+            Address = merchantAddress,
+            PhoneNumber = merchantPhoneNumber,
         };
     }
 

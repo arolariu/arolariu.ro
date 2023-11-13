@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using arolariu.Backend.Common.DDD.Contracts;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
@@ -10,28 +11,31 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// The merchant information is extracted from the invoice image using the OCR service.
 /// This record is used to store the merchant information in the database.
 /// </summary>
-[Serializable]
 [ExcludeFromCodeCoverage]
-public class Merchant
+public class Merchant : NamedEntity<Guid>
 {
-    /// <summary>
-    /// The merchant identifier.
-    /// </summary>
-    public Guid Id { get; set; } = Guid.NewGuid();
-
     /// <summary>
     /// The merchant parent company.
     /// The parent company is used to generate the invoice statistics.
     /// </summary>
-    public Guid ParentCompanyId { get; set; } = Guid.Empty;
+    [JsonPropertyOrder(3)]
+    public Guid ParentCompanyId { get; set; }
 
     /// <summary>
-    /// The merchant information.
+    /// The merchant address.
     /// </summary>
-    public MerchantInformation MerchantInformation { get; set; }
+    [JsonPropertyOrder(4)]
+    public string Address { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The merchant phone number.
+    /// </summary>
+    [JsonPropertyOrder(5)]
+    public string PhoneNumber { get; set; } = string.Empty;
 
     /// <summary>
     /// The merchant category.
     /// </summary>
+    [JsonPropertyOrder(6)]
     public MerchantCategory Category { get; set; } = MerchantCategory.OTHER;
 }

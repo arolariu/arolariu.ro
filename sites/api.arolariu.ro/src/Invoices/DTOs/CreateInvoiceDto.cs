@@ -26,14 +26,11 @@ public readonly record struct CreateInvoiceDto(
     /// <returns></returns>
     public Invoice ToInvoice()
     {
-        var invoice = Invoice.CreateNullInvoice();
-        invoice.AdditionalMetadata = this.PhotoMetadata;
-
         // Given `https://api.arolariu.ro/invoices/58c130ea-f767-4d4e-b1f6-5d514776cb3d.jpg`
         // Retrieve the `58c130ea-f767-4d4e-b1f6-5d514776cb3d` part.
         var invoiceId = this.PhotoLocation.Segments[^1].Split('.')[0];
-        invoice.Id = Guid.Parse(invoiceId);
-
+        var invoice = Invoice.CreateNullInvoiceWithId(Guid.Parse(invoiceId));
+        invoice.AdditionalMetadata = this.PhotoMetadata;
         return invoice;
     }
 }

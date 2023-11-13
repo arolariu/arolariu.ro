@@ -1,6 +1,6 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.Contracts;
 using Microsoft.AspNetCore.Http;
 
 using System.Collections;

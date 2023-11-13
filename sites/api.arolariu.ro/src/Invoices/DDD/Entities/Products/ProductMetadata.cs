@@ -6,7 +6,6 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 /// <summary>
 /// Product metadata.
 /// </summary>
-[Serializable]
 [ExcludeFromCodeCoverage]
 public record struct ProductMetadata
 {

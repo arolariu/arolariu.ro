@@ -9,7 +9,6 @@ namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// The metadata contains both system-assigned and user-assigned information.
 /// Thus, the struct is divided into two parts: system-assigned and user-assigned.
 /// </summary>
-[Serializable]
 [ExcludeFromCodeCoverage]
 public record struct InvoiceMetadata(
     bool IsAnalyzed,

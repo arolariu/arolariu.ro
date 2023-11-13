@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+namespace arolariu.Backend.Domain.Invoices.DDD.Contracts;
 
 /// <summary>
 /// Recipe model.
@@ -13,7 +13,6 @@ namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// <param name="Complexity"></param>
 /// <param name="RecipeIngredients"></param>
 /// <param name="Observations"></param>
-[Serializable]
 [ExcludeFromCodeCoverage]
 public record struct Recipe(
     string Name,

@@ -10,7 +10,6 @@ namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// <param name="LastUpdatedAt"></param>
 /// <param name="DateOfPurchase"></param>
 /// <param name="DateOfAnalysis"></param>
-[Serializable]
 [ExcludeFromCodeCoverage]
 public record struct InvoiceTimeInformation(
     DateTimeOffset CreatedAt,

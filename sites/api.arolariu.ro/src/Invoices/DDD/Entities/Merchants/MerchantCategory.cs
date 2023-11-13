@@ -8,7 +8,6 @@ namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// This enum is used to categorize the invoice merchants.
 /// The categories are used to generate the invoice statistics.
 /// </summary>
-[Serializable]
 [SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification = "<Pending>")]
 public enum MerchantCategory
 {

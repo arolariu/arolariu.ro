@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using System;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.Contracts;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
@@ -67,14 +67,20 @@ public partial class InvoiceNoSqlBroker
             entity.Property(merchant => merchant.Id)
                 .HasConversion<string>();
 
-            entity.Property(merchant => merchant.ParentCompanyId)
-                .HasConversion<string>();
+            entity.Property(merchant => merchant.Name)
+                .IsRequired(true);
 
-            entity.Property(merchant => merchant.MerchantInformation)
+            entity.Property(merchant => merchant.Address)
+                .IsRequired(true);
+
+            entity.Property(merchant => merchant.PhoneNumber)
                 .IsRequired(true);
 
             entity.Property(merchant => merchant.Category)
                 .IsRequired(true);
+
+            entity.Property(merchant => merchant.ParentCompanyId)
+                .HasConversion<string>();
 
             entity.HasIndex(merchant => merchant.Id);
             entity.HasPartitionKey(merchant => merchant.ParentCompanyId);
@@ -104,9 +110,6 @@ public partial class InvoiceNoSqlBroker
             entity.Property(invoice => invoice.PaymentInformation)
                 .HasConversion(new PaymentInformationValueConverter());
 
-            entity.Property(invoice => invoice.Merchant)
-                .HasConversion(new MerchantValueConverter());
-
             entity.Property(invoice => invoice.PossibleRecipes)
                 .HasConversion(new IEnumerableOfStructTypeValueConverter<Recipe>());
 
@@ -121,7 +124,13 @@ public partial class InvoiceNoSqlBroker
 
             entity.HasIndex(invoice => invoice.Id);
             entity.HasPartitionKey(invoice => invoice.UserIdentifier);
+            entity.HasNoDiscriminator();
         });
+
+        // Embed the merchant entity into the invoice entity:
+        modelBuilder.Entity<Invoice>().Property(invoice => invoice.Merchant)
+            .ToJsonProperty("Merchant")
+            .HasConversion(new MerchantValueConverter());
 
         // Embed the product entity into the invoice entity:
         modelBuilder.Entity<Invoice>().OwnsMany<Product>(invoice => invoice.Items,

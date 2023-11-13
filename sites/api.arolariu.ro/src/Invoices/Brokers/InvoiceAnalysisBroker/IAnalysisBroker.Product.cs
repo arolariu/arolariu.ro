@@ -1,6 +1,6 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using System.Collections.Generic;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.Contracts;
 
 using System.Threading.Tasks;
 

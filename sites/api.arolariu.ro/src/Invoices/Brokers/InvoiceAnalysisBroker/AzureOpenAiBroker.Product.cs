@@ -1,5 +1,5 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.Contracts;
 using Azure.AI.OpenAI;
 
 using System;
