@@ -79,7 +79,7 @@ public class Product
     /// The product's detected allergens.
     /// </summary>
     [JsonPropertyOrder(8)]
-    public IEnumerable<Allergen> DetectedAllergens { get; set; } = new List<Allergen>();
+    public IEnumerable<Allergen> DetectedAllergens { get; } = new List<Allergen>();
 
     /// <summary>
     /// Product metadata.

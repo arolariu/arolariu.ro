@@ -19,7 +19,8 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
 /// The Entity Framework Invoice SQL broker.
 /// </summary>
 [ExcludeFromCodeCoverage]
-public partial class InvoiceNoSqlBroker(DbContextOptions options) : DbContext(options), IInvoiceNoSqlBroker
+public sealed partial class InvoiceNoSqlBroker(DbContextOptions<InvoiceNoSqlBroker> options)
+    : DbContext(options), IInvoiceNoSqlBroker
 {
     internal async ValueTask<T> InsertAsync<T>(T @object) =>
     await ChangeEntityStateAndSaveChangesAsync(@object, EntityState.Added)
@@ -107,12 +108,11 @@ public partial class InvoiceNoSqlBroker(DbContextOptions options) : DbContext(op
             entity.HasNoDiscriminator();
         });
 
-        // Embed the merchant entity into the invoice entity:
+        // Embed (configure the 1:M) relationship between invoice and merchant:
         modelBuilder.Entity<Invoice>()
             .HasOne(invoice => invoice.Merchant)
             .WithMany(merchant => merchant.Invoices)
-            .HasForeignKey("MerchantId", "MerchantParentCompanyId")
-            .OnDelete(DeleteBehavior.NoAction);
+            .IsRequired(false);
 
         // Embed the product entity into the invoice entity:
         modelBuilder.Entity<Invoice>().OwnsMany<Product>(invoice => invoice.Items,

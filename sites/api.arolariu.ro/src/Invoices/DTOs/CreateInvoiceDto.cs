@@ -37,13 +37,10 @@ public readonly record struct CreateInvoiceDto(
         {
             Id = Guid.Parse(invoiceId),
             Category = InvoiceCategory.NOT_DEFINED,
-            AdditionalMetadata = this.PhotoMetadata,
             EstimatedSurvivalDays = 0,
-            Items = new List<Product>(),
             Merchant = null!, // defer initialization to the OCR service
             PaymentInformation = new PaymentInformation(),
             PhotoLocation = this.PhotoLocation,
-            PossibleRecipes = new List<Recipe>(),
             UserIdentifier = userIdentifier ?? Guid.Empty,
             CreatedBy = userIdentifier ?? Guid.Empty,
         };

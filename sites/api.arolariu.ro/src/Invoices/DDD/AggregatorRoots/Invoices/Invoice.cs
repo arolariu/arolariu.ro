@@ -8,6 +8,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using arolariu.Backend.Common.DDD.Contracts;
 using arolariu.Backend.Domain.Invoices.DTOs;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
@@ -45,21 +47,20 @@ public class Invoice : NamedEntity<Guid>
     /// The invoice 1:1? merchant relationship.
     /// </summary>
     [JsonPropertyOrder(7)]
-    #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    public virtual Merchant Merchant { get; set; }
-    #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    [DeleteBehavior(DeleteBehavior.ClientNoAction)]
+    public Merchant Merchant { get; set; } = null!;
 
     /// <summary>
     /// The invoice 1:*? - item relationship.
     /// </summary>
     [JsonPropertyOrder(8)]
-    public required IEnumerable<Product> Items { get; set; }
+    public IEnumerable<Product> Items { get; set; } = new List<Product>();
 
     /// <summary>
     /// Possible recipes for the invoice.
     /// </summary>
     [JsonPropertyOrder(9)]
-    public required IEnumerable<Recipe> PossibleRecipes { get; set; }
+    public IEnumerable<Recipe> PossibleRecipes { get; } = new List<Recipe>();
 
     /// <summary>
     /// How many days can you survive with the invoice items?
@@ -73,27 +74,7 @@ public class Invoice : NamedEntity<Guid>
     /// Metadata is used to generate the invoice statistics.
     /// </summary>
     [JsonPropertyOrder(11)]
-    public IEnumerable<KeyValuePair<string, object>> AdditionalMetadata { get; set; } = new List<KeyValuePair<string, object>>();
-
-    /// <summary>
-    /// Method used to update the invoice with the data from another invoice.
-    /// </summary>
-    /// <param name="other"></param>
-    /// <returns></returns>
-    public Invoice Update(Invoice other)
-    {
-        ArgumentNullException.ThrowIfNull(other);
-        this.PhotoLocation = other.PhotoLocation;
-        this.Description = other.Description;
-        this.PaymentInformation = other.PaymentInformation;
-        this.EstimatedSurvivalDays = other.EstimatedSurvivalDays;
-        this.PossibleRecipes = other.PossibleRecipes;
-        this.Merchant = other.Merchant;
-        this.Items = other.Items;
-        this.AdditionalMetadata = other.AdditionalMetadata;
-
-        return this;
-    }
+    public IEnumerable<KeyValuePair<string, object>> AdditionalMetadata { get; } = new List<KeyValuePair<string, object>>();
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)
