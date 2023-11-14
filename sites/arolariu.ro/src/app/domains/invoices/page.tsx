@@ -16,7 +16,7 @@ export default async function InvoicePage() {
 		<main>
 			<section className="dark:text-gray-200">
 				<div className="container flex flex-col items-center justify-center px-5 py-24 mx-auto">
-					<InvoicePageTopSVG className="object-cover object-center" />
+					<InvoicePageTopSVG className="object-cover object-center w-full" />
 					<div className="w-full mt-2 text-center lg:w-2/3">
 						<h1 className="mb-4 text-3xl font-medium text-transparent title-font bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text sm:text-4xl">
 							Turn your paper receipts into powerful digital knowledge.
@@ -75,7 +75,7 @@ export default async function InvoicePage() {
 										information is{" "}
 										<strong
 											className="text-red-600 tooltip tooltip-right"
-											data-tip="TODO: some text should go here.">
+											data-tip="The receipt information is only accessible to you. You can, however, make your invoice public, so that others can see the data on it.">
 											<span className="font-mono text-lg">safe</span>
 										</strong>
 										.
@@ -190,7 +190,7 @@ export default async function InvoicePage() {
 							</div>
 						</div>
 						<div className="pt-4 m-auto">
-							<InvoicePageBottomSVG className="object-cover object-center" />
+							<InvoicePageBottomSVG className="object-cover object-center w-full" />
 						</div>
 					</div>
 				</div>

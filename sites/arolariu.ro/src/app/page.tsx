@@ -16,11 +16,9 @@ export default async function Home() {
 							</span>{" "}
 						</h1>
 						<p className="max-w-lg mt-4 text-xl font-normal text-gray-400 sm:mt-8">
-							This platform was built by Alexandru-Razvan Olariu as a playground for new
-							technologies. The platform is built using state-of-the-art, enterprise-grade
-							technologies. <br /> <br />
-							You are welcome to explore all of the applications and services that are hosted on
-							this domain space.
+							This platform was built by Alexandru-Razvan Olariu as a playground for new technologies. The platform is
+							built using state-of-the-art, enterprise-grade technologies. <br /> <br />
+							You are welcome to explore all of the applications and services that are hosted on this domain space.
 						</p>
 						<div className="relative inline-flex items-center justify-center mt-8 group sm:mt-12">
 							<div className="absolute transition-all duration-200 rounded-full -inset-px bg-gradient-to-r from-cyan-500 to-purple-500 group-hover:shadow-lg group-hover:shadow-cyan-500/50"></div>

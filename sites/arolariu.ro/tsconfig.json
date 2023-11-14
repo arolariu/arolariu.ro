@@ -11,6 +11,7 @@
 		"pretty": true,
 		"lib": ["dom", "dom.iterable", "esnext"],
 		"allowJs": true,
+		"typeRoots": ["./node_modules/@types", "./src/types"],
 		"skipLibCheck": true,
 		"strict": true,
 		"forceConsistentCasingInFileNames": true,
@@ -37,7 +38,9 @@
 		"**/*.ts",
 		"**/*.tsx",
 		"src/components/my-profile/RenderProfileMenu.tsx",
-		"src/components/my-profile/RenderProfileMenuItem.tsx"
+		"src/components/my-profile/RenderProfileMenuItem.tsx",
+		"src/components/domains/invoices/view-invoice/ViewInvoiceImageModal.tsx",
+		"src/components/domains/invoices/edit-invoice/EditInvoiceItemCard.tsx"
 	],
 	"exclude": ["node_modules"]
 }

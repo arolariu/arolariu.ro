@@ -6,7 +6,7 @@
 module.exports = {
 	arrowParens: "always",
 	insertPragma: false,
-	printWidth: 100,
+	printWidth: 120,
 	useTabs: true,
 	tabWidth: 2,
 	semi: true,

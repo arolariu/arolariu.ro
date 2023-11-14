@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+	<GenerateDocumentationFile>True</GenerateDocumentationFile>
+	<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+	<AnalysisLevel>latest-all</AnalysisLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <WarningLevel>9999</WarningLevel>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+	  <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+	  <Deterministic>True</Deterministic>
+	  <NoWarn>S1135</NoWarn>
+	  <!-- S1135 - SonarLint "Complete TODOs" -->
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <WarningLevel>9999</WarningLevel>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+	  <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+	  <Deterministic>True</Deterministic>
+	  <NoWarn>S1135</NoWarn>
+	  <!-- S1135 - SonarLint "Complete TODOs" -->
+  </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.35.4" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0-rc.2.23479.6" />
+		<PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
+	</ItemGroup>
+</Project>

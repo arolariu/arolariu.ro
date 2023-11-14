@@ -1,6 +1,7 @@
 /** @format */
 
 import {Metadata} from "next";
+import RenderStatisticsPage from "./island";
 
 export const metadata: Metadata = {
 	title: "Statistics",
@@ -9,8 +10,8 @@ export const metadata: Metadata = {
 
 export default async function StatisticsPage() {
 	return (
-		<div>
-			<h1> Hello World!</h1>
-		</div>
+		<main>
+			<RenderStatisticsPage />
+		</main>
 	);
 }
