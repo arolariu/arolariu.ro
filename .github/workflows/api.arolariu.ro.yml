@@ -1,39 +1,56 @@
 # GitHub Actions workflow that builds the `api.arolariu.ro` Public API.
-# This GitHub action does five main things:
-# 1. Checks out the repository inside the runner environment.
-# 2. Executes the auth process using a service principal AAD auth.
-# 3. Builds the API platform according to the configured Dockerfile.
-# 4. Uploads the new container image to a private Azure Container Registry.
-# 5. Sends an update event to the existing container apps to update themselves.
-
 name: API platform (api.arolariu.ro) deployment
 
 on:
   push:
-    branches: ["main"]
-    paths: ["sites/api.arolariu.ro/**"]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
-    name: 🚀 Building the container image and deploying to Azure Container Apps...
+  build:
     runs-on: ubuntu-latest
+
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: 🔒 Handling the auth process to Azure Public Cloud...
-        uses: Azure/login@v1
+      - name: ⚙️ Set up .NET runtime
+        uses: actions/setup-dotnet@v1
         with:
-          creds: ${{ secrets.CONTAINERBACKEND_AZURE_CREDENTIALS }}
+          dotnet-version: '8.x'
+          include-prerelease: true
 
-      - name: 🏗️ Pushing the container image to Azure Container Registry and updating existing container...
-        uses: Azure/container-apps-deploy-action@v1
+      - name: 🛠️ Build with dotnet
+        run: dotnet build --configuration Release
+
+      - name: 🏗️ Publish artifact
+        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/backend
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v3
         with:
-          appSourcePath: ${{ github.workspace }}/sites/api.arolariu.ro/backend/src
-          registryUrl: arolariu.azurecr.io
-          registryUsername: ${{ secrets.CONTAINERBACKEND_REGISTRY_USERNAME }}
-          registryPassword: ${{ secrets.CONTAINERBACKEND_REGISTRY_PASSWORD }}
-          containerAppName: container-backend
-          resourceGroup: arolariu-rg
-          imageToBuild: arolariu.azurecr.io/container-backend:latest
-          dockerfilePath: Dockerfile
+          name: .net-backend
+          path: ${{env.DOTNET_ROOT}}/backend
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+      
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v3
+        with:
+          name: .net-backend
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'api-arolariu'
+          slot-name: 'production'
+          package: .
+          publish-profile: ${{ secrets.AzureAppService_PublishProfile_38f3e1ce816c4d1e958d9605f204c4f8 }}
