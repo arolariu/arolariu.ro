@@ -12,7 +12,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
-
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
 
 /// <summary>
@@ -42,20 +41,11 @@ public sealed partial class InvoiceNoSqlBroker(DbContextOptions<InvoiceNoSqlBrok
     internal async ValueTask<T> ChangeEntityStateAndSaveChangesAsync<T>(T @object, EntityState entityState)
     {
         ArgumentNullException.ThrowIfNull(@object);
-
-        switch (entityState)
+        this.Entry(@object).State = entityState;
+        if (@object is Invoice invoice && entityState == EntityState.Added)
         {
-            case EntityState.Added:
-                Add(@object);
-                break;
-            case EntityState.Modified:
-                Update(@object);
-                break;
-            case EntityState.Deleted:
-                Remove(@object);
-                break;
+            this.Entry(invoice.Merchant).State = entityState;
         }
-
         await SaveChangesAsync().ConfigureAwait(false);
         return @object;
     }

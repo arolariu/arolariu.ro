@@ -23,8 +23,10 @@ public partial class InvoiceNoSqlBroker
     public async ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier)
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceAsync));
-        // TODO: SelectAsync uses FindAsync which uses only 1 entity tracker... need to change.
+
+        // dotnet/efcore#16920 - EF Core Cosmos DB provider does not support Include/ThenInclude.
         var invoice = await SelectAsync<Invoice>(invoiceIdentifier, userIdentifier).ConfigureAwait(false);
+        await Entry(invoice!).Reference(i => i.Merchant).LoadAsync().ConfigureAwait(false);
         return invoice!;
     }
 
@@ -32,8 +34,12 @@ public partial class InvoiceNoSqlBroker
     public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync()
     {
         using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));
-        // TODO: SelectAll uses the DbSet of the given entity.. which uses only 1 entity tracker... need to change.
+
+        // dotnet/efcore#16920 - EF Core Cosmos DB provider does not support Include/ThenInclude.
         var invoices = await SelectAll<Invoice>().ToListAsync().ConfigureAwait(false);
+        foreach(var invoice in invoices)
+            await Entry(invoice).Reference(i => i.Merchant).LoadAsync().ConfigureAwait(false);
+
         return invoices;
     }
 
