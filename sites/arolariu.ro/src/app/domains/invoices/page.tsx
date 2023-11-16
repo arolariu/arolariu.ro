@@ -1,8 +1,8 @@
 /** @format */
 
-import InvoicePageBottomSVG from "@/assets/InvoicePageBottomSVG";
-import InvoicePageTopSVG from "@/assets/InvoicePageTopSVG";
+import fetchUser from "@/lib/fetchUser";
 import {Metadata} from "next";
+import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -12,11 +12,13 @@ export const metadata: Metadata = {
 };
 
 export default async function InvoicePage() {
+	const {isAuthenticated} = await fetchUser();
+	
 	return (
 		<main>
 			<section className="dark:text-gray-200">
 				<div className="container flex flex-col items-center justify-center px-5 py-24 mx-auto">
-					<InvoicePageTopSVG className="object-cover object-center w-full" />
+					<Image src="/images/domains/invoices/invoice-top.svg" alt="Invoice top SVG" width="500" height="500" className="object-cover object-center" />
 					<div className="w-full mt-2 text-center lg:w-2/3">
 						<h1 className="mb-4 text-3xl font-medium text-transparent title-font bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text sm:text-4xl">
 							Turn your paper receipts into powerful digital knowledge.
@@ -36,11 +38,12 @@ export default async function InvoicePage() {
 								className="inline-flex px-6 py-2 text-lg text-white bg-indigo-500 border-0 rounded hover:bg-indigo-600 focus:outline-none">
 								Upload receipt
 							</Link>
-							<Link
+							{/* If user is authenticated, show the `My Receipts` button too. */}
+							{isAuthenticated && <Link
 								href="/domains/invoices/view-invoices"
 								className="inline-flex px-6 py-2 ml-4 text-lg text-gray-700 bg-gray-100 border-0 rounded hover:bg-gray-200 focus:outline-none">
 								My receipts
-							</Link>
+							</Link>}
 						</div>
 					</div>
 				</div>
@@ -190,7 +193,7 @@ export default async function InvoicePage() {
 							</div>
 						</div>
 						<div className="pt-4 m-auto">
-							<InvoicePageBottomSVG className="object-cover object-center w-full" />
+							<Image src="/images/domains/invoices/invoice-bottom.svg" alt="Invoice bottom SVG" width="500" height="500" className="object-cover object-center w-full" />
 						</div>
 					</div>
 				</div>

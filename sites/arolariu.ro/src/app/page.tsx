@@ -1,6 +1,5 @@
 /** @format */
 
-import Illustration from "@/assets/3d-illustration.png";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -57,7 +56,7 @@ export default async function Home() {
 					<div className="mt-8 md:absolute md:right-0 md:top-32 md:mt-0 lg:top-0">
 						<Image
 							className="w-full max-w-xs mx-auto lg:max-w-lg xl:max-w-xl"
-							src={Illustration}
+							src="/images/3d-illustration.png"
 							alt="Generated 3D image."
 							width={640}
 							height={320}

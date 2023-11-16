@@ -1,22 +1,24 @@
 "use client";
 
 import {ViewInvoiceCard} from "@/components/domains/invoices/view-invoices/ViewInvoiceCard";
-import useFetchInvoiceForUser from "@/hooks/useFetchInvoiceForUser";
-import {Session} from "next-auth";
+import {useZustandStore} from "@/hooks/stateStore";
+import Invoice from "@/types/invoices/Invoice";
 import Link from "next/link";
 
 interface Props {
-	session: Session;
+	invoices: Invoice[];
 }
 
-export default function RenderViewInvoicesPage({session}: Props) {
-	const {invoices, isLoading} = useFetchInvoiceForUser(session as any, "test");
+export default function RenderViewInvoicesPage({invoices}: Props) {
+	const setInvoices = useZustandStore((state) => state.setInvoices);
 
-	if (invoices.length > 0 && !isLoading) {
+	if (invoices) {
+		setInvoices(invoices);
+
 		const calculateInvoiceTotalCost = (): number => {
 			let totalCost = 0;
 			invoices.forEach((invoice) => {
-				totalCost += invoice?.totalAmount;
+				totalCost += invoice?.paymentInformation.totalAmount;
 			});
 			return totalCost;
 		};
@@ -44,7 +46,7 @@ export default function RenderViewInvoicesPage({session}: Props) {
 			<div className="container px-5 py-24 mx-auto">
 				<div className="flex flex-col w-full mb-20 text-center">
 					<h1 className="mb-4 text-2xl font-medium text-transparent bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text sm:text-3xl">
-						Welcome, <span>{session.user?.name}</span> !
+						Welcome, <span>{"TODO: USER"}</span> !
 					</h1>
 					<p className="mx-auto text-base leading-relaxed lg:w-2/3">
 						This is your digital receipts inventory. <br /> Here you can find the receipts that you&apos;ve uploaded so
@@ -85,12 +87,12 @@ export default function RenderViewInvoicesPage({session}: Props) {
 				</div>
 			</div>
 		);
-	} else if (!isLoading) {
+	} else {
 		return (
 			<div className="container px-5 py-24 mx-auto">
 				<div className="flex flex-col w-full mb-20 text-center">
 					<h1 className="mb-4 text-2xl font-medium text-transparent bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text sm:text-3xl">
-						Welcome, <span>{session.user?.name}</span> !
+						Welcome, <span>{"TODO: USER"}</span> !
 					</h1>
 					<p className="mx-auto text-base leading-relaxed lg:w-2/3">
 						This is your digital receipts inventory. <br /> Here you can find the receipts that you&apos;ve uploaded so

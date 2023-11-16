@@ -1,25 +1,20 @@
-import {useStore} from "@/hooks/stateStore";
+import {useZustandStore} from "@/hooks/stateStore";
 
 export const ViewInvoiceSummary = () => {
-	const [invoice] = useStore((state) => [state.selectedInvoice]);
-	const {
-		possibleAllergens,
-		uploadedDate,
-		possibleRecipes,
-		merchant,
-		identifiedDate,
-		lastAnalyzedDate,
-		estimatedSurvivalDays,
-	} = invoice;
+	const invoice = useZustandStore((state) => state.selectedInvoice);
+	const merchant = invoice.merchant;
+	const productsWithAllergens = invoice.items.filter((item) => item.detectedAllergens.length > 0);
+	const allergensList = productsWithAllergens.map((item) => item.detectedAllergens).flat();
+	const recipesList = invoice.possibleRecipes.flat();
 
 	const allergensText =
-		possibleAllergens?.length > 0
-			? possibleAllergens.join(", ")
+	allergensList?.length > 0
+			? allergensList.join(", ")
 			: "no identified allergens... input allergens manually or analyze again.";
 
 	const recipesText =
-		possibleRecipes?.length > 0
-			? possibleRecipes.join(", ")
+	recipesList?.length > 0
+			? recipesList.join(", ")
 			: "no identified recipes... input recipes manually or analyze again.";
 
 	const boughtItems = invoice.items
@@ -31,7 +26,7 @@ export const ViewInvoiceSummary = () => {
 			<p className="mb-4 leading-relaxed">
 				⚠️ ALLERGENS: <em>{allergensText}</em> <br />
 				🍳 RECIPES: <em>{recipesText}</em> <br />
-				💚 ESTIMATED SURVIVAL (<strong>1 adult</strong>): <em>{estimatedSurvivalDays} days</em>
+				💚 ESTIMATED SURVIVAL (<strong>1 adult</strong>): <em>{invoice.estimatedSurvivalDays} days</em>
 			</p>
 			<center className="mx-auto mt-4 mb-2">
 				<em>If you feel that some of the details are not correct, feel free to edit the invoice.</em>
@@ -48,15 +43,15 @@ export const ViewInvoiceSummary = () => {
 			</div>
 			<div className="flex py-2 border-b border-gray-200">
 				<span>Invoice Last Analysis</span>
-				<span className="ml-auto dark:text-gray-300">{new Date(lastAnalyzedDate).toUTCString()}</span>
+				<span className="ml-auto dark:text-gray-300">{new Date(invoice.lastUpdatedAt).toUTCString()}</span>
 			</div>
 			<div className="flex py-2 border-b border-gray-200">
 				<span>Invoice Uploaded Date</span>
-				<span className="ml-auto dark:text-gray-300">{new Date(uploadedDate).toUTCString()}</span>
+				<span className="ml-auto dark:text-gray-300">{new Date(invoice.createdAt).toUTCString()}</span>
 			</div>
 			<div className="flex py-2 mb-6 border-b border-gray-200">
 				<span>Invoice Identified Date</span>
-				<span className="ml-auto dark:text-gray-300">{new Date(identifiedDate).toUTCString()}</span>
+				<span className="ml-auto dark:text-gray-300">{new Date(invoice.paymentInformation.dateOfPurchase).toUTCString()}</span>
 			</div>
 		</section>
 	);

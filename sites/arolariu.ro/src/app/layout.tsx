@@ -2,8 +2,9 @@
 
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
-import {Inter} from "next/font/google";
+import {Caudex} from "next/font/google";
 
+import {ClerkProvider} from "@clerk/nextjs";
 import {Metadata} from "next";
 import {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
 import {Author, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
@@ -12,7 +13,12 @@ import {PropsWithChildren, Suspense} from "react";
 import "./globals.css";
 import Loading from "./loading";
 
-const inter = Inter({subsets: ["latin"]});
+const fontFamily = Caudex({
+	weight: "700",
+	style: "normal",
+	subsets: ["latin"],
+	preload: true,
+});
 
 export const metadata: Metadata = {
 	title: {
@@ -50,12 +56,14 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({children}: PropsWithChildren<{}>) {
 	return (
-		<html lang="en">
-			<body className={inter.className}>
-				<Header />
-				<Suspense fallback={<Loading />}>{children}</Suspense>
-				<Footer />
-			</body>
-		</html>
+		<ClerkProvider>
+			<html lang="en" className={fontFamily.className}>
+				<body>
+					<Header />
+					<Suspense fallback={<Loading />}>{children}</Suspense>
+					<Footer />
+				</body>
+			</html>
+		</ClerkProvider>
 	);
 }

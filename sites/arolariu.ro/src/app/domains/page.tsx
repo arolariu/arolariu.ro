@@ -1,6 +1,6 @@
 /** @format */
 
-import RenderDomainService from "@/app/domains/RenderDomainService";
+import RenderDomainService from "@/components/domains/RenderDomainService";
 import invoiceManagementSystemPhoto from "@/assets/invoice-management-system.png";
 import {Metadata} from "next";
 
