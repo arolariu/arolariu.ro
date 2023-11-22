@@ -1,4 +1,7 @@
-﻿using arolariu.Backend.Core.DAL.Database;
+﻿using arolariu.Backend.Common.Telemetry.Logging;
+using arolariu.Backend.Common.Telemetry.Metering;
+using arolariu.Backend.Common.Telemetry.Tracing;
+using arolariu.Backend.Core.DAL.Database;
 using arolariu.Backend.Core.Domain.General.Services.KeyVault;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
 using Azure.Identity;
@@ -118,6 +121,17 @@ internal static partial class WebApplicationBuilderExtensions
         builder.Configuration["JWT:Audience"] = keyVaultService.GetSecret("jwt-audience");
         #endregion
 
+        #region OTel configuration
+        builder.Configuration["OTel:InstrumentationKey"] = keyVaultService.GetSecret("OTel-InstrumentationKey");
         #endregion
+
+        #endregion
+    }
+
+    private static void ConfigureObservability(WebApplicationBuilder builder)
+    {
+        builder.AddOTelLogging();
+        builder.AddOTelMetering();
+        builder.AddOTelTracing();
     }
 }
