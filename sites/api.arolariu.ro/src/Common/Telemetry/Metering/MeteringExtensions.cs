@@ -18,11 +18,11 @@ public static class MeteringExtensions
         .WithMetrics(metricsOptions =>
         {
             metricsOptions.AddAspNetCoreInstrumentation();
+            metricsOptions.AddHttpClientInstrumentation();
 
-            metricsOptions.AddConsoleExporter(consoleOptions =>
-            {
-                consoleOptions.Targets = ConsoleExporterOutputTargets.Console;
-            });
+            #if DEBUG
+            metricsOptions.AddConsoleExporter();
+            #endif
 
             metricsOptions.AddAzureMonitorMetricExporter(monitorOptions =>
             {

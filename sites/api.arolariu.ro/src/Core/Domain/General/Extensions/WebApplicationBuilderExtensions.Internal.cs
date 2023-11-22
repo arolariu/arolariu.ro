@@ -1,4 +1,5 @@
-﻿using arolariu.Backend.Common.Telemetry.Logging;
+using arolariu.Backend.Common.Telemetry;
+using arolariu.Backend.Common.Telemetry.Logging;
 using arolariu.Backend.Common.Telemetry.Metering;
 using arolariu.Backend.Common.Telemetry.Tracing;
 using arolariu.Backend.Core.DAL.Database;
@@ -130,6 +131,7 @@ internal static partial class WebApplicationBuilderExtensions
 
     private static void ConfigureObservability(WebApplicationBuilder builder)
     {
+        builder.AddTelemetry();
         builder.AddOTelLogging();
         builder.AddOTelMetering();
         builder.AddOTelTracing();

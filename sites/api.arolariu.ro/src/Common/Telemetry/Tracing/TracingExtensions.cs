@@ -17,15 +17,13 @@ public static class TracingExtensions
         .AddOpenTelemetry()
         .WithTracing(tracingOptions =>
         {
-            tracingOptions.AddAspNetCoreInstrumentation(aspNetOptions =>
-            {
-                aspNetOptions.RecordException = true;
-            });
+            tracingOptions.AddAspNetCoreInstrumentation();
+            tracingOptions.AddHttpClientInstrumentation();
+            tracingOptions.AddEntityFrameworkCoreInstrumentation();
 
-            tracingOptions.AddConsoleExporter(consoleOptions =>
-            {
-                consoleOptions.Targets = ConsoleExporterOutputTargets.Console;
-            });
+            #if DEBUG
+            tracingOptions.AddConsoleExporter();
+            #endif
 
             tracingOptions.AddAzureMonitorTraceExporter(monitorOptions =>
             {
