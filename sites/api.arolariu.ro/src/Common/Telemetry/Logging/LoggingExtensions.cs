@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 
+using System.Collections.Generic;
+
 namespace arolariu.Backend.Common.Telemetry.Logging;
 
 public static class LoggingExtensions
@@ -18,10 +20,10 @@ public static class LoggingExtensions
         {
             otelOptions.IncludeFormattedMessage = true;
             otelOptions.IncludeScopes = true;
-            otelOptions.AddConsoleExporter(consoleOptions =>
-            {
-                consoleOptions.Targets = ConsoleExporterOutputTargets.Console;
-            });
+
+            #if DEBUG
+            otelOptions.AddConsoleExporter();
+            #endif
 
             otelOptions.AddAzureMonitorLogExporter(monitorOptions =>
             {
