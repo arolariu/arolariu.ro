@@ -4,14 +4,8 @@ using Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
 
-using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 
-<<<<<<< HEAD
-using System.Collections.Generic;
-
-=======
->>>>>>> main
 namespace arolariu.Backend.Common.Telemetry.Logging;
 
 public static class LoggingExtensions
@@ -23,17 +17,10 @@ public static class LoggingExtensions
         {
             otelOptions.IncludeFormattedMessage = true;
             otelOptions.IncludeScopes = true;
-<<<<<<< HEAD
 
             #if DEBUG
             otelOptions.AddConsoleExporter();
             #endif
-=======
-            otelOptions.AddConsoleExporter(consoleOptions =>
-            {
-                consoleOptions.Targets = ConsoleExporterOutputTargets.Console;
-            });
->>>>>>> main
 
             otelOptions.AddAzureMonitorLogExporter(monitorOptions =>
             {
