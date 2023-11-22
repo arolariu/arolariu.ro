@@ -1,10 +1,10 @@
 /** @format */
 
-import RenderForbiddenScreen from "@/app/domains/RenderForbiddenScreen";
-import {authOptions} from "@/lib/authOptions";
+import RenderForbiddenScreen from "@/components/domains/RenderForbiddenScreen";
 import {Metadata} from "next";
-import {getServerSession} from "next-auth";
 import RenderEditInvoicePage from "./island";
+import fetchUser from "@/lib/fetchUser";
+import fetchInvoice from "@/lib/invoices/fetchInvoice";
 
 interface Props {
 	params: {id: string};
@@ -15,15 +15,15 @@ export const metadata: Metadata = {
 	description: "Edit an invoice from the invoice management system.",
 };
 
-export default async function EditInvoicePage({params}: Props) {
-	const session = await getServerSession(authOptions);
+export default async function EditInvoicePage({params}: Readonly<Props>) {
+	const invoice = await fetchInvoice(params.id);
+	const {isAuthenticated} = await fetchUser();
+
+	if (!isAuthenticated) { return <RenderForbiddenScreen />; }
+
 	return (
 		<main>
-			{session ? (
-				<RenderEditInvoicePage session={session} id={params.id} />
-			) : (
-				<RenderForbiddenScreen />
-			)}
+			<RenderEditInvoicePage invoice={invoice}/>
 		</main>
 	);
 }

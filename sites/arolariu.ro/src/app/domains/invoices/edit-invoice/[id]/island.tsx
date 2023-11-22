@@ -3,28 +3,30 @@
 import EditInvoiceItemCard from "@/components/domains/invoices/edit-invoice/EditInvoiceItemCard";
 import EditInvoicePhotoPreview from "@/components/domains/invoices/edit-invoice/EditInvoicePhotoPreview";
 import {EditInvoiceTable} from "@/components/domains/invoices/edit-invoice/EditInvoiceTable";
-import useFetchInvoiceForUser from "@/hooks/useFetchInvoiceForUser";
+import { useZustandStore } from "@/hooks/stateStore";
 import useWindowSize from "@/hooks/useWindowSize";
-import {Session, User} from "next-auth";
+import Invoice from "@/types/invoices/Invoice";
 
 interface Props {
-	session: Session;
-	id: string;
+	invoice: Invoice | null;
 }
 
-export default function RenderEditInvoicePage({session, id}: Props) {
-	const {invoice, isLoading} = useFetchInvoiceForUser(session.user as User, id);
+export default function RenderEditInvoicePage({invoice}: Readonly<Props>) {
+	const setSelectedInvoice = useZustandStore((state) => state.setSelectedInvoice);
 	const {windowSize} = useWindowSize();
 
 	// TODO: invoice item card pagination to avoid slow performance that can be seen after 10 items for e.g.;
 	// TODO: filtering, searching, sorting, etc for the invoice items.
 
-	if (invoice && !isLoading) {
+	// TODO: saving mechanism for the invoice items.
+
+	if (invoice) {
+		setSelectedInvoice(invoice);
 		return (
 			<section className="container p-2 mx-auto my-8 border-2 rounded-2xl">
 				{windowSize.width! < 1024 && (
 					<div className="m-auto">
-						<EditInvoicePhotoPreview invoiceUri={invoice.imageUri} />
+						<EditInvoicePhotoPreview />
 					</div>
 				)}
 				<div className="flex flex-row flex-nowrap">
@@ -33,7 +35,7 @@ export default function RenderEditInvoicePage({session, id}: Props) {
 					</div>
 					{windowSize.width! >= 1024 && (
 						<div className="p-4 m-auto 2xsm:hidden lg:block">
-							<EditInvoicePhotoPreview invoiceUri={invoice.imageUri} />
+							<EditInvoicePhotoPreview />
 						</div>
 					)}
 				</div>
@@ -59,7 +61,7 @@ export default function RenderEditInvoicePage({session, id}: Props) {
 					</p>
 				</div>
 				<div className="flex flex-row flex-wrap">
-					{invoice.items?.map((item, index) => (
+					{invoice.items?.map((item:any, index:number) => (
 						<div key={index} className="2xsm:w-full sm:w-1/2 lg:w-1/3 xl:w-1/4">
 							<EditInvoiceItemCard item={item} />
 						</div>

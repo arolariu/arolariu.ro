@@ -1,10 +1,8 @@
 /** @format */
 
-import RenderForbiddenScreen from "@/app/domains/RenderForbiddenScreen";
 import {Metadata} from "next";
-import {getServerSession} from "next-auth";
-import {authOptions} from "../../../../lib/authOptions";
 import {RenderInvoiceScreen} from "./island";
+import fetchUser from "@/lib/fetchUser";
 
 export const metadata: Metadata = {
 	title: "Invoice Management System - Create Invoice",
@@ -13,12 +11,12 @@ export const metadata: Metadata = {
 };
 
 export default async function CreateInvoicePage() {
-	const session = await getServerSession(authOptions);
-	const isLoggedIn = session?.user ?? session?.expires;
+	const {isAuthenticated} = await fetchUser();
 
 	return (
 		<section className="dark:text-gray-300">
-			{isLoggedIn ? <RenderInvoiceScreen /> : <RenderForbiddenScreen />}
+			<RenderInvoiceScreen/>
+			{!isAuthenticated && <p>In order to save your invoice, please create an account.</p>}
 		</section>
 	);
 }

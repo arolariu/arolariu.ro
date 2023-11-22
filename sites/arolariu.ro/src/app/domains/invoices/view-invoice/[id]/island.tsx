@@ -7,30 +7,25 @@ import {ViewInvoiceHeader} from "@/components/domains/invoices/view-invoice/View
 import {ViewInvoiceImageModal} from "@/components/domains/invoices/view-invoice/ViewInvoiceImageModal";
 import ViewInvoiceItems from "@/components/domains/invoices/view-invoice/ViewInvoiceItems";
 import {ViewInvoiceSummary} from "@/components/domains/invoices/view-invoice/ViewInvoiceSummary";
-import useFetchInvoiceForUser from "@/hooks/useFetchInvoiceForUser";
-import {Player} from "@lottiefiles/react-lottie-player";
-import {Session, User} from "next-auth";
+import { useZustandStore } from "@/hooks/stateStore";
+import Invoice from "@/types/invoices/Invoice";
 import {useState} from "react";
 
-interface IslandProps {
-	session: Session;
-	id: string;
-}
+interface Props { invoice: Invoice | null; }
 
-export function RenderViewInvoicePage({session, id}: IslandProps) {
-	const {invoice, isLoading} = useFetchInvoiceForUser(session.user as User, id);
+export function RenderViewInvoicePage({invoice}: Readonly<Props>) {
 	const [currentStep, setCurrentStep] = useState<number>(1);
-
-	if (invoice && !isLoading) {
+	const setSelectedInvoice = useZustandStore((state) => state.setSelectedInvoice);
+		setSelectedInvoice(invoice!);
 		return (
 			<div className="container py-12 mx-auto">
 				<div className="flex flex-wrap justify-center mx-auto">
 					<div className="w-full mb-6 lg:mb-0 lg:w-1/2 lg:py-6 lg:pr-10">
 						<h2 className="text-sm tracking-widest title-font dark:text-gray-500">
-							Invoice: <span>{invoice.id}</span>
+							Invoice: <span>{invoice!.id}</span>
 						</h2>
 						<h1 className="mb-4 text-3xl font-medium text-transparent text-transparenttext-3xl bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text">
-							{invoice.description}
+							{invoice!.description}
 						</h1>
 						<ViewInvoiceHeader currentStep={currentStep} setCurrentStep={setCurrentStep} />
 						{currentStep === 1 && <ViewInvoiceSummary />}
@@ -52,5 +47,5 @@ export function RenderViewInvoicePage({session, id}: IslandProps) {
 				</h1>
 			</div>
 		);
-	}
+}
 }

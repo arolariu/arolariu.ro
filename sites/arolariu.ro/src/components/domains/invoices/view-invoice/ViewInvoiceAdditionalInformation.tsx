@@ -1,14 +1,14 @@
-import {useStore} from "@/hooks/stateStore";
+import {useZustandStore} from "@/hooks/stateStore";
 
 export default function ViewInvoiceAdditionalInformation() {
-	const [invoice] = useStore((state) => [state.selectedInvoice]);
-	const {additionalMetadata, lastAnalyzedDate, userIdentifier} = invoice;
+	const invoice = useZustandStore((state) => state.selectedInvoice);
+	const {additionalMetadata, userIdentifier} = invoice;
 
 	return (
 		<section>
 			<div className="flex py-2 border-b border-gray-200">
 				<span>Invoice Last Analysis</span>
-				<span className="ml-auto dark:text-gray-300">{new Date(lastAnalyzedDate).toUTCString()}</span>
+				<span className="ml-auto dark:text-gray-300">{new Date(invoice.lastUpdatedAt).toUTCString()}</span>
 			</div>
 			<div className="flex py-2 border-b border-gray-200">
 				<span>User Identifier</span>
@@ -17,7 +17,7 @@ export default function ViewInvoiceAdditionalInformation() {
 			{additionalMetadata.map((kvPair, index) => (
 				<div key={index} className="flex py-2 border-b border-gray-200">
 					<span>{kvPair.key}</span>
-					<span className="ml-auto dark:text-gray-300">{kvPair.value}</span>
+					<span className="ml-auto dark:text-gray-300">{kvPair.value as any}</span>
 				</div>
 			))}
 			<div>

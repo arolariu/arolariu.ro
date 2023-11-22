@@ -1,4 +1,4 @@
-import {useStore} from "@/hooks/stateStore";
+import {useZustandStore} from "@/hooks/stateStore";
 import Image from "next/image";
 import {useRef, useState} from "react";
 
@@ -6,7 +6,7 @@ import {useRef, useState} from "react";
 
 export const ViewInvoiceImageModal = () => {
 	const modalReference = useRef<HTMLDialogElement | null>(null);
-	const [invoice] = useStore((state) => [state.selectedInvoice]);
+	const invoice = useZustandStore((state) => state.selectedInvoice);
 	const [isFrozen, setIsFrozen] = useState<boolean>(false);
 	const [zoomStyle, setZoomStyle] = useState({
 		transform: "scale(1)",
@@ -74,7 +74,7 @@ export const ViewInvoiceImageModal = () => {
 								transition: "transform 0.3s ease, transform-origin 0s",
 								...zoomStyle,
 							}}
-							src={`${invoice != null ? invoice.imageUri : "https://dummyimage.com/400x400"}`}
+							src={`${invoice != null ? invoice.photoLocation : "https://dummyimage.com/400x400"}`}
 							width={800}
 							height={800}
 							onMouseMove={handleMouseMove}
