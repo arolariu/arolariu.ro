@@ -41,7 +41,6 @@ public static partial class InvoiceEndpoints
     [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The invoice could not be created due to the payload (photo field) being too large.", typeof(ProblemDetails))]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be created due to an internal service error.", typeof(ProblemDetails))]
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
-    [Authorize]
     private static async Task<IResult> CreateNewInvoiceAsync(
         [FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
         [FromServices] IHttpContextAccessor httpContext,
