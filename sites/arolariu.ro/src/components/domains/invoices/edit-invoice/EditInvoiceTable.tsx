@@ -1,6 +1,6 @@
 "use client";
 
-import {useStore} from "@/hooks/stateStore";
+import {useZustandStore} from "@/hooks/stateStore";
 
 export const EditInvoiceTable = () => {
 	// TODO: the state of the below fields needs to be saved.... I recommend going with the object approach. (const state = {...})
@@ -9,18 +9,12 @@ export const EditInvoiceTable = () => {
 	// TODO: the current way of adding new metadata is not giving great UX. We need to have a RED / GREEN popup on the right side of the additional metadata keys.
 	// TODO: ^--- this will indicate for the user that he can either remove the additional metadata (by pressing on the red popup) or add a new entry.
 
-	const [invoice] = useStore((state) => [state.selectedInvoice]);
-	const {
-		additionalMetadata,
-		currency,
-		description,
-		estimatedSurvivalDays,
-		identifiedDate,
-		isImportant,
-		possibleAllergens,
-		possibleRecipes,
-	} = invoice;
+	const [invoice] = useZustandStore((state) => [state.selectedInvoice]);
 	const merchant = invoice.merchant;
+
+	const itemsWithAllergens = invoice.items.filter((item) => item.detectedAllergens.length > 0);
+	const allergensList = itemsWithAllergens.map((item) => item.detectedAllergens).flat();
+	const recipesList = invoice.possibleRecipes;
 
 	if (invoice) {
 		return (
@@ -41,31 +35,31 @@ export const EditInvoiceTable = () => {
 					<tbody className="text-center table-row-grup">
 						<tr className="table-row">
 							<td className="table-cell">Currency</td>
-							<td className="table-cell">{currency}</td>
+							<td className="table-cell">{invoice.paymentInformation.currency.name}</td>
 						</tr>
 						<tr className="table-row bg-gray-900">
 							<td className="table-cell">Description</td>
-							<td className="table-cell">{description}</td>
+							<td className="table-cell">{invoice.description}</td>
 						</tr>
 						<tr className="table-row">
 							<td className="table-cell">Estimated Survival Days</td>
-							<td className="table-cell">{estimatedSurvivalDays}</td>
+							<td className="table-cell">{invoice.estimatedSurvivalDays}</td>
 						</tr>
 						<tr className="table-row bg-gray-900">
 							<td className="table-cell">Identified Date</td>
-							<td className="table-cell">{identifiedDate as any}</td>
+							<td className="table-cell">{invoice.paymentInformation.dateOfPurchase.toUTCString()}</td>
 						</tr>
 						<tr className="table-row">
 							<td className="table-cell">Is Important</td>
-							<td className="table-cell">{isImportant}</td>
+							<td className="table-cell">{invoice.isImportant}</td>
 						</tr>
 						<tr className="table-row bg-gray-900">
 							<td className="table-cell">Possible Allergens</td>
-							<td className="table-cell">{possibleAllergens}</td>
+							<td className="table-cell">{allergensList.map(item => item.name)}</td>
 						</tr>
 						<tr className="table-row">
 							<td className="table-cell">Possible Recipes</td>
-							<td className="table-cell">{possibleRecipes}</td>
+							<td className="table-cell">{recipesList.map(item => item.name)}</td>
 						</tr>
 						<tr className="table-row bg-gray-900">
 							<td className="table-cell">Merchant Name</td>
@@ -79,14 +73,10 @@ export const EditInvoiceTable = () => {
 							<td className="table-cell">Merchant Phone Number</td>
 							<td className="table-cell">{merchant.phoneNumber}</td>
 						</tr>
-						<tr className="table-row">
-							<td className="table-cell">Merchant Parent Company</td>
-							<td className="table-cell">{merchant.parentCompany}</td>
-						</tr>
-						{additionalMetadata.map((kvPair, index) => (
+						{invoice.additionalMetadata.map((kvPair, index) => (
 							<tr key={index} className={`${index % 2 != 1 ? "bg-gray-900" : ""} table-row text-center`}>
 								<td className="table-cell">{kvPair.key}</td>
-								<td className="table-cell">{kvPair.value}</td>
+								<td className="table-cell">{kvPair.value as any}</td>
 							</tr>
 						))}
 					</tbody>

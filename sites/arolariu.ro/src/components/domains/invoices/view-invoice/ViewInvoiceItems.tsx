@@ -1,9 +1,9 @@
-import {useStore} from "@/hooks/stateStore";
-import {Item} from "@/types/Invoice";
+import {useZustandStore} from "@/hooks/stateStore";
+import Product from "@/types/invoices/Product";
 
 export default function ViewInvoiceItems() {
-	const [invoice] = useStore((state) => [state.selectedInvoice]);
-	const items: Item[] = invoice.items;
+	const [invoice] = useZustandStore((state) => [state.selectedInvoice]);
+	const items: Product[] = invoice.items;
 
 	if (items) {
 		return (

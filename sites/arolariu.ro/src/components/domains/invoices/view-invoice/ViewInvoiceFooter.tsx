@@ -1,22 +1,23 @@
 "use client";
 
-import {useStore} from "@/hooks/stateStore";
+import {useZustandStore} from "@/hooks/stateStore";
 import Link from "next/link";
 import {useState} from "react";
 
 export default function ViewInvoiceFooter() {
-	const [invoice] = useStore((state) => [state.selectedInvoice]);
+	const invoice = useZustandStore((state) => state.selectedInvoice);
+	const paymentInformation = invoice.paymentInformation;
 	const [isImportant, setIsImportant] = useState<boolean>(false);
-	const {totalAmount, currency, id} = invoice;
+	// TODO: set the isImportant value to the invoice too.
 
 	return (
 		<div className="flex">
 			<span className="text-2xl font-medium title-font dark:text-gray-300">
-				Total Cost: {totalAmount}
-				{currency}
+				Total Cost: {paymentInformation.totalAmount}
+				{paymentInformation.currency.symbol}
 			</span>
 			<Link
-				href={`../edit-invoice/${id}`}
+				href={`../edit-invoice/${invoice.id}`}
 				className="flex px-6 py-2 ml-auto text-white bg-indigo-500 border-0 rounded hover:bg-indigo-600 focus:outline-none">
 				Edit this invoice
 			</Link>

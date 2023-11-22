@@ -1,18 +1,20 @@
+import { useZustandStore } from "@/hooks/stateStore";
 import Image from "next/image";
 import {useEffect, useState} from "react";
 
-interface Props {
-	invoiceUri: string;
-}
-
-export default function EditInvoicePhotoPreview({invoiceUri}: Props) {
+export default function EditInvoicePhotoPreview() {
+	const invoice = useZustandStore((state) => state.selectedInvoice);
 	const [photoAsBlob, setPhotoAsBlob] = useState<Blob>(null!);
 
 	useEffect(() => {
-		fetch(invoiceUri)
-			.then((res) => res.blob())
-			.then((blob) => setPhotoAsBlob(blob));
-	}, [invoiceUri]);
+		if (invoice.photoLocation) {
+			fetch(invoice.photoLocation)
+				.then((response) => response.blob())
+				.then((blob) => {
+					setPhotoAsBlob(blob);
+				});
+		}
+	}, [invoice.photoLocation]);
 
 	if (photoAsBlob != null) {
 		if (photoAsBlob.type === "application/pdf") {

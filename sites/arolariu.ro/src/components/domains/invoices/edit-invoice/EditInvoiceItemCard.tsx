@@ -1,16 +1,22 @@
-import {capitalizeWords, first15} from "@/lib/stringUtils";
-import {Item, ItemCategory} from "@/types/Invoice";
+import Product, { ItemCategory } from "@/types/invoices/Product";
 import {useRef, useState} from "react";
 
 interface Props {
-	item: Item;
+	item: Product;
 }
 
 export default function EditInvoiceItemCard({item}: Props) {
-	const [itemState, setItemState] = useState<Item>(item);
+	const [itemState, setItemState] = useState<Product>(item);
 
 	const editItemDialogRef = useRef<null | HTMLDialogElement>(null);
 	const deleteItemDialogref = useRef<null | HTMLDialogElement>(null);
+
+	const capitalizeFirst15Words = (str: string) => {
+		return str
+			.split(" ")
+			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+			.join(" ");
+	}
 
 	// TODO: Dialogs could be their own JSX components...?
 	// TODO: implement logic for both dialogs.
@@ -30,10 +36,10 @@ export default function EditInvoiceItemCard({item}: Props) {
 				</div>
 				<div className="flex flex-col mx-auto text-center">
 					<span className="text-sm font-semibold tooltip tooltip-top" data-tip={itemState.rawName}>
-						{capitalizeWords(first15(itemState.rawName))}
+						{capitalizeFirst15Words(itemState.rawName)}
 					</span>
 					<span className="text-sm font-semibold tooltip tooltip-bottom" data-tip={itemState.genericName}>
-						{capitalizeWords(first15(itemState.genericName))}
+						{capitalizeFirst15Words((itemState.genericName))}
 					</span>
 					<span className="text-sm font-semibold">{ItemCategory[itemState.category]}</span>
 					<span className="text-sm font-semibold">{itemState.quantity}</span>

@@ -1,4 +1,4 @@
-import Invoice from "@/types/Invoice";
+import Invoice from "@/types/invoices/Invoice";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -7,7 +7,7 @@ interface Props {
 }
 
 export const ViewInvoiceCard = ({ invoice }: Props) => {
-	const isPdfImage = invoice.imageUri.endsWith(".pdf");
+	const isPdfImage = invoice.photoLocation.endsWith(".pdf");
 
 	return (
 		<div className="w-full p-4 md:w-1/2 lg:w-1/4">
@@ -23,7 +23,7 @@ export const ViewInvoiceCard = ({ invoice }: Props) => {
 					<Image
 						alt="ecommerce"
 						className="block object-cover object-center w-full h-full"
-						src={invoice.imageUri}
+						src={invoice.photoLocation}
 						width={420}
 						height={260}
 					/>
@@ -31,14 +31,14 @@ export const ViewInvoiceCard = ({ invoice }: Props) => {
 			</Link>
 			<div className="mt-4">
 				<h3 className="mb-1 text-xs tracking-widest title-font dark:text-gray-500">
-					DATE: {new Date(invoice.identifiedDate).toUTCString()}
+					DATE: {new Date(invoice.paymentInformation.dateOfPurchase).toUTCString()}
 				</h3>
 				<h2 className="text-base font-medium text-gray-500 title-font">
 					MERCHANT: {invoice.merchant.name}
 				</h2>
 				<p className="mt-1">
-					Total: {invoice.totalAmount}
-					{invoice.currency}
+					Total: {invoice.paymentInformation.totalAmount}
+					{invoice.paymentInformation.currency.symbol}
 				</p>
 			</div>
 		</div>
