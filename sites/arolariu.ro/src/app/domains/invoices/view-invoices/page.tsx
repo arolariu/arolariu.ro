@@ -19,7 +19,7 @@ export default async function ViewInvoicesPage() {
 
 	return (
 		<main className="dark:text-gray-300">
-			{isAuthenticated && <RenderViewInvoicesPage invoices={invoices!} />}
+			<RenderViewInvoicesPage invoices={invoices!} />
 		</main>
 	);
 }

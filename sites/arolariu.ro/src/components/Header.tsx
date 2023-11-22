@@ -30,6 +30,11 @@ export default async function Header() {
 						Domains
 						<sub className="mx-2 badge badge-primary indicator-end">new</sub>
 					</Link>
+					{!isAuthenticated && (
+						<Link href={`${sitePath}/auth`} className="mr-5 hover:text-yellow-300">
+							Auth
+						</Link>
+					)}
 					{isAuthenticated && (
 						<Link href={`${sitePath}/my-profile`} className="mr-5 hover:text-yellow-300">
 							Profile

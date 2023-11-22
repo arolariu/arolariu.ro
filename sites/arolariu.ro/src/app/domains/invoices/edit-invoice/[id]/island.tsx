@@ -11,12 +11,14 @@ interface Props {
 	invoice: Invoice | null;
 }
 
-export default function RenderEditInvoicePage({invoice}: Props) {
+export default function RenderEditInvoicePage({invoice}: Readonly<Props>) {
 	const setSelectedInvoice = useZustandStore((state) => state.setSelectedInvoice);
 	const {windowSize} = useWindowSize();
 
 	// TODO: invoice item card pagination to avoid slow performance that can be seen after 10 items for e.g.;
 	// TODO: filtering, searching, sorting, etc for the invoice items.
+
+	// TODO: saving mechanism for the invoice items.
 
 	if (invoice) {
 		setSelectedInvoice(invoice);

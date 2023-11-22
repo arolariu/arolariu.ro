@@ -49,13 +49,13 @@ export function RenderInvoiceScreen() {
 					STEP 2
 				</a>
 			</div>
-			{1 == currentStep && (
+			{1 === currentStep && (
 				<UploadInvoicePhoto
 					setCurrentStep={setCurrentStep}
 					setInvoiceIdentifier={setInvoiceIdentifier}
 				/>
 			)}
-			{2 == currentStep && (
+			{2 === currentStep && (
 				<AnalyzeInvoiceProcess
 					setCurrentStep={setCurrentStep}
 					invoiceIdentifier={invoiceIdentifier}

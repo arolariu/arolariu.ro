@@ -9,7 +9,7 @@ interface Props {
 	invoices: Invoice[];
 }
 
-export default function RenderViewInvoicesPage({invoices}: Props) {
+export default function RenderViewInvoicesPage({invoices}: Readonly<Props>) {
 	const setInvoices = useZustandStore((state) => state.setInvoices);
 
 	if (invoices) {

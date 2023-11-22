@@ -13,7 +13,11 @@ export const metadata: Metadata = {
 
 export default async function InvoicePage() {
 	const {isAuthenticated} = await fetchUser();
-	
+
+	// TODO: implement criptare at rest and at transit.
+	// TODO: implement possibility to have a decript key for the user - thus allowing guest users to fully leverage the system.
+	// TODO: hide behind-the-scenes this logic for authenticated users; guest users will need to attach the key for any request.
+
 	return (
 		<main>
 			<section className="dark:text-gray-200">

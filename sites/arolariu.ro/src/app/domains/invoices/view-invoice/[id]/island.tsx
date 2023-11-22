@@ -10,12 +10,9 @@ import { useZustandStore } from "@/hooks/stateStore";
 import Invoice from "@/types/invoices/Invoice";
 import {useState} from "react";
 
+interface Props { invoice: Invoice | null; }
 
-interface Props {
-	invoice: Invoice | null;
-}
-
-export function RenderViewInvoicePage({invoice}: Props) {
+export function RenderViewInvoicePage({invoice}: Readonly<Props>) {
 	const [currentStep, setCurrentStep] = useState<number>(1);
 	const setSelectedInvoice = useZustandStore((state) => state.setSelectedInvoice);
 		setSelectedInvoice(invoice!);

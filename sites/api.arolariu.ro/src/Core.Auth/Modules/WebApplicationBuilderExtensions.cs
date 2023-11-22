@@ -32,7 +32,7 @@ public static class WebApplicationBuilderExtensions
     private static void AddAuthN(this WebApplicationBuilder builder)
     {
         var jwtAudience = builder.Configuration["JWT:Audience"]!;
-        var jwtIssuer = builder.Configuration["JWT:Issuer"]!;
+        var jwtIssuers = new [] {"clerk.arolariu.ro", "clerk.dev.arolariu.ro"};
         var jwtSecret = builder.Configuration["JWT:Secret"]!;
 
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
@@ -48,7 +48,7 @@ public static class WebApplicationBuilderExtensions
         {
             jwtOptions.TokenValidationParameters = new()
             {
-                ValidIssuer = jwtIssuer,
+                ValidIssuers = jwtIssuers,
                 ValidAudience = jwtAudience,
                 IssuerSigningKey = signingKey,
                 ValidateIssuer = true,

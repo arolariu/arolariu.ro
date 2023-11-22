@@ -7,19 +7,31 @@ export default authMiddleware({
     publicRoutes: [
         // General areas that are public.
         "/",
+
+        // About routes:
+        "/about",
+        "/about/the-platform",
+        "/about/the-author",
+
+        // Auth routes:
         "/auth",
         "/auth/sign-in",
         "/auth/sign-up",
-        "/domains",
 
-        // Invoice public routes:
+        // Domains public routes:
+        "/domains",
         "/domains/invoices",
         "/domains/invoices/create-invoice",
         "/domains/invoices/view-invoice/:id*",
         "/domains/invoices/view-invoices",
+
+
+        // ToS and Privacy Policy
+        "/terms-of-service",
+        "/privacy-policy",
     ]
 });
- 
+
 export const config = {
   matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
 };
