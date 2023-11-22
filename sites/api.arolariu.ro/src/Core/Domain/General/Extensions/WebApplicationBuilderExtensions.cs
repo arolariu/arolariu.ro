@@ -42,5 +42,7 @@ internal static partial class WebApplicationBuilderExtensions
         PopulateConfigurationWithCorrectValues(builder);
         ConfigureDataLayer(builder);
         ConfigureHealthChecks(builder);
+
+        ConfigureObservability(builder);
     }
 }
