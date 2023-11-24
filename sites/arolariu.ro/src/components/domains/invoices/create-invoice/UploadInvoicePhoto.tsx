@@ -1,6 +1,6 @@
 "use client";
 
-import {API_URL} from "@/lib/constants";
+import {API_URL} from "@/constants";
 import CreateInvoiceDto from "@/types/DTOs/CreateInvoiceDto";
 import {KeyValuePair} from "@/types/KvPair";
 import {useUser} from "@clerk/nextjs";

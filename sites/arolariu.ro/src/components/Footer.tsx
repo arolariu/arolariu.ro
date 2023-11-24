@@ -1,11 +1,11 @@
 /** @format */
 
+import { SITE_URL } from "@/constants";
 import Link from "next/link";
 import { FaGithub, FaLinkedin } from "react-icons/fa";
 
 
 export default async function Footer() {
-	const sitePath = process.env["SITE_URL"] as string;
 	return (
 		<footer className="relative bottom-0 w-full mt-16 bg-indigo-500">
 			<svg
@@ -21,8 +21,8 @@ export default async function Footer() {
 			<div className="px-4 pt-12 mx-auto sm:max-w-xl md:max-w-full md:px-24 lg:max-w-screen-xl lg:px-8">
 				<div className="grid gap-16 row-gap-10 mb-8 lg:grid-cols-6">
 					<div className="md:max-w-md lg:col-span-2">
-						<a
-							href={sitePath}
+						<Link
+							href={SITE_URL}
 							aria-label="Go home"
 							title="AROLARIU.RO"
 							className="inline-flex items-center">
@@ -40,7 +40,7 @@ export default async function Footer() {
 							<span className="ml-2 text-xl font-bold tracking-wide text-gray-100 uppercase">
 								AROLARIU.RO
 							</span>
-						</a>
+						</Link>
 						<div className="mt-4 lg:max-w-sm">
 							<p className="text-sm text-deep-purple-50">
 								The platform is built using the latest stable, state-of-the-art technologies and
@@ -58,7 +58,7 @@ export default async function Footer() {
 							<ul className="mt-2 space-y-2">
 								<li>
 									<Link
-										href={`${sitePath}/domains/invoices`}
+										href={`${SITE_URL}/domains/invoices`}
 										className="transition-colors duration-300 tooltip tooltip-top text-purple-50 hover:text-teal-400"
 										data-tip="Invoice Management System (IMS)">
 										<span>I M S</span>
@@ -66,7 +66,7 @@ export default async function Footer() {
 								</li>
 								<li>
 									<Link
-										href={`${sitePath}/domains/links`}
+										href={`${SITE_URL}/domains/links`}
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400 tooltip"
 										data-tip="Link Analysis & Insights System (LAIS)">
 										<span>L A I S</span>
@@ -166,28 +166,28 @@ export default async function Footer() {
 							<ul className="mt-2 space-y-2">
 								<li>
 									<Link
-										href={`${sitePath}/about/the-platform`}
+										href={`${SITE_URL}/about/the-platform`}
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										What is <code>arolariu.ro</code>?
 									</Link>
 								</li>
 								<li>
 									<Link
-										href={`${sitePath}/about/the-author`}
+										href={`${SITE_URL}/about/the-author`}
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										Who is <code>arolariu</code>?
 									</Link>
 								</li>
 								<li>
 									<Link
-										href={`${sitePath}/terms-of-service`}
+										href={`${SITE_URL}/terms-of-service`}
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										Terms of Service
 									</Link>
 								</li>
 								<li>
 									<Link
-										href={`${sitePath}/privacy-policy`}
+										href={`${SITE_URL}/privacy-policy`}
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										Privacy Policy
 									</Link>

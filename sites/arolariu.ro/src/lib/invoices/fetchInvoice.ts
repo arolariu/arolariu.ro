@@ -1,5 +1,5 @@
 import Invoice from "@/types/invoices/Invoice";
-import { API_URL } from "../constants";
+import { API_URL } from "../../constants";
 import fetchUser from "../fetchUser";
 import generateGuestJwt from "../generateGuestJwt";
 

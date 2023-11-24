@@ -1,8 +1,8 @@
+import { API_JWT } from "@/constants";
 import * as jose from "jose";
 
 export default async function generateGuestJwt() {
-	const jwtSignKey = process.env.JWT_SIGN_KEY as string;
-	const secret = new TextEncoder().encode(jwtSignKey);
+	const secret = new TextEncoder().encode(API_JWT);
 
 	const header = { alg: "HS256", typ: "JWT" };
 
