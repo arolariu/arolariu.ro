@@ -1,3 +1,4 @@
+# GitHub Actions workflow that builds the `arolariu.ro` main platform.
 name: Main platform (arolariu.ro) deployment
 
 on:
@@ -6,6 +7,22 @@ on:
     paths: ["sites/arolariu.ro/**"]
   workflow_dispatch:
 
+env:
+  SITE_ENV: PRODUCTION
+  SITE_NAME: arolariu.ro
+  SITE_URL: https://arolariu.ro
+
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+  NEXT_PUBLIC_CLERK_SIGN_IN_URL: /auth/sign-in
+  NEXT_PUBLIC_CLERK_SIGN_UP_URL: /auth/sign-up
+  NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /
+  NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /
+  CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+
+  API_URL: https://api.arolariu.ro
+  API_JWT: ${{ secrets.API_JWT }}
+  
+
 permissions:
   id-token: write
   contents: read
@@ -13,6 +30,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4
