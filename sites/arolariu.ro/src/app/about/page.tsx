@@ -1,5 +1,11 @@
+import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+	title: "About Us",
+	description: "Learn more about the author and the platform.",
+};
 
 export default async function AboutPage() {
 	return (
