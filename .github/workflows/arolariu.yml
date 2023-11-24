@@ -47,6 +47,22 @@ jobs:
           login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
           username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
           password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
+
+      - name: Creating .env file for docker...
+        working-directory: ./sites/arolariu.ro
+        run: |
+          touch .env
+          echo "SITE_ENV=PRODUCTION" > .env
+          echo "SITE_NAME=arolariu.ro" > .env
+          echo "SITE_URL=https://arolariu.ro" > .env
+          echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" > .env
+          echo "NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/sign-in" > .env
+          echo "NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/sign-up" > .env
+          echo "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/" > .env
+          echo "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/" > .env
+          echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" > .env
+          echo "API_URL=https://api.arolariu.ro" > .env
+          echo "API_JWT=${{ secrets.API_JWT }}" > .env
       
       - name: 🏗️ Building the docker container...
         working-directory: ./sites/arolariu.ro
