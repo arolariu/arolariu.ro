@@ -7,22 +7,6 @@ on:
     paths: ["sites/arolariu.ro/**"]
   workflow_dispatch:
 
-env:
-  SITE_ENV: PRODUCTION
-  SITE_NAME: arolariu.ro
-  SITE_URL: https://arolariu.ro
-
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-  NEXT_PUBLIC_CLERK_SIGN_IN_URL: /auth/sign-in
-  NEXT_PUBLIC_CLERK_SIGN_UP_URL: /auth/sign-up
-  NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /
-  NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /
-  CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-
-  API_URL: https://api.arolariu.ro
-  API_JWT: ${{ secrets.API_JWT }}
-  
-
 permissions:
   id-token: write
   contents: read
@@ -35,18 +19,6 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4
 
-      - name: ⚙️ Set up the Node.js runtime...
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20.x'
-
-      - name: 🛠️ Building the Next.JS application...
-        working-directory: ./sites/arolariu.ro
-        run: |
-          npm install
-          npm run build --if-present
-          npm run test --if-present
-
       - name: Zip artifact for deployment
         working-directory: ./sites/arolariu.ro
         run: zip release.zip ./* -r
@@ -55,7 +27,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: arolariu
-          path: release.zip
+          path: ./sites/arolariu.ro/release.zip
 
   deploy:
     runs-on: ubuntu-latest
