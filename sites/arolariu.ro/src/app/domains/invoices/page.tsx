@@ -83,7 +83,6 @@ export default async function InvoicePage() {
 										<strong
 											className="text-red-600 tooltip tooltip-right"
 											data-tip="The receipt information is only accessible to you. You can, however, make your invoice public, so that others can see the data on it.">
-											data-tip="The receipt information is only accessible to you. You can, however, make your invoice public, so that others can see the data on it.">
 											<span className="font-mono text-lg">safe</span>
 										</strong>
 										.

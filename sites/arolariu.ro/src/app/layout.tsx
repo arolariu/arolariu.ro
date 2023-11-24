@@ -13,6 +13,7 @@ import {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
 import {PropsWithChildren, Suspense} from "react";
 import "./globals.css";
 import Loading from "./loading";
+import { SITE_URL } from "@/constants";
 
 const fontFamily: NextFont = Caudex({
 	weight: "700",
@@ -22,7 +23,7 @@ const fontFamily: NextFont = Caudex({
 });
 
 export const metadata: Metadata = {
-	metadataBase: new URL(process.env["SITE_URL"]!),
+	metadataBase: new URL(SITE_URL),
 	title: {
 		absolute: "arolariu.ro | Alexandru-Razvan Olariu",
 		default: "arolariu.ro | Unknown page",

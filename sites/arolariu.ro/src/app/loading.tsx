@@ -1,3 +1,7 @@
 export default async function Loading() {
-	return <p>Loading...</p>
+	return(
+		<div>
+			<p>Loading...</p>
+		</div>
+	)
 }

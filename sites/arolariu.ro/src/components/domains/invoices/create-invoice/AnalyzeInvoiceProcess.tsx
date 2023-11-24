@@ -1,6 +1,5 @@
 "use client";
 
-import useSendInvoiceToAnalysis from "@/hooks/useSendInvoiceToAnalysis";
 import Link from "next/link";
 
 interface Props {
@@ -9,7 +8,7 @@ interface Props {
 	setCurrentStep: (step: number) => void;
 }
 
-export default function AnalyzeInvoiceProcess({invoiceIdentifier, setCurrentStep}: Props) {
+export default function AnalyzeInvoiceProcess({invoiceIdentifier, setCurrentStep}: Readonly<Props>) {
 	return (
 		<section className="flex flex-col items-center mx-auto">
 			<div className="w-full px-4 mb-6 sm:p-4">
