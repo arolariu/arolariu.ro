@@ -1,4 +1,11 @@
+import { Metadata } from "next";
 import Link from "next/link";
+
+
+export const metadata: Metadata = {
+	title: "arolariu.ro | 404",
+	description: "Page not found.",
+};
 
 export default async function NotFound() {
 	return (
