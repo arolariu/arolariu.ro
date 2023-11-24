@@ -3,6 +3,12 @@ import Link from "next/link";
 import {FaGithub, FaLinkedin} from "react-icons/fa";
 import CompetenceList from "./_components/CompetenceList";
 import ContactForm from "./_components/ContactForm";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+	title: "About the author",
+	description: "Learn more about Alexandru-Razvan Olariu, the author of this platform.",
+};
 
 export default async function AuthorPage() {
 	return (

@@ -1,5 +1,11 @@
 import Accordion from "@/components/general/Accordion";
 import AccordionItem from "@/components/general/AccordionItem";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+	title: "The Platform",
+	description: "Learn more about the platform.",
+};
 
 export default async function PlatformPage() {
 	return (
