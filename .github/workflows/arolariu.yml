@@ -19,45 +19,26 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4
 
-      - name: Zip artifact for deployment
-        working-directory: ./sites/arolariu.ro
-        run: zip release.zip ./* -r
-
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v3
-        with:
-          name: arolariu
-          path: ./sites/arolariu.ro/release.zip
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: 'production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    permissions:
-      id-token: write #This is required for requesting the JWT
-
-    steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v3
-        with:
-          name: arolariu
-
-      - name: Unzip artifact for deployment
-        run: unzip release.zip
-      
-      - name: 🔒 Handling the auth process to Azure Public Cloud...
+      - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} 
 
-      - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v2
+      - name: 🔒 Performing auth against private Azure Container Registry...
+        uses: Azure/docker-login@v1
         with:
-          app-name: 'arolariu'
-          slot-name: 'production'
-          package: .
+          login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+          username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
+          password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
+      
+      - name: 🏗️ Building the docker container...
+        working-directory: ./sites/arolariu.ro
+        run: |
+          docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/arolariu:${{ github.sha }} .
+
+      - name: ⏫ Pushing the docker container...
+        working-directory: ./sites/arolariu.ro
+        run: |
+          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/arolariu:${{ github.sha }}
