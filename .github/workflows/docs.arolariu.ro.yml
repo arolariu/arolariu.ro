@@ -16,6 +16,9 @@ jobs:
   build-and-deploy:
     name: 🚀 Building and deploying the docs platform (docs.arolariu.ro)...
     runs-on: ubuntu-latest
+    environment: 
+      name: 'documentation'
+      url: "https://docs.arolariu.ro"
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v3
