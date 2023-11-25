@@ -10,6 +10,7 @@ name: Docs platform (docs.arolariu.ro) deployment
 on:
   push:
     branches: ["main"]
+    paths-ignore: [".github/*"]
 
 jobs:
   build-and-deploy:
@@ -19,26 +20,28 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v3
 
-      - name: 📐 Starting set-up for the .NET 7.0+ environment...
+      - name: 📐 Starting setup for the .NET 8.0 (LTS) environment...
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 7.0
+          dotnet-version: 8.0
 
-      - name: 🏗️ Installing the API Backend dependencies...
-        working-directory: ./sites/api.arolariu.ro/backend/src
+      - name: (API == Step 1/3) 🏗️ Installing the API dependencies...
+        working-directory: ./sites/api.arolariu.ro/src
         run: |
           dotnet workload restore
           dotnet restore
 
-      - name: ⚙️ Starting setup for the DocFX documentation platform...
+      - name: (API == Step 2/3) ⚙️ Starting setup for the DocFX documentation platform...
         run: |
           dotnet tool update -g docfx
           docfx metadata "./sites/docs.arolariu.ro/docfx.json"
           docfx build "./sites/docs.arolariu.ro/docfx.json"
 
-      - name: 📢 Publishing the DocFX `_site` folder...
-        uses: peaceiris/actions-gh-pages@v3
+      - name: (API == Step 3/3) Deploying API documentation...
+        uses: Azure/static-web-apps-deploy@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: sites/docs.arolariu.ro/_site
-          cname: docs.arolariu.ro
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_DOCS_TOKEN }}
+          action: "upload"
+          app_location: "./sites/docs.arolariu.ro/_site" # App source code path
+          api_location: "" # Api source code path - optional
+          output_location: "./sites/docs.arolariu.ro/_site" 
