@@ -1,4 +1,5 @@
-name: DEV platform (dev.arolariu.ro) deployment
+# GitHub Actions workflow that builds the `dev.arolariu.ro` main platform.
+name: Dev platform (dev.arolariu.ro) deployment
 
 on:
   push:
@@ -13,29 +14,50 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4
 
-      - name: ⚙️ Set up the Node.js runtime...
-        uses: actions/setup-node@v3
+      - name: 🔒 Performing auth against Azure Public Cloud...
+        uses: Azure/login@v1
         with:
-          node-version: '20.x'
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} 
 
-      - name: 🛠️ Building the Next.JS application...
+      - name: 🔒 Performing auth against private Azure Container Registry...
+        uses: Azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+          username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
+          password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
+
+      - name: Creating .env file for docker...
+        working-directory: ./sites/arolariu.ro
         run: |
-          npm install
-          npm run build --if-present
-          npm run test --if-present
+          touch .env
+          echo "SITE_ENV=PRODUCTION" > .env
+          echo "SITE_NAME=dev.arolariu.ro" >> .env
+          echo "SITE_URL=https://dev.arolariu.ro" >> .env
+          echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY_DEV }}" >> .env
+          echo "NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/sign-in" >> .env
+          echo "NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/sign-up" >> .env
+          echo "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/" >> .env
+          echo "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/" >> .env
+          echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY_DEV }}" >> .env
+          echo "API_URL=https://api.arolariu.ro" >> .env
+          echo "API_JWT=${{ secrets.API_JWT }}" >> .env
+      
+      - name: 🏗️ Building the docker container...
+        working-directory: ./sites/arolariu.ro
+        run: |
+          docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/dev.arolariu:latest .
 
-      - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
-
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v3
-        with:
-          name: dev-arolariu
-          path: release.zip
+      - name: ⏫ Pushing the docker container...
+        working-directory: ./sites/arolariu.ro
+        run: |
+          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/dev.arolariu:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -43,30 +65,13 @@ jobs:
     environment:
       name: 'production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    permissions:
-      id-token: write #This is required for requesting the JWT
-
+    
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v3
-        with:
-          name: dev-arolariu
-
-      - name: Unzip artifact for deployment
-        run: unzip release.zip
-      
-      - name: 🔒 Handling the auth process to Azure Public Cloud...
-        uses: Azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} 
-
-      - name: 'Deploy to Azure Web App'
+      - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'arolariu'
           slot-name: 'production'
-          package: .
-          
+          publish-profile: ${{ secrets.AROLARIU_WEB_APP_PUBLISHER_PROFILE_DEV }}
+          images: '${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/dev.arolariu:latest'
