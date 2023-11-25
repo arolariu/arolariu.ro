@@ -7,21 +7,6 @@ on:
     paths: ["sites/arolariu.ro/**"]
   workflow_dispatch:
 
-env:
-   SITE_ENV: PRODUCTION
-   SITE_NAME: arolariu.ro
-   SITE_URL: https://arolariu.ro
-
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-   NEXT_PUBLIC_CLERK_SIGN_IN_URL: /auth/sign-in
-   NEXT_PUBLIC_CLERK_SIGN_UP_URL: /auth/sign-up
-   NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: /
-   NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: /
-   CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-
-   API_URL: https://api.arolariu.ro
-   API_JWT: ${{ secrets.API_JWT }}
-
 permissions:
   id-token: write
   contents: read
@@ -73,3 +58,20 @@ jobs:
         working-directory: ./sites/arolariu.ro
         run: |
           docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/arolariu:${{ github.sha }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    
+    steps:
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'arolariu'
+          slot-name: 'production'
+          publish-profile: ${{ secrets.AzureAppService_PublishProfile_714144f82bca4cf2ad5d1a391187a33d }}
+          images: '${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/arolariu:${{ github.sha }}'
