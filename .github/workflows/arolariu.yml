@@ -73,5 +73,5 @@ jobs:
         with:
           app-name: 'arolariu'
           slot-name: 'production'
-          publish-profile: ${{ secrets.AzureAppService_PublishProfile_714144f82bca4cf2ad5d1a391187a33d }}
+          publish-profile: ${{ secrets.AROLARIU_WEB_APP_PUBLISHER_PROFILE }}
           images: '${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/arolariu:${{ github.sha }}'
