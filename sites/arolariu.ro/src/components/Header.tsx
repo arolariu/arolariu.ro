@@ -1,5 +1,6 @@
 /** @format */
 
+import ThemeSwitcherButton from "@/app/providers";
 import { SITE_URL } from "@/constants";
 import fetchUser from "@/lib/fetchUser";
 import {SignedIn, SignedOut, UserButton} from "@clerk/nextjs";
@@ -9,7 +10,7 @@ export default async function Header() {
 	const {isAuthenticated} = await fetchUser();
 
 	return (
-		<header className="dark:text-white">
+		<header className="text-black bg-white dark:bg-black dark:text-white">
 			<div className="container flex flex-col flex-wrap items-center p-5 mx-auto md:flex-row">
 				<Link href={SITE_URL} className="flex items-center mb-4 font-medium title-font md:mb-0">
 					<svg
@@ -42,7 +43,7 @@ export default async function Header() {
 					)}
 				</nav>
 
-				<div>
+				<div className="2xsm:mt-8 md:mt-0">
 					<SignedOut>
 						<Link href={`${SITE_URL}/auth`} className="mr-5 hover:text-yellow-300">
 							Login
@@ -51,6 +52,7 @@ export default async function Header() {
 					<SignedIn>
 						<UserButton afterSignOutUrl="/" />
 					</SignedIn>
+					<ThemeSwitcherButton/>
 				</div>
 			</div>
 		</header>

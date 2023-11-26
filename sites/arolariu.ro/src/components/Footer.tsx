@@ -1,13 +1,13 @@
 /** @format */
 
-import { SITE_URL } from "@/constants";
+import {COMMIT_SHA, TIMESTAMP} from "@/constants";
 import Link from "next/link";
-import { FaGithub, FaLinkedin } from "react-icons/fa";
-
+import {FaGithub, FaLinkedin} from "react-icons/fa";
 
 export default async function Footer() {
+	const sitePath = process.env["SITE_URL"] as string;
 	return (
-		<footer className="relative bottom-0 w-full mt-16 bg-indigo-500">
+		<footer className="relative bottom-0 w-full bg-indigo-500">
 			<svg
 				className="absolute top-0 w-full h-6 -mt-5 text-indigo-500 sm:-mt-10 sm:h-16"
 				preserveAspectRatio="none"
@@ -18,14 +18,14 @@ export default async function Footer() {
 				/>
 			</svg>
 
-			<div className="px-4 pt-12 mx-auto sm:max-w-xl md:max-w-full md:px-24 lg:max-w-screen-xl lg:px-8">
-				<div className="grid gap-16 row-gap-10 mb-8 lg:grid-cols-6">
-					<div className="md:max-w-md lg:col-span-2">
+			<div className="pt-12 mx-auto text-gray-100 sm:max-w-xl md:max-w-full md:px-24 lg:max-w-screen-xl lg:px-8">
+				<div className="grid gap-16 row-gap-10 mb-8 sm:grid-cols-2 lg:grid-cols-6">
+					<div className=" md:col-span-1 lg:col-span-2">
 						<Link
-							href={SITE_URL}
+							href={sitePath}
 							aria-label="Go home"
 							title="AROLARIU.RO"
-							className="inline-flex items-center">
+							className="inline-flex items-center 2xsm:ml-[20%] md:ml-0">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								fill="none"
@@ -37,99 +37,71 @@ export default async function Footer() {
 								viewBox="0 0 24 24">
 								<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
 							</svg>
-							<span className="ml-2 text-xl font-bold tracking-wide text-gray-100 uppercase">
-								AROLARIU.RO
-							</span>
+							<span className="ml-2 text-xl font-bold tracking-wide uppercase">AROLARIU.RO</span>
 						</Link>
-						<div className="mt-4 lg:max-w-sm">
-							<p className="text-sm text-deep-purple-50">
-								The platform is built using the latest stable, state-of-the-art technologies and
-								with enterprise-grade experience.
-							</p>
-							<p className="mt-4 text-sm text-deep-purple-50">
+						<div className="mt-4 text-sm 2xsm:px-4 2xsm:text-center md:px-0 md:text-left">
+							<p>
+								The platform is built using the latest stable, state-of-the-art technologies and with enterprise-grade
+								experience. <br /> <br />
 								We hope that you have a great experience when exploring this platform.
 							</p>
 						</div>
 					</div>
 
-					<div className="grid grid-cols-2 gap-5 row-gap-8 md:grid-cols-4 lg:col-span-4">
+					<div className="flex gap-16 2xsm:flex-col 2xsm:text-center lg:flex-row lg:text-left">
 						<div>
-							<p className="font-semibold tracking-wide text-teal-accent-400">Domain Services</p>
+							<p className="font-semibold tracking-wide text-black">Domain Services</p>
 							<ul className="mt-2 space-y-2">
 								<li>
 									<Link
-										href={`${SITE_URL}/domains/invoices`}
-										className="transition-colors duration-300 tooltip tooltip-top text-purple-50 hover:text-teal-400"
+										href={`${sitePath}/domains/invoices`}
+										className="transition-colors duration-300 tooltip tooltip-top hover:text-teal-400"
 										data-tip="Invoice Management System (IMS)">
 										<span>I M S</span>
 									</Link>
 								</li>
 								<li>
 									<Link
-										href={`${SITE_URL}/domains/links`}
-										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400 tooltip"
+										href={`${sitePath}/domains/links`}
+										className="transition-colors duration-300 tooltip tooltip-top hover:text-teal-400"
 										data-tip="Link Analysis & Insights System (LAIS)">
 										<span>L A I S</span>
 									</Link>
 								</li>
-								<li>
-									<a
-										href="/"
-										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
-										Games
-									</a>
-								</li>
-								<li>
-									<a
-										href="/"
-										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
-										References
-									</a>
-								</li>
 							</ul>
 						</div>
 						<div>
-							<p className="font-semibold tracking-wide text-teal-accent-400">Libraries</p>
+							<p className="font-semibold tracking-wide text-black">Libraries</p>
 							<ul className="mt-2 space-y-2">
 								<li>
-									<a
-										href="/"
-										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
+									<a href="/" className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										Web
 									</a>
 								</li>
 								<li>
-									<a
-										href="/"
-										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
+									<a href="/" className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										eCommerce
 									</a>
 								</li>
 								<li>
-									<a
-										href="/"
-										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
+									<a href="/" className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										Business
 									</a>
 								</li>
 								<li>
-									<a
-										href="/"
-										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
+									<a href="/" className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										Entertainment
 									</a>
 								</li>
 								<li>
-									<a
-										href="/"
-										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
+									<a href="/" className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										Portfolio
 									</a>
 								</li>
 							</ul>
 						</div>
 						<div>
-							<p className="font-semibold tracking-wide text-teal-accent-400">Public subdomains</p>
+							<p className="font-semibold tracking-wide text-black">Public subdomains</p>
 							<ul className="mt-2 space-y-2">
 								<li>
 									<Link
@@ -162,32 +134,32 @@ export default async function Footer() {
 							</ul>
 						</div>
 						<div>
-							<p className="font-semibold tracking-wide text-teal-accent-400">About</p>
+							<p className="font-semibold tracking-wide text-black">About</p>
 							<ul className="mt-2 space-y-2">
 								<li>
 									<Link
-										href={`${SITE_URL}/about/the-platform`}
+										href={`${sitePath}/about/the-platform`}
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										What is <code>arolariu.ro</code>?
 									</Link>
 								</li>
 								<li>
 									<Link
-										href={`${SITE_URL}/about/the-author`}
+										href={`${sitePath}/about/the-author`}
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										Who is <code>arolariu</code>?
 									</Link>
 								</li>
 								<li>
 									<Link
-										href={`${SITE_URL}/terms-of-service`}
+										href={`${sitePath}/terms-of-service`}
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										Terms of Service
 									</Link>
 								</li>
 								<li>
 									<Link
-										href={`${SITE_URL}/privacy-policy`}
+										href={`${sitePath}/privacy-policy`}
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										Privacy Policy
 									</Link>
@@ -196,8 +168,10 @@ export default async function Footer() {
 						</div>
 					</div>
 				</div>
-				<div className="flex flex-col justify-between pt-5 pb-10 border-t border-deep-purple-accent-200 sm:flex-row">
-					<p className="text-sm text-gray-100">
+
+				{/* Footer metadata information */}
+				<div className="flex flex-row justify-between py-5 border-t 2xsm:flex-wrap md:flex-nowrap">
+					<p className="text-sm 2xsm:text-center md:text-left">
 						© Copyright 2022-{new Date().getFullYear()} Alexandru-Razvan Olariu. <br />
 						<span className="ml-4">
 							Source code is available{" "}
@@ -207,15 +181,20 @@ export default async function Footer() {
 							.
 						</span>
 					</p>
-					<div className="flex items-center mt-4 space-x-4 sm:mt-0">
+					<div className="flex flex-row items-center 2xsm:mx-auto 2xsm:mt-8 2xsm:space-x-8 md:mx-0 md:mt-0 md:space-x-4">
 						<Link href="https://github.com/arolariu">
-							<FaGithub className="h-7 w-7"/>
+							<FaGithub className="h-7 w-7" />
 						</Link>
 						<Link href="https://linkedin.com/in/olariu-alexandru">
-							<FaLinkedin className="h-7 w-7"/>
+							<FaLinkedin className="h-7 w-7" />
 						</Link>
 					</div>
 				</div>
+				<p className="text-sm text-gray-600 2xsm:text-center md:text-end">
+					Built on <code>{TIMESTAMP}</code>
+					<br />
+					Commit SHA: <code>{COMMIT_SHA}</code>
+				</p>
 			</div>
 		</footer>
 	);
