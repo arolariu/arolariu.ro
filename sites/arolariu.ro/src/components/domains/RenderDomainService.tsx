@@ -10,7 +10,7 @@ export default async function RenderDomainService({
 	linkTo = "https://arolariu.ro",
 }) {
 	return (
-		<div className="p-4 mb-6 sm:mb-0 md:w-1/3">
+		<div className="max-w-[20rem] p-4 mb-6 sm:mb-0">
 			<div className="h-64 overflow-hidden rounded-lg">
 				<Image
 					alt="content"

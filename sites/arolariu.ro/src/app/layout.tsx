@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {Caudex} from "next/font/google";
 
+import {SITE_URL} from "@/constants";
 import {ClerkProvider} from "@clerk/nextjs";
 import {Metadata} from "next";
 import {NextFont} from "next/dist/compiled/@next/font";
@@ -13,7 +14,7 @@ import {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
 import {PropsWithChildren, Suspense} from "react";
 import "./globals.css";
 import Loading from "./loading";
-import { SITE_URL } from "@/constants";
+import {Providers} from "./providers";
 
 const fontFamily: NextFont = Caudex({
 	weight: "700",
@@ -60,11 +61,13 @@ export const metadata: Metadata = {
 export default async function RootLayout({children}: Readonly<PropsWithChildren<{}>>) {
 	return (
 		<ClerkProvider>
-			<html lang="en" className={fontFamily.className}>
-				<body>
-					<Header />
-					<Suspense fallback={<Loading />}>{children}</Suspense>
-					<Footer />
+			<html lang="en" suppressHydrationWarning className={fontFamily.className}>
+				<body className="text-black bg-white dark:bg-black dark:text-white">
+					<Providers>
+						<Header />
+						<Suspense fallback={<Loading />}>{children}</Suspense>
+						<Footer />
+					</Providers>
 				</body>
 			</html>
 		</ClerkProvider>

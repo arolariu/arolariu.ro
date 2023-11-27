@@ -5,9 +5,8 @@ import Feature from "./Feature";
 export default function FeaturesList() {
 	return (
 		<div className="max-w-screen-xl px-4 py-8 mx-auto sm:px-6 sm:py-12 lg:px-8 lg:py-16">
-			<div className="max-w-lg mx-auto text-center">
+			<div className="text-center">
 				<h2 className="text-3xl font-bold sm:text-4xl">Key Features</h2>
-
 				<p className="mt-4 text-gray-300">The `arolariu.ro` platform is built using the latest stable technologies.</p>
 			</div>
 

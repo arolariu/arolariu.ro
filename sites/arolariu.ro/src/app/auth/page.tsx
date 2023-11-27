@@ -31,7 +31,7 @@ export default async function AuthPage() {
 							unified experience across all the domains.
 						</p>
 						<Link
-							href="/api/auth/signin?callbackUrl=/auth"
+							href="/auth/sign-up/"
 							className="flex w-full px-5 py-2 mt-6 text-white border-0 rounded focus:outline-none btn btn-primary hover:bg-indigo-600">
 							Sign up.
 						</Link>
@@ -46,7 +46,7 @@ export default async function AuthPage() {
 							Sign in using your member credentials. Your profile will be kept in sync during this browser session.
 						</p>
 						<Link
-							href="/api/auth/signin?callbackUrl=/auth"
+							href="/auth/sign-in/"
 							className="flex w-full px-5 py-2 mt-6 text-white border-0 rounded focus:outline-none btn btn-primary hover:bg-indigo-600">
 							Sign in.
 						</Link>
