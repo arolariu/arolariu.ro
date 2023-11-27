@@ -1,6 +1,4 @@
-import Accordion from "@/components/general/Accordion";
-import AccordionItem from "@/components/general/AccordionItem";
-import { Metadata } from "next";
+import {Metadata} from "next";
 
 export const metadata: Metadata = {
 	title: "The Platform",
@@ -11,16 +9,37 @@ export default async function PlatformPage() {
 	return (
 		<main>
 			<section>
+				<h1 className="my-8 text-3xl font-bold text-center">
+					How <code>arolariu.ro</code> is built?
+				</h1>
 				<article>
-					<h1>
-						How <code>arolariu.ro</code> is built?
-					</h1>
-					<p>
-						The main front-facing platform is built using the latest stable iteration of Next.JS (version 14 at the
-						moment).
-					</p>
-					<p>Here is a table with all the technologies used on the platform:</p>
-					<table>
+					The <code>arolariu.ro</code> platform is built using the latest and most stable iteration of front-end
+					technologies and techniques. <br /> <br />
+					The platform is built using the <code>Next.JS</code> framework, which is a React framework that allows for
+					server-side rendering and static site generation. The framework also employs React&apos;s <code>SSR</code> and{" "}
+					<code>CSR</code> techniques to provide the best possible experience for the end-user.
+					<br />
+					<br />
+					The platform is hosted on Microsoft&apos;s Azure cloud infrastructure, more precisely leveraging the App
+					Service resource. The platform is able to scale horizontally to up to 10 instances.
+					<br />
+					<br />
+					The API service that powers the platform and the adjacent services hosted under the <code>
+						*.arolariu.ro
+					</code>{" "}
+					domain umbrella is built using the latest iteration of .NET 8. The API can be accessed on{" "}
+					<a href="https://api.arolariu.ro" target="_blank" rel="noopener">
+						<code>api.arolariu.ro</code>
+					</a>
+					.
+				</article>
+			</section>
+
+			<section className="my-16">
+				<h2 className="mb-4 text-3xl font-bold">Technology overview</h2>
+				<article>
+					<table className="table table-auto table-pin-cols 2xsm:table-xs md:table-lg">
+						<caption className="caption-bottom">Technologies used to build this platform.</caption>
 						<thead>
 							<tr>
 								<th>Technology</th>
@@ -46,139 +65,34 @@ export default async function PlatformPage() {
 							</tr>
 						</tbody>
 					</table>
-					<p>The project also uses the following third party packages:</p>
-					<ul>
-						<li>DaisyUI - UI toolkit based on TailwindCSS.</li>
-						<li>Clerk - auth framework that supports the OAuth 2.0 protocol.</li>
-						<li>Zustand - state management library based on client-side hooks.</li>
-						<li>jose - JWT/E/K management library, for guest accounts.</li>
-					</ul>
-
-					<p>The platform was built from scratch, taking inspiration from sites such as:</p>
-					<ol>
-						<li>tailblocks.cc</li>
-						<li>hyperUI.dev</li>
-						<li>kitwind.io</li>
-					</ol>
-				</article>
-
-				<article>
-					<h1>
-						How <code>api.arolariu.ro</code> is built?
-					</h1>
-					<p>The API service is built using the latest stable iteration of .NET (currently version 8). </p>
-					<p>Here is a table with all the technologies used on the platform:</p>
-					<table>
-						<thead>
-							<tr>
-								<th>Technology</th>
-								<th>Version</th>
-								<th>Usage</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td>ASP.NET</td>
-								<td>8.0.0</td>
-								<td>Web framework</td>
-							</tr>
-							<tr>
-								<td>Entity Framework Core</td>
-								<td>8.0.0</td>
-								<td>ORM</td>
-							</tr>
-							<tr>
-								<td>MS SQL Server</td>
-								<td>13.0.0</td>
-								<td>Database service</td>
-							</tr>
-							<tr>
-								<td>Redis</td>
-								<td>6.0.0</td>
-								<td>Cache service</td>
-							</tr>
-							<tr>
-								<td>Azure CosmosDB</td>
-								<td>13.0.0</td>
-								<td>Database service</td>
-							</tr>
-							<tr>
-								<td>Azure Storage</td>
-								<td>13.0.0</td>
-								<td>Storage service</td>
-							</tr>
-						</tbody>
-					</table>
-				</article>
-
-				<article>
-					<h1>
-						How <code>cv.arolariu.ro</code> is built?
-					</h1>
-					<p>
-						The platform represents an interactive, online CV format that encompasses the authors&apos; competences.
-					</p>
-					<p>Here is a table with all the technologies used on the platform:</p>
-					<table>
-						<thead>
-							<tr>
-								<th>Technology</th>
-								<th>Version</th>
-								<th>Usage</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td>SvelteKit</td>
-								<td>5.0.0</td>
-								<td>Front-end framework</td>
-							</tr>
-							<tr>
-								<td>SvelteJS</td>
-								<td>5.0.0</td>
-								<td>Front-end library</td>
-							</tr>
-							<tr>
-								<td>TailwindCSS</td>
-								<td>3.3.0</td>
-								<td>CSS library</td>
-							</tr>
-						</tbody>
-					</table>
-				</article>
-
-				<article>
-					<h1>
-						How <code>obs.arolariu.ro</code> is built?
-					</h1>
-					<p>The platform represents a unified pane of glass targeted for observability.</p>
-					<p>
-						The three pillars of observability (3PO): metrics, logs, traces are all incorporated onto this platform.
-					</p>
-					<p>The platform leverages Grafana dashboards, Prometehus clusters and Jaeger Tracing capabilities.</p>
 				</article>
 			</section>
 
-			<section>
-				<Accordion>
-					<AccordionItem
-						title="arolariu.ro"
-						description="This is the main website of Alexandru-Razvan Olariu. It is built using Next.js and TailwindCSS. It is hosted on Vercel."
-					/>
-					<AccordionItem
-						title="arolariu.ro"
-						description="This is the main website of Alexandru-Razvan Olariu. It is built using Next.js and TailwindCSS. It is hosted on Vercel."
-					/>
-					<AccordionItem
-						title="arolariu.ro"
-						description="This is the main website of Alexandru-Razvan Olariu. It is built using Next.js and TailwindCSS. It is hosted on Vercel."
-					/>
-					<AccordionItem
-						title="arolariu.ro"
-						description="This is the main website of Alexandru-Razvan Olariu. It is built using Next.js and TailwindCSS. It is hosted on Vercel."
-					/>
-				</Accordion>
+			<section className="my-16">
+				<h2 className="mb-4 text-3xl font-bold">Frequently asked questions</h2>
+				<article className="flex flex-wrap items-center justify-center gap-16 mt-8 2xsm:flex-col lg:flex-row justify-items-center">
+					<div className="p-2 border-2 border-white lg:w-1/3 rounded-xl">
+						<p className="mb-4 text-xl font-medium text-center">
+							Lorem ipsum dolor, sit amet consectetur adipisicing elit. Eum, error?
+						</p>
+						<p className="text-gray-200">
+							Lorem ipsum dolor sit, amet consectetur adipisicing elit. Voluptatibus dolorem non cum exercitationem
+							molestias laborum voluptatem laudantium magni quod aliquam! Eius commodi odio assumenda quasi aliquam
+							nostrum ea ad quia?
+						</p>
+					</div>
+					<div className="p-2 border-2 border-white lg:w-1/3 rounded-xl">
+						<p className="mb-4 text-xl font-medium text-center">Lorem ipsum dolor sit amet consectetur adipisicing?</p>
+						<p className="text-gray-200">
+							Lorem ipsum, dolor sit amet consectetur adipisicing elit. Consectetur, natus similique saepe nemo debitis
+							dicta non. In illo quod nihil corrupti iste amet voluptatem cum accusantium aliquam, molestias beatae,
+							facere consequuntur quaerat. Quod natus, harum consequuntur sunt recusandae nam maiores!
+						</p>
+					</div>
+				</article>
 			</section>
+
+			<section className="my-16"></section>
 		</main>
 	);
 }

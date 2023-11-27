@@ -1,7 +1,7 @@
+import CompetenceList from "@/components/about/the-author/CompetenceList";
+import ContactForm from "@/components/about/the-author/ContactForm";
 import {Metadata} from "next";
 import Image from "next/image";
-import CompetenceList from "./_components/CompetenceList";
-import ContactForm from "./_components/ContactForm";
 
 export const metadata: Metadata = {
 	title: "About the author",
@@ -21,7 +21,7 @@ export default async function AuthorPage() {
 			</section>
 
 			<section>
-				<article className="text-2xl">
+				<article className="text-2xl 2xsm:ml-2 md:ml-0">
 					Alexandru-Razvan Olariu is the sole author of the platform that you are on.
 					<br /> <br />
 					Alexandru is a {new Date().getFullYear() - 2000} years old software engineer and solution architect. He
@@ -52,22 +52,24 @@ export default async function AuthorPage() {
 			</section>
 
 			<section className="my-16">
-				<h1 className="text-3xl prose text-center prose-blue">Alexandru&apos;s competences</h1>
+				<h1 className="text-center 2xsm:text-3xl md:text-5xl">Alexandru&apos;s competences</h1>
 				<CompetenceList />
 			</section>
 
 			<section className="flex flex-row flex-wrap items-center justify-center my-16 justify-items-center">
 				<div className="prose text-left prose-blue 2xsm:text-center md:text-left">
-					<h1 className="mb-16 font-semibold">Connect with Alexandru</h1>
-					<p className="text-2xl">
-						E-mail address: <a href="mailto:olariu.alexandru@pm.me">olariu.alexandru@pm.me</a>
-					</p>
-					<p className="text-2xl">
-						LinkedIn: <code>/olariu-alexandru</code>
-					</p>
-					<p className="text-2xl">
-						GitHub: <code>/arolariu</code>
-					</p>
+					<h1 className="mb-16 font-semibold text-black dark:text-white">Connect with Alexandru</h1>
+					<div className="text-2xl">
+						<p>
+							E-mail address: <a href="mailto:olariu.alexandru@pm.me">olariu.alexandru@pm.me</a>
+						</p>
+						<p>
+							LinkedIn: <code>/olariu-alexandru</code>
+						</p>
+						<p>
+							GitHub: <code>/arolariu</code>
+						</p>
+					</div>
 				</div>
 				<Image
 					src="/images/about/the-author/work-together.svg"
