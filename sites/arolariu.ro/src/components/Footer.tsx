@@ -1,11 +1,10 @@
 /** @format */
 
-import {COMMIT_SHA, TIMESTAMP} from "@/constants";
+import {COMMIT_SHA, SITE_URL, TIMESTAMP} from "@/constants";
 import Link from "next/link";
 import {FaGithub, FaLinkedin} from "react-icons/fa";
 
 export default async function Footer() {
-	const sitePath = process.env["SITE_URL"] as string;
 	return (
 		<footer className="relative bottom-0 w-full bg-indigo-500">
 			<svg
@@ -22,7 +21,7 @@ export default async function Footer() {
 				<div className="grid gap-16 row-gap-10 mb-8 sm:grid-cols-2 lg:grid-cols-6">
 					<div className=" md:col-span-1 lg:col-span-2">
 						<Link
-							href={sitePath}
+							href={SITE_URL}
 							aria-label="Go home"
 							title="AROLARIU.RO"
 							className="inline-flex items-center 2xsm:ml-[20%] md:ml-0">
@@ -54,7 +53,7 @@ export default async function Footer() {
 							<ul className="mt-2 space-y-2">
 								<li>
 									<Link
-										href={`${sitePath}/domains/invoices`}
+										href={`${SITE_URL}/domains/invoices`}
 										className="transition-colors duration-300 tooltip tooltip-top hover:text-teal-400"
 										data-tip="Invoice Management System (IMS)">
 										<span>I M S</span>
@@ -62,7 +61,7 @@ export default async function Footer() {
 								</li>
 								<li>
 									<Link
-										href={`${sitePath}/domains/links`}
+										href={`${SITE_URL}/domains/links`}
 										className="transition-colors duration-300 tooltip tooltip-top hover:text-teal-400"
 										data-tip="Link Analysis & Insights System (LAIS)">
 										<span>L A I S</span>
