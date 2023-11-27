@@ -4,20 +4,19 @@
       "src": [
         {
           "src": "../api.arolariu.ro/",
-          "files": [
-            "/backend/**/*.csproj"
-          ]
+          "files": ["/src/**/*.csproj"]
         }
       ],
       "dest": "api",
       "shouldSkipMarkup": false,
       "includePrivateMembers": true,
-      "disableGitFeatures": true,
+      "disableGitFeatures": false,
       "disableDefaultFilter": false,
       "noRestore": false,
       "memberLayout": "samePage",
       "namespaceLayout": "nested",
-      "allowCompilationErrors": false
+      "allowCompilationErrors": false,
+      "properties": { "TargetFramework": "net8.0" }
     }
   ],
   "build": {
