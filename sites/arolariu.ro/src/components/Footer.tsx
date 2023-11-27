@@ -137,28 +137,28 @@ export default async function Footer() {
 							<ul className="mt-2 space-y-2">
 								<li>
 									<Link
-										href={`${sitePath}/about/the-platform`}
+										href={`${SITE_URL}/about/the-platform`}
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										What is <code>arolariu.ro</code>?
 									</Link>
 								</li>
 								<li>
 									<Link
-										href={`${sitePath}/about/the-author`}
+										href={`${SITE_URL}/about/the-author`}
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										Who is <code>arolariu</code>?
 									</Link>
 								</li>
 								<li>
 									<Link
-										href={`${sitePath}/terms-of-service`}
+										href={`${SITE_URL}/terms-of-service`}
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										Terms of Service
 									</Link>
 								</li>
 								<li>
 									<Link
-										href={`${sitePath}/privacy-policy`}
+										href={`${SITE_URL}/privacy-policy`}
 										className="transition-colors duration-300 text-deep-purple-50 hover:text-teal-accent-400">
 										Privacy Policy
 									</Link>
