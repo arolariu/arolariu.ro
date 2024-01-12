@@ -1,4 +1,5 @@
 import {Metadata} from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
 	title: "The Platform",
@@ -12,7 +13,15 @@ export default async function PlatformPage() {
 				<h1 className="my-8 text-3xl font-bold text-center">
 					How <code>arolariu.ro</code> is built?
 				</h1>
-				<article>
+				<div className="flex justify-center mx-auto my-12">
+					<span className="inline-block h-2 bg-blue-500 rounded-full w-60"></span>
+					<span className="inline-block w-6 h-2 mx-1 bg-blue-500 rounded-full"></span>
+					<span className="inline-block w-3 h-2 bg-blue-500 rounded-full"></span>
+				</div>
+			</section> {/* Title */}
+
+			<section>
+				<article className="md:text-left 2xsm:text-center">
 					The <code>arolariu.ro</code> platform is built using the latest and most stable iteration of front-end
 					technologies and techniques. <br /> <br />
 					The platform is built using the <code>Next.JS</code> framework, which is a React framework that allows for
@@ -28,12 +37,12 @@ export default async function PlatformPage() {
 						*.arolariu.ro
 					</code>{" "}
 					domain umbrella is built using the latest iteration of .NET 8. The API can be accessed on{" "}
-					<a href="https://api.arolariu.ro" target="_blank" rel="noopener">
+					<Link href="https://api.arolariu.ro" target="_blank" rel="noopener" className="text-blue-500">
 						<code>api.arolariu.ro</code>
-					</a>
+					</Link>
 					.
 				</article>
-			</section>
+			</section> {/* About the platform */}
 
 			<section className="my-16">
 				<h2 className="mb-4 text-3xl font-bold">Technology overview</h2>
@@ -90,7 +99,7 @@ export default async function PlatformPage() {
 						</p>
 					</div>
 				</article>
-			</section>
+			</section> {/* Frequently asked questions */}
 
 			<section className="my-16"></section>
 		</main>

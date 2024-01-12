@@ -1,7 +1,12 @@
-import CompetenceList from "@/components/about/the-author/CompetenceList";
+import Competence from "@/components/about/the-author/Competence";
 import ContactForm from "@/components/about/the-author/ContactForm";
 import {Metadata} from "next";
 import Image from "next/image";
+import Link from "next/link";
+import { FaUserCheck, FaRegSun } from "react-icons/fa";
+import { GrTest, GrResources } from "react-icons/gr";
+import { SiThealgorithms } from "react-icons/si";
+import { SlLoop } from "react-icons/sl";
 
 export const metadata: Metadata = {
 	title: "About the author",
@@ -18,11 +23,11 @@ export default async function AuthorPage() {
 					<span className="inline-block w-6 h-2 mx-1 bg-blue-500 rounded-full"></span>
 					<span className="inline-block w-3 h-2 bg-blue-500 rounded-full"></span>
 				</div>
-			</section>
+			</section> {/* Title */}
 
 			<section>
 				<article className="text-2xl 2xsm:ml-2 md:ml-0">
-					Alexandru-Razvan Olariu is the sole author of the platform that you are on.
+					Alexandru-Razvan Olariu is the sole author of the platform that you are on currently.
 					<br /> <br />
 					Alexandru is a {new Date().getFullYear() - 2000} years old software engineer and solution architect. He
 					currently works at Microsoft as a software enginneer in the E+D organization, building complex solutions for
@@ -43,18 +48,58 @@ export default async function AuthorPage() {
 					`test-bench` for new technologies and as a way to learn new things. He is also a big fan of the `open-source`
 					movement and has contributed to Microsoft&apos;s OSS repositories{" "}
 					<em>(such as dotnet/efcore and dotnet/docs)</em>. <br /> <br />
-					Alexandru is open for collaboration in projects that involve IoT and Network Engineering fields. <br /> If you
+					Alexandru is open for collaboration in projects that involve Internet of Things, Software Engineering and Network Engineering fields. <br /> If you
 					are interested in working with Alexandru and you wonder what he is capable of, please visit the
 					`cv.arolariu.ro` website to see his CV. <br /> <br />
-					To reach out to him, scroll down to the contact form or connect with him via the `cv.arolariu.ro` website.{" "}
+					To reach out to him, scroll down to the contact form or connect with him via the information provided on the <Link href="https://cv.arolariu.ro" className="text-blue-500">cv.arolariu.ro</Link> website.{" "}
 					<br /> <br />
 				</article>
-			</section>
+			</section> {/* About the author */}
 
 			<section className="my-16">
 				<h1 className="text-center 2xsm:text-3xl md:text-5xl">Alexandru&apos;s competences</h1>
-				<CompetenceList />
-			</section>
+				<div className="flex flex-row flex-wrap px-5 py-8 mx-auto">
+			<Competence
+				title="Algorithmic skills."
+				description="Alexandru has completed all Hacker Rank, Hacker Earth and Leet Code challenges published until 2023. He
+								has a strong algorithmic thinking and is able to construct complex algorithms with ease.">
+				<SiThealgorithms className="h-7 w-7" />
+			</Competence>
+			<Competence
+				title="Test-Driven Development (TDD)"
+				description="Alexandru is a firm believer of test-driven development. He constantly applies this approach to his
+								projects and he is always trying to improve his testing skills. He is also a big fan of the
+								`red-green-refactor` approach.">
+				<GrTest className="h-7 w-7" />
+			</Competence>
+			<Competence
+				title="Domain-Driven Design (DDD)"
+				description="Alexandru follows domain-driven design principles strongly. He is able to combine DDD with TDD to create
+								complex solutions that are easy to maintain and extend. He is also a big fan of the `onion architecture`
+								and `clean architecture` approaches.">
+				<GrResources className="h-7 w-7" />
+			</Competence>
+			<Competence
+				title="Agile Methodologies."
+				description="Alexandru has learnt about agile working and agile methodologies since he was a student in his BSc.
+								degree. He follows the agile manifesto and is a big fan of the Kanban technique of planning.">
+				<SlLoop className="h-7 w-7" />
+			</Competence>
+			<Competence
+				title="Customer Centric."
+				description="Alexandru has been working with customers for two full years in his tenure at Microsoft. He has gained a lot
+					of knowledge and is able to put himself in the shoes of the customer. He is able to understand the
+					customer's needs and to deliver solutions that are tailored to their needs.">
+				<FaUserCheck className="h-7 w-7" />
+			</Competence>
+			<Competence
+				title="Engineering Excellence."
+				description="Alexandru is passionate about delivering the best solutions for the problem and for the customer. He is
+								always striving to deliver the best software and to follow consacrated engineering excellence practices.">
+				<FaRegSun className="h-7 w-7" />
+			</Competence>
+		</div>
+			</section> {/* Competences list */}
 
 			<section className="flex flex-row flex-wrap items-center justify-center my-16 justify-items-center">
 				<div className="prose text-left prose-blue 2xsm:text-center md:text-left">
@@ -78,7 +123,7 @@ export default async function AuthorPage() {
 					height={"600"}
 					className="ml-[10%] object-cover 2xsm:hidden xl:block"
 				/>
-			</section>
+			</section> {/* Connect information */}
 
 			<section className="my-16">
 				<h1 className="text-5xl text-center">Contact Alexandru</h1>
@@ -87,7 +132,7 @@ export default async function AuthorPage() {
 					will need to provide a mean of contact so that Alexandru can reach out to you.
 				</p>
 				<ContactForm />
-			</section>
+			</section> {/* Contact form */}
 		</main>
 	);
 }

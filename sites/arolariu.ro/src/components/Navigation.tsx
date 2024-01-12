@@ -16,16 +16,11 @@ export default async function Navigation({className}: Readonly<Props>) {
 				</Link>
 			</li>
 			<li>
-				<Link href={`${SITE_URL}/domains`} className="mr-5 indicator hover:text-yellow-300">
-					Domains
+				<Link href={`${SITE_URL}/events`} className="mr-5 indicator hover:text-yellow-300">
+					Events
 				</Link>
 			</li>
 
-			<li>
-				<Link href={`${SITE_URL}/domains`} className="mr-5 indicator hover:text-yellow-300">
-					Domains
-				</Link>
-			</li>
 			{!isAuthenticated && (
 				<li>
 					<Link href={`${SITE_URL}/auth`} className="mr-5 indicator hover:text-yellow-300">
