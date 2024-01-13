@@ -5,7 +5,8 @@ import Link from "next/link";
 interface Props { className?: string }
 
 export default async function Navigation({className}: Readonly<Props>) {
-	const {isAuthenticated} = await fetchUser();
+	const {user, isAuthenticated} = await fetchUser();
+	// TODO: user identifier should be a GUID.
 
 	return (
 		<ul className={className}>
@@ -30,8 +31,8 @@ export default async function Navigation({className}: Readonly<Props>) {
 			)}
 			{isAuthenticated && (
 				<li>
-					<Link href={`${SITE_URL}/my-profile`} className="mr-5 indicator hover:text-yellow-300">
-						Profile
+					<Link href={`${SITE_URL}/accounts/${user?.id}`} className="mr-5 indicator hover:text-yellow-300">
+						Account
 					</Link>
 				</li>
 			)}

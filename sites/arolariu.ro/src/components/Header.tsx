@@ -38,14 +38,16 @@ export default async function Header() {
 				</div>
 
 				<div className="navbar-end">
-					<SignedOut>
-						<Link href={`${SITE_URL}/auth`} className="mr-5 hover:text-yellow-300">
-							Login
-						</Link>
-					</SignedOut>
-					<SignedIn>
-						<UserButton afterSignOutUrl="/" />
-					</SignedIn>
+					<div className="mr-4 -mt-1">
+						<SignedOut>
+							<Link href={`${SITE_URL}/auth`} className="mr-5 hover:text-yellow-300">
+								Login
+							</Link>
+						</SignedOut>
+						<SignedIn>
+							<UserButton afterSignOutUrl="/" />
+						</SignedIn>
+					</div>
 					<ThemeSwitcherButton />
 				</div>
 			</nav>
