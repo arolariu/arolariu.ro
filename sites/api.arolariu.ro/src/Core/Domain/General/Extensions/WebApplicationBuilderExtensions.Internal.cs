@@ -1,10 +1,12 @@
+using arolariu.Backend.Common.Database;
+using arolariu.Backend.Common.Database.DirectAccess;
 using arolariu.Backend.Common.Telemetry;
 using arolariu.Backend.Common.Telemetry.Logging;
 using arolariu.Backend.Common.Telemetry.Metering;
 using arolariu.Backend.Common.Telemetry.Tracing;
-using arolariu.Backend.Core.DAL.Database;
 using arolariu.Backend.Core.Domain.General.Services.KeyVault;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
+
 using Azure.Identity;
 
 using Microsoft.AspNetCore.Builder;

@@ -37,23 +37,15 @@
 	  <None Remove="Domain\General\Helpers\**" />
 	</ItemGroup>
 
-	<!-- Other packages -->
-	<ItemGroup>
-		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
-		<PackageReference Include="System.Drawing.Common" Version="8.0.0-rc.2.23479.14" />
-	</ItemGroup>
-
 	<!-- Health checks packages -->
 	<ItemGroup>
-		<PackageReference Include="AspNetCore.HealthChecks.AzureKeyVault" Version="7.0.0" />
-		<PackageReference Include="AspNetCore.HealthChecks.CosmosDb" Version="7.1.0" />
-		<PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="7.0.0" />
+		<PackageReference Include="AspNetCore.HealthChecks.AzureKeyVault" Version="8.0.0" />
+		<PackageReference Include="AspNetCore.HealthChecks.CosmosDb" Version="8.0.0" />
+		<PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="8.0.0" />
 		<PackageReference Include="AspNetCore.HealthChecks.AzureStorage" Version="7.0.0" />
-		<PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="7.1.0" />
-		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="8.0.0" />
+		<PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="8.0.1" />
 	</ItemGroup>
 
 	<!-- Azure packages-->
@@ -66,7 +58,6 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
 	  <ProjectReference Include="..\Core.Auth\arolariu.Backend.Core.Auth.csproj" />
-	  <ProjectReference Include="..\Core.DAL\arolariu.Backend.Core.DAL.csproj" />
 	  <ProjectReference Include="..\Invoices\arolariu.Backend.Domain.Invoices.csproj" />
 	</ItemGroup>
 

@@ -19,14 +19,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Core", "si
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Core.Auth", "sites\api.arolariu.ro\src\Core.Auth\arolariu.Backend.Core.Auth.csproj", "{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Core.DAL", "sites\api.arolariu.ro\src\Core.DAL\arolariu.Backend.Core.DAL.csproj", "{C111946D-40FF-4A5E-97DC-904D60834294}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Domain.Invoices", "sites\api.arolariu.ro\src\Invoices\arolariu.Backend.Domain.Invoices.csproj", "{E85B9224-1256-4396-BF99-B94F8359F3E1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Core.Tests", "sites\api.arolariu.ro\tests\arolariu.Backend.Core.Tests\arolariu.Backend.Core.Tests.csproj", "{3C562B2D-B1CB-4B86-B2E5-0FE29D37BCAA}"
 	ProjectSection(ProjectDependencies) = postProject
 		{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4} = {BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4}
-		{C111946D-40FF-4A5E-97DC-904D60834294} = {C111946D-40FF-4A5E-97DC-904D60834294}
 		{E6984367-2B9A-48AA-9D45-8BA72871153E} = {E6984367-2B9A-48AA-9D45-8BA72871153E}
 	EndProjectSection
 EndProject
@@ -35,7 +32,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Domain.Tes
 		{E85B9224-1256-4396-BF99-B94F8359F3E1} = {E85B9224-1256-4396-BF99-B94F8359F3E1}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "arolariu.Backend.Common", "sites\api.arolariu.ro\src\Common\arolariu.Backend.Common.csproj", "{6C25CE54-46CD-4ED9-9A9E-9DD94A4F938E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Common", "sites\api.arolariu.ro\src\Common\arolariu.Backend.Common.csproj", "{6C25CE54-46CD-4ED9-9A9E-9DD94A4F938E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,10 +48,6 @@ Global
 		{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C111946D-40FF-4A5E-97DC-904D60834294}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C111946D-40FF-4A5E-97DC-904D60834294}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C111946D-40FF-4A5E-97DC-904D60834294}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C111946D-40FF-4A5E-97DC-904D60834294}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E85B9224-1256-4396-BF99-B94F8359F3E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E85B9224-1256-4396-BF99-B94F8359F3E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E85B9224-1256-4396-BF99-B94F8359F3E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -83,7 +76,6 @@ Global
 		{8521A553-FE75-45D8-8C39-5AC04A9F9102} = {43EC0FDF-1BAE-4E8D-96AF-4965B3D3955B}
 		{E6984367-2B9A-48AA-9D45-8BA72871153E} = {1187C109-1E68-46E3-86FB-3ABB5FC50129}
 		{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4} = {1187C109-1E68-46E3-86FB-3ABB5FC50129}
-		{C111946D-40FF-4A5E-97DC-904D60834294} = {1187C109-1E68-46E3-86FB-3ABB5FC50129}
 		{E85B9224-1256-4396-BF99-B94F8359F3E1} = {1187C109-1E68-46E3-86FB-3ABB5FC50129}
 		{3C562B2D-B1CB-4B86-B2E5-0FE29D37BCAA} = {8521A553-FE75-45D8-8C39-5AC04A9F9102}
 		{119ABED5-14E7-46C1-A8E9-C2FAFAFFE6C2} = {8521A553-FE75-45D8-8C39-5AC04A9F9102}
