@@ -1,0 +1,48 @@
+name: observability
+version: "3.8"
+
+networks:
+  observability-network:
+    name: localhost
+    external: false
+
+volumes:
+  grafana-storage:
+    external: false
+
+services:
+  grafana:
+    image: grafana/grafana-oss:10.2.2
+    container_name: grafana
+    restart: unless-stopped
+    networks:
+      - observability-network
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    environment:
+      - GF_SERVER_DOMAIN=obs.arolariu.ro
+      - GF_SERVER_ROOT_URL=https://obs.arolariu.ro/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SECURITY_COOKIE_SECURE=true
+      - GF_SECURITY_COOKIE_SAMESITE=lax
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_USERS_ALLOW_ORG_CREATE=false
+    labels:
+      traefik.enable: true
+      traefik.http.routers.grafana.rule: PathPrefix(`/grafana`)
+      traefik.http.services.grafana.loadbalancer.server.port: 3000
+
+
+  reverse-proxy:
+      image: traefik:v2.10
+      container_name: traefik
+      restart: unless-stopped
+      command: --api.insecure --providers.docker
+      ports:
+        - 80:80
+        - 443:443
+        - 8080:8080
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+      networks:
+        - observability-network

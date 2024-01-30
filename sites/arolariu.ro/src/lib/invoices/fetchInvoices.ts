@@ -1,7 +1,7 @@
 import Invoice from "@/types/invoices/Invoice";
 import fetchUser from "../fetchUser";
 import generateGuestJwt from "../generateGuestJwt";
-import { API_URL } from "../constants";
+import { API_URL } from "../../constants";
 
 export default async function fetchInvoices() : Promise<Invoice[] | null> {
     const {user, isAuthenticated} = await fetchUser();

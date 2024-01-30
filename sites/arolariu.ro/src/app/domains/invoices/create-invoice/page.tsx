@@ -14,9 +14,9 @@ export default async function CreateInvoicePage() {
 	const {isAuthenticated} = await fetchUser();
 
 	return (
-		<section className="dark:text-gray-300">
+		<main>
 			<RenderInvoiceScreen/>
-			{!isAuthenticated && <p>In order to save your invoice, please create an account.</p>}
-		</section>
+			{!isAuthenticated && <p className="mb-32 text-2xl text-center">In order to save your invoice, please create an account.</p>}
+		</main>
 	);
 }

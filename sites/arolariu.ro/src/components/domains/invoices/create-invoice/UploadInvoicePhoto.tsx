@@ -1,6 +1,5 @@
 "use client";
 
-import {API_URL} from "@/lib/constants";
 import CreateInvoiceDto from "@/types/DTOs/CreateInvoiceDto";
 import {KeyValuePair} from "@/types/KvPair";
 import {useUser} from "@clerk/nextjs";
@@ -47,7 +46,7 @@ const AlertNotification = () => {
 	);
 };
 
-export default function UploadInvoicePhoto({setCurrentStep, setInvoiceIdentifier}: Props) {
+export default function UploadInvoicePhoto({setCurrentStep, setInvoiceIdentifier}: Readonly<Props>) {
 	const {user} = useUser();
 	const [imageBlob, setImageBlob] = useState<Blob>(null!);
 	const [imageError, setImageError] = useState<boolean>(false);
@@ -82,12 +81,12 @@ export default function UploadInvoicePhoto({setCurrentStep, setInvoiceIdentifier
 		}
 
 		const payload = {photoLocation, photoMetadata} satisfies CreateInvoiceDto;
-		const response = await fetch(API_URL + "/rest/invoices", {
+		const response = await fetch("https://api.arolariu.ro" + "/rest/invoices", {
 			method: "POST",
 			body: JSON.stringify(payload),
 			headers: {"Content-Type": "application/json"},
 		});
-		console.log("Response: " + response)
+		console.log("Response: " + response.json())
 
 		// TODO: uncomment after backend is ready
 		//const json = await response.json();

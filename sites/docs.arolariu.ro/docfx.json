@@ -1,55 +1,19 @@
 {
-  "metadata": [
-    {
-      "src": [
-        {
-          "src": "../api.arolariu.ro/",
-          "files": [
-            "/backend/**/*.csproj"
-          ]
-        }
-      ],
-      "dest": "api",
-      "shouldSkipMarkup": false,
-      "includePrivateMembers": true,
-      "disableGitFeatures": true,
-      "disableDefaultFilter": false,
-      "noRestore": false,
-      "memberLayout": "samePage",
-      "namespaceLayout": "nested",
-      "allowCompilationErrors": false
-    }
-  ],
   "build": {
-    "content": [
-      {
-        "files": [
-          "**/*.yml",
-          "**/*.md"
-        ],
-        "exclude": [
-          "_site/**"
-        ]
-      }
-    ],
-    "resource": [
-      {
-        "files": [
-          "images/**"
-        ]
-      }
-    ],
+    "content": ["**/*.{md,yml}"],
+    "resource": ["images/**"],
     "output": "_site",
     "globalMetadata": {
       "_appTitle": "arolariu.ro DocFX",
       "_appName": "docs.arolariu.ro",
-      "_appFooter": "<strong>Built using <em><a href=\"https://dotnet.github.io/docfx\">DocFX</a></em> and <em><a href=\"https://github.com/Singulink/SingulinkFX\" style='color:red!IMPORTANT'>Singulink</a></em>.</strong>",
-      "_copyrightFooter": "Project is backed by an MIT License.",
+      "_appFooter": "<strong>Built using <em><a href=\"https://dotnet.github.io/docfx\">DocFX</a></em>.</strong>",
       "_enableSearch": true,
       "_enableNewTab": true,
-      "_disableSideFilter": false,
-      "_disableContribution": false,
+      "_disableNavbar": false,
       "_disableBreadcrumb": false,
+      "_disableToc": false,
+      "_disableContribution": false,
+      "_disableSideFilter": false,
       "_gitContribute": {
         "repo": "https://github.com/arolariu/arolariu.ro"
       },
@@ -57,9 +21,8 @@
     },
     "template": [
       "default",
-      "templates/singulinkfx"
+      "modern"
     ],
-    "keepFileLink": false,
     "disableGitFeatures": false,
     "sitemap": {
       "baseUrl": "https://docs.arolariu.ro/",
@@ -76,5 +39,26 @@
     "postProcessors": [
       "ExtractSearchIndex"
     ]
-  }
+  },
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": ["/src/**/*.csproj"],
+          "src": "../api.arolariu.ro/"
+        }
+      ],
+      "dest": "api",
+      "shouldSkipMarkup": false,
+      "disableDefaultFilter": false,
+      "disableGitFeatures": false,
+      "noRestore": false,
+      "namespaceLayout": "nested",
+      "memberLayout": "samePage",
+      "allowCompilationErrors": false,
+      "EnumSortOrder": "declaringOrder",
+      "includePrivateMembers": true,
+      "includeExplicitInterfaceImplmenetations": true
+    }
+  ]
 }

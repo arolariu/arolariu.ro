@@ -1,9 +1,9 @@
-# GitHub Actions workflow that builds the `dev.arolariu.ro` main platform.
-name: Dev platform (dev.arolariu.ro) deployment
+# GitHub Actions workflow that builds the `arolariu.ro` main platform.
+name: Main platform (arolariu.ro) deployment
 
 on:
   push:
-    branches: ["preview"]
+    branches: ["main"]
     paths: ["sites/arolariu.ro/**"]
   workflow_dispatch:
 
@@ -14,7 +14,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: development
+    environment: production
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4
@@ -40,8 +40,8 @@ jobs:
           echo "SITE_ENV=PRODUCTION" > .env
           echo "COMMIT_SHA=${{ github.sha }}" >> .env
           echo "TIMESTAMP=$(date -I)" >> .env
-          echo "SITE_NAME=dev.arolariu.ro" >> .env
-          echo "SITE_URL=https://dev.arolariu.ro" >> .env
+          echo "SITE_NAME=arolariu.ro" >> .env
+          echo "SITE_URL=https://arolariu.ro" >> .env
           echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" >> .env
           echo "NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/sign-in" >> .env
           echo "NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/sign-up" >> .env
@@ -54,27 +54,26 @@ jobs:
       - name: 🏗️ Building the docker container...
         working-directory: ./sites/arolariu.ro
         run: |
-          docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/dev.arolariu:latest .
+          docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/arolariu:${{ github.sha }} .
 
       - name: ⏫ Pushing the docker container...
         working-directory: ./sites/arolariu.ro
         run: |
-          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/dev.arolariu:latest
+          docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/arolariu:${{ github.sha }}
 
   deploy:
-      runs-on: ubuntu-latest
-      needs: build
-      environment:
-        name: 'development'
-        url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-      
-      steps:
-        - name: Deploy to Azure Web App
-          id: deploy-to-webapp
-          uses: azure/webapps-deploy@v2
-          with:
-            app-name: 'dev-arolariu'
-            slot-name: 'production'
-            publish-profile: ${{ secrets.AROLARIU_WEB_APP_PUBLISHER_PROFILE_DEV }}
-            images: '${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/dev.arolariu:latest'
-
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    
+    steps:
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'arolariu'
+          slot-name: 'production'
+          publish-profile: ${{ secrets.AROLARIU_WEB_APP_PUBLISHER_PROFILE }}
+          images: '${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/arolariu:${{ github.sha }}'
