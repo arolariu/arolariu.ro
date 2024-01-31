@@ -2,8 +2,7 @@
  * @format
  * @type {import("prettier").Options}
  */
-
-module.exports = {
+const prettierConfig = {
 	arrowParens: "always",
 	insertPragma: false,
 	printWidth: 120,
@@ -17,3 +16,5 @@ module.exports = {
 	bracketSpacing: false,
 	plugins: ["prettier-plugin-organize-imports", "prettier-plugin-tailwindcss"],
 };
+
+module.exports = prettierConfig;
