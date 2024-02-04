@@ -3,7 +3,6 @@
 using Azure;
 using Azure.AI.Translation.Text;
 
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
 using System;
@@ -42,5 +41,17 @@ public class AzureTranslatorBroker : ITranslatorBroker
         var translation = response.Value[0];
         var result = translation?.Translations[0]?.Text ?? string.Empty;
         return result;
+    }
+
+    /// <inheritdoc/>
+    public async Task<string> DetectLanguage(string text)
+    {
+        var translatedText = await textTranslationClient
+            .TranslateAsync(text, "en")
+            .ConfigureAwait(false);
+
+        var translation = translatedText.Value[0];
+        var detectedLanguage = translation.DetectedLanguage.Language;
+        return detectedLanguage;
     }
 }

@@ -15,5 +15,12 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker
         /// <param name="language"></param>
         /// <returns></returns>
         public Task<string> Translate(string text, string language = "en");
+
+        /// <summary>
+        /// Detects the language of the given text.
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        public Task<string> DetectLanguage(string text);
     }
 }
