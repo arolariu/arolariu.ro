@@ -40,10 +40,6 @@ public class AzureTranslatorBroker : ITranslatorBroker
             .ConfigureAwait(false);
 
         var translation = response.Value[0];
-
-        Console.WriteLine($"Detected languages of the input text:" +
-            $" {translation?.DetectedLanguage?.Language} with score: {translation?.DetectedLanguage?.Score}.");
-
         var result = translation?.Translations[0]?.Text ?? string.Empty;
         return result;
     }

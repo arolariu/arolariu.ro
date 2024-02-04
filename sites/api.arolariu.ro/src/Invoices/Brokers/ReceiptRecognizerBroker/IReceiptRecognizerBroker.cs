@@ -1,11 +1,9 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
-using Microsoft.AspNetCore.Http;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.ReceiptRecognizerBroker
 {
@@ -13,28 +11,28 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.ReceiptRecognizerBroker
     /// Interface for the receipt recognizer broker.
     /// This interface is used to recognize the merchant, payment information and products from an invoice photo.
     /// </summary>
-    public interface IReceiptRecognizerBroker
+    public interface IReceiptRecognizerBroker<in TPhoto>
+        where TPhoto : class
     {
         /// <summary>
         /// Recognize the merchant from an invoice photo.
         /// </summary>
-        /// <param name="photoContent"></param>
+        /// <param name="photo"></param>
         /// <returns></returns>
-        public Task<Merchant> RecognizeMerchantFromPhotoContentAsync<T>(T photoContent);
+        public Task<Merchant> IdentifyMerchant(TPhoto photo);
 
         /// <summary>
         /// Recognize the payment information from an invoice photo.
         /// </summary>
-        /// <param name="photoContent"></param>
+        /// <param name="photo"></param>
         /// <returns></returns>
-        public Task<PaymentInformation> RecognizePaymentInformationAsync<T>(T photoContent);
+        public Task<PaymentInformation> IdentifyPaymentInformation(TPhoto photo);
 
         /// <summary>
         /// Recognize the products from an invoice photo.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="photoContent"></param>
+        /// <param name="photo"></param>
         /// <returns></returns>
-        public Task<IEnumerable<Product>> RecognizeProductsFromPhotoContentAsync<T>(T photoContent);
+        public Task<IEnumerable<Product>> IdentifyProducts(TPhoto photo);
     }
 }
