@@ -29,6 +29,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DTOs\**" />
+    <EmbeddedResource Remove="DTOs\**" />
+    <None Remove="DTOs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.1" />
@@ -37,10 +43,6 @@
     <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.3.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="DTOs\" />
   </ItemGroup>
 
   <ItemGroup>
