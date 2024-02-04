@@ -1,7 +1,10 @@
-﻿using Azure;
+﻿using arolariu.Backend.Common.Options;
+
+using Azure;
 using Azure.AI.Translation.Text;
 
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -20,19 +23,13 @@ public class AzureTranslatorBroker : ITranslatorBroker
     /// <summary>
     /// Constructor.
     /// </summary>
-    /// <param name="configuration"></param>
-    public AzureTranslatorBroker(IConfiguration configuration)
+    /// <param name="options"></param>
+    public AzureTranslatorBroker(IOptionsMonitor<AzureOptions> options)
     {
-        ArgumentNullException.ThrowIfNull(configuration);
-        var azureTranslatorEndpoint = configuration["Azure:CognitiveServices:EndpointName"]
-            ?? throw new ArgumentNullException(nameof(configuration));
-
-        var azureTranslatorApiKey = configuration["Azure:CognitiveServices:EndpointKey"]
-            ?? throw new ArgumentNullException(nameof(configuration));
-
+        ArgumentNullException.ThrowIfNull(options);
         textTranslationClient = new TextTranslationClient(
-            new AzureKeyCredential(azureTranslatorApiKey),
-            new Uri(azureTranslatorEndpoint));
+            new AzureKeyCredential(options.CurrentValue.CognitiveServicesKey),
+            new Uri(options.CurrentValue.CognitiveServicesEndpoint));
     }
 
     /// <inheritdoc/>

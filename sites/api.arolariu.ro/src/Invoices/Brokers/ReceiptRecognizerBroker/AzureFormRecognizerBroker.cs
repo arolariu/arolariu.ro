@@ -9,7 +9,9 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.Brokers.ReceiptRecognizerBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.Contracts;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using Microsoft.Extensions.Options;
+using arolariu.Backend.Common.Options;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 
@@ -28,20 +30,13 @@ public partial class AzureFormRecognizerBroker : IReceiptRecognizerBroker
     /// <summary>
     /// Constructor.
     /// </summary>
-    /// <param name="configuration"></param>
-    public AzureFormRecognizerBroker(IConfiguration configuration)
+    /// <param name="options"></param>
+    public AzureFormRecognizerBroker(IOptionsMonitor<AzureOptions> options)
     {
-        ArgumentNullException.ThrowIfNull(configuration);
-        var cognitiveServicesUri = configuration["Azure:CognitiveServices:EndpointName"]
-            ?? throw new ArgumentNullException(nameof(configuration));
-
-        var cognitiveServicesConnString = configuration["Azure:CognitiveServices:EndpointKey"]
-            ?? throw new ArgumentNullException(nameof(configuration));
-
-        var endpoint = new Uri(cognitiveServicesUri);
-        var credentials = new AzureKeyCredential(cognitiveServicesConnString);
-
-        client = new DocumentAnalysisClient(endpoint, credentials);
+        ArgumentNullException.ThrowIfNull(options);
+        client = new DocumentAnalysisClient(
+            new Uri(options.CurrentValue.CognitiveServicesEndpoint),
+            new AzureKeyCredential(options.CurrentValue.CognitiveServicesKey));
     }
 
     /// <summary>

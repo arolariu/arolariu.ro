@@ -1,11 +1,11 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
-using arolariu.Backend.Domain.Invoices.DDD.Contracts;
 using Azure.AI.OpenAI;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 

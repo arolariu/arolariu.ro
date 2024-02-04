@@ -1,6 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using Azure.Security.KeyVault.Secrets;
 
-namespace arolariu.Backend.Core.Domain.General.Services.KeyVault;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
+
+namespace arolariu.Backend.Common.Services.KeyVault;
 
 /// <summary>
 /// Interface that handles the Azure Key Vault integration.

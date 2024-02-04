@@ -1,4 +1,6 @@
-﻿using Azure;
+﻿using arolariu.Backend.Common.Options;
+
+using Azure;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 
@@ -8,16 +10,16 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Core.Domain.General.Services.KeyVault;
+namespace arolariu.Backend.Common.Services.KeyVault;
 
 /// <summary>
 /// Service that handles the Azure Key Vault integration.
 /// A singleton instance of this class is registered in the service collection.
 /// </summary>
 [ExcludeFromCodeCoverage] // Infrastructure code is not tested currently.
-public class KeyVaultService : IKeyVaultService
+public sealed class KeyVaultService : IKeyVaultService
 {
-    private readonly SecretClient _secretClient;
+    private SecretClient _secretClient { get; init; }
 
     /// <summary>
     /// Constructor.
@@ -26,13 +28,15 @@ public class KeyVaultService : IKeyVaultService
     /// <exception cref="ArgumentNullException">Thrown when the configuration is null.</exception>
     public KeyVaultService(IConfiguration configuration)
     {
-        var kvUri = configuration["Azure:KeyVault:Uri"]
+        ArgumentNullException.ThrowIfNull(configuration);
+        var kvUri = configuration[$"{nameof(AzureOptions)}:KeyVaultEndpoint"]
             ?? throw new ArgumentNullException(nameof(configuration));
 
         _secretClient = new SecretClient(
             new Uri(kvUri),
             new DefaultAzureCredential());
     }
+
 
     /// <inheritdoc/>
     /// <param name="secretName">The name of the secret to fetch from Azure Key Vault.</param>
@@ -48,7 +52,9 @@ public class KeyVaultService : IKeyVaultService
         catch (RequestFailedException)
         {
             #pragma warning disable S112 // General exceptions should never be thrown
+            #pragma warning disable CA2201 // Do not raise reserved exception types
             throw new Exception($"Failed to get secret '{secretName}' from Key Vault: {_secretClient.VaultUri}");
+            #pragma warning restore CA2201 // Do not raise reserved exception types
             #pragma warning restore S112 // General exceptions should never be thrown
         }
     }
@@ -61,13 +67,15 @@ public class KeyVaultService : IKeyVaultService
     {
         try
         {
-            var secret = await _secretClient.GetSecretAsync(secretName);
+            var secret = await _secretClient.GetSecretAsync(secretName).ConfigureAwait(false);
             return secret.Value.Value;
         }
         catch (RequestFailedException)
         {
             #pragma warning disable S112 // General exceptions should never be thrown
+            #pragma warning disable CA2201 // Do not raise reserved exception types
             throw new Exception($"Failed to get secret '{secretName}' from Key Vault: {_secretClient.VaultUri}");
+            #pragma warning restore CA2201 // Do not raise reserved exception types
             #pragma warning restore S112 // General exceptions should never be thrown
         }
     }

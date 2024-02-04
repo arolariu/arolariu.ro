@@ -1,5 +1,6 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.Contracts;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

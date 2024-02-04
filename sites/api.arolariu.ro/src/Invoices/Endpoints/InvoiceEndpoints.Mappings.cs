@@ -42,7 +42,6 @@ public static partial class InvoiceEndpoints
             .ProducesProblem(StatusCodes.Status429TooManyRequests) // TODO: Rate Limiter
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName(nameof(RetrieveAllInvoicesAsync))
-            .RequireAuthorization()
             .WithOpenApi();
 
         router

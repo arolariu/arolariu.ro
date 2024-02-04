@@ -1,8 +1,8 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using System.Collections.Generic;
-using arolariu.Backend.Domain.Invoices.DDD.Contracts;
 
 using System.Threading.Tasks;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker
 {

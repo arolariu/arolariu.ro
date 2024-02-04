@@ -1,6 +1,21 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using arolariu.Backend.Common.Options;
+using arolariu.Backend.Common.Telemetry.Logging;
+using arolariu.Backend.Common.Telemetry.Metering;
+using arolariu.Backend.Common.Telemetry.Tracing;
+using arolariu.Backend.Common.Telemetry;
+using arolariu.Backend.Core.Domain.General.Services.Swagger;
+
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics.CodeAnalysis;
+using arolariu.Backend.Common.Services.KeyVault;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.Extensions.Configuration;
+using Azure.Identity;
+using System;
+using Azure.Extensions.AspNetCore.Configuration.Secrets;
 
 namespace arolariu.Backend.Core.Domain.General.Extensions;
 
@@ -34,15 +49,86 @@ internal static partial class WebApplicationBuilderExtensions
     /// <seealso cref="IServiceCollection"/>
     public static void AddGeneralDomainConfiguration(this WebApplicationBuilder builder)
     {
-        ConfigureKeyVaultIntegration(builder);
-        ConfigureHttpSettings(builder);
-        ConfigureLocalization(builder);
+        var services = builder.Services;
+        var configuration = builder.Configuration;
 
-        ConfigureSwaggerUI(builder);
-        PopulateConfigurationWithCorrectValues(builder);
-        ConfigureDataLayer(builder);
-        ConfigureHealthChecks(builder);
+        services.AddSingleton<IKeyVaultService, KeyVaultService>();
 
-        ConfigureObservability(builder);
+        configuration.AddEnvironmentVariables();
+        configuration.AddJsonFile("appsettings.json");
+        configuration.AddAzureKeyVault(
+            vaultUri: new Uri(configuration["AzureOptions:KeyVaultEndpoint"]!),
+            credential: new DefaultAzureCredential(),
+            options: new AzureKeyVaultConfigurationOptions()
+            {
+                ReloadInterval = TimeSpan.FromMinutes(30)
+            });
+        configuration.AddAzureAppConfiguration(config =>
+        {
+            config.ConfigureKeyVault(kv =>
+            {
+                kv.SetCredential(new DefaultAzureCredential());
+                kv.SetSecretRefreshInterval(TimeSpan.FromMinutes(30));
+            });
+
+            config.ConfigureClientOptions(options =>
+            {
+                options.Retry.MaxRetries = 5;
+                options.Retry.Mode = Azure.Core.RetryMode.Exponential;
+                options.Retry.MaxDelay = TimeSpan.FromSeconds(30);
+                options.Retry.NetworkTimeout = TimeSpan.FromSeconds(30);
+            });
+
+            config.Connect(configuration["ConfigurationStore"]);
+        });
+        services.Configure<AuthOptions>(configuration.GetSection(nameof(AuthOptions)));
+        services.Configure<AzureOptions>(configuration.GetSection(nameof(AzureOptions)));
+        services.Configure<CommonOptions>(configuration.GetSection(nameof(CommonOptions)));
+
+        services.AddHttpClient();
+        services.AddHttpContextAccessor();
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAllOrigins", builder =>
+            {
+                builder
+                    .AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
+            });
+        });
+
+        services.AddLocalization();
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen(SwaggerConfigurationService.GetSwaggerGenOptions());
+
+        builder.AddTelemetry();
+        builder.AddOTelLogging();
+        builder.AddOTelMetering();
+        builder.AddOTelTracing();
+
+        services.AddHealthChecks();
+
+        services.AddAuthentication(authOptions =>
+        {
+            authOptions.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            authOptions.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            authOptions.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+        }).AddJwtBearer(jwtOptions =>
+        {
+            var authConfig = builder.Configuration.GetSection("AuthOptions");
+            jwtOptions.TokenValidationParameters = new()
+            {
+                ValidIssuer = authConfig["Issuer"],
+                ValidAudience = authConfig["Audience"],
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authConfig["Secret"]!)),
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+            };
+        });
+
+        services.AddAuthorization();
     }
 }

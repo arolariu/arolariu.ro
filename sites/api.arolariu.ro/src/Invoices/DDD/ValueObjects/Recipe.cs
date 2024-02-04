@@ -1,9 +1,10 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace arolariu.Backend.Domain.Invoices.DDD.Contracts;
+namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 /// <summary>
 /// Recipe model.

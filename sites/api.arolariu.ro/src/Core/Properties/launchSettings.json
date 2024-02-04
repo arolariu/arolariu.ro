@@ -3,6 +3,9 @@
     "Console App": {
       "commandName": "Project",
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
       "hotReloadEnabled": true,
       "nativeDebugging": true,
       "use64Bit": true,
@@ -10,13 +13,13 @@
     },
     "Docker App": {
       "commandName": "Docker",
+      "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/",
       "hotReloadEnabled": true,
       "publishAllPorts": true,
-      "launchBrowser": true,
       "use64Bit": true,
       "useSSL": true
     }
   },
-  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "$schema": "https://json.schemastore.org/launchsettings.json"
 }

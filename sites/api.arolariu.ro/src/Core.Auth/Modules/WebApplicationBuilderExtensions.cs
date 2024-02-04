@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using arolariu.Backend.Common.Options;
+
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.VisualBasic;
 
 using System;
 using System.Text;
@@ -18,53 +20,18 @@ public static class WebApplicationBuilderExtensions
     /// Configure authentication and authorization services.
     /// </summary>
     /// <param name="builder"></param>
-    public static void AddAuthServices(this WebApplicationBuilder builder)
+    /// <param name="azureOptions"></param>
+    /// <param name="commonOptions"></param>
+    public static void AddAuthServices(
+        this WebApplicationBuilder builder,
+        IOptions<AzureOptions> azureOptions,
+        IOptions<CommonOptions> commonOptions)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        builder.AddAuthN();
-        builder.AddAuthZ();
-    }
+        ArgumentNullException.ThrowIfNull(azureOptions);
+        ArgumentNullException.ThrowIfNull(commonOptions);
+        var services = builder.Services;
 
-    /// <summary>
-    /// Configure authentication services.
-    /// </summary>
-    /// <param name="builder"></param>
-    private static void AddAuthN(this WebApplicationBuilder builder)
-    {
-        var jwtAudience = builder.Configuration["JWT:Audience"]!;
-        var jwtIssuers = new [] {"clerk.arolariu.ro", "clerk.dev.arolariu.ro"};
-        var jwtSecret = builder.Configuration["JWT:Secret"]!;
-
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
-
-        builder.Services
-        .AddAuthentication(authOptions =>
-        {
-            authOptions.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            authOptions.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            authOptions.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(jwtOptions =>
-        {
-            jwtOptions.TokenValidationParameters = new()
-            {
-                ValidIssuers = jwtIssuers,
-                ValidAudience = jwtAudience,
-                IssuerSigningKey = signingKey,
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-            };
-        });
-    }
-
-    /// <summary>
-    /// Configure authorization services.
-    /// </summary>
-    /// <param name="builder"></param>
-    private static void AddAuthZ(this WebApplicationBuilder builder)
-    {
-        builder.Services.AddAuthorization();
+        
     }
 }

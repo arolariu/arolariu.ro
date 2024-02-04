@@ -13,7 +13,7 @@ public abstract class BaseEntity<T> : IAuditable
     /// The identity of the entity.
     /// </summary>
     [JsonPropertyOrder(0)]
-    public T Id { get; init; }
+    public T? Id { get; init; }
 
     /// <inheritdoc/>
     [JsonPropertyOrder(byte.MaxValue - 10)]

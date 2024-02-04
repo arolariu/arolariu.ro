@@ -1,6 +1,5 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
-using arolariu.Backend.Domain.Invoices.DDD.Contracts;
 using Azure;
 using Azure.AI.OpenAI;
 
@@ -12,6 +11,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using Microsoft.Extensions.Options;
+using arolariu.Backend.Common.Options;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 
@@ -27,19 +29,13 @@ public partial class AzureOpenAiBroker : IAnalysisBroker
     /// <summary>
     /// Constructor.
     /// </summary>
-    /// <param name="configuration"></param>
-    public AzureOpenAiBroker(IConfiguration configuration)
+    /// <param name="options"></param>
+    public AzureOpenAiBroker(IOptionsMonitor<AzureOptions> options)
     {
-        ArgumentNullException.ThrowIfNull(configuration);
-        var openAiEndpoint = configuration["Azure:OpenAI:EndpointName"]
-            ?? throw new ArgumentNullException(nameof(configuration));
-
-        var openAiKey = configuration["Azure:OpenAI:EndpointKey"]
-            ?? throw new ArgumentNullException(nameof(configuration));
-
+        ArgumentNullException.ThrowIfNull(options);
         openAIClient = new OpenAIClient(
-            new Uri(openAiEndpoint),
-            new AzureKeyCredential(openAiKey));
+            new Uri(options.CurrentValue.OpenAIEndpoint),
+            new AzureKeyCredential(options.CurrentValue.OpenAIKey));
     }
 
     /// <inheritdoc/>

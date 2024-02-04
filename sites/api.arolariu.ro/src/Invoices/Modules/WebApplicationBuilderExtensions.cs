@@ -1,4 +1,5 @@
-﻿using arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
+﻿using arolariu.Backend.Common.Options;
+using arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.ReceiptRecognizerBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
@@ -46,7 +47,7 @@ public static class WebApplicationBuilderExtensions
         builder.Services.AddDbContextPool<InvoiceNoSqlBroker>(options =>
         {
             options.UseCosmos(
-                connectionString: builder.Configuration["Azure:NoSQL-DB:ConnectionString"]!,
+                connectionString: builder.Configuration[$"{nameof(AzureOptions)}:NoSqlConnectionString"]!,
                 databaseName: "arolariu");
         });
 

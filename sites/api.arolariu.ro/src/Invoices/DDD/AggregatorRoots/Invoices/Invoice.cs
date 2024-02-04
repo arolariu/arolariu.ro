@@ -1,6 +1,5 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
-using arolariu.Backend.Domain.Invoices.DDD.Contracts;
 
 using System;
 using System.Collections.Generic;
@@ -10,6 +9,7 @@ using arolariu.Backend.Common.DDD.Contracts;
 using arolariu.Backend.Domain.Invoices.DTOs;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
