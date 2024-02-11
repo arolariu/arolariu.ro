@@ -7,7 +7,7 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
-namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
+namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 
 public partial class InvoiceNoSqlBroker
 {

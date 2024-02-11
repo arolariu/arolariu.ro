@@ -1,4 +1,5 @@
-﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+﻿using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
@@ -12,7 +13,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
+namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 
 /// <summary>
 /// The Entity Framework Invoice SQL broker.

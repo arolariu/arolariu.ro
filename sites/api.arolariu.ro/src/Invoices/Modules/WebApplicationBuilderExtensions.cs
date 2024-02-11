@@ -1,14 +1,19 @@
 ﻿using arolariu.Backend.Common.Options;
-using arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.ReceiptRecognizerBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
+using arolariu.Backend.Domain.Invoices.Modules.Http.OpenAI;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration;
+
+using Azure.AI.FormRecognizer.DocumentAnalysis;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
@@ -51,10 +56,19 @@ public static class WebApplicationBuilderExtensions
                 databaseName: "arolariu");
         });
 
+        // HTTP typed client services:
+        builder.Services.AddHttpClient<OpenAIService>((serviceProvider, httpClient) =>
+        {
+            var azureOptions = serviceProvider.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue;
+            httpClient.BaseAddress = new Uri($"{azureOptions.OpenAIEndpoint}/openai");
+            httpClient.DefaultRequestHeaders.Add("Content-Type", "application/json");
+            httpClient.DefaultRequestHeaders.Add("api-key", azureOptions.OpenAIKey);
+        });
+
         // Broker services:
-        builder.Services.AddScoped<IAnalysisBroker, AzureOpenAiBroker>();
+        builder.Services.AddScoped<IClassifierBroker, AzureOpenAiBroker>();
+        builder.Services.AddScoped<IIdentifierBroker<AnalyzedDocument>, AzureFormRecognizerBroker>();
         builder.Services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
-        builder.Services.AddScoped<IReceiptRecognizerBroker, AzureFormRecognizerBroker>();
         builder.Services.AddScoped<ITranslatorBroker, AzureTranslatorBroker>();
 
         // Foundation services:

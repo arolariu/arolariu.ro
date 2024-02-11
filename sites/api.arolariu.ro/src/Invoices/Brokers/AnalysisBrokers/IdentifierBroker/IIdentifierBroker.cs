@@ -5,13 +5,13 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace arolariu.Backend.Domain.Invoices.Brokers.ReceiptRecognizerBroker
+namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker
 {
     /// <summary>
     /// Interface for the receipt recognizer broker.
     /// This interface is used to recognize the merchant, payment information and products from an invoice photo.
     /// </summary>
-    public interface IReceiptRecognizerBroker<in TPhoto>
+    public interface IIdentifierBroker<in TPhoto>
         where TPhoto : class
     {
         /// <summary>

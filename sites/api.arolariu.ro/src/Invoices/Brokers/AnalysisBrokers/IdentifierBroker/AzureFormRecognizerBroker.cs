@@ -6,14 +6,13 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.Brokers.ReceiptRecognizerBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using Microsoft.Extensions.Options;
 using arolariu.Backend.Common.Options;
 using System.Linq;
 
-namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
+namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
 
 /// <summary>
 /// The <see cref="AzureFormRecognizerBroker"/> class.
@@ -23,7 +22,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
 /// This package is used to interact with the Azure Form Recognizer service.
 /// </summary>
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
-public partial class AzureFormRecognizerBroker : IReceiptRecognizerBroker<AnalyzedDocument>
+public partial class AzureFormRecognizerBroker : IIdentifierBroker<AnalyzedDocument>
 {
     private readonly DocumentAnalysisClient client;
 
