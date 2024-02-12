@@ -6,14 +6,13 @@ interface Props { className?: string }
 
 export default async function Navigation({className}: Readonly<Props>) {
 	const {user, isAuthenticated} = await fetchUser();
-	// TODO: user identifier should be a GUID.
 
 	return (
 		<ul className={className}>
 			<li>
 				<Link href={`${SITE_URL}/domains`} className="mr-5 indicator hover:text-yellow-300">
 					Domains
-					<sub className="mx-2 badge badge-primary indicator-end">new</sub>
+					<div className="pb-1"><sub className="ml-2 badge badge-primary indicator-end">new</sub></div>
 				</Link>
 			</li>
 			<li>
