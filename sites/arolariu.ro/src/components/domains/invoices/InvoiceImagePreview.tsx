@@ -1,15 +1,12 @@
 import Image from "next/image";
 
-export default function CreateInvoiceImagePreview({image}: {image: Blob}) {
-	if (image != null) {
+export default function InvoiceImagePreview({ image }: { image: Blob }) {
+    const allowedFormats = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
+	if (image != null && allowedFormats.includes(image.type)) {
 		if (image.type === "application/pdf") {
 			return (
 				<div className="w-2/3 mx-auto mb-10 md:w-1/2 lg:w-1/3 xl:w-1/4">
-					<iframe
-						title="Submitted receipt PDF"
-						src={URL.createObjectURL(image)}
-						width="100%"
-						height="600px"></iframe>
+					<iframe title="Submitted receipt PDF" src={URL.createObjectURL(image)} width="100%" height="600px"></iframe>
 				</div>
 			);
 		} else {
@@ -34,4 +31,4 @@ export default function CreateInvoiceImagePreview({image}: {image: Blob}) {
 			/>
 		);
 	}
-};
+}
