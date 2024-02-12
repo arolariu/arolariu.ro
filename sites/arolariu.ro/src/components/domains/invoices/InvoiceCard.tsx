@@ -6,7 +6,7 @@ interface Props {
 	invoice: Invoice;
 }
 
-export const ViewInvoiceCard = ({ invoice }: Props) => {
+export const InvoiceCard = ({ invoice }: Props) => {
 	const isPdfImage = invoice.photoLocation.endsWith(".pdf");
 
 	return (

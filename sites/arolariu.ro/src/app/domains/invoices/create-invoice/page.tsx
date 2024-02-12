@@ -12,11 +12,11 @@ export const metadata: Metadata = {
 };
 
 export default async function CreateInvoicePage() {
-	const {isAuthenticated} = await fetchUser();
+	const {user, isAuthenticated} = await fetchUser();
 
 	return (
 		<main>
-			<RenderInvoiceScreen />
+			<RenderInvoiceScreen user={user}/>
 			{!isAuthenticated && (
 				<div className="flex flex-col mx-auto mb-32">
 					<p className="mb-4 text-2xl text-center">In order to save your invoice, please create an account or sign in.</p>

@@ -5,7 +5,7 @@ import Link from "next/link";
  export default async function RenderForbiddenScreen() {
  	return (
  		<section className="container flex flex-col items-center justify-center px-5 py-12 mx-auto">
- 			<Image src="/images/auth/forbidden.svg" alt="Forbidden SVG" className="object-cover object-center w-full h-full mb-4 rounded md:w-3/6 lg:w-2/6" />
+ 			<Image src="/images/auth/forbidden.svg" alt="Forbidden SVG" className="object-cover object-center w-full h-full mb-4 rounded md:w-3/6 lg:w-2/6" width={500} height={500}/>
  			<div className="w-full text-center lg:w-2/3">
  				<h1 className="inline mb-4 text-3xl font-medium text-transparent bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text sm:text-4xl">
  					You&apos;re missing out on the fun!
@@ -17,7 +17,7 @@ import Link from "next/link";
  					By creating an account on our platform or signing in with an existing account, you will be
  					able to access our whole arsenal of services, including this one.
  				</p>
- 				<div className="flex justify-center">
+ 				<div className="flex justify-center mb-12">
  					<Link
  						href={`${SITE_URL}/auth`}
  						className="inline-flex px-6 py-2 text-lg text-white bg-indigo-500 border-0 rounded hover:bg-indigo-600 focus:outline-none">

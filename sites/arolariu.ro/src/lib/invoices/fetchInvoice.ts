@@ -1,12 +1,12 @@
 import Invoice from "@/types/invoices/Invoice";
 import { API_URL } from "../../constants";
 import fetchUser from "../fetchUser";
-import generateGuestJwt from "../generateGuestJwt";
+import generateJWT from "../generateJWT";
 
 export default async function fetchInvoice(id:string) : Promise<Invoice | null>{
     const {user, isAuthenticated} = await fetchUser();
     const userIdentifier = isAuthenticated ? user?.id : "00000000-0000-0000-0000-000000000000";
-    const userAuthorization = isAuthenticated ? user?.id : await generateGuestJwt(); // TODO: check JWT.
+    const userAuthorization = isAuthenticated ? user?.id : await generateJWT(); // TODO: check JWT.
 
     const response = await fetch(`${API_URL}/users/${userIdentifier}/invoices/${id}`, {
         method: "GET",

@@ -4,6 +4,7 @@
 
 import InvoiceImagePreview from "@/components/domains/invoices/InvoiceImagePreview";
 import AlertNotification from "@/components/domains/invoices/UploadAlertNotification";
+import { User } from "@clerk/backend";
 import Link from "next/link";
 import {useState} from "react";
 
@@ -58,7 +59,7 @@ const TopBarComponent = ({uploadIsDone}: {uploadIsDone: boolean}) => {
 	);
 };
 
-export default function RenderInvoiceScreen() {
+export default function RenderInvoiceScreen({user}: Readonly<{user: User | null}>) {
 	const [imageState, setImageState] = useState<ImageState>({
 		blob: null as unknown as Blob,
 		identifier: "",
@@ -72,7 +73,11 @@ export default function RenderInvoiceScreen() {
 	};
 
 	const handleImageTransport = async () => {
-		setImageState({...imageState, identifier: "replace-me", status: ImageStatus.SENT_TO_STORAGE});
+		setImageState({ ...imageState, identifier: "replace-me", status: ImageStatus.SENT_TO_STORAGE });
+		console.log(user);
+		// TODO: Step 1. Send the image to the Azure Storage account.
+		// TODO: Step 2. Create a new object in the backend that represents this invoice.
+		// TODO: Step 3. Call the analysis endpoint to process the newly uploaded invoice.
 	};
 
 	// Return one of the following two possible scenes:
