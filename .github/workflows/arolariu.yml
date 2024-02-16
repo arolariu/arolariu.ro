@@ -39,7 +39,7 @@ jobs:
           touch .env
           echo "SITE_ENV=PRODUCTION" > .env
           echo "COMMIT_SHA=${{ github.sha }}" >> .env
-          echo "TIMESTAMP=$(date -I)" >> .env
+          echo "TIMESTAMP=$(date -u  +"%Y-%m-%dT%H:%M:%S"Z)" >> .env
           echo "SITE_NAME=arolariu.ro" >> .env
           echo "SITE_URL=https://arolariu.ro" >> .env
           echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" >> .env
