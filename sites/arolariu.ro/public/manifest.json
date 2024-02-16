@@ -1,13 +1,19 @@
 {
     "$schema": "https://developer.mozilla.org/en-US/docs/Web/Manifest",
+    "background_color": "#000000",
+    "categories": [
+        "education",
+        "productivity",
+        "utilities"
+    ],
+    "description": "The `arolariu.ro` website is a personal website of Alexandru-Razvan Olariu, a software engineer from Romania.",
+    "display": "standalone",
     "name": "arolariu.ro",
     "short_name": "arolariu",
+    "orientation": "portrait",
     "start_url": "https://arolariu.ro/",
     "scope": "/",
-    "display": "standalone",
     "theme_color": "#9013fe",
-    "background_color": "#000000",
-    "description": "The `arolariu.ro` website is a personal website of Alexandru-Razvan Olariu, a software engineer from Romania.",
     "icons": [
         {
             "src": "manifest/icon-192x192.png",
