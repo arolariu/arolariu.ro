@@ -1,6 +1,6 @@
 /** @format */
 
-import RenderDomainService from "@/components/domains/RenderDomainService";
+import DomainServiceCard from "@/components/Cards/DomainServiceCard";
 import {Metadata} from "next";
 
 export const metadata: Metadata = {
@@ -33,7 +33,7 @@ export default async function DomainsHomepage() {
 				</div>
 
 				<div className="flex flex-row flex-wrap">
-					<RenderDomainService
+					<DomainServiceCard
 						title="Invoice Management System"
 						description="This domain space service assists with the digital transformation of physical receipts. It allows users to upload receipts, and get carefully-crafted insights into their spending habits."
 						linkTo="/domains/invoices"

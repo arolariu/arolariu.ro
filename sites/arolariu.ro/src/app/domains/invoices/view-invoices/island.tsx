@@ -1,6 +1,6 @@
 "use client";
 
-import {InvoiceCard} from "@/components/domains/invoices/InvoiceCard";
+import {InvoiceCard} from "@/components/Cards/InvoiceCard";
 import {useZustandStore} from "@/hooks/stateStore";
 import Invoice from "@/types/invoices/Invoice";
 import Link from "next/link";

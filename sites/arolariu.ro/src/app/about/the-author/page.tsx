@@ -1,4 +1,4 @@
-import Competence from "@/components/about/the-author/Competence";
+import Competence from "@/components/Features/Competence";
 import {Metadata} from "next";
 import Image from "next/image";
 import Link from "next/link";
