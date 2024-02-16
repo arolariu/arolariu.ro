@@ -9,7 +9,7 @@
 		"diagnostics": true,
 		"extendedDiagnostics": true,
 		"pretty": true,
-		"lib": ["dom", "dom.iterable", "esnext", "webworker"],
+		"lib": ["webworker", "dom", "dom.iterable", "esnext", "ES6"],
 		"allowJs": true,
 		"typeRoots": ["./node_modules/@types"],
 		"skipLibCheck": true,
