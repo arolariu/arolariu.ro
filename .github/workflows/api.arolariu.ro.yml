@@ -3,10 +3,8 @@ name: API platform (api.arolariu.ro) deployment
 
 on:
   push:
-    branches:
-      - main
-    paths: 
-      - sites/api.arolariu/*
+    branches: ["main"]
+    paths: ["sites/api.arolariu/**"]
   workflow_dispatch:
 
 
