@@ -13,7 +13,7 @@ interface Props {
 export default function EventCard({title, description, date, location, imagePath, formLink}: Readonly<Props>) {
 	return (
 		<Link href={formLink ?? ""}>
-			<div className="overflow-hidden bg-white rounded-lg shadow-lg dark:bg-gray-800 2xsm:w-full md:w-1/2 lg:w-1/3 2xl:w-1/4">
+			<div className="bg-white rounded-lg shadow-lg  dark:bg-gray-800">
 				<Image
 					className="object-fill object-center w-full"
 					src={imagePath ?? "https://dummyimage.com/720x400&text=TBA"}
