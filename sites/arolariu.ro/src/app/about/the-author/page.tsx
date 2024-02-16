@@ -1,5 +1,4 @@
 import Competence from "@/components/about/the-author/Competence";
-import ContactForm from "@/components/about/the-author/ContactForm";
 import {Metadata} from "next";
 import Image from "next/image";
 import Link from "next/link";
