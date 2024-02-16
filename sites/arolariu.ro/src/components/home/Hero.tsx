@@ -10,7 +10,7 @@ export default function Hero() {
 						Welcome to <span className="font-bold">arolariu.ro</span>
 					</span>
 				</h1>
-				<p className="max-w-lg mt-4 text-xl text-gray-400 lg:max-w-2xl 2xsm:text-center md:text-left">
+				<p className="max-w-lg mt-4 text-xl text-gray-500 lg:max-w-2xl 2xsm:text-center md:text-left">
 					This platform was built by Alexandru-Razvan Olariu as a playground for new technologies. The platform is built
 					using state-of-the-art, enterprise-grade technologies. <br /> <br />
 					You are welcome to explore all of the applications and services that are hosted on this domain space.
