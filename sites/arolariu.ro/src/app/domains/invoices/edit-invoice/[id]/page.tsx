@@ -15,12 +15,13 @@ export const metadata: Metadata = {
 	description: "Edit an invoice from the invoice management system.",
 };
 
-export default async function EditInvoicePage({params}: Readonly<Props>) {
-	const invoice = await fetchInvoice(params.id);
-	const {isAuthenticated} = await fetchUser();
+export default async function EditInvoicePage({ params }: Readonly<Props>) {
+	const { user, isAuthenticated } = await fetchUser();
+	const invoice = await fetchInvoice(params.id, user);
 
 	if (!isAuthenticated) { return <RenderForbiddenScreen />; }
-
+	if (!invoice) { return <RenderForbiddenScreen />; }
+	
 	return (
 		<main>
 			<RenderEditInvoicePage invoice={invoice}/>

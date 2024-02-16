@@ -1,6 +1,5 @@
-// @ts-check
-
 /**
+ * @format
  * @type {import("next").NextConfig}
  */
 const nextConfig = {
@@ -25,7 +24,7 @@ const nextConfig = {
 		],
 	},
 
-	output: 'standalone',
+	output: "standalone",
 };
 
 module.exports = nextConfig;

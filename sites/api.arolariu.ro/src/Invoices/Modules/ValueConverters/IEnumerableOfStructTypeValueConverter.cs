@@ -1,5 +1,4 @@
-﻿using arolariu.Backend.Domain.Invoices.DDD.Contracts;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;

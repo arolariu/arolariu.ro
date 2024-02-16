@@ -1,9 +1,5 @@
 ﻿using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.Contracts;
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
-
-using Microsoft.AspNetCore.Http;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 using System;
 using System.Collections.Generic;

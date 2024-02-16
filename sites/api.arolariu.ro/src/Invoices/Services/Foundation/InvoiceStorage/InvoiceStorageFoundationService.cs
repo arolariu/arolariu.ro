@@ -1,4 +1,4 @@
-﻿using arolariu.Backend.Domain.Invoices.Brokers.InvoiceSqlBroker;
+﻿using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DTOs;
 

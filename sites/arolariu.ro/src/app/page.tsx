@@ -6,11 +6,11 @@ export default async function Home() {
 		<main>
 			<section className="py-12 sm:pb-16 lg:pb-20 xl:pb-24">
 				<Hero />
-			</section>
+			</section> {/* Hero section */}
 
 			<section className="py-12 sm:pb-16 lg:pb-20 xl:pb-24">
 				<FeaturesList />
-			</section>
+			</section> {/* Features section */}
 		</main>
 	);
 }

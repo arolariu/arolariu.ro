@@ -25,14 +25,13 @@ public static class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.AddGeneralDomainConfiguration();
-        builder.AddAuthServices();
         builder.AddInvoicesDomainConfiguration();
 
         var app = builder.Build();
         app.AddGeneralApplicationConfiguration();
-        app.UseAuthServices();
-        app.AddGeneralApplicationEndpoints();
         app.AddInvoiceDomainConfiguration();
+
+
         app.Run();
     }
 }

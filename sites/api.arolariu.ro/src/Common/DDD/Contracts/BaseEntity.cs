@@ -13,33 +13,33 @@ public abstract class BaseEntity<T> : IAuditable
     /// The identity of the entity.
     /// </summary>
     [JsonPropertyOrder(0)]
-    public T Id { get; init; }
+    public T? Id { get; init; }
 
     /// <inheritdoc/>
-    [JsonPropertyOrder(994)]
+    [JsonPropertyOrder(byte.MaxValue - 10)]
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 
     /// <inheritdoc/>
-    [JsonPropertyOrder(995)]
+    [JsonPropertyOrder(byte.MaxValue - 09)]
     public Guid CreatedBy { get; init; }
 
     /// <inheritdoc/>
-    [JsonPropertyOrder(996)]
+    [JsonPropertyOrder(byte.MaxValue - 08)]
     public DateTimeOffset LastUpdatedAt { get; protected set; } = DateTimeOffset.UtcNow;
 
     /// <inheritdoc/>
-    [JsonPropertyOrder(997)]
+    [JsonPropertyOrder(byte.MaxValue - 07)]
     public Guid LastUpdatedBy { get; protected set; }
 
     /// <inheritdoc/>
-    [JsonPropertyOrder(998)]
+    [JsonPropertyOrder(byte.MaxValue - 06)]
     public int NumberOfUpdates { get; protected set; } = 0;
 
     /// <inheritdoc/>
-    [JsonPropertyOrder(999)]
+    [JsonPropertyOrder(byte.MaxValue - 05)]
     public bool IsImportant { get; set; } = false;
 
     /// <inheritdoc/>
-    [JsonPropertyOrder(1000)]
+    [JsonPropertyOrder(byte.MaxValue - 04)]
     public bool IsSoftDeleted { get; protected set; } = false;
 }

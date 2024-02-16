@@ -1,15 +1,12 @@
-﻿using arolariu.Backend.Domain.Invoices.Brokers.InvoiceAnalysisBroker;
-using arolariu.Backend.Domain.Invoices.Brokers.ReceiptRecognizerBroker;
+﻿using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using Azure.AI.FormRecognizer.DocumentAnalysis;
 
-using System;
-using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 
 namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
@@ -19,9 +16,9 @@ namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 /// </summary>
 public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationService
 {
-    private readonly IAnalysisBroker analysisBroker;
+    private readonly IClassifierBroker analysisBroker;
     private readonly ITranslatorBroker translatorBroker;
-    private readonly IReceiptRecognizerBroker receiptRecognizerBroker;
+    private readonly IIdentifierBroker<AnalyzedDocument> receiptRecognizerBroker;
     private readonly ILogger<IInvoiceAnalysisFoundationService> logger;
 
     /// <summary>
@@ -32,9 +29,9 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
     /// <param name="receiptRecognizerBroker"></param>
     /// <param name="loggerFactory"></param>
     public InvoiceAnalysisFoundationService(
-        IAnalysisBroker analysisBroker,
+        IClassifierBroker analysisBroker,
         ITranslatorBroker translatorBroker,
-        IReceiptRecognizerBroker receiptRecognizerBroker,
+        IIdentifierBroker<AnalyzedDocument> receiptRecognizerBroker,
         ILoggerFactory loggerFactory)
     {
         this.analysisBroker = analysisBroker;
