@@ -10,9 +10,13 @@ export default async function EventsPage() {
 					<span className="inline-block w-6 h-2 mx-1 bg-blue-500 rounded-full"></span>
 					<span className="inline-block w-3 h-2 bg-blue-500 rounded-full"></span>
 				</div>
+				<p className="2xsm:hidden md:block md:text-center">
+					This section contains the upcoming events that will be hosted by <code>arolariu.ro</code>.<br />
+					The events are designed to be fun, accessible, interesting and valuable.
+				</p>
 			</section>
 
-			<section className="flex flex-wrap lg:flex-nowrap 2xsm:gap-4 md:gap-8 md:p-4">
+			<section className="flex flex-wrap 2xsm:gap-4 md:gap-8 md:p-4 lg:flex-nowrap">
 				<EventCard
 					title="System Design 101 - L100"
 					description="Learn the basics of system design and how to approach any architecture interview with no stress."
@@ -49,7 +53,7 @@ export default async function EventsPage() {
 			</section>
 
 			{/** TODO: fix the lg:w-1/3 CSS when more events will pop-up. */}
-			<section className="flex flex-wrap lg:flex-nowrap 2xsm:gap-4 md:gap-8 md:p-4 lg:w-1/3">
+			<section className="flex flex-wrap 2xsm:gap-4 md:gap-8 md:p-4 lg:w-1/3 lg:flex-nowrap">
 				<EventCard
 					title="Learn how to program in C/C++11"
 					description="
