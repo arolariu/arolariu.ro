@@ -9,7 +9,7 @@
 		"diagnostics": true,
 		"extendedDiagnostics": true,
 		"pretty": true,
-		"lib": ["webworker", "dom", "dom.iterable", "esnext", "ES6"],
+		"lib": ["dom", "dom.iterable", "esnext", "webworker"],
 		"allowJs": true,
 		"typeRoots": ["./node_modules/@types"],
 		"skipLibCheck": true,
@@ -23,7 +23,6 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"jsx": "preserve",
-		"types": ["@serwist/next/typings"],
 		"plugins": [
 			{
 				"name": "next"
@@ -33,15 +32,6 @@
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": [
-		"next-env.d.ts",
-		".next/types/**/*.ts",
-		"**/*.ts",
-		"**/*.tsx",
-		"src/components/my-profile/RenderProfileMenu.tsx",
-		"src/components/my-profile/RenderProfileMenuItem.tsx",
-		"src/components/domains/invoices/view-invoice/ViewInvoiceImageModal.tsx",
-		"src/components/domains/invoices/edit-invoice/EditInvoiceItemCard.tsx"
-	],
+	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
 	"exclude": ["node_modules"]
 }
