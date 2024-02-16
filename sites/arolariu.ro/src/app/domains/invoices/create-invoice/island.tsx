@@ -26,7 +26,7 @@ const TopBarComponent = ({uploadIsDone}: {uploadIsDone: boolean}) => {
 	return (
 		<div className="flex flex-wrap mx-auto mb-20 2xsm:flex-col md:flex-row">
 			<div
-				className={`inline-flex 2xsm:w-full md:w-1/2 items-center rounded-t border-b-2 py-3 font-medium tracking-wider sm:w-auto sm:justify-start sm:px-6
+				className={`inline-flex 2xsm:w-full md:w-1/2 items-center rounded-t 2xsm:my-1 md:my-0 2xsm:border-b-0 md:border-b-2 py-3 font-medium tracking-wider sm:w-auto sm:justify-start sm:px-6
                     ${uploadIsDone == false ? " border-indigo-500 bg-gray-100 text-indigo-500 " : " border-gray-200 "}`}>
 				<svg
 					fill="none"
@@ -41,7 +41,7 @@ const TopBarComponent = ({uploadIsDone}: {uploadIsDone: boolean}) => {
 				UPLOAD
 			</div>
 			<div
-				className={`inline-flex 2xsm:w-full md:w-1/2 items-center rounded-t border-b-2 py-3 font-medium tracking-wider sm:w-auto sm:justify-start sm:px-6
+				className={`inline-flex 2xsm:w-full md:w-1/2 items-center rounded-t 2xsm:my-1 md:my-0 2xsm:border-b-0 md:border-b-2 py-3 font-medium tracking-wider sm:w-auto sm:justify-start sm:px-6
                     ${uploadIsDone == true ? " border-indigo-500 bg-gray-100 text-indigo-500 " : " border-gray-200 "}`}>
 				<svg
 					fill="none"
