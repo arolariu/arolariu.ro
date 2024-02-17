@@ -14,7 +14,7 @@ export default async function Header() {
 				<div className="navbar-start">
 					<div className="dropdown">
 						<GiHamburgerMenu tabIndex={0} className="w-full h-full btn btn-circle btn-ghost lg:hidden" />
-						<Navigation className="menu dropdown-content menu-sm lg:ml-[12%]" />
+						<Navigation className="menu dropdown-content menu-sm lg:ml-[12%] bg-white dark:bg-black" />
 					</div>
 
 					<Link href={SITE_URL} className="flex items-center ml-2 font-medium">
