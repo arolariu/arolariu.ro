@@ -1,8 +1,14 @@
 import EventCard from "@/components/Cards/EventCard";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+	title: "Events",
+	description: "Upcoming events that will be hosted by arolariu.ro",
+};
 
 export default async function EventsPage() {
 	return (
-		<main className="m-20">
+		<main className="p-20">
 			<section>
 				<h1 className="my-8 font-bold text-center 2xsm:text-2xl xsm:text-3xl md:text-4xl">Upcoming events</h1>
 				<div className="flex justify-center mx-auto my-12">

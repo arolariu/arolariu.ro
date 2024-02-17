@@ -25,7 +25,7 @@ export default async function AuthorPage() {
 			</section> {/* Title */}
 
 			<section>
-				<article className="p-2 text-2xl 2xsm:ml-2 md:ml-0 2xsm:text-center md:text-left">
+				<article className="text-center 2xsm:text-lg lg:text-xl 2xl:text-2xl 2xl:p-16 2xsm:p-2">
 					Alexandru-Razvan Olariu is the author of the platform that you are currently browsing.
 					<br /> <br />
 					Alexandru is a {new Date().getFullYear() - 2000} years old software engineer and solution architect. He
