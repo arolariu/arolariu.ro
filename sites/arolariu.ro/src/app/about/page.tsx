@@ -61,7 +61,7 @@ export default async function AboutPage() {
 					</p>
 					<Link href="/about/the-platform">
 						<button className="flex px-5 py-2 mx-auto mt-6 text-white bg-indigo-500 border-0 rounded hover:bg-indigo-600 focus:outline-none">
-							Learn more...
+							Learn more about the platform...
 						</button>
 					</Link>
 				</div>
@@ -87,7 +87,7 @@ export default async function AboutPage() {
 					</p>
 					<Link href="/about/the-author">
 						<button className="flex px-5 py-2 mx-auto mt-6 text-white bg-indigo-500 border-0 rounded hover:bg-indigo-600 focus:outline-none">
-							Learn more...
+							Learn more about the author...
 						</button>
 					</Link>
 				</div>

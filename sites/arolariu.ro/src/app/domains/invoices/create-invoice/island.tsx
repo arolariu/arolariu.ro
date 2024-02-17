@@ -103,7 +103,7 @@ export default function RenderInvoiceScreen({user}: Readonly<{user: User | null}
 							<input
 								type="file"
 								name="file"
-								className="w-full max-w-xs file-input file-input-bordered"
+								className="w-full max-w-xs bg-white dark:bg-black file-input file-input-bordered"
 								title="Test"
 								onChange={handleImageUpload}
 							/>

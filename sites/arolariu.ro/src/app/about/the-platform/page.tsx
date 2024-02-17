@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
 	title: "The Platform",
-	description: "Learn more about the platform.",
+	description: "Learn more about the platform that you are currently on.",
 };
 
 export default async function PlatformPage() {
@@ -59,9 +59,9 @@ export default async function PlatformPage() {
 					<table className="table text-center table-auto table-pin-cols 2xsm:table-xs md:table-lg">
 						<caption className="my-4 text-left caption-top 2xsm:text-lg">Technologies used to build this platform:</caption>
 						<thead>
-							<tr className="font-bold text-black dark:text-white">
-								<th>Technology</th>
-								<th>Usage scenario</th>
+							<tr className="font-bold text-black dark:text-white ">
+								<th className="bg-white dark:bg-black">Technology</th>
+								<th className="bg-white dark:bg-black">Usage scenario</th>
 							</tr>
 						</thead>
 						<tbody className="xl:text-left">
