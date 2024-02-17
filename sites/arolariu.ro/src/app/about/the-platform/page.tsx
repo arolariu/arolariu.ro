@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default async function PlatformPage() {
 	return (
-		<main>
+		<main className="pt-16">
 			<section> {/* Title */}
 				<h1 className="my-8 font-bold text-center 2xsm:text-2xl xsm:text-3xl md:text-4xl">
 					What is <code>arolariu.ro</code>?

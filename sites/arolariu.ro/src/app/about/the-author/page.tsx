@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 
 export default async function AuthorPage() {
 	return (
-		<main>
-			<section className="2xsm:py-12 lg:py-24">
+		<main className="pt-16">
+			<section>
 				<h1 className="font-semibold text-center 2xsm:text-3xl md:text-5xl lg:text-7xl">Meet the author.</h1>
 				<div className="flex justify-center mx-auto mt-6">
 					<span className="inline-block h-2 bg-blue-500 rounded-full w-60"></span>
