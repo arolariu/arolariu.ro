@@ -61,7 +61,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({children}: Readonly<PropsWithChildren<{}>>) {
 	return (
 		<ClerkProvider>
-			<html lang="en" suppressHydrationWarning className={fontFamily.className}>
+			<html lang="en" suppressHydrationWarning className={fontFamily.className} dir="ltr">
 				<body className="text-black bg-white dark:bg-black dark:text-white">
 					<Providers>
 						<Header />

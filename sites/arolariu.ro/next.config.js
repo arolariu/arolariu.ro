@@ -27,4 +27,13 @@ const nextConfig = {
 	output: "standalone",
 };
 
-module.exports = nextConfig;
+// Service Worker for PWA.
+const withSerwist = require("@serwist/next").default({
+	cacheOnFrontEndNav: true,
+	swSrc: "src/sw.ts",
+	swDest: "public/sw.js",
+	reloadOnOnline: true,
+	disable: process.env.NODE_ENV === "development",
+});
+
+module.exports = withSerwist(nextConfig);

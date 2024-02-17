@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default async function RenderDomainService({
+export default async function DomainServiceCard({
 	title = "Placeholder title",
 	description = "Placeholder descriptipn",
 	imageUrl = "https://dummyimage.com/1203x503",
