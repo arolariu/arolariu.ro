@@ -4,7 +4,7 @@
 
 import InvoiceImagePreview from "@/components/domains/invoices/InvoiceImagePreview";
 import AlertNotification from "@/components/domains/invoices/UploadAlertNotification";
-import { User } from "@clerk/backend";
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import {useState} from "react";
 
@@ -59,7 +59,8 @@ const TopBarComponent = ({uploadIsDone}: {uploadIsDone: boolean}) => {
 	);
 };
 
-export default function RenderInvoiceScreen({user}: Readonly<{user: User | null}>) {
+export default function RenderInvoiceScreen() {
+	const { user } = useUser();
 	const [imageState, setImageState] = useState<ImageState>({
 		blob: null as unknown as Blob,
 		identifier: "",
