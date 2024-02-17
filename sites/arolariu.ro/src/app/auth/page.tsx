@@ -44,6 +44,7 @@ export default async function AuthPage() {
 						<h2 className="mt-6 mb-3 text-2xl font-medium title-font">Continue as an existing member.</h2>
 						<p className="text-base leading-relaxed">
 							Sign in using your member credentials. Your profile will be kept in sync during this browser session.
+							You can benefit from seamless synchronization and a unified experience across all the domains.
 						</p>
 						<Link
 							href="/auth/sign-in/"
