@@ -1,16 +1,26 @@
 # Welcome to the `arolariu.ro` monorepo
 
+![GitHub commit activity](https://img.shields.io/github/commit-activity/y/arolariu/arolariu.ro?style=for-the-badge)
+![GitHub language count](https://img.shields.io/github/languages/count/arolariu/arolariu.ro?style=for-the-badge)
+![GitHub repo size](https://img.shields.io/github/repo-size/arolariu/arolariu.ro?style=for-the-badge)
+
+![GitHub followers](https://img.shields.io/github/followers/arolariu?style=for-the-badge)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/arolariu/arolariu.ro?style=for-the-badge)
+![Lines of code](https://aschey.tech/tokei/github/arolariu/arolariu.ro?style=for-the-badge&label=Lines%20of%20Code)
+
+![Mozilla HTTP Observatory Grade](https://img.shields.io/mozilla-observatory/grade/arolariu.ro?style=for-the-badge&label=MDN%20Security%20Score)
+
+## Platform screenshots
+
 ![Screenshot of the main website](./readme/desktop-platform.png)
 
 ## Table of Contents
 
-- [Welcome to the `arolariu.ro` monorepo](#welcome-to-the-arolariuro-monorepo)
-  - [Table of Contents](#table-of-contents)
-    - [What is this repository?](#what-is-this-repository)
-    - [CI/CD Status](#cicd-status)
-    - [Repository Statistics](#repository-statistics)
-      - [Repository activity](#repository-activity)
-      - [Repository contributors](#repository-contributors)
+- [What is this repository?](#what-is-this-repository)
+- [CI/CD Status](#cicd-status)
+- [Repository Statistics](#repository-statistics)
+  - [Repository activity](#repository-activity)
+  - [Repository contributors](#repository-contributors)
 
 ### What is this repository?
 
