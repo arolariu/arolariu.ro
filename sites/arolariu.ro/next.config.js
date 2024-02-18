@@ -11,8 +11,8 @@ const cspHeader = `
     base-uri 'self' ${trustedDomains};
     form-action 'self' ${trustedDomains};
     frame-ancestors 'none';
-    block-all-mixed-content ${trustedDomains};
-    upgrade-insecure-requests ${trustedDomains};
+    block-all-mixed-content;
+    upgrade-insecure-requests;
 `;
 
 /**
