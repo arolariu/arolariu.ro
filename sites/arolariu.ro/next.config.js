@@ -1,9 +1,9 @@
 // @ts-check
 
 const cspHeader = `
-    default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline';
-    style-src 'self' 'unsafe-inline';
+    default-src 'self' data: gap: https://ssl.gstatic.com;
+    script-src 'self' https://clerk.arolariu.ro;
+    style-src 'self';
     img-src 'self' blob: data:;
     font-src 'self';
     object-src 'none';
@@ -77,7 +77,7 @@ const nextConfig = {
 					},
 					{
 						key: "Referrer-Policy",
-						value: "origin-when-cross-origin",
+						value: "same-origin",
 					},
 				],
 			},
