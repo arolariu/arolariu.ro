@@ -8,6 +8,7 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/arolariu/arolariu.ro?style=for-the-badge)
 ![Lines of code](https://aschey.tech/tokei/github/arolariu/arolariu.ro?style=for-the-badge&label=Lines%20of%20Code)
 
+![Qualys SSL/TLS Grade](http://img.shields.io/badge/Qualys%20SSL%2FTLS%20Grade-A%2B-brightgreen.svg?style=for-the-badge)
 ![Mozilla HTTP Observatory Grade](https://img.shields.io/mozilla-observatory/grade/arolariu.ro?style=for-the-badge&label=MDN%20Security%20Score)
 
 ## Platform screenshots
