@@ -1,17 +1,18 @@
 // @ts-check
 
+const trustedDomains = "arolariu.ro *.arolariu.ro";
 const cspHeader = `
-    default-src 'self' data: gap: https://ssl.gstatic.com;
-    script-src 'self' https://clerk.arolariu.ro;
-    style-src 'self';
-    img-src 'self' blob: data:;
-    font-src 'self';
-    object-src 'none';
-    base-uri 'self';
-    form-action 'self';
-    frame-ancestors 'none';
-    block-all-mixed-content;
-    upgrade-insecure-requests;
+    default-src 'self' ${trustedDomains} https://ssl.gstatic.com;
+    script-src 'self' ${trustedDomains};
+    style-src 'self' ${trustedDomains};
+    img-src 'self' ${trustedDomains} blob: data:;
+    font-src 'self' ${trustedDomains};
+    object-src 'none' ${trustedDomains};
+    base-uri 'self' ${trustedDomains};
+    form-action 'self' ${trustedDomains};
+    frame-ancestors 'none' ${trustedDomains};
+    block-all-mixed-content ${trustedDomains};
+    upgrade-insecure-requests ${trustedDomains};
 `;
 
 /**
