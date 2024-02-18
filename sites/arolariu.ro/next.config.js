@@ -7,10 +7,10 @@ const cspHeader = `
     style-src 'self' ${trustedDomains};
     img-src 'self' ${trustedDomains} blob: data:;
     font-src 'self' ${trustedDomains};
-    object-src 'none' ${trustedDomains};
+    object-src 'none';
     base-uri 'self' ${trustedDomains};
     form-action 'self' ${trustedDomains};
-    frame-ancestors 'none' ${trustedDomains};
+    frame-ancestors 'none'};
     block-all-mixed-content ${trustedDomains};
     upgrade-insecure-requests ${trustedDomains};
 `;
