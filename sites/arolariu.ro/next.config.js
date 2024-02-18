@@ -10,7 +10,7 @@ const cspHeader = `
     object-src 'none';
     base-uri 'self' ${trustedDomains};
     form-action 'self' ${trustedDomains};
-    frame-ancestors 'none'};
+    frame-ancestors 'none';
     block-all-mixed-content ${trustedDomains};
     upgrade-insecure-requests ${trustedDomains};
 `;
