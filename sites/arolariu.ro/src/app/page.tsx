@@ -50,7 +50,7 @@ export default async function Home() {
 			</div>
 
 			<div className="2xsm:hidden xl:absolute xl:right-0 xl:top-0 xl:block">
-				<Image src="/images/3d-illustration.png" alt="Generated 3D image." width={640} height={320} />
+				<Image src="/images/3d-illustration.png" alt="Generated 3D image." width={640} height={320} priority />
 			</div>
 		</div>
 			</section> {/* Hero section */}

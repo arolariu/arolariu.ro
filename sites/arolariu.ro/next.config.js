@@ -1,15 +1,16 @@
 // @ts-check
 
-const trustedDomains = "arolariu.ro *.arolariu.ro";
+const trustedDomains = "arolariu.ro *.arolariu.ro clerk.com *.clerk.com accounts.dev *.accounts.dev";
 const cspHeader = `
-    default-src 'self' ${trustedDomains} https://ssl.gstatic.com;
-    script-src 'self' ${trustedDomains};
-    style-src 'self' ${trustedDomains};
-    img-src 'self' ${trustedDomains} blob: data:;
-    font-src 'self' ${trustedDomains};
+    default-src 'self' ${trustedDomains};
+    script-src 'self' 'unsafe-inline' ${trustedDomains};
+    style-src 'self' 'unsafe-inline' ${trustedDomains};
+    img-src 'self' blob: data: 'unsafe-inline' ${trustedDomains};
+    font-src 'self';
     object-src 'none';
-    base-uri 'self' ${trustedDomains};
-    form-action 'self' ${trustedDomains};
+	worker-src 'self' blob: data:;
+    base-uri 'self';
+    form-action 'self';
     frame-ancestors 'none';
     block-all-mixed-content;
     upgrade-insecure-requests;
@@ -57,7 +58,10 @@ const nextConfig = {
 						value: "max-age=63072000; includeSubDomains; preload",
 					},
 					{
-						key: "Content-Security-Policy",
+						key:
+							process.env.NODE_ENV === "development"
+								? "Content-Security-Policy-Report-Only"
+								: "Content-Security-Policy",
 						value: cspHeader.replace(/\n/g, ""),
 					},
 					{
