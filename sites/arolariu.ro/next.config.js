@@ -73,7 +73,7 @@ const nextConfig = {
 						value: "DENY",
 					},
 					{
-						key: "X-Powered-By",
+						key: "X-Built-With",
 						value: "ReactJS & NextJS",
 					},
 					{
@@ -82,13 +82,14 @@ const nextConfig = {
 					},
 					{
 						key: "Referrer-Policy",
-						value: "same-origin",
+						value: "strict-origin-when-cross-origin",
 					},
 				],
 			},
 		];
 	},
 
+	poweredByHeader: false,
 	output: "standalone",
 };
 
