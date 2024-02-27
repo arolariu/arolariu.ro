@@ -1,4 +1,8 @@
-# Welcome to the `arolariu.ro` monorepo
+<center>
+
+<img width="400" src="readme/logo.png" alt="arolariu.ro logo">
+
+# AROLARIU.RO Monorepo
 
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/y/arolariu/arolariu.ro?style=for-the-badge)
 ![GitHub language count](https://img.shields.io/github/languages/count/arolariu/arolariu.ro?style=for-the-badge)
@@ -10,6 +14,8 @@
 
 ![Qualys SSL/TLS Grade](http://img.shields.io/badge/Qualys%20SSL%2FTLS%20Grade-A%2B-brightgreen.svg?style=for-the-badge)
 ![Mozilla HTTP Observatory Grade](https://img.shields.io/mozilla-observatory/grade/arolariu.ro?style=for-the-badge&label=MDN%20Security%20Score)
+
+</center>
 
 ## Platform screenshots
 
@@ -33,11 +39,11 @@ The `arolariu.ro` repository contains the open-source code for different service
 
 ### CI/CD Status
 
-[![API platform (api.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/api.arolariu.ro.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/api.arolariu.ro.yml)
-
-[![Docs platform (docs.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/docs.arolariu.ro.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/docs.arolariu.ro.yml)
-
-[![About platform (about.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/about.arolariu.ro.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/about.arolariu.ro.yml)
+| Service                                          | Deployment Status                                                                                     |
+|--------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| .NET 8 API                   | [![API platform (api.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/api.arolariu.ro.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/api.arolariu.ro.yml) |
+| DocFX SSG                 | [![Docs platform (docs.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/docs.arolariu.ro.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/docs.arolariu.ro.yml) |
+| Hugo Blog                | [![About platform (about.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/about.arolariu.ro.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/about.arolariu.ro.yml) |
 
 ---
 
