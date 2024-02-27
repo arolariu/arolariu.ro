@@ -2,19 +2,20 @@
 
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
-import {Caudex} from "next/font/google";
+import { Caudex } from "next/font/google";
 
-import {SITE_URL} from "@/constants";
-import {ClerkProvider} from "@clerk/nextjs";
-import {Metadata} from "next";
-import {NextFont} from "next/dist/compiled/@next/font";
-import {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
-import {Author, Icon, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
-import {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
-import {PropsWithChildren, Suspense} from "react";
+import { SITE_URL } from "@/constants";
+import { ClerkProvider } from "@clerk/nextjs";
+import { Metadata } from "next";
+import { NextFont } from "next/dist/compiled/@next/font";
+import { AlternateURLs } from "next/dist/lib/metadata/types/alternative-urls-types";
+import { AppleWebApp } from "next/dist/lib/metadata/types/extra-types";
+import { Author, Icon, Robots, TemplateString } from "next/dist/lib/metadata/types/metadata-types";
+import { OpenGraph } from "next/dist/lib/metadata/types/opengraph-types";
+import { PropsWithChildren, Suspense } from "react";
 import "./globals.css";
 import Loading from "./loading";
-import {Providers} from "./providers";
+import { Providers } from "./providers";
 
 const fontFamily: NextFont = Caudex({
 	weight: "700",
@@ -31,6 +32,12 @@ export const metadata: Metadata = {
 		template: "%s | arolariu.ro",
 	} satisfies TemplateString,
 	description: "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania.",
+	appleWebApp: {
+		capable: true,
+		statusBarStyle: "black-translucent",
+		title: "arolariu.ro",
+	} satisfies AppleWebApp,
+	classification: "Personal",
 	applicationName: "arolariu.ro",
 	authors: {
 		name: "Alexandru-Razvan Olariu",
@@ -123,7 +130,7 @@ export const metadata: Metadata = {
 			sizes: '180x180',
 			url: 'manifest/apple-touch-icon-180x180.png',
 		},
-	] as Icon[],
+	] satisfies Icon[],
 };
 
 export default async function RootLayout({children}: Readonly<PropsWithChildren<{}>>) {
