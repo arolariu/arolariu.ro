@@ -37,9 +37,6 @@ export default async function AuthorPage() {
 					and 10 GB of storage, running Windows 98. He learnt most of his computer skills by playing video games and
 					tinkering with his personal computer. He also learnt a good amount of English and was able to fluently read,
 					write and speak in English by the age of 7. <br /> <br />
-					Alexandru was a talented student in school, always striving to be the best in his class. He was taught by his
-					mother to always be the best at what he does, and to never settle for less. He was also taught by his father
-					to always be respectful and to be humble. <br /> <br />
 					Alexandru is a video game enthusiast. He used to be a &quot;professional&quot; player, ranking at #70 in
 					Romania for the video game called `DotA2`. He enjoys playing long-lasting games that have a focus on
 					strategies and a medieval setting: like Age of Empires, Age of Mythology, etc. He also enjoys playing games
