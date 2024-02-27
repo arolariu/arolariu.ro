@@ -24,6 +24,9 @@ const fontFamily: NextFont = Caudex({
 	preload: true,
 });
 
+const siteDescription: string =
+	"Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania.";
+
 export const metadata: Metadata = {
 	metadataBase: new URL(SITE_URL),
 	title: {
@@ -31,7 +34,7 @@ export const metadata: Metadata = {
 		default: "arolariu.ro | Unknown page",
 		template: "%s | arolariu.ro",
 	} satisfies TemplateString,
-	description: "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania.",
+	description: siteDescription,
 	appleWebApp: {
 		capable: true,
 		statusBarStyle: "black-translucent",
@@ -52,16 +55,26 @@ export const metadata: Metadata = {
 	robots: {
 		follow: true,
 		index: true,
+		"max-image-preview": "large",
+		"max-snippet": -1,
+		"max-video-preview": -1,
+		googleBot: "index, follow"
 	} satisfies Robots,
 	openGraph: {
 		type: "website",
 		url: "https://arolariu.ro",
 		countryName: "Romania",
-		description: "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu.",
+		description: siteDescription,
 		siteName: "arolariu.ro",
+		locale: "en",
 		title: "arolariu.ro | Alexandru-Razvan Olariu",
 		alternateLocale: "ro_RO",
 	} satisfies OpenGraph,
+	twitter: {
+		creator: "Alexandru-Razvan Olariu",
+		title: "arolariu.ro | Alexandru-Razvan Olariu",
+		description: siteDescription,
+	},
 	manifest: "/manifest.json",
 	icons: [
 		{
@@ -133,7 +146,7 @@ export const metadata: Metadata = {
 	] satisfies Icon[],
 };
 
-export default async function RootLayout({children}: Readonly<PropsWithChildren<{}>>) {
+export default async function RootLayout({ children }: Readonly<PropsWithChildren<{}>>) {
 	return (
 		<ClerkProvider>
 			<html lang="en" suppressHydrationWarning className={fontFamily.className} dir="ltr">

@@ -1,3 +1,5 @@
+// @ts-check
+
 /**
  * @format
  * @type {import('postcss-load-config').Config}

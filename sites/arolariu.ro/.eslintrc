@@ -1,9 +1,0 @@
-/** @format */
-{
-	"extends": ["eslint:recommended", "next", "prettier"],
-	"settings": {
-		"next": {
-			"rootDir": "./src/"
-		}
-	}
-}

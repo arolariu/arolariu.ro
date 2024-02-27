@@ -1,3 +1,5 @@
+// @ts-check
+
 /**
  * @format
  * @type {import('tailwindcss').Config}
