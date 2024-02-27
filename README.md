@@ -1,4 +1,4 @@
-<center>
+<div align="center">
 
 <img width="400" src="readme/logo.png" alt="arolariu.ro logo">
 
@@ -15,7 +15,7 @@
 ![Qualys SSL/TLS Grade](http://img.shields.io/badge/Qualys%20SSL%2FTLS%20Grade-A%2B-brightgreen.svg?style=for-the-badge)
 ![Mozilla HTTP Observatory Grade](https://img.shields.io/mozilla-observatory/grade/arolariu.ro?style=for-the-badge&label=MDN%20Security%20Score)
 
-</center>
+</div>
 
 ## Platform screenshots
 
