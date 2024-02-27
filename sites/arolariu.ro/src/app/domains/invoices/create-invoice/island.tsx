@@ -4,7 +4,7 @@
 
 import InvoiceImagePreview from "@/components/domains/invoices/InvoiceImagePreview";
 import AlertNotification from "@/components/domains/invoices/UploadAlertNotification";
-import { User } from "@clerk/backend";
+import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import {useState} from "react";
 
@@ -24,9 +24,9 @@ type ImageState = {
 
 const TopBarComponent = ({uploadIsDone}: {uploadIsDone: boolean}) => {
 	return (
-		<div className="flex flex-wrap mx-auto mb-20">
-			<a
-				className={`inline-flex w-1/2 items-center rounded-t border-b-2 py-3 font-medium tracking-wider sm:w-auto sm:justify-start sm:px-6
+		<div className="flex flex-wrap mx-auto mb-20 2xsm:flex-col md:flex-row">
+			<div
+				className={`inline-flex 2xsm:w-full md:w-1/2 items-center rounded-t 2xsm:my-1 md:my-0 2xsm:border-b-0 md:border-b-2 py-3 font-medium tracking-wider sm:w-auto sm:justify-start sm:px-6
                     ${uploadIsDone == false ? " border-indigo-500 bg-gray-100 text-indigo-500 " : " border-gray-200 "}`}>
 				<svg
 					fill="none"
@@ -39,9 +39,9 @@ const TopBarComponent = ({uploadIsDone}: {uploadIsDone: boolean}) => {
 					<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
 				</svg>
 				UPLOAD
-			</a>
-			<a
-				className={`inline-flex w-1/2 items-center rounded-t border-b-2 py-3 font-medium tracking-wider sm:w-auto sm:justify-start sm:px-6
+			</div>
+			<div
+				className={`inline-flex 2xsm:w-full md:w-1/2 items-center rounded-t 2xsm:my-1 md:my-0 2xsm:border-b-0 md:border-b-2 py-3 font-medium tracking-wider sm:w-auto sm:justify-start sm:px-6
                     ${uploadIsDone == true ? " border-indigo-500 bg-gray-100 text-indigo-500 " : " border-gray-200 "}`}>
 				<svg
 					fill="none"
@@ -54,12 +54,13 @@ const TopBarComponent = ({uploadIsDone}: {uploadIsDone: boolean}) => {
 					<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
 				</svg>
 				ANALYSIS
-			</a>
+			</div>
 		</div>
 	);
 };
 
-export default function RenderInvoiceScreen({user}: Readonly<{user: User | null}>) {
+export default function RenderInvoiceScreen() {
+	const { user } = useUser();
 	const [imageState, setImageState] = useState<ImageState>({
 		blob: null as unknown as Blob,
 		identifier: "",
@@ -103,7 +104,7 @@ export default function RenderInvoiceScreen({user}: Readonly<{user: User | null}
 							<input
 								type="file"
 								name="file"
-								className="w-full max-w-xs file-input file-input-bordered"
+								className="w-full max-w-xs bg-white dark:bg-black file-input file-input-bordered"
 								title="Test"
 								onChange={handleImageUpload}
 							/>

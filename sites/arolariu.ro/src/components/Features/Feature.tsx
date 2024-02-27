@@ -17,7 +17,7 @@ export default function Feature({link, title, children, description}: Readonly<P
 			<div>
 				{children} <span className="ml-2 text-xl">{title}</span>
 			</div>
-			<p className="mt-3 text-gray-300 text-md">{description}</p>
+			<p className="mt-3 text-gray-500 text-md">{description}</p>
 		</Link>
     )
 }

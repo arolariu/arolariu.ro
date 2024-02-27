@@ -22,7 +22,7 @@ export default async function InvoicePage() {
 		<main>
 			<section className="dark:text-gray-200">
 				<div className="container flex flex-col items-center justify-center px-5 py-24 mx-auto">
-					<Image src="/images/domains/invoices/invoice-top.svg" alt="Invoice top SVG" width="500" height="500" className="object-cover object-center" />
+					<Image src="/images/domains/invoices/invoice-top.svg" alt="Invoice top SVG" width="500" height="500" className="object-cover object-center" priority/>
 					<div className="w-full mt-2 text-center lg:w-2/3">
 						<h1 className="mb-4 text-3xl font-medium text-transparent title-font bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text sm:text-4xl">
 							Turn your paper receipts into powerful digital knowledge.

@@ -9,12 +9,12 @@ import Navigation from "./Navigation";
 
 export default async function Header() {
 	return (
-		<header className="text-black bg-white dark:bg-black dark:text-white">
-			<nav className="navbar">
+		<header>
+			<nav className="text-black bg-white 2xsm:z-50 md:z-auto 2xsm:top-0 navbar 2xsm:fixed md:relative dark:bg-black dark:text-white">
 				<div className="navbar-start">
 					<div className="dropdown">
 						<GiHamburgerMenu tabIndex={0} className="w-full h-full btn btn-circle btn-ghost lg:hidden" />
-						<Navigation className="menu dropdown-content menu-sm lg:ml-[12%]" />
+						<Navigation className="menu dropdown-content menu-sm lg:ml-[12%] bg-white dark:bg-black" />
 					</div>
 
 					<Link href={SITE_URL} className="flex items-center ml-2 font-medium">

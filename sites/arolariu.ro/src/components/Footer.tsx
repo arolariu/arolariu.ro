@@ -190,7 +190,7 @@ export default async function Footer() {
 					</div>
 				</div>
 				<p className="text-sm text-gray-600 2xsm:text-center md:text-end">
-					Built on <code>{TIMESTAMP}</code>
+					Built on <code className="tooltip" data-tip={new Date(TIMESTAMP)}>{TIMESTAMP.split("T")[0]}</code>
 					<br />
 					Commit SHA: <code>{COMMIT_SHA}</code>
 				</p>
