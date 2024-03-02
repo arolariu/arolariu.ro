@@ -2,20 +2,20 @@
 
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
-import { Caudex } from "next/font/google";
+import {Caudex} from "next/font/google";
 
-import { SITE_URL } from "@/constants";
-import { ClerkProvider } from "@clerk/nextjs";
-import { Metadata } from "next";
-import { NextFont } from "next/dist/compiled/@next/font";
-import { AlternateURLs } from "next/dist/lib/metadata/types/alternative-urls-types";
-import { AppleWebApp } from "next/dist/lib/metadata/types/extra-types";
-import { Author, Icon, Robots, TemplateString } from "next/dist/lib/metadata/types/metadata-types";
-import { OpenGraph } from "next/dist/lib/metadata/types/opengraph-types";
-import { PropsWithChildren, Suspense } from "react";
+import {SITE_URL} from "@/constants";
+import {ClerkProvider} from "@clerk/nextjs";
+import {Metadata} from "next";
+import {NextFont} from "next/dist/compiled/@next/font";
+import {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
+import {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";
+import {Author, Icon, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
+import {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
+import {PropsWithChildren, Suspense} from "react";
 import "./globals.css";
 import Loading from "./loading";
-import { Providers } from "./providers";
+import {Providers} from "./providers";
 
 const fontFamily: NextFont = Caudex({
 	weight: "700",
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
 		"max-image-preview": "large",
 		"max-snippet": -1,
 		"max-video-preview": -1,
-		googleBot: "index, follow"
+		googleBot: "index, follow",
 	} satisfies Robots,
 	openGraph: {
 		type: "website",
@@ -78,79 +78,79 @@ export const metadata: Metadata = {
 	manifest: "/manifest.json",
 	icons: [
 		{
-			rel: 'icon',
-			type: 'image/png',
-			sizes: '16x16',
-			url: 'manifest/favicon-16x16.png',
+			rel: "icon",
+			type: "image/png",
+			sizes: "16x16",
+			url: "manifest/favicon-16x16.png",
 		},
 		{
-			rel: 'icon',
-			type: 'image/png',
-			sizes: '32x32',
-			url: 'manifest/favicon-32x32.png',
+			rel: "icon",
+			type: "image/png",
+			sizes: "32x32",
+			url: "manifest/favicon-32x32.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '57x57',
-			url: 'manifest/apple-touch-icon-57x57.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "57x57",
+			url: "manifest/apple-touch-icon-57x57.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '60x60',
-			url: 'manifest/apple-touch-icon-60x60.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "60x60",
+			url: "manifest/apple-touch-icon-60x60.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '72x72',
-			url: 'manifest/apple-touch-icon-72x72.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "72x72",
+			url: "manifest/apple-touch-icon-72x72.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '76x76',
-			url: 'manifest/apple-touch-icon-76x76.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "76x76",
+			url: "manifest/apple-touch-icon-76x76.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '114x114',
-			url: 'manifest/apple-touch-icon-114x114.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "114x114",
+			url: "manifest/apple-touch-icon-114x114.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '120x120',
-			url: 'manifest/apple-touch-icon-120x120.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "120x120",
+			url: "manifest/apple-touch-icon-120x120.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '144x144',
-			url: 'manifest/apple-touch-icon-144x144.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "144x144",
+			url: "manifest/apple-touch-icon-144x144.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '152x152',
-			url: 'manifest/apple-touch-icon-152x152.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "152x152",
+			url: "manifest/apple-touch-icon-152x152.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '180x180',
-			url: 'manifest/apple-touch-icon-180x180.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "180x180",
+			url: "manifest/apple-touch-icon-180x180.png",
 		},
 	] satisfies Icon[],
 };
 
-export default async function RootLayout({ children }: Readonly<PropsWithChildren<{}>>) {
+export default async function RootLayout({children}: Readonly<PropsWithChildren<{}>>) {
 	return (
 		<ClerkProvider>
 			<html lang="en" suppressHydrationWarning className={fontFamily.className} dir="ltr">
-				<body className="text-black bg-white dark:bg-black dark:text-white">
+				<body className="bg-white text-black dark:bg-black dark:text-white">
 					<Providers>
 						<Header />
 						<Suspense fallback={<Loading />}>{children}</Suspense>
