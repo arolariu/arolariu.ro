@@ -31,10 +31,10 @@
 
 	<!-- Dependency Injection & Configuration packages -->
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Azure.AppConfiguration.AspNetCore" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Azure.AppConfiguration.AspNetCore" Version="7.1.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.AzureAppConfiguration" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.AzureAppConfiguration" Version="7.1.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
 	</ItemGroup>
@@ -88,7 +88,7 @@
 	<!-- Other packages -->
 	<ItemGroup>
 		<PackageReference Include="Azure.Identity" Version="1.10.4" />
-		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.6.0-beta.2" />
+		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.6.0" />
 	</ItemGroup>
 
 	<ItemGroup>
