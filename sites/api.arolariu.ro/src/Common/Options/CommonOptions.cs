@@ -1,5 +1,8 @@
 ﻿namespace arolariu.Backend.Common.Options;
 
+/// <summary>
+/// Common options for the application.
+/// </summary>
 public class CommonOptions
 {
     #region General configuration

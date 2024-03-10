@@ -2,6 +2,9 @@
 
 namespace arolariu.Backend.Common.Telemetry.Logging;
 
+/// <summary>
+/// This class uses the source generator to create logging methods for the application.
+/// </summary>
 public static partial class Log
 {
     /// <summary>

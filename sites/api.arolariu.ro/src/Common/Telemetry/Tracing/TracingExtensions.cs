@@ -13,8 +13,15 @@ using System;
 
 namespace arolariu.Backend.Common.Telemetry.Tracing;
 
+/// <summary>
+/// Extensions for tracing.
+/// </summary>
 public static class TracingExtensions
 {
+    /// <summary>
+    /// Extension for adding OpenTelemetry tracing to the application.
+    /// </summary>
+    /// <param name="builder"></param>
     public static void AddOTelTracing(this WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

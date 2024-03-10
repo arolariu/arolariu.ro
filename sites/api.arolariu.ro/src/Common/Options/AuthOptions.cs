@@ -1,5 +1,8 @@
 ﻿namespace arolariu.Backend.Common.Options;
 
+/// <summary>
+/// Options for the authentication.
+/// </summary>
 public class AuthOptions
 {
     /// <summary>

@@ -12,8 +12,15 @@ using System;
 
 namespace arolariu.Backend.Common.Telemetry.Logging;
 
+/// <summary>
+/// Extensions for logging.
+/// </summary>
 public static class LoggingExtensions
 {
+    /// <summary>
+    /// Adds OpenTelemetry logging to the application.
+    /// </summary>
+    /// <param name="builder"></param>
     public static void AddOTelLogging(this WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);

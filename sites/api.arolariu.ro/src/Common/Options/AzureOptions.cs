@@ -2,6 +2,9 @@
 
 namespace arolariu.Backend.Common.Options;
 
+/// <summary>
+/// Options for the Azure services.
+/// </summary>
 public class AzureOptions
 {
     #region Azure Key Vault configuration

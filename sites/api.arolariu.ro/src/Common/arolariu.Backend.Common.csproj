@@ -7,6 +7,7 @@
 	<ImplicitUsings>disable</ImplicitUsings>
 	<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
 	<AnalysisLevel>latest-all</AnalysisLevel>
+	<GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
 	<!-- Treat warnings as errors for `DEBUG` deployment. -->
