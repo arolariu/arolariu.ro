@@ -22,6 +22,7 @@ public class SwaggerFilterService : IDocumentFilter
     /// <param name="context">The context of the document filter.</param>
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
+        ArgumentNullException.ThrowIfNull(swaggerDoc);
         FilterEndpointsFromDiscovery(swaggerDoc);
         AddExternalDocumentation(swaggerDoc);
     }
@@ -32,6 +33,7 @@ public class SwaggerFilterService : IDocumentFilter
     /// <param name="swaggerDoc">The Swagger document to be filtered.</param>
     private static void FilterEndpointsFromDiscovery(OpenApiDocument swaggerDoc)
     {
+        ArgumentNullException.ThrowIfNull(swaggerDoc);
         var ignoredEndpoints = new[]
                     {
             "/health",
@@ -48,12 +50,13 @@ public class SwaggerFilterService : IDocumentFilter
     /// <param name="swaggerDoc"></param>
     private static void AddExternalDocumentation(OpenApiDocument swaggerDoc)
     {
-#pragma warning disable S1075 // URIs should not be hardcoded
+        ArgumentNullException.ThrowIfNull(swaggerDoc);
+        #pragma warning disable S1075 // URIs should not be hardcoded
         swaggerDoc.ExternalDocs = new OpenApiExternalDocs()
         {
             Description = "Check the API docs here!",
             Url = new Uri("https://docs.arolariu.ro"),
         };
-#pragma warning restore S1075 // URIs should not be hardcoded
+        #pragma warning restore S1075 // URIs should not be hardcoded
     }
 }

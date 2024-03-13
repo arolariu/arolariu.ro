@@ -61,7 +61,6 @@ public static class WebApplicationBuilderExtensions
         {
             var azureOptions = serviceProvider.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue;
             httpClient.BaseAddress = new Uri($"{azureOptions.OpenAIEndpoint}/openai");
-            httpClient.DefaultRequestHeaders.Add("Content-Type", "application/json");
             httpClient.DefaultRequestHeaders.Add("api-key", azureOptions.OpenAIKey);
         });
 
