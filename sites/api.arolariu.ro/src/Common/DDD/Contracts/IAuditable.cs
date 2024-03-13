@@ -34,11 +34,6 @@ public interface IAuditable
     public int NumberOfUpdates { get; }
 
     /// <summary>
-    /// The individual updates for the entity.
-    /// </summary>
-    public IReadOnlyDictionary<string, object> IndividualUpdates { get; }
-
-    /// <summary>
     /// Is the entity soft deleted?
     /// </summary>
     public bool IsSoftDeleted { get; }

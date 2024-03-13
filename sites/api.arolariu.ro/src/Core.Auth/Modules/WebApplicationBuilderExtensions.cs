@@ -30,8 +30,5 @@ public static class WebApplicationBuilderExtensions
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(azureOptions);
         ArgumentNullException.ThrowIfNull(commonOptions);
-        var services = builder.Services;
-
-        
     }
 }

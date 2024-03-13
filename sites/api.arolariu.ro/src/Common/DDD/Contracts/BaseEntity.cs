@@ -43,8 +43,4 @@ public abstract class BaseEntity<T> : IAuditable
     /// <inheritdoc/>
     [JsonPropertyOrder(byte.MaxValue - 04)]
     public bool IsSoftDeleted { get; protected set; }
-
-    /// <inheritdoc/>
-    [JsonPropertyOrder(byte.MaxValue - 03)]
-    public IReadOnlyDictionary<string, object> IndividualUpdates { get; protected set; } = new Dictionary<string, object>();
 }
