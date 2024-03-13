@@ -4,7 +4,7 @@
 
 import InvoiceImagePreview from "@/components/domains/invoices/InvoiceImagePreview";
 import AlertNotification from "@/components/domains/invoices/UploadAlertNotification";
-import { useUser } from "@clerk/nextjs";
+import {useUser} from "@clerk/nextjs";
 import Link from "next/link";
 import {useState} from "react";
 
@@ -26,7 +26,7 @@ const TopBarComponent = ({uploadIsDone}: {uploadIsDone: boolean}) => {
 	return (
 		<div className="flex flex-wrap mx-auto mb-20 2xsm:flex-col md:flex-row">
 			<div
-				className={`inline-flex 2xsm:w-full md:w-1/2 items-center rounded-t 2xsm:my-1 md:my-0 2xsm:border-b-0 md:border-b-2 py-3 font-medium tracking-wider sm:w-auto sm:justify-start sm:px-6
+				className={`inline-flex items-center rounded-t py-3 font-medium tracking-wider 2xsm:my-1 2xsm:w-full 2xsm:border-b-0 sm:w-auto sm:justify-start sm:px-6 md:my-0 md:w-1/2 md:border-b-2
                     ${uploadIsDone == false ? " border-indigo-500 bg-gray-100 text-indigo-500 " : " border-gray-200 "}`}>
 				<svg
 					fill="none"
@@ -41,7 +41,7 @@ const TopBarComponent = ({uploadIsDone}: {uploadIsDone: boolean}) => {
 				UPLOAD
 			</div>
 			<div
-				className={`inline-flex 2xsm:w-full md:w-1/2 items-center rounded-t 2xsm:my-1 md:my-0 2xsm:border-b-0 md:border-b-2 py-3 font-medium tracking-wider sm:w-auto sm:justify-start sm:px-6
+				className={`inline-flex items-center rounded-t py-3 font-medium tracking-wider 2xsm:my-1 2xsm:w-full 2xsm:border-b-0 sm:w-auto sm:justify-start sm:px-6 md:my-0 md:w-1/2 md:border-b-2
                     ${uploadIsDone == true ? " border-indigo-500 bg-gray-100 text-indigo-500 " : " border-gray-200 "}`}>
 				<svg
 					fill="none"
@@ -60,7 +60,7 @@ const TopBarComponent = ({uploadIsDone}: {uploadIsDone: boolean}) => {
 };
 
 export default function RenderInvoiceScreen() {
-	const { user } = useUser();
+	const {user} = useUser();
 	const [imageState, setImageState] = useState<ImageState>({
 		blob: null as unknown as Blob,
 		identifier: "",
@@ -74,7 +74,7 @@ export default function RenderInvoiceScreen() {
 	};
 
 	const handleImageTransport = async () => {
-		setImageState({ ...imageState, identifier: "replace-me", status: ImageStatus.SENT_TO_STORAGE });
+		setImageState({...imageState, identifier: "replace-me", status: ImageStatus.SENT_TO_STORAGE});
 		console.log(user);
 		// TODO: Step 1. Send the image to the Azure Storage account.
 		// TODO: Step 2. Create a new object in the backend that represents this invoice.
@@ -85,36 +85,7 @@ export default function RenderInvoiceScreen() {
 	// 1. Upload scene - where the user will be prompted to upload a new image.
 	// 2. Analysis scene - where the will has the possibility to upload a new image or view the analysed image.
 	// This return is based on the state variable.
-	if (imageState.status == ImageStatus.NOT_UPLOADED) {
-		return (
-			<div className="container flex flex-col flex-wrap px-5 py-24 mx-auto">
-				<TopBarComponent uploadIsDone={false} />
-				<div className="container flex flex-col">
-					<InvoiceImagePreview image={imageState.blob} />
-					<div className="flex flex-col w-full text-center">
-						<h1 className="mb-4 text-xl font-medium text-transparent title-font bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text">
-							<strong>UPLOAD A PICTURE OF THE PAPER RECEIPT</strong>
-						</h1>
-						<p className="mx-auto text-base leading-relaxed lg:w-2/3">
-							Carefully photograph or scan your paper receipt. <br />
-							Attach the digital image from your device, here.
-						</p>
-
-						<form className="container my-5">
-							<input
-								type="file"
-								name="file"
-								className="w-full max-w-xs bg-white dark:bg-black file-input file-input-bordered"
-								title="Test"
-								onChange={handleImageUpload}
-							/>
-							<button type="submit" title="Submit" className="hidden" />
-						</form>
-					</div>
-				</div>
-			</div>
-		);
-	} else if (imageState.status == ImageStatus.UPLOADED_TO_SITE) {
+	if (imageState.status == ImageStatus.UPLOADED_TO_SITE) {
 		return (
 			<div className="container flex flex-col flex-wrap px-5 py-24 mx-auto">
 				<TopBarComponent uploadIsDone={false} />
@@ -197,6 +168,35 @@ export default function RenderInvoiceScreen() {
 						</Link>
 					</div>
 				</section>
+			</div>
+		);
+	} else {
+		return (
+			<div className="container flex flex-col flex-wrap px-5 py-24 mx-auto">
+				<TopBarComponent uploadIsDone={false} />
+				<div className="container flex flex-col">
+					<InvoiceImagePreview image={imageState.blob} />
+					<div className="flex flex-col w-full text-center">
+						<h1 className="mb-4 text-xl font-medium text-transparent title-font bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text">
+							<strong>UPLOAD A PICTURE OF THE PAPER RECEIPT</strong>
+						</h1>
+						<p className="mx-auto text-base leading-relaxed lg:w-2/3">
+							Carefully photograph or scan your paper receipt. <br />
+							Attach the digital image from your device, here.
+						</p>
+
+						<form className="container my-5">
+							<input
+								type="file"
+								name="file"
+								className="w-full max-w-xs bg-white file-input file-input-bordered dark:bg-black"
+								title="Test"
+								onChange={handleImageUpload}
+							/>
+							<button type="submit" title="Submit" className="hidden" />
+						</form>
+					</div>
+				</div>
 			</div>
 		);
 	}
