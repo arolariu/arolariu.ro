@@ -31,7 +31,6 @@ public static class Program
         app.AddGeneralApplicationConfiguration();
         app.AddInvoiceDomainConfiguration();
 
-
         app.Run();
     }
 }
