@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace arolariu.Backend.Common.DDD.Contracts;
 
@@ -31,6 +32,11 @@ public interface IAuditable
     /// The number of times the entity has been updated.
     /// </summary>
     public int NumberOfUpdates { get; }
+
+    /// <summary>
+    /// The individual updates for the entity.
+    /// </summary>
+    public IReadOnlyDictionary<string, object> IndividualUpdates { get; }
 
     /// <summary>
     /// Is the entity soft deleted?
