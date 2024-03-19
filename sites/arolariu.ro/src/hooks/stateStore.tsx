@@ -1,8 +1,7 @@
 /* eslint-disable no-unused-vars */
 import Invoice from "@/types/invoices/Invoice";
+import {mountStoreDevtool} from "simple-zustand-devtools";
 import {create} from "zustand";
-import { mountStoreDevtool } from 'simple-zustand-devtools';
-
 
 type States = {
 	invoices: Invoice[];
@@ -35,7 +34,9 @@ export const useZustandStore = create<States & Actions>()((set) => ({
 		})),
 	setSelectedInvoice: (invoice: Invoice) => set({selectedInvoice: invoice}),
 	updateSelectedInvoice: (invoice: Invoice) => set({selectedInvoice: invoice}),
-	removeSelectedInvoice: (invoice: Invoice) => set({selectedInvoice: {} as Invoice}),
+	removeSelectedInvoice: () => set({selectedInvoice: {} as Invoice}),
 }));
 
-if (process.env.NODE_ENV === "development") {mountStoreDevtool("Store", useZustandStore)}
+if (process.env.NODE_ENV === "development") {
+	mountStoreDevtool("Store", useZustandStore);
+}

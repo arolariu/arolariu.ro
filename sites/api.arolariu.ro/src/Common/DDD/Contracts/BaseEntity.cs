@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace arolariu.Backend.Common.DDD.Contracts;
@@ -33,13 +34,13 @@ public abstract class BaseEntity<T> : IAuditable
 
     /// <inheritdoc/>
     [JsonPropertyOrder(byte.MaxValue - 06)]
-    public int NumberOfUpdates { get; protected set; } = 0;
+    public int NumberOfUpdates { get; protected set; }
 
     /// <inheritdoc/>
     [JsonPropertyOrder(byte.MaxValue - 05)]
-    public bool IsImportant { get; set; } = false;
+    public bool IsImportant { get; set; }
 
     /// <inheritdoc/>
     [JsonPropertyOrder(byte.MaxValue - 04)]
-    public bool IsSoftDeleted { get; protected set; } = false;
+    public bool IsSoftDeleted { get; protected set; }
 }

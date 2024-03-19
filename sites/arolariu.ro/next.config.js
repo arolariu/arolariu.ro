@@ -91,6 +91,10 @@ const nextConfig = {
 
 	poweredByHeader: false,
 	output: "standalone",
+
+	experimental: {
+		optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
+	},
 };
 
 // Service Worker for PWA.

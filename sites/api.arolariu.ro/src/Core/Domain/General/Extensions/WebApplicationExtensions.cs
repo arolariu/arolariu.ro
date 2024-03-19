@@ -15,7 +15,7 @@ namespace arolariu.Backend.Core.Domain.General.Extensions;
 /// This extension class builds the Web Application.
 /// </summary>
 [ExcludeFromCodeCoverage] // Infrastructure code is not tested currently.
-internal static partial class WebApplicationExtensions
+internal static class WebApplicationExtensions
 {
     /// <summary>
     /// Adds general application configurations to the WebApplication instance.

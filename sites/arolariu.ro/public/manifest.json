@@ -1,5 +1,6 @@
 {
     "$schema": "https://developer.mozilla.org/en-US/docs/Web/Manifest",
+    "id": "pwa.arolariu.ro",
     "background_color": "#000000",
     "categories": [
         "education",
@@ -14,6 +15,8 @@
     "start_url": "https://arolariu.ro/",
     "scope": "/",
     "theme_color": "#9013fe",
+    "lang": "en",
+    "dir": "ltr",
     "icons": [
         {
             "src": "manifest/android-chrome-72x72.png",

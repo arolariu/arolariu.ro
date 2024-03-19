@@ -10,7 +10,7 @@
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<SignAssembly>False</SignAssembly>
 		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-		<AnalysisLevel>latest</AnalysisLevel>
+		<AnalysisLevel>latest-all</AnalysisLevel>
 	</PropertyGroup>
 
 	<!-- Treat warnings as errors for `DEBUG` deployment. -->

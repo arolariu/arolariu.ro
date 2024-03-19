@@ -188,7 +188,7 @@ internal static class SwaggerConfigurationService
                     {
                         Reference = jwtReferenceObject
                     },
-                    new [] { "Bearer" }
+                    new [] { jwtReferenceObject.Id }
                 },
             });
 

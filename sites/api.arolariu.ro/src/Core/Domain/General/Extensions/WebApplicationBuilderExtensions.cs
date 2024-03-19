@@ -26,7 +26,7 @@ namespace arolariu.Backend.Core.Domain.General.Extensions;
 /// This class represents the `Composition Root` of the application.
 /// </summary>
 [ExcludeFromCodeCoverage] // Infrastructure code is not tested currently.
-internal static partial class WebApplicationBuilderExtensions
+internal static class WebApplicationBuilderExtensions
 {
     /// <summary>
     /// Adds general domain configurations to the WebApplicationBuilder instance.
@@ -81,6 +81,7 @@ internal static partial class WebApplicationBuilderExtensions
 
             config.Connect(configuration["ConfigurationStore"]);
         });
+
         services.Configure<AuthOptions>(configuration.GetSection(nameof(AuthOptions)));
         services.Configure<AzureOptions>(configuration.GetSection(nameof(AzureOptions)));
         services.Configure<CommonOptions>(configuration.GetSection(nameof(CommonOptions)));

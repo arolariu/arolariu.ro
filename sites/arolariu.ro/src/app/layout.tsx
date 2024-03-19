@@ -5,10 +5,11 @@ import Header from "@/components/Header";
 import {Caudex} from "next/font/google";
 
 import {SITE_URL} from "@/constants";
-import {ClerkProvider} from "@clerk/nextjs";
+import "@mantine/core/styles.css";
 import {Metadata} from "next";
 import {NextFont} from "next/dist/compiled/@next/font";
 import {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
+import {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";
 import {Author, Icon, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
 import {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
 import {PropsWithChildren, Suspense} from "react";
@@ -23,6 +24,9 @@ const fontFamily: NextFont = Caudex({
 	preload: true,
 });
 
+const siteDescription: string =
+	"Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania.";
+
 export const metadata: Metadata = {
 	metadataBase: new URL(SITE_URL),
 	title: {
@@ -30,7 +34,13 @@ export const metadata: Metadata = {
 		default: "arolariu.ro | Unknown page",
 		template: "%s | arolariu.ro",
 	} satisfies TemplateString,
-	description: "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania.",
+	description: siteDescription,
+	appleWebApp: {
+		capable: true,
+		statusBarStyle: "black-translucent",
+		title: "arolariu.ro",
+	} satisfies AppleWebApp,
+	classification: "Personal",
 	applicationName: "arolariu.ro",
 	authors: {
 		name: "Alexandru-Razvan Olariu",
@@ -45,99 +55,107 @@ export const metadata: Metadata = {
 	robots: {
 		follow: true,
 		index: true,
+		"max-image-preview": "large",
+		"max-snippet": -1,
+		"max-video-preview": -1,
+		googleBot: "index, follow",
 	} satisfies Robots,
 	openGraph: {
 		type: "website",
 		url: "https://arolariu.ro",
 		countryName: "Romania",
-		description: "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu.",
+		description: siteDescription,
 		siteName: "arolariu.ro",
+		locale: "en",
 		title: "arolariu.ro | Alexandru-Razvan Olariu",
 		alternateLocale: "ro_RO",
 	} satisfies OpenGraph,
+	twitter: {
+		creator: "Alexandru-Razvan Olariu",
+		title: "arolariu.ro | Alexandru-Razvan Olariu",
+		description: siteDescription,
+	},
 	manifest: "/manifest.json",
 	icons: [
 		{
-			rel: 'icon',
-			type: 'image/png',
-			sizes: '16x16',
-			url: 'manifest/favicon-16x16.png',
+			rel: "icon",
+			type: "image/png",
+			sizes: "16x16",
+			url: "manifest/favicon-16x16.png",
 		},
 		{
-			rel: 'icon',
-			type: 'image/png',
-			sizes: '32x32',
-			url: 'manifest/favicon-32x32.png',
+			rel: "icon",
+			type: "image/png",
+			sizes: "32x32",
+			url: "manifest/favicon-32x32.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '57x57',
-			url: 'manifest/apple-touch-icon-57x57.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "57x57",
+			url: "manifest/apple-touch-icon-57x57.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '60x60',
-			url: 'manifest/apple-touch-icon-60x60.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "60x60",
+			url: "manifest/apple-touch-icon-60x60.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '72x72',
-			url: 'manifest/apple-touch-icon-72x72.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "72x72",
+			url: "manifest/apple-touch-icon-72x72.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '76x76',
-			url: 'manifest/apple-touch-icon-76x76.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "76x76",
+			url: "manifest/apple-touch-icon-76x76.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '114x114',
-			url: 'manifest/apple-touch-icon-114x114.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "114x114",
+			url: "manifest/apple-touch-icon-114x114.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '120x120',
-			url: 'manifest/apple-touch-icon-120x120.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "120x120",
+			url: "manifest/apple-touch-icon-120x120.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '144x144',
-			url: 'manifest/apple-touch-icon-144x144.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "144x144",
+			url: "manifest/apple-touch-icon-144x144.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '152x152',
-			url: 'manifest/apple-touch-icon-152x152.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "152x152",
+			url: "manifest/apple-touch-icon-152x152.png",
 		},
 		{
-			rel: 'apple-touch-icon',
-			type: 'image/png',
-			sizes: '180x180',
-			url: 'manifest/apple-touch-icon-180x180.png',
+			rel: "apple-touch-icon",
+			type: "image/png",
+			sizes: "180x180",
+			url: "manifest/apple-touch-icon-180x180.png",
 		},
-	] as Icon[],
+	] satisfies Icon[],
 };
 
 export default async function RootLayout({children}: Readonly<PropsWithChildren<{}>>) {
 	return (
-		<ClerkProvider>
-			<html lang="en" suppressHydrationWarning className={fontFamily.className} dir="ltr">
-				<body className="text-black bg-white dark:bg-black dark:text-white">
-					<Providers>
-						<Header />
-						<Suspense fallback={<Loading />}>{children}</Suspense>
-						<Footer />
-					</Providers>
-				</body>
-			</html>
-		</ClerkProvider>
+		<html lang="en" suppressHydrationWarning className={fontFamily.className} dir="ltr">
+			<body className="bg-white text-black dark:bg-black dark:text-white">
+				<Providers>
+					<Header />
+					<Suspense fallback={<Loading />}>{children}</Suspense>
+					<Footer />
+				</Providers>
+			</body>
+		</html>
 	);
 }

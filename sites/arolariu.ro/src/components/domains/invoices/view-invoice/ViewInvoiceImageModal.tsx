@@ -55,38 +55,36 @@ export const ViewInvoiceImageModal = () => {
 		}
 	};
 
-	if (invoice) {
-		return (
-			<div className="flex flex-wrap justify-center mx-auto mt-4">
-				<button className="btn btn-secondary" onClick={() => modalReference.current?.showModal()}>
-					Preview uploaded receipt photo
-				</button>
-				<dialog
-					id="invoiceModal"
-					ref={modalReference}
-					className="modal modal-bottom backdrop-blur-sm sm:modal-middle"
-					onClick={handleImageClick}>
-					<form method="dialog" className="modal-box">
-						<center className="mb-2 font-black">Invoice: {invoice.id}</center>
-						<Image
-							alt="Invoice photo"
-							style={{
-								transition: "transform 0.3s ease, transform-origin 0s",
-								...zoomStyle,
-							}}
-							src={`${invoice != null ? invoice.photoLocation : "https://dummyimage.com/400x400"}`}
-							width={800}
-							height={800}
-							onMouseMove={handleMouseMove}
-							onMouseLeave={handleMouseLeave}
-							onClick={handleImageClick}
-						/>
-						<div className="modal-action">
-							<button className="mx-auto btn btn-secondary">Close invoice preview</button>
-						</div>
-					</form>
-				</dialog>
-			</div>
-		);
-	}
+	return (
+		<div className="flex flex-wrap justify-center mx-auto mt-4">
+			<button className="btn btn-secondary" onClick={() => modalReference.current?.showModal()}>
+				Preview uploaded receipt photo
+			</button>
+			<dialog
+				id="invoiceModal"
+				ref={modalReference}
+				className="modal modal-bottom backdrop-blur-sm sm:modal-middle"
+				onClick={handleImageClick}>
+				<form method="dialog" className="modal-box">
+					<center className="mb-2 font-black">Invoice: {invoice.id}</center>
+					<Image
+						alt="Invoice photo"
+						style={{
+							transition: "transform 0.3s ease, transform-origin 0s",
+							...zoomStyle,
+						}}
+						src={`${invoice != null ? invoice.photoLocation : "https://dummyimage.com/400x400"}`}
+						width={800}
+						height={800}
+						onMouseMove={handleMouseMove}
+						onMouseLeave={handleMouseLeave}
+						onClick={handleImageClick}
+					/>
+					<div className="modal-action">
+						<button className="mx-auto btn btn-secondary">Close invoice preview</button>
+					</div>
+				</form>
+			</dialog>
+		</div>
+	);
 };

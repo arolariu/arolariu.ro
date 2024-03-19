@@ -16,7 +16,7 @@ export default async function AuthPage() {
 	if (isAuthenticated) { return redirect("/"); }
 
 	return (
-		<section className="body-font dark:text-gray-300">
+		<main className="body-font dark:text-gray-300">
 			<div className="container px-5 py-24 mx-auto">
 				<div className="flex flex-wrap mx-4 mb-10 text-center">
 					{/* Sign up component */}
@@ -54,6 +54,6 @@ export default async function AuthPage() {
 					</div>
 				</div>
 			</div>
-		</section>
+		</main>
 	);
 }

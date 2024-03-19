@@ -13,8 +13,15 @@ using System;
 
 namespace arolariu.Backend.Common.Telemetry.Metering;
 
+/// <summary>
+/// Extensions for metering.
+/// </summary>
 public static class MeteringExtensions
 {
+    /// <summary>
+    /// Adds OpenTelemetry metering to the application.
+    /// </summary>
+    /// <param name="builder"></param>
     public static void AddOTelMetering(this WebApplicationBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
