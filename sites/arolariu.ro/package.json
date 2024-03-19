@@ -7,6 +7,7 @@
     "url": "https://arolariu.ro"
   },
   "description": "The `arolariu.ro` project consists of a Next.JS web application.",
+  "packageManager": "yarn@4.1.1",
   "private": true,
   "license": "MIT",
   "version": "1.0.0",
@@ -66,5 +67,4 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5.4.2"
   },
-  "packageManager": "yarn@4.1.1"
 }
