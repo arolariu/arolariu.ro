@@ -4,7 +4,7 @@ import {COMMIT_SHA, SITE_URL, TIMESTAMP} from "@/constants";
 import Link from "next/link";
 import {FaGithub, FaLinkedin} from "react-icons/fa";
 
-export default async function Footer() {
+export default function Footer() {
 	return (
 		<footer className="relative bottom-0 w-full bg-indigo-500">
 			<svg

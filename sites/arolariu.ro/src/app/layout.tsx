@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import {Caudex} from "next/font/google";
 
 import {SITE_URL} from "@/constants";
-import {ClerkProvider} from "@clerk/nextjs";
+import "@mantine/core/styles.css";
 import {Metadata} from "next";
 import {NextFont} from "next/dist/compiled/@next/font";
 import {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
@@ -148,16 +148,14 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({children}: Readonly<PropsWithChildren<{}>>) {
 	return (
-		<ClerkProvider>
-			<html lang="en" suppressHydrationWarning className={fontFamily.className} dir="ltr">
-				<body className="bg-white text-black dark:bg-black dark:text-white">
-					<Providers>
-						<Header />
-						<Suspense fallback={<Loading />}>{children}</Suspense>
-						<Footer />
-					</Providers>
-				</body>
-			</html>
-		</ClerkProvider>
+		<html lang="en" suppressHydrationWarning className={fontFamily.className} dir="ltr">
+			<body className="bg-white text-black dark:bg-black dark:text-white">
+				<Providers>
+					<Header />
+					<Suspense fallback={<Loading />}>{children}</Suspense>
+					<Footer />
+				</Providers>
+			</body>
+		</html>
 	);
 }
