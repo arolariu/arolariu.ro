@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 import type { PrecacheEntry } from "@serwist/precaching";
 import { SerwistOptions, installSerwist } from "@serwist/sw";
-import { defaultCache } from "@serwist/next/browser";
+import { defaultCache } from "@serwist/next/worker";
 
 /// <reference lib="webworker" />
 declare const self: ServiceWorkerGlobalScope & {
@@ -22,14 +22,14 @@ installSerwist({
   navigationPreload: true,
   runtimeCaching: defaultCache,
   fallbacks: {
-    entries: [
-      {
-        url: "/~offline",
-        revision,
-        matcher({ request }: any) {
-          return request.destination === "document";
+   entries: [
+        {
+          url: "/~offline",
+          revision,
+          matcher({ request }) {
+            return request.destination === "document";
+          },
         },
-      },
     ],
   },
 } satisfies SerwistOptions);

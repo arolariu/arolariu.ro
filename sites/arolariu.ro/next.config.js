@@ -1,5 +1,7 @@
 // @ts-check
 
+import withSerwistInit from "@serwist/next";
+
 const trustedDomains = "arolariu.ro *.arolariu.ro clerk.com *.clerk.com accounts.dev *.accounts.dev";
 const cspHeader = `
     default-src 'self' ${trustedDomains};
@@ -58,10 +60,7 @@ const nextConfig = {
 						value: "max-age=63072000; includeSubDomains; preload",
 					},
 					{
-						key:
-							process.env.NODE_ENV === "development"
-								? "Content-Security-Policy-Report-Only"
-								: "Content-Security-Policy",
+						key: process.env.NODE_ENV === "development" ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy",
 						value: cspHeader.replace(/\n/g, ""),
 					},
 					{
@@ -95,15 +94,26 @@ const nextConfig = {
 	experimental: {
 		optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
 	},
+
+	eslint: {
+		// We run ESLint V9 which is not yet supported by the NextJS v14 framework.
+		ignoreDuringBuilds: true,
+  },
+
+  typescript: {
+    ignoreBuildErrors: false,
+    tsconfigPath: "tsconfig.json",
+  },
+
 };
 
-// Service Worker for PWA.
-const withSerwist = require("@serwist/next").default({
-	cacheOnFrontEndNav: true,
+const withSerwist = withSerwistInit({
+	cacheOnNavigation: true,
 	swSrc: "src/sw.ts",
 	swDest: "public/sw.js",
 	reloadOnOnline: true,
 	disable: process.env.NODE_ENV === "development",
 });
 
-module.exports = withSerwist(nextConfig);
+export default withSerwist(nextConfig);
+

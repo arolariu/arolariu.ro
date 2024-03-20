@@ -1,5 +1,3 @@
-// @ts-check
-
 /**
  * @format
  * @type {import('tailwindcss').Config}
@@ -45,4 +43,5 @@ const tailwindConfig = {
 	plugins: [require("@tailwindcss/typography"), require("tailwindcss-animate"), require("daisyui")],
 };
 
-module.exports = tailwindConfig;
+export default tailwindConfig;
+
