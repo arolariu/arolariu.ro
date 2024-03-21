@@ -1,6 +1,7 @@
 // @ts-check
 
 import withSerwistInit from "@serwist/next";
+import withBundleAnalyzerInit from "@next/bundle-analyzer"
 
 const trustedDomains = "arolariu.ro *.arolariu.ro clerk.com *.clerk.com accounts.dev *.accounts.dev";
 const cspHeader = `
@@ -115,5 +116,9 @@ const withSerwist = withSerwistInit({
 	disable: process.env.NODE_ENV === "development",
 });
 
-export default withSerwist(nextConfig);
+const withBundleAnalyzer = withBundleAnalyzerInit({
+  enabled: process.env.ANALYZE === 'true'
+})
+
+export default withBundleAnalyzer(withSerwist(nextConfig));
 

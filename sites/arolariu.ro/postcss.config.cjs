@@ -22,5 +22,5 @@ const postcssConfig = {
 	},
 };
 
-export default postcssConfig;
+module.exports = postcssConfig;
 
