@@ -5,9 +5,14 @@ interface Props {
         account: string
     }
 }
+
+/**
+ * The account page.
+ * @returns The account page.
+ */
 export default async function AccountPage({params}: Readonly<Props>) {
     const {user, isAuthenticated} = await fetchUser();
-    
+
     return (
         <main className="m-20">
             <section>

@@ -5,7 +5,11 @@ interface Props {
 	item: Product;
 }
 
-export default function EditInvoiceItemCard({item}: Props) {
+/**
+ * This function renders the edit invoice item card.
+ * @returns The JSX for the edit invoice item card.
+ */
+export default function EditInvoiceItemCard({item}: Readonly<Props>) {
 	const [itemState, setItemState] = useState<Product>(item);
 
 	const editItemDialogRef = useRef<null | HTMLDialogElement>(null);
@@ -138,8 +142,8 @@ export default function EditInvoiceItemCard({item}: Props) {
 							value={(itemState.totalPrice = itemState.price * itemState.quantity)}
 						/>
 						<div className="flex flex-col gap-4 modal-action">
-							<button className="btn btn-success">💾 Save item changes</button>
-							<button className="btn btn-neutral">🔙 Drop item changes</button>
+							<button type="button" className="btn btn-success">💾 Save item changes</button>
+							<button type="button" className="btn btn-neutral">🔙 Drop item changes</button>
 						</div>
 					</form>
 				</dialog>
@@ -152,15 +156,15 @@ export default function EditInvoiceItemCard({item}: Props) {
 							You can, however, manually add it back later.
 						</center>
 						<div className="gap-4 modal-action">
-							<button className="btn btn-neutral">🔙 Go back</button>
-							<button className="btn btn-error">🗑️ Delete item</button>
+							<button type="button" className="btn btn-neutral">🔙 Go back</button>
+							<button type="button" className="btn btn-error">🗑️ Delete item</button>
 						</div>
 					</form>
 				</dialog>
-				<button className="btn btn-neutral" onClick={() => editItemDialogRef.current?.show()}>
+				<button type="button" className="btn btn-neutral" onClick={() => editItemDialogRef.current?.show()}>
 					✅ Edit Item
 				</button>
-				<button className="btn btn-neutral" onClick={() => deleteItemDialogref.current?.show()}>
+				<button type="button" className="btn btn-neutral" onClick={() => deleteItemDialogref.current?.show()}>
 					❌ Delete Item
 				</button>
 			</div>

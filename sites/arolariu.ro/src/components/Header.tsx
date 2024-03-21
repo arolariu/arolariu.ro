@@ -5,6 +5,10 @@ import {GiHamburgerMenu} from "react-icons/gi";
 import ThemeSwitcherButton from "./Buttons/ThemeButton";
 import Navigation from "./Navigation";
 
+/**
+ * The header component.
+ * @returns The header component.
+ */
 export default function Header() {
 	return (
 		<header>
@@ -25,7 +29,7 @@ export default function Header() {
 							strokeWidth="2"
 							className="h-10 w-10 rounded-full bg-indigo-500 p-2 text-white"
 							viewBox="0 0 24 24">
-							<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+							<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
 						</svg>
 						<span className="ml-3 text-xl">arolariu.ro</span>
 					</Link>

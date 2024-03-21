@@ -1,6 +1,10 @@
 import {useZustandStore} from "@/hooks/stateStore";
 import Product from "@/types/invoices/Product";
 
+/**
+ * The view for the invoice items.
+ * @returns The view for the invoice items.
+ */
 export default function ViewInvoiceItems() {
 	const [invoice] = useZustandStore((state) => [state.selectedInvoice]);
 	const items: Product[] = invoice.items;

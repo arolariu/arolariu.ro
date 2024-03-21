@@ -12,6 +12,10 @@ import {useState} from "react";
 
 interface Props { invoice: Invoice | null; }
 
+/**
+ * This function renders the view invoice page.
+ * @returns The JSX for the view invoice page.
+ */
 export function RenderViewInvoicePage({invoice}: Readonly<Props>) {
 	const [currentStep, setCurrentStep] = useState<number>(1);
 	const setSelectedInvoice = useZustandStore((state) => state.setSelectedInvoice);
@@ -21,10 +25,10 @@ export function RenderViewInvoicePage({invoice}: Readonly<Props>) {
 				<div className="flex flex-wrap justify-center mx-auto">
 					<div className="w-full mb-6 lg:mb-0 lg:w-1/2 lg:py-6 lg:pr-10">
 						<h2 className="text-sm tracking-widest title-font dark:text-gray-500">
-							Invoice: <span>{invoice!.id}</span>
+							Invoice: <span>{invoice?.id}</span>
 						</h2>
 						<h1 className="mb-4 text-3xl font-medium text-transparent text-transparenttext-3xl bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text">
-							{invoice!.description}
+							{invoice?.description}
 						</h1>
 						<ViewInvoiceHeader currentStep={currentStep} setCurrentStep={setCurrentStep} />
 						{currentStep === 1 && <ViewInvoiceSummary />}

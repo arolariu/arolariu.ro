@@ -3,6 +3,11 @@ import {MantineProvider, MantineTheme} from "@mantine/core";
 import {ThemeProvider} from "next-themes";
 import {ReactNode} from "react";
 
+/**
+ * The providers component.
+ * @param param0 The children components.
+ * @returns The providers component.
+ */
 export function Providers({children}: Readonly<{children: ReactNode}>) {
 	return (
 		<ClerkProvider>

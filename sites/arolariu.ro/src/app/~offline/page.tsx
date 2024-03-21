@@ -4,6 +4,10 @@ export const metadata: Metadata = {
   title: "Offline",
 };
 
+/**
+ * The offline fallback page.
+ * @returns The offline fallback page.
+ */
 export default function Page() {
   return (
     <>

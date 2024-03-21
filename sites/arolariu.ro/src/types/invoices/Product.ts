@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 export default interface Product {
     rawName: string;
 	genericName: string;

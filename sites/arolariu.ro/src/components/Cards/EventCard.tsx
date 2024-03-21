@@ -6,10 +6,14 @@ interface Props {
 	description: string;
 	date: string;
 	location: string;
-	imagePath: string;
-	formLink: string;
+	imagePath: string | undefined;
+	formLink: string | undefined;
 }
 
+/**
+ * The event card component
+ * @returns The event card component
+ */
 export default function EventCard({title, description, date, location, imagePath, formLink}: Readonly<Props>) {
 	return (
 		<Link href={formLink ?? ""} target="_blank">

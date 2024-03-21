@@ -1,3 +1,7 @@
+/**
+ * The blog homepage.
+ * @returns The blog homepage.
+ */
 export default async function BlogPage() {
     return (
         <main>

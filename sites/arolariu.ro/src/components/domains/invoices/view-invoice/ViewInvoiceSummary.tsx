@@ -4,16 +4,16 @@ export const ViewInvoiceSummary = () => {
 	const invoice = useZustandStore((state) => state.selectedInvoice);
 	const merchant = invoice.merchant;
 	const productsWithAllergens = invoice.items.filter((item) => item.detectedAllergens.length > 0);
-	const allergensList = productsWithAllergens.map((item) => item.detectedAllergens).flat();
+  const allergensList = productsWithAllergens.flatMap((item) => item.detectedAllergens);
 	const recipesList = invoice.possibleRecipes.flat();
 
 	const allergensText =
-	allergensList?.length > 0
+	allergensList.length > 0
 			? allergensList.join(", ")
 			: "no identified allergens... input allergens manually or analyze again.";
 
 	const recipesText =
-	recipesList?.length > 0
+	recipesList.length > 0
 			? recipesList.join(", ")
 			: "no identified recipes... input recipes manually or analyze again.";
 
@@ -34,7 +34,7 @@ export const ViewInvoiceSummary = () => {
 			<div className="flex py-2 border-t border-b border-gray-200">
 				<span>Items Purchased</span>
 				<span className="ml-auto dark:text-gray-300">
-					{boughtItems > 0 ? `${boughtItems} items.` : "No purchase identified."}
+					{boughtItems > 0 ? `${boughtItems.toString()} items.` : "No purchase identified."}
 				</span>
 			</div>
 			<div className="flex py-2 border-b border-gray-200">

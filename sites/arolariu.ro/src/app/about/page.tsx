@@ -7,6 +7,10 @@ export const metadata: Metadata = {
 	description: "Learn more about the author and the platform.",
 };
 
+/**
+ * The about page.
+ * @returns The about page.
+ */
 export default async function AboutPage() {
 	return (
 		<main className="text-gray-600 dark:text-slate-300">
@@ -60,7 +64,7 @@ export default async function AboutPage() {
 						click the button below or navigate to <code>&quot;/about/the-platform&quot;</code>
 					</p>
 					<Link href="/about/the-platform">
-						<button className="flex px-5 py-2 mx-auto mt-6 text-white bg-indigo-500 border-0 rounded hover:bg-indigo-600 focus:outline-none">
+						<button type="button" className="flex px-5 py-2 mx-auto mt-6 text-white bg-indigo-500 border-0 rounded hover:bg-indigo-600 focus:outline-none">
 							Learn more about the platform...
 						</button>
 					</Link>
@@ -86,7 +90,7 @@ export default async function AboutPage() {
 						<code>&quot;/about/the-author&quot;</code>
 					</p>
 					<Link href="/about/the-author">
-						<button className="flex px-5 py-2 mx-auto mt-6 text-white bg-indigo-500 border-0 rounded hover:bg-indigo-600 focus:outline-none">
+						<button type="button" className="flex px-5 py-2 mx-auto mt-6 text-white bg-indigo-500 border-0 rounded hover:bg-indigo-600 focus:outline-none">
 							Learn more about the author...
 						</button>
 					</Link>

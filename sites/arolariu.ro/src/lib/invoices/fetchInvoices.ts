@@ -3,7 +3,12 @@ import generateJWT from "../generateJWT";
 import { API_URL } from "../../constants";
 import { User } from "@clerk/backend";
 
-export default async function fetchInvoices(user : User | null) : Promise<Invoice[] | null> {
+/**
+ * Server action that fetches all invoices for a user.
+ * @param user The user for which to fetch the invoices.
+ * @returns A promise of the invoices, or null if the request failed.
+ */
+export default async function fetchInvoices(user : User | null) : Promise<Invoice[] | undefined> {
     const userAuthorization = await generateJWT(user);
 
     const response = await fetch(`${API_URL}/rest/invoices/`, {
@@ -14,6 +19,18 @@ export default async function fetchInvoices(user : User | null) : Promise<Invoic
         }
     });
 
-    if (response.status === 200) {return await response.json();}
-    else {return null;} // TODO: perform 403, 401, 500, etc. handling
+  let invoices: Invoice[] | undefined;
+
+  switch (response.status) {
+    case 200:
+      invoices = await response.json() as Invoice[];
+      break;
+    case 401:
+    case 403:
+      break;
+    case 500:
+      break; // TODO: add alerting.
+  }
+
+  return invoices;
 }

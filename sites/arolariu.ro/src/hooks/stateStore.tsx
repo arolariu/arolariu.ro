@@ -1,4 +1,5 @@
-/* eslint-disable no-unused-vars */
+/* eslint-disable */
+
 import Invoice from "@/types/invoices/Invoice";
 import {mountStoreDevtool} from "simple-zustand-devtools";
 import {create} from "zustand";
@@ -40,3 +41,6 @@ export const useZustandStore = create<States & Actions>()((set) => ({
 if (process.env.NODE_ENV === "development") {
 	mountStoreDevtool("Store", useZustandStore);
 }
+
+
+/* eslint-enable */

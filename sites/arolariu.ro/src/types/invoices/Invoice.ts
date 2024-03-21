@@ -1,11 +1,8 @@
-/** @format */
-
 import NamedEntity from "../DDD/NamedEntity";
 import { KeyValuePair } from "../KvPair";
 import Merchant from "./Merchant";
 import Product from "./Product";
 
-/* eslint-disable no-unused-vars */
 export default interface Invoice extends NamedEntity<string> {
 	category: InvoiceCategory;
 	userIdentifier: string;

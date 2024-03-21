@@ -1,8 +1,10 @@
-/** @format */
-
 import Image from "next/image";
 import Link from "next/link";
 
+/**
+ * The card component for the domain services
+ * @returns The domain service card.
+ */
 export default async function DomainServiceCard({
 	title = "Placeholder title",
 	description = "Placeholder descriptipn",
@@ -16,8 +18,8 @@ export default async function DomainServiceCard({
 					alt="content"
 					className="object-cover object-center w-full h-full"
 					src={imageUrl}
-					width={600}
-					height={400}
+					width="600"
+					height="400"
 				/>
 			</div>
 			<h2 className="mt-5 text-xl font-medium title-font dark:text-gray-300">{title}</h2>
@@ -31,8 +33,8 @@ export default async function DomainServiceCard({
 					strokeLinejoin="round"
 					strokeWidth="2"
 					className="w-4 h-4 ml-2"
-					viewBox="0 0 24 24">
-					<path d="M5 12h14M12 5l7 7-7 7"></path>
+          viewBox="0 0 24 24">
+					<path d="M5 12h14M12 5l7 7-7 7"/>
 				</svg>
 			</Link>
 		</div>

@@ -1,5 +1,5 @@
 
-const Skeleton = ({ className }: any) => (
+const Skeleton = ({ className }: Readonly<{className: string}>) => (
   <div aria-live="polite" aria-busy="true" className={className}>
     <span className="inline-flex w-full leading-none bg-gray-300 rounded-md select-none animate-pulse">
       ‌
@@ -8,7 +8,7 @@ const Skeleton = ({ className }: any) => (
   </div>
 )
 
-const SVGSkeleton = ({ className }: any) => (
+const SVGSkeleton = ({ className }: Readonly<{className: string}>) => (
   <svg
     className={
       className + " animate-pulse rounded bg-gray-300"
@@ -16,6 +16,10 @@ const SVGSkeleton = ({ className }: any) => (
   />
 )
 
+/**
+ * This function renders the loading screen for the auth pages.
+ * @returns The loading screen for the auth pages.
+ */
 export default async function Loading() {
     return (
 <main>

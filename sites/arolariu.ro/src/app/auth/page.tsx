@@ -1,5 +1,3 @@
-/** @format */
-
 import fetchUser from "@/lib/fetchUser";
 import {Metadata} from "next";
 import Image from "next/image";
@@ -11,6 +9,10 @@ export const metadata: Metadata = {
 	description: "The authentication page for the `arolariu.ro` platform.",
 };
 
+/**
+ * The main authentication page.
+ * @returns The main authentication page.
+ */
 export default async function AuthPage() {
 	const {isAuthenticated} = await fetchUser();
 	if (isAuthenticated) { return redirect("/"); }
@@ -22,7 +24,7 @@ export default async function AuthPage() {
 					{/* Sign up component */}
 					<div className="container px-8 mb-10 sm:w-1/2">
 						<div className="flex items-center justify-center h-64 overflow-hidden rounded-lg">
-							<Image src="/images/auth/sign-up.svg" alt="Sign up SVG" width={"300"} height={"500"} className="object-cover"/>
+							<Image src="/images/auth/sign-up.svg" alt="Sign up SVG" width="300" height="500" className="object-cover"/>
 						</div>
 						<h2 className="mt-6 mb-3 text-2xl font-medium title-font">Become a new member today.</h2>
 						<p className="text-base leading-relaxed">
@@ -39,7 +41,7 @@ export default async function AuthPage() {
 					{/* Sign in component */}
 					<div className="container px-8 mb-10 sm:w-1/2">
 						<div className="flex items-center justify-center h-64 overflow-hidden rounded-lg">
-							<Image src="/images/auth/sign-in.svg" alt="Sign in SVG" width={"300"} height={"500"} className="object-cover" />
+							<Image src="/images/auth/sign-in.svg" alt="Sign in SVG" width="300" height="500" className="object-cover" />
 						</div>
 						<h2 className="mt-6 mb-3 text-2xl font-medium title-font">Continue as an existing member.</h2>
 						<p className="text-base leading-relaxed">

@@ -11,7 +11,7 @@ const ThemeSwitcherButton = () => {
 		setMounted(true);
 	}, []);
 
-	if (!mounted) return null;
+	if (!mounted) return;
 
 	return (
 		<div title="Theme switcher element" className="text-yellow-500">

@@ -1,5 +1,9 @@
 import {useEffect, useState} from "react";
 
+/**
+ * Client hook to get the window size and whether the window is mobile or desktop.
+ * @returns An object containing the window size and whether the window is mobile or desktop.
+ */
 export default function useWindowSize() {
 	const [windowSize, setWindowSize] = useState<{
 		width: number | undefined;
@@ -9,7 +13,10 @@ export default function useWindowSize() {
 		height: undefined,
 	});
 
-	useEffect(() => {
+  useEffect(() => {
+    /**
+     * Function that handles the window resize event.
+     */
 		function handleResize() {
 			setWindowSize({
 				width: window.innerWidth,
@@ -25,7 +32,7 @@ export default function useWindowSize() {
 
 	return {
 		windowSize,
-		isMobile: typeof windowSize?.width === "number" && windowSize?.width < 768,
-		isDesktop: typeof windowSize?.width === "number" && windowSize?.width >= 768,
+		isMobile: typeof windowSize.width === "number" && windowSize.width < 768,
+		isDesktop: typeof windowSize.width === "number" && windowSize.width >= 768,
 	};
 }

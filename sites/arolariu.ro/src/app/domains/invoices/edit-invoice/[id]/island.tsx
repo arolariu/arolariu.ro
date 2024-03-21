@@ -6,11 +6,16 @@ import {EditInvoiceTable} from "@/components/domains/invoices/edit-invoice/EditI
 import {useZustandStore} from "@/hooks/stateStore";
 import useWindowSize from "@/hooks/useWindowSize";
 import Invoice from "@/types/invoices/Invoice";
+import Product from "@/types/invoices/Product";
 
 interface Props {
 	invoice: Invoice;
 }
 
+/**
+ * This function renders the edit invoice page.
+ * @returns The view for the edit invoice page.
+ */
 export default function RenderEditInvoicePage({invoice}: Readonly<Props>) {
 	const setSelectedInvoice = useZustandStore((state) => state.setSelectedInvoice);
 	const {windowSize} = useWindowSize();
@@ -40,7 +45,7 @@ export default function RenderEditInvoicePage({invoice}: Readonly<Props>) {
 			<hr />
 			<div className="flex flex-row gap-10 mx-auto">
 				<h2 className="w-4/5 mt-4 text-2xl font-extrabold tracking-widest text-transparent bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text indent-8">
-					Item List: ({invoice.items?.length} items)
+					Item List: ({invoice.items.length} items)
 				</h2>
 				<p className="justify-end mt-6 text-sm text-gray-500">
 					Filters:
@@ -59,7 +64,7 @@ export default function RenderEditInvoicePage({invoice}: Readonly<Props>) {
 				</p>
 			</div>
 			<div className="flex flex-row flex-wrap">
-				{invoice.items?.map((item: any, index: number) => (
+				{invoice.items.map((item: Product, index: number) => (
 					<div key={index} className="2xsm:w-full sm:w-1/2 lg:w-1/3 xl:w-1/4">
 						<EditInvoiceItemCard item={item} />
 					</div>

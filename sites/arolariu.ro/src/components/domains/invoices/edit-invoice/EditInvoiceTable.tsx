@@ -13,7 +13,7 @@ export const EditInvoiceTable = () => {
 	const merchant = invoice.merchant;
 
 	const itemsWithAllergens = invoice.items.filter((item) => item.detectedAllergens.length > 0);
-	const allergensList = itemsWithAllergens.map((item) => item.detectedAllergens).flat();
+	const allergensList = itemsWithAllergens.flatMap((item) => item.detectedAllergens);
 	const recipesList = invoice.possibleRecipes;
 
 	return (
@@ -73,9 +73,9 @@ export const EditInvoiceTable = () => {
 						<td className="table-cell">{merchant.phoneNumber}</td>
 					</tr>
 					{invoice.additionalMetadata.map((kvPair, index) => (
-						<tr key={index} className={`${index % 2 != 1 ? "bg-gray-900" : ""} table-row text-center`}>
+						<tr key={index} className={`${index % 2 ? "bg-gray-900" : ""} table-row text-center`}>
 							<td className="table-cell">{kvPair.key}</td>
-							<td className="table-cell">{kvPair.value as any}</td>
+							<td className="table-cell">{String(kvPair.value)}</td>
 						</tr>
 					))}
 				</tbody>

@@ -6,6 +6,10 @@ export const metadata: Metadata = {
 	description: "Learn more about the platform that you are currently on.",
 };
 
+/**
+ * The platform page.
+ * @returns The platform page
+ */
 export default async function PlatformPage() {
 	return (
 		<main className="pt-16">
@@ -14,9 +18,9 @@ export default async function PlatformPage() {
 					What is <code>arolariu.ro</code>?
 				</h1>
 				<div className="flex justify-center mx-auto my-12">
-					<span className="inline-block h-2 bg-blue-500 rounded-full w-60"></span>
-					<span className="inline-block w-6 h-2 mx-1 bg-blue-500 rounded-full"></span>
-					<span className="inline-block w-3 h-2 bg-blue-500 rounded-full"></span>
+					<span className="inline-block h-2 bg-blue-500 rounded-full w-60"/>
+					<span className="inline-block w-6 h-2 mx-1 bg-blue-500 rounded-full"/>
+					<span className="inline-block w-3 h-2 bg-blue-500 rounded-full"/>
 				</div>
 			</section>
 			<section> {/* About the platform */}

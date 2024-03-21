@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import type { PrecacheEntry } from "@serwist/precaching";
 import { SerwistOptions, installSerwist } from "@serwist/sw";
 import { defaultCache } from "@serwist/next/worker";

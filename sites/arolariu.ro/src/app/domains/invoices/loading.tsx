@@ -1,12 +1,16 @@
-const Skeleton = ({className}: any) => (
+const Skeleton = ({className}: Readonly<{className: string}>) => (
 	<div aria-live="polite" aria-busy="true" className={className}>
 		<span className="inline-flex w-full leading-none bg-gray-300 rounded-md select-none animate-pulse">‌</span>
 		<br />
 	</div>
 );
 
-const SVGSkeleton = ({className}: any) => <svg className={className + " animate-pulse rounded bg-gray-300"} />;
+const SVGSkeleton = ({className}: Readonly<{className: string}>) => <svg className={className + " animate-pulse rounded bg-gray-300"} />;
 
+/**
+ * This function renders the loading screen for the invoices domain.
+ * @returns The loading screen for the invoices domain.
+ */
 export default async function Loading() {
 	return (
 		<section>

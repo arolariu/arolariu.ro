@@ -1,5 +1,3 @@
-/** @format */
-
 import fetchUser from "@/lib/fetchUser";
 import {Metadata} from "next";
 import Image from "next/image";
@@ -11,6 +9,10 @@ export const metadata: Metadata = {
 		"The invoice management system provides users with detailed insights into their spending habits, according to their uploaded receipts.",
 };
 
+/**
+ * The invoice management system homepage.
+ * @returns The invoice management system homepage.
+ */
 export default async function InvoicePage() {
 	const {isAuthenticated} = await fetchUser();
 
@@ -43,7 +45,7 @@ export default async function InvoicePage() {
 								Upload receipt
 							</Link>
 							{/* If user is authenticated, show the `My Receipts` button too. */}
-							{isAuthenticated && <Link
+							{!!isAuthenticated && <Link
 								href="/domains/invoices/view-invoices"
 								className="inline-flex px-6 py-2 ml-4 text-lg text-gray-700 bg-gray-100 border-0 rounded hover:bg-gray-200 focus:outline-none">
 								My receipts
@@ -58,7 +60,7 @@ export default async function InvoicePage() {
 						<div className="md:w-1/2 md:py-6 md:pr-10 lg:w-2/5">
 							<div className="relative flex pb-12">
 								<div className="absolute inset-0 flex items-center justify-center w-10 h-full">
-									<div className="w-1 h-full bg-gray-200 pointer-events-none"></div>
+									<div className="w-1 h-full bg-gray-200 pointer-events-none"/>
 								</div>
 								<div className="relative z-10 inline-flex items-center justify-center flex-shrink-0 w-10 h-10 bg-indigo-500 rounded-full">
 									<svg
@@ -69,7 +71,7 @@ export default async function InvoicePage() {
 										strokeWidth="2"
 										className="w-5 h-5"
 										viewBox="0 0 24 24">
-										<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+										<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
 									</svg>
 								</div>
 								<div className="flex-grow pl-4">
@@ -91,7 +93,7 @@ export default async function InvoicePage() {
 							</div>
 							<div className="relative flex pb-12">
 								<div className="absolute inset-0 flex items-center justify-center w-10 h-full">
-									<div className="w-1 h-full bg-gray-200 pointer-events-none"></div>
+									<div className="w-1 h-full bg-gray-200 pointer-events-none"/>
 								</div>
 								<div className="relative z-10 inline-flex items-center justify-center flex-shrink-0 w-10 h-10 bg-indigo-500 rounded-full">
 									<svg
@@ -102,7 +104,7 @@ export default async function InvoicePage() {
 										strokeWidth="2"
 										className="w-5 h-5"
 										viewBox="0 0 24 24">
-										<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+										<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
 									</svg>
 								</div>
 								<div className="flex-grow pl-4">
@@ -118,7 +120,7 @@ export default async function InvoicePage() {
 							</div>
 							<div className="relative flex pb-12">
 								<div className="absolute inset-0 flex items-center justify-center w-10 h-full">
-									<div className="w-1 h-full bg-gray-200 pointer-events-none"></div>
+									<div className="w-1 h-full bg-gray-200 pointer-events-none"/>
 								</div>
 								<div className="relative z-10 inline-flex items-center justify-center flex-shrink-0 w-10 h-10 bg-indigo-500 rounded-full">
 									<svg
@@ -129,8 +131,8 @@ export default async function InvoicePage() {
 										strokeWidth="2"
 										className="w-5 h-5"
 										viewBox="0 0 24 24">
-										<circle cx="12" cy="5" r="3"></circle>
-										<path d="M12 22V8M5 12H2a10 10 0 0020 0h-3"></path>
+										<circle cx="12" cy="5" r="3"/>
+										<path d="M12 22V8M5 12H2a10 10 0 0020 0h-3"/>
 									</svg>
 								</div>
 								<div className="flex-grow pl-4">
@@ -145,7 +147,7 @@ export default async function InvoicePage() {
 							</div>
 							<div className="relative flex pb-12">
 								<div className="absolute inset-0 flex items-center justify-center w-10 h-full">
-									<div className="w-1 h-full bg-gray-200 pointer-events-none"></div>
+									<div className="w-1 h-full bg-gray-200 pointer-events-none"/>
 								</div>
 								<div className="relative z-10 inline-flex items-center justify-center flex-shrink-0 w-10 h-10 bg-indigo-500 rounded-full">
 									<svg
@@ -156,8 +158,8 @@ export default async function InvoicePage() {
 										strokeWidth="2"
 										className="w-5 h-5"
 										viewBox="0 0 24 24">
-										<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
-										<circle cx="12" cy="7" r="4"></circle>
+										<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+										<circle cx="12" cy="7" r="4"/>
 									</svg>
 								</div>
 								<div className="flex-grow pl-4">
@@ -181,8 +183,8 @@ export default async function InvoicePage() {
 										strokeWidth="2"
 										className="w-5 h-5"
 										viewBox="0 0 24 24">
-										<path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
-										<path d="M22 4L12 14.01l-3-3"></path>
+										<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+										<path d="M22 4L12 14.01l-3-3"/>
 									</svg>
 								</div>
 								<div className="flex-grow pl-4">

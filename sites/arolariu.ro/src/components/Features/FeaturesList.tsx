@@ -2,6 +2,10 @@ import Link from "next/link";
 import {SiCsharp, SiGithubactions, SiMicrosoftazure, SiNextdotjs, SiOpentelemetry, SiSvelte} from "react-icons/si";
 import Feature from "./Feature";
 
+/**
+ * The features list component.
+ * @returns A list of features.
+ */
 export default function FeaturesList() {
 	return (
 		<div className="max-w-screen-xl px-4 py-8 mx-auto sm:px-6 sm:py-12 lg:px-8 lg:py-16">

@@ -1,9 +1,11 @@
-/** @format */
-
 import {COMMIT_SHA, SITE_URL, TIMESTAMP} from "@/constants";
 import Link from "next/link";
 import {FaGithub, FaLinkedin} from "react-icons/fa";
 
+/**
+ * The footer component.
+ * @returns The footer component.
+ */
 export default function Footer() {
 	return (
 		<footer className="relative bottom-0 w-full bg-indigo-500">
@@ -34,7 +36,7 @@ export default function Footer() {
 								strokeWidth="2"
 								className="w-10 h-10 p-2 bg-indigo-500 rounded-full"
 								viewBox="0 0 24 24">
-								<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+								<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
 							</svg>
 							<span className="ml-2 text-xl font-bold tracking-wide uppercase">AROLARIU.RO</span>
 						</Link>

@@ -2,6 +2,10 @@ import FeaturesList from "@/components/Features/FeaturesList";
 import Image from "next/image";
 import Link from "next/link";
 
+/**
+ * The home page component.
+ * @returns The home page component.
+ */
 export default async function Home() {
 	return (
 		<main>
@@ -19,7 +23,7 @@ export default async function Home() {
 					You are welcome to explore all of the applications and services that are hosted on this domain space.
 				</p>
 				<div className="relative inline-flex mt-8 2xsm:ml-[26%] md:ml-0">
-					<div className="absolute transition-all duration-200 rounded-full -inset-px bg-gradient-to-r from-cyan-500 to-purple-500 group-hover:shadow-lg group-hover:shadow-cyan-500/50"></div>
+					<div className="absolute transition-all duration-200 rounded-full -inset-px bg-gradient-to-r from-cyan-500 to-purple-500 group-hover:shadow-lg group-hover:shadow-cyan-500/50"/>
 					<Link
 						href="/domains"
 						title=""

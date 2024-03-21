@@ -1,5 +1,3 @@
-/** @format */
-
 import fetchUser from "@/lib/fetchUser";
 import {Metadata} from "next";
 import RenderInvoiceScreen from "./island";
@@ -10,6 +8,10 @@ export const metadata: Metadata = {
 		"The invoice management system provides users with detailed insights into their spending habits, according to their uploaded receipts.",
 };
 
+/**
+ * The create invoice page.
+ * @returns The create invoice page.
+ */
 export default async function CreateInvoicePage() {
 	const {isAuthenticated} = await fetchUser();
 

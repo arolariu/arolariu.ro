@@ -12,15 +12,19 @@ export const metadata: Metadata = {
 	description: "Learn more about Alexandru-Razvan Olariu, the author of this platform.",
 };
 
+/**
+ * The author page.
+ * @returns The author page.
+ */
 export default async function AuthorPage() {
 	return (
 		<main className="pt-16">
 			<section>
 				<h1 className="font-semibold text-center 2xsm:text-3xl md:text-5xl lg:text-7xl">Meet the author.</h1>
 				<div className="flex justify-center mx-auto mt-6">
-					<span className="inline-block h-2 bg-blue-500 rounded-full w-60"></span>
-					<span className="inline-block w-6 h-2 mx-1 bg-blue-500 rounded-full"></span>
-					<span className="inline-block w-3 h-2 bg-blue-500 rounded-full"></span>
+					<span className="inline-block h-2 bg-blue-500 rounded-full w-60"/>
+					<span className="inline-block w-6 h-2 mx-1 bg-blue-500 rounded-full"/>
+					<span className="inline-block w-3 h-2 bg-blue-500 rounded-full"/>
 				</div>
 			</section> {/* Title */}
 
@@ -115,8 +119,8 @@ export default async function AuthorPage() {
 				<Image
 					src="/images/about/the-author/work-together.svg"
 					alt="Work Together SVG"
-					width={"600"}
-					height={"600"}
+					width="600"
+					height="600"
 					className="ml-[10%] object-cover 2xsm:hidden xl:block"
 				/>
 			</section> {/* Connect information */}

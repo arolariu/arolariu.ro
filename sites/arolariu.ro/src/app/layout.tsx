@@ -1,5 +1,3 @@
-/** @format */
-
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {Caudex} from "next/font/google";
@@ -24,7 +22,7 @@ const fontFamily: NextFont = Caudex({
 	preload: true,
 });
 
-const siteDescription: string =
+const siteDescription =
 	"Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania.";
 
 export const metadata: Metadata = {
@@ -146,6 +144,10 @@ export const metadata: Metadata = {
 	] satisfies Icon[],
 };
 
+/**
+ * The root layout.
+ * @returns The root layout.
+ */
 export default async function RootLayout({children}: Readonly<PropsWithChildren<{}>>) {
 	return (
 		<html lang="en" suppressHydrationWarning className={fontFamily.className} dir="ltr">

@@ -4,6 +4,10 @@ import Link from "next/link";
 
 interface Props { className?: string }
 
+/**
+ * This function renders the navigation bar.
+ * @returns The navigation bar.
+ */
 export default async function Navigation({className}: Readonly<Props>) {
 	const {user, isAuthenticated} = await fetchUser();
 
@@ -28,9 +32,9 @@ export default async function Navigation({className}: Readonly<Props>) {
 					</Link>
 				</li>
 			)}
-			{isAuthenticated && (
+			{!!isAuthenticated && (
 				<li>
-					<Link href={`${SITE_URL}/accounts/${user?.id}`} className="mr-5 indicator hover:text-yellow-300">
+					<Link href={`${SITE_URL}/accounts/${user?.id ?? ''}`} className="mr-5 indicator hover:text-yellow-300">
 						Account
 					</Link>
 				</li>

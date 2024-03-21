@@ -15,6 +15,10 @@ import {Label} from "@/components/ui/label";
 import {Switch} from "@/components/ui/switch";
 import {AlertDialogContent} from "@radix-ui/react-alert-dialog";
 
+/**
+ * The cookies banner component.
+ * @returns The cookies banner component.
+ */
 export function CookiesBanner() {
 	return (
 		<AlertDialog>
@@ -26,7 +30,7 @@ export function CookiesBanner() {
 					<AlertDialogHeader>
 						<CardHeader className="border-b border-gray-300 pb-4">
 							<div className="flex items-center">
-								<CookieIcon className="mr-2" />
+								<CookieIcon />
 								<AlertDialogTitle>
 									<CardTitle>Cookie Preferences</CardTitle>
 								</AlertDialogTitle>
@@ -83,10 +87,13 @@ export function CookiesBanner() {
 	);
 }
 
-function CookieIcon(props: any) {
+/**
+ * The cookie icon.
+ * @returns The cookie icon.
+ */
+function CookieIcon() {
 	return (
 		<svg
-			{...props}
 			xmlns="http://www.w3.org/2000/svg"
 			width="24"
 			height="24"
@@ -94,7 +101,8 @@ function CookieIcon(props: any) {
 			fill="none"
 			stroke="currentColor"
 			strokeWidth="2"
-			strokeLinecap="round"
+      strokeLinecap="round"
+      className="mr-2"
 			strokeLinejoin="round">
 			<path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5" />
 			<path d="M8.5 8.5v.01" />

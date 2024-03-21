@@ -1,10 +1,9 @@
 interface Props {
 	currentStep: number;
-	// eslint-disable-next-line no-unused-vars
 	setCurrentStep: (step: number) => void;
 }
 
-export const ViewInvoiceHeader = ({currentStep, setCurrentStep}: Props) => {
+export const ViewInvoiceHeader = ({currentStep, setCurrentStep}: Readonly<Props>) => {
 	return (
 		<div className="flex mb-4">
 			<a

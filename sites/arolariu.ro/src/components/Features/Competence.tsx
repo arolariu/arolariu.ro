@@ -5,6 +5,11 @@ interface Props {
 	description: string;
 	children: ReactNode;
 }
+
+/**
+ * The competence component.
+ * @returns The competence component.
+ */
 export default function Competence({title, description, children}: Readonly<Props>) {
 	return (
 		<div className="flex flex-col items-center pb-10 mx-auto my-10 border-b border-gray-700 dark:border-gray-200 max-w-7xl sm:flex-row">

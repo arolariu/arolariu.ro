@@ -2,6 +2,10 @@ import {SITE_URL} from "@/constants";
 import Image from "next/image";
 import Link from "next/link";
 
+/**
+ * This function renders a screen that tells the user that they are forbidden from accessing a certain resource.
+ * @returns Render a screen that tells the user that they are forbidden from accessing a certain resource.
+ */
 export default async function RenderForbiddenScreen() {
 	return (
 		<section className="container flex flex-col items-center justify-center px-5 py-12 mx-auto">

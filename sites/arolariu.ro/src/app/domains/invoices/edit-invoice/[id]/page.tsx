@@ -1,5 +1,3 @@
-/** @format */
-
 import RenderForbiddenScreen from "@/components/domains/RenderForbiddenScreen";
 import {Metadata} from "next";
 import RenderEditInvoicePage from "./island";
@@ -15,13 +13,17 @@ export const metadata: Metadata = {
 	description: "Edit an invoice from the invoice management system.",
 };
 
+/**
+ * The edit invoice page.
+ * @returns The edit invoice page.
+ */
 export default async function EditInvoicePage({ params }: Readonly<Props>) {
 	const { user, isAuthenticated } = await fetchUser();
 	const invoice = await fetchInvoice(params.id, user);
 
 	if (!isAuthenticated) { return <RenderForbiddenScreen />; }
 	if (!invoice) { return <RenderForbiddenScreen />; }
-	
+
 	return (
 		<main>
 			<RenderEditInvoicePage invoice={invoice}/>

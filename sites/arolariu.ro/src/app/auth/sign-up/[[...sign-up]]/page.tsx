@@ -6,6 +6,10 @@ export const metadata: Metadata = {
 	description: "Sign up to arolariu.ro",
 };
 
+/**
+ * The sign up page.
+ * @returns The sign up page.
+ */
 export default async function Page() {
 	return (
 		<main className="flex flex-col 2xsm:p-2 sm:p-4 md:p-8 2xsm:mt-16 md:mt-0">

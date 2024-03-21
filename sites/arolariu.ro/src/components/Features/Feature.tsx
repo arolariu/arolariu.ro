@@ -8,6 +8,10 @@ interface Props {
 	description: string;
 }
 
+/**
+ * The feature component
+ * @returns The feature component
+ */
 export default function Feature({link, title, children, description}: Readonly<Props>) {
     return (
         <Link

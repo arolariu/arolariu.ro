@@ -13,7 +13,7 @@ export const ViewInvoiceImageModal = () => {
 		transformOrigin: "0 0",
 	});
 
-	const handleMouseMove = (event: any) => {
+const handleMouseMove = (event: React.MouseEvent<HTMLImageElement>) => {
 		if (isFrozen) return;
 
 		const containerRect = event.currentTarget.getBoundingClientRect();
@@ -29,7 +29,7 @@ export const ViewInvoiceImageModal = () => {
 		const boundNormalizedY = Math.min(Math.max(normalizedY, 0.05), 0.95);
 
 		// Calculate new transform origin based on bounds
-		const newTransformOrigin = `${boundNormalizedX * 100}% ${boundNormalizedY * 100}%`;
+		const newTransformOrigin = `${(boundNormalizedX * 100).toString()}% ${(boundNormalizedY * 100).toString()}%`;
 
 		setZoomStyle({
 			transform: "scale(2)",
@@ -46,18 +46,19 @@ export const ViewInvoiceImageModal = () => {
 		}
 	};
 
-	const handleImageClick = (event: any) => {
-		if (event.target.tagName === "IMG") {
-			setIsFrozen(!isFrozen);
-		} else if (event.target.tagName === "DIALOG") {
-			modalReference.current?.close();
-			setIsFrozen(false);
-		}
-	};
+const handleImageClick = (event: React.MouseEvent<HTMLImageElement | HTMLDialogElement>) => {
+  const target = event.target as HTMLElement;
+  if (target.tagName === "IMG") {
+    setIsFrozen(!isFrozen);
+  } else if (target.tagName === "DIALOG") {
+    modalReference.current?.close();
+    setIsFrozen(false);
+  }
+};
 
 	return (
 		<div className="flex flex-wrap justify-center mx-auto mt-4">
-			<button className="btn btn-secondary" onClick={() => modalReference.current?.showModal()}>
+			<button type="button" className="btn btn-secondary" onClick={() => modalReference.current?.showModal()}>
 				Preview uploaded receipt photo
 			</button>
 			<dialog
@@ -73,7 +74,7 @@ export const ViewInvoiceImageModal = () => {
 							transition: "transform 0.3s ease, transform-origin 0s",
 							...zoomStyle,
 						}}
-						src={`${invoice != null ? invoice.photoLocation : "https://dummyimage.com/400x400"}`}
+						src={invoice.photoLocation}
 						width={800}
 						height={800}
 						onMouseMove={handleMouseMove}
@@ -81,7 +82,7 @@ export const ViewInvoiceImageModal = () => {
 						onClick={handleImageClick}
 					/>
 					<div className="modal-action">
-						<button className="mx-auto btn btn-secondary">Close invoice preview</button>
+						<button type="button" className="mx-auto btn btn-secondary">Close invoice preview</button>
 					</div>
 				</form>
 			</dialog>

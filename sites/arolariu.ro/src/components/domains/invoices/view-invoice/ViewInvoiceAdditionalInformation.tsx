@@ -1,14 +1,18 @@
 import {useZustandStore} from "@/hooks/stateStore";
 
+/**
+ * This function renders the view invoice additional information.
+ * @returns The JSX for the view invoice additional information.
+ */
 export default function ViewInvoiceAdditionalInformation() {
 	const invoice = useZustandStore((state) => state.selectedInvoice);
-	const {additionalMetadata, userIdentifier} = invoice;
+	const {additionalMetadata, userIdentifier, lastUpdatedAt} = invoice;
 
 	return (
 		<section>
 			<div className="flex py-2 border-b border-gray-200">
 				<span>Invoice Last Analysis</span>
-				<span className="ml-auto dark:text-gray-300">{new Date(invoice.lastUpdatedAt).toUTCString()}</span>
+				<span className="ml-auto dark:text-gray-300">{new Date(lastUpdatedAt).toUTCString()}</span>
 			</div>
 			<div className="flex py-2 border-b border-gray-200">
 				<span>User Identifier</span>

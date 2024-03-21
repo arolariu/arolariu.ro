@@ -1,5 +1,3 @@
-/** @format */
-
 import {SignIn} from "@clerk/nextjs";
 import {Metadata} from "next";
 
@@ -8,6 +6,10 @@ export const metadata: Metadata = {
 	description: "Sign in to arolariu.ro",
 };
 
+/**
+ * The sign in page.
+ * @returns The sign in page.
+ */
 export default async function Page() {
 	return (
 		<main className="flex flex-col 2xsm:p-2 sm:p-4 md:p-8 2xsm:mt-16 md:mt-0">

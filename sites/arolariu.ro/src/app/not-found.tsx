@@ -6,6 +6,10 @@ export const metadata: Metadata = {
 	description: "Page not found.",
 };
 
+/**
+ * The 404 page.
+ * @returns The 404 page.
+ */
 export default async function NotFound() {
 	return (
 		<div className="container flex flex-col mx-auto my-4">
@@ -18,7 +22,7 @@ export default async function NotFound() {
 					<code className="container flex items-center justify-center mb-4 text-center">
 						User is
 						<br />
-						Username: {"Unknown username"}
+						Username: &quot;Unknown username&quot;
 					</code>
 					<center className="items-center justify-center block mx-8 text-center border-2 border-dotted">
 						TODO: Add base64 representation here.
