@@ -11,7 +11,7 @@ export default function AlertNotification({ imageBlob }: Readonly<Props>) {
 
   const allowedFormats = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
   return allowedFormats.includes(imageBlob.type) ? undefined
-    : <div className="container alert alert-error mx-auto mt-8 flex w-1/2 flex-col opacity-100 transition-opacity duration-[1250ms] ease-in">
+    : <div className="container alert alert-error mx-auto mt-8 flex w-1/2 flex-col opacity-100 transition-opacity duration-1000 ease-in">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         className="w-6 h-6 stroke-current shrink-0"
