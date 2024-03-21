@@ -2,9 +2,8 @@
 
 import { InvoiceCard } from "@/components/Cards/InvoiceCard";
 import Invoice from "@/types/invoices/Invoice";
-import Link from "next/link";
 interface Props {
-  invoices: Invoice[];
+  invoices: Invoice[] | undefined;
 }
 
 /**
@@ -12,6 +11,7 @@ interface Props {
  * @returns This function renders the view invoices page.
  */
 export default function RenderViewInvoicesPage({ invoices }: Readonly<Props>) {
+  if (!invoices) return;
 
   const calculateInvoiceTotalCost = (): number => {
     let totalCost = 0;
@@ -41,8 +41,7 @@ export default function RenderViewInvoicesPage({ invoices }: Readonly<Props>) {
     return totalProducts;
   };
 
-  return invoices.length > 0
-    ?
+  return (
     <>
       <section className="dark:text-white">
         <div className="container px-5 pb-6 mx-auto">
@@ -76,17 +75,5 @@ export default function RenderViewInvoicesPage({ invoices }: Readonly<Props>) {
         })}
       </div>
     </>
-    :
-    <div className="flex flex-col w-full mb-20 text-center">
-      <h1 className="mb-4 text-2xl font-medium sm:text-3xl">Something is missing here... 😰</h1>
-      <p className="mx-auto text-base leading-relaxed lg:w-2/3">
-        It seems that you do not have any invoices associated with your account... <br />
-        Please upload some invoices and come back later. <br /> <br />
-      </p>
-      <Link
-        href="./create-invoice"
-        className="inline-flex px-6 py-2 mx-auto mt-8 text-lg text-white bg-indigo-500 border-0 rounded hover:bg-indigo-600 focus:outline-none">
-        Upload an invoice here.
-      </Link>
-    </div>
+  );
 }

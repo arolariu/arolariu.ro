@@ -1,7 +1,9 @@
+"use server";
+
 import Invoice from "@/types/invoices/Invoice";
-import { User } from "@clerk/backend";
 import { API_URL } from "../../constants";
 import generateJWT from "../generateJWT";
+import fetchUser from "../fetchUser";
 
 /**
  * Server action that fetches a single invoice for a user.
@@ -9,7 +11,8 @@ import generateJWT from "../generateJWT";
  * @param user The user for which to fetch the invoice.
  * @returns A promise of the invoice, or null if the request failed.
  */
-export default async function fetchInvoice(id: string, user: User | null): Promise<Invoice | undefined> {
+export default async function fetchInvoice(id: string): Promise<Invoice | undefined> {
+  const { user } = await fetchUser();
   const authorizationHeader = await generateJWT(user);
   const headers = {
     "Content-Type": "application/json",

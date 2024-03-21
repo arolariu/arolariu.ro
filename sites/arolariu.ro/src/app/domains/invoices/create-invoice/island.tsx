@@ -32,15 +32,16 @@ export default function RenderInvoiceScreen() {
     }
   };
 
-  const handleImageTransport = async () => {
+  const handleImageTransport = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
     const response = await uploadInvoice({ image: imageState.blob });
-    const { identifier, status } = response;
+    const { identifier, status, message } = response;
 
     if (status === "SUCCESS") {
       setImageState({ ...imageState, identifier, status: "SERVER_SIDE_UPLOAD" });
     } else {
       setImageState({ ...imageState, status: "NOT_UPLOADED" });
-      console.error("Error uploading the image to the server: ", response.message);
+      console.error("Error uploading the image to the server:", message);
     }
   };
 
@@ -64,7 +65,7 @@ export default function RenderInvoiceScreen() {
                   type="file"
                   name="file"
                   className="w-full max-w-xs bg-white file-input file-input-bordered dark:bg-black"
-                  title="Test"
+                  title="Upload a receipt"
                   onChange={handleImageUpload}
                 />
                 <button type="submit" title="Submit" className="hidden" />
@@ -92,8 +93,8 @@ export default function RenderInvoiceScreen() {
                   type="file"
                   name="file"
                   className="w-full max-w-xs file-input file-input-bordered"
-                  title="Test"
-                  onChange={async () => handleImageUpload}
+                  title="Upload a receipt."
+                  onChange={handleImageUpload}
                 />
                 <button type="submit" title="Submit" className="hidden" />
               </form>
@@ -101,14 +102,14 @@ export default function RenderInvoiceScreen() {
 
             {AlertNotification({ imageBlob: imageState.blob }) == undefined ? (
               <div className="container flex flex-col">
-                <button className="mx-auto mt-4 btn btn-primary" type="button" onClick={async () => await handleImageTransport()}>
+                <button className="mx-auto mt-4 btn btn-primary" type="button" onClick={handleImageTransport}>
                   Continue to the next step
                 </button>
                 <button
                   className="mx-auto mt-4 btn btn-secondary"
                   type="button"
                   onClick={() =>
-                    setImageState({ ...imageState, blob: undefined, identifier: "", status: ImageStatus.NOT_UPLOADED })
+                    setImageState({ ...imageState, blob: undefined, identifier: "", status: "NOT_UPLOADED" })
                   }>
                   Clear image
                 </button>
@@ -146,7 +147,7 @@ export default function RenderInvoiceScreen() {
                 href="./create-invoice"
                 className="btn btn-secondary"
                 onClick={() =>
-                  setImageState({ ...imageState, blob: undefined, identifier: "", status: ImageStatus.NOT_UPLOADED })
+                  setImageState({ ...imageState, blob: undefined, identifier: "", status: "NOT_UPLOADED" })
                 }>
                 Upload another invoice
               </Link>
@@ -160,6 +161,5 @@ export default function RenderInvoiceScreen() {
 
     default:
       return;
-
   }
 }

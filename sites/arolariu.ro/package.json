@@ -33,6 +33,9 @@
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
+    "@azure/app-configuration": "^1.5.0",
+    "@azure/identity": "^4.0.1",
+    "@azure/storage-blob": "^12.17.0",
     "@clerk/nextjs": "^4.29.9",
     "@mantine/core": "^7.6.2",
     "@mantine/hooks": "^7.6.2",
