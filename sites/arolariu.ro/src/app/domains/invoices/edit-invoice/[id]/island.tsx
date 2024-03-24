@@ -27,7 +27,7 @@ export default function RenderEditInvoicePage({invoice}: Readonly<Props>) {
 
 	return (
 		<section className="container p-2 mx-auto my-8 border-2 rounded-2xl">
-			{windowSize.width! < 1024 && (
+			{typeof windowSize.width === "number" && windowSize.width < 1024 && (
 				<div className="m-auto">
 					<EditInvoicePhotoPreview />
 				</div>
@@ -36,7 +36,7 @@ export default function RenderEditInvoicePage({invoice}: Readonly<Props>) {
 				<div className="flex-initial mx-auto 2xsm:w-full lg:w-1/2">
 					<EditInvoiceTable />
 				</div>
-				{windowSize.width! >= 1024 && (
+				{typeof windowSize.width === "number" && windowSize.width >= 1024 && (
 					<div className="p-4 m-auto 2xsm:hidden lg:block">
 						<EditInvoicePhotoPreview />
 					</div>

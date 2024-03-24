@@ -26,7 +26,7 @@ export default tseslint.config(eslint.configs.recommended, ...tseslint.configs.s
 	plugins: {
 		unicorn: eslintPluginUnicorn,
 		react: eslintPluginReact,
-		jsdoc: eslintPluginJsDoc,
+    jsdoc: eslintPluginJsDoc,
 	},
 	rules: {
 		...eslintPluginReact.configs.all.rules,

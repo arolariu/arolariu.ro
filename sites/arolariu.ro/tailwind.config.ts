@@ -1,8 +1,9 @@
-/**
- * @format
- * @type {import('tailwindcss').Config}
- */
-const tailwindConfig = {
+import typography from "@tailwindcss/typography";
+import animate from "tailwindcss-animate";
+import daisyUI from "daisyui";
+import { type Config } from "tailwindcss";
+
+const tailwindConfig: Config = {
 	content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
 	darkMode: ["selector", "[data-mantine-color-scheme='dark']"],
 	theme: {
@@ -40,7 +41,7 @@ const tailwindConfig = {
 			"3xl": "1976px",
 		},
 	},
-	plugins: [require("@tailwindcss/typography"), require("tailwindcss-animate"), require("daisyui")],
+  plugins: [typography, animate, daisyUI],
 };
 
 export default tailwindConfig;
