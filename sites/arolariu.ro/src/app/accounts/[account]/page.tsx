@@ -1,4 +1,4 @@
-import fetchUser from "@/lib/fetchUser";
+import {fetchUser} from "@/lib/utils.server";
 
 interface Props {
     params: {

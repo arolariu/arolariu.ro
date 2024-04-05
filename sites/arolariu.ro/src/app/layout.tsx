@@ -1,19 +1,19 @@
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
-import {Caudex} from "next/font/google";
+import { Caudex } from "next/font/google";
 
-import {SITE_URL} from "@/constants";
+import { SITE_URL } from "@/constants";
 import "@mantine/core/styles.css";
-import {Metadata} from "next";
-import {NextFont} from "next/dist/compiled/@next/font";
-import {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
-import {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";
-import {Author, Icon, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
-import {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
-import {PropsWithChildren, Suspense} from "react";
+import type { Metadata } from "next";
+import type { NextFont } from "next/dist/compiled/@next/font";
+import type { AlternateURLs } from "next/dist/lib/metadata/types/alternative-urls-types";
+import type { AppleWebApp } from "next/dist/lib/metadata/types/extra-types";
+import type { Author, Icon, Robots, TemplateString } from "next/dist/lib/metadata/types/metadata-types";
+import type { OpenGraph } from "next/dist/lib/metadata/types/opengraph-types";
+import { Suspense, type PropsWithChildren } from "react";
 import "./globals.css";
 import Loading from "./loading";
-import {Providers} from "./providers";
+import { Providers } from "./providers";
 
 const fontFamily: NextFont = Caudex({
 	weight: "700",

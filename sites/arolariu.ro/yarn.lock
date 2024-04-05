@@ -384,6 +384,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@cloudamqp/amqp-client@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "@cloudamqp/amqp-client@npm:3.1.1"
+  checksum: 10c0/e9420ca31cc309992f5d1aa2f2faafd2aa8d2e7dfa9d0481c74167931069f0c565a504bda03a1b4fa431110f906945123c3a29684fe4c409f00295babb5597b4
+  languageName: node
+  linkType: hard
+
 "@discoveryjs/json-ext@npm:0.5.7":
   version: 0.5.7
   resolution: "@discoveryjs/json-ext@npm:0.5.7"
@@ -2523,6 +2530,7 @@ __metadata:
     "@azure/identity": "npm:^4.0.1"
     "@azure/storage-blob": "npm:^12.17.0"
     "@clerk/nextjs": "npm:^4.29.9"
+    "@cloudamqp/amqp-client": "npm:^3.1.1"
     "@mantine/core": "npm:^7.6.2"
     "@mantine/hooks": "npm:^7.6.2"
     "@next/bundle-analyzer": "npm:^14.1.4"
@@ -2545,6 +2553,7 @@ __metadata:
     "@types/react-dom": "npm:^18.2.22"
     autoprefixer: "npm:^10.4.19"
     class-variance-authority: "npm:^0.7.0"
+    client-only: "npm:^0.0.1"
     clsx: "npm:^2.1.0"
     cssnano: "npm:^6.1.1"
     daisyui: "npm:^4.7.3"
@@ -3000,7 +3009,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"client-only@npm:0.0.1":
+"client-only@npm:0.0.1, client-only@npm:^0.0.1":
   version: 0.0.1
   resolution: "client-only@npm:0.0.1"
   checksum: 10c0/9d6cfd0c19e1c96a434605added99dff48482152af791ec4172fb912a71cff9027ff174efd8cdb2160cc7f377543e0537ffc462d4f279bc4701de3f2a3c4b358

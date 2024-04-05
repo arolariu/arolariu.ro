@@ -1,7 +1,7 @@
-import { Metadata } from "next";
+import { type Metadata } from "next";
 import RenderViewInvoicesPage from "./island";
 import fetchInvoices from "@/lib/invoices/fetchInvoices";
-import fetchUser from "@/lib/fetchUser";
+import {fetchUser} from "@/lib/utils.server";
 import Link from "next/link";
 
 export const metadata: Metadata = {

@@ -1,5 +1,5 @@
 import DomainServiceCard from "@/components/Cards/DomainServiceCard";
-import {Metadata} from "next";
+import {type Metadata} from "next";
 
 export const metadata: Metadata = {
 	title: "Domain Space Services",
@@ -39,7 +39,7 @@ export default async function DomainsHomepage() {
 					linkTo="/domains/invoices"
 					imageUrl="/images/domains/invoice-management-system.png"
 				/>
-			</div>
+      </div>
 		</main>
 	);
 }

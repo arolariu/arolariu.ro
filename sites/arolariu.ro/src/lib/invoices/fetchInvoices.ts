@@ -1,9 +1,9 @@
 "use server";
 
 import Invoice from "@/types/invoices/Invoice";
-import generateJWT from "../generateJWT";
+import generateJWT from "../utils.server";
 import { API_URL } from "../../constants";
-import fetchUser from "../fetchUser";
+import fetchUser from "../utils.server";
 
 /**
  * Server action that fetches all invoices for a user.

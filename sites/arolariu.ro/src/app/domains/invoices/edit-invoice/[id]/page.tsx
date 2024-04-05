@@ -1,7 +1,7 @@
 import RenderForbiddenScreen from "@/components/domains/RenderForbiddenScreen";
-import {Metadata} from "next";
+import {type Metadata} from "next";
 import RenderEditInvoicePage from "./island";
-import fetchUser from "@/lib/fetchUser";
+import {fetchUser} from "@/lib/utils.server";
 import fetchInvoice from "@/lib/invoices/fetchInvoice";
 
 interface Props {

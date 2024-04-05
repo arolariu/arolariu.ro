@@ -1,5 +1,5 @@
 import fetchInvoice from "@/lib/invoices/fetchInvoice";
-import {Metadata} from "next";
+import {type Metadata} from "next";
 import {RenderViewInvoicePage} from "./island";
 import Image from "next/image";
 

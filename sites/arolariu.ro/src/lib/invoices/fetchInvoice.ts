@@ -2,21 +2,20 @@
 
 import Invoice from "@/types/invoices/Invoice";
 import { API_URL } from "../../constants";
-import generateJWT from "../generateJWT";
-import fetchUser from "../fetchUser";
+import generateJWT from "../utils.server";
+import fetchUser from "../utils.server";
 
 /**
  * Server action that fetches a single invoice for a user.
  * @param id The id of the invoice to fetch.
- * @param user The user for which to fetch the invoice.
- * @returns A promise of the invoice, or null if the request failed.
+ * @returns A promise of the invoice, or undefined if the request failed.
  */
 export default async function fetchInvoice(id: string): Promise<Invoice | undefined> {
   const { user } = await fetchUser();
-  const authorizationHeader = await generateJWT(user);
+  const authorizationToken = await generateJWT(user);
   const headers = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${authorizationHeader}`,
+    Authorization: `Bearer ${authorizationToken}`,
   };
 
   // To understand if the invoice was shared with the user, we will hit the API on both the user's behalf and the guest's behalf.

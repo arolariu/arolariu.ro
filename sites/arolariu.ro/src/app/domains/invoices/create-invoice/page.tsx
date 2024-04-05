@@ -1,5 +1,5 @@
-import fetchUser from "@/lib/fetchUser";
-import {Metadata} from "next";
+import {fetchUser} from "@/lib/utils.server";
+import {type Metadata} from "next";
 import RenderInvoiceScreen from "./island";
 
 export const metadata: Metadata = {

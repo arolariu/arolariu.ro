@@ -1,9 +1,9 @@
 import Competence from "@/components/Features/Competence";
-import {Metadata} from "next";
+import { type Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { FaUserCheck, FaRegSun } from "react-icons/fa";
-import { GrTest, GrResources } from "react-icons/gr";
+import { FaRegSun, FaUserCheck } from "react-icons/fa";
+import { GrResources, GrTest } from "react-icons/gr";
 import { SiThealgorithms } from "react-icons/si";
 import { SlLoop } from "react-icons/sl";
 

@@ -1,5 +1,5 @@
 import {SITE_URL} from "@/constants";
-import fetchUser from "@/lib/fetchUser";
+import { fetchUser } from "@/lib/utils.server";
 import Link from "next/link";
 
 interface Props { className?: string }
