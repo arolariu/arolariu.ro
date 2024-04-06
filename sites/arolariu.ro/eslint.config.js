@@ -73,7 +73,7 @@ export default tseslint.config(
       "@typescript-eslint/consistent-type-definitions": "off",
       "@typescript-eslint/no-confusing-void-expression": "off",
     },
-    ignores: ["*.config.js", "package.json", "node_modules/**"],
+    ignores: ["*.config.js", "*.config.ts", "package.json", "node_modules/**"],
     settings: {
       react: {
         version: "18.2.0",
