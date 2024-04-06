@@ -16,5 +16,5 @@ public interface IInvoiceAnalysisFoundationService
     /// <param name="invoice"></param>
     /// <param name="options"></param>
     /// <returns></returns>
-    public Task AnalyzeInvoiceAsync(Invoice invoice, AnalysisOptionsDto options);
+    public Task AnalyzeInvoiceAsync(Invoice invoice, AnalysisOptions options);
 }

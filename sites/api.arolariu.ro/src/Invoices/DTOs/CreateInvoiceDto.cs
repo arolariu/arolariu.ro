@@ -16,30 +16,27 @@ namespace arolariu.Backend.Domain.Invoices.DTOs;
 [Serializable]
 [ExcludeFromCodeCoverage] // DTOs are not tested - they are used to transfer data between the client and the server.
 public readonly record struct CreateInvoiceDto(
+    [Required] Guid UserIdentifier,
+    [Required] Guid PhotoIdentifier,
     [Required] Uri PhotoLocation,
     IEnumerable<KeyValuePair<string, object>> PhotoMetadata)
 {
     /// <summary>
     /// Method used to convert the DTO to an invoice.
     /// </summary>
-    /// <param name="userIdentifier"></param>
     /// <returns></returns>
-    public Invoice ToInvoice(Guid? userIdentifier = null)
+    public Invoice ToInvoice()
     {
-        // Given `https://api.arolariu.ro/invoices/58c130ea-f767-4d4e-b1f6-5d514776cb3d.jpg`
-        // Retrieve the `58c130ea-f767-4d4e-b1f6-5d514776cb3d` part.
-        var invoiceId = this.PhotoLocation.Segments[^1].Split('.')[0];
         var invoice = new Invoice()
         {
-            Id = Guid.Parse(invoiceId),
+            Id = PhotoIdentifier,
             Category = InvoiceCategory.NOT_DEFINED,
-            EstimatedSurvivalDays = 0,
-            Merchant = null!, // defer initialization to the OCR service
             PaymentInformation = new PaymentInformation(),
-            PhotoLocation = this.PhotoLocation,
-            UserIdentifier = userIdentifier ?? Guid.Empty,
-            CreatedBy = userIdentifier ?? Guid.Empty,
+            PhotoLocation = PhotoLocation,
+            UserIdentifier = UserIdentifier,
+            CreatedBy = UserIdentifier,
         };
+
         return invoice;
     }
 }

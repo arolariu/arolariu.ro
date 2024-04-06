@@ -20,16 +20,16 @@ namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 public class Invoice : NamedEntity<Guid>
 {
     /// <summary>
-    /// The invoice category.
-    /// </summary>
-    [JsonPropertyOrder(3)]
-    public required InvoiceCategory Category { get; set; }
-
-    /// <summary>
     /// The invoice 1:1 user relationship (owner).
     /// </summary>
-    [JsonPropertyOrder(4)]
+    [JsonPropertyOrder(3)]
     public required Guid UserIdentifier { get; set; }
+
+    /// <summary>
+    /// The invoice category.
+    /// </summary>
+    [JsonPropertyOrder(4)]
+    public InvoiceCategory Category { get; set; } = InvoiceCategory.NOT_DEFINED;
 
     /// <summary>
     /// The invoice photo location.
@@ -41,7 +41,7 @@ public class Invoice : NamedEntity<Guid>
     /// Payment information (currency, total amount, total tax).
     /// </summary>
     [JsonPropertyOrder(6)]
-    public required PaymentInformation PaymentInformation { get; set; }
+    public PaymentInformation PaymentInformation { get; set; }
 
     /// <summary>
     /// The invoice 1:1? merchant relationship.
@@ -61,12 +61,6 @@ public class Invoice : NamedEntity<Guid>
     /// </summary>
     [JsonPropertyOrder(9)]
     public IEnumerable<Recipe> PossibleRecipes { get; } = new List<Recipe>();
-
-    /// <summary>
-    /// How many days can you survive with the invoice items?
-    /// </summary>
-    [JsonPropertyOrder(10)]
-    public required int EstimatedSurvivalDays { get; set; }
 
     /// <summary>
     /// The invoice additional metadata.

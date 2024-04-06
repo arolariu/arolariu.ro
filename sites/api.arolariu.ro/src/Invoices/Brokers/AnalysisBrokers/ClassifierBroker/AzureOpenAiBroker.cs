@@ -7,9 +7,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
-using arolariu.Backend.Domain.Invoices.Modules.Http.OpenAI;
 using System.Text.RegularExpressions;
 using System.Globalization;
+using Microsoft.Extensions.Options;
+using arolariu.Backend.Common.Options;
+using Azure.AI.OpenAI.Assistants;
+using Azure;
 
 namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
 
@@ -17,40 +20,57 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBro
 /// The Azure OpenAI broker service.
 /// </summary>
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
-public partial class AzureOpenAiBroker(OpenAIService aiService) : IClassifierBroker
+public sealed class AzureOpenAiBroker(IOptionsSnapshot<AzureOptions> options) : IClassifierBroker
 {
+    private AssistantsClient _client { get; init; } = new AssistantsClient(
+        new Uri(options.Value.OpenAIEndpoint),
+        new AzureKeyCredential(options.Value.OpenAIKey));
+
+    private Assistant InvoiceAssistant => _client.GetAssistant("id1");
+
     /// <inheritdoc/>
     public async Task<string> GenerateInvoiceDescription(Invoice invoice)
     {
         var productsList = invoice?.Items.Select(item => item.GenericName).ToList();
-        var thread = await aiService.CreateThread().ConfigureAwait(false);
-        var threadIdentifier = thread.id;
+        var merchantName = invoice?.Merchant?.Name;
 
-        await aiService.AddMessageToThread(threadIdentifier, new OpenAiRequestMessage
-        {
-            role = OpenAiThreadMessageRole.User,
-            content = "This invoice consists of the following items:"
-        }).ConfigureAwait(false);
-
-        foreach (var item in productsList!)
-        {
-            var message = new OpenAiRequestMessage
-            {
-                role = OpenAiThreadMessageRole.User,
-                content = item
-            };
-            await aiService.AddMessageToThread(threadIdentifier, message)
+        AssistantThread thread = await _client.CreateThreadAsync().ConfigureAwait(false);
+        await _client
+                .CreateMessageAsync(thread.Id, MessageRole.User, "Given the following products and merchant:\n" +
+                $"{string.Join(",\n", productsList!)}\n" +
+                $"Merchant Name: {merchantName}\n" +
+                "Create a short, 15 characters long, funny & smart invoice description.")
                 .ConfigureAwait(false);
+
+        ThreadRun run = await _client
+                                .CreateRunAsync(thread.Id, new CreateRunOptions(InvoiceAssistant.Id))
+                                .ConfigureAwait(false);
+
+        do
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
+            run = await _client.GetRunAsync(thread.Id, run.Id).ConfigureAwait(false);
+        }
+        while (run.Status == RunStatus.Queued
+            || run.Status == RunStatus.InProgress);
+
+        PageableList<ThreadMessage> messagesPage = await _client.GetMessagesAsync(thread.Id).ConfigureAwait(false);
+        IReadOnlyList<ThreadMessage> messages = messagesPage.Data;
+
+        foreach (ThreadMessage threadMessage in messages.Reverse())
+        {
+            Console.Write($"{threadMessage.CreatedAt:yyyy-MM-dd HH:mm:ss} - {threadMessage.Role,10}: ");
+            foreach (MessageContent contentItem in threadMessage.ContentItems)
+            {
+                if (contentItem is MessageTextContent textItem)
+                {
+                    Console.Write(textItem.Text);
+                }
+                Console.WriteLine();
+            }
         }
 
-        await aiService.AddMessageToThread(threadIdentifier, new OpenAiRequestMessage
-        {
-            role = OpenAiThreadMessageRole.User,
-            content = "Generate a short, funny, 30 character long description of the invoice, based on the given products list."
-        }).ConfigureAwait(false);
-
-        await aiService.ExecuteThreadRun(threadIdentifier).ConfigureAwait(false);
-        return await aiService.GetAssistantResponse(threadIdentifier).ConfigureAwait(false);
+        return messages[^1].ContentItems.OfType<MessageTextContent>().Last().Text;
     }
 
     /// <inheritdoc/>
@@ -60,79 +80,15 @@ public partial class AzureOpenAiBroker(OpenAIService aiService) : IClassifierBro
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<Recipe>> GeneratePossibleRecipes(IEnumerable<Product> products)
+    public Task<IEnumerable<Recipe>> GeneratePossibleRecipes(IEnumerable<Product> products)
     {
-        var productsList = products.Select(item => item.GenericName).ToList();
-        var thread = await aiService.CreateThread().ConfigureAwait(false);
-        var threadIdentifier = thread.id;
-
-        await aiService.AddMessageToThread(threadIdentifier, new OpenAiRequestMessage
-        {
-            role = OpenAiThreadMessageRole.User,
-            content = "This invoice consists of the following items:"
-        }).ConfigureAwait(false);
-
-        foreach (var item in productsList!)
-        {
-            var message = new OpenAiRequestMessage
-            {
-                role = OpenAiThreadMessageRole.User,
-                content = item
-            };
-            await aiService.AddMessageToThread(threadIdentifier, message)
-                .ConfigureAwait(false);
-        }
-
-        await aiService.AddMessageToThread(threadIdentifier, new OpenAiRequestMessage
-        {
-            role = OpenAiThreadMessageRole.User,
-            content = "Generate a list of maximum 3 possible recipes for this invoice. Output ONLY the generated recipes."
-        }).ConfigureAwait(false);
-
-        await aiService.ExecuteThreadRun(threadIdentifier).ConfigureAwait(false);
-        var response = await aiService.GetAssistantResponse(threadIdentifier).ConfigureAwait(false);
-        var recipes = response.Split(',').Select(recipe => new Recipe(recipe)).ToList();
-        return recipes;
+        throw new NotImplementedException();
     }
 
     /// <inheritdoc/>
-    public async Task<int> GeneratePossibleSurvivalDays(IEnumerable<Product> products)
+    public Task<int> GeneratePossibleSurvivalDays(IEnumerable<Product> products)
     {
-        var productsList = products.Select(item => item.GenericName).ToList();
-        var thread = await aiService.CreateThread().ConfigureAwait(false);
-        var threadIdentifier = thread.id;
-
-        await aiService.AddMessageToThread(threadIdentifier, new OpenAiRequestMessage
-        {
-            role = OpenAiThreadMessageRole.User,
-            content = "This invoice consists of the following items:"
-        }).ConfigureAwait(false);
-
-        foreach (var item in productsList!)
-        {
-            var message = new OpenAiRequestMessage
-            {
-                role = OpenAiThreadMessageRole.User,
-                content = item
-            };
-            await aiService.AddMessageToThread(threadIdentifier, message)
-                .ConfigureAwait(false);
-        }
-
-        await aiService.AddMessageToThread(threadIdentifier, new OpenAiRequestMessage
-        {
-            role = OpenAiThreadMessageRole.User,
-            content = "Output an estimate of how many days can a normal, healthy human being, survive with the given products, given normal circumstances."
-        }).ConfigureAwait(false);
-
-        await aiService.ExecuteThreadRun(threadIdentifier).ConfigureAwait(false);
-        var response = await aiService.GetAssistantResponse(threadIdentifier).ConfigureAwait(false);
-
-        // Create a regex that will retrieve the number from the response.
-        Regex regex = new(@"\d+");
-        var match = regex.Match(response);
-        var survivalDays = int.Parse(match.Value, CultureInfo.InvariantCulture);
-        return survivalDays;
+        throw new NotImplementedException();
     }
 
     /// <inheritdoc/>

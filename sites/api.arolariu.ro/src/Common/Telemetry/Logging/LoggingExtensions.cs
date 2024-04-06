@@ -30,9 +30,9 @@ public static class LoggingExtensions
             otelOptions.IncludeFormattedMessage = true;
             otelOptions.IncludeScopes = true;
 
-            #if DEBUG // Add console exporter only in Development
+#if DEBUG // Add console exporter only in Development
             otelOptions.AddConsoleExporter();
-            #endif
+#endif
 
             otelOptions.AddAzureMonitorLogExporter(monitorOptions =>
             {

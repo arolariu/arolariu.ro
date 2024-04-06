@@ -14,7 +14,7 @@ public partial class InvoiceAnalysisFoundationService
         ArgumentNullException.ThrowIfNull(invoice);
     }
 
-    private static void ValidateAnalysisOptionsAreSet(AnalysisOptionsDto options)
+    private static void ValidateAnalysisOptionsAreSet(AnalysisOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
     }

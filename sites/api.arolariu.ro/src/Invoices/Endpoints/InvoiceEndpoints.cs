@@ -10,7 +10,7 @@ namespace arolariu.Backend.Domain.Invoices.Endpoints;
 [ExcludeFromCodeCoverage]
 public static partial class InvoiceEndpoints
 {
-    private const string SemanticVersioning = "0.3.0-rc1";
+    private const string SemanticVersioning = "0.4.0-rc1";
     private const string EndpointNameTag = "Invoices Management System v" + SemanticVersioning;
 
     /// <summary>
@@ -24,7 +24,6 @@ public static partial class InvoiceEndpoints
     /// <param name="router">The <see cref="IEndpointRouteBuilder"/> used for mapping the endpoints.</param>
     public static void MapInvoiceEndpoints(this IEndpointRouteBuilder router)
     {
-        // Endpoints group: /api/invoices
         // This group contains the standard invoice endpoints (CRUD operations)
         MapStandardInvoiceEndpoints(router);
 
