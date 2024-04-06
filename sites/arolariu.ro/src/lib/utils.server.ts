@@ -1,9 +1,11 @@
-import {API_JWT} from "@/constants";
+import {API_JWT, CONFIG_STORE} from "@/constants";
+import {AppConfigurationClient} from "@azure/app-configuration";
 import "server-only";
 
 import {type User} from "@clerk/backend";
 import {currentUser} from "@clerk/nextjs";
 
+import {DefaultAzureCredential} from "@azure/identity";
 import * as jose from "jose";
 
 /**
@@ -36,4 +38,16 @@ export async function fetchUser(): Promise<{isAuthenticated: boolean; user: User
   const user = await currentUser();
   const isAuthenticated = user !== null;
   return {isAuthenticated, user};
+}
+
+/**
+ * Function to fetch a configuration value from Azure App Configuration.
+ * @param key The key of the configuration value to fetch.
+ * @returns The value of the configuration value.
+ */
+export async function fetchConfigurationValue(key: string): Promise<string> {
+  const credentials = new DefaultAzureCredential();
+  const client = new AppConfigurationClient(CONFIG_STORE, credentials);
+  const setting = await client.getConfigurationSetting({key});
+  return setting?.value ?? "";
 }

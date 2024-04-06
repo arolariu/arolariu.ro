@@ -34,6 +34,7 @@ export default function RenderInvoiceScreen() {
 
   const handleImageTransport = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
+    console.log("Entered handleImageTransport");
     const response = await uploadInvoice({image: imageState.blob});
     const {identifier, status, message} = response;
 

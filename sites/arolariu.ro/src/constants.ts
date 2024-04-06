@@ -13,3 +13,4 @@ export const API_URL = process.env["API_URL"] ?? "";
 export const API_JWT = process.env["API_JWT"] ?? "";
 export const COMMIT_SHA = process.env["COMMIT_SHA"] ?? "";
 export const TIMESTAMP = process.env["TIMESTAMP"] ?? "";
+export const CONFIG_STORE = process.env["CONFIG_STORE"] ?? "";
