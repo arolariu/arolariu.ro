@@ -2,8 +2,7 @@
 
 import Invoice from "@/types/invoices/Invoice";
 import { API_URL } from "../../constants";
-import generateJWT from "../utils.server";
-import fetchUser from "../utils.server";
+import {fetchUser, generateJWT} from "../utils.server";
 
 /**
  * Server action that fetches a single invoice for a user.

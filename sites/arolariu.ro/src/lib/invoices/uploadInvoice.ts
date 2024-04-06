@@ -1,7 +1,6 @@
 "use server";
 
-import fetchUser from "../utils.server";
-import generateJWT from "../utils.server";
+import {fetchUser, generateJWT} from "../utils.server";
 
 type invoiceRequest = {
   image: undefined | Blob;

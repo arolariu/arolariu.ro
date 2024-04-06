@@ -1,7 +1,7 @@
 import {ClerkProvider} from "@clerk/nextjs";
-import {MantineProvider, MantineTheme} from "@mantine/core";
+import {MantineProvider, type MantineTheme} from "@mantine/core";
 import {ThemeProvider} from "next-themes";
-import {ReactNode} from "react";
+import {type ReactNode} from "react";
 
 /**
  * The providers component.
