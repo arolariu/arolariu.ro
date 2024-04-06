@@ -43,40 +43,41 @@ export default async function uploadInvoice(imageInBase64: string) {
       },
     });
 
-    // Step 2. Send a POST message to the main backend server to ack the image upload.
-    let response = await fetch("https://api.arolariu.ro/rest/invoices", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authorizationHeader}`,
-      },
-      body: JSON.stringify({
-        photoLocation: `${storageEndpoint}/${containerName}/${blobName}`,
-        photoMetadata: [
-          {
-            key: "Account",
-            value: isAuthenticated ? user?.id : "guest",
-          },
-        ],
-      }),
-    });
+    // TODO: fix this.
+    // // Step 2. Send a POST message to the main backend server to ack the image upload.
+    // let response = await fetch("https://api.arolariu.ro/rest/invoices", {
+    //   method: "POST",
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //     Authorization: `Bearer ${authorizationHeader}`,
+    //   },
+    //   body: JSON.stringify({
+    //     photoLocation: `${storageEndpoint}/${containerName}/${blobName}`,
+    //     photoMetadata: [
+    //       {
+    //         key: "Account",
+    //         value: isAuthenticated ? user?.id : "guest",
+    //       },
+    //     ],
+    //   }),
+    // });
 
-    // Step 3 (optional). Send a POST message to the main backend server to request a full analysis.
-    if (isAuthenticated) {
-      // authenticated users get a full analysis as soon as they upload the invoice.
-      response = await fetch(`https://api.arolariu.ro/rest/user/${user?.id}/invoices/${uuid}/analyze`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authorizationHeader}`,
-        },
-        body: "1",
-      });
-    }
+    // // Step 3 (optional). Send a POST message to the main backend server to request a full analysis.
+    // if (isAuthenticated) {
+    //   // authenticated users get a full analysis as soon as they upload the invoice.
+    //   response = await fetch(`https://api.arolariu.ro/rest/user/${user?.id}/invoices/${uuid}/analyze`, {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       Authorization: `Bearer ${authorizationHeader}`,
+    //     },
+    //     body: "1",
+    //   });
+    // }
 
     return {
       status: "SUCCESS",
-      message: "Invoice uploaded successfully.",
+      message: "Invoice uploaded successfully." + isAuthenticated ? " Full analysis requested." : "",
       identifier: crypto.randomUUID(),
     };
   } catch (error) {
