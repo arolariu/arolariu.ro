@@ -3,6 +3,7 @@
 import InvoiceImagePreview from "@/components/domains/invoices/InvoiceImagePreview";
 import AlertNotification from "@/components/domains/invoices/UploadAlertNotification";
 import uploadInvoice from "@/lib/invoices/uploadInvoice";
+import {extractBase64FromBlob} from "@/lib/utils.client";
 import Link from "next/link";
 import {useState} from "react";
 
@@ -29,20 +30,6 @@ export default function RenderInvoiceScreen() {
     if (files && files.length > 0) {
       const image = files[0] as Blob;
       setImageState({...imageState, blob: image, status: "CLIENT_SIDE_UPLOAD"});
-    }
-  };
-
-  const handleImageTransport = async (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    console.log("Entered handleImageTransport");
-    const response = await uploadInvoice({image: imageState.blob});
-    const {identifier, status, message} = response;
-
-    if (status === "SUCCESS") {
-      setImageState({...imageState, identifier, status: "SERVER_SIDE_UPLOAD"});
-    } else {
-      setImageState({...imageState, status: "NOT_UPLOADED"});
-      console.error("Error uploading the image to the server:", message);
     }
   };
 
@@ -111,11 +98,15 @@ export default function RenderInvoiceScreen() {
             </div>
 
             {AlertNotification({imageBlob: imageState.blob}) == undefined ? (
-              <div className='container flex flex-col'>
+              <form className='container flex flex-col'>
                 <button
                   className='btn btn-primary mx-auto mt-4'
                   type='button'
-                  onClick={handleImageTransport}>
+                  onClick={async () => {
+                    const base64 = await extractBase64FromBlob(imageState.blob as Blob);
+                    const response = await uploadInvoice(base64);
+                    console.log(response);
+                  }}>
                   Continue to the next step
                 </button>
                 <button
@@ -126,7 +117,7 @@ export default function RenderInvoiceScreen() {
                   }>
                   Clear image
                 </button>
-              </div>
+              </form>
             ) : (
               <AlertNotification imageBlob={imageState.blob} />
             )}

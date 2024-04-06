@@ -51,3 +51,36 @@ export async function fetchConfigurationValue(key: string): Promise<string> {
   const setting = await client.getConfigurationSetting({key});
   return setting?.value ?? "";
 }
+
+/**
+ * Function that extracts a base64 string from a blob
+ * @param base64String The base64 string to extract the mime type from
+ * @returns The mime type
+ */
+export function getMimeTypeFromBase64(base64String: string): string | undefined {
+  const match = /^data:(.*?);base64,/.exec(base64String);
+  return match ? match[1] : undefined;
+}
+
+/**
+ * Function that converts a base64 string to a Blob
+ * @param base64String The base64 string to convert
+ * @returns The Blob object
+ */
+export async function base64ToBlob(base64String: string): Promise<Blob> {
+  // Extract and store the mime type.
+  const mimeType = getMimeTypeFromBase64(base64String) as string;
+  console.log("[INFO - Invoices]: Got the following mime type: ", mimeType);
+
+  // Remove the mime type from the base64 string.
+  const base64 = base64String.replace(/^data:(.*?);base64,/, "");
+
+  const byteCharacters = atob(base64);
+  const byteArrays = [];
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteArrays.push(byteCharacters.charCodeAt(i));
+  }
+
+  const byteArray = new Uint8Array(byteArrays);
+  return new Blob([byteArray], {type: mimeType});
+}
