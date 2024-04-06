@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-	<Nullable>enable</Nullable>
-	<ImplicitUsings>disable</ImplicitUsings>
-	<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-	<AnalysisLevel>latest-all</AnalysisLevel>
-	<GenerateDocumentationFile>True</GenerateDocumentationFile>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+		<AnalysisLevel>latest-all</AnalysisLevel>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+	</PropertyGroup>
 
 	<!-- Treat warnings as errors for `DEBUG` deployment. -->
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

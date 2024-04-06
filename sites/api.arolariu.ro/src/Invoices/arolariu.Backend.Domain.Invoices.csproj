@@ -1,55 +1,55 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-	<OutputType>Library</OutputType>
-	<TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-	<GenerateDocumentationFile>True</GenerateDocumentationFile>
-	<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-	<AnalysisLevel>latest-all</AnalysisLevel>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+		<AnalysisLevel>latest-all</AnalysisLevel>
+	</PropertyGroup>
 
 	<!-- Treat warnings as errors for `DEBUG` deployment. -->
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <WarningLevel>9999</WarningLevel>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-	  <Deterministic>True</Deterministic>
-	  <NoWarn>S1135</NoWarn>
-	  <!-- S1135 - SonarLint "Complete TODOs" -->
-  </PropertyGroup>
+		<WarningLevel>9999</WarningLevel>
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+		<Deterministic>True</Deterministic>
+		<NoWarn>S1135</NoWarn>
+		<!-- S1135 - SonarLint "Complete TODOs" -->
+	</PropertyGroup>
 
 	<!-- Treat warnings as errors for `RELEASE` deployment. -->
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <WarningLevel>9999</WarningLevel>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-	  <Deterministic>True</Deterministic>
-	  <NoWarn>S1135</NoWarn>
-	  <!-- S1135 - SonarLint "Complete TODOs" -->
-  </PropertyGroup>
+		<WarningLevel>9999</WarningLevel>
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+		<Deterministic>True</Deterministic>
+		<NoWarn>S1135</NoWarn>
+		<!-- S1135 - SonarLint "Complete TODOs" -->
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Azure.AI.FormRecognizer" Version="4.1.0" />
-    <PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.15" />
-    <PackageReference Include="Azure.AI.OpenAI.Assistants" Version="1.0.0-beta.3" />
-    <PackageReference Include="Azure.AI.Translation.Text" Version="1.0.0-beta.1" />
-    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.3.1" />
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.19.1" />
-    <PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" Version="7.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.2" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Azure.AI.FormRecognizer" Version="4.1.0" />
+		<PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.15" />
+		<PackageReference Include="Azure.AI.OpenAI.Assistants" Version="1.0.0-beta.3" />
+		<PackageReference Include="Azure.AI.Translation.Text" Version="1.0.0-beta.1" />
+		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.3.1" />
+		<PackageReference Include="Azure.Storage.Blobs" Version="12.19.1" />
+		<PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" Version="7.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.2" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Brokers\DataBrokers\StorageBroker\" />
-    <Folder Include="DDD\Entities\Merchants\Exceptions\Inner\" />
-    <Folder Include="DDD\Entities\Merchants\Exceptions\Outer\" />
-    <Folder Include="DDD\Entities\Products\Exceptions\Inner\" />
-    <Folder Include="DDD\Entities\Products\Exceptions\Outer\" />
-  </ItemGroup>
+	<ItemGroup>
+		<Folder Include="Brokers\DataBrokers\StorageBroker\" />
+		<Folder Include="DDD\Entities\Merchants\Exceptions\Inner\" />
+		<Folder Include="DDD\Entities\Merchants\Exceptions\Outer\" />
+		<Folder Include="DDD\Entities\Products\Exceptions\Inner\" />
+		<Folder Include="DDD\Entities\Products\Exceptions\Outer\" />
+	</ItemGroup>
 
 </Project>

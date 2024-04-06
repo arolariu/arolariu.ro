@@ -1,52 +1,52 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-	  <OutputType>Library</OutputType>
-	  <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-    <AnalysisLevel>latest-all</AnalysisLevel>
-    <UserSecretsId>8a44d640-f16e-4cd4-86e6-eaf5792517cf</UserSecretsId>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+		<AnalysisLevel>latest-all</AnalysisLevel>
+		<UserSecretsId>8a44d640-f16e-4cd4-86e6-eaf5792517cf</UserSecretsId>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <WarningLevel>9999</WarningLevel>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <Deterministic>True</Deterministic>
-	  <NoWarn>S1135</NoWarn>
-  <!-- S1135 - SonarLint "Complete TODOs" -->
-</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<WarningLevel>9999</WarningLevel>
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+		<Deterministic>True</Deterministic>
+		<NoWarn>S1135</NoWarn>
+		<!-- S1135 - SonarLint "Complete TODOs" -->
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <WarningLevel>9999</WarningLevel>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <Deterministic>True</Deterministic>
-	  <NoWarn>S1135</NoWarn>
-	  <!-- S1135 - SonarLint "Complete TODOs" -->
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<WarningLevel>9999</WarningLevel>
+		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+		<Deterministic>True</Deterministic>
+		<NoWarn>S1135</NoWarn>
+		<!-- S1135 - SonarLint "Complete TODOs" -->
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="DTOs\**" />
-    <EmbeddedResource Remove="DTOs\**" />
-    <None Remove="DTOs\**" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="DTOs\**" />
+		<EmbeddedResource Remove="DTOs\**" />
+		<None Remove="DTOs\**" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="8.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="8.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
-    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.5.1" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Identity.Core" Version="8.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="8.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.5.1" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
+	</ItemGroup>
 
 </Project>
