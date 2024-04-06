@@ -1,8 +1,27 @@
 node_modules
 .next
+.yarn
+.yarnrc.yml
+.vscode
+.env
+.env.example
+.eslintignore
+.gitattributes
+.gitignore
+.prettierignore
+.editorconfig
 
 public
 
 **/**/node_modules
 **/**/.next
 **/**/public
+**/**/*.ico
+**/**/*.png
+**/**/*.jpg
+**/*.json
+
+package-lock.json
+yarn.lock
+
+Dockerfile

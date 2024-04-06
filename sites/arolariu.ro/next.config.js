@@ -1,7 +1,7 @@
 // @ts-check
 
+import withBundleAnalyzerInit from "@next/bundle-analyzer";
 import withSerwistInit from "@serwist/next";
-import withBundleAnalyzerInit from "@next/bundle-analyzer"
 
 const trustedDomains = "arolariu.ro *.arolariu.ro clerk.com *.clerk.com accounts.dev *.accounts.dev";
 const cspHeader = `
@@ -61,7 +61,10 @@ const nextConfig = {
             value: "max-age=63072000; includeSubDomains; preload",
           },
           {
-            key: process.env.NODE_ENV === "development" ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy",
+            key:
+              process.env.NODE_ENV === "development"
+                ? "Content-Security-Policy-Report-Only"
+                : "Content-Security-Policy",
             value: cspHeader.replace(/\n/g, ""),
           },
           {
@@ -105,7 +108,6 @@ const nextConfig = {
     ignoreBuildErrors: false,
     tsconfigPath: "tsconfig.json",
   },
-
 };
 
 const withSerwist = withSerwistInit({
@@ -117,8 +119,7 @@ const withSerwist = withSerwistInit({
 });
 
 const withBundleAnalyzer = withBundleAnalyzerInit({
-  enabled: process.env.ANALYZE === 'true'
-})
+  enabled: process.env.ANALYZE === "true",
+});
 
 export default withBundleAnalyzer(withSerwist(nextConfig));
-

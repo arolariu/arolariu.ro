@@ -1,8 +1,8 @@
+import {API_JWT} from "@/constants";
 import "server-only";
-import { API_JWT } from "@/constants";
 
-import { type User } from "@clerk/backend";
-import { currentUser } from "@clerk/nextjs";
+import {type User} from "@clerk/backend";
+import {currentUser} from "@clerk/nextjs";
 
 import * as jose from "jose";
 
@@ -14,7 +14,7 @@ import * as jose from "jose";
 export async function generateJWT(user: User | null) {
   const secret = new TextEncoder().encode(API_JWT);
 
-  const header = { alg: "HS256", typ: "JWT" };
+  const header = {alg: "HS256", typ: "JWT"};
 
   const payload = {
     iss: "https://arolariu.ro",
@@ -32,9 +32,8 @@ export async function generateJWT(user: User | null) {
  * Fetches the current user.
  * @returns A promise of the current user.
  */
-export async function fetchUser(): Promise<{ isAuthenticated: boolean, user: User | null }> {
+export async function fetchUser(): Promise<{isAuthenticated: boolean; user: User | null}> {
   const user = await currentUser();
   const isAuthenticated = user !== null;
-  return { isAuthenticated, user };
+  return {isAuthenticated, user};
 }
-

@@ -1,6 +1,6 @@
-import { ApplicationEnvironment } from "@/types/ApplicationEnvironment";
-import fetchAppConfiguration from "./fetchAppConfiguration";
+import {ApplicationEnvironment} from "@/types/ApplicationEnvironment";
 import fs from "node:fs";
+import fetchAppConfiguration from "./fetchAppConfiguration";
 
 /**
  * This function generates a .env file based on the application configuration.
@@ -10,8 +10,10 @@ import fs from "node:fs";
 export default async function generateDotEnv(appEnvironment: ApplicationEnvironment): Promise<boolean> {
   try {
     const configuration = await fetchAppConfiguration(appEnvironment);
-    const env = Object.entries(configuration).map(([key, value]) => `${key}=${String(value)}`).join("\n");
-    fs.writeFileSync(".env.local", env, { encoding: "utf8" });
+    const env = Object.entries(configuration)
+      .map(([key, value]) => `${key}=${String(value)}`)
+      .join("\n");
+    fs.writeFileSync(".env.local", env, {encoding: "utf8"});
     return true;
   } catch (error) {
     console.error(error);

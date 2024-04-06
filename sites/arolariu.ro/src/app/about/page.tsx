@@ -1,4 +1,4 @@
-import { type Metadata } from "next";
+import {type Metadata} from "next";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -13,11 +13,11 @@ export const metadata: Metadata = {
  */
 export default async function AboutPage() {
   return (
-    <main className="text-gray-600 dark:text-slate-300">
+    <main className='text-gray-600 dark:text-slate-300'>
       <section>
-        <div className="container px-5 pt-24 mx-auto">
-          <div className="flex flex-col w-full mb-20 text-center">
-            <h1 className="mb-4 text-transparent bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text sm:text-3xl ">
+        <div className='container mx-auto px-5 pt-24'>
+          <div className='mb-20 flex w-full flex-col text-center'>
+            <h1 className='mb-4 bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent sm:text-3xl '>
               About Us
             </h1>
             <p>
@@ -40,21 +40,21 @@ export default async function AboutPage() {
           </div>
         </div>
       </section>
-      <section className="flex flex-row flex-wrap items-center justify-center pb-16 mb-16 text-center justify-items-center">
-        <div className="p-8">
-          <div className="rounded-lg">
+      <section className='mb-16 flex flex-row flex-wrap items-center justify-center justify-items-center pb-16 text-center'>
+        <div className='p-8'>
+          <div className='rounded-lg'>
             <Image
-              alt="content"
-              className="object-cover object-center mx-auto"
+              alt='content'
+              className='mx-auto object-cover object-center'
               width={650}
               height={500}
-              src="/images/about/platform-thumbnail.svg"
+              src='/images/about/platform-thumbnail.svg'
             />
           </div>
-          <h2 className="mt-6 mb-3 text-2xl font-medium text-white title-font">
+          <h2 className='title-font mb-3 mt-6 text-2xl font-medium text-white'>
             What is <code>arolariu.ro</code>?
           </h2>
-          <p className="text-base leading-relaxed">
+          <p className='text-base leading-relaxed'>
             The <code>arolariu.ro</code> platform is a collection of applications that are hosted under the{" "}
             <code>arolariu.ro</code> umbrella. <br /> The platform was built with the purpose of providing a unified
             experience for all of the applications and OSS projects that the author <em>(Alexandru-Razvan Olariu)</em>{" "}
@@ -63,34 +63,38 @@ export default async function AboutPage() {
             To learn more about the technologies that are used in the process and how they interact with each other,
             click the button below or navigate to <code>&quot;/about/the-platform&quot;</code>
           </p>
-          <Link href="/about/the-platform">
-            <button type="button" className="flex px-5 py-2 mx-auto mt-6 text-white bg-indigo-500 border-0 rounded hover:bg-indigo-600 focus:outline-none">
+          <Link href='/about/the-platform'>
+            <button
+              type='button'
+              className='mx-auto mt-6 flex rounded border-0 bg-indigo-500 px-5 py-2 text-white hover:bg-indigo-600 focus:outline-none'>
               Learn more about the platform...
             </button>
           </Link>
         </div>
-        <div className="p-8">
-          <div className="rounded-lg">
+        <div className='p-8'>
+          <div className='rounded-lg'>
             <Image
-              alt="content"
-              className="object-cover object-center mx-auto"
+              alt='content'
+              className='mx-auto object-cover object-center'
               width={300}
               height={500}
-              src="/images/about/author-thumbnail.svg"
+              src='/images/about/author-thumbnail.svg'
             />
           </div>
-          <h2 className="mt-6 mb-3 text-2xl font-medium text-white title-font">
+          <h2 className='title-font mb-3 mt-6 text-2xl font-medium text-white'>
             Who is <code>arolariu</code>?
           </h2>
-          <p className="text-base leading-relaxed">
+          <p className='text-base leading-relaxed'>
             <code>arolariu</code> is the alias/nickname of the author: Alexandru-Razvan Olariu. <br /> Alexandru is a
             well-tenured software engineer, solution architect and lifelong learner. <br />
             <br />
             To learn more about Alexandru, click the button below or navigate to{" "}
             <code>&quot;/about/the-author&quot;</code>
           </p>
-          <Link href="/about/the-author">
-            <button type="button" className="flex px-5 py-2 mx-auto mt-6 text-white bg-indigo-500 border-0 rounded hover:bg-indigo-600 focus:outline-none">
+          <Link href='/about/the-author'>
+            <button
+              type='button'
+              className='mx-auto mt-6 flex rounded border-0 bg-indigo-500 px-5 py-2 text-white hover:bg-indigo-600 focus:outline-none'>
               Learn more about the author...
             </button>
           </Link>

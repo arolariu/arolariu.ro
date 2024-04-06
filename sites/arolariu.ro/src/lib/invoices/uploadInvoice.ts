@@ -4,13 +4,13 @@ import {fetchUser, generateJWT} from "../utils.server";
 
 type invoiceRequest = {
   image: undefined | Blob;
-}
+};
 
 type invoiceResponse = {
   status: "SUCCESS" | "FAILURE";
   message: string;
   identifier: string;
-}
+};
 
 /**
  * This function uploads the invoice to the server.
@@ -23,10 +23,10 @@ type invoiceResponse = {
  * @returns The result of the upload.
  */
 export default async function uploadInvoice(invoice: invoiceRequest): Promise<invoiceResponse> {
-  const { user, isAuthenticated } = await fetchUser();
+  const {user, isAuthenticated} = await fetchUser();
 
   if (!isAuthenticated) {
-    return { status: "FAILURE", message: "User is not authenticated.", identifier: "" };
+    return {status: "FAILURE", message: "User is not authenticated.", identifier: ""};
   }
 
   const authorizationHeader = await generateJWT(user);
@@ -35,5 +35,5 @@ export default async function uploadInvoice(invoice: invoiceRequest): Promise<in
     Authorization: `Bearer ${authorizationHeader}`,
   };
 
-   // TODO: Complete the server action.
+  // TODO: Complete the server action.
 }

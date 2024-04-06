@@ -1,7 +1,7 @@
 "use server";
 
 import Invoice from "@/types/invoices/Invoice";
-import { API_URL } from "../../constants";
+import {API_URL} from "../../constants";
 import {fetchUser, generateJWT} from "../utils.server";
 
 /**
@@ -10,7 +10,7 @@ import {fetchUser, generateJWT} from "../utils.server";
  * @returns A promise of the invoice, or undefined if the request failed.
  */
 export default async function fetchInvoice(id: string): Promise<Invoice | undefined> {
-  const { user } = await fetchUser();
+  const {user} = await fetchUser();
   const authorizationToken = await generateJWT(user);
   const headers = {
     "Content-Type": "application/json",
@@ -21,19 +21,21 @@ export default async function fetchInvoice(id: string): Promise<Invoice | undefi
   // If the invoice is found on the user's behalf, we will return it. Otherwise, we will check if we get a good response from the guest.
   // If neither of the requests return a success, we will return null.
 
-  const userResponse = await fetch(`${API_URL}/rest/user/${user?.id ?? ''}/invoices/${id}`, {
+  const userResponse = await fetch(`${API_URL}/rest/user/${user?.id ?? ""}/invoices/${id}`, {
     method: "GET",
     headers: headers,
   });
-  if (userResponse.status === 200) { return await userResponse.json() as Invoice; }
-
+  if (userResponse.status === 200) {
+    return (await userResponse.json()) as Invoice;
+  }
 
   const guestResponse = await fetch(`${API_URL}/rest/invoices/${id}`, {
     method: "GET",
     headers: headers,
   });
-  if (guestResponse.status === 200) { return await guestResponse.json() as Invoice; }
-
+  if (guestResponse.status === 200) {
+    return (await guestResponse.json()) as Invoice;
+  }
 
   return undefined;
 }

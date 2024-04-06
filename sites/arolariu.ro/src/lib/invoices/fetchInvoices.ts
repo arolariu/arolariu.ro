@@ -1,8 +1,8 @@
 "use server";
 
 import Invoice from "@/types/invoices/Invoice";
-import { API_URL } from "../../constants";
-import { fetchUser, generateJWT } from "../utils.server";
+import {API_URL} from "../../constants";
+import {fetchUser, generateJWT} from "../utils.server";
 
 /**
  * Server action that fetches all invoices for a user.
@@ -10,22 +10,22 @@ import { fetchUser, generateJWT } from "../utils.server";
  * @returns A promise of the invoices, or null if the request failed.
  */
 export default async function fetchInvoices(): Promise<Invoice[] | undefined> {
-  const { user } = await fetchUser();
+  const {user} = await fetchUser();
   const userAuthorization = await generateJWT(user);
 
   const response = await fetch(`${API_URL}/rest/invoices/`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${userAuthorization}`,
-    }
+      Authorization: `Bearer ${userAuthorization}`,
+    },
   });
 
   let invoices: Invoice[] | undefined;
 
   switch (response.status) {
     case 200:
-      invoices = await response.json() as Invoice[];
+      invoices = (await response.json()) as Invoice[];
       break;
     case 401:
     case 403:
