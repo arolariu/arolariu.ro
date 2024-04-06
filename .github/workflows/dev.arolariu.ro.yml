@@ -24,7 +24,7 @@ jobs:
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} 
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: 🔒 Performing auth against private Azure Container Registry...
         uses: Azure/docker-login@v1
@@ -50,7 +50,7 @@ jobs:
           echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env
           echo "API_URL=https://api.arolariu.ro" >> .env
           echo "API_JWT=${{ secrets.API_JWT }}" >> .env
-      
+
       - name: 🏗️ Building the docker container...
         working-directory: ./sites/arolariu.ro
         run: |
@@ -62,19 +62,19 @@ jobs:
           docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/dev.arolariu:latest
 
   deploy:
-      runs-on: ubuntu-latest
-      needs: build
-      environment:
-        name: 'development'
-        url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-      
-      steps:
-        - name: Deploy to Azure Web App
-          id: deploy-to-webapp
-          uses: azure/webapps-deploy@v3
-          with:
-            app-name: 'dev-arolariu'
-            slot-name: 'production'
-            publish-profile: ${{ secrets.AROLARIU_WEB_APP_PUBLISHER_PROFILE_DEV }}
-            images: '${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/dev.arolariu:latest'
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: "development"
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: "dev-arolariu"
+          slot-name: "production"
+          publish-profile: ${{ secrets.AROLARIU_WEB_APP_PUBLISHER_PROFILE_DEV }}
+          images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/dev.arolariu:latest"
 
