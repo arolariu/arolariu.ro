@@ -41,7 +41,7 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
     }
 
     /// <inheritdoc/>
-    public async Task AnalyzeInvoiceAsync(Invoice invoice, AnalysisOptionsDto options) =>
+    public async Task AnalyzeInvoiceAsync(Invoice invoice, AnalysisOptions options) =>
     await TryCatchAsync(async () =>
     {
         ValidateInvoiceExists(invoice);

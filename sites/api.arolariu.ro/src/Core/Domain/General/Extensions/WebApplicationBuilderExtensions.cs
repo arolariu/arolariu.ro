@@ -52,8 +52,7 @@ internal static class WebApplicationBuilderExtensions
         var services = builder.Services;
         var configuration = builder.Configuration;
 
-        services.AddSingleton<IKeyVaultService, KeyVaultService>();
-
+        #region Setting up the service configuration.
         configuration.AddEnvironmentVariables();
         configuration.AddJsonFile("appsettings.json");
         configuration.AddAzureKeyVault(
@@ -85,6 +84,8 @@ internal static class WebApplicationBuilderExtensions
         services.Configure<AuthOptions>(configuration.GetSection(nameof(AuthOptions)));
         services.Configure<AzureOptions>(configuration.GetSection(nameof(AzureOptions)));
         services.Configure<CommonOptions>(configuration.GetSection(nameof(CommonOptions)));
+        services.AddSingleton<IKeyVaultService, KeyVaultService>();
+        #endregion
 
         services.AddHttpClient();
         services.AddHttpContextAccessor();
@@ -110,6 +111,7 @@ internal static class WebApplicationBuilderExtensions
 
         services.AddHealthChecks();
 
+        #region AuthN & AuthZ configuration.
         services.AddAuthentication(authOptions =>
         {
             authOptions.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -131,5 +133,6 @@ internal static class WebApplicationBuilderExtensions
         });
 
         services.AddAuthorization();
+        #endregion
     }
 }

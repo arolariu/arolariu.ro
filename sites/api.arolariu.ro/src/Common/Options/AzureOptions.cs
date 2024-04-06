@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace arolariu.Backend.Common.Options;
+﻿namespace arolariu.Backend.Common.Options;
 
 /// <summary>
 /// Options for the Azure services.

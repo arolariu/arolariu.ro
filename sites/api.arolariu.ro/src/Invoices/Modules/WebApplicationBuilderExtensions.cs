@@ -3,7 +3,6 @@ using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
-using arolariu.Backend.Domain.Invoices.Modules.Http.OpenAI;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration;
@@ -54,14 +53,6 @@ public static class WebApplicationBuilderExtensions
             options.UseCosmos(
                 connectionString: builder.Configuration[$"{nameof(AzureOptions)}:NoSqlConnectionString"]!,
                 databaseName: "arolariu");
-        });
-
-        // HTTP typed client services:
-        builder.Services.AddHttpClient<OpenAIService>((serviceProvider, httpClient) =>
-        {
-            var azureOptions = serviceProvider.GetRequiredService<IOptionsMonitor<AzureOptions>>().CurrentValue;
-            httpClient.BaseAddress = new Uri($"{azureOptions.OpenAIEndpoint}/openai");
-            httpClient.DefaultRequestHeaders.Add("api-key", azureOptions.OpenAIKey);
         });
 
         // Broker services:
