@@ -22,20 +22,26 @@ export default async function uploadInvoice(imageInBase64: string) {
 
     const {user, isAuthenticated} = await fetchUser();
     const authorizationHeader = await generateJWT(user);
+    console.warn("Authorization header: ", authorizationHeader);
+
     // Step 1. Upload invoice photo to the blob storage server.
     const credentials = new DefaultAzureCredential();
     const storageEndpoint = await fetchConfigurationValue("AzureOptions:StorageAccountEndpoint");
-    console.log("Storage endpoint:", storageEndpoint);
     const storageClient = new BlobServiceClient(storageEndpoint, credentials);
 
     const containerName = "invoices";
     const containerClient = storageClient.getContainerClient(containerName);
 
     const uuid = crypto.randomUUID();
-    const blobName = `${uuid}.${invoice.image.type.split("/")[1]}`;
+    const blobName = `${uuid}.${invoice.type.split("/")[1]}`;
 
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-    await blockBlobClient.upload(invoice.image as Blob, invoice.image?.size as number);
+    const arrayBuffer = await invoice.arrayBuffer();
+    await blockBlobClient.uploadData(arrayBuffer, {
+      blobHTTPHeaders: {
+        blobContentType: invoice.type,
+      },
+    });
 
     // Step 2. Send a POST message to the main backend server to ack the image upload.
     let response = await fetch("https://api.arolariu.ro/rest/invoices", {
