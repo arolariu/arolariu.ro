@@ -5,7 +5,8 @@ import "server-only";
 import {type User} from "@clerk/backend";
 import {currentUser} from "@clerk/nextjs";
 
-import {DefaultAzureCredential} from "@azure/identity";
+import {Blob} from "node:buffer";
+
 import * as jose from "jose";
 
 /**
@@ -46,8 +47,8 @@ export async function fetchUser(): Promise<{isAuthenticated: boolean; user: User
  * @returns The value of the configuration value.
  */
 export async function fetchConfigurationValue(key: string): Promise<string> {
-  const credentials = new DefaultAzureCredential();
-  const client = new AppConfigurationClient(CONFIG_STORE, credentials);
+  console.log("Trying to fetch the following key: ", key);
+  const client = new AppConfigurationClient(CONFIG_STORE);
   const setting = await client.getConfigurationSetting({key});
   return setting?.value ?? "";
 }
@@ -70,7 +71,6 @@ export function getMimeTypeFromBase64(base64String: string): string | undefined 
 export async function base64ToBlob(base64String: string): Promise<Blob> {
   // Extract and store the mime type.
   const mimeType = getMimeTypeFromBase64(base64String) as string;
-  console.log("[INFO - Invoices]: Got the following mime type: ", mimeType);
 
   // Remove the mime type from the base64 string.
   const base64 = base64String.replace(/^data:(.*?);base64,/, "");
