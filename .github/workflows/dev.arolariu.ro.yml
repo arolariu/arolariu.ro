@@ -50,6 +50,7 @@ jobs:
           echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env
           echo "API_URL=https://api.arolariu.ro" >> .env
           echo "API_JWT=${{ secrets.API_JWT }}" >> .env
+          echo "CONFIG_STORE=${{ secrets.CONFIG_STORE }}" >> .env
 
       - name: 🏗️ Building the docker container...
         working-directory: ./sites/arolariu.ro
