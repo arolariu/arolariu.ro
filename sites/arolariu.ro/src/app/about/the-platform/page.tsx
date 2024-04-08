@@ -12,28 +12,21 @@ export const metadata: Metadata = {
  */
 export default async function PlatformPage() {
   return (
-    <main className='pt-16'>
+    <>
       <section>
-        {" "}
-        {/* Title */}
-        <h1 className='my-8 text-center font-bold 2xsm:text-2xl xsm:text-3xl md:text-4xl'>
+        <h1 className='my-8 font-bold 2xsm:text-2xl xsm:text-3xl md:text-4xl'>
           What is <code>arolariu.ro</code>?
         </h1>
-        <div className='mx-auto my-12 flex justify-center'>
+        <div className='mx-auto my-12'>
           <span className='inline-block h-2 w-60 rounded-full bg-blue-500' />
           <span className='mx-1 inline-block h-2 w-6 rounded-full bg-blue-500' />
           <span className='inline-block h-2 w-3 rounded-full bg-blue-500' />
         </div>
-      </section>
-      <section>
-        {" "}
-        {/* About the platform */}
-        <article className='text-center 2xsm:p-2 2xsm:text-lg lg:text-xl 2xl:p-16 2xl:text-2xl'>
+        <article className='2xsm:p-2 2xsm:text-lg lg:text-xl 2xl:p-16 2xl:text-2xl'>
           The <code>arolariu.ro</code> platform is a personal project made by{" "}
           <Link href='/about/the-author'>
-            <em>Alexandru-Razvan Olariu</em>
+            <em>Alexandru-Razvan Olariu.</em>
           </Link>
-          .
           <br />
           <br />
           The platform is built using the latest stable iterations of different technologies such as Next.JS, React, and
@@ -62,11 +55,10 @@ export default async function PlatformPage() {
           .
         </article>
       </section>
-      <section className='my-16'>
-        {" "}
+      <section className='my-16 pb-16'>
         {/* Technology overview */}
-        <h2 className='mb-4 text-center font-bold 2xsm:text-2xl md:text-3xl'>Technology overview</h2>
-        <article className='text-center 2xsm:px-2 2xsm:text-lg lg:text-xl 2xl:px-16 2xl:text-2xl'>
+        <h2 className='mb-4 font-bold 2xsm:text-2xl md:text-3xl'>Technology overview</h2>
+        <article className='2xsm:px-2 2xsm:text-lg lg:text-xl 2xl:px-16 2xl:text-2xl'>
           The platform is built using the latest stable iterations of different technologies. The table below provides
           an overview of the technologies used to build the platform. It might not be exhaustive, but it provides a good
           starting point for understanding the technologies used to build the platform.
@@ -197,9 +189,6 @@ export default async function PlatformPage() {
           </table>
         </article>
       </section>
-      <section className='my-16 pb-32'>
-        <h2 className='text-center text-3xl font-bold'>Thank you.</h2>
-      </section>
-    </main>
+    </>
   );
 }

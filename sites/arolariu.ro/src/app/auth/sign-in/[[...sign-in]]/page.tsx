@@ -10,9 +10,9 @@ export const metadata: Metadata = {
  * The sign in page.
  * @returns The sign in page.
  */
-export default async function Page() {
+export default async function SignInPage() {
   return (
-    <main className='flex flex-col 2xsm:mt-16 2xsm:p-2 sm:p-4 md:mt-0 md:p-8'>
+    <section className='flex flex-col 2xsm:mt-16 2xsm:p-2 sm:p-4 md:mt-0 md:p-8'>
       <h1 className='my-4 text-center text-2xl font-extrabold'>
         Sign in by reusing your account from one of the following providers:
       </h1>
@@ -22,6 +22,6 @@ export default async function Page() {
       <small className='mb-8 py-16 text-center text-lg font-semibold'>
         We do not offer the possibility to create an account via an e-mail / password combination at this moment.
       </small>
-    </main>
+    </section>
   );
 }

@@ -18,28 +18,30 @@ export const metadata: Metadata = {
  */
 export default async function AuthorPage() {
   return (
-    <main className='pt-16'>
+    <main className='px-5 pt-24'>
       <section>
-        <h1 className='text-center font-semibold 2xsm:text-3xl md:text-5xl lg:text-7xl'>Meet the author.</h1>
-        <div className='mx-auto mt-6 flex justify-center'>
+        <h1 className='font-semibold 2xsm:text-3xl md:text-5xl lg:text-7xl'>Meet the author.</h1>
+        <div className='mx-auto mt-6'>
           <span className='inline-block h-2 w-60 rounded-full bg-blue-500' />
           <span className='mx-1 inline-block h-2 w-6 rounded-full bg-blue-500' />
           <span className='inline-block h-2 w-3 rounded-full bg-blue-500' />
         </div>
-      </section>{" "}
-      {/* Title */}
-      <section>
-        <article className='text-center 2xsm:p-2 2xsm:text-lg lg:text-xl 2xl:p-16 2xl:text-2xl'>
+        <article className='2xsm:p-2 2xsm:text-lg lg:text-xl 2xl:p-16 2xl:text-2xl'>
           Alexandru-Razvan Olariu is the author of the platform that you are currently browsing.
-          <br /> <br />
+          <br />
+          <br />
           Alexandru is a {new Date().getFullYear() - 2000} years old software engineer and solution architect. He
           currently works at Microsoft as a software enginneer in the E+D organization, building complex solutions for
-          the Sovereign Clouds line of business. <br /> <br />
+          the Sovereign Clouds line of business.
+          <br />
+          <br />
           Alexandru was born on the 8th of January, year 2000, to Alexandra and Razvan, in a small city called{" "}
           <code>Curtea de Arges</code> in Romania. He got his first computer when he was just 5 years old - a Pentium 4
           with 512 MB of RAM and 10 GB of storage, running Windows 98. He learnt most of his computer skills by playing
           video games and tinkering with his personal computer. He also learnt a good amount of English and was able to
-          fluently read, write and speak in English by the age of 7. <br /> <br />
+          fluently read, write and speak in English by the age of 7.
+          <br />
+          <br />
           Alexandru is a video game enthusiast. He used to be a &quot;professional&quot; player, ranking at #70 in
           Romania for the video game called `DotA2`. He enjoys playing long-lasting games that have a focus on
           strategies and a medieval setting: like Age of Empires, Age of Mythology, etc. He also enjoys playing games
@@ -133,13 +135,9 @@ export default async function AuthorPage() {
           alt='Work Together SVG'
           width='600'
           height='600'
-          className='ml-[10%] object-cover 2xsm:hidden xl:block'
+          className='ml-[10%] object-fill 2xsm:hidden xl:block'
         />
       </section>{" "}
-      {/* Connect information */}
-      <section className='my-16 pb-32'>
-        <h2 className='text-center text-3xl font-bold 2xl:text-7xl'>Thank you.</h2>
-      </section>
     </main>
   );
 }
