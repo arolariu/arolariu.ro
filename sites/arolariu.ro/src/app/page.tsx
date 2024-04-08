@@ -1,5 +1,4 @@
 import FeaturesList from "@/components/Features/FeaturesList";
-import Image from "next/image";
 import Link from "next/link";
 
 /**
@@ -51,16 +50,6 @@ export default async function Home() {
                 <span className='2xsm:text-center md:text-left'>THANK YOU FOR THE TIME SPENT ON THE WEBSITE.</span>
               </div>
             </div>
-          </div>
-
-          <div className='2xsm:hidden xl:absolute xl:right-0 xl:top-0 xl:block'>
-            <Image
-              src='/images/3d-illustration.png'
-              alt='Generated 3D image.'
-              width={640}
-              height={320}
-              priority
-            />
           </div>
         </div>
       </section>{" "}

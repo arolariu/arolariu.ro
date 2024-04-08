@@ -31,7 +31,7 @@ export default async function AuthPage() {
                 alt='Sign up SVG'
                 width='300'
                 height='500'
-                className='object-cover'
+                className='object-fill object-center'
               />
             </div>
             <h2 className='title-font mb-3 mt-6 text-2xl font-medium'>Become a new member today.</h2>
@@ -54,7 +54,7 @@ export default async function AuthPage() {
                 alt='Sign in SVG'
                 width='300'
                 height='500'
-                className='object-cover'
+                className='object-fill object-center'
               />
             </div>
             <h2 className='title-font mb-3 mt-6 text-2xl font-medium'>Continue as an existing member.</h2>

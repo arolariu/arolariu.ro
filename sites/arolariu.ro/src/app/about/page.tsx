@@ -45,13 +45,13 @@ export default async function AboutPage() {
           <div className='rounded-lg'>
             <Image
               alt='content'
-              className='mx-auto object-cover object-center'
+              className='mx-auto object-fill object-center'
               width={650}
               height={500}
               src='/images/about/platform-thumbnail.svg'
             />
           </div>
-          <h2 className='title-font mb-3 mt-6 text-2xl font-medium text-white'>
+          <h2 className='title-font mb-3 mt-6 text-2xl font-medium'>
             What is <code>arolariu.ro</code>?
           </h2>
           <p className='text-base leading-relaxed'>
@@ -75,13 +75,13 @@ export default async function AboutPage() {
           <div className='rounded-lg'>
             <Image
               alt='content'
-              className='mx-auto object-cover object-center'
+              className='mx-auto object-fill object-center'
               width={300}
               height={500}
               src='/images/about/author-thumbnail.svg'
             />
           </div>
-          <h2 className='title-font mb-3 mt-6 text-2xl font-medium text-white'>
+          <h2 className='title-font mb-3 mt-6 text-2xl font-medium'>
             Who is <code>arolariu</code>?
           </h2>
           <p className='text-base leading-relaxed'>

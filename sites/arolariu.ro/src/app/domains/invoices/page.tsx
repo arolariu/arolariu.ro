@@ -29,7 +29,7 @@ export default async function InvoicePage() {
             alt='Invoice top SVG'
             width='500'
             height='500'
-            className='object-cover object-center'
+            className='object-fill object-center'
             priority
           />
           <div className='mt-2 w-full text-center lg:w-2/3'>
@@ -218,7 +218,7 @@ export default async function InvoicePage() {
                 alt='Invoice bottom SVG'
                 width='500'
                 height='500'
-                className='w-full object-cover object-center'
+                className='w-full object-fill object-center'
               />
             </div>
           </div>

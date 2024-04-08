@@ -26,6 +26,9 @@
     "url": "https://arolariu.ro"
   },
   "scripts": {
+    "clean": "npm run clean:win && npm run clean:lin",
+    "clean:win": "node -e \"if (process.platform === 'win32') process.exit(1)\" || , if exist .next rmdir /Q /S .next",
+    "clean:lin": "node -e \"if (process.platform !== 'win32') process.exit(1)\" || rm -rf .next",
     "dev": "next dev --turbo",
     "build": "next build",
     "format:check": "prettier --check . --config prettier.config.js --config-precedence prefer-file",
@@ -47,6 +50,7 @@
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-icons": "^1.3.0",
     "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-switch": "^1.0.3",
     "@serwist/build": "^9.0.0-preview.21",
@@ -71,6 +75,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@fullhuman/postcss-purgecss": "^6.0.0",
     "@next/bundle-analyzer": "^14.1.4",
     "@tailwindcss/typography": "^0.5.12",
     "@types/eslint": "^8.56.7",
@@ -85,6 +90,7 @@
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-unicorn": "^52.0.0",
     "postcss": "^8.4.38",
+    "postcss-dropunusedvars": "^2.2.1",
     "postcss-preset-mantine": "^1.13.0",
     "postcss-simple-vars": "^7.0.1",
     "prettier": "^3.2.5",
