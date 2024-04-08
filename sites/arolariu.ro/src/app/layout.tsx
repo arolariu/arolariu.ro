@@ -1,7 +1,7 @@
 import Footer from "@/components/Footer";
-import Header from "@/components/Header";
 import {Caudex} from "next/font/google";
 
+import Header from "@/components/Header";
 import {SITE_URL} from "@/constants";
 import "@mantine/core/styles.css";
 import type {Metadata} from "next";

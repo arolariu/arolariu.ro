@@ -10,9 +10,9 @@ export const metadata: Metadata = {
  * The sign up page.
  * @returns The sign up page.
  */
-export default async function Page() {
+export default async function SignUpPage() {
   return (
-    <main className='flex flex-col 2xsm:mt-16 2xsm:p-2 sm:p-4 md:mt-0 md:p-8'>
+    <section className='flex flex-col 2xsm:mt-16 2xsm:p-2 sm:p-4 md:mt-0 md:p-8'>
       <h1 className='my-4 text-center text-2xl font-extrabold'>
         Sign up by creating a new account or by reusing your account from one of the following identity providers:
       </h1>
@@ -23,6 +23,6 @@ export default async function Page() {
         We do not offer the possibility to recover an account created via an e-mail / password combination at this
         moment.
       </small>
-    </main>
+    </section>
   );
 }

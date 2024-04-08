@@ -12,7 +12,7 @@ export default async function DomainServiceCard({
   linkTo = "https://arolariu.ro",
 }) {
   return (
-    <div className='mb-6 max-w-[20rem] p-4 sm:mb-0'>
+    <div className='mb-6 max-w-80 p-4 sm:mb-0'>
       <div className='h-64 overflow-hidden rounded-lg'>
         <Image
           alt='content'

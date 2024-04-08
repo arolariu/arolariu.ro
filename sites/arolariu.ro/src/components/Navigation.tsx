@@ -20,9 +20,6 @@ export default async function Navigation({className}: Readonly<Props>) {
           href={`${SITE_URL}/domains`}
           className='indicator mr-5 hover:text-yellow-300'>
           Domains
-          <div className='pb-1'>
-            <sub className='badge badge-primary indicator-end ml-2'>new</sub>
-          </div>
         </Link>
       </li>
       <li>

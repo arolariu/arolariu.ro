@@ -3,7 +3,7 @@ import daisyUI from "daisyui";
 import {type Config} from "tailwindcss";
 import animate from "tailwindcss-animate";
 
-const tailwindConfig: Config = {
+const tailwindConfig = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   darkMode: ["selector", "[data-mantine-color-scheme='dark']"],
   theme: {
@@ -42,6 +42,6 @@ const tailwindConfig: Config = {
     },
   },
   plugins: [typography, animate, daisyUI],
-};
+} satisfies Config;
 
 export default tailwindConfig;

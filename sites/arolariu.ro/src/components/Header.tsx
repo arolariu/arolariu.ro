@@ -1,9 +1,11 @@
 import {SITE_URL} from "@/constants";
 import {SignedIn, SignedOut, UserButton} from "@clerk/nextjs";
+import {HamburgerMenuIcon} from "@radix-ui/react-icons";
 import Link from "next/link";
-import {GiHamburgerMenu} from "react-icons/gi";
 import ThemeSwitcherButton from "./Buttons/ThemeButton";
 import Navigation from "./Navigation";
+import {Button} from "./ui/button";
+import {Popover, PopoverContent, PopoverTrigger} from "./ui/popover";
 
 /**
  * The header component.
@@ -12,16 +14,20 @@ import Navigation from "./Navigation";
 export default function Header() {
   return (
     <header>
-      <nav className='navbar bg-white text-black 2xsm:fixed 2xsm:top-0 2xsm:z-50 md:relative md:z-auto dark:bg-black dark:text-white'>
-        <div className='navbar-start'>
-          <div className='dropdown'>
-            <GiHamburgerMenu
-              tabIndex={0}
-              className='btn btn-circle btn-ghost h-full w-full lg:hidden'
-            />
-            <Navigation className='menu dropdown-content menu-sm bg-white lg:ml-[12%] dark:bg-black' />
+      <nav className='navbar bg-white 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto dark:bg-black'>
+        <div className='navbar-start flex flex-row flex-nowrap'>
+          <div className='lg:hidden'>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant='outline'>
+                  <HamburgerMenuIcon />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent>
+                <Navigation className='menu menu-vertical' />
+              </PopoverContent>
+            </Popover>
           </div>
-
           <Link
             href={SITE_URL}
             className='ml-2 flex items-center font-medium'>
@@ -40,16 +46,16 @@ export default function Header() {
           </Link>
         </div>
 
-        <div className='navbar-center hidden lg:flex'>
+        <div className='navbar-center 2xsm:hidden lg:relative lg:flex'>
           <Navigation className='menu menu-horizontal' />
         </div>
 
-        <div className='navbar-end'>
-          <div className='-mt-1 mr-4'>
+        <div className='navbar-end flex flex-row flex-wrap'>
+          <div className='mr-4 mt-2'>
             <SignedOut>
               <Link
                 href={`${SITE_URL}/auth`}
-                className='mr-5 hover:text-yellow-300'>
+                className='mr-5 hover:text-yellow-300 2xsm:mr-1'>
                 Login
               </Link>
             </SignedOut>
