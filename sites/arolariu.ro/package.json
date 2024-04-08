@@ -31,6 +31,7 @@
     "clean:lin": "node -e \"if (process.platform !== 'win32') process.exit(1)\" || rm -rf .next",
     "dev": "next dev --turbo",
     "build": "next build",
+    "format": "npm run format:check; npm run format:fix",
     "format:check": "prettier --check . --config prettier.config.js --config-precedence prefer-file",
     "format:fix": "prettier --write . --config prettier.config.js --config-precedence prefer-file",
     "start": "next start",

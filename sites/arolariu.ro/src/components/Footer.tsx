@@ -195,10 +195,14 @@ export default function Footer() {
             </span>
           </p>
           <div className='flex flex-row items-center 2xsm:mx-auto 2xsm:mt-8 2xsm:space-x-8 md:mx-0 md:mt-0 md:space-x-4'>
-            <Link href='https://github.com/arolariu'>
+            <Link
+              href='https://github.com/arolariu'
+              about='GitHub Repository'>
               <FaGithub className='h-7 w-7' />
             </Link>
-            <Link href='https://linkedin.com/in/olariu-alexandru'>
+            <Link
+              href='https://linkedin.com/in/olariu-alexandru'
+              about='LinkedIn Page'>
               <FaLinkedin className='h-7 w-7' />
             </Link>
           </div>
