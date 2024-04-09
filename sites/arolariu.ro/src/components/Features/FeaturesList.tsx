@@ -8,11 +8,11 @@ import Feature from "./Feature";
  */
 export default function FeaturesList() {
   return (
-    <div className='mx-auto max-w-screen-xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16'>
-      <div className='text-center'>
-        <h2 className='text-3xl font-bold sm:text-4xl'>Key Features</h2>
-        <p className='mt-4 text-gray-500'>The `arolariu.ro` platform is built using the latest stable technologies.</p>
-      </div>
+    <section className='mx-auto max-w-screen-xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16'>
+      <h2 className='text-center text-3xl font-bold sm:text-4xl'>Key Features</h2>
+      <p className='mt-4 text-center text-gray-500'>
+        The `arolariu.ro` platform is built using the latest stable technologies.
+      </p>
 
       <div className='mt-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3'>
         <Feature
@@ -66,6 +66,6 @@ export default function FeaturesList() {
           Interesting? Click here to learn more...
         </button>
       </Link>
-    </div>
+    </section>
   );
 }
