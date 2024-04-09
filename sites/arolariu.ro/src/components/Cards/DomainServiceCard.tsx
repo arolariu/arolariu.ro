@@ -12,7 +12,7 @@ export default async function DomainServiceCard({
   linkTo = "https://arolariu.ro",
 }) {
   return (
-    <div className='mb-6 max-w-80 p-4 sm:mb-0'>
+    <div className='mb-6 max-w-80 rounded-xl border p-4 sm:mb-0'>
       <div className='h-64 overflow-hidden rounded-lg'>
         <Image
           alt='content'
@@ -22,8 +22,8 @@ export default async function DomainServiceCard({
           height='400'
         />
       </div>
-      <h2 className='title-font mt-5 text-xl font-medium dark:text-gray-300'>{title}</h2>
-      <p className='mt-2 text-base leading-relaxed'>{description}</p>
+      <h2 className='title-font mt-5 text-center text-xl font-medium dark:text-gray-300'>{title}</h2>
+      <p className='mt-2 text-base italic leading-relaxed'>{description}</p>
       <Link
         href={linkTo}
         className='mt-3 inline-flex items-center text-indigo-500'>

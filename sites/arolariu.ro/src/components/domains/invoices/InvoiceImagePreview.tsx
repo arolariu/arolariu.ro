@@ -24,7 +24,7 @@ export default function InvoiceImagePreview({image}: Readonly<Props>) {
       </div>
     ) : (
       <Image
-        className='mx-auto mb-10 block w-2/3 rounded object-cover object-center md:w-1/2 lg:w-1/3 xl:w-1/4'
+        className='mx-auto mb-10 h-2/3 w-2/3 rounded object-fill object-center md:h-1/2 md:w-1/2 lg:h-1/3 lg:w-1/3 xl:h-1/4 xl:w-1/4'
         alt='Submitted receipt image'
         src={URL.createObjectURL(image)}
         width='600'
@@ -34,7 +34,7 @@ export default function InvoiceImagePreview({image}: Readonly<Props>) {
   } else {
     return (
       <Image
-        className='mx-auto mb-10 block w-2/3 rounded object-cover object-center md:w-1/2 lg:w-1/3 xl:w-1/4'
+        className='mx-auto mb-10 h-2/3 w-2/3 rounded object-fill object-center md:h-1/2 md:w-1/2 lg:h-1/3 lg:w-1/3 xl:h-1/4 xl:w-1/4'
         alt='Default dummy image'
         src='https://dummyimage.com/600x900&text=placeholder'
         width='600'
