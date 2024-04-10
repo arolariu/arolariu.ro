@@ -49,7 +49,6 @@ jobs:
           echo "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/" >> .env
           echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env
           echo "API_URL=https://api.arolariu.ro" >> .env
-          echo "USE_CDN=false" >> .env
           echo "API_JWT=${{ secrets.API_JWT }}" >> .env
           echo "CONFIG_STORE=${{ secrets.CONFIG_STORE }}" >> .env
 
