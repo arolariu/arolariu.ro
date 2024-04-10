@@ -1,11 +1,11 @@
-FROM --platform=linux/amd64 node:20-alpine AS base
+FROM --platform=linux/amd64 node:21-alpine AS base
 
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies
-COPY package.json ./
+COPY package*.json ./
 RUN npm install
 
 # Rebuild the source code only when needed
@@ -23,8 +23,8 @@ WORKDIR /app
 
 ENV NODE_ENV production
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 
