@@ -12,21 +12,19 @@ export const metadata: Metadata = {
  */
 export default async function EventsPage() {
   return (
-    <main className='p-20'>
-      <section>
-        <h1 className='my-8 text-center font-bold 2xsm:text-2xl xsm:text-3xl md:text-4xl'>Upcoming events</h1>
-        <div className='mx-auto my-12 flex justify-center'>
-          <span className='inline-block h-2 w-60 rounded-full bg-blue-500' />
-          <span className='mx-1 inline-block h-2 w-6 rounded-full bg-blue-500' />
-          <span className='inline-block h-2 w-3 rounded-full bg-blue-500' />
-        </div>
-        <p className='2xsm:hidden md:block md:text-center'>
-          This section contains the upcoming events that will be hosted by <code>arolariu.ro</code>.<br />
-          The events are designed to be fun, accessible, interesting and valuable.
-        </p>
-      </section>
+    <main className='px-5 py-24'>
+      <h1 className='my-8 text-center font-bold 2xsm:text-2xl xsm:text-3xl md:text-4xl'>Upcoming events</h1>
+      <div className='mx-auto my-12 flex justify-center'>
+        <span className='inline-block h-2 w-60 rounded-full bg-blue-500' />
+        <span className='mx-1 inline-block h-2 w-6 rounded-full bg-blue-500' />
+        <span className='inline-block h-2 w-3 rounded-full bg-blue-500' />
+      </div>
+      <p className='2xsm:hidden md:block md:text-center'>
+        This section contains the upcoming events that will be hosted by <code>arolariu.ro</code>.<br />
+        The events are designed to be fun, accessible, interesting and valuable.
+      </p>
 
-      <section className='flex flex-wrap 2xsm:gap-4 md:gap-8 md:p-4 lg:flex-nowrap'>
+      <section className='flex flex-col flex-wrap items-center justify-center justify-items-center gap-8 p-8 md:flex-row'>
         <EventCard
           title='System Design 101 - L100'
           description='Learn the basics of system design and how to approach any architecture interview with no stress.'
@@ -53,17 +51,14 @@ export default async function EventsPage() {
         />
       </section>
 
-      <section>
-        <h1 className='my-8 text-center font-bold 2xsm:text-2xl xsm:text-3xl md:text-4xl'>Archive</h1>
-        <div className='mx-auto my-12 flex justify-center'>
-          <span className='inline-block h-2 w-60 rounded-full bg-blue-500' />
-          <span className='mx-1 inline-block h-2 w-6 rounded-full bg-blue-500' />
-          <span className='inline-block h-2 w-3 rounded-full bg-blue-500' />
-        </div>
-      </section>
+      <h1 className='my-8 text-center font-bold 2xsm:text-2xl xsm:text-3xl md:text-4xl'>Archive</h1>
+      <div className='mx-auto my-12 flex justify-center'>
+        <span className='inline-block h-2 w-60 rounded-full bg-blue-500' />
+        <span className='mx-1 inline-block h-2 w-6 rounded-full bg-blue-500' />
+        <span className='inline-block h-2 w-3 rounded-full bg-blue-500' />
+      </div>
 
-      {/** TODO: fix the lg:w-1/3 CSS when more events will pop-up. */}
-      <section className='flex flex-wrap 2xsm:gap-4 md:gap-8 md:p-4 lg:w-1/3 lg:flex-nowrap'>
+      <section className='flex flex-col flex-wrap items-center justify-center justify-items-center gap-8 p-8 md:flex-row'>
         <EventCard
           title='Learn how to program in C/C++11'
           description='

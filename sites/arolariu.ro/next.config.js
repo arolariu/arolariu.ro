@@ -111,6 +111,8 @@ const nextConfig = {
     ignoreBuildErrors: false,
     tsconfigPath: "tsconfig.json",
   },
+
+  assetPrefix: process.env["USE_CDN"] === "true" ? "https://cdn.arolariu.ro" : undefined,
 };
 
 const withSerwist = withSerwistInit({

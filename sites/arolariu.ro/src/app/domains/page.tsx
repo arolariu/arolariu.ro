@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default async function DomainsHomepage() {
   return (
     <main className='container mx-auto px-5 py-24'>
-      <div className='flex flex-col'>
+      <section className='flex flex-col'>
         <div className='h-1 overflow-hidden rounded bg-gray-200'>
           <div className='h-full w-24 bg-indigo-500' />
         </div>
@@ -22,24 +22,26 @@ export default async function DomainsHomepage() {
           <h1 className='align-center mb-2 justify-items-center bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-center text-5xl font-bold text-transparent sm:mb-0 sm:w-2/5'>
             Domain Space Services
           </h1>
-          <p className='pl-0 leading-relaxed 2xsm:mt-8 sm:w-3/5 sm:pl-10 md:mt-0'>
-            The <code className='font-extrabold text-blue-400'>arolariu.ro</code> domain offers a wide range of services
-            under it&apos;s umbrella. Most of the services require that you have an account created on this platform, so
-            that your data can be safely synchronized across all the domain services.
+          <article className='pl-0 leading-relaxed 2xsm:mt-8 sm:w-3/5 sm:pl-10 md:mt-0'>
+            The <code className='font-extrabold text-blue-400'>arolariu.ro</code> platform offers a wide range of
+            services under it&apos;s umbrella. <br />
+            Most of the services require that you have an account created on this platform, so that your data can be
+            safely synchronized between all of the domain services.
+            <br />
             <br />
             Here you can see a showcase of all domain services that are available for exploration.
-          </p>
+          </article>
         </div>
-      </div>
+      </section>
 
-      <div className='flex flex-row flex-wrap'>
+      <section className='flex flex-row flex-wrap 2xsm:items-center 2xsm:justify-center 2xsm:justify-items-center md:items-baseline md:justify-normal md:justify-items-start'>
         <DomainServiceCard
           title='Invoice Management System'
           description='This domain space service assists with the digital transformation of physical receipts. It allows users to upload receipts, and get carefully-crafted insights into their spending habits.'
           linkTo='/domains/invoices'
           imageUrl='/images/domains/invoice-management-system.png'
         />
-      </div>
+      </section>
     </main>
   );
 }

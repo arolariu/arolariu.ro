@@ -18,10 +18,11 @@ export default function EventCard({title, description, date, location, imagePath
   return (
     <Link
       href={formLink ?? ""}
-      target='_blank'>
+      target='_blank'
+      className='max-w-[32rem]'>
       <div className='rounded-lg bg-white shadow-lg dark:bg-gray-800'>
         <Image
-          className='w-full object-fill object-center'
+          className='w-full object-fill'
           src={imagePath ?? "https://dummyimage.com/720x400&text=TBA"}
           width={720}
           height={400}
