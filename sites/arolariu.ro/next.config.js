@@ -9,12 +9,12 @@ const cspHeader = `
     script-src 'self' 'unsafe-inline' ${trustedDomains};
     style-src 'self' 'unsafe-inline' ${trustedDomains};
     img-src 'self' blob: data: 'unsafe-inline' ${trustedDomains};
-    font-src 'self';
-    object-src 'self';
-    worker-src 'self' blob: data:;
-    base-uri 'self';
-    form-action 'self';
-    frame-ancestors 'self';
+    font-src 'self' ${trustedDomains};
+    object-src 'self' ${trustedDomains};
+    worker-src 'self' ${trustedDomains} blob: data:;
+    base-uri 'self' ${trustedDomains};
+    form-action 'self' ${trustedDomains};
+    frame-ancestors 'self' ${trustedDomains};
     block-all-mixed-content;
     upgrade-insecure-requests;
 `;
@@ -28,6 +28,10 @@ const nextConfig = {
 
   images: {
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.arolariu.ro",
+      },
       {
         protocol: "https",
         hostname: "dummyimage.com",
