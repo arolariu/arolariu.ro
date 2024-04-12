@@ -3,18 +3,12 @@
 import withBundleAnalyzerInit from "@next/bundle-analyzer";
 import withSerwistInit from "@serwist/next";
 
-const trustedDomains = "arolariu.ro *.arolariu.ro clerk.com *.clerk.com accounts.dev *.accounts.dev";
+const trustedDomains = "https: arolariu.ro *.arolariu.ro clerk.com *.clerk.com accounts.dev *.accounts.dev";
 const cspHeader = `
     default-src 'self' ${trustedDomains};
     script-src 'self' 'unsafe-inline' ${trustedDomains};
     style-src 'self' 'unsafe-inline' ${trustedDomains};
-    img-src 'self' blob: data: 'unsafe-inline' ${trustedDomains};
-    font-src 'self' ${trustedDomains};
-    object-src 'self' ${trustedDomains};
-    worker-src 'self' ${trustedDomains} blob: data:;
-    base-uri 'self' ${trustedDomains};
-    form-action 'self' ${trustedDomains};
-    frame-ancestors 'self' ${trustedDomains};
+    img-src 'self' 'unsafe-inline' ${trustedDomains};
     block-all-mixed-content;
     upgrade-insecure-requests;
 `;
