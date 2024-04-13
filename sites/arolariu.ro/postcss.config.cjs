@@ -1,6 +1,8 @@
 const postcssConfig = {
   plugins: {
-    "postcss-preset-mantine": {},
+    "postcss-preset-mantine": {
+      autoRem: true,
+    },
     "postcss-simple-vars": {
       variables: {
         "mantine-breakpoint-xs": "36em",

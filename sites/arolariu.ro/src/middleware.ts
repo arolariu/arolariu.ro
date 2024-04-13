@@ -9,7 +9,7 @@ const cspMiddleware = (request: NextRequest) => {
 
   const cspHeader = `
     default-src 'self' 'nonce-${nonce}' ${trustedDomains};
-    script-src 'self' 'unsafe-inline' ${trustedDomains};
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' ${trustedDomains};
     style-src 'self' 'unsafe-inline' ${trustedDomains};
     img-src 'self' blob: data: ${trustedDomains};
     worker-src 'self' blob: data: ${trustedDomains};
