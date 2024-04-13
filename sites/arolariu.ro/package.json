@@ -35,14 +35,14 @@
     "format:check": "prettier --check . --config prettier.config.js --config-precedence prefer-file",
     "format:fix": "prettier --write . --config prettier.config.js --config-precedence prefer-file",
     "start": "next start",
-    "lint": "npx eslint src/",
+    "lint": "eslint src/",
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
     "@azure/app-configuration": "^1.5.0",
     "@azure/identity": "^4.0.1",
     "@azure/storage-blob": "^12.17.0",
-    "@clerk/nextjs": "^4.29.12",
+    "@clerk/nextjs": "5.0.0-beta.41",
     "@cloudamqp/amqp-client": "^3.1.1",
     "@mantine/core": "^7.7.1",
     "@mantine/hooks": "^7.7.1",

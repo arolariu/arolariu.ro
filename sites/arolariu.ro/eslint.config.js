@@ -51,6 +51,7 @@ export default tseslint.config(
       "react/jsx-no-bind": "off",
       "react/jsx-max-depth": "off",
       "react/no-multi-comp": "off",
+      "react/no-array-index-key": "off", // this is a good rule that we violate for some components.
       "react/jsx-sort-props": "off",
       "react/jsx-no-literals": "off", // this is a good rule for I18N.
       "react/jsx-tag-spacing": "off",
@@ -69,6 +70,7 @@ export default tseslint.config(
       "react/jsx-closing-bracket-location": "off",
       "react/function-component-definition": "off",
       "@typescript-eslint/require-await": "off",
+      "@typescript-eslint/non-nullable-type-assertion-style": "off",
       "@typescript-eslint/no-misused-promises": "off",
       "@typescript-eslint/consistent-type-definitions": "off",
       "@typescript-eslint/no-confusing-void-expression": "off",

@@ -1,6 +1,8 @@
-import {SITE_URL} from "@/constants";
-import {fetchUser} from "@/lib/utils.server";
+"use client";
+
+import {fetchUser} from "@/lib/actions/fetchUser";
 import Link from "next/link";
+import {useEffect, useState} from "react";
 
 interface Props {
   className?: string;
@@ -10,21 +12,33 @@ interface Props {
  * This function renders the navigation bar.
  * @returns The navigation bar.
  */
-export default async function Navigation({className}: Readonly<Props>) {
-  const {user, isAuthenticated} = await fetchUser();
+export default function Navigation({className}: Readonly<Props>) {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string>();
+
+  useEffect(() => {
+    fetchUser()
+      .then((user) => {
+        setIsAuthenticated(user.isAuthenticated);
+        setUserId(user.user?.id);
+      })
+      .catch((error: unknown) => {
+        console.error(error);
+      });
+  }, []);
 
   return (
     <ul className={className}>
       <li>
         <Link
-          href={`${SITE_URL}/domains`}
+          href={`/domains`}
           className='indicator mr-5 hover:text-yellow-300'>
           Domains
         </Link>
       </li>
       <li>
         <Link
-          href={`${SITE_URL}/events`}
+          href={`/events`}
           className='indicator mr-5 hover:text-yellow-300'>
           Events
         </Link>
@@ -33,7 +47,7 @@ export default async function Navigation({className}: Readonly<Props>) {
       {!isAuthenticated && (
         <li>
           <Link
-            href={`${SITE_URL}/auth`}
+            href={`/auth`}
             className='indicator mr-5 hover:text-yellow-300'>
             Auth
           </Link>
@@ -42,7 +56,7 @@ export default async function Navigation({className}: Readonly<Props>) {
       {!!isAuthenticated && (
         <li>
           <Link
-            href={`${SITE_URL}/accounts/${user?.id ?? ""}`}
+            href={`/accounts/${userId as string}`}
             className='indicator mr-5 hover:text-yellow-300'>
             Account
           </Link>

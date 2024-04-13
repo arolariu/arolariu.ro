@@ -45,6 +45,6 @@ export default async function fetchAppConfiguration(
       return environment;
     }
     default:
-      throw new Error(`Unknown environment: ${appEnvironment}`);
+      throw new Error(`Unknown environment received.`);
   }
 }

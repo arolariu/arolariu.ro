@@ -25,9 +25,9 @@ export default async function Loading() {
           <h1 className='mb-4 from-pink-400 bg-clip-text'>
             <Skeleton className='w-[456px] max-w-full' />
           </h1>
-          <p className='mb-8 leading-relaxed'>
+          <div className='mb-8 leading-relaxed'>
             <Skeleton className='w-[1560px] max-w-full' />
-          </p>
+          </div>
           <div className='flex justify-center'>
             <a className='inline-flex border-0 px-6 py-2'>
               <Skeleton className='w-[112px] max-w-full' />

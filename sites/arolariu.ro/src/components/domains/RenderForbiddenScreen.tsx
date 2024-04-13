@@ -1,4 +1,4 @@
-import {SITE_URL} from "@/constants";
+import {SITE_URL} from "@/lib/utils.generic";
 import Image from "next/image";
 import Link from "next/link";
 

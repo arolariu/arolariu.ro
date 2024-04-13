@@ -2,7 +2,7 @@ import Footer from "@/components/Footer";
 import {Caudex} from "next/font/google";
 
 import Header from "@/components/Header";
-import {SITE_URL} from "@/constants";
+import {SITE_URL} from "@/lib/utils.generic";
 import "@mantine/core/styles.css";
 import type {Metadata} from "next";
 import type {NextFont} from "next/dist/compiled/@next/font";

@@ -1,4 +1,4 @@
-import {cn} from "@/lib/utils.client";
+import {cn} from "@/lib/utils.generic";
 import React from "react";
 
 /**

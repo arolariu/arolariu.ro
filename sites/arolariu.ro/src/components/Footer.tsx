@@ -1,4 +1,4 @@
-import {COMMIT_SHA, SITE_URL, TIMESTAMP} from "@/constants";
+import {COMMIT_SHA, TIMESTAMP} from "@/lib/utils.generic";
 import Link from "next/link";
 import {FaGithub, FaLinkedin} from "react-icons/fa";
 
@@ -23,7 +23,7 @@ export default function Footer() {
         <div className='row-gap-10 mb-8 grid gap-16 sm:grid-cols-2 lg:grid-cols-6'>
           <div className=' md:col-span-1 lg:col-span-2'>
             <Link
-              href={SITE_URL}
+              href='/'
               aria-label='Go home'
               title='AROLARIU.RO'
               className='inline-flex items-center 2xsm:ml-[20%] md:ml-0'>
@@ -55,7 +55,7 @@ export default function Footer() {
               <ul className='mt-2 space-y-2'>
                 <li>
                   <Link
-                    href={`${SITE_URL}/domains/invoices`}
+                    href={`/domains/invoices`}
                     className='tooltip tooltip-top transition-colors duration-300 hover:text-teal-400'
                     data-tip='Invoice Management System (IMS)'>
                     <span>I M S</span>
@@ -63,7 +63,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    href={`${SITE_URL}/domains/links`}
+                    href={`/domains/links`}
                     className='tooltip tooltip-top transition-colors duration-300 hover:text-teal-400'
                     data-tip='Link Analysis & Insights System (LAIS)'>
                     <span>L A I S</span>
@@ -149,28 +149,28 @@ export default function Footer() {
               <ul className='mt-2 space-y-2'>
                 <li>
                   <Link
-                    href={`${SITE_URL}/about/the-platform`}
+                    href={`/about/the-platform`}
                     className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
                     What is <code>arolariu.ro</code>?
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href={`${SITE_URL}/about/the-author`}
+                    href={`/about/the-author`}
                     className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
                     Who is <code>arolariu</code>?
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href={`${SITE_URL}/terms-of-service`}
+                    href={`/terms-of-service`}
                     className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
                     Terms of Service
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href={`${SITE_URL}/privacy-policy`}
+                    href={`/privacy-policy`}
                     className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
                     Privacy Policy
                   </Link>

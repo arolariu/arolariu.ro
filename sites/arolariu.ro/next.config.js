@@ -3,16 +3,6 @@
 import withBundleAnalyzerInit from "@next/bundle-analyzer";
 import withSerwistInit from "@serwist/next";
 
-const trustedDomains = "https: arolariu.ro *.arolariu.ro clerk.com *.clerk.com accounts.dev *.accounts.dev";
-const cspHeader = `
-    default-src 'self' ${trustedDomains};
-    script-src 'self' 'unsafe-inline' ${trustedDomains};
-    style-src 'self' 'unsafe-inline' ${trustedDomains};
-    img-src 'self' 'unsafe-inline' ${trustedDomains};
-    block-all-mixed-content;
-    upgrade-insecure-requests;
-`;
-
 /**
  * @format
  * @type {import("next").NextConfig}
@@ -57,13 +47,6 @@ const nextConfig = {
           {
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains; preload",
-          },
-          {
-            key:
-              process.env.NODE_ENV === "development"
-                ? "Content-Security-Policy-Report-Only"
-                : "Content-Security-Policy",
-            value: cspHeader.replace(/\n/g, ""),
           },
           {
             key: "X-Content-Type-Options",
@@ -115,6 +98,7 @@ const nextConfig = {
   },
 
   assetPrefix: process.env["USE_CDN"] === "true" ? "https://cdn.arolariu.ro" : undefined,
+  trailingSlash: true,
 };
 
 const withSerwist = withSerwistInit({

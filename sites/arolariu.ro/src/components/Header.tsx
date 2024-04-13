@@ -1,7 +1,10 @@
-import {SITE_URL} from "@/constants";
+"use client";
+
+import {fetchUser} from "@/lib/actions/fetchUser";
 import {SignedIn, SignedOut, UserButton} from "@clerk/nextjs";
 import {HamburgerMenuIcon} from "@radix-ui/react-icons";
 import Link from "next/link";
+import {useEffect, useState} from "react";
 import ThemeSwitcherButton from "./Buttons/ThemeButton";
 import Navigation from "./Navigation";
 import {Button} from "./ui/button";
@@ -12,6 +15,18 @@ import {Popover, PopoverContent, PopoverTrigger} from "./ui/popover";
  * @returns The header component.
  */
 export default function Header() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  useEffect(() => {
+    fetchUser()
+      .then((user) => {
+        setIsAuthenticated(user.isAuthenticated);
+      })
+      .catch((error: unknown) => {
+        console.error(error);
+      });
+  }, []);
+
   return (
     <header>
       <nav className='navbar bg-white 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto dark:bg-black'>
@@ -29,7 +44,7 @@ export default function Header() {
             </Popover>
           </div>
           <Link
-            href={SITE_URL}
+            href='/'
             className='ml-2 flex items-center font-medium'>
             <svg
               xmlns='http://www.w3.org/2000/svg'
@@ -52,16 +67,20 @@ export default function Header() {
 
         <div className='navbar-end flex flex-row flex-wrap'>
           <div className='mr-4 mt-2'>
-            <SignedOut>
-              <Link
-                href={`${SITE_URL}/auth`}
-                className='mr-5 hover:text-yellow-300 2xsm:mr-1'>
-                Login
-              </Link>
-            </SignedOut>
-            <SignedIn>
-              <UserButton afterSignOutUrl='/' />
-            </SignedIn>
+            {!isAuthenticated && (
+              <SignedOut>
+                <Link
+                  href={`/auth`}
+                  className='mr-5 hover:text-yellow-300 2xsm:mr-1'>
+                  Login
+                </Link>
+              </SignedOut>
+            )}
+            {!!isAuthenticated && (
+              <SignedIn>
+                <UserButton />
+              </SignedIn>
+            )}
           </div>
           <ThemeSwitcherButton />
         </div>
