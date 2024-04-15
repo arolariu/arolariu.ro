@@ -1,12 +1,12 @@
 import {COMMIT_SHA, TIMESTAMP} from "@/lib/utils.generic";
+import {GitHubLogoIcon, LinkedInLogoIcon} from "@radix-ui/react-icons";
 import Link from "next/link";
-import {FaGithub, FaLinkedin} from "react-icons/fa";
 
 /**
  * The footer component.
  * @returns The footer component.
  */
-export default function Footer() {
+export default async function Footer() {
   return (
     <footer className='relative bottom-0 w-full bg-indigo-500'>
       <svg
@@ -55,7 +55,7 @@ export default function Footer() {
               <ul className='mt-2 space-y-2'>
                 <li>
                   <Link
-                    href={`/domains/invoices`}
+                    href='/domains/invoices'
                     className='tooltip tooltip-top transition-colors duration-300 hover:text-teal-400'
                     data-tip='Invoice Management System (IMS)'>
                     <span>I M S</span>
@@ -63,7 +63,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    href={`/domains/links`}
+                    href='/domains/links'
                     className='tooltip tooltip-top transition-colors duration-300 hover:text-teal-400'
                     data-tip='Link Analysis & Insights System (LAIS)'>
                     <span>L A I S</span>
@@ -149,28 +149,28 @@ export default function Footer() {
               <ul className='mt-2 space-y-2'>
                 <li>
                   <Link
-                    href={`/about/the-platform`}
+                    href='/about/the-platform'
                     className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
                     What is <code>arolariu.ro</code>?
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href={`/about/the-author`}
+                    href='/about/the-author'
                     className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
                     Who is <code>arolariu</code>?
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href={`/terms-of-service`}
+                    href='/terms-of-service'
                     className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
                     Terms of Service
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href={`/privacy-policy`}
+                    href='/privacy-policy'
                     className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
                     Privacy Policy
                   </Link>
@@ -188,6 +188,7 @@ export default function Footer() {
               Source code is available{" "}
               <Link
                 href='https://github.com/arolariu/arolariu.ro/'
+                target='_blank'
                 className='italic text-red-200'>
                 here (GitHub public repository)
               </Link>
@@ -197,13 +198,15 @@ export default function Footer() {
           <div className='flex flex-row items-center 2xsm:mx-auto 2xsm:mt-8 2xsm:space-x-8 md:mx-0 md:mt-0 md:space-x-4'>
             <Link
               href='https://github.com/arolariu'
-              about='GitHub Repository'>
-              <FaGithub className='h-7 w-7' />
+              target='_blank'
+              about='GitHub'>
+              <GitHubLogoIcon className='h-7 w-7' />
             </Link>
             <Link
               href='https://linkedin.com/in/olariu-alexandru'
-              about='LinkedIn Page'>
-              <FaLinkedin className='h-7 w-7' />
+              target='_blank'
+              about='LinkedIn'>
+              <LinkedInLogoIcon className='h-7 w-7' />
             </Link>
           </div>
         </div>

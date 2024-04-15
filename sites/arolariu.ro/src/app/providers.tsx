@@ -10,7 +10,12 @@ import {type ReactNode} from "react";
  */
 export function Providers({children}: Readonly<{children: ReactNode}>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      afterSignInUrl='/'
+      afterSignUpUrl='/'
+      afterSignOutUrl='/'
+      signInUrl='/auth/sign-in'
+      signUpUrl='/auth/sign-up'>
       <ThemeProvider
         attribute='data-mantine-color-scheme'
         themes={["light", "dark"]}

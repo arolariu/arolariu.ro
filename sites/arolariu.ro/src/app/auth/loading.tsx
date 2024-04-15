@@ -28,12 +28,12 @@ export default async function Loading() {
             <h2 className='mb-3 mt-6'>
               <Skeleton className='w-[208px] max-w-full' />
             </h2>
-            <p className='leading-relaxed'>
+            <div className='leading-relaxed'>
               <Skeleton className='w-[1960px] max-w-full' />
-            </p>
-            <a className='mt-6 flex w-full border-0 px-5 py-2'>
+            </div>
+            <div className='mt-6 flex w-full border-0 px-5 py-2'>
               <Skeleton className='w-[64px] max-w-full' />
-            </a>
+            </div>
           </div>
           <div className='container mb-10 px-8 sm:w-1/2'>
             <div className='flex h-64 items-center justify-center'>
@@ -42,12 +42,12 @@ export default async function Loading() {
             <h2 className='mb-3 mt-6'>
               <Skeleton className='w-[248px] max-w-full' />
             </h2>
-            <p className='leading-relaxed'>
+            <div className='leading-relaxed'>
               <Skeleton className='w-[1568px] max-w-full' />
-            </p>
-            <a className='mt-6 flex w-full border-0 px-5 py-2'>
+            </div>
+            <div className='mt-6 flex w-full border-0 px-5 py-2'>
               <Skeleton className='w-[64px] max-w-full' />
-            </a>
+            </div>
           </div>
         </div>
       </div>

@@ -2,10 +2,9 @@ import "server-only";
 
 import {AppConfigurationClient} from "@azure/app-configuration";
 
-import {type User} from "@clerk/backend";
-
 import {Blob} from "node:buffer";
 
+import {type User} from "@clerk/nextjs/server";
 import * as jose from "jose";
 import {CONFIG_STORE} from "./utils.generic";
 
