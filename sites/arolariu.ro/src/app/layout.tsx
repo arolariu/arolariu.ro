@@ -2,7 +2,10 @@ import Footer from "@/components/Footer";
 import {Caudex} from "next/font/google";
 
 import Header from "@/components/Header";
+import {languageTag} from "@/i18n/runtime";
 import {SITE_URL} from "@/lib/utils.generic";
+import {ClerkProvider} from "@clerk/nextjs";
+import {LanguageProvider} from "@inlang/paraglide-next";
 import "@mantine/core/styles.css";
 import type {Metadata} from "next";
 import type {NextFont} from "next/dist/compiled/@next/font";
@@ -150,18 +153,27 @@ export const metadata: Metadata = {
  */
 export default async function RootLayout({children}: Readonly<PropsWithChildren<{}>>) {
   return (
-    <html
-      lang='en'
-      suppressHydrationWarning
-      className={fontFamily.className}
-      dir='ltr'>
-      <body className='bg-white text-black dark:bg-black dark:text-white'>
-        <Providers>
-          <Header />
-          <Suspense fallback={<Loading />}>{children}</Suspense>
-          <Footer />
-        </Providers>
-      </body>
-    </html>
+    <ClerkProvider
+      afterSignInUrl='/'
+      afterSignUpUrl='/'
+      afterSignOutUrl='/'
+      signInUrl='/auth/sign-in'
+      signUpUrl='/auth/sign-up'>
+      <LanguageProvider>
+        <html
+          lang={languageTag()}
+          suppressHydrationWarning
+          className={fontFamily.className}
+          dir='ltr'>
+          <body className='bg-white text-black dark:bg-black dark:text-white'>
+            <Providers>
+              <Header />
+              <Suspense fallback={<Loading />}>{children}</Suspense>
+              <Footer />
+            </Providers>
+          </body>
+        </html>
+      </LanguageProvider>
+    </ClerkProvider>
   );
 }

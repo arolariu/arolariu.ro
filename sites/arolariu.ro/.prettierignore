@@ -12,7 +12,7 @@ node_modules
 .editorconfig
 
 public
-
+i18n.inlang/
 
 **/**/node_modules
 **/**/.next

@@ -1,4 +1,5 @@
 import FeaturesList from "@/components/Features/FeaturesList";
+import * as m from "@/i18n/messages";
 import Link from "next/link";
 
 /**
@@ -13,7 +14,7 @@ export default async function Home() {
           <div>
             <h1 className='mt-6 text-4xl font-normal text-white 2xsm:text-center sm:mt-10 sm:text-5xl md:text-left lg:text-6xl xl:text-8xl'>
               <span className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent'>
-                Welcome to <span className='font-bold'>arolariu.ro</span>
+                {m.welcomePage_title()}
               </span>
             </h1>
             <p className='mt-4 max-w-lg text-xl text-gray-500 2xsm:text-center md:text-left lg:max-w-2xl'>

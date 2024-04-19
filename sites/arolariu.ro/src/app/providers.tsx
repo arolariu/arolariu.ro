@@ -1,4 +1,3 @@
-import {ClerkProvider} from "@clerk/nextjs";
 import {MantineProvider, type MantineTheme} from "@mantine/core";
 import {ThemeProvider} from "next-themes";
 import {type ReactNode} from "react";
@@ -10,31 +9,24 @@ import {type ReactNode} from "react";
  */
 export function Providers({children}: Readonly<{children: ReactNode}>) {
   return (
-    <ClerkProvider
-      afterSignInUrl='/'
-      afterSignUpUrl='/'
-      afterSignOutUrl='/'
-      signInUrl='/auth/sign-in'
-      signUpUrl='/auth/sign-up'>
-      <ThemeProvider
-        attribute='data-mantine-color-scheme'
-        themes={["light", "dark"]}
-        enableSystem={false}>
-        <MantineProvider
-          theme={
-            {
+    <ThemeProvider
+      attribute='data-mantine-color-scheme'
+      themes={["light", "dark"]}
+      enableSystem={false}>
+      <MantineProvider
+        theme={
+          {
+            fontFamily: "Caudex, ",
+            fontFamilyMonospace: "Caudex, ",
+            headings: {
               fontFamily: "Caudex, ",
-              fontFamilyMonospace: "Caudex, ",
-              headings: {
-                fontFamily: "Caudex, ",
-                fontWeight: "700",
-                textWrap: "wrap",
-              },
-            } as MantineTheme
-          }>
-          {children}
-        </MantineProvider>
-      </ThemeProvider>
-    </ClerkProvider>
+              fontWeight: "700",
+              textWrap: "wrap",
+            },
+          } as MantineTheme
+        }>
+        {children}
+      </MantineProvider>
+    </ThemeProvider>
   );
 }

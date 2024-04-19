@@ -25,7 +25,7 @@
 		"noEmit": true,
 		"removeComments": true,
 		"allowJs": true,
-		"checkJs": true,
+		"checkJs": false, // set to true when paraglide fixes their JS types
 		"lib": ["dom", "dom.iterable", "esnext", "webworker"],
 		"target": "esnext",
 		"diagnostics": true,
@@ -37,7 +37,7 @@
 		"esModuleInterop": true,
 		"allowSyntheticDefaultImports": true,
 		"module": "esnext",
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"jsx": "preserve",
@@ -52,5 +52,5 @@
 		"types": ["@types/node", "@serwist/next/typings"]
 	},
 	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "postcss.config.cjs"],
-	"exclude": ["node_modules", "src/components/ui"],
+	"exclude": ["node_modules", "src/components/ui", "src/i18n"],
 }
