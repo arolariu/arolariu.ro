@@ -1,6 +1,4 @@
-import {KeyValuePair} from "../KvPair";
-
-export default interface CreateInvoiceDto {
+export type CreateInvoiceDto = {
   photoLocation: string;
-  photoMetadata: KeyValuePair<string, object>[];
-}
+  photoMetadata: Record<string, object>[];
+};

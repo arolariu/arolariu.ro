@@ -1,5 +1,4 @@
 import NamedEntity from "../DDD/NamedEntity";
-import {KeyValuePair} from "../KvPair";
 import Merchant from "./Merchant";
 import Product from "./Product";
 
@@ -12,7 +11,7 @@ export default interface Invoice extends NamedEntity<string> {
   items: Product[];
   possibleRecipes: Recipe[];
   estimatedSurvivalDays: number;
-  additionalMetadata: KeyValuePair<string, object>[];
+  additionalMetadata: Record<string, object>[];
 }
 
 export interface InvoiceAnalysisOptions {
