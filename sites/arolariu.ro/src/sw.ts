@@ -1,6 +1,6 @@
-import {type SerwistGlobalConfig} from "@serwist/core";
 import {defaultCache} from "@serwist/next/worker";
-import {Serwist, type PrecacheEntry, type SerwistOptions} from "serwist";
+import type {PrecacheEntry, SerwistGlobalConfig, SerwistOptions} from "serwist";
+import {Serwist} from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -12,10 +12,12 @@ declare const self: ServiceWorkerGlobalScope;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
-  cleanupOutdatedCaches: true,
   disableDevLogs: false,
   offlineAnalyticsConfig: false,
   skipWaiting: true,
+  cleanupOutdatedCaches: true,
+  concurrentPrecaching: 12,
+  fallbackToNetwork: true,
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: defaultCache,

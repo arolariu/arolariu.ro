@@ -108,6 +108,7 @@ const withSerwist = withSerwistInit({
   swDest: "public/sw.js",
   reloadOnOnline: true,
 
+  register: true,
   disable: process.env.NODE_ENV === "development",
 });
 
