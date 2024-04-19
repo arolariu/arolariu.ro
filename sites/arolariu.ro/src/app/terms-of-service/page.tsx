@@ -6,6 +6,10 @@ export const metadata: Metadata = {
   description: "The terms of service for arolariu.ro",
 };
 
+/**
+ * The terms of service page.
+ * @returns The terms of service page.
+ */
 export default async function TermsOfServicePage() {
   return (
     <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-8 px-12 py-24'>

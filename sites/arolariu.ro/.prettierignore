@@ -14,6 +14,7 @@ node_modules
 public
 i18n.inlang/
 
+**/**/readme.md
 **/**/node_modules
 **/**/.next
 **/**/public

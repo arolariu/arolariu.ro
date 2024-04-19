@@ -6,7 +6,16 @@ import {Blob} from "node:buffer";
 
 import {type User} from "@clerk/nextjs/server";
 import * as jose from "jose";
+import {Resend} from "resend";
 import {CONFIG_STORE} from "./utils.generic";
+
+/**
+ * Singleton pattern class object that handles the interaction with the Resend API (mail).
+ */
+export const resend = new Resend(process.env["RESEND_API_KEY"]);
+
+export const API_URL = process.env["API_URL"] ?? "";
+export const API_JWT = process.env["API_JWT"] ?? "";
 
 /**
  * Generate a JWT for a user.
@@ -73,6 +82,3 @@ export async function base64ToBlob(base64String: string): Promise<Blob> {
   const byteArray = new Uint8Array(byteArrays);
   return new Blob([byteArray], {type: mimeType});
 }
-
-export const API_URL = process.env["API_URL"] ?? "";
-export const API_JWT = process.env["API_JWT"] ?? "";
