@@ -36,8 +36,7 @@
     "format:fix": "prettier --write . --config prettier.config.js --config-precedence prefer-file",
     "start": "next start",
     "lint": "eslint src/",
-    "analyze": "ANALYZE=true next build",
-    "postinstall": "paraglide-js compile --project i18n.inlang --outdir src/i18n"
+    "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
     "@azure/app-configuration": "1.6.0",
