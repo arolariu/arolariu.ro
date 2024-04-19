@@ -37,7 +37,7 @@
     "start": "next start",
     "lint": "eslint src/",
     "analyze": "ANALYZE=true next build",
-    "postinstall": "paraglide-js compile --project ./i18n.inlang --outdir ./src/i18n"
+    "postinstall": "paraglide-js compile --project i18n.inlang --outdir src/i18n"
   },
   "dependencies": {
     "@azure/app-configuration": "1.6.0",
