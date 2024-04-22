@@ -103,4 +103,3 @@ export default function SubscriptionEmail({username}: Readonly<{username: string
     </Html>
   );
 }
-

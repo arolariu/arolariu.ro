@@ -1,5 +1,6 @@
 import {clerkMiddleware as authMiddleware, createRouteMatcher} from "@clerk/nextjs/server";
-import {NextRequest, NextResponse} from "next/server";
+import {NextRequest} from "next/server";
+import {middleware as translationMiddleware} from "./lib/i18n";
 
 const isProtectedRoute = createRouteMatcher(["/admin(.*)"]);
 
@@ -24,11 +25,7 @@ const cspMiddleware = (request: NextRequest) => {
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", contentSecurityPolicyHeaderValue);
 
-  const response = NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
+  const response = translationMiddleware({request: {headers: requestHeaders}});
   response.headers.set("Content-Security-Policy", contentSecurityPolicyHeaderValue);
 
   return response;
