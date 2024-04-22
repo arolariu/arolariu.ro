@@ -3397,9 +3397,8 @@ __metadata:
     react-icons: "npm:5.0.1"
     resend: "npm:3.2.0"
     server-only: "npm:0.0.1"
-    serwist: "npm:9.0.0-preview.24"
+    serwist: "npm:^9.0.0"
     sharp: "npm:0.33.3"
-    simple-zustand-devtools: "npm:^1.1.0"
     tailwind-merge: "npm:2.2.2"
     tailwindcss: "npm:3.4.3"
     tailwindcss-animate: "npm:1.0.7"
@@ -9012,7 +9011,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"serwist@npm:9.0.0":
+"serwist@npm:9.0.0, serwist@npm:^9.0.0":
   version: 9.0.0
   resolution: "serwist@npm:9.0.0"
   dependencies:
@@ -9023,20 +9022,6 @@ __metadata:
     typescript:
       optional: true
   checksum: 10c0/c985fa179d107162e30acf1a74690414af1f3525feb9b5bee9e411438b85427aaf83ec9edb84686b39263cf9d05fce893bde8424fcd27cd17a08df0ecbfcb2cd
-  languageName: node
-  linkType: hard
-
-"serwist@npm:9.0.0-preview.24":
-  version: 9.0.0-preview.24
-  resolution: "serwist@npm:9.0.0-preview.24"
-  dependencies:
-    idb: "npm:8.0.0"
-  peerDependencies:
-    typescript: ">=5.0.0"
-  peerDependenciesMeta:
-    typescript:
-      optional: true
-  checksum: 10c0/8f7559d41d2255abd25cccabdca8089014e99efaee67b37b3b7c24c3306e98ad7f22bb8db291056e2d0b76aea111e7998cda899dc825780c0766a17fb9ef2052
   languageName: node
   linkType: hard
 
@@ -9196,19 +9181,6 @@ __metadata:
   dependencies:
     is-arrayish: "npm:^0.3.1"
   checksum: 10c0/df5e4662a8c750bdba69af4e8263c5d96fe4cd0f9fe4bdfa3cbdeb45d2e869dff640beaaeb1ef0e99db4d8d2ec92f85508c269f50c972174851bc1ae5bd64308
-  languageName: node
-  linkType: hard
-
-"simple-zustand-devtools@npm:^1.1.0":
-  version: 1.1.0
-  resolution: "simple-zustand-devtools@npm:1.1.0"
-  peerDependencies:
-    "@types/react": ">=18.0.0"
-    "@types/react-dom": ">=18.0.0"
-    react: ">=18.0.0"
-    react-dom: ">=18.0.0"
-    zustand: ">=1.0.2"
-  checksum: 10c0/8214dafd66ca7581c0f474c8a19a1717f0391f8e5f93125aaeb44a350fed1dfaf9b68c4ac05e7fd7cdf7a52109536c1197b4bddeb8f1886489090aa381245f17
   languageName: node
   linkType: hard
 
