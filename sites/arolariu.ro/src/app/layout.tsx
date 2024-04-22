@@ -6,8 +6,8 @@ import {languageTag} from "@/i18n/runtime";
 import {SITE_URL} from "@/lib/utils.generic";
 import {ClerkProvider} from "@clerk/nextjs";
 import {LanguageProvider} from "@inlang/paraglide-next";
-import "@mantine/core/styles.css";
 import type {Metadata} from "next";
+import {ThemeProvider} from "next-themes";
 import type {NextFont} from "next/dist/compiled/@next/font";
 import type {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
 import type {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";
@@ -16,7 +16,6 @@ import type {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
 import {Suspense, type PropsWithChildren} from "react";
 import "./globals.css";
 import Loading from "./loading";
-import {Providers} from "./providers";
 
 const fontFamily: NextFont = Caudex({
   weight: "700",
@@ -166,11 +165,14 @@ export default async function RootLayout({children}: Readonly<PropsWithChildren<
           className={fontFamily.className}
           dir='ltr'>
           <body className='bg-white text-black dark:bg-black dark:text-white'>
-            <Providers>
+            <ThemeProvider
+              attribute='class'
+              themes={["light", "dark"]}
+              enableSystem={false}>
               <Header />
               <Suspense fallback={<Loading />}>{children}</Suspense>
               <Footer />
-            </Providers>
+            </ThemeProvider>
           </body>
         </html>
       </LanguageProvider>

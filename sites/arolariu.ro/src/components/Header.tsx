@@ -15,7 +15,7 @@ const NavigationLinks = [
 
 const HeaderSkeleton = () => (
   <header>
-    <nav className='navbar bg-white 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto dark:bg-black'>
+    <nav className='navbar bg-white dark:bg-black 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto'>
       <div className='navbar-start flex flex-row flex-nowrap'>
         <Skeleton className='h-10 w-10 rounded-full bg-indigo-500 p-2 text-white' />
       </div>
@@ -79,7 +79,7 @@ export default function Header() {
 
   return (
     <header>
-      <nav className='navbar bg-white 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto dark:bg-black'>
+      <nav className='navbar bg-white dark:bg-black 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto'>
         <div className='navbar-start flex flex-row flex-nowrap'>
           <div className='lg:hidden'>
             <Popover>
