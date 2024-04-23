@@ -18,6 +18,11 @@ const serwist = new Serwist({
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: defaultCache,
+  precacheOptions: {
+    cleanupOutdatedCaches: true,
+    concurrency: 12,
+    fallbackToNetwork: true,
+  },
   fallbacks: {
     entries: [
       {
