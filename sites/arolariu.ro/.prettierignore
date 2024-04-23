@@ -12,7 +12,8 @@ node_modules
 .editorconfig
 
 public
-i18n.inlang/
+i18n.inlang
+src/components/ui
 
 **/**/readme.md
 **/**/node_modules
