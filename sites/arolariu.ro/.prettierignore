@@ -19,6 +19,7 @@ i18n.inlang/
 **/**/.next
 **/**/public
 **/**/*.ico
+**/**/*.css
 **/**/*.svg
 **/**/*.png
 **/**/*.jpg

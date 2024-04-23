@@ -33,8 +33,8 @@
     "email": "email dev",
     "build": "paraglide-js compile --project i18n.inlang --outdir src/i18n && next build",
     "format": "npm run format:check; npm run format:fix",
-    "format:check": "prettier --check . --config prettier.config.js --config-precedence prefer-file",
-    "format:fix": "prettier --write . --config prettier.config.js --config-precedence prefer-file",
+    "format:check": "prettier --check . --config prettier.config.js --config-precedence prefer-file --cache --cache-strategy metadata",
+    "format:fix": "prettier --write . --config prettier.config.js --config-precedence prefer-file --cache --cache-strategy metadata",
     "start": "next start",
     "lint": "eslint src/",
     "analyze": "ANALYZE=true next build"

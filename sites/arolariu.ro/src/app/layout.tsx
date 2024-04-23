@@ -13,6 +13,7 @@ import type {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-
 import type {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";
 import type {Author, Icon, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
 import type {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
+import type {Twitter} from "next/dist/lib/metadata/types/twitter-types";
 import {Suspense, type PropsWithChildren} from "react";
 import "./globals.css";
 import Loading from "./loading";
@@ -74,7 +75,8 @@ export const metadata: Metadata = {
     creator: "Alexandru-Razvan Olariu",
     title: "arolariu.ro | Alexandru-Razvan Olariu",
     description: siteDescription,
-  },
+    card: "summary",
+  } satisfies Twitter,
   manifest: "/manifest.json",
   icons: [
     {
