@@ -1,9 +1,8 @@
-﻿using arolariu.Backend.Core.Auth.Models;
+﻿namespace arolariu.Backend.Core.Auth.Brokers;
+using arolariu.Backend.Core.Auth.Models;
 
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-
-namespace arolariu.Backend.Core.Auth.Brokers;
 
 /// <summary>
 /// To complete.

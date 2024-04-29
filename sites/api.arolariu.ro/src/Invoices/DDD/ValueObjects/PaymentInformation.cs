@@ -1,7 +1,6 @@
-﻿using System;
+﻿namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using System;
 using System.Diagnostics.CodeAnalysis;
-
-namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 /// <summary>
 /// To complete
@@ -12,7 +11,7 @@ namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// <param name="TotalTax"></param>
 [ExcludeFromCodeCoverage]
 public record struct PaymentInformation(
-    DateTimeOffset DateOfPurchase,
-    Currency Currency,
-    decimal TotalAmount,
-    decimal TotalTax);
+	DateTimeOffset DateOfPurchase,
+	Currency Currency,
+	decimal TotalAmount,
+	decimal TotalTax);

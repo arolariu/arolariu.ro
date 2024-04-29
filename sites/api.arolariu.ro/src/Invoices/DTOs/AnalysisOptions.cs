@@ -1,6 +1,5 @@
-﻿using System;
-
-namespace arolariu.Backend.Domain.Invoices.DTOs;
+﻿namespace arolariu.Backend.Domain.Invoices.DTOs;
+using System;
 
 /// <summary>
 /// This class represents the invoice analysis options DTO.
@@ -8,23 +7,23 @@ namespace arolariu.Backend.Domain.Invoices.DTOs;
 [Serializable]
 public enum AnalysisOptions
 {
-    /// <summary>
-    /// No analysis.
-    /// </summary>
-    NoAnalysis,
+	/// <summary>
+	/// No analysis.
+	/// </summary>
+	NoAnalysis,
 
-    /// <summary>
-    /// Do a complete analysis of the invoice.
-    /// </summary>
-    CompleteAnalysis,
+	/// <summary>
+	/// Do a complete analysis of the invoice.
+	/// </summary>
+	CompleteAnalysis,
 
-    /// <summary>
-    /// Analyze the invoice description.
-    /// </summary>
-    InvoiceOnly,
+	/// <summary>
+	/// Analyze the invoice description.
+	/// </summary>
+	InvoiceOnly,
 
-    /// <summary>
-    /// Analyze the invoice items only.
-    /// </summary>
-    InvoiceItemsOnly,
+	/// <summary>
+	/// Analyze the invoice items only.
+	/// </summary>
+	InvoiceItemsOnly,
 }

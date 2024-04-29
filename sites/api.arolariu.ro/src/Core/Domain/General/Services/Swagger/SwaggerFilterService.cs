@@ -1,11 +1,10 @@
-﻿using Microsoft.OpenApi.Models;
+﻿namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
+using Microsoft.OpenApi.Models;
 
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-
-namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 /// <summary>
 /// The swagger filter service represents the service that filters the swagger document.
@@ -13,50 +12,51 @@ namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
 /// This service is also used to add external documentation to the swagger document.
 /// </summary>
 [ExcludeFromCodeCoverage] // Infrastructure code is not tested currently.
-public class SwaggerFilterService : IDocumentFilter
+[SuppressMessage("Design", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by the Swagger middleware.")]
+internal sealed class SwaggerFilterService : IDocumentFilter
 {
-    /// <summary>
-    /// Applies the Swagger document filter by filtering endpoints from discovery.
-    /// </summary>
-    /// <param name="swaggerDoc">The Swagger document being filtered.</param>
-    /// <param name="context">The context of the document filter.</param>
-    public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
-    {
-        ArgumentNullException.ThrowIfNull(swaggerDoc);
-        FilterEndpointsFromDiscovery(swaggerDoc);
-        AddExternalDocumentation(swaggerDoc);
-    }
+	/// <summary>
+	/// Applies the Swagger document filter by filtering endpoints from discovery.
+	/// </summary>
+	/// <param name="swaggerDoc">The Swagger document being filtered.</param>
+	/// <param name="context">The context of the document filter.</param>
+	public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
+	{
+		ArgumentNullException.ThrowIfNull(swaggerDoc);
+		FilterEndpointsFromDiscovery(swaggerDoc);
+		AddExternalDocumentation(swaggerDoc);
+	}
 
-    /// <summary>
-    /// Filters out specified endpoints from the Swagger document.
-    /// </summary>
-    /// <param name="swaggerDoc">The Swagger document to be filtered.</param>
-    private static void FilterEndpointsFromDiscovery(OpenApiDocument swaggerDoc)
-    {
-        ArgumentNullException.ThrowIfNull(swaggerDoc);
-        var ignoredEndpoints = new[]
-                    {
-            "/health",
-            "/terms",
-        };
+	/// <summary>
+	/// Filters out specified endpoints from the Swagger document.
+	/// </summary>
+	/// <param name="swaggerDoc">The Swagger document to be filtered.</param>
+	private static void FilterEndpointsFromDiscovery(OpenApiDocument swaggerDoc)
+	{
+		ArgumentNullException.ThrowIfNull(swaggerDoc);
+		var ignoredEndpoints = new[]
+					{
+			"/health",
+			"/terms",
+		};
 
-        foreach (var endpoint in ignoredEndpoints)
-            swaggerDoc.Paths.Remove(endpoint);
-    }
+		foreach (var endpoint in ignoredEndpoints)
+			swaggerDoc.Paths.Remove(endpoint);
+	}
 
-    /// <summary>
-    /// Adds the API external documentation to the Swagger document.
-    /// </summary>
-    /// <param name="swaggerDoc"></param>
-    private static void AddExternalDocumentation(OpenApiDocument swaggerDoc)
-    {
-        ArgumentNullException.ThrowIfNull(swaggerDoc);
-        #pragma warning disable S1075 // URIs should not be hardcoded
-        swaggerDoc.ExternalDocs = new OpenApiExternalDocs()
-        {
-            Description = "Check the API docs here!",
-            Url = new Uri("https://docs.arolariu.ro"),
-        };
-        #pragma warning restore S1075 // URIs should not be hardcoded
-    }
+	/// <summary>
+	/// Adds the API external documentation to the Swagger document.
+	/// </summary>
+	/// <param name="swaggerDoc"></param>
+	private static void AddExternalDocumentation(OpenApiDocument swaggerDoc)
+	{
+		ArgumentNullException.ThrowIfNull(swaggerDoc);
+#pragma warning disable S1075 // URIs should not be hardcoded
+		swaggerDoc.ExternalDocs = new OpenApiExternalDocs()
+		{
+			Description = "Check the API docs here!",
+			Url = new Uri("https://docs.arolariu.ro"),
+		};
+#pragma warning restore S1075 // URIs should not be hardcoded
+	}
 }

@@ -1,7 +1,5 @@
-﻿using System;
+﻿namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using System.Diagnostics.CodeAnalysis;
-
-namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 /// <summary>
 /// The currency model.
