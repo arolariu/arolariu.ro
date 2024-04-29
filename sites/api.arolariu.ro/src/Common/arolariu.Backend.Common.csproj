@@ -17,6 +17,8 @@
 		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
 		<Deterministic>True</Deterministic>
 		<NoWarn>S1135</NoWarn>
+		<IsTrimmable>True</IsTrimmable>
+		<IsAotCompatible>True</IsAotCompatible>
 		<!-- S1135 - SonarLint "Complete TODOs" -->
 	</PropertyGroup>
 
@@ -27,6 +29,8 @@
 		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
 		<Deterministic>True</Deterministic>
 		<NoWarn>S1135</NoWarn>
+		<IsTrimmable>True</IsTrimmable>
+		<IsAotCompatible>True</IsAotCompatible>
 		<!-- S1135 - SonarLint "Complete TODOs" -->
 	</PropertyGroup>
 
