@@ -1,64 +1,64 @@
-﻿using System.Collections.Generic;
-using System;
-using System.Threading.Tasks;
-using arolariu.Backend.Domain.Invoices.DTOs;
+﻿namespace arolariu.Backend.Domain.Invoices.Services.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DTOs;
 
-namespace arolariu.Backend.Domain.Invoices.Services.Orchestration;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 /// <summary>
 /// The invoice orchestration service interface represents the orchestration service for the invoice domain.
 /// </summary>
 public interface IInvoiceOrchestrationService
 {
-    #region Implements the Invoice Analysis Foundation Service
-    /// <summary>
-    /// Analyze an invoice.
-    /// </summary>
-    /// <param name="invoiceIdentifier"></param>
-    /// <param name="userIdentifier"></param>
-    /// <param name="options"></param>
-    /// <returns></returns>
-    public Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, Guid userIdentifier, AnalysisOptions options);
-    #endregion
+	#region Implements the Invoice Analysis Foundation Service
+	/// <summary>
+	/// Analyze an invoice.
+	/// </summary>
+	/// <param name="invoiceIdentifier"></param>
+	/// <param name="userIdentifier"></param>
+	/// <param name="options"></param>
+	/// <returns></returns>
+	public Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, Guid userIdentifier, AnalysisOptions options);
+	#endregion
 
-    #region Implements the Invoice Storage Foundation Service
+	#region Implements the Invoice Storage Foundation Service
 
-    /// <summary>
-    /// Creates an invoice object.
-    /// </summary>
-    /// <param name="createInvoiceDto"></param>
-    /// <returns></returns>
-    public Task<Invoice> CreateInvoiceObject(CreateInvoiceDto createInvoiceDto);
+	/// <summary>
+	/// Creates an invoice object.
+	/// </summary>
+	/// <param name="createInvoiceDto"></param>
+	/// <returns></returns>
+	public Task<Invoice> CreateInvoiceObject(CreateInvoiceDto createInvoiceDto);
 
-    /// <summary>
-    /// Reads an invoice object.
-    /// </summary>
-    /// <param name="identifier"></param>
-    /// <param name="userIdentifier"></param>
-    /// <returns></returns>
-    public Task<Invoice> ReadInvoiceObject(Guid identifier, Guid userIdentifier);
+	/// <summary>
+	/// Reads an invoice object.
+	/// </summary>
+	/// <param name="identifier"></param>
+	/// <param name="userIdentifier"></param>
+	/// <returns></returns>
+	public Task<Invoice> ReadInvoiceObject(Guid identifier, Guid userIdentifier);
 
-    /// <summary>
-    /// Reads all invoice objects.
-    /// </summary>
-    /// <returns></returns>
-    public Task<IEnumerable<Invoice>> ReadAllInvoiceObjects();
+	/// <summary>
+	/// Reads all invoice objects.
+	/// </summary>
+	/// <returns></returns>
+	public Task<IEnumerable<Invoice>> ReadAllInvoiceObjects();
 
-    /// <summary>
-    /// Updates an invoice object.
-    /// </summary>
-    /// <param name="currentInvoice"></param>
-    /// <param name="updatedInvoice"></param>
-    /// <returns></returns>
-    public Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice);
+	/// <summary>
+	/// Updates an invoice object.
+	/// </summary>
+	/// <param name="currentInvoice"></param>
+	/// <param name="updatedInvoice"></param>
+	/// <returns></returns>
+	public Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice);
 
-    /// <summary>
-    /// Deletes an invoice object.
-    /// </summary>
-    /// <param name="identifier"></param>
-    /// <param name="userIdentifier"></param>
-    /// <returns></returns>
-    public Task DeleteInvoiceObject(Guid identifier, Guid userIdentifier);
-    #endregion
+	/// <summary>
+	/// Deletes an invoice object.
+	/// </summary>
+	/// <param name="identifier"></param>
+	/// <param name="userIdentifier"></param>
+	/// <returns></returns>
+	public Task DeleteInvoiceObject(Guid identifier, Guid userIdentifier);
+	#endregion
 }

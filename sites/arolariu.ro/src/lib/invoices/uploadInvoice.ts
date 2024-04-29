@@ -2,7 +2,8 @@
 
 import {DefaultAzureCredential} from "@azure/identity";
 import {BlobServiceClient} from "@azure/storage-blob";
-import {base64ToBlob, fetchConfigurationValue, fetchUser, generateJWT} from "../utils.server";
+import {fetchUser} from "../actions/fetchUser";
+import {base64ToBlob, fetchConfigurationValue, generateJWT} from "../utils.server";
 
 /**
  * This function uploads the invoice to the server.
@@ -22,7 +23,7 @@ export default async function uploadInvoice(imageInBase64: string) {
 
     const {user, isAuthenticated} = await fetchUser();
     const authorizationHeader = await generateJWT(user);
-    console.warn("Authorization header: ", authorizationHeader);
+    console.warn("Authorization header:", authorizationHeader);
 
     // Step 1. Upload invoice photo to the blob storage server.
     const credentials = new DefaultAzureCredential();
@@ -33,7 +34,7 @@ export default async function uploadInvoice(imageInBase64: string) {
     const containerClient = storageClient.getContainerClient(containerName);
 
     const uuid = crypto.randomUUID();
-    const blobName = `${uuid}.${invoice.type.split("/")[1]}`;
+    const blobName = `${uuid}.${invoice.type.split("/")[1] as string}`;
 
     const blockBlobClient = containerClient.getBlockBlobClient(blobName);
     const arrayBuffer = await invoice.arrayBuffer();
@@ -77,7 +78,7 @@ export default async function uploadInvoice(imageInBase64: string) {
 
     return {
       status: "SUCCESS",
-      message: "Invoice uploaded successfully." + isAuthenticated ? " Full analysis requested." : "",
+      message: "Invoice uploaded successfully." + (isAuthenticated ? " Full analysis requested." : ""),
       identifier: crypto.randomUUID(),
     };
   } catch (error) {

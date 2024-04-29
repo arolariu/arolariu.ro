@@ -5,7 +5,7 @@ import animate from "tailwindcss-animate";
 
 const tailwindConfig = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
-  darkMode: ["selector", "[data-mantine-color-scheme='dark']"],
+  darkMode: "class",
   theme: {
     container: {
       center: true,

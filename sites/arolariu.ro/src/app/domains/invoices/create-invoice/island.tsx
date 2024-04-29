@@ -96,7 +96,7 @@ export default function RenderInvoiceScreen() {
                 className='btn btn-primary mx-auto mt-4'
                 type='button'
                 onClick={async () => {
-                  const base64 = await extractBase64FromBlob(imageState.blob!);
+                  const base64 = await extractBase64FromBlob(imageState.blob as Blob);
                   const response = await uploadInvoice(base64);
                   console.log(response);
                 }}>

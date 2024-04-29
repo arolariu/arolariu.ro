@@ -1,6 +1,6 @@
 import RenderForbiddenScreen from "@/components/domains/RenderForbiddenScreen";
+import {fetchUser} from "@/lib/actions/fetchUser";
 import fetchInvoice from "@/lib/invoices/fetchInvoice";
-import {fetchUser} from "@/lib/utils.server";
 import {type Metadata} from "next";
 import RenderEditInvoicePage from "./island";
 

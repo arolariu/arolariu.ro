@@ -1,7 +1,6 @@
 /* eslint-disable */
 
 import Invoice from "@/types/invoices/Invoice";
-import {mountStoreDevtool} from "simple-zustand-devtools";
 import {create} from "zustand";
 
 type States = {
@@ -37,9 +36,5 @@ export const useZustandStore = create<States & Actions>()((set) => ({
   updateSelectedInvoice: (invoice: Invoice) => set({selectedInvoice: invoice}),
   removeSelectedInvoice: () => set({selectedInvoice: {} as Invoice}),
 }));
-
-if (process.env.NODE_ENV === "development") {
-  mountStoreDevtool("Store", useZustandStore);
-}
 
 /* eslint-enable */

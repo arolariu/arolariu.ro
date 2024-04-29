@@ -1,13 +1,21 @@
-import {API_JWT, CONFIG_STORE} from "@/constants";
-import {AppConfigurationClient} from "@azure/app-configuration";
 import "server-only";
 
-import {type User} from "@clerk/backend";
-import {currentUser} from "@clerk/nextjs";
+import {AppConfigurationClient} from "@azure/app-configuration";
 
 import {Blob} from "node:buffer";
 
+import {type User} from "@clerk/nextjs/server";
 import * as jose from "jose";
+import {Resend} from "resend";
+import {CONFIG_STORE} from "./utils.generic";
+
+/**
+ * Singleton pattern class object that handles the interaction with the Resend API (mail).
+ */
+export const resend = new Resend(process.env["RESEND_API_KEY"]);
+
+export const API_URL = process.env["API_URL"] ?? "";
+export const API_JWT = process.env["API_JWT"] ?? "";
 
 /**
  * Generate a JWT for a user.
@@ -32,25 +40,15 @@ export async function generateJWT(user: User | null) {
 }
 
 /**
- * Fetches the current user.
- * @returns A promise of the current user.
- */
-export async function fetchUser(): Promise<{isAuthenticated: boolean; user: User | null}> {
-  const user = await currentUser();
-  const isAuthenticated = user !== null;
-  return {isAuthenticated, user};
-}
-
-/**
  * Function to fetch a configuration value from Azure App Configuration.
  * @param key The key of the configuration value to fetch.
  * @returns The value of the configuration value.
  */
 export async function fetchConfigurationValue(key: string): Promise<string> {
-  console.log("Trying to fetch the following key: ", key);
+  console.log("Trying to fetch the following key:", key);
   const client = new AppConfigurationClient(CONFIG_STORE);
   const setting = await client.getConfigurationSetting({key});
-  return setting?.value ?? "";
+  return setting.value ?? "";
 }
 
 /**
@@ -78,7 +76,7 @@ export async function base64ToBlob(base64String: string): Promise<Blob> {
   const byteCharacters = atob(base64);
   const byteArrays = [];
   for (let i = 0; i < byteCharacters.length; i++) {
-    byteArrays.push(byteCharacters.charCodeAt(i));
+    byteArrays.push(byteCharacters.codePointAt(i) as number);
   }
 
   const byteArray = new Uint8Array(byteArrays);

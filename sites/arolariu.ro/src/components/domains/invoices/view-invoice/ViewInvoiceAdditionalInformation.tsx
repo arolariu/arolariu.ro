@@ -22,8 +22,8 @@ export default function ViewInvoiceAdditionalInformation() {
         <div
           key={index}
           className='flex border-b border-gray-200 py-2'>
-          <span>{kvPair.key}</span>
-          <span className='ml-auto dark:text-gray-300'>{kvPair.value as any}</span>
+          <span>{Object.keys(kvPair)[index]}</span>
+          <span className='ml-auto dark:text-gray-300'>{String(Object.values(kvPair)[index])}</span>
         </div>
       ))}
       <div>

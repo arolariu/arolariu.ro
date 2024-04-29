@@ -1,44 +1,46 @@
-import {authMiddleware} from "@clerk/nextjs";
+import {clerkMiddleware as authMiddleware, createRouteMatcher} from "@clerk/nextjs/server";
+import {NextRequest, NextResponse} from "next/server";
 
-export default authMiddleware({
-  publicRoutes: [
-    // General areas that are public.
-    "/",
+const isProtectedRoute = createRouteMatcher(["/admin(.*)"]);
 
-    // About routes:
-    "/about",
-    "/about/the-platform",
-    "/about/the-author",
+const cspMiddleware = (request: NextRequest) => {
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const trustedDomains = `https://arolariu.ro https://*.arolariu.ro https://clerk.com https://*.clerk.com https://accounts.dev https://*.accounts.dev https://fonts.astatic.com https://*.fonts.astatic.com https://fonts.gstatic.com https://*.fonts.gstatic.com`;
 
-    // Auth routes:
-    "/auth",
-    "/auth/sign-in",
-    "/auth/sign-up",
+  const cspHeader = `
+    default-src 'self' 'nonce-${nonce}' ${trustedDomains};
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' ${trustedDomains};
+    style-src 'self' 'unsafe-inline' ${trustedDomains};
+    img-src 'self' blob: data: ${trustedDomains};
+    worker-src 'self' blob: data: ${trustedDomains};
+    object-src 'none';
+    block-all-mixed-content;
+    upgrade-insecure-requests;
+    `;
 
-    // Domains public routes:
-    "/domains",
-    "/domains/invoices",
-    "/domains/invoices/create-invoice",
-    "/domains/invoices/view-invoice/:id",
-    "/domains/invoices/view-invoices",
+  const contentSecurityPolicyHeaderValue = cspHeader.replaceAll(/\s{2,}/g, " ").trim();
 
-    // Events public routes:
-    "/events",
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", contentSecurityPolicyHeaderValue);
 
-    // Account public routes:
-    "/accounts",
-    "/accounts/:account",
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+  response.headers.set("Content-Security-Policy", contentSecurityPolicyHeaderValue);
+  return response;
+};
 
-    // Blog public routes:
-    "/blog",
-    "/blog/:slug",
+export default authMiddleware((auth, req) => {
+  if (isProtectedRoute(req)) {
+    auth().protect();
+  }
 
-    // ToS and Privacy Policy
-    "/terms-of-service",
-    "/privacy-policy",
-  ],
+  return cspMiddleware(req);
 });
 
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
 };

@@ -2,18 +2,21 @@ import Footer from "@/components/Footer";
 import {Caudex} from "next/font/google";
 
 import Header from "@/components/Header";
-import {SITE_URL} from "@/constants";
-import "@mantine/core/styles.css";
+import {languageTag} from "@/i18n/runtime";
+import {SITE_URL} from "@/lib/utils.generic";
+import {ClerkProvider} from "@clerk/nextjs";
+import {LanguageProvider} from "@inlang/paraglide-next";
 import type {Metadata} from "next";
+import {ThemeProvider} from "next-themes";
 import type {NextFont} from "next/dist/compiled/@next/font";
 import type {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
 import type {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";
 import type {Author, Icon, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
 import type {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
+import type {Twitter} from "next/dist/lib/metadata/types/twitter-types";
 import {Suspense, type PropsWithChildren} from "react";
 import "./globals.css";
 import Loading from "./loading";
-import {Providers} from "./providers";
 
 const fontFamily: NextFont = Caudex({
   weight: "700",
@@ -72,7 +75,8 @@ export const metadata: Metadata = {
     creator: "Alexandru-Razvan Olariu",
     title: "arolariu.ro | Alexandru-Razvan Olariu",
     description: siteDescription,
-  },
+    card: "summary",
+  } satisfies Twitter,
   manifest: "/manifest.json",
   icons: [
     {
@@ -150,18 +154,30 @@ export const metadata: Metadata = {
  */
 export default async function RootLayout({children}: Readonly<PropsWithChildren<{}>>) {
   return (
-    <html
-      lang='en'
-      suppressHydrationWarning
-      className={fontFamily.className}
-      dir='ltr'>
-      <body className='bg-white text-black dark:bg-black dark:text-white'>
-        <Providers>
-          <Header />
-          <Suspense fallback={<Loading />}>{children}</Suspense>
-          <Footer />
-        </Providers>
-      </body>
-    </html>
+    <ClerkProvider
+      afterSignInUrl='/'
+      afterSignUpUrl='/'
+      afterSignOutUrl='/'
+      signInUrl='/auth/sign-in'
+      signUpUrl='/auth/sign-up'>
+      <LanguageProvider>
+        <html
+          lang={languageTag()}
+          suppressHydrationWarning
+          className={fontFamily.className}
+          dir='ltr'>
+          <body className='bg-white text-black dark:bg-black dark:text-white'>
+            <ThemeProvider
+              attribute='class'
+              themes={["light", "dark"]}
+              enableSystem={false}>
+              <Header />
+              <Suspense fallback={<Loading />}>{children}</Suspense>
+              <Footer />
+            </ThemeProvider>
+          </body>
+        </html>
+      </LanguageProvider>
+    </ClerkProvider>
   );
 }

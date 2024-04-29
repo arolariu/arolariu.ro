@@ -43,14 +43,10 @@ jobs:
           echo "SITE_NAME=dev.arolariu.ro" >> .env
           echo "SITE_URL=https://dev.arolariu.ro" >> .env
           echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" >> .env
-          echo "NEXT_PUBLIC_CLERK_SIGN_IN_URL=/auth/sign-in" >> .env
-          echo "NEXT_PUBLIC_CLERK_SIGN_UP_URL=/auth/sign-up" >> .env
-          echo "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/" >> .env
-          echo "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/" >> .env
           echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env
           echo "API_URL=https://api.arolariu.ro" >> .env
-          echo "USE_CDN=false" >> .env
           echo "API_JWT=${{ secrets.API_JWT }}" >> .env
+          echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env
           echo "CONFIG_STORE=${{ secrets.CONFIG_STORE }}" >> .env
 
       - name: 🏗️ Building the docker container...

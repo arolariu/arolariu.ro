@@ -1,5 +1,5 @@
+import {fetchUser} from "@/lib/actions/fetchUser";
 import fetchInvoices from "@/lib/invoices/fetchInvoices";
-import {fetchUser} from "@/lib/utils.server";
 import {type Metadata} from "next";
 import Link from "next/link";
 import RenderViewInvoicesPage from "./island";

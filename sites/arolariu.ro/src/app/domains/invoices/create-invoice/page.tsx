@@ -1,4 +1,4 @@
-import {fetchUser} from "@/lib/utils.server";
+import {fetchUser} from "@/lib/actions/fetchUser";
 import {type Metadata} from "next";
 import RenderInvoiceScreen from "./island";
 

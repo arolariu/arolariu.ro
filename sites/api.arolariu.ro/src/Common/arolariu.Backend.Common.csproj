@@ -17,6 +17,8 @@
 		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
 		<Deterministic>True</Deterministic>
 		<NoWarn>S1135</NoWarn>
+		<IsTrimmable>True</IsTrimmable>
+		<IsAotCompatible>True</IsAotCompatible>
 		<!-- S1135 - SonarLint "Complete TODOs" -->
 	</PropertyGroup>
 
@@ -27,35 +29,38 @@
 		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
 		<Deterministic>True</Deterministic>
 		<NoWarn>S1135</NoWarn>
+		<IsTrimmable>True</IsTrimmable>
+		<IsAotCompatible>True</IsAotCompatible>
 		<!-- S1135 - SonarLint "Complete TODOs" -->
 	</PropertyGroup>
 
 	<!-- Dependency Injection & Configuration packages -->
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Azure.AppConfiguration.AspNetCore" Version="7.1.0" />
+		<PackageReference Include="Azure.Core" Version="1.39.0" />
+		<PackageReference Include="Microsoft.Azure.AppConfiguration.AspNetCore" Version="8.0.0-preview.2" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.AzureAppConfiguration" Version="7.1.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.AzureAppConfiguration" Version="8.0.0-preview.2" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
 	</ItemGroup>
 
 	<!-- Entity Framework & Direct-Database-Access packages -->
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.3" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.3" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="8.0.3" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Analyzers" Version="8.0.3" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" Version="8.0.3" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.3" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.3" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="8.0.3" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.3" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.3">
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="8.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Analyzers" Version="8.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" Version="8.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="8.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.4">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.3">
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.4">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -63,13 +68,13 @@
 
 	<!-- Open Telemetry & Application Insights packages -->
 	<ItemGroup>
-		<PackageReference Include="OpenTelemetry" Version="1.8.0" />
-		<PackageReference Include="OpenTelemetry.Api" Version="1.8.0" />
-		<PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.8.0" />
-		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.8.0" />
-		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.8.0" />
+		<PackageReference Include="OpenTelemetry" Version="1.8.1" />
+		<PackageReference Include="OpenTelemetry.Api" Version="1.8.1" />
+		<PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.8.1" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.8.1" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.8.1" />
 		<PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.0.0-beta.11" />
-		<PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.8.0" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.8.1" />
 		<PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.2.0" />
 		<PackageReference Include="Microsoft.ApplicationInsights" Version="2.22.0" />
 		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
@@ -83,12 +88,12 @@
 		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="6.5.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.5.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.5.0" />
-		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.4" />
 	</ItemGroup>
 
 	<!-- Other packages -->
 	<ItemGroup>
-		<PackageReference Include="Azure.Identity" Version="1.10.4" />
+		<PackageReference Include="Azure.Identity" Version="1.11.2" />
 		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.6.0" />
 	</ItemGroup>
 

@@ -1,7 +1,6 @@
-import {type SerwistGlobalConfig} from "@serwist/core";
 import {defaultCache} from "@serwist/next/worker";
-import {PrecacheController, type PrecacheEntry} from "@serwist/precaching";
-import {Serwist, type SerwistInstallOptions, type SerwistOptions} from "@serwist/sw";
+import type {PrecacheEntry, SerwistGlobalConfig, SerwistOptions} from "serwist";
+import {Serwist} from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -11,33 +10,29 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
-// Anything random.
-const revision = crypto.randomUUID();
-
 const serwist = new Serwist({
-  precacheController: new PrecacheController({
-    concurrentPrecaching: 10,
-  }),
-} satisfies SerwistOptions);
-
-serwist.install({
   precacheEntries: self.__SW_MANIFEST,
-  cleanupOutdatedCaches: true,
   disableDevLogs: false,
   offlineAnalyticsConfig: false,
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: defaultCache,
+  precacheOptions: {
+    cleanupOutdatedCaches: true,
+    concurrency: 12,
+    fallbackToNetwork: true,
+  },
   fallbacks: {
     entries: [
       {
         url: "/~offline",
-        revision,
         matcher({request}) {
           return request.destination === "document";
         },
       },
     ],
   },
-} satisfies SerwistInstallOptions);
+} satisfies SerwistOptions);
+
+serwist.addEventListeners();

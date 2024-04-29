@@ -3,12 +3,6 @@
 import {useZustandStore} from "@/hooks/stateStore";
 
 export const EditInvoiceTable = () => {
-  // TODO: the state of the below fields needs to be saved.... I recommend going with the object approach. (const state = {...})
-  // TODO: the state then needs to be forwarded to the BE for the PUT endpoint....
-  // TODO: here we need to add the possibility to add additional metadata on the fly.
-  // TODO: the current way of adding new metadata is not giving great UX. We need to have a RED / GREEN popup on the right side of the additional metadata keys.
-  // TODO: ^--- this will indicate for the user that he can either remove the additional metadata (by pressing on the red popup) or add a new entry.
-
   const [invoice] = useZustandStore((state) => [state.selectedInvoice]);
   const merchant = invoice.merchant;
 
@@ -72,12 +66,12 @@ export const EditInvoiceTable = () => {
             <td className='table-cell'>Merchant Phone Number</td>
             <td className='table-cell'>{merchant.phoneNumber}</td>
           </tr>
-          {invoice.additionalMetadata.map((kvPair, index) => (
+          {invoice.additionalMetadata.flatMap((metadata, index) => (
             <tr
               key={index}
-              className={`${index % 2 ? "bg-gray-900" : ""} table-row text-center`}>
-              <td className='table-cell'>{kvPair.key}</td>
-              <td className='table-cell'>{String(kvPair.value)}</td>
+              className='table-row'>
+              <td className='table-cell'>{Object.keys(metadata)[index]}</td>
+              <td className='table-cell'>{String(Object.values(metadata)[index])}</td>
             </tr>
           ))}
         </tbody>

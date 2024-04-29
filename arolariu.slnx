@@ -1,0 +1,24 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Folder Name="/sites/docs.arolariu.ro/" />
+  <Folder Name="/sites/api.arolariu.ro/tests/">
+    <Project Path="sites\api.arolariu.ro\tests\arolariu.Backend.Core.Tests\arolariu.Backend.Core.Tests.csproj">
+      <BuildDependency Project="sites\api.arolariu.ro\src\Core.Auth\arolariu.Backend.Core.Auth.csproj" />
+      <BuildDependency Project="sites\api.arolariu.ro\src\Core\arolariu.Backend.Core.csproj" />
+    </Project>
+    <Project Path="sites\api.arolariu.ro\tests\arolariu.Backend.Domain.Tests\arolariu.Backend.Domain.Tests.csproj">
+      <BuildDependency Project="sites\api.arolariu.ro\src\Invoices\arolariu.Backend.Domain.Invoices.csproj" />
+    </Project>
+  </Folder>
+  <Folder Name="/sites/api.arolariu.ro/src/">
+    <Project Path="sites\api.arolariu.ro\src\Common\arolariu.Backend.Common.csproj" />
+    <Project Path="sites\api.arolariu.ro\src\Core.Auth\arolariu.Backend.Core.Auth.csproj" />
+    <Project Path="sites\api.arolariu.ro\src\Core\arolariu.Backend.Core.csproj" />
+    <Project Path="sites\api.arolariu.ro\src\Invoices\arolariu.Backend.Domain.Invoices.csproj" />
+  </Folder>
+  <Folder Name="/sites/api.arolariu.ro/" />
+  <Folder Name="/sites/about.arolariu.ro/" />
+  <Folder Name="/sites/" />
+</Solution>
