@@ -16,6 +16,16 @@ public static partial class AuthEndpoints
 		router.MapGroup("/auth")
 			  .MapIdentityApi<AuthenticatedUser>()
 			  .WithTags(EndpointNameTag)
+			  .AllowAnonymous()
 			  .WithOpenApi();
+
+		router.MapPost("/auth/logout", LogoutRoute)
+			.Accepts<object>("application/json")
+			.Produces(StatusCodes.Status200OK)
+			.Produces(StatusCodes.Status401Unauthorized)
+			.Produces(StatusCodes.Status500InternalServerError)
+			.WithTags(EndpointNameTag)
+			.AllowAnonymous()
+			.WithOpenApi();
 	}
 }

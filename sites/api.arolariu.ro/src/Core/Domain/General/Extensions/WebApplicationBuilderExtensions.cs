@@ -5,21 +5,18 @@ using arolariu.Backend.Common.Telemetry;
 using arolariu.Backend.Common.Telemetry.Logging;
 using arolariu.Backend.Common.Telemetry.Metering;
 using arolariu.Backend.Common.Telemetry.Tracing;
+using arolariu.Backend.Core.Auth.Modules;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 using Azure.Core;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
-
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 
 /// <summary>
 /// Extension methods for the <see cref="WebApplicationBuilder"/> builder.
@@ -134,27 +131,7 @@ internal static class WebApplicationBuilderExtensions
 		services.AddHealthChecks();
 
 		#region AuthN & AuthZ configuration.
-		services.AddAuthentication(authOptions =>
-		{
-			authOptions.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-			authOptions.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-			authOptions.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-		}).AddJwtBearer(jwtOptions =>
-		{
-			var authConfig = builder.Configuration.GetSection("AuthOptions");
-			jwtOptions.TokenValidationParameters = new()
-			{
-				ValidIssuer = authConfig["Issuer"],
-				ValidAudience = authConfig["Audience"],
-				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authConfig["Secret"]!)),
-				ValidateIssuer = true,
-				ValidateAudience = true,
-				ValidateLifetime = true,
-				ValidateIssuerSigningKey = true,
-			};
-		});
-
-		services.AddAuthorization();
+		builder.AddAuthServices();
 		#endregion
 	}
 }

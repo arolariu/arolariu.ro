@@ -1,4 +1,7 @@
 ﻿namespace arolariu.Backend.Core.Auth.Modules;
+
+using arolariu.Backend.Core.Auth.Endpoints;
+
 using Microsoft.AspNetCore.Builder;
 
 using System;
@@ -15,6 +18,7 @@ public static class WebApplicationExtensions
 	public static void UseAuthServices(this WebApplication app)
 	{
 		ArgumentNullException.ThrowIfNull(app);
+		app.MapAuthEndpoints();
 		app.UseAuthN();
 		app.UseAuthZ();
 	}

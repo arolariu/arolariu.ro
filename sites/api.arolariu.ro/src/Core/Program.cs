@@ -1,4 +1,5 @@
 namespace arolariu.Backend.Core;
+
 using arolariu.Backend.Core.Domain.General.Extensions;
 using arolariu.Backend.Domain.Invoices.Modules;
 
