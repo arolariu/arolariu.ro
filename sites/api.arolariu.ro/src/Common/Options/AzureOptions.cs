@@ -67,4 +67,11 @@ public class AzureOptions
 	/// </summary>
 	public string CognitiveServicesKey { get; set; } = string.Empty;
 	#endregion
+
+	#region Azure Exchange Services configuration (e-mail)
+	/// <summary>
+	/// The SMTP server for the Azure Exchange Services.
+	/// </summary>
+	public string SmtpServer { get; set; } = string.Empty;
+	#endregion
 }
