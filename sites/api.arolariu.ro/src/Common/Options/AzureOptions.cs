@@ -5,6 +5,13 @@
 /// </summary>
 public class AzureOptions
 {
+	#region General Azure Configuration
+	/// <summary>
+	/// The Azure Tenant ID.
+	/// </summary>
+	public string TenantId { get; set; } = string.Empty;
+	#endregion
+
 	#region Azure Key Vault configuration
 	/// <summary>
 	/// The name of the Azure Key Vault.
@@ -66,12 +73,5 @@ public class AzureOptions
 	/// The key of the Azure Cognitive Services.
 	/// </summary>
 	public string CognitiveServicesKey { get; set; } = string.Empty;
-	#endregion
-
-	#region Azure Exchange Services configuration (e-mail)
-	/// <summary>
-	/// The SMTP server for the Azure Exchange Services.
-	/// </summary>
-	public string SmtpServer { get; set; } = string.Empty;
 	#endregion
 }

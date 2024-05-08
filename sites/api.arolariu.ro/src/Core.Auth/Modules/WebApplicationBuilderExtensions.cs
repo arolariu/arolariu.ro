@@ -8,6 +8,7 @@ using arolariu.Backend.Core.Auth.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -55,6 +56,9 @@ public static class WebApplicationBuilderExtensions
 		services.AddIdentityApiEndpoints<AuthenticatedUser>(
 			options => options.SignIn.RequireConfirmedEmail = true)
 				.AddEntityFrameworkStores<AuthDbContext>();
+
+		// Configure the SMTP email sender.
+		services.AddTransient<IEmailSender, AuthEmailSender>();
 
 		// Configure cookie settings.
 		services.ConfigureApplicationCookie(options =>
