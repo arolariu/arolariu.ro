@@ -78,7 +78,7 @@ export default tseslint.config(
     ignores: ["*.config.js", "*.config.ts", "package.json", "node_modules/**"],
     settings: {
       react: {
-        version: "18.2.0",
+        version: "18.3.0",
       },
     },
     linterOptions: {

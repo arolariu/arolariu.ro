@@ -7,13 +7,12 @@ import SubscriptionEmail from "../../../../../emails/newsletter/Subscription";
  * @returns The response object.
  */
 export async function POST(request: Request) {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const {email, username} = await request.json();
+  const {email, username} = (await request.json()) as {email: string; username: string};
 
   try {
     const data = await resend.emails.send({
       from: "AROLARIU.RO <doNotReply@mail.arolariu.ro>",
-      to: email as string,
+      to: email,
       reply_to: "admin@arolariu.ro",
       subject: "Thank you for subscribing to arolariu.ro! 🎉🎉",
       react: SubscriptionEmail({username}),
