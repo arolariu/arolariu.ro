@@ -36,7 +36,7 @@ export default function RenderInvoiceScreen() {
   switch (imageState.status) {
     case "NOT_UPLOADED":
       return (
-        <div>
+        <section className='h-full w-full'>
           <InvoiceImagePreview image={imageState.blob} />
           <h1 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-xl font-medium text-transparent'>
             UPLOAD A PICTURE OF THE PAPER RECEIPT
@@ -60,12 +60,12 @@ export default function RenderInvoiceScreen() {
               className='hidden'
             />
           </form>
-        </div>
+        </section>
       );
 
     case "CLIENT_SIDE_UPLOAD":
       return (
-        <div>
+        <section className='h-full w-full'>
           <InvoiceImagePreview image={imageState.blob} />
           <h1 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-xl font-medium text-transparent'>
             IS THIS THE CORRECT PHOTO...?!
@@ -112,7 +112,7 @@ export default function RenderInvoiceScreen() {
           ) : (
             <AlertNotification imageBlob={imageState.blob} />
           )}
-        </div>
+        </section>
       );
 
     case "SERVER_SIDE_UPLOAD":
