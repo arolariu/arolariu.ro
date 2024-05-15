@@ -30,8 +30,8 @@ export default async function ViewInvoicePage({params}: Readonly<Props>) {
     );
   }
   return (
-    <section className='overflow-hidden dark:text-gray-300'>
+    <main className='overflow-hidden dark:text-gray-300'>
       <RenderViewInvoicePage invoice={invoice} />
-    </section>
+    </main>
   );
 }

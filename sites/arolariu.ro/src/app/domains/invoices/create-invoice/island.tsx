@@ -17,7 +17,7 @@ type ImageState = {
  * This function renders the invoice upload page.
  * @returns The JSX for the invoice upload page.
  */
-export default function RenderInvoiceScreen() {
+export default function RenderCreateInvoiceScreen() {
   const [imageState, setImageState] = useState<ImageState>({
     blob: undefined,
     identifier: "",
