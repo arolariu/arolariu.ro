@@ -1,28 +1,31 @@
 "use client";
 
-import ViewInvoiceAdditionalInformation from "@/components/domains/invoices/view-invoice/ViewInvoiceAdditionalInformation";
-import ViewInvoiceFooter from "@/components/domains/invoices/view-invoice/ViewInvoiceFooter";
-import {ViewInvoiceHeader} from "@/components/domains/invoices/view-invoice/ViewInvoiceHeader";
 import {ViewInvoiceImageModal} from "@/components/domains/invoices/view-invoice/ViewInvoiceImageModal";
-import ViewInvoiceItems from "@/components/domains/invoices/view-invoice/ViewInvoiceItems";
-import {ViewInvoiceSummary} from "@/components/domains/invoices/view-invoice/ViewInvoiceSummary";
+import {useZustandStore} from "@/hooks/stateStore";
 import Invoice from "@/types/invoices/Invoice";
-import {useState} from "react";
-
-interface Props {
-  invoice: Invoice;
-}
+import Link from "next/link";
+import {useEffect, useState} from "react";
+import {InvoiceInformation} from "./_components/InvoiceInformation";
+import {InvoiceProducts} from "./_components/InvoiceProducts";
+import {InvoiceSummary} from "./_components/InvoiceSummary";
 
 /**
  * This function renders the view invoice page.
  * @returns The JSX for the view invoice page.
  */
-export function RenderViewInvoicePage({invoice}: Readonly<Props>) {
+export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: Invoice}>) {
+  const setSelectedInvoice = useZustandStore((state) => state.setSelectedInvoice);
+  const selectedInvoice = useZustandStore((state) => state.selectedInvoice);
+  const {id, description, paymentInformation, isImportant} = invoice;
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const {id, description} = invoice;
 
+  useEffect(() => {
+    setSelectedInvoice(invoice);
+  }, [selectedInvoice !== invoice]);
+
+  if (selectedInvoice !== invoice) return undefined;
   return (
-    <div className='container mx-auto py-12'>
+    <section className='mx-auto py-12'>
       <div className='mx-auto flex flex-wrap justify-center'>
         <div className='mb-6 w-full lg:mb-0 lg:w-1/2 lg:py-6 lg:pr-10'>
           <h2 className='title-font text-sm tracking-widest dark:text-gray-500'>
@@ -31,17 +34,63 @@ export function RenderViewInvoicePage({invoice}: Readonly<Props>) {
           <h1 className='text-transparenttext-3xl mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-3xl font-medium text-transparent'>
             {description}
           </h1>
-          <ViewInvoiceHeader
-            currentStep={currentStep}
-            setCurrentStep={setCurrentStep}
-          />
-          {currentStep === 1 && <ViewInvoiceSummary />}
-          {currentStep === 2 && <ViewInvoiceItems />}
-          {currentStep === 3 && <ViewInvoiceAdditionalInformation />}
-          <ViewInvoiceFooter />
+          <div className='mb-4 flex'>
+            <button
+              type='button'
+              className={`${
+                currentStep == 1 ? "border-indigo-500" : "border-gray-300"
+              } " flex-grow cursor-pointer border-b-2 px-1 py-2 text-lg`}
+              onClick={() => setCurrentStep(1)}>
+              Summary
+            </button>
+            <button
+              type='button'
+              className={`${
+                currentStep == 2 ? "border-indigo-500" : "border-gray-300"
+              } " mx-1 flex-grow cursor-pointer border-b-2 px-1 py-2 text-lg`}
+              onClick={() => setCurrentStep(2)}>
+              Items
+            </button>
+            <button
+              type='button'
+              className={`${
+                currentStep == 3 ? "border-indigo-500" : "border-gray-300"
+              } " flex-grow cursor-pointer border-b-2 px-1 py-2 text-lg`}
+              onClick={() => setCurrentStep(3)}>
+              Additional Information
+            </button>
+          </div>
+          {currentStep === 1 && <InvoiceSummary />}
+          {currentStep === 2 && <InvoiceProducts />}
+          {currentStep === 3 && <InvoiceInformation />}
+          <div className='flex'>
+            <span className='title-font text-2xl font-medium dark:text-gray-300'>
+              Total Cost: {paymentInformation.totalAmount}
+              {paymentInformation.currency.symbol}
+            </span>
+            <Link
+              href={`../edit-invoice/${invoice.id}`}
+              className='ml-auto flex rounded border-0 bg-indigo-500 px-6 py-2 text-white hover:bg-indigo-600 focus:outline-none'>
+              Edit this invoice
+            </Link>
+            <button
+              type='button'
+              className='ml-4 inline-flex h-10 w-10 items-center justify-center rounded-full border-0 bg-gray-200 p-0 text-gray-500'
+              title='Bookmark (mark as important) the invoice'>
+              <svg
+                fill='currentColor'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth='2'
+                className={`${isImportant ? "text-red-600" : ""}  h-5 w-5`}
+                viewBox='0 0 24 24'>
+                <path d='M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z' />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
       <ViewInvoiceImageModal />
-    </div>
+    </section>
   );
 }

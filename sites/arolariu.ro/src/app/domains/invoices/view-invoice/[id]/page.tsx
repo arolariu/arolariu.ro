@@ -1,7 +1,7 @@
 import fetchInvoice from "@/lib/invoices/fetchInvoice";
 import {type Metadata} from "next";
 import Image from "next/image";
-import {RenderViewInvoicePage} from "./island";
+import RenderViewInvoiceScreen from "./island";
 
 interface Props {
   params: {id: string};
@@ -30,8 +30,9 @@ export default async function ViewInvoicePage({params}: Readonly<Props>) {
     );
   }
   return (
-    <main className='overflow-hidden dark:text-gray-300'>
-      <RenderViewInvoicePage invoice={invoice} />
+    <main className='overflow-hidden px-5 py-24'>
+      <RenderViewInvoiceScreen invoice={invoice} />
     </main>
   );
 }
+

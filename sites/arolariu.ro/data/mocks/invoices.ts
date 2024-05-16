@@ -17,7 +17,7 @@ const generateFakeInvoice = (): Invoice => ({
   lastUpdatedBy: fake.string.uuid(),
   name: fake.lorem.sentence(5),
   numberOfUpdates: fake.number.int({min: 0, max: 100}),
-  photoLocation: fake.image.url(),
+  photoLocation: "https://cdn.arolariu.ro/fakes/" + fake.lorem.slug(3),
   userIdentifier: fake.string.uuid(),
   items: Array.from({length: fake.number.int({min: 1, max: 30})}, generateFakeInvoiceProduct),
   paymentInformation: {
