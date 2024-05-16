@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 interface Props {
-  image: undefined | Blob;
+  image?: Blob;
 }
 
 /**

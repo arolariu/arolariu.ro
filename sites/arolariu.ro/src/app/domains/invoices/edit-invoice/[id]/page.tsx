@@ -30,4 +30,3 @@ export default async function EditInvoicePage({params}: Readonly<Props>) {
     </main>
   );
 }
-
