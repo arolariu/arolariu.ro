@@ -5,7 +5,7 @@ import {faker as fake} from "@faker-js/faker";
 
 const generateFakeInvoice = (): Invoice => ({
   id: fake.string.uuid(),
-  category: InvoiceCategory.FOOD,
+  category: fake.number.int({min: 1, max: 3}) as InvoiceCategory,
   createdAt: fake.date.anytime(),
   merchant: generateFakeMerchant(),
   createdBy: fake.string.uuid(),

@@ -35,4 +35,3 @@ export default async function ViewInvoicePage({params}: Readonly<Props>) {
     </main>
   );
 }
-
