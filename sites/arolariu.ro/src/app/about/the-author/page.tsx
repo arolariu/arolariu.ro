@@ -18,9 +18,9 @@ export const metadata: Metadata = {
  */
 export default async function AuthorPage() {
   return (
-    <main className='px-5 pt-24'>
+    <>
       <section>
-        <h1 className='font-semibold 2xsm:text-3xl md:text-5xl lg:text-7xl'>Meet the author.</h1>
+        <h1 className='font-bold 2xsm:text-2xl xsm:text-3xl md:text-4xl'>Meet the author.</h1>
         <div className='mx-auto mt-6'>
           <span className='inline-block h-2 w-60 rounded-full bg-blue-500' />
           <span className='mx-1 inline-block h-2 w-6 rounded-full bg-blue-500' />
@@ -137,7 +137,7 @@ export default async function AuthorPage() {
           height='600'
           className='ml-[10%] object-fill 2xsm:hidden xl:block'
         />
-      </section>{" "}
-    </main>
+      </section>
+    </>
   );
 }

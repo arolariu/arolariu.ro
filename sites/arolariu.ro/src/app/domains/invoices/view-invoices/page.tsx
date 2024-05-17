@@ -49,4 +49,3 @@ export default async function ViewInvoicesPage() {
     </main>
   );
 }
-

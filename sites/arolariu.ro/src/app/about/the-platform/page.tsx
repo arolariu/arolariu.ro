@@ -24,15 +24,17 @@ export default async function PlatformPage() {
         </div>
         <article className='2xsm:p-2 2xsm:text-lg lg:text-xl 2xl:p-16 2xl:text-2xl'>
           The <code>arolariu.ro</code> platform is a personal project made by{" "}
-          <Link href='/about/the-author'>
+          <Link
+            href='/about/the-author'
+            className='text-blue-500'>
             <em>Alexandru-Razvan Olariu.</em>
           </Link>
           <br />
           <br />
           The platform is built using the latest stable iterations of different technologies such as Next.JS, React, and
-          TailwindCSS. The platform is built according to several design principles and best practices, such as the use
-          of atomic design, the use of a mobile-first approach, and the use of a component-based architecture. The
-          platform is also built with accessibility in mind, and it is designed to be as accessible as possible.
+          TailwindCSS; according to several design principles and best practices, such as the use of atomic design, the
+          use of a mobile-first approach, and the use of a component-based architecture. The platform is also built with
+          accessibility in mind, and it is designed to be as accessible as possible.
           <br />
           <br />
           In order for the platform to grow and evolve, it is built with a modular architecture in mind, and it is
@@ -44,7 +46,7 @@ export default async function PlatformPage() {
           The API service that powers the platform and the adjacent services hosted under the <code>
             *.arolariu.ro
           </code>{" "}
-          domain umbrella is built using the latest iteration of .NET 8. The API can be accessed on{" "}
+          domain umbrella is built using the latest iteration of .NET LTS. The API can be accessed on{" "}
           <Link
             href='https://api.arolariu.ro'
             target='_blank'
