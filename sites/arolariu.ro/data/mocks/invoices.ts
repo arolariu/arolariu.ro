@@ -24,7 +24,7 @@ const generateFakeInvoice = (): Invoice => ({
   items: Array.from({length: fake.number.int({min: 1, max: 30})}, generateFakeInvoiceProduct),
   paymentInformation: {
     currency: {name: fake.finance.currencyName(), symbol: fake.finance.currencySymbol()},
-    dateOfPurchase: fake.date.anytime(),
+    dateOfPurchase: fake.date.past(),
     totalAmount: fake.number.float({min: 0, max: 1000, multipleOf: 2}),
     totalTax: fake.number.float({min: 0, max: 1000, multipleOf: 2}),
   },
