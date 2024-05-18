@@ -1,9 +1,8 @@
 /** @format */
 
 import Footer from "@/components/Footer";
-import {Caudex} from "next/font/google";
-
 import Header from "@/components/Header";
+import {Toaster} from "@/components/ui/toaster";
 import {languageTag} from "@/i18n/runtime";
 import {SITE_URL} from "@/lib/utils.generic";
 import {ClerkProvider} from "@clerk/nextjs";
@@ -16,6 +15,7 @@ import type {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";
 import type {Author, Icon, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
 import type {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
 import type {Twitter} from "next/dist/lib/metadata/types/twitter-types";
+import {Caudex} from "next/font/google";
 import {Suspense, type PropsWithChildren} from "react";
 import "./globals.css";
 import Loading from "./loading";
@@ -175,6 +175,7 @@ export default async function RootLayout({children}: Readonly<PropsWithChildren<
               enableSystem={false}>
               <Header />
               <Suspense fallback={<Loading />}>{children}</Suspense>
+              <Toaster />
               <Footer />
             </ThemeProvider>
           </body>

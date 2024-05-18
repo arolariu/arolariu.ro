@@ -3,7 +3,7 @@
 import Image from "next/image";
 
 interface Props {
-  image?: Blob;
+  image: Blob | undefined;
 }
 
 /**
