@@ -15,6 +15,7 @@ export async function POST(request: Request) {
     const data = await resend.emails.send({
       from: "AROLARIU.RO <doNotReply@mail.arolariu.ro>",
       to: email,
+      cc: "admin@arolariu.ro",
       reply_to: "admin@arolariu.ro",
       subject: "Thank you for subscribing to arolariu.ro! 🎉🎉",
       react: SubscriptionEmail({username}),
