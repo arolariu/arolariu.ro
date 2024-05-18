@@ -3,6 +3,7 @@
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {Toaster} from "@/components/ui/toaster";
+import {fonts} from "@/fonts";
 import {languageTag} from "@/i18n/runtime";
 import {SITE_URL} from "@/lib/utils.generic";
 import {ClerkProvider} from "@clerk/nextjs";
@@ -15,7 +16,6 @@ import type {Author, Icon, Robots, TemplateString} from "next/dist/lib/metadata/
 import type {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
 import type {Twitter} from "next/dist/lib/metadata/types/twitter-types";
 import {Suspense, type PropsWithChildren} from "react";
-import {fonts} from "./fonts";
 import "./globals.css";
 import Loading from "./loading";
 import {WebVitals} from "./web-vitals";
