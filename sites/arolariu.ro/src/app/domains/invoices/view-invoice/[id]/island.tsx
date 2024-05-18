@@ -30,12 +30,12 @@ export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: In
     <section className='mx-auto py-12'>
       <div className='mx-auto flex flex-wrap justify-center'>
         <div className='mb-6 w-full lg:mb-0 lg:w-1/2 lg:py-6 lg:pr-10'>
-          <h2 className='title-font text-sm tracking-widest dark:text-gray-500'>
-            Invoice id: <span>{id}</span>
+          <h2 className='text-md tracking-widest text-gray-500 2xsm:text-xs'>
+            Invoice id: <span>{id}</span>{" "}
           </h2>
-          <h1 className='text-transparenttext-3xl mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-3xl font-medium text-transparent'>
+          <h3 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-3xl font-medium text-transparent'>
             {description}
-          </h1>
+          </h3>
           <div className='mb-4 flex'>
             <button
               type='button'
@@ -77,7 +77,7 @@ export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: In
             </Link>
             <button
               type='button'
-              className='ml-4 inline-flex h-10 w-10 items-center justify-center rounded-full border-0 bg-gray-200 p-0 text-gray-500'
+              className='my-auto ml-4 inline-flex h-10 w-10 items-center justify-center rounded-full border-0 bg-gray-200 p-0 text-gray-500'
               title='Bookmark (mark as important) the invoice'>
               <svg
                 fill='currentColor'

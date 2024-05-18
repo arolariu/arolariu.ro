@@ -2,6 +2,7 @@
 
 "use client";
 
+import {Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {useZustandStore} from "@/hooks/stateStore";
 import type Product from "@/types/invoices/Product";
 
@@ -10,27 +11,38 @@ export const InvoiceProducts = () => {
   const items: Product[] = invoice.items;
 
   return (
-    <table className='container mx-auto mb-8 border-b border-gray-200'>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Price</th>
-          <th>Quantity</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody>
+    <Table className='mx-auto mb-8 border-b border-gray-200'>
+      <TableHeader>
+        <TableRow>
+          <TableHead className='text-center'>Name</TableHead>
+          <TableHead className='text-center'>Price</TableHead>
+          <TableHead className='text-center'>Quantity</TableHead>
+          <TableHead className='text-center'>Total</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {items.map((item, index) => (
-          <tr
-            key={index}
+          <TableRow
+            key={item.rawName + index}
             className='text-center odd:bg-gray-900'>
-            <td>{item.rawName}</td>
-            <td>{item.price}</td>
-            <td>{item.quantity}</td>
-            <td>{item.totalPrice}</td>
-          </tr>
+            <TableCell>{item.rawName}</TableCell>
+            <TableCell>{item.price}</TableCell>
+            <TableCell>{item.quantity}</TableCell>
+            <TableCell>{item.totalPrice}</TableCell>
+          </TableRow>
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+      <TableFooter>
+        <TableRow>
+          <TableCell
+            colSpan={2}
+            className='text-center'>
+            <strong>TOTAL</strong>
+          </TableCell>
+          <TableCell className='text-center'>{items.reduce((acc, item) => acc + item.quantity, 0)}</TableCell>
+          <TableCell className='text-center'>{items.reduce((acc, item) => acc + item.totalPrice, 0)}</TableCell>
+        </TableRow>
+      </TableFooter>
+    </Table>
   );
 };

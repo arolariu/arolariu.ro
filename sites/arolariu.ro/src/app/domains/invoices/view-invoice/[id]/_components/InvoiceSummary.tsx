@@ -14,12 +14,12 @@ export const InvoiceSummary = () => {
 
   const allergensText =
     allergensList.length > 0
-      ? allergensList.join(", ")
+      ? allergensList.map((allergen) => allergen.name).join(", ")
       : "no identified allergens... input allergens manually or analyze again.";
 
   const recipesText =
     recipesList.length > 0
-      ? recipesList.join(", ")
+      ? recipesList.map((recipe) => recipe.name).join(", ")
       : "no identified recipes... input recipes manually or analyze again.";
 
   const boughtItems = invoice.items
@@ -28,11 +28,11 @@ export const InvoiceSummary = () => {
 
   return (
     <section>
-      <p className='mb-4 leading-relaxed'>
+      <article className='mb-4 leading-relaxed'>
         ⚠️ ALLERGENS: <em>{allergensText}</em> <br />
         🍳 RECIPES: <em>{recipesText}</em> <br />
         💚 ESTIMATED SURVIVAL (<strong>1 adult</strong>): <em>{invoice.estimatedSurvivalDays} days</em>
-      </p>
+      </article>
       <center className='mx-auto mb-2 mt-4'>
         <em>If you feel that some of the details are not correct, feel free to edit the invoice.</em>
       </center>
