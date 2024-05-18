@@ -102,6 +102,7 @@ export default function RenderViewInvoicesScreen({invoices}: Readonly<Props>) {
       </article>
       <InvoiceFilters
         filters={filters}
+        displayStyle={displayStyle}
         setDisplayStyle={setDisplayStyle}
         setFilters={setFilters}
       />{" "}
