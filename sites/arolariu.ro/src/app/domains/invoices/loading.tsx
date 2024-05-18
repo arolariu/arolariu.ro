@@ -18,22 +18,22 @@ const SVGSkeleton = ({className}: Readonly<{className: string}>) => (
  * This function renders the loading screen for the invoices domain.
  * @returns The loading screen for the invoices domain.
  */
-export default async function Loading() {
+export default function Loading() {
   return (
     <section>
       <div className='container mx-auto flex flex-col items-center justify-center px-5 py-24'>
         <SVGSkeleton className='h-[500px] w-[500px] object-cover object-center' />
         <div className='mt-2 w-full lg:w-2/3'>
-          <h1 className='mb-4 from-pink-400 bg-clip-text'>
+          <div className='mb-4 from-pink-400 bg-clip-text'>
             <Skeleton className='w-[456px] max-w-full' />
-          </h1>
+          </div>
           <div className='mb-8 leading-relaxed'>
             <Skeleton className='w-[1560px] max-w-full' />
           </div>
           <div className='flex justify-center'>
-            <a className='inline-flex border-0 px-6 py-2'>
+            <div className='inline-flex border-0 px-6 py-2'>
               <Skeleton className='w-[112px] max-w-full' />
-            </a>
+            </div>
           </div>
         </div>
       </div>

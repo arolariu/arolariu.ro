@@ -6,7 +6,7 @@ import {Skeleton} from "@/components/ui/skeleton";
  * The loading screen for the about homepage
  * @returns Loading screen for the about homepage
  */
-export default async function Loading() {
+export default function Loading() {
   return (
     <main>
       <section>
