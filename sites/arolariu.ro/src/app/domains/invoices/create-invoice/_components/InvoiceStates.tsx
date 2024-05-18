@@ -1,15 +1,15 @@
 /** @format */
 
-import InvoiceImagePreview from "@/components/domains/invoices/InvoiceImagePreview";
-import AlertNotification from "@/components/domains/invoices/UploadAlertNotification";
 import uploadInvoice from "@/lib/invoices/uploadInvoice";
 import {extractBase64FromBlob} from "@/lib/utils.client";
 import Link from "next/link";
+import AlertNotification from "./AlertNotification";
+import InvoicePreview from "./InvoicePreview";
 
 export const InvoiceNotUploaded = ({handleImageUpload}: Readonly<{handleImageUpload: any}>) => {
   return (
     <section className='h-full w-full'>
-      <InvoiceImagePreview />
+      <InvoicePreview />
       <h1 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-xl font-medium text-transparent'>
         UPLOAD A PICTURE OF THE PAPER RECEIPT
       </h1>
@@ -43,7 +43,7 @@ export const InvoiceClientSideUpload = ({
 }: Readonly<{blob: Blob | undefined; handleImageUpload: any; setImageState: any}>) => {
   return (
     <section className='h-full w-full'>
-      <InvoiceImagePreview image={blob!} />
+      <InvoicePreview image={blob!} />
       <h1 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-xl font-medium text-transparent'>
         IS THIS THE CORRECT PHOTO...?!
       </h1>

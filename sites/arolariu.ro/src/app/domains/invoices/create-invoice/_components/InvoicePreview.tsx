@@ -11,7 +11,7 @@ interface Props {
  * @param image The image to preview.
  * @returns The JSX for the invoice image preview.
  */
-export default function InvoiceImagePreview({image}: Readonly<Props>) {
+export default function InvoicePreview({image}: Readonly<Props>) {
   const allowedFormats = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
   if (image != undefined && allowedFormats.includes(image.type)) {
     return image.type === "application/pdf" ? (
