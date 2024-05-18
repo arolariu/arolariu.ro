@@ -9,23 +9,15 @@ import {ClerkProvider} from "@clerk/nextjs";
 import {LanguageProvider} from "@inlang/paraglide-next";
 import type {Metadata} from "next";
 import {ThemeProvider} from "next-themes";
-import type {NextFont} from "next/dist/compiled/@next/font";
 import type {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
 import type {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";
 import type {Author, Icon, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
 import type {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
 import type {Twitter} from "next/dist/lib/metadata/types/twitter-types";
-import {Caudex} from "next/font/google";
 import {Suspense, type PropsWithChildren} from "react";
+import {fonts} from "./fonts";
 import "./globals.css";
 import Loading from "./loading";
-
-const fontFamily: NextFont = Caudex({
-  weight: "700",
-  style: "normal",
-  subsets: ["latin"],
-  preload: true,
-});
 
 const siteDescription =
   "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania.";
@@ -166,7 +158,8 @@ export default async function RootLayout({children}: Readonly<PropsWithChildren<
         <html
           lang={languageTag()}
           suppressHydrationWarning
-          className={fontFamily.className}
+          className={fonts[0]?.className}
+          // TODO: implement function with RxJs to automatically set the font based on user preferences.
           dir='ltr'>
           <body className='bg-white text-black dark:bg-black dark:text-white'>
             <ThemeProvider
