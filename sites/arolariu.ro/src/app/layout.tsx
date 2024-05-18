@@ -18,6 +18,7 @@ import {Suspense, type PropsWithChildren} from "react";
 import {fonts} from "./fonts";
 import "./globals.css";
 import Loading from "./loading";
+import {WebVitals} from "./web-vitals";
 
 const siteDescription =
   "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania.";
@@ -167,6 +168,7 @@ export default async function RootLayout({children}: Readonly<PropsWithChildren<
               themes={["light", "dark"]}
               enableSystem={false}>
               <Header />
+              <WebVitals />
               <Suspense fallback={<Loading />}>{children}</Suspense>
               <Toaster />
               <Footer />
