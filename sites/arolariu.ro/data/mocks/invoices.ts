@@ -11,7 +11,7 @@ const generateFakeInvoice = (): Invoice => ({
   createdAt: fake.date.anytime(),
   merchant: generateFakeMerchant(),
   createdBy: fake.string.uuid(),
-  description: fake.lorem.sentence(10),
+  description: fake.lorem.sentence(6),
   estimatedSurvivalDays: fake.number.int({min: 0, max: 10}),
   isImportant: fake.datatype.boolean(),
   isSoftDeleted: fake.datatype.boolean(),
@@ -91,3 +91,4 @@ export const FakeInvoiceBigList: Invoice[] = Array.from(
   {length: fake.number.int({min: 10, max: 100})},
   generateFakeInvoice,
 );
+
