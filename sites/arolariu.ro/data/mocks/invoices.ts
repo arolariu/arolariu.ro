@@ -91,4 +91,3 @@ export const FakeInvoiceBigList: Invoice[] = Array.from(
   {length: fake.number.int({min: 10, max: 100})},
   generateFakeInvoice,
 );
-
