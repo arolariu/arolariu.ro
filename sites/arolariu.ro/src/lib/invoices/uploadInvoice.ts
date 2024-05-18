@@ -1,3 +1,5 @@
+/** @format */
+
 "use server";
 
 import {DefaultAzureCredential} from "@azure/identity";

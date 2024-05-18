@@ -1,3 +1,5 @@
+/** @format */
+
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import type Invoice from "@/types/invoices/Invoice";
 import {InvoiceCategory} from "@/types/invoices/Invoice";

@@ -1,3 +1,5 @@
+/** @format */
+
 import {DashboardIcon, HeartFilledIcon, MoonIcon, SunIcon, TextAlignJustifyIcon} from "@radix-ui/react-icons";
 
 interface Props {

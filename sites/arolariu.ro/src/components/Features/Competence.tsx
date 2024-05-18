@@ -1,3 +1,5 @@
+/** @format */
+
 import {ReactNode} from "react";
 
 interface Props {

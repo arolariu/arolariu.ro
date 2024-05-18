@@ -1,3 +1,5 @@
+/** @format */
+
 import {defaultCache} from "@serwist/next/worker";
 import type {PrecacheEntry, SerwistGlobalConfig, SerwistOptions} from "serwist";
 import {Serwist} from "serwist";

@@ -1,3 +1,5 @@
+/** @format */
+
 import {type Metadata} from "next";
 import {PastEvents} from "./_components/PastEvents";
 import {PresentEvents} from "./_components/PresentEvents";

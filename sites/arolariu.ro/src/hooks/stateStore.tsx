@@ -1,4 +1,8 @@
-/* eslint-disable */
+/**
+ * eslint-disable
+ *
+ * @format
+ */
 
 import Invoice from "@/types/invoices/Invoice";
 import {create} from "zustand";

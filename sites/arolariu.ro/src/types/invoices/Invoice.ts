@@ -1,3 +1,5 @@
+/** @format */
+
 import NamedEntity from "../DDD/NamedEntity";
 import Merchant from "./Merchant";
 import Product from "./Product";

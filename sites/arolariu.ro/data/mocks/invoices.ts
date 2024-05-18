@@ -1,3 +1,5 @@
+/** @format */
+
 import Invoice, {InvoiceCategory, type Recipe} from "@/types/invoices/Invoice";
 import Merchant, {MerchantCategory} from "@/types/invoices/Merchant";
 import Product, {ItemCategory} from "@/types/invoices/Product";

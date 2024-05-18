@@ -1,3 +1,5 @@
+/** @format */
+
 import type {AvailableLanguageTag} from "@/i18n/runtime.js"; //generated file
 import {createI18n} from "@inlang/paraglide-next";
 

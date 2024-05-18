@@ -1,8 +1,11 @@
 /**
  * Function that extracts a base64 string from a blob
+ *
+ * @format
  * @param blob The blob to extract the base64 string from
  * @returns The base64 string
  */
+
 export async function extractBase64FromBlob(blob: Blob): Promise<string> {
   return new Promise((resolve) => {
     const reader = new FileReader();

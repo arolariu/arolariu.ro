@@ -29,7 +29,7 @@
     "clean": "npm run clean:win && npm run clean:lin",
     "clean:win": "node -e \"if (process.platform === 'win32') process.exit(1)\" || , if exist .next rmdir /Q /S .next",
     "clean:lin": "node -e \"if (process.platform !== 'win32') process.exit(1)\" || rm -rf .next",
-    "dev": "next dev --turbo",
+    "dev": "next dev --turbo --experimental-https",
     "email": "email dev",
     "build": "paraglide-js compile --project i18n.inlang --outdir src/i18n && next build",
     "format": "npm run format:check; npm run format:fix",

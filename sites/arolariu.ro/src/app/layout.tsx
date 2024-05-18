@@ -1,3 +1,5 @@
+/** @format */
+
 import Footer from "@/components/Footer";
 import {Caudex} from "next/font/google";
 

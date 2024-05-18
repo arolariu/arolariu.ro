@@ -1,3 +1,5 @@
+/** @format */
+
 import {clerkMiddleware as authMiddleware, createRouteMatcher} from "@clerk/nextjs/server";
 import {NextRequest, NextResponse} from "next/server";
 

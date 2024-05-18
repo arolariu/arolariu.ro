@@ -1,3 +1,5 @@
+/** @format */
+
 import {fetchUser} from "@/lib/actions/fetchUser";
 import fetchInvoices from "@/lib/invoices/fetchInvoices";
 import {type Metadata} from "next";

@@ -1,3 +1,5 @@
+/** @format */
+
 import InvoiceImagePreview from "@/components/domains/invoices/InvoiceImagePreview";
 import AlertNotification from "@/components/domains/invoices/UploadAlertNotification";
 import uploadInvoice from "@/lib/invoices/uploadInvoice";

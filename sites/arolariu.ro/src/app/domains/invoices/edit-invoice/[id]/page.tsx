@@ -1,3 +1,5 @@
+/** @format */
+
 import RenderForbiddenScreen from "@/components/domains/RenderForbiddenScreen";
 import {fetchUser} from "@/lib/actions/fetchUser";
 import fetchInvoice from "@/lib/invoices/fetchInvoice";

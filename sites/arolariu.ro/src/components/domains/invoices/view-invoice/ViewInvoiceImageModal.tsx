@@ -1,3 +1,5 @@
+/** @format */
+
 import {useZustandStore} from "@/hooks/stateStore";
 import Image from "next/image";
 import {useRef, useState} from "react";

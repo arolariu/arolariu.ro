@@ -1,3 +1,5 @@
+/** @format */
+
 "use client";
 
 import {ViewInvoiceImageModal} from "@/components/domains/invoices/view-invoice/ViewInvoiceImageModal";

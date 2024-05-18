@@ -1,3 +1,5 @@
+/** @format */
+
 import {fetchUser} from "@/lib/actions/fetchUser";
 import {type Metadata} from "next";
 import Image from "next/image";

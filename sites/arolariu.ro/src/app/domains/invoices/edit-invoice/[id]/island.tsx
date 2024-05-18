@@ -1,3 +1,5 @@
+/** @format */
+
 "use client";
 
 import EditInvoicePhotoPreview from "@/components/domains/invoices/edit-invoice/EditInvoicePhotoPreview";

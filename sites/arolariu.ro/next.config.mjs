@@ -1,3 +1,5 @@
+/** @format */
+
 // @ts-check
 
 import {paraglide as withTranslationInit} from "@inlang/paraglide-next/plugin";

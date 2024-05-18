@@ -1,3 +1,5 @@
+/** @format */
+
 // @ts-check
 
 import eslint from "@eslint/js";

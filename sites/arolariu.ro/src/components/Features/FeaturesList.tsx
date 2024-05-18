@@ -1,3 +1,5 @@
+/** @format */
+
 import Link from "next/link";
 import {SiCsharp, SiGithubactions, SiMicrosoftazure, SiNextdotjs, SiOpentelemetry, SiSvelte} from "react-icons/si";
 import Feature from "./Feature";

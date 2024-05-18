@@ -1,3 +1,5 @@
+/** @format */
+
 import {useEffect, useState} from "react";
 
 // TODO: this hook needs a major rework

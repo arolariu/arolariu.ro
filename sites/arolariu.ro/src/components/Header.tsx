@@ -1,3 +1,5 @@
+/** @format */
+
 "use client";
 
 import {SignedIn, SignedOut, UserButton, useUser} from "@clerk/nextjs";

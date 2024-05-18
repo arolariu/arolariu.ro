@@ -1,3 +1,5 @@
+/** @format */
+
 import DomainServiceCard from "@/components/Cards/DomainServiceCard";
 import {type Metadata} from "next";
 

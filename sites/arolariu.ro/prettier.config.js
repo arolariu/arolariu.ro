@@ -1,9 +1,11 @@
 /**
+ * @format
  * @type {import("prettier").Config}
  */
+
 const prettierConfig = {
   arrowParens: "always",
-  insertPragma: false,
+  insertPragma: true,
   printWidth: 120,
   useTabs: false,
   tabWidth: 2,

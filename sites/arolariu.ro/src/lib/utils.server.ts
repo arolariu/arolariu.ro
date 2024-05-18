@@ -1,3 +1,5 @@
+/** @format */
+
 import "server-only";
 
 import {AppConfigurationClient} from "@azure/app-configuration";

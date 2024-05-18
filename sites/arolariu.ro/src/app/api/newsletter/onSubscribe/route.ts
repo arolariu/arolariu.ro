@@ -1,3 +1,5 @@
+/** @format */
+
 import {resend} from "@/lib/utils.server";
 import SubscriptionEmail from "../../../../../emails/newsletter/Subscription";
 

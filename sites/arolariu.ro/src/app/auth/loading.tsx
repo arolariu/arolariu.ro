@@ -1,3 +1,5 @@
+/** @format */
+
 const Skeleton = ({className}: Readonly<{className: string}>) => (
   <div
     aria-live='polite'

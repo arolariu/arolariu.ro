@@ -1,3 +1,5 @@
+/** @format */
+
 import NamedEntity from "../DDD/NamedEntity";
 
 export default interface Merchant extends NamedEntity<string> {

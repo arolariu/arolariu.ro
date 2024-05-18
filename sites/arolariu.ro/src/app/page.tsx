@@ -1,3 +1,5 @@
+/** @format */
+
 import FeaturesList from "@/components/Features/FeaturesList";
 import * as m from "@/i18n/messages";
 import Link from "next/link";

@@ -1,3 +1,5 @@
+/** @format */
+
 import {EventCard} from "./EventCard";
 
 export const PresentEvents = () => {

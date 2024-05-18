@@ -1,3 +1,5 @@
+/** @format */
+
 interface Props {
   imageBlob: undefined | Blob;
 }

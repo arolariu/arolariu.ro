@@ -1,3 +1,5 @@
+/** @format */
+
 "use server";
 
 import Invoice from "@/types/invoices/Invoice";

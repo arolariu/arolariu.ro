@@ -30,3 +30,5 @@ next-env.d.ts
 # service worker
 /public/sw.js
 /public/swe-*.js
+
+certificates

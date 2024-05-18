@@ -1,3 +1,5 @@
+/** @format */
+
 import {fetchUser} from "@/lib/actions/fetchUser";
 
 interface Props {

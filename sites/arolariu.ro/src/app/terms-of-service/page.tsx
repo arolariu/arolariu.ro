@@ -1,3 +1,5 @@
+/** @format */
+
 import * as m from "@/i18n/messages";
 import {type Metadata} from "next";
 

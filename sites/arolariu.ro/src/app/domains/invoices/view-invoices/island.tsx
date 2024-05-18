@@ -1,3 +1,5 @@
+/** @format */
+
 "use client";
 
 import Invoice from "@/types/invoices/Invoice";

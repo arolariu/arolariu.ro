@@ -1,3 +1,5 @@
+/** @format */
+
 import {SignIn} from "@clerk/nextjs";
 import {type Metadata} from "next";
 

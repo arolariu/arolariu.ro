@@ -1,3 +1,5 @@
+/** @format */
+
 import Competence from "@/components/Features/Competence";
 import {type Metadata} from "next";
 import Image from "next/image";
@@ -35,10 +37,10 @@ export default async function AuthorPage() {
           the Sovereign Clouds line of business.
           <br />
           <br />
-          Alexandru was born on the 8th of January, year 2000, to Alexandra and Razvan, in a small city called{" "}
-          <code>Curtea de Arges</code> in Romania. He got his first computer when he was just 5 years old - a Pentium 4
-          with 512 MB of RAM and 10 GB of storage, running Windows 98. He learnt most of his computer skills by playing
-          video games and tinkering with his personal computer. He also learnt a good amount of English and was able to
+          Alexandru was born on the 8th of January, year 2000 in a small city called <code>Curtea de Arges</code> in
+          Romania. He got his first computer when he was just 5 years old - a Pentium 4 E2220 Dual-Core 2.4 GHz with 512
+          MB of RAM and 10 GB of storage, running Windows 98. He learnt most of his computer skills by playing video
+          games and tinkering with his personal computer. He also learnt a good amount of English and was able to
           fluently read, write and speak in English by the age of 7.
           <br />
           <br />
@@ -49,10 +51,10 @@ export default async function AuthorPage() {
           Alexandru enjoys reading technical books and tinkering with new technologies. He has built this platform as a
           `test-bench` for new technologies and as a way to learn new things. He is also a big fan of the `open-source`
           movement and has contributed to Microsoft&apos;s OSS repositories{" "}
-          <em>(such as dotnet/efcore and dotnet/docs)</em>. <br /> <br />
-          Alexandru is open for collaboration in projects that involve Internet of Things, Software Engineering and
-          Network Engineering fields. <br /> If you are interested in working with Alexandru and you wonder what he is
-          capable of, please visit the `cv.arolariu.ro` website to see his CV. <br /> <br />
+          <em>(dotnet/efcore, dotnet/docs, azure/docs)</em>. <br /> <br />
+          Alexandru is open for collaboration in projects that involve any of the Internet of Things, Software
+          Engineering and Network Engineering fields. <br /> If you are interested in working with Alexandru and you
+          wonder what he is capable of, please visit the `cv.arolariu.ro` website to see his CV. <br /> <br />
           To reach out to him, scroll down to the contact information section, or connect with him via the information
           provided on the{" "}
           <Link
@@ -95,15 +97,15 @@ export default async function AuthorPage() {
           </Competence>
           <Competence
             title='Customer Centric.'
-            description="Alexandru has been working with customers for two full years in his tenure at Microsoft. He has gained a lot
+            description="Alexandru has been working with customers for many years, in his tenure at Microsoft. He has gained a lot
 					of knowledge and is able to put himself in the shoes of the customer. He is able to understand the
-					customer's needs and to deliver solutions that are tailored to their needs.">
+					customer's needs and to deliver solutions that are exactly tailored to their needs.">
             <FaUserCheck className='h-7 w-7' />
           </Competence>
           <Competence
             title='Engineering Excellence.'
             description='Alexandru is passionate about delivering the best solutions for the problem and for the customer. He is
-								always striving to deliver the best software and to follow consacrated engineering excellence practices.'>
+								always striving to deliver the best software and to follow consacrated engineering excellence practices. A perfect solution is a solution that is easy to maintain, extend and understand, not the one that is the most complex.'>
             <FaRegSun className='h-7 w-7' />
           </Competence>
         </div>

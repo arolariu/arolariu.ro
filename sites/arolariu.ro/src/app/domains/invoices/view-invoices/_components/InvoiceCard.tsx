@@ -1,3 +1,5 @@
+/** @format */
+
 import Invoice from "@/types/invoices/Invoice";
 import Image from "next/image";
 import Link from "next/link";

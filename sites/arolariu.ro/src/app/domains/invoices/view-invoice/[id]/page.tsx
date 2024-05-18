@@ -1,3 +1,5 @@
+/** @format */
+
 import fetchInvoice from "@/lib/invoices/fetchInvoice";
 import {type Metadata} from "next";
 import Image from "next/image";
