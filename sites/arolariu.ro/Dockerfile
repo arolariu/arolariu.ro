@@ -1,12 +1,17 @@
-FROM --platform=linux/amd64 node:21-alpine AS base
+FROM --platform=linux/amd64 node:22-alpine AS base
 
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Install dependencies
-COPY package*.json ./
-RUN npm install
+COPY package*.json pnpm-lock.yaml* ./
+RUN \
+  if [ -f package-lock.json ]; then npm ci; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
+  elif [ -f yarn.lock ]; then yarn --frozen-lockfile; \
+  else echo "Lockfile not found." && exit 1; \
+  fi
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -15,7 +20,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN npm run build
+RUN \
+  if [ -f package-lock.json ]; then npm run build; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
+  elif [ -f yarn.lock ]; then yarn run build; \
+  else echo "Lockfile not found." && exit 1; \
+  fi
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -43,7 +53,4 @@ EXPOSE 3000
 
 ENV PORT 3000
 
-# set hostname to localhost
-ENV HOSTNAME "0.0.0.0"
-
-CMD ["node", "server.js"]
+CMD HOSTNAME="0.0.0.0" node server.js
