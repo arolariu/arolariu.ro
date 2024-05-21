@@ -44,7 +44,11 @@ export default async function PrivacyPolicyPage() {
             <Link
               key={license.name}
               className='group col-span-full flex-col space-y-1 overflow-hidden'
-              href={license.homepage ?? `https://www.npmjs.com/package/${license.name}`.replace(/\/\//g, "/")}
+              href={
+                license.homepage?.startsWith("https")
+                  ? license.homepage
+                  : `https://www.npmjs.com/package/${license.name}`.replace(/\/\//g, "/")
+              }
               target='_blank'
               rel='noopener noreferrer'
               aria-label={`Open repository for ${license.name}`}>
