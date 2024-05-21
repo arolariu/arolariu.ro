@@ -1,5 +1,6 @@
 /** @format */
 
+import {TIMESTAMP} from "@/lib/utils.generic";
 import {ExternalLinkIcon} from "@radix-ui/react-icons";
 import Link from "next/link";
 import licenses from "../../../licenses.json";
@@ -30,7 +31,7 @@ export default async function PrivacyPolicyPage() {
           Acknowledgments (3rd party packages)
         </h1>
         <p className='text-center'>
-          Last updated: <small>{new Date().toUTCString()}</small>
+          Last updated: <small>{new Date(TIMESTAMP).toUTCString()}</small>
         </p>
       </section>
       <section>
@@ -70,3 +71,4 @@ export default async function PrivacyPolicyPage() {
     </main>
   );
 }
+
