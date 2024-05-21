@@ -23,8 +23,9 @@ import {useState} from "react";
  * @returns The JSX for the edit invoice item card.
  */
 export default function ProductCard({item}: Readonly<{item: Product}>) {
+  // TODO: Implement the edit invoice item (product) card.
   const [itemState, setItemState] = useState<Product>(item);
-  const [isModified, setIsModified] = useState<boolean>(false);
+  const isModified = itemState !== item;
 
   const capitalizeFirst15Words = (str: string) => {
     return str
@@ -47,7 +48,9 @@ export default function ProductCard({item}: Readonly<{item: Product}>) {
             <TableCell>Raw Name</TableCell>
             <TableCell
               className='tooltip tooltip-top'
-              data-tip={itemState.rawName}>
+              data-tip={itemState.rawName}
+              contentEditable={true}
+              onInput={(e) => setItemState({...itemState, rawName: e.currentTarget.textContent!})}>
               {capitalizeFirst15Words(itemState.rawName)}
             </TableCell>
           </TableRow>
@@ -55,7 +58,9 @@ export default function ProductCard({item}: Readonly<{item: Product}>) {
             <TableCell>Generic Name</TableCell>
             <TableCell
               className='tooltip tooltip-bottom'
-              data-tip={itemState.genericName}>
+              data-tip={itemState.genericName}
+              contentEditable={true}
+              onInput={(e) => setItemState({...itemState, rawName: e.currentTarget.textContent!})}>
               {capitalizeFirst15Words(itemState.genericName)}
             </TableCell>
           </TableRow>
@@ -65,23 +70,39 @@ export default function ProductCard({item}: Readonly<{item: Product}>) {
           </TableRow>
           <TableRow>
             <TableCell>Quantity</TableCell>
-            <TableCell>{itemState.quantity}</TableCell>
+            <TableCell
+              contentEditable={true}
+              onInput={(e) => setItemState({...itemState, quantity: parseInt(e.currentTarget.textContent!)})}>
+              {itemState.quantity}
+            </TableCell>
           </TableRow>
           <TableRow>
             <TableCell>Quantity Unit</TableCell>
-            <TableCell>{itemState.quantityUnit}</TableCell>
+            <TableCell
+              contentEditable={true}
+              onInput={(e) => setItemState({...itemState, quantityUnit: e.currentTarget.textContent!})}>
+              {itemState.quantityUnit}
+            </TableCell>
           </TableRow>
           <TableRow>
             <TableCell>Price</TableCell>
-            <TableCell>{itemState.price}</TableCell>
+            <TableCell
+              contentEditable={true}
+              onInput={(e) => setItemState({...itemState, price: parseFloat(e.currentTarget.textContent!)})}>
+              {itemState.price}
+            </TableCell>
           </TableRow>
           <TableRow>
             <TableCell>Total Price</TableCell>
-            <TableCell>{itemState.totalPrice}</TableCell>
+            <TableCell>{itemState.price * itemState.quantity}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell>Product Code</TableCell>
-            <TableCell>{itemState.productCode}</TableCell>
+            <TableCell
+              contentEditable={true}
+              onInput={(e) => setItemState({...itemState, productCode: e.currentTarget.textContent!})}>
+              {itemState.productCode}
+            </TableCell>
           </TableRow>
         </TableBody>
       </Table>
