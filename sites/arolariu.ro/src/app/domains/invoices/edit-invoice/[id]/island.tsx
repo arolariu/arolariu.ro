@@ -16,10 +16,6 @@ export default function RenderEditInvoiceScreen({invoice}: Readonly<{invoice: In
   const merchant = invoice.merchant;
   const additionalMetadata = invoice.additionalMetadata;
 
-  const itemsWithAllergens = invoice.items.filter((item) => item.detectedAllergens.length > 0);
-  const allergensList = itemsWithAllergens.flatMap((item) => item.detectedAllergens);
-  const recipesList = invoice.possibleRecipes;
-
   return (
     <section className='mx-auto rounded-2xl border-2'>
       <div className='flex flex-row flex-nowrap'>
