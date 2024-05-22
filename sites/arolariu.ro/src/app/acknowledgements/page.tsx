@@ -20,7 +20,7 @@ export default async function AcknowledgementsPage() {
     <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-8 px-12 py-24'>
       <section>
         <h1 className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-3xl font-black text-transparent'>
-          Acknowledgments (3rd party packages)
+          Acknowledgements (3rd party packages)
         </h1>
         <p className='text-center'>
           Last updated: <small>{new Date(TIMESTAMP).toUTCString()}</small>
@@ -67,3 +67,4 @@ export default async function AcknowledgementsPage() {
     </main>
   );
 }
+
