@@ -44,7 +44,13 @@ export default async function AcknowledgementsPage() {
                 100
               ).toPrecision(4)}
             </code>
-            % are production packages)
+            % are production packages, and{" "}
+            <code className='tracking-widest'>
+              {((packages.filter((pkg) => pkg.name.startsWith("@types")).length / packages.length) * 100).toPrecision(
+                2,
+              )}
+            </code>
+            % are typedef packages)
           </span>
         </div>
         <div className='mx-auto grid max-w-3xl grid-cols-12 gap-10'>
