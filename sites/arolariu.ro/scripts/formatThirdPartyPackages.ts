@@ -35,7 +35,7 @@ function writeJsonFileWithManifests(packageManifests: Map<string, Package>) {
   console.info("Exact path:", path.dirname(rootPath));
 
   fs.mkdirSync(path.dirname(rootPath), {recursive: true});
-  fs.writeFileSync(rootPath, `${JSON.stringify(sortedPackages, null, 4)}${EOL}`);
+  fs.writeFileSync(rootPath, `${JSON.stringify(sortedPackages, null, 0)}${EOL}`);
 }
 
 function buildPackageManifests(packageDirectPaths: string[]) {
@@ -135,3 +135,4 @@ function extractDependenciesFromRootManifest() {
 }
 
 generateAcknowledgments();
+
