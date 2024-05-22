@@ -32,5 +32,3 @@ next-env.d.ts
 /public/swe-*.js
 
 certificates
-
-licenses.json

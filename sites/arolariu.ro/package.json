@@ -33,7 +33,7 @@
     "dev": "next dev --turbo --experimental-https",
     "license": "npx tsx .\\scripts\\formatThirdPartyPackages.ts",
     "email": "email dev",
-    "build": "npm run license && paraglide-js compile --project i18n.inlang --outdir src/i18n && next build",
+    "build": "paraglide-js compile --project i18n.inlang --outdir src/i18n && next build",
     "format": "npm run format:check; npm run format:fix",
     "format:check": "prettier --check . --config prettier.config.js --config-precedence prefer-file --cache --cache-strategy metadata",
     "format:fix": "prettier --write . --config prettier.config.js --config-precedence prefer-file --cache --cache-strategy metadata",
