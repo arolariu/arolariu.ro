@@ -12,10 +12,12 @@ type Package = {
   homepage?: string;
   version: string;
   license: string;
+  dependecyType: string | "production" | "development";
 };
 
 export default async function AcknowledgementsPage() {
   const packages: Package[] = licenses;
+
   return (
     <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-8 px-12 py-24'>
       <section>
@@ -27,10 +29,24 @@ export default async function AcknowledgementsPage() {
         </p>
       </section>
       <section>
-        <article className='pb-8 text-center text-xl'>
+        <article className='pb-4 text-center text-xl'>
           This website could not have been possible without the following third-party packages. <br /> I would like to
           thank the authors of these packages for their hard work and dedication to the open-source community.
         </article>
+        <div className='pb-8'>
+          <h2 className='inline text-2xl font-black underline'>Total Packages: {packages.length}</h2>
+          <span className='inline no-underline'>
+            {" "}
+            (of which, around{" "}
+            <code className='tracking-widest'>
+              {(
+                (packages.filter((pkg) => pkg.dependecyType === "production").length / packages.length) *
+                100
+              ).toPrecision(4)}
+            </code>
+            % are production packages)
+          </span>
+        </div>
         <div className='mx-auto grid max-w-3xl grid-cols-12 gap-10'>
           {packages.map((license) => (
             <Link

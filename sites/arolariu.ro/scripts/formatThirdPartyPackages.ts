@@ -13,7 +13,12 @@ interface Package {
   homepage: string;
   version: string;
   license: string;
+  dependecyType: "production" | "development";
 }
+
+// global variables
+let dependencies: string[];
+let devDependencies: string[];
 
 export async function generateAcknowledgments(): Promise<void> {
   console.log("Generating the `licenses.json` file...");
@@ -74,6 +79,7 @@ function buildPackageManifests(packageDirectPaths: string[]) {
         homepage: packageManifest.homepage!,
         version: packageManifest.version,
         license: packageManifest.license ?? "unknown",
+        dependecyType: dependencies.includes(packageManifest.name) ? "production" : "development",
       } satisfies Package);
     }
   } catch (err) {
@@ -125,8 +131,8 @@ function extractDependenciesFromRootManifest() {
   console.log("Reading current package.json file from ", currentPackageManifestPath);
   const currentPackageManifest = JSON.parse(fs.readFileSync(currentPackageManifestPath, "utf-8"));
 
-  const dependencies = Object.keys(currentPackageManifest.dependencies ?? {});
-  const devDependencies = Object.keys(currentPackageManifest.devDependencies ?? {});
+  dependencies = Object.keys(currentPackageManifest.dependencies ?? {});
+  devDependencies = Object.keys(currentPackageManifest.devDependencies ?? {});
   const specifiedPackages = new Set([...dependencies, ...devDependencies]);
   console.info("Found ", specifiedPackages.size, " total packages in package.json.");
   console.info("Production packages: ", dependencies.length);
@@ -135,3 +141,4 @@ function extractDependenciesFromRootManifest() {
 }
 
 generateAcknowledgments();
+
