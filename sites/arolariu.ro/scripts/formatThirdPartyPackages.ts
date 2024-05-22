@@ -135,4 +135,3 @@ function extractDependenciesFromRootManifest() {
 }
 
 generateAcknowledgments();
-
