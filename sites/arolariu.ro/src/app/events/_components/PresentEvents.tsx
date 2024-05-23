@@ -20,7 +20,7 @@ export const PresentEvents = () => {
         <EventCard
           title='System Design 101 - L100'
           description='Learn the basics of system design and how to approach any architecture interview with no stress.'
-          date='2024-03-01'
+          date='2024-06-01'
           location='Online'
           imagePath='https://dummyimage.com/720x400&text=System+Design+101+%2D+L100'
           formLink='https://forms.office.com/r/m1KGUNs5A8'
@@ -28,15 +28,15 @@ export const PresentEvents = () => {
         <EventCard
           title='System Design 101 - L200'
           description='Learn the basics of system design and how to approach any architecture interview with no stress.'
-          date='2024-05-01'
+          date='2024-07-01'
           location='Online'
           imagePath='https://dummyimage.com/720x400&text=System+Design+101+%2D+L200'
           formLink='https://forms.office.com/r/m1KGUNs5A8'
         />
         <EventCard
-          title='System Design 101 - L200'
+          title='System Design 101 - L300'
           description='Learn the basics of system design and how to approach any architecture interview with no stress.'
-          date='2024-06-01'
+          date='2024-08-01'
           location='Online'
           imagePath='https://dummyimage.com/720x400&text=System+Design+101+%2D+L300'
           formLink='https://forms.office.com/r/m1KGUNs5A8'
@@ -45,3 +45,4 @@ export const PresentEvents = () => {
     </section>
   );
 };
+
