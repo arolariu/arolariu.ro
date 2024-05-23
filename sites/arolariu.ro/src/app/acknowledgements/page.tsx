@@ -66,4 +66,3 @@ export default async function AcknowledgementsPage() {
     </main>
   );
 }
-

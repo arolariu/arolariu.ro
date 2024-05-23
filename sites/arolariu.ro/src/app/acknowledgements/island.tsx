@@ -79,4 +79,3 @@ export default function AcknowledgementsTable({packages}: Readonly<Props>) {
     </section>
   );
 }
-
