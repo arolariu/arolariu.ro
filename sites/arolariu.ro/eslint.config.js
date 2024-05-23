@@ -1,11 +1,16 @@
 /** @format */
 
-import {fixupConfigRules} from "@eslint/compat";
+import {fixupConfigRules, fixupPluginRules} from "@eslint/compat";
 import eslint from "@eslint/js";
 import typescriptParser from "@typescript-eslint/parser";
+import eslintPluginFunctional from "eslint-plugin-functional/flat";
 import eslintPluginJsDoc from "eslint-plugin-jsdoc";
+import eslintPluginPerfectionist from "eslint-plugin-perfectionist";
 import eslintPluginReact from "eslint-plugin-react";
+import eslintPluginReactHooks from "eslint-plugin-react-hooks";
 import eslintPluginReactRules from "eslint-plugin-react/configs/recommended.js";
+import eslintPluginSecurity from "eslint-plugin-security";
+import eslintPluginSonarJs from "eslint-plugin-sonarjs";
 import eslintPluginUnicorn from "eslint-plugin-unicorn";
 import globals from "globals";
 import tseslint from "typescript-eslint";
@@ -36,13 +41,24 @@ const defaultConfig = tseslint.config(
       },
     },
     plugins: {
-      unicorn: eslintPluginUnicorn,
-      jsdoc: eslintPluginJsDoc,
+      perfectionist: fixupPluginRules(eslintPluginPerfectionist),
+      "react-hooks": fixupPluginRules(eslintPluginReactHooks),
+      functional: fixupPluginRules(eslintPluginFunctional),
+      security: fixupPluginRules(eslintPluginSecurity),
+      unicorn: fixupPluginRules(eslintPluginUnicorn),
+      jsdoc: fixupPluginRules(eslintPluginJsDoc),
+      sonarjs: fixupPluginRules(eslintPluginSonarJs),
     },
     rules: {
+      ...eslintPluginFunctional.configs.recommended.rules,
+      ...eslintPluginFunctional.configs.stylistic.rules,
       ...eslintPluginReact.configs.all.rules,
       ...eslintPluginUnicorn.configs.all.rules,
+      ...eslintPluginReactHooks.configs.recommended.rules,
+      ...eslintPluginSecurity.configs.recommended.rules,
+      ...eslintPluginSonarJs.configs.recommended.rules,
       ...eslintPluginJsDoc.configs["recommended-typescript"].rules,
+      ...eslintPluginPerfectionist.configs["recommended-alphabetical"].rules,
       "jsdoc/require-param": "off",
       "jsdoc/require-returns": "off",
       "jsdoc/check-tag-names": "off", // prettier's @format tag is not recognized.
