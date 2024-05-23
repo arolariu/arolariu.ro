@@ -25,7 +25,7 @@ export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: In
     setSelectedInvoice(invoice);
   }, [selectedInvoice !== invoice]);
 
-  if (selectedInvoice !== invoice) return undefined;
+  if (selectedInvoice !== invoice) return;
   return (
     <section className='mx-auto py-12'>
       <div className='mx-auto flex flex-wrap justify-center'>

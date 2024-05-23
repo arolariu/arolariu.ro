@@ -39,6 +39,7 @@
     "format:fix": "prettier --write . --config prettier.config.js --config-precedence prefer-file --cache --cache-strategy metadata",
     "start": "next start",
     "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {

@@ -1,5 +1,8 @@
 /** @format */
 
+/**
+ * Represents a product from the invoice domain system.
+ */
 export default interface Product {
   rawName: string;
   genericName: string;
@@ -13,6 +16,9 @@ export default interface Product {
   metadata: ProductMetadata;
 }
 
+/**
+ * Represents the category of a product from the invoice domain system.
+ */
 export enum ItemCategory {
   NOT_DEFINED = 0,
   BAKED_GOODS,
@@ -31,6 +37,12 @@ export enum ItemCategory {
   OTHER,
 }
 
+/**
+ * Represents an allergen from the invoice domain system.
+ */
 export type Allergen = {name: string};
 
+/**
+ * Represents the metadata of a product from the invoice domain system.
+ */
 export type ProductMetadata = {isEdited: boolean; isComplete: boolean; isSoftDeleted: boolean};

@@ -5,6 +5,9 @@
 import type Invoice from "@/types/invoices/Invoice";
 import ProductCard from "./ProductCard";
 
+/**
+ *
+ */
 export default function ProductTable({invoice}: Readonly<{invoice: Invoice}>) {
   const items = invoice.items;
 

@@ -16,21 +16,21 @@ import InvoicePreview from "./_components/InvoicePreview";
 export default function RenderCreateInvoiceScreen() {
   const {toast} = useToast();
   const router = useRouter();
-  const [image, setImage] = useState<Blob | undefined>(undefined);
-  const [isValidMimeType, setIsValidMimeType] = useState<boolean | undefined>(undefined);
-  const validMimeTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
+  const [image, setImage] = useState<Blob | undefined>();
+  const [isValidMimeType, setIsValidMimeType] = useState<boolean | undefined>();
+  const validMimeTypes = new Set(["image/jpeg", "image/jpg", "image/png", "application/pdf"]);
 
   const ctaText =
-    isValidMimeType !== true
-      ? "Carefully photograph or scan your paper receipt. Attach the digital image from your device, here."
-      : "Review the uploaded receipt photo. If it is correct, proceed to the next step.";
+    isValidMimeType === true
+      ? "Review the uploaded receipt photo. If it is correct, proceed to the next step."
+      : "Carefully photograph or scan your paper receipt. Attach the digital image from your device, here.";
 
   const handleImageClientSideUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     event.preventDefault();
     const files = event.target.files;
     if (files && files.length > 0) {
       const image = files[0] as Blob;
-      const isValidMimeType = validMimeTypes.includes(image.type);
+      const isValidMimeType = validMimeTypes.has(image.type);
       setImage(isValidMimeType ? image : undefined);
       setIsValidMimeType(isValidMimeType);
     }
@@ -61,7 +61,7 @@ export default function RenderCreateInvoiceScreen() {
     <section className='h-full w-full'>
       <InvoicePreview image={image} />
       <h1 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-xl font-medium text-transparent'>
-        {isValidMimeType !== true ? "UPLOAD A PICTURE OF THE PAPER RECEIPT" : "IS THIS THE CORRECT PHOTO...?!"}
+        {isValidMimeType === true ? "IS THIS THE CORRECT PHOTO...?!" : "UPLOAD A PICTURE OF THE PAPER RECEIPT"}
       </h1>
       <p className='mx-auto text-base leading-relaxed lg:w-2/3'>
         {ctaText.split(".").map((text, index) => (

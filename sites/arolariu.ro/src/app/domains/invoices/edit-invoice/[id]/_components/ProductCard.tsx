@@ -49,7 +49,7 @@ export default function ProductCard({item}: Readonly<{item: Product}>) {
             <TableCell
               className='tooltip tooltip-top'
               data-tip={itemState.rawName}
-              contentEditable={true}
+              contentEditable
               onInput={(e) => setItemState({...itemState, rawName: e.currentTarget.textContent!})}>
               {capitalizeFirst15Words(itemState.rawName)}
             </TableCell>
@@ -59,7 +59,7 @@ export default function ProductCard({item}: Readonly<{item: Product}>) {
             <TableCell
               className='tooltip tooltip-bottom'
               data-tip={itemState.genericName}
-              contentEditable={true}
+              contentEditable
               onInput={(e) => setItemState({...itemState, rawName: e.currentTarget.textContent!})}>
               {capitalizeFirst15Words(itemState.genericName)}
             </TableCell>
@@ -71,15 +71,15 @@ export default function ProductCard({item}: Readonly<{item: Product}>) {
           <TableRow>
             <TableCell>Quantity</TableCell>
             <TableCell
-              contentEditable={true}
-              onInput={(e) => setItemState({...itemState, quantity: parseInt(e.currentTarget.textContent!)})}>
+              contentEditable
+              onInput={(e) => setItemState({...itemState, quantity: Number.parseInt(e.currentTarget.textContent!)})}>
               {itemState.quantity}
             </TableCell>
           </TableRow>
           <TableRow>
             <TableCell>Quantity Unit</TableCell>
             <TableCell
-              contentEditable={true}
+              contentEditable
               onInput={(e) => setItemState({...itemState, quantityUnit: e.currentTarget.textContent!})}>
               {itemState.quantityUnit}
             </TableCell>
@@ -87,8 +87,8 @@ export default function ProductCard({item}: Readonly<{item: Product}>) {
           <TableRow>
             <TableCell>Price</TableCell>
             <TableCell
-              contentEditable={true}
-              onInput={(e) => setItemState({...itemState, price: parseFloat(e.currentTarget.textContent!)})}>
+              contentEditable
+              onInput={(e) => setItemState({...itemState, price: Number.parseFloat(e.currentTarget.textContent!)})}>
               {itemState.price}
             </TableCell>
           </TableRow>
@@ -99,7 +99,7 @@ export default function ProductCard({item}: Readonly<{item: Product}>) {
           <TableRow>
             <TableCell>Product Code</TableCell>
             <TableCell
-              contentEditable={true}
+              contentEditable
               onInput={(e) => setItemState({...itemState, productCode: e.currentTarget.textContent!})}>
               {itemState.productCode}
             </TableCell>
@@ -107,7 +107,7 @@ export default function ProductCard({item}: Readonly<{item: Product}>) {
         </TableBody>
       </Table>
       <div className='mx-auto mt-4 flex flex-row gap-4'>
-        {isModified && (
+        {isModified ? (
           <Dialog>
             <DialogTrigger asChild>
               <Button className='mb-4 font-black'>✅ Save Changes</Button>
@@ -131,7 +131,7 @@ export default function ProductCard({item}: Readonly<{item: Product}>) {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        )}
+        ) : null}
         <Dialog>
           <DialogTrigger asChild>
             <Button className='mb-4 font-black'>⚠️ Delete Item</Button>

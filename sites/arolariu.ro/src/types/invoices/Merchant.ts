@@ -2,6 +2,9 @@
 
 import NamedEntity from "../DDD/NamedEntity";
 
+/**
+ * Represents a merchant from the invoice domain system.
+ */
 export default interface Merchant extends NamedEntity<string> {
   category: MerchantCategory;
   address: string;
@@ -9,6 +12,9 @@ export default interface Merchant extends NamedEntity<string> {
   parentCompanyId: string;
 }
 
+/**
+ * Represents the category of a merchant from the invoice domain system.
+ */
 export enum MerchantCategory {
   NOT_DEFINED = 0,
   LOCAL_SHOP,

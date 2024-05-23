@@ -15,6 +15,9 @@ type Package = {
   dependecyType: string | "production" | "development";
 };
 
+/**
+ *
+ */
 export default async function AcknowledgementsPage() {
   const packages: Package[] = licenses;
 
@@ -61,7 +64,7 @@ export default async function AcknowledgementsPage() {
               href={
                 license.homepage?.startsWith("https")
                   ? license.homepage
-                  : `https://www.npmjs.com/package/${license.name}`.replace(/\/\//g, "/")
+                  : `https://www.npmjs.com/package/${license.name}`.replaceAll("//", "/")
               }
               target='_blank'
               rel='noopener noreferrer'

@@ -1,6 +1,5 @@
 /**
  * eslint-disable
- *
  * @format
  */
 
@@ -30,5 +29,3 @@ export const useZustandStore = create<States & Actions>()(
     ),
   ),
 );
-
-/* eslint-enable */

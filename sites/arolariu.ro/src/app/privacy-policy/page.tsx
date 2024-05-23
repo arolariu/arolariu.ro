@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 
+/**
+ *
+ */
 export default async function PrivacyPolicyPage() {
   return (
     <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-8 px-12 py-24'>
