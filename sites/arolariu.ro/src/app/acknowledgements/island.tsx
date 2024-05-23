@@ -20,7 +20,11 @@ type Package = {
 interface Props {
   packages: Package[];
 }
-export default function AcknowledgemenetsTable({packages}: Readonly<Props>) {
+
+/**
+ * Table of acknowledgements for the third-party packages used in this project.
+ */
+export default function AcknowledgementsTable({packages}: Readonly<Props>) {
   const [shownPackages, setShownPackages] = useState<Package[]>(packages);
   const productionPackages = packages.filter((pkg) => pkg.dependecyType === "production");
   const developmentPackages = packages.filter((pkg) => pkg.dependecyType === "development");
@@ -75,3 +79,4 @@ export default function AcknowledgemenetsTable({packages}: Readonly<Props>) {
     </section>
   );
 }
+

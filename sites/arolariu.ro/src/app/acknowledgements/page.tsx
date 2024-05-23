@@ -2,7 +2,7 @@
 
 import {TIMESTAMP} from "@/lib/utils.generic";
 import licenses from "../../../licenses.json";
-import AcknowledgemenetsTable from "./island";
+import AcknowledgementsTable from "./island";
 
 type Package = {
   name: string;
@@ -15,7 +15,7 @@ type Package = {
 };
 
 /**
- *
+ * Acknowledgements page for the third-party packages used in this project.
  */
 export default async function AcknowledgementsPage() {
   const packages: Package[] = licenses;
@@ -56,7 +56,8 @@ export default async function AcknowledgementsPage() {
           </span>
         </div>
       </section>
-      <AcknowledgemenetsTable packages={packages} />
+      <AcknowledgementsTable packages={packages} />
     </main>
   );
 }
+
