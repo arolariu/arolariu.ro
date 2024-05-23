@@ -10,8 +10,14 @@ declare global {
   }
 }
 
+/**
+ * The global scope of the service worker.
+ */
 declare const self: ServiceWorkerGlobalScope;
 
+/**
+ * The main service worker instance.
+ */
 const serwist = new Serwist({
   clientsClaim: true,
   disableDevLogs: false,

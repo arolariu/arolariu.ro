@@ -59,7 +59,7 @@ export async function fetchConfigurationValue(key: string): Promise<string> {
  * @returns The mime type
  */
 export function getMimeTypeFromBase64(base64String: string): string | null {
-  const match = /^data:(.*?);base64,/.exec(base64String);
+  const match = /^data:(.*?);base64,/u.exec(base64String);
   return match ? match.at(1)! : null;
 }
 
@@ -73,7 +73,7 @@ export async function base64ToBlob(base64String: string): Promise<Blob> {
   const mimeType = getMimeTypeFromBase64(base64String) as string;
 
   // Remove the mime type from the base64 string.
-  const base64 = base64String.replace(/^data:(.*?);base64,/, "");
+  const base64 = base64String.replace(/^data:(.*?);base64,/u, "");
 
   const byteCharacters = atob(base64);
   const byteArrays = [];

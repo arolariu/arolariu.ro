@@ -36,7 +36,7 @@ export default function AcknowledgementsTable({packages}: Readonly<Props>) {
         <Button onClick={() => setShownPackages(productionPackages)}>Show Production Packages</Button>
         <Button onClick={() => setShownPackages(developmentPackages)}>Show Development Packages</Button>
         <Button
-          variant={"outline"}
+          variant='outline'
           onClick={() => setShownPackages(packages)}>
           Show all packages {!isShowingAllPackages && "(RESET)"}
         </Button>

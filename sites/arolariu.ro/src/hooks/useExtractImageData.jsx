@@ -36,8 +36,8 @@ export default function useExtractImageData(image) {
   }, [image]);
 
   return {
+    additionalMetadata,
     imageData,
     imageError,
-    additionalMetadata,
   };
 }
