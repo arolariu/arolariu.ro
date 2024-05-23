@@ -20,7 +20,7 @@ export default async function AboutPage() {
         <h1 className='mb-4 bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent sm:text-3xl '>
           About Us
         </h1>
-        <article>
+        <article className='mx-auto w-2/3 text-center'>
           The <code>arolariu.ro</code> story began in 2022, when the author - Alexandru-Razvan Olariu, wanted to
           understand how websites work.
           <br />
@@ -88,3 +88,4 @@ export default async function AboutPage() {
     </>
   );
 }
+
