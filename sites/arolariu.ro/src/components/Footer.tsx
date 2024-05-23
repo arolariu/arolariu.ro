@@ -153,14 +153,14 @@ export default async function Footer() {
                   <Link
                     href='/about/the-platform'
                     className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
-                    What is <code>arolariu.ro</code>?
+                    What is this?
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href='/about/the-author'
+                    href='/acknowledgements'
                     className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
-                    Who is <code>arolariu</code>?
+                    Acknowledgements
                   </Link>
                 </li>
                 <li>

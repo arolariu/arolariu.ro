@@ -1,7 +1,7 @@
 /** @format */
 
-import fs from "fs";
 import {globSync} from "glob";
+import fs from "node:fs";
 import {exit} from "node:process";
 import {EOL} from "os";
 import path from "path";
@@ -20,7 +20,7 @@ interface Package {
 let dependencies: string[];
 let devDependencies: string[];
 
-export async function generateAcknowledgments(): Promise<void> {
+export default async function generateAcknowledgements(): Promise<void> {
   console.log("Generating the `licenses.json` file...");
   const specifiedPackages = extractDependenciesFromRootManifest();
 
@@ -140,4 +140,4 @@ function extractDependenciesFromRootManifest() {
   return specifiedPackages;
 }
 
-generateAcknowledgments();
+generateAcknowledgements();

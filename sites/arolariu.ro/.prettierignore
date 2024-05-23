@@ -15,6 +15,7 @@ public
 i18n.inlang
 src/components/ui
 
+readme.md
 **/**/readme.md
 **/**/node_modules
 **/**/.next
@@ -30,5 +31,6 @@ src/components/ui
 
 package-lock.json
 yarn.lock
+pnpm-lock.yaml
 
 Dockerfile

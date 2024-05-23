@@ -31,7 +31,7 @@
     "clean:win": "node -e \"if (process.platform === 'win32') process.exit(1)\" || , if exist .next rmdir /Q /S .next",
     "clean:lin": "node -e \"if (process.platform !== 'win32') process.exit(1)\" || rm -rf .next",
     "dev": "next dev --turbo --experimental-https",
-    "license": "npx tsx .\\scripts\\formatThirdPartyPackages.ts",
+    "license": "npx tsx scripts/generateAcknowledgements.ts",
     "email": "email dev",
     "build": "paraglide-js compile --project i18n.inlang --outdir src/i18n && next build",
     "format": "npm run format:check; npm run format:fix",
@@ -39,7 +39,7 @@
     "format:fix": "prettier --write . --config prettier.config.js --config-precedence prefer-file --cache --cache-strategy metadata",
     "start": "next start",
     "lint": "eslint src/",
-    "lint:fix": "eslint src/  --fix",
+    "lint:fix": "eslint src/ --fix",
     "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
@@ -95,6 +95,7 @@
     "eslint-plugin-jsdoc": "48.2.5",
     "eslint-plugin-react": "7.34.1",
     "eslint-plugin-unicorn": "53.0.0",
+    "glob": "10.3.16",
     "globals": "^15.3.0",
     "postcss": "8.4.38",
     "postcss-simple-vars": "7.0.1",
