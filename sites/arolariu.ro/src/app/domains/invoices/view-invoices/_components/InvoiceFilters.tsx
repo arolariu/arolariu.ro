@@ -4,10 +4,10 @@ import {Button} from "@/components/ui/button";
 import {DashboardIcon, HeartFilledIcon, MoonIcon, SunIcon, TextAlignJustifyIcon} from "@radix-ui/react-icons";
 
 interface Props {
-  filters: {isImportant: boolean; dayOnly: boolean; nightOnly: boolean};
+  filters: Readonly<{isImportant: boolean; dayOnly: boolean; nightOnly: boolean}>;
   displayStyle: "grid" | "list";
   setDisplayStyle: (style: "grid" | "list") => void;
-  setFilters: (filters: {isImportant: boolean; dayOnly: boolean; nightOnly: boolean}) => void;
+  setFilters: (filters: Readonly<{isImportant: boolean; dayOnly: boolean; nightOnly: boolean}>) => void;
 }
 
 export const InvoiceFilters = ({filters, displayStyle, setDisplayStyle, setFilters}: Readonly<Props>) => {

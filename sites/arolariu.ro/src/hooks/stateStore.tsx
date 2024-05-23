@@ -13,8 +13,8 @@ type States = {
 
 type Actions = {
   // Invoice actions:
-  setSelectedInvoice: (invoice: Invoice) => void;
-  removeSelectedInvoice: (invoice: Invoice) => void;
+  setSelectedInvoice: (invoice: Readonly<Invoice>) => void;
+  removeSelectedInvoice: (invoice: Readonly<Invoice>) => void;
 };
 
 export const useZustandStore = create<States & Actions>()(
@@ -22,7 +22,7 @@ export const useZustandStore = create<States & Actions>()(
     persist(
       (set) => ({
         selectedInvoice: {} as Invoice,
-        setSelectedInvoice: (invoice: Invoice) => set({selectedInvoice: invoice}),
+        setSelectedInvoice: (invoice: Readonly<Invoice>) => set({selectedInvoice: invoice}),
         removeSelectedInvoice: () => set({selectedInvoice: {} as Invoice}),
       }),
       {name: "zustand-store", storage: createJSONStorage(() => sessionStorage)},

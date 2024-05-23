@@ -15,7 +15,7 @@ export const ViewInvoiceImageModal = () => {
     transformOrigin: "0 0",
   });
 
-  const handleMouseMove = (event: React.MouseEvent<HTMLImageElement>) => {
+  const handleMouseMove = (event: Readonly<React.MouseEvent<HTMLImageElement>>) => {
     if (isFrozen) return;
 
     const containerRect = event.currentTarget.getBoundingClientRect();
@@ -48,13 +48,13 @@ export const ViewInvoiceImageModal = () => {
     }
   };
 
-  const handleImageClick = (event: React.MouseEvent<HTMLImageElement | HTMLDialogElement>) => {
+  const handleImageClick = (event: Readonly<React.MouseEvent<HTMLImageElement | HTMLDialogElement>>) => {
     const target = event.target as HTMLElement;
     if (target.tagName === "IMG") {
-      setIsFrozen(!isFrozen);
+      return setIsFrozen(!isFrozen);
     } else if (target.tagName === "DIALOG") {
       modalReference.current?.close();
-      setIsFrozen(false);
+      return setIsFrozen(false);
     }
   };
 

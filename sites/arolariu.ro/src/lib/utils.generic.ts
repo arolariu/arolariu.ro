@@ -15,6 +15,6 @@ export const CONFIG_STORE = process.env["CONFIG_STORE"] ?? "";
  * @param inputs different classes to merge
  * @returns the merged classes
  */
-export function cn(...inputs: ClassValue[]) {
+export function cn(...inputs: Readonly<ClassValue[]>) {
   return twMerge(clsx(inputs));
 }

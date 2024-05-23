@@ -8,7 +8,7 @@ import {InvoiceFilters} from "./_components/InvoiceFilters";
 import {InvoiceList} from "./_components/InvoiceList";
 
 interface Props {
-  invoices: Invoice[] | undefined;
+  invoices: Invoice[] | null;
 }
 
 /**
@@ -44,34 +44,26 @@ export default function RenderViewInvoicesScreen({invoices}: Readonly<Props>) {
       );
     }
     setShownInvoices(filteredInvoices);
-  }, [filters]);
+  }, [filters, invoices]);
 
   const calculateInvoiceTotalCost = (): number => {
-    let totalCost = 0;
-    for (const invoice of shownInvoices) {
-      totalCost += invoice.paymentInformation.totalAmount;
-    }
-    return totalCost;
+    return shownInvoices.reduce((totalCost, invoice) => totalCost + invoice.paymentInformation.totalAmount, 0);
   };
 
   const calculateInvoiceTotalSavings = (): number => {
-    let totalSavings = 0;
-    for (const invoice of shownInvoices) {
-      for (const item of invoice.items) {
-        if (item.price < 0) totalSavings += item.price;
-      }
-    }
-    return -totalSavings;
+    return shownInvoices.reduce((totalSavings, invoice) => {
+      const savings = invoice.items
+        .filter((item) => item.price < 0)
+        .reduce((subtotal, item) => subtotal + item.price, 0);
+      return totalSavings + savings;
+    }, 0);
   };
 
   const calculateNumberOfProductsBought = (): number => {
-    let totalProducts = 0;
-    for (const invoice of shownInvoices) {
-      for (const item of invoice.items) {
-        if (item.totalPrice > 0) totalProducts += item.quantity;
-      }
-    }
-    return totalProducts;
+    return shownInvoices.reduce((total, invoice) => {
+      const productsBought = invoice.items.filter((item) => item.totalPrice > 0);
+      return total + productsBought.reduce((subtotal, item) => subtotal + item.quantity, 0);
+    }, 0);
   };
 
   return (

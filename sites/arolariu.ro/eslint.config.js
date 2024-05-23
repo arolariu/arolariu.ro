@@ -68,11 +68,27 @@ const defaultConfig = tseslint.config(
       "unicorn/switch-case-braces": "off",
       "unicorn/prevent-abbreviations": "off",
       "unicorn/no-abusive-eslint-disable": "off",
+      "unicorn/no-array-reduce": "off", // array reduce is useful for reducing arrays and in FP.
+      "functional/prefer-immutable-types": "off", // typescript v5 does not offer a deep readonly type; TBD.
       "unicorn/consistent-function-scoping": "off",
+      "perfectionist/sort-intersection-types": "off", // prettier sorts intersection types automatically.
+      "perfectionist/sort-jsx-props": "off", // prettier sorts JSX props automatically.
+      "functional/no-conditional-statements": "off", // conditional statements are used for conditional rendering.
+      "functional/functional-parameters": "off", // Not applicable to TSX functions.
       "react/prop-types": "off",
+      "functional/no-let": "off", // let is useful for iterators and ahead-of-time computing.
+      "functional/no-return-void": "off", // TSX components do not always have a return statement.
+      "functional/no-mixed-types": "off", // TSX components have mixed types used for props.
       "react/jsx-indent": "off",
+      "perfectionist/sort-object-types": "off", // prettier sorts object types automatically.
+      "perfectionist/sort-interfaces": "off", // prettier sorts interfaces automatically.
+      "functional/no-expression-statements": "off", // side-effects are needed by 3rd party libraries.
       "react/jsx-newline": "off",
+      "perfectionist/sort-objects": "off", // prettier sorts objects automatically.
       "react/jsx-no-bind": "off",
+      "perfectionist/sort-imports": "off", // prettier sorts imports automatically.
+      "perfectionist/sort-named-imports": "off", // prettier sorts named imports automatically.
+      "perfectionist/sort-union-types": "off", // prettier sorts union types automatically.
       "react/jsx-max-depth": "off",
       "react/no-multi-comp": "off",
       "react/no-array-index-key": "off", // this is a good rule that we violate for some components.
