@@ -151,7 +151,7 @@ export default async function Footer() {
               <ul className='mt-2 space-y-2'>
                 <li>
                   <Link
-                    href='/about/the-platform'
+                    href='/about'
                     className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
                     What is this?
                   </Link>
