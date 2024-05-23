@@ -1,9 +1,8 @@
 /** @format */
 
 import {TIMESTAMP} from "@/lib/utils.generic";
-import {ExternalLinkIcon} from "@radix-ui/react-icons";
-import Link from "next/link";
 import licenses from "../../../licenses.json";
+import AcknowledgemenetsTable from "./island";
 
 type Package = {
   name: string;
@@ -56,39 +55,8 @@ export default async function AcknowledgementsPage() {
             % are typedef packages)
           </span>
         </div>
-        <div className='mx-auto grid max-w-3xl grid-cols-12 gap-10'>
-          {packages.map((license) => (
-            <Link
-              key={license.name}
-              className='group col-span-full flex-col space-y-1 overflow-hidden'
-              href={
-                license.homepage?.startsWith("https")
-                  ? license.homepage
-                  : `https://www.npmjs.com/package/${license.name}`.replaceAll("//", "/")
-              }
-              target='_blank'
-              rel='noopener noreferrer'
-              aria-label={`Open repository for ${license.name}`}>
-              <div className='inline-flex items-end'>
-                <div className='space-x-2 duration-300 ease-in group-hover:translate-x-6 group-hover:opacity-0'>
-                  <span className='text-2xl'>{license.name}</span>
-                  <span className='opacity-50'>{license.version}</span>
-                </div>
-
-                <div className='absolute mb-1 -translate-x-4 text-blue-600 opacity-0 duration-300 ease-in group-hover:translate-x-0 group-hover:opacity-100'>
-                  <ExternalLinkIcon className='inline' />
-                  <span className='text-sm'> {license.homepage} </span>
-                </div>
-              </div>
-
-              <article className='text-gray-400'>{license.description}</article>
-              <article className='text-end text-gray-400'>
-                {[license.license, license.author].filter(Boolean).join(" license, by ")}
-              </article>
-            </Link>
-          ))}
-        </div>
       </section>
+      <AcknowledgemenetsTable packages={packages} />
     </main>
   );
 }
