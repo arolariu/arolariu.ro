@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
-import Product, {ItemCategory} from "@/types/invoices/Product";
+import Product, {ProductCategory} from "@/types/invoices/Product";
 import {useState} from "react";
 
 /**
@@ -66,7 +66,7 @@ export default function ProductCard({item}: Readonly<{item: Product}>) {
           </TableRow>
           <TableRow>
             <TableCell>Category</TableCell>
-            <TableCell>{ItemCategory[itemState.category]}</TableCell>
+            <TableCell>{ProductCategory[itemState.category]}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell>Quantity</TableCell>

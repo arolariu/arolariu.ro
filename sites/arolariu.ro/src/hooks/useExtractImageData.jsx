@@ -29,7 +29,7 @@ export default function useExtractImageData(image) {
   };
 
   useEffect(() => {
-    if (image != null) {
+    if (image !== null) {
       extractBase64ImageData(image);
       extractImageMetadata(image);
     }

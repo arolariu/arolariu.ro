@@ -28,7 +28,7 @@ export const EventCard = ({title, description, date, location, imagePath, formLi
           src={imagePath ?? "https://dummyimage.com/720x400&text=TBA"}
           width={720}
           height={400}
-          alt={title + " event image"}
+          alt={`${title} event image`}
         />
         <div className='p-4 2xsm:text-center md:text-left'>
           <h1 className='mb-2 text-xl font-semibold text-gray-800 dark:text-white'>{title}</h1>

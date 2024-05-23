@@ -58,9 +58,9 @@ export async function fetchConfigurationValue(key: string): Promise<string> {
  * @param base64String The base64 string to extract the mime type from
  * @returns The mime type
  */
-export function getMimeTypeFromBase64(base64String: string): string | undefined {
+export function getMimeTypeFromBase64(base64String: string): string | null {
   const match = /^data:(.*?);base64,/.exec(base64String);
-  return match ? match[1] : undefined;
+  return match ? match.at(1)! : null;
 }
 
 /**
@@ -77,8 +77,8 @@ export async function base64ToBlob(base64String: string): Promise<Blob> {
 
   const byteCharacters = atob(base64);
   const byteArrays = [];
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteArrays.push(byteCharacters.codePointAt(i) as number);
+  for (let index = 0; index < byteCharacters.length; ++index) {
+    byteArrays.push(byteCharacters.codePointAt(index) as number);
   }
 
   const byteArray = new Uint8Array(byteArrays);

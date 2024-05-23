@@ -12,7 +12,7 @@ type Package = {
   homepage?: string;
   version: string;
   license: string;
-  dependecyType: string | "production" | "development";
+  dependecyType: string;
 };
 
 /**

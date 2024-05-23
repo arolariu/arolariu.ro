@@ -1,3 +1,5 @@
+/** @format */
+
 "use client";
 
 // Inspired by react-hot-toast library
@@ -169,7 +171,7 @@ function toast({...props}: Toast) {
   });
 
   return {
-    id: id,
+    id,
     dismiss,
     update,
   };

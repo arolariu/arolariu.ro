@@ -12,7 +12,7 @@ export const InvoiceCard = ({invoice}: Readonly<{invoice: Invoice}>) => {
       <Link
         href={`./view-invoice/${invoice.id}`}
         className='relative block h-48 overflow-hidden rounded'>
-        {!!isPdfImage && (
+        {Boolean(isPdfImage) && (
           <div className='flex h-full w-full items-center justify-center bg-gray-100'>
             <p className='text-2xl text-gray-500'>PDF</p>
           </div>

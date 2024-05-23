@@ -58,10 +58,10 @@ const Navigation = ({className}: Readonly<{className?: string}>) => {
           </Link>
         </li>
       )}
-      {!!isSignedIn && (
+      {Boolean(isSignedIn) && (
         <li>
           <Link
-            href={`/accounts/${user.id}`}
+            href={`/accounts/${user!.id}`}
             className='indicator mr-5 hover:text-yellow-300'>
             Account
           </Link>
@@ -128,7 +128,7 @@ export default function Header() {
                 </Link>
               </SignedOut>
             )}
-            {!!isSignedIn && (
+            {Boolean(isSignedIn) && (
               <SignedIn>
                 <UserButton />
               </SignedIn>

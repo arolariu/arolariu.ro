@@ -40,7 +40,7 @@ export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: In
             <button
               type='button'
               className={`${
-                currentStep == 1 ? "border-indigo-500" : "border-gray-300"
+                currentStep === 1 ? "border-indigo-500" : "border-gray-300"
               } " flex-grow cursor-pointer border-b-2 px-1 py-2 text-lg`}
               onClick={() => setCurrentStep(1)}>
               Summary
@@ -48,7 +48,7 @@ export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: In
             <button
               type='button'
               className={`${
-                currentStep == 2 ? "border-indigo-500" : "border-gray-300"
+                currentStep === 2 ? "border-indigo-500" : "border-gray-300"
               } " mx-1 flex-grow cursor-pointer border-b-2 px-1 py-2 text-lg`}
               onClick={() => setCurrentStep(2)}>
               Items
@@ -56,7 +56,7 @@ export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: In
             <button
               type='button'
               className={`${
-                currentStep == 3 ? "border-indigo-500" : "border-gray-300"
+                currentStep === 3 ? "border-indigo-500" : "border-gray-300"
               } " flex-grow cursor-pointer border-b-2 px-1 py-2 text-lg`}
               onClick={() => setCurrentStep(3)}>
               Additional Information
@@ -71,7 +71,7 @@ export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: In
               {paymentInformation.currency.symbol}
             </span>
             <Link
-              href={`../edit-invoice/${invoice.id}`}
+              href={`../edit-invoice/${id}`}
               className='ml-auto flex rounded border-0 bg-indigo-500 px-6 py-2 text-white hover:bg-indigo-600 focus:outline-none'>
               Edit this invoice
             </Link>

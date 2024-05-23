@@ -16,8 +16,8 @@ import InvoicePreview from "./_components/InvoicePreview";
 export default function RenderCreateInvoiceScreen() {
   const {toast} = useToast();
   const router = useRouter();
-  const [image, setImage] = useState<Blob | undefined>();
-  const [isValidMimeType, setIsValidMimeType] = useState<boolean | undefined>();
+  const [image, setImage] = useState<Blob | null>(null);
+  const [isValidMimeType, setIsValidMimeType] = useState<boolean | null>(null);
   const validMimeTypes = new Set(["image/jpeg", "image/jpg", "image/png", "application/pdf"]);
 
   const ctaText =
@@ -27,11 +27,11 @@ export default function RenderCreateInvoiceScreen() {
 
   const handleImageClientSideUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     event.preventDefault();
-    const files = event.target.files;
+    const {files} = event.target;
     if (files && files.length > 0) {
       const image = files[0] as Blob;
       const isValidMimeType = validMimeTypes.has(image.type);
-      setImage(isValidMimeType ? image : undefined);
+      setImage(isValidMimeType ? image : null);
       setIsValidMimeType(isValidMimeType);
     }
   };
@@ -40,8 +40,8 @@ export default function RenderCreateInvoiceScreen() {
     console.log(image);
 
     // TODO: completet this action + toast router push page.
-    setImage(undefined);
-    setIsValidMimeType(undefined);
+    setImage(null);
+    setIsValidMimeType(null);
 
     toast({
       variant: "destructive",
@@ -134,8 +134,8 @@ export default function RenderCreateInvoiceScreen() {
             className='btn btn-secondary mx-auto mt-4'
             type='button'
             onClick={() => {
-              setImage(undefined);
-              setIsValidMimeType(undefined);
+              setImage(null);
+              setIsValidMimeType(null);
             }}>
             Clear the image
           </button>

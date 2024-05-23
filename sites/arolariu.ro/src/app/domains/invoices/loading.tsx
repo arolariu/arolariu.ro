@@ -11,7 +11,7 @@ const Skeleton = ({className}: Readonly<{className: string}>) => (
 );
 
 const SVGSkeleton = ({className}: Readonly<{className: string}>) => (
-  <svg className={className + " animate-pulse rounded bg-gray-300"} />
+  <svg className={`${className} animate-pulse rounded bg-gray-300`} />
 );
 
 /**

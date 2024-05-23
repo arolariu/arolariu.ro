@@ -2,7 +2,7 @@
 
 import Invoice, {type InvoiceCategory, type Recipe} from "@/types/invoices/Invoice";
 import Merchant, {MerchantCategory} from "@/types/invoices/Merchant";
-import Product, {Allergen, ItemCategory} from "@/types/invoices/Product";
+import Product, {Allergen, ProductCategory} from "@/types/invoices/Product";
 import {faker as fake} from "@faker-js/faker";
 
 const generateFakeInvoice = (): Invoice => {
@@ -97,7 +97,7 @@ const generateFakeInvoiceProduct = (): Product => {
   const totalPrice = price * quantity;
 
   return {
-    category: fake.number.int({min: 0, max: 13}) as ItemCategory,
+    category: fake.number.int({min: 0, max: 13}) as ProductCategory,
     detectedAllergens: [...allergens] as Allergen[],
     genericName: fake.commerce.productName(),
     price,

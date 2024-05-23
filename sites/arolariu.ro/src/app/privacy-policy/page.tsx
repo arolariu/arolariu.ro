@@ -19,13 +19,14 @@ export default async function PrivacyPolicyPage() {
           <h2 className='text-xl font-black tracking-widest underline'>Introduction</h2>
           <article className='text-pretty leading-5'>
             At <code> AROLARIU.RO </code>
-            ("us", "we", "our" or the "Company") we value your privacy and the importance of safeguarding your data.
-            This Privacy Policy (the "Policy") describes our privacy practices for the activities set out below.
+            (&ldquo;us&rdquo;, &ldquo;we&rdquo;, &ldquo;our&rdquo; or the &rdquo;Company&ldquo;) we value your privacy
+            and the importance of safeguarding your data. This Privacy Policy (the &ldquo;Policy&rdquo;) describes our
+            privacy practices for the activities set out below.
             <br />
             <br />
             As per your rights, we inform you how we collect, store, access, and otherwise process information relating
-            to individuals. In this Policy, personal data ("Personal Data") refers to any information that on its own,
-            or in combination with other available information, can identify an individual.
+            to individuals. In this Policy, personal data (&ldquo;Personal Data&rdquo;) refers to any information that
+            on its own, or in combination with other available information, can identify an individual.
           </article>
           <article className='text-pretty pt-4 leading-5'>
             We are committed to protecting your privacy in accordance with the highest level of privacy regulation.{" "}
@@ -33,17 +34,17 @@ export default async function PrivacyPolicyPage() {
             As such, we follow the obligations under the below regulations:
             <ul className='list-inside list-disc pt-2'>
               <li>
-                California's Consumer Privacy Act (CCPA) / California Privacy Rights Act (CPRA) and California Online
-                Privacy Protection Act (CalOPPA)
+                California&quot;s Consumer Privacy Act (CCPA) / California Privacy Rights Act (CPRA) and California
+                Online Privacy Protection Act (CalOPPA)
               </li>
               <li>
-                Canada's Personal Information Protection and Electronic Documents Act (PIPEDA) and the applicable
+                Canada&quot;s Personal Information Protection and Electronic Documents Act (PIPEDA) and the applicable
                 provincial legislations
               </li>
-              <li>The European Union's General Data Protection Regulation (GDPR)</li>
-              <li>South Africa’s Protection of Personal Information Act (POPIA)</li>
+              <li>The European Union&quot;s General Data Protection Regulation (GDPR)</li>
+              <li>South Africa&quot;s Protection of Personal Information Act (POPIA)</li>
               <li>Virginia Consumer Data Protection Act (VCDPA)</li>
-              <li>Brazil’s Data Protection Legislation (LGPD)</li>
+              <li>Brazil&quot;s Data Protection Legislation (LGPD)</li>
               <li>Connecticut Data Privacy Act (CTDPA)</li>
               <li>Utah Consumer Privacy Act (UCPA)</li>
               <li>Colorado Privacy Act (CPA)</li>
@@ -59,7 +60,7 @@ export default async function PrivacyPolicyPage() {
             be accessed through (non-
             <code>AROLARIU.RO</code>) links that we may provide to you. These sites are owned and operated independently
             from us, and they have their own separate privacy and data collection practices. Any Personal Data that you
-            provide to these websites will be governed by the third-party’s own privacy policy. We cannot accept
+            provide to these websites will be governed by the third-party&quot;s own privacy policy. We cannot accept
             liability for the actions or policies of these independent sites, and we are not responsible for the content
             or privacy practices of such sites.
           </article>
@@ -169,7 +170,7 @@ export default async function PrivacyPolicyPage() {
               represent that you have the authority to do so and acknowledge that it will be used in accordance with
               this Policy. If you believe that your Personal Data has been provided to us improperly, or to otherwise
               exercise your rights relating to your Personal Data, please contact us by using the information set out in
-              the "Contact us" section below.
+              the &ldquo;Contact us&rdquo; section below.
             </span>
           </article>
         </section>
@@ -219,8 +220,8 @@ export default async function PrivacyPolicyPage() {
             We may receive your Personal Data from third parties such as companies subscribing to
             <code> AROLARIU.RO </code>
             services, partners and other sources. This Personal Data is not collected by us but by a third party and is
-            subject to the relevant third party’s own separate privacy and data collection policies. We do not have any
-            control or input on how your Personal Data is handled by third parties. As always, you have the right to
+            subject to the relevant third party&quot;s own separate privacy and data collection policies. We do not have
+            any control or input on how your Personal Data is handled by third parties. As always, you have the right to
             review and rectify this information. If you have any questions you should first contact the relevant third
             party for further information about your Personal Data. Where that third party is unresponsive to your
             rights, you may contact the Data Protection Officer at
@@ -231,8 +232,8 @@ export default async function PrivacyPolicyPage() {
             <br />
             Our websites and services may contain links to other websites, applications and services maintained by third
             parties. The information practices of such other services, or of social media networks that host our branded
-            social media pages, are governed by third parties’ privacy statements, which you should review to better
-            understand those third parties’ privacy practices.
+            social media pages, are governed by third parties&quot; privacy statements, which you should review to
+            better understand those third parties&quot; privacy practices.
           </article>
         </section>
         <section>
@@ -329,7 +330,7 @@ export default async function PrivacyPolicyPage() {
             <br />
             <br />
             For more information about how targeted advertising works, you can visit the Network Advertising
-            Initiative’s ("NAI") educational page at{" "}
+            Initiative&quot;s (&ldquo;NAI&rdquo;) educational page at{" "}
             <Link
               className='text-sm italic text-blue-500'
               href='https://www.networkadvertising.org/understanding-online-advertising/how-does-it-work'>
@@ -365,7 +366,7 @@ export default async function PrivacyPolicyPage() {
             only to maintain and improve our products and services. <br />
             <br />
             For further information on the recipients of your Personal Data, please contact us by using the information
-            in the "Contacting us" section below.
+            in the &ldquo;Contact us&rdquo; section below.
           </article>
         </section>
         <section>
@@ -398,7 +399,7 @@ export default async function PrivacyPolicyPage() {
           </article>
         </section>
         <section>
-          <h2 className='text-xl font-black tracking-widest underline'>Children's Privacy</h2>
+          <h2 className='text-xl font-black tracking-widest underline'>Children&quot;s Privacy</h2>
           <article className='text-pretty leading-5'>
             Our website is not intended for children under the age of 13. We do not knowingly collect Personal Data from
             children under the age of 13. If you are a parent or guardian and you are aware that your child has provided
@@ -443,7 +444,7 @@ export default async function PrivacyPolicyPage() {
             You have the right to access, correct, update or delete your Personal Data. You also have the right to
             object to the processing of your Personal Data, ask us to restrict the processing of your Personal Data or
             request portability of your Personal Data. You can exercise these rights by contacting us using the contact
-            details provided under the "Contacting us" section below.
+            details provided under the &ldquo;Contact us&rdquo; section below.
             <br />
             <br />
             <br />
@@ -466,8 +467,8 @@ export default async function PrivacyPolicyPage() {
             <br />
             <br />
             If you want to file an appeal or complaint about how we process your Personal Data, you can contact us using
-            the contact details provided under the "Contacting us" section below. You also have the right to file a
-            complaint with the data protection authority in your jurisdiction.
+            the contact details provided under the &ldquo;Contact us&rdquo; section below. You also have the right to
+            file a complaint with the data protection authority in your jurisdiction.
             <br />
             In the case that you did contact us and you are not satisfied with our response, you have the right to file
             an appeal with the attorney general located here:
@@ -516,15 +517,15 @@ export default async function PrivacyPolicyPage() {
           <article className='text-pretty leading-5'>
             If you have given your consent to the processing of your Personal Data, you have the right to withdraw your
             consent at any time. To withdraw your consent, please contact us using the contact details provided under
-            the "Contacting us" section below.
+            the &ldquo;Contact us&rdquo; section below.
           </article>
         </section>
         <section>
           <h2 className='text-xl font-black tracking-widest underline'>How to Exercise Your Rights</h2>
           <article className='text-pretty leading-5'>
-            To exercise your rights, please contact us using the contact details provided under the "Contacting us"
-            section below. We will respond to your request within a reasonable timeframe and in accordance with
-            applicable law. <br />
+            To exercise your rights, please contact us using the contact details provided under the &ldquo;Contact
+            us&rdquo; section below. We will respond to your request within a reasonable timeframe and in accordance
+            with applicable law. <br />
             <br />
             For your own safety and security, we may need to verify your identity before responding to your request. We
             will make reasonable efforts to verify your identity by asking for information that we have on file about

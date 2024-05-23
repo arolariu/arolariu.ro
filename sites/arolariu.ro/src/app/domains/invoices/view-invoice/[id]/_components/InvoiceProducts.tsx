@@ -4,11 +4,10 @@
 
 import {Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import {useZustandStore} from "@/hooks/stateStore";
-import type Product from "@/types/invoices/Product";
 
 export const InvoiceProducts = () => {
   const invoice = useZustandStore((state) => state.selectedInvoice);
-  const items: Product[] = invoice.items;
+  const {items} = invoice;
 
   return (
     <Table className='mx-auto mb-8 border-b border-gray-200'>
@@ -23,7 +22,7 @@ export const InvoiceProducts = () => {
       <TableBody>
         {items.map((item, index) => (
           <TableRow
-            key={item.rawName + index}
+            key={`${item.rawName}#${String(index)}`}
             className='text-center odd:bg-gray-900'>
             <TableCell>{item.rawName}</TableCell>
             <TableCell>{item.price}</TableCell>

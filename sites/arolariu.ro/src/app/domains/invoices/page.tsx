@@ -51,7 +51,7 @@ export default async function InvoicePage() {
             </Link>
 
             {/* If user is authenticated, show the `My Receipts` button too. */}
-            {!!isAuthenticated && (
+            {Boolean(isAuthenticated) && (
               <Link
                 href='/domains/invoices/view-invoices'
                 className='rounded border-0 bg-gray-100 px-6 py-2 text-lg text-gray-700 hover:bg-gray-200 focus:outline-none'>

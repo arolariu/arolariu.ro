@@ -8,11 +8,11 @@ import {useEffect, useState} from "react";
  */
 export default function useWindowSize() {
   const [windowSize, setWindowSize] = useState<{
-    width: number | undefined;
-    height: number | undefined;
+    width: number | null;
+    height: number | null;
   }>({
-    width: undefined,
-    height: undefined,
+    width: null,
+    height: null,
   });
 
   useEffect(() => {

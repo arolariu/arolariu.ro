@@ -1,8 +1,7 @@
 /** @format */
 
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
-import type Invoice from "@/types/invoices/Invoice";
-import {InvoiceCategory} from "@/types/invoices/Invoice";
+import Invoice, {InvoiceCategory} from "@/types/invoices/Invoice";
 import {useRouter} from "next/navigation";
 import {InvoiceCard} from "./InvoiceCard";
 
@@ -71,5 +70,7 @@ export const InvoiceList = ({invoices, displayStyle}: Readonly<Props>) => {
           ))}
         </section>
       );
+    default:
+      return null;
   }
 };

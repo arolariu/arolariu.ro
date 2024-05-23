@@ -13,8 +13,8 @@ import ProductTable from "./_components/ProductTable";
  */
 export default function RenderEditInvoiceScreen({invoice}: Readonly<{invoice: Invoice}>) {
   const {windowSize} = useWindowSize();
-  const merchant = invoice.merchant;
-  const additionalMetadata = invoice.additionalMetadata;
+  const {merchant, additionalMetadata, description, isImportant, estimatedSurvivalDays, paymentInformation} = invoice;
+  const {name, address, phoneNumber} = merchant;
 
   return (
     <section className='mx-auto rounded-2xl border-2'>
@@ -37,35 +37,35 @@ export default function RenderEditInvoiceScreen({invoice}: Readonly<{invoice: In
               <tbody>
                 <tr>
                   <td>Currency</td>
-                  <td>{invoice.paymentInformation.currency.name}</td>
+                  <td>{paymentInformation.currency.name}</td>
                 </tr>
                 <tr>
                   <td>Description</td>
-                  <td>{invoice.description}</td>
+                  <td>{description}</td>
                 </tr>
                 <tr>
                   <td>Estimated Survival Days</td>
-                  <td>{invoice.estimatedSurvivalDays}</td>
+                  <td>{estimatedSurvivalDays}</td>
                 </tr>
                 <tr>
                   <td>Identified Date</td>
-                  <td>{invoice.paymentInformation.dateOfPurchase.toUTCString()}</td>
+                  <td>{paymentInformation.dateOfPurchase.toUTCString()}</td>
                 </tr>
                 <tr className='table-row'>
                   <td>Is Important</td>
-                  <td>{String(invoice.isImportant)}</td>
+                  <td>{String(isImportant)}</td>
                 </tr>
                 <tr>
                   <td>Merchant Name</td>
-                  <td>{merchant.name}</td>
+                  <td>{name}</td>
                 </tr>
                 <tr className='table-row'>
                   <td>Merchant Address</td>
-                  <td>{merchant.address}</td>
+                  <td>{address}</td>
                 </tr>
                 <tr>
                   <td>Merchant Phone Number</td>
-                  <td>{merchant.phoneNumber}</td>
+                  <td>{phoneNumber}</td>
                 </tr>
                 {additionalMetadata.flatMap((metadata, index) => (
                   <tr key={index}>
