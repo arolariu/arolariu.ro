@@ -1,9 +1,15 @@
 /** @format */
 
+import type {Metadata} from "next";
 import Link from "next/link";
 
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "The privacy policy page for the `arolariu.ro` platform.",
+};
+
 /**
- *
+ * The privacy policy page.
  */
 export default async function PrivacyPolicyPage() {
   return (

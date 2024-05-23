@@ -1,6 +1,7 @@
 /** @format */
 
 import {TIMESTAMP} from "@/lib/utils.generic";
+import type {Metadata} from "next";
 import licenses from "../../../licenses.json";
 import AcknowledgementsTable from "./island";
 
@@ -12,6 +13,11 @@ type Package = {
   version: string;
   license: string;
   dependecyType: string;
+};
+
+export const metadata: Metadata = {
+  title: "Acknowledgements",
+  description: "Acknowledgements page for the third-party packages used in this project.",
 };
 
 /**
