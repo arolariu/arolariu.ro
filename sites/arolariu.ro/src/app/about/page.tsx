@@ -20,7 +20,7 @@ export default async function AboutPage() {
         <h1 className='mb-4 bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent sm:text-3xl '>
           About Us
         </h1>
-        <article className='mx-auto w-2/3 text-center'>
+        <article>
           The <code>arolariu.ro</code> story began in 2022, when the author - Alexandru-Razvan Olariu, wanted to
           understand how websites work.
           <br />
@@ -30,8 +30,8 @@ export default async function AboutPage() {
           <br />
           <br />
           Alexandru currently works as a software engineer at Microsoft. To learn more about him, check the right
-          section of this page. The platform is built using the latest state-of-the-art technologies. To learn more
-          about it, check the left section of this page.
+          section of this page. <br /> The platform is built using the latest state-of-the-art technologies. To learn
+          more about it, check the left section of this page.
         </article>
       </section>
       <section className='mb-16 flex flex-col flex-nowrap pb-16 lg:flex-row'>
