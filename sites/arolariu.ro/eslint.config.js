@@ -15,7 +15,7 @@ import eslintPluginUnicorn from "eslint-plugin-unicorn";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
-const defaultConfig = tseslint.config(
+const eslintConfig = tseslint.config(
   {languageOptions: {globals: {...globals.browser, ...globals.node}}},
   eslint.configs.recommended,
   eslint.configs.all,
@@ -170,7 +170,7 @@ const defaultConfig = tseslint.config(
 );
 
 // Add the global ignores to the default config.
-defaultConfig.forEach((config) => {
+eslintConfig.forEach((config) => {
   const ignoreList = ["*.config.{js,ts}", "**/node_modules/**", "**/ui/**", "**/i18n/**"];
   if (config.ignores === undefined) {
     config.ignores = [...ignoreList];
@@ -179,4 +179,4 @@ defaultConfig.forEach((config) => {
   }
 });
 
-export default defaultConfig;
+export default eslintConfig;
