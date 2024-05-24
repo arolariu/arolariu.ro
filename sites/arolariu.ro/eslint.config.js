@@ -65,6 +65,7 @@ const defaultConfig = tseslint.config(
       "jsdoc/check-param-names": "off",
       "unicorn/filename-case": "off",
       "unicorn/no-keyword-prefix": "off",
+      "react-hooks/exhaustive-deps": "off", // sometimes useEffect hooks depend on a prop that is not in the dependency array.
       "unicorn/switch-case-braces": "off",
       "unicorn/prevent-abbreviations": "off",
       "unicorn/no-abusive-eslint-disable": "off",

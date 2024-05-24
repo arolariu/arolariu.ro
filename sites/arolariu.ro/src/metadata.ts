@@ -16,6 +16,63 @@ const options = {
     "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania.",
 } as const;
 
+const appleTouchIcons: Icon[] = [
+  {
+    rel: "apple-touch-icon",
+    type: "image/png",
+    sizes: "57x57",
+    url: "manifest/apple-touch-icon-57x57.png",
+  },
+  {
+    rel: "apple-touch-icon",
+    type: "image/png",
+    sizes: "60x60",
+    url: "manifest/apple-touch-icon-60x60.png",
+  },
+  {
+    rel: "apple-touch-icon",
+    type: "image/png",
+    sizes: "72x72",
+    url: "manifest/apple-touch-icon-72x72.png",
+  },
+  {
+    rel: "apple-touch-icon",
+    type: "image/png",
+    sizes: "76x76",
+    url: "manifest/apple-touch-icon-76x76.png",
+  },
+  {
+    rel: "apple-touch-icon",
+    type: "image/png",
+    sizes: "114x114",
+    url: "manifest/apple-touch-icon-114x114.png",
+  },
+  {
+    rel: "apple-touch-icon",
+    type: "image/png",
+    sizes: "120x120",
+    url: "manifest/apple-touch-icon-120x120.png",
+  },
+  {
+    rel: "apple-touch-icon",
+    type: "image/png",
+    sizes: "144x144",
+    url: "manifest/apple-touch-icon-144x144.png",
+  },
+  {
+    rel: "apple-touch-icon",
+    type: "image/png",
+    sizes: "152x152",
+    url: "manifest/apple-touch-icon-152x152.png",
+  },
+  {
+    rel: "apple-touch-icon",
+    type: "image/png",
+    sizes: "180x180",
+    url: "manifest/apple-touch-icon-180x180.png",
+  },
+] as const;
+
 export const metadata: Metadata = {
   metadataBase: options.siteUrl,
   title: {
@@ -79,59 +136,6 @@ export const metadata: Metadata = {
       sizes: "32x32",
       url: "manifest/favicon-32x32.png",
     },
-    {
-      rel: "apple-touch-icon",
-      type: "image/png",
-      sizes: "57x57",
-      url: "manifest/apple-touch-icon-57x57.png",
-    },
-    {
-      rel: "apple-touch-icon",
-      type: "image/png",
-      sizes: "60x60",
-      url: "manifest/apple-touch-icon-60x60.png",
-    },
-    {
-      rel: "apple-touch-icon",
-      type: "image/png",
-      sizes: "72x72",
-      url: "manifest/apple-touch-icon-72x72.png",
-    },
-    {
-      rel: "apple-touch-icon",
-      type: "image/png",
-      sizes: "76x76",
-      url: "manifest/apple-touch-icon-76x76.png",
-    },
-    {
-      rel: "apple-touch-icon",
-      type: "image/png",
-      sizes: "114x114",
-      url: "manifest/apple-touch-icon-114x114.png",
-    },
-    {
-      rel: "apple-touch-icon",
-      type: "image/png",
-      sizes: "120x120",
-      url: "manifest/apple-touch-icon-120x120.png",
-    },
-    {
-      rel: "apple-touch-icon",
-      type: "image/png",
-      sizes: "144x144",
-      url: "manifest/apple-touch-icon-144x144.png",
-    },
-    {
-      rel: "apple-touch-icon",
-      type: "image/png",
-      sizes: "152x152",
-      url: "manifest/apple-touch-icon-152x152.png",
-    },
-    {
-      rel: "apple-touch-icon",
-      type: "image/png",
-      sizes: "180x180",
-      url: "manifest/apple-touch-icon-180x180.png",
-    },
+    ...appleTouchIcons,
   ] satisfies Icon[],
 };

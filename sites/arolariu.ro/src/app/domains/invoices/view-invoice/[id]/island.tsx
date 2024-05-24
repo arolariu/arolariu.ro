@@ -21,12 +21,13 @@ export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: In
   const {id, description, paymentInformation, isImportant} = invoice;
   const [currentStep, setCurrentStep] = useState<number>(1);
   const buttonStyle = ["border-indigo-500", "border-gray-300"];
+  const isDifferentInvoice = selectedInvoice !== invoice;
 
   useEffect(() => {
     setSelectedInvoice(invoice);
-  }, [selectedInvoice !== invoice]);
+  }, [isDifferentInvoice]);
 
-  if (selectedInvoice !== invoice) return;
+  if (isDifferentInvoice) return;
   return (
     <section className='mx-auto py-12'>
       <div className='mx-auto flex flex-wrap justify-center'>

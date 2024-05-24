@@ -1,8 +1,10 @@
 /** @format */
 
-import Invoice, {type InvoiceCategory, type Recipe} from "@/types/invoices/Invoice";
-import Merchant, {MerchantCategory} from "@/types/invoices/Merchant";
-import Product, {Allergen, ProductCategory} from "@/types/invoices/Product";
+import type {Allergen} from "@/types/invoices/Allergen";
+import Invoice, {type InvoiceCategory} from "@/types/invoices/Invoice";
+import Merchant, {type MerchantCategory} from "@/types/invoices/Merchant";
+import Product, {type ProductCategory} from "@/types/invoices/Product";
+import type {Recipe} from "@/types/invoices/Recipe";
 import {faker as fake} from "@faker-js/faker";
 
 const generateFakeInvoice = (): Invoice => {
