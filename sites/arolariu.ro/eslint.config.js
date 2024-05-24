@@ -172,11 +172,8 @@ const eslintConfig = tseslint.config(
 // Add the global ignores to the default config.
 eslintConfig.forEach((config) => {
   const ignoreList = ["*.config.{js,ts}", "**/node_modules/**", "**/ui/**", "**/i18n/**"];
-  if (config.ignores === undefined) {
-    config.ignores = [...ignoreList];
-  } else {
-    config.ignores = [...config.ignores, ...ignoreList];
-  }
+  config.ignores = config.ignores ? [...config.ignores, ...ignoreList] : [...ignoreList];
 });
 
 export default eslintConfig;
+
