@@ -4,9 +4,9 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {Toaster} from "@/components/ui/toaster";
 import {fonts} from "@/fonts";
-import {languageTag} from "@/i18n/runtime";
 import {ClerkProvider} from "@clerk/nextjs";
-import {LanguageProvider} from "@inlang/paraglide-next";
+import {NextIntlClientProvider as TranslationProvider} from "next-intl";
+import {getLocale, getMessages} from "next-intl/server";
 import {ThemeProvider} from "next-themes";
 import {Suspense, type PropsWithChildren} from "react";
 import "./globals.css";
@@ -20,6 +20,9 @@ export {metadata} from "@/metadata";
  * @returns The root layout.
  */
 export default async function RootLayout({children}: Readonly<PropsWithChildren<{}>>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
     <ClerkProvider
       afterSignInUrl='/'
@@ -27,14 +30,13 @@ export default async function RootLayout({children}: Readonly<PropsWithChildren<
       afterSignOutUrl='/'
       signInUrl='/auth/sign-in'
       signUpUrl='/auth/sign-up'>
-      <LanguageProvider>
-        <html
-          lang={languageTag()}
-          suppressHydrationWarning
-          className={fonts[0]?.className}
-          // TODO: implement function with RxJs to automatically set the font based on user preferences.
-          dir='ltr'>
-          <body className='bg-white text-black dark:bg-black dark:text-white'>
+      <html
+        lang={locale}
+        suppressHydrationWarning
+        className={fonts[0]?.className}
+        dir='ltr'>
+        <body className='bg-white text-black dark:bg-black dark:text-white'>
+          <TranslationProvider messages={messages}>
             <ThemeProvider
               attribute='class'
               themes={["light", "dark"]}
@@ -45,9 +47,9 @@ export default async function RootLayout({children}: Readonly<PropsWithChildren<
               <Toaster />
               <Footer />
             </ThemeProvider>
-          </body>
-        </html>
-      </LanguageProvider>
+          </TranslationProvider>
+        </body>
+      </html>
     </ClerkProvider>
   );
 }

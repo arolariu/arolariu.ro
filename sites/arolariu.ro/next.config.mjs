@@ -2,9 +2,9 @@
 
 // @ts-check
 
-import {paraglide as withTranslationInit} from "@inlang/paraglide-next/plugin";
 import withBundleAnalyzerInit from "@next/bundle-analyzer";
 import withSerwistInit from "@serwist/next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 /**
  * @format
@@ -119,16 +119,5 @@ const withBundleAnalyzer = withBundleAnalyzerInit({
   enabled: process.env.ANALYZE === "true",
 });
 
-const withTranslation = withTranslationInit({
-  paraglide: {
-    project: "./i18n.inlang",
-    outdir: "./src/i18n",
-  },
-  i18n: {
-    defaultLocale: "en",
-    locales: ["en", "ro"],
-  },
-  ...nextConfig,
-});
-
-export default withBundleAnalyzer(withSerwist(withTranslation));
+const withTranslation = createNextIntlPlugin();
+export default withTranslation(withBundleAnalyzer(withSerwist(nextConfig)));

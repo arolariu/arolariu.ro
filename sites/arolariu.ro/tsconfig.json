@@ -20,13 +20,10 @@
 		"strictFunctionTypes": true,
 		"strictNullChecks": true,
 		"strictPropertyInitialization": true,
-		"declaration": true,
-		"declarationDir": "./src/types",
-		"declarationMap": true,
 		"noEmit": true,
 		"removeComments": true,
 		"allowJs": true,
-		"checkJs": false, // set to true when paraglide fixes their JS types
+		"checkJs": true,
 		"lib": ["dom", "dom.iterable", "esnext", "webworker"],
 		"target": "esnext",
 		"diagnostics": true,
@@ -52,6 +49,6 @@
 		},
 		"types": ["@types/node", "@serwist/next/typings"]
 	},
-	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "postcss.config.cjs"],
-	"exclude": ["node_modules", "src/components/ui", "src/i18n"],
+	"include": ["**/*.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "postcss.config.cjs"],
+	"exclude": ["node_modules"],
 }

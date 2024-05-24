@@ -138,6 +138,7 @@ const eslintConfig = tseslint.config(
       "@typescript-eslint/no-misused-promises": "off",
       "no-plusplus": "off", // plusplus is useful for iterators.
       "prefer-named-capture-group": "off",
+      "react/no-unstable-nested-components": "off", // next-intl (i18n) uses nested components for structured messages.
       "@typescript-eslint/consistent-type-definitions": "off",
       "no-ternary": "off",
       "@typescript-eslint/no-confusing-void-expression": "off",
@@ -176,4 +177,3 @@ eslintConfig.forEach((config) => {
 });
 
 export default eslintConfig;
-

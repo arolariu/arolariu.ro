@@ -1,14 +1,16 @@
 /** @format */
 
 import FeaturesList from "@/components/Features/FeaturesList";
-import * as m from "@/i18n/messages";
+import {useTranslations} from "next-intl";
 import Link from "next/link";
 
 /**
  * The home page component.
  * @returns The home page component.
  */
-export default async function Home() {
+export default function Home() {
+  const t = useTranslations("Home");
+
   return (
     <main>
       <section className='py-12 sm:pb-16 lg:pb-20 xl:pb-24'>
@@ -16,13 +18,18 @@ export default async function Home() {
           <div>
             <h1 className='mt-6 text-4xl font-normal text-white 2xsm:text-center sm:mt-10 sm:text-5xl md:text-left lg:text-6xl xl:text-8xl'>
               <span className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent'>
-                {m.welcomePage_title()}
+                {t("title")}
               </span>
             </h1>
             <p className='mt-4 max-w-lg text-xl text-gray-500 2xsm:text-center md:text-left lg:max-w-2xl'>
-              This platform was built by Alexandru-Razvan Olariu as a playground for new technologies. The platform is
-              built using state-of-the-art, enterprise-grade technologies. <br /> <br />
-              You are welcome to explore all of the applications and services that are hosted on this domain space.
+              {t.rich("subtitle", {
+                br: (chunks) => (
+                  <>
+                    <br />
+                    {chunks}
+                  </>
+                ),
+              })}
             </p>
             <div className='relative mt-8 inline-flex 2xsm:ml-[26%] md:ml-0'>
               <div className='absolute -inset-px rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all duration-200 group-hover:shadow-lg group-hover:shadow-cyan-500/50' />
@@ -50,7 +57,7 @@ export default async function Home() {
                   />
                 </svg>
 
-                <span className='2xsm:text-center md:text-left'>THANK YOU FOR THE TIME SPENT ON THE WEBSITE.</span>
+                <span className='2xsm:text-center md:text-left'>{t("appreciation")}</span>
               </div>
             </div>
           </div>

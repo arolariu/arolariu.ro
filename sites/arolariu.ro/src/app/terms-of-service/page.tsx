@@ -1,7 +1,7 @@
 /** @format */
 
-import * as m from "@/i18n/messages";
 import {type Metadata} from "next";
+import {useTranslations} from "next-intl";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -12,117 +12,115 @@ export const metadata: Metadata = {
  * The terms of service page.
  * @returns The terms of service page.
  */
-export default async function TermsOfServicePage() {
+export default function TermsOfServicePage() {
+  const t = useTranslations("termsOfService");
+
   return (
     <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-8 px-12 py-24'>
       <section className='pb-12'>
         <h1 className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-3xl font-black text-transparent'>
-          {m.termsOfService()}
+          {t("title")}
         </h1>
-        <p className='text-center'>{m.termsOfService_last_updated()}</p>
+        <p className='text-center'>{t("last_updated")}</p>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_general_terms()}</h2>
-        <article className='italic'>{m.termsOfService_general_terms_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.generalTerms.title")}</h2>
+        <article className='italic'>{t("terms.generalTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_license_terms()}</h2>
-        <article className='italic'>{m.termsOfService_license_terms_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.licenseTerms.title")}</h2>
+        <article className='italic'>{t("terms.licenseTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_definitions()}</h2>
-        <article className='italic'>{m.termsOfService_definitions_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.definitionTerms.title")}</h2>
+        <article className='italic'>{t("terms.definitionTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_restrictions()}</h2>
-        <article className='italic'>{m.termsOfService_restrictions_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.restrictionTerms.title")}</h2>
+        <article className='italic'>{t("terms.restrictionTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_your_consent()}</h2>
-        <article className='italic'>{m.termsOfService_your_consent_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.consentTerms.title")}</h2>
+        <article className='italic'>{t("terms.consentTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_links_to_other_websites()}</h2>
-        <article className='italic'>{m.termsOfService_links_to_other_websites_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.linksToOtherSitesTerms.title")}</h2>
+        <article className='italic'>{t("terms.linksToOtherSitesTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_cookies()}</h2>
-        <article className='italic'>{m.termsOfService_cookies_content()} </article>
+        <h2 className='text-2xl font-black underline'>{t("terms.cookiesTerms.title")}</h2>
+        <article className='italic'>{t("terms.cookiesTerms.content")} </article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_changes_to_tos()}</h2>
-        <article className='italic'>{m.termsOfService_changes_to_tos_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.changesToTos.title")}</h2>
+        <article className='italic'>{t("terms.changesToTos.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_updates_to_service()}</h2>
-        <article className='italic'>{m.termsOfService_updates_to_service_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.updateOfServicesTerms.title")}</h2>
+        <article className='italic'>{t("terms.updateOfServicesTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_third_party_services()}</h2>
-        <article className='italic'>{m.termsOfService_third_party_services_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.thirdPartyTerms.title")}</h2>
+        <article className='italic'>{t("terms.thirdPartyTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_termination()}</h2>
-        <article className='italic'>{m.termsOfService_termination_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.terminationTerms.title")}</h2>
+        <article className='italic'>{t("terms.terminationTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_no_warranties()}</h2>
-        <article className='italic'>{m.termsOfService_no_warranties_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.noWarrantiesTerms.title")}</h2>
+        <article className='italic'>{t("terms.noWarrantiesTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_limitation_liability()}</h2>
-        <article className='italic'>{m.termsOfService_limitation_liability_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.liabilityTerms.title")}</h2>
+        <article className='italic'>{t("terms.liabilityTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_severability()}</h2>
-        <article className='italic'>{m.termsOfService_severability_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.severabilityTerms.title")}</h2>
+        <article className='italic'>{t("terms.severabilityTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_waiver()}</h2>
-        <article className='italic'>{m.termsOfService_waiver_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.waiverTerms.title")}</h2>
+        <article className='italic'>{t("terms.waiverTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_amendments_to_agreement()}</h2>
-        <article className='italic'>{m.termsOfService_amendments_to_agreement_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.amendmentsTerms.title")}</h2>
+        <article className='italic'>{t("terms.amendmentsTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_entire_agreement()}</h2>
-        <article className='italic'>{m.termsOfService_entire_agreement_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.entireAgreementTerms.title")}</h2>
+        <article className='italic'>{t("terms.entireAgreementTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_updates_to_service()}</h2>
-        <article className='italic'>{m.termsOfService_updates_to_service_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.updateOfServicesTerms.title")}</h2>
+        <article className='italic'>{t("terms.updateOfServicesTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_notice_of_dispute()}</h2>
-        <article className='italic'>{m.termsOfService_notice_of_dispute_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.arbitrateTerms.title")}</h2>
+        <article className='italic'>{t("terms.arbitrateTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_agreement_to_arbitrate()}</h2>
-        <article className='italic'>{m.termsOfService_agreement_to_arbitrate_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.submissionsAndPrivacyTerms.title")}</h2>
+        <article className='italic'>{t("terms.submissionsAndPrivacyTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_submissions_and_privacy()}</h2>
-        <article className='italic'>{m.termsOfService_submissions_and_privacy_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.promotionTerms.title")}</h2>
+        <article className='italic'>{t("terms.promotionTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_promotions()}</h2>
-        <article className='italic'>{m.termsOfService_promotions_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.typographyErrorsTerms.title")}</h2>
+        <article className='italic'>{t("terms.typographyErrorsTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_typography_errors()}</h2>
-        <article className='italic'>{m.termsOfService_typography_errors_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.miscellaneousTerms.title")}</h2>
+        <article className='italic'>{t("terms.miscellaneousTerms.content")}</article>
       </section>
       <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_miscellaneous_terms()}</h2>
-        <article className='italic'>{m.termsOfService_miscellaneous_terms_content()}</article>
-      </section>
-      <section>
-        <h2 className='text-2xl font-black underline'>{m.termsOfService_disclaimer()}</h2>
-        <article className='italic'>{m.termsOfService_disclaimer_content()}</article>
+        <h2 className='text-2xl font-black underline'>{t("terms.disclaimerTerms.title")}</h2>
+        <article className='italic'>{t("terms.disclaimerTerms.content")}</article>
       </section>
       <article className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text pt-8 text-3xl font-black italic text-transparent'>
-        {m.termsOfService_contact_content()}
+        {t("contactInformation.content")}
       </article>
     </main>
   );
