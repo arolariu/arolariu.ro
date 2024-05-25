@@ -1,7 +1,13 @@
 {
   "Home": {
     "title": "Bine ai venit pe arolariu.ro",
-    "subtitle": "This platform was built by Alexandru-Razvan Olariu as a playground for new technologies. The platform is built using state-of-the-art, enterprise-grade technologies. <br /> <br /> You are welcome to explore all of the applications and services that are hosted on this domain space."
+    "subtitle": "Această platformă a fost construită de Alexandru-Răzvan Olariu ca loc de joacă pentru noile tehnologii. Platforma este construită folosind tehnologii de ultimă oră, de nivel enterprise. <br> </br> <br> </br> Sunteți binevenit să explorați toate aplicațiile și serviciile care sunt găzduite pe acest spațiu de domeniu.",
+    "cta": "Începeți să explorați",
+    "appreciation": "MULȚUMESC PENTRU TIMPUL PETRECUT PE SITE.",
+    "1stPanel": {
+      "title": "Caracteristici cheie",
+      "subtitle": "Platforma `arolariu.ro` este construita folosind cele mai noi tehnologii stabile."
+    }
   },
   "termsOfService": {
     "title": "Termenii serviciului",
