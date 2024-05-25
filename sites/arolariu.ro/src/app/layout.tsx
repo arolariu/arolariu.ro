@@ -1,5 +1,6 @@
 /** @format */
 
+import EULA from "@/components/EULA";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {Toaster} from "@/components/ui/toaster";
@@ -8,6 +9,7 @@ import {ClerkProvider} from "@clerk/nextjs";
 import {NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {getLocale, getMessages} from "next-intl/server";
 import {ThemeProvider} from "next-themes";
+import {cookies} from "next/headers";
 import {Suspense, type PropsWithChildren} from "react";
 import "./globals.css";
 import Loading from "./loading";
@@ -22,6 +24,7 @@ export {metadata} from "@/metadata";
 export default async function RootLayout({children}: Readonly<PropsWithChildren<{}>>) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const eulaAccepted = (await cookies().get("eula-accepted")?.value) === "true";
 
   return (
     <ClerkProvider
@@ -41,11 +44,17 @@ export default async function RootLayout({children}: Readonly<PropsWithChildren<
               attribute='class'
               themes={["light", "dark"]}
               enableSystem={false}>
-              <Header />
               <WebVitals />
-              <Suspense fallback={<Loading />}>{children}</Suspense>
+              {eulaAccepted ? (
+                <>
+                  <Header />
+                  <Suspense fallback={<Loading />}>{children}</Suspense>
+                  <Footer />
+                </>
+              ) : (
+                <EULA />
+              )}
               <Toaster />
-              <Footer />
             </ThemeProvider>
           </TranslationProvider>
         </body>

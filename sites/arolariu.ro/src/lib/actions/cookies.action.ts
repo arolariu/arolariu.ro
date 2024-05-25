@@ -8,7 +8,7 @@ import {cookies} from "next/headers";
  * This function gets a cookie from the request.
  */
 export async function getCookie({name}: Readonly<{name: string}>) {
-  return cookies().get(name);
+  return cookies().get(name)?.value;
 }
 
 /**
