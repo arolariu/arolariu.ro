@@ -34,14 +34,15 @@ function TermsOfService() {
 }
 
 function PrivacyPolicy() {
+  const t = useTranslations("privacyPolicy");
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className='m-4 w-1/2 p-4'>Privacy Policy</Button>
+        <Button className='m-4 w-1/2 p-4'>{t("title")}</Button>
       </DialogTrigger>
       <DialogContent className='max-h-[75vh] max-w-[75vw] overflow-y-scroll'>
         <DialogHeader>
-          <DialogTitle className='text-center'>Privacy Policy</DialogTitle>
+          <DialogTitle className='text-center'>{t("title")}</DialogTitle>
           <DialogDescription className='modal-scroll'>
             <RenderPrivacyPolicyScreen />
           </DialogDescription>
@@ -55,11 +56,14 @@ function PrivacyPolicy() {
  * The cookies banner component.
  * @returns The cookies banner component.
  */
-function CookiesBanner() {
-  const [cookiesState, setCookiesState] = useState({
-    essential: true,
-    analytics: true,
-  });
+function CookiesBanner({
+  cookiesState,
+  setCookiesState,
+}: {
+  cookiesState: Readonly<{essential: boolean; analytics: boolean}>;
+  setCookiesState: (state: {essential: boolean; analytics: boolean}) => void | Promise<void>;
+}) {
+  const t = useTranslations("EULA.cookiesPolicy");
   const {toast} = useToast();
 
   return (
@@ -84,20 +88,23 @@ function CookiesBanner() {
             <path d='M11 17v.01' />
             <path d='M7 14v.01' />
           </svg>
-          <CardTitle className='inline tracking-wide'>Cookies Preference</CardTitle>
-          <CardDescription>
-            Manage your cookie settings. You can enable or disable different types of cookies below.
-          </CardDescription>
+          <CardTitle className='inline tracking-wide'>{t("title")}</CardTitle>
+          <CardDescription>{t("subtitle")}</CardDescription>
         </div>
       </CardHeader>
       <CardContent>
         <form className='flex flex-col flex-wrap gap-4'>
           <div>
-            Essential Cookies
+            {t("cookies.essential.title")}
             <small className='mb-2 block leading-tight tracking-wider'>
-              Essential cookies are necessary for the website to function properly. <br />
-              This category only includes cookies that ensures basic functionalities and security features of the
-              website.
+              {t.rich("cookies.essential.description", {
+                br: (chunks) => (
+                  <>
+                    <br />
+                    {chunks}
+                  </>
+                ),
+              })}
             </small>
             <Checkbox
               id='essential'
@@ -108,19 +115,21 @@ function CookiesBanner() {
             <Label
               htmlFor='essential'
               className='ml-2 text-gray-400'>
-              This option cannot be disabled. Essential cookies are always enabled.
+              {t("cookies.essential.checkbox")}
             </Label>
           </div>
           <div>
-            Analytics Cookies
+            {t("cookies.analytics.title")}
             <small className='mb-2 block leading-tight tracking-wider'>
-              These cookies allow us to count visits and traffic sources, so we can measure and improve the performance
-              of our site. <br /> They help us know which pages are the most and least popular and see how visitors move
-              around the site.
-              <br />
-              <em className='text-gray-400'>
-                All information these cookies collect is aggregated and therefore can be considered anonymous.
-              </em>
+              {t.rich("cookies.analytics.description", {
+                br: (chunks) => (
+                  <>
+                    <br />
+                    {chunks}
+                  </>
+                ),
+                em: (chunks) => <em className='text-gray-400'>{chunks}</em>,
+              })}
             </small>
             <Checkbox
               className='size-5'
@@ -131,8 +140,7 @@ function CookiesBanner() {
             <Label
               htmlFor='analytics'
               className='ml-2 text-gray-400'>
-              {cookiesState.analytics && "Thank you for enabling analytics!"}
-              {!cookiesState.analytics && "Enabling the analytics cookies to helps us to improve our website."}
+              {t("cookies.analytics.checkbox")}
             </Label>
           </div>
         </form>
@@ -149,7 +157,7 @@ function CookiesBanner() {
               });
             });
           }}>
-          Save cookies configuration
+          {t("cookies.cta")}
         </Button>
       </CardFooter>
     </Card>
@@ -157,8 +165,13 @@ function CookiesBanner() {
 }
 
 export default function EULA() {
+  const t = useTranslations("EULA");
   const [locale, setLocale] = useState<string>("en");
   const [eulaAccepted, setEulaAccepted] = useState<boolean | null>(null);
+  const [cookiesState, setCookiesState] = useState({
+    essential: true,
+    analytics: true,
+  });
 
   useEffect(() => {
     getCookie({name: "eula-accepted"}).then((value) => {
@@ -170,6 +183,8 @@ export default function EULA() {
 
   const handleAccept = () => {
     setCookie({name: "eula-accepted", value: "true"});
+    setCookie({name: "accepted-cookies", value: JSON.stringify(cookiesState)});
+    setCookie({name: "locale", value: locale});
     setEulaAccepted(true);
   };
 
@@ -177,7 +192,7 @@ export default function EULA() {
     <main className='fixed inset-0 flex items-center justify-center bg-black'>
       <section className='absolute top-0 flex h-screen w-full flex-col items-center justify-center justify-items-center gap-8'>
         <article className='w-1/2 rounded-xl bg-white shadow-inner shadow-black'>
-          <h1 className='pt-2 text-center text-2xl font-bold underline'>End User License Agreement</h1>
+          <h1 className='pt-2 text-center text-2xl font-bold underline'>{t("title")}</h1>
 
           <div className='flex justify-center gap-4'>
             <p
@@ -188,7 +203,7 @@ export default function EULA() {
               className={locale === "en" ? "bg-blue-500 text-white" : "bg-white text-black"}>
               EN
             </p>
-            <div className='divider divider-horizontal' />
+            <div className='divider divider-horizontal w-1 rounded-xl bg-black' />
             <p
               onClick={() => {
                 setLocale("ro");
@@ -200,25 +215,33 @@ export default function EULA() {
           </div>
 
           <article className='mt-4 text-center text-gray-600'>
-            By using this website, you agree to the terms and conditions of the End User License Agreement (EULA).
-            <br />
-            Please read the following documents carefully before using the website:
+            {t.rich("content", {
+              br: (chunks) => (
+                <>
+                  <br />
+                  {chunks}
+                </>
+              ),
+            })}
           </article>
           <ul className='flex list-inside list-disc flex-col items-center'>
-            <li>Terms of Service</li>
-            <li>Privacy Policy</li>
+            <li>{t("termsOfService")}</li>
+            <li>{t("privacyPolicy")}</li>
           </ul>
           <div className='justify-items-centers flex flex-row items-center justify-center gap-4'>
             <TermsOfService />
             <PrivacyPolicy />
           </div>
           <hr />
-          <CookiesBanner />
+          <CookiesBanner
+            cookiesState={cookiesState}
+            setCookiesState={setCookiesState}
+          />
           <div className='my-8 flex justify-center'>
             <Button
               variant='default'
               onClick={handleAccept}>
-              Accept EULA
+              {t("accept")}
             </Button>
           </div>
         </article>

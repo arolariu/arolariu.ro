@@ -113,5 +113,34 @@
       "title": "Contact Information",
       "content": "If you have any questions about our Terms of Service, please contact us at admin@arolariu.ro"
     }
+  },
+  "privacyPolicy": {
+    "title": "Privacy Policy",
+    "last_updated": "Last updated: 2024-01-01",
+    "terms": {}
+  },
+  "EULA": {
+    "title": "End User License Agreement (EULA)",
+    "content": "By using this website, you agree to the terms and conditions of the End User License Agreement (EULA).<br></br>Please read the following documents carefully before using the website:",
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "accept": "Accept EULA",
+    "cookiesPolicy": {
+      "title": "Cookies Preference",
+      "subtitle": "Manage your cookie settings. You can enable or disable different types of cookies below.",
+      "cookies": {
+        "cta": "Save cookies configuration",
+        "essential": {
+          "title": "Essential Cookies",
+          "description": "Essential cookies are necessary for the website to function properly. <br> </br> This category only includes cookies that ensures basic functionalities and security features of the website.",
+          "checkbox": "This option cannot be disabled. Essential cookies are always enabled."
+        },
+        "analytics": {
+          "title": "Analytics Cookies",
+          "description": "These cookies allow us to count visits and traffic sources, so we can measure and improve the performance of our site. <br></br> They help us know which pages are the most and least popular and see how visitors move around the site. <br></br> <em>All information these cookies collect is aggregated and therefore can be considered anonymous.</em>",
+          "checkbox": "Enabling the analytics cookies to helps us to improve our website."
+        }
+      }
+    }
   }
 }

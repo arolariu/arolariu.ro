@@ -112,5 +112,34 @@
       "title": "Contact",
       "content": "Dacă aveți întrebări cu privire la Termenii noștri de utilizare, vă rugăm să ne contactați la admin@arolariu.ro."
     }
+  },
+  "privacyPolicy": {
+    "title": "Politica de confidentialitate",
+    "last_updated": "Ultima actualizare: 1 ianuarie 2024",
+    "terms": {}
+  },
+  "EULA": {
+    "title": "Acord de licență pentru utilizatorul final",
+    "content": "Acest acord de licență pentru utilizatorul final („EULA”) reprezintă un acord între dvs. și AROLARIU.RO și reglementează utilizarea acestui software. <br></br> Vă rugăm să citiți cu atenție următoarele documente înainte de a utiliza site-ul web:",
+    "termsOfService": "Termenii de utilizare",
+    "privacyPolicy": "Politica de confidentialitate",
+    "accept": "Accept acest acord",
+    "cookiesPolicy": {
+      "title": "Politica de cookie-uri",
+      "subtitle": "Acest site folosește cookie-uri pentru a vă îmbunătăți experiența.",
+      "cookies": {
+        "cta": "Salvează preferințele cookie-urilor",
+        "essential": {
+          "title": "Cookie-uri esențiale",
+          "description": "Cookie-urile esențiale sunt necesare pentru ca site-ul să funcționeze corect. <br> </br> Această categorie include numai cookie-uri care asigură funcționalitățile de bază și caracteristicile de securitate ale site-ului web.",
+          "checkbox": "Aceste cookie-uri sunt necesare pentru ca site-ul să funcționeze corect."
+        },
+        "analytics": {
+          "title": "Cookie-uri de analiză",
+          "description": "Aceste cookie-uri ne permit să numărăm vizitele și sursele de trafic, astfel încât să putem măsura și îmbunătăți performanța site-ului nostru. <br></br> Ne ajută să știm care pagini sunt cele mai și mai puțin populare și să vedem cum se deplasează vizitatorii pe site. <br></br> <em>Toate informațiile colectate de aceste cookie-uri sunt agregate și, prin urmare, pot fi considerate anonime.</em>",
+          "checkbox": "Activarea cookie-urilor de analiză ne ajută să ne îmbunătățim site-ul."
+        }
+      }
+    }
   }
 }
