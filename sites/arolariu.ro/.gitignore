@@ -22,10 +22,11 @@
 
 # vercel
 .vercel
-next-env.d.ts
 
 # typescript
 *.tsbuildinfo
+next-env.d.ts
+
 
 # service worker
 /public/sw.js
