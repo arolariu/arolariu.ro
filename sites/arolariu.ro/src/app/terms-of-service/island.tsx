@@ -2,6 +2,10 @@
 
 import {useTranslations} from "next-intl";
 
+/**
+ * This function renders the terms of service screen.
+ * @returns The terms of service screen.
+ */
 export default function RenderTermsOfServiceScreen() {
   const t = useTranslations("termsOfService");
   return (

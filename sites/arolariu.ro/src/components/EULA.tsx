@@ -14,6 +14,9 @@ import {Checkbox} from "./ui/checkbox";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "./ui/dialog";
 import {useToast} from "./ui/use-toast";
 
+/**
+ * The terms of service dialog component.
+ */
 function TermsOfService() {
   const t = useTranslations("termsOfService");
   return (
@@ -33,6 +36,9 @@ function TermsOfService() {
   );
 }
 
+/**
+ * The privacy policy dialog component.
+ */
 function PrivacyPolicy() {
   const t = useTranslations("privacyPolicy");
   return (
@@ -59,10 +65,10 @@ function PrivacyPolicy() {
 function CookiesBanner({
   cookiesState,
   setCookiesState,
-}: {
+}: Readonly<{
   cookiesState: Readonly<{essential: boolean; analytics: boolean}>;
   setCookiesState: (state: {essential: boolean; analytics: boolean}) => void | Promise<void>;
-}) {
+}>) {
   const t = useTranslations("EULA.cookiesPolicy");
   const {toast} = useToast();
 
@@ -149,13 +155,21 @@ function CookiesBanner({
         <Button
           variant='default'
           onClick={() => {
-            setCookie({name: "accepted-cookies", value: JSON.stringify(cookiesState)}).then(() => {
-              toast({
-                title: "Cookies preferences saved!",
-                description: "Your cookies preferences have been saved.",
-                duration: 3000,
+            setCookie({name: "accepted-cookies", value: JSON.stringify(cookiesState)})
+              .then(() => {
+                toast({
+                  title: "Cookies preferences saved!",
+                  description: "Your cookies preferences have been saved.",
+                  duration: 3000,
+                });
+              })
+              .catch((error: unknown) => {
+                toast({
+                  title: "Error saving cookies preferences!",
+                  description: `Error: ${String(error)}`,
+                  duration: 3000,
+                });
               });
-            });
           }}>
           {t("cookies.cta")}
         </Button>
@@ -164,6 +178,10 @@ function CookiesBanner({
   );
 }
 
+/**
+ * The EULA component.
+ * @returns The EULA component.
+ */
 export default function EULA() {
   const t = useTranslations("EULA");
   const [locale, setLocale] = useState<string>("en");
@@ -174,17 +192,21 @@ export default function EULA() {
   });
 
   useEffect(() => {
-    getCookie({name: "eula-accepted"}).then((value) => {
-      setEulaAccepted(value === "true");
-    });
+    getCookie({name: "eula-accepted"})
+      .then((value) => {
+        setEulaAccepted(value === "true");
+      })
+      .catch(() => {
+        setEulaAccepted(false);
+      });
   }, []);
 
   if (eulaAccepted === null || eulaAccepted) return null;
 
   const handleAccept = () => {
-    setCookie({name: "eula-accepted", value: "true"});
-    setCookie({name: "accepted-cookies", value: JSON.stringify(cookiesState)});
-    setCookie({name: "locale", value: locale});
+    void setCookie({name: "eula-accepted", value: "true"});
+    void setCookie({name: "accepted-cookies", value: JSON.stringify(cookiesState)});
+    void setCookie({name: "locale", value: locale});
     setEulaAccepted(true);
   };
 
@@ -198,7 +220,7 @@ export default function EULA() {
             <p
               onClick={() => {
                 setLocale("en");
-                setCookie({name: "locale", value: "en"});
+                void setCookie({name: "locale", value: "en"});
               }}
               className={locale === "en" ? "bg-blue-500 text-white" : "bg-white text-black"}>
               EN
@@ -207,7 +229,7 @@ export default function EULA() {
             <p
               onClick={() => {
                 setLocale("ro");
-                setCookie({name: "locale", value: "ro"});
+                void setCookie({name: "locale", value: "ro"});
               }}
               className={locale === "ro" ? "bg-blue-500 text-white" : "bg-white text-black"}>
               RO

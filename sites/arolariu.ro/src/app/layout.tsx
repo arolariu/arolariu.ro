@@ -10,7 +10,7 @@ import {NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {getLocale, getMessages} from "next-intl/server";
 import {ThemeProvider} from "next-themes";
 import {cookies} from "next/headers";
-import {Suspense, type PropsWithChildren} from "react";
+import {ReactNode, Suspense} from "react";
 import "./globals.css";
 import Loading from "./loading";
 import {WebVitals} from "./web-vitals";
@@ -21,10 +21,10 @@ export {metadata} from "@/metadata";
  * The root layout.
  * @returns The root layout.
  */
-export default async function RootLayout({children}: Readonly<PropsWithChildren<{}>>) {
+export default async function RootLayout({children}: Readonly<{children: ReactNode}>) {
   const locale = await getLocale();
   const messages = await getMessages();
-  const eulaAccepted = (await cookies().get("eula-accepted")?.value) === "true";
+  const eulaAccepted = cookies().get("eula-accepted")?.value === "true";
 
   return (
     <ClerkProvider

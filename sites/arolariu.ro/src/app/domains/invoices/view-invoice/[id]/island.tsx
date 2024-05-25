@@ -41,19 +41,19 @@ export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: In
           <div className='mb-4 flex'>
             <button
               type='button'
-              className={`${currentStep === 1 ? buttonStyle[0] : buttonStyle[1]} flex-grow cursor-pointer border-b-2 px-1 py-2 text-lg`}
+              className={`${currentStep === 1 ? String(buttonStyle[0]) : String(buttonStyle[1])} flex-grow cursor-pointer border-b-2 px-1 py-2 text-lg`}
               onClick={() => setCurrentStep(1)}>
               Summary
             </button>
             <button
               type='button'
-              className={`${currentStep === 2 ? buttonStyle[0] : buttonStyle[1]} mx-1 flex-grow cursor-pointer border-b-2 px-1 py-2 text-lg`}
+              className={`${currentStep === 2 ? String(buttonStyle[0]) : String(buttonStyle[1])} mx-1 flex-grow cursor-pointer border-b-2 px-1 py-2 text-lg`}
               onClick={() => setCurrentStep(2)}>
               Items
             </button>
             <button
               type='button'
-              className={`${currentStep === 3 ? buttonStyle[0] : buttonStyle[1]} flex-grow cursor-pointer border-b-2 px-1 py-2 text-lg`}
+              className={`${currentStep === 3 ? String(buttonStyle[0]) : String(buttonStyle[1])} flex-grow cursor-pointer border-b-2 px-1 py-2 text-lg`}
               onClick={() => setCurrentStep(3)}>
               Additional Information
             </button>

@@ -141,8 +141,10 @@ const eslintConfig = tseslint.config(
       "react/no-unstable-nested-components": "off", // next-intl (i18n) uses nested components for structured messages.
       "@typescript-eslint/consistent-type-definitions": "off",
       "no-ternary": "off",
+      "no-void": "off",
       "@typescript-eslint/no-confusing-void-expression": "off",
       "no-warning-comments": "warn",
+      "react/jsx-pascal-case": "off",
     },
     settings: {
       react: {
@@ -172,7 +174,15 @@ const eslintConfig = tseslint.config(
 
 // Add the global ignores to the default config.
 eslintConfig.forEach((config) => {
-  const ignoreList = ["*.config.{js,ts}", "**/node_modules/**", "**/ui/**", "**/i18n/**"];
+  const ignoreList = [
+    "*.config.{js,ts}",
+    "**/node_modules/**",
+    "**/ui/**",
+    "**/i18n.ts",
+    "**/sw.ts",
+    "**/metadata.ts",
+    "**/middleware.ts",
+  ];
   config.ignores = config.ignores ? [...config.ignores, ...ignoreList] : [...ignoreList];
 });
 

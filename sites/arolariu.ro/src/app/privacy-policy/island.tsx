@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 
+/**
+ * This function renders the privacy policy screen.
+ * @returns The privacy policy screen.
+ */
 export default function RenderPrivacyPolicyScreen() {
   return (
     <>
