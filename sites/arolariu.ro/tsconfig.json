@@ -37,8 +37,11 @@
 		"module": "esnext",
 		"moduleResolution": "bundler",
 		"resolveJsonModule": true,
+    "resolvePackageJsonExports": true,
+    "resolvePackageJsonImports": true,
 		"isolatedModules": true,
 		"jsx": "preserve",
+    "disableSizeLimit": true,
 		"plugins": [
 			{
 				"name": "next"
@@ -47,7 +50,8 @@
 		"paths": {
 			"@/*": ["./src/*"]
 		},
-		"types": ["@types/node", "@serwist/next/typings"]
+		"types": ["@types/node", "@serwist/next/typings"],
+    "stripInternal": true,
 	},
 	"include": ["**/*.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "postcss.config.cjs"],
 	"exclude": ["node_modules"],
