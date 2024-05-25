@@ -8,20 +8,22 @@ import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
 import {Label} from "@/components/ui/label";
 import {getCookie, setCookie} from "@/lib/actions/cookies.action";
+import {useTranslations} from "next-intl";
 import {useEffect, useState} from "react";
 import {Checkbox} from "./ui/checkbox";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "./ui/dialog";
 import {useToast} from "./ui/use-toast";
 
 function TermsOfService() {
+  const t = useTranslations("termsOfService");
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className='m-4 w-1/2 p-4'>Terms of Service</Button>
+        <Button className='m-4 w-1/2 p-4'>{t("title")}</Button>
       </DialogTrigger>
       <DialogContent className='max-h-[75vh] max-w-[75vw] overflow-y-scroll'>
         <DialogHeader>
-          <DialogTitle className='text-center'>Terms of Service</DialogTitle>
+          <DialogTitle className='text-center'>{t("title")}</DialogTitle>
           <DialogDescription>
             <RenderTermsOfServiceScreen />
           </DialogDescription>
@@ -155,6 +157,7 @@ function CookiesBanner() {
 }
 
 export default function EULA() {
+  const [locale, setLocale] = useState<string>("en");
   const [eulaAccepted, setEulaAccepted] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -175,6 +178,27 @@ export default function EULA() {
       <section className='absolute top-0 flex h-screen w-full flex-col items-center justify-center justify-items-center gap-8'>
         <article className='w-1/2 rounded-xl bg-white shadow-inner shadow-black'>
           <h1 className='pt-2 text-center text-2xl font-bold underline'>End User License Agreement</h1>
+
+          <div className='flex justify-center gap-4'>
+            <p
+              onClick={() => {
+                setLocale("en");
+                setCookie({name: "locale", value: "en"});
+              }}
+              className={locale === "en" ? "bg-blue-500 text-white" : "bg-white text-black"}>
+              EN
+            </p>
+            <div className='divider divider-horizontal' />
+            <p
+              onClick={() => {
+                setLocale("ro");
+                setCookie({name: "locale", value: "ro"});
+              }}
+              className={locale === "ro" ? "bg-blue-500 text-white" : "bg-white text-black"}>
+              RO
+            </p>
+          </div>
+
           <article className='mt-4 text-center text-gray-600'>
             By using this website, you agree to the terms and conditions of the End User License Agreement (EULA).
             <br />
