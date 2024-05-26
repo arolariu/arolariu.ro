@@ -24,7 +24,7 @@ function TermsOfService() {
       <DialogTrigger asChild>
         <Button className='m-4 w-1/2 p-4'>{t("title")}</Button>
       </DialogTrigger>
-      <DialogContent className='max-h-[75vh] max-w-[75vw] overflow-y-scroll'>
+      <DialogContent className='overflow-y-scroll 2xsm:max-h-[90vh] 2xsm:max-w-[90vw] md:max-h-[75vh] md:max-w-[75vw]'>
         <DialogHeader>
           <DialogTitle className='text-center'>{t("title")}</DialogTitle>
           <DialogDescription>
@@ -46,10 +46,10 @@ function PrivacyPolicy() {
       <DialogTrigger asChild>
         <Button className='m-4 w-1/2 p-4'>{t("title")}</Button>
       </DialogTrigger>
-      <DialogContent className='max-h-[75vh] max-w-[75vw] overflow-y-scroll'>
+      <DialogContent className='overflow-y-scroll 2xsm:max-h-[90vh] 2xsm:max-w-[90vw] md:max-h-[75vh] md:max-w-[75vw]'>
         <DialogHeader>
           <DialogTitle className='text-center'>{t("title")}</DialogTitle>
-          <DialogDescription className='modal-scroll'>
+          <DialogDescription>
             <RenderPrivacyPolicyScreen />
           </DialogDescription>
         </DialogHeader>
@@ -211,9 +211,9 @@ export default function EULA() {
   };
 
   return (
-    <main className='fixed inset-0 flex items-center justify-center bg-black'>
-      <section className='absolute top-0 flex h-screen w-full flex-col items-center justify-center justify-items-center gap-8'>
-        <article className='w-1/2 rounded-xl bg-white shadow-inner shadow-black'>
+    <main className='overflow-y-scroll bg-black'>
+      <section className='flex flex-col items-center justify-center justify-items-center md:h-screen md:w-screen'>
+        <article className='rounded-xl bg-white shadow-inner shadow-black 2xsm:w-full lg:w-1/2 xl:w-2/3'>
           <h1 className='pt-2 text-center text-2xl font-bold underline'>{t("title")}</h1>
 
           <div className='flex justify-center gap-4'>

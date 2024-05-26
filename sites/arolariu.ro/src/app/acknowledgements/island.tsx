@@ -32,7 +32,7 @@ export default function AcknowledgementsTable({packages}: Readonly<Props>) {
 
   return (
     <section>
-      <div className='flex flex-row items-center justify-between justify-items-center gap-4'>
+      <div className='flex items-center justify-between justify-items-center gap-4 2xsm:flex-col md:flex-row'>
         <Button onClick={() => setShownPackages(productionPackages)}>Show Production Packages</Button>
         <Button onClick={() => setShownPackages(developmentPackages)}>Show Development Packages</Button>
         <Button
@@ -41,11 +41,11 @@ export default function AcknowledgementsTable({packages}: Readonly<Props>) {
           Show all packages {!isShowingAllPackages && "(RESET)"}
         </Button>
       </div>
-      <div className='mx-auto grid max-w-3xl grid-cols-12 gap-10 pt-4'>
+      <div className='flex flex-col flex-nowrap gap-10 pt-4'>
         {shownPackages.map((license) => (
           <Link
             key={license.name}
-            className='group col-span-full flex-col space-y-1 overflow-hidden rounded-lg border border-gray-200 p-4 shadow-md  transition-opacity duration-300 ease-in hover:shadow-lg'
+            className='group flex flex-col space-y-1 overflow-hidden rounded-lg border border-gray-200 p-4 shadow-md  transition-opacity duration-300 ease-in hover:shadow-lg'
             href={
               license.homepage?.startsWith("https")
                 ? license.homepage

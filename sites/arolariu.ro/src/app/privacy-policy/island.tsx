@@ -11,7 +11,7 @@ export default function RenderPrivacyPolicyScreen() {
     <>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>Introduction</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           At <code> AROLARIU.RO </code>
           (&ldquo;us&rdquo;, &ldquo;we&rdquo;, &ldquo;our&rdquo; or the &rdquo;Company&ldquo;) we value your privacy and
           the importance of safeguarding your data. This Privacy Policy (the &ldquo;Policy&rdquo;) describes our privacy
@@ -22,7 +22,7 @@ export default function RenderPrivacyPolicyScreen() {
           individuals. In this Policy, personal data (&ldquo;Personal Data&rdquo;) refers to any information that on its
           own, or in combination with other available information, can identify an individual.
         </article>
-        <article className='text-pretty pt-4 leading-5'>
+        <article className='text-pretty pt-4 italic'>
           We are committed to protecting your privacy in accordance with the highest level of privacy regulation. <br />
           As such, we follow the obligations under the below regulations:
           <ul className='list-inside list-disc pt-2'>
@@ -46,7 +46,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>Scope</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           This policy applies to the <code> AROLARIU.RO </code> website, products, and services. It also applies to the
           use of our website, products, and services by our customers, partners, and visitors. <br /> <br />
           This Policy does not apply to third-party applications, websites, products, services or platforms that may be
@@ -60,7 +60,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>Processing Activities</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           This policy applies when you visit our website, use our products or services, or interact with us.
           <br />
           Additionally, this policy applies when you:
@@ -73,7 +73,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>What Personal Data We Collect</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           a) When you make a purchase or attempt to make a purchase, we collect the following types of Personal Data:
           <ul className='list-inside list-disc pt-2'>
             <li>
@@ -107,7 +107,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'> How We Collect Your Personal Data </h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           We collect Personal Data in the following ways: <br />
           <br />
           <span className='italic tracking-wide'>1. From you.</span> <br /> We collect Personal Data from you when you
@@ -167,7 +167,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>Device and Usage Data</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           When you visit a AROLARIU.RO website and/or mobile application, we automatically collect and store information
           about your visit using browser cookies (files which are sent by us to your computer), or similar technologies.
           You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent. The `Help`
@@ -207,7 +207,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>Data we collect from third parties</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           We may receive your Personal Data from third parties such as companies subscribing to
           <code> AROLARIU.RO </code>
           services, partners and other sources. This Personal Data is not collected by us but by a third party and is
@@ -231,7 +231,7 @@ export default function RenderPrivacyPolicyScreen() {
         <h2 className='text-xl font-black tracking-widest underline'>
           Purpose and Legal Basis for the Processing of Personal Data
         </h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           We collect and use your Personal Data with your consent to provide, maintain, and develop our products and
           services and understand how to further improve them.
           <br />
@@ -265,7 +265,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>International Data Transfer and Storage</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           Where possible, we store and process data on servers within the general geographical region where you reside
           (note: this may not be within the country in which you reside).
           <span className='italic tracking-wide'>
@@ -289,7 +289,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>Sharing and Disclosure</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           We will share your Personal Data with third parties only in the ways set out in this Policy or set out at the
           point when the Personal Data is collected. <br />
           <br />
@@ -341,7 +341,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>Legal Requirement</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           We may use or disclose your Personal Data in order to comply with a legal obligation, in connection with a
           request from a public or government authority, or in connection with court or tribunal proceedings, to prevent
           loss of life or injury, or to protect our rights or property. Where possible and practical to do so, we will
@@ -350,7 +350,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>Service Providers and Other Third Parties</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           We may use a third party service provider, independent contractors, agencies, or consultants to deliver and
           help us improve our products and services. We may share your Personal Data with marketing agencies, database
           service providers, backup and disaster recovery service providers, e-mail service providers and others but
@@ -362,7 +362,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>What are Cookies?</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           Cookies are small pieces of data stored on your device (computer or mobile device). Cookies are used to
           improve your experience on our website and to provide you with relevant content. For more information on
           cookies, please visit{" "}
@@ -391,7 +391,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>Children&quot;s Privacy</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           Our website is not intended for children under the age of 13. We do not knowingly collect Personal Data from
           children under the age of 13. If you are a parent or guardian and you are aware that your child has provided
           us with Personal Data, please contact us. If we become aware that we have collected Personal Data from
@@ -401,7 +401,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>How We Keep Your Data Safe</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           We have implemented appropriate technical and organizational security measures designed to protect the
           security of any Personal Data we process. However, please also remember that we cannot guarantee that the
           internet itself is 100% secure. Although we will do our best to protect your Personal Data, the transmission
@@ -431,7 +431,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>Your Rights for Your Personal Data</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           You have the right to access, correct, update or delete your Personal Data. You also have the right to object
           to the processing of your Personal Data, ask us to restrict the processing of your Personal Data or request
           portability of your Personal Data. You can exercise these rights by contacting us using the contact details
@@ -505,7 +505,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>Withdrawing Consent</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           If you have given your consent to the processing of your Personal Data, you have the right to withdraw your
           consent at any time. To withdraw your consent, please contact us using the contact details provided under the
           &ldquo;Contact us&rdquo; section below.
@@ -513,7 +513,7 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>How to Exercise Your Rights</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           To exercise your rights, please contact us using the contact details provided under the &ldquo;Contact
           us&rdquo; section below. We will respond to your request within a reasonable timeframe and in accordance with
           applicable law. <br />
@@ -524,14 +524,14 @@ export default function RenderPrivacyPolicyScreen() {
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>Changes to this Policy</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           We may update this Policy from time to time. If we make significant changes, we will let you know, but please
           regularly check this Policy to ensure you are aware of the most updated version.
         </article>
       </section>
       <section>
         <h2 className='text-xl font-black tracking-widest underline'>Contact Us</h2>
-        <article className='text-pretty leading-5'>
+        <article className='text-pretty italic'>
           If you have any questions about this Policy, please contact us by email at{" "}
           <Link
             className='italic text-blue-500'
