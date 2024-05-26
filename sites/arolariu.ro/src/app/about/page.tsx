@@ -13,7 +13,7 @@ export const metadata: Metadata = {
  * The about page.
  * @returns The about page.
  */
-export default async function AboutPage() {
+export default function AboutPage() {
   return (
     <>
       <section>

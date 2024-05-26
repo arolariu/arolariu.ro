@@ -13,7 +13,7 @@ export const metadata: Metadata = {
  * The domains homepage.
  * @returns The domains homepage.
  */
-export default async function DomainsHomepage() {
+export default function DomainsHomepage() {
   return (
     <main className='container mx-auto px-5 py-24'>
       <section className='flex flex-col'>

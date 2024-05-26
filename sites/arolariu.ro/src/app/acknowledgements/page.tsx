@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 /**
  * Acknowledgements page for the third-party packages used in this project.
  */
-export default async function AcknowledgementsPage() {
+export default function AcknowledgementsPage() {
   const packages: Package[] = licenses;
 
   return (

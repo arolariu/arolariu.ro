@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 /**
  * The privacy policy page.
  */
-export default async function PrivacyPolicyPage() {
+export default function PrivacyPolicyPage() {
   return (
     <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-8 px-12 py-24'>
       <div className='flex flex-col flex-nowrap gap-8 2xsm:w-full md:w-2/3'>

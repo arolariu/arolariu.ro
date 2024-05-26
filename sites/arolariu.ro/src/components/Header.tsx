@@ -4,6 +4,7 @@
 
 import {SignedIn, SignedOut, UserButton, useUser} from "@clerk/nextjs";
 import {HamburgerMenuIcon} from "@radix-ui/react-icons";
+import Image from "next/image";
 import Link from "next/link";
 import ThemeSwitcherButton from "./Buttons/ThemeButton";
 import {Button} from "./ui/button";
@@ -97,18 +98,14 @@ export default function Header() {
           </div>
           <Link
             href='/'
-            className='ml-2 flex items-center font-medium'>
-            <svg
-              xmlns='http://www.w3.org/2000/svg'
-              fill='none'
-              stroke='currentColor'
-              strokeLinecap='round'
-              strokeLinejoin='round'
-              strokeWidth='2'
-              className='h-10 w-10 rounded-full bg-indigo-500 p-2 text-white'
-              viewBox='0 0 24 24'>
-              <path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' />
-            </svg>
+            className='ml-2 flex items-center font-medium hover:text-yellow-300'>
+            <Image
+              src='logo.svg'
+              alt='arolariu.ro'
+              className='rounded-full ring-2 ring-indigo-500 2xsm:hidden lg:block '
+              width={40}
+              height={40}
+            />
             <span className='ml-3 text-xl'>arolariu.ro</span>
           </Link>
         </div>

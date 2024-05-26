@@ -18,7 +18,7 @@ export const metadata: Metadata = {
  * The author page.
  * @returns The author page.
  */
-export default async function AuthorPage() {
+export default function AuthorPage() {
   return (
     <>
       <section>

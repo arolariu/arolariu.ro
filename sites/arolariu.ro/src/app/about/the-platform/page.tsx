@@ -12,7 +12,7 @@ export const metadata: Metadata = {
  * The platform page.
  * @returns The platform page
  */
-export default async function PlatformPage() {
+export default function PlatformPage() {
   return (
     <section>
       <h1 className='my-8 font-bold 2xsm:text-2xl xsm:text-3xl md:text-4xl'>
