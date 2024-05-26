@@ -4,6 +4,7 @@ import {COMMIT_SHA, TIMESTAMP} from "@/lib/utils.generic";
 import {GitHubLogoIcon, LinkedInLogoIcon} from "@radix-ui/react-icons";
 import Image from "next/image";
 import Link from "next/link";
+import logo from "../../public/logo.svg";
 
 /**
  * The footer component.
@@ -31,7 +32,7 @@ export default async function Footer() {
               title='AROLARIU.RO'
               className='inline-flex transform items-center transition-all duration-300 ease-in-out hover:scale-110 2xsm:ml-[20%] md:ml-0'>
               <Image
-                src='logo.svg'
+                src={logo}
                 alt='arolariu.ro'
                 className='rounded-full ring-2 ring-indigo-500 '
                 width={40}

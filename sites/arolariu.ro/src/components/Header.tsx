@@ -6,6 +6,7 @@ import {SignedIn, SignedOut, UserButton, useUser} from "@clerk/nextjs";
 import {HamburgerMenuIcon} from "@radix-ui/react-icons";
 import Image from "next/image";
 import Link from "next/link";
+import logo from "../../public/logo.svg";
 import ThemeSwitcherButton from "./Buttons/ThemeButton";
 import {Button} from "./ui/button";
 import {Popover, PopoverContent, PopoverTrigger} from "./ui/popover";
@@ -100,7 +101,7 @@ export default function Header() {
             href='/'
             className='ml-2 flex items-center font-medium hover:text-yellow-300'>
             <Image
-              src='logo.svg'
+              src={logo}
               alt='arolariu.ro'
               className='rounded-full ring-2 ring-indigo-500 2xsm:hidden lg:block '
               width={40}

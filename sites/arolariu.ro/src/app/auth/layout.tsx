@@ -1,6 +1,6 @@
 /** @format */
 
-import {ReactNode, Suspense} from "react";
+import {Suspense, type ReactNode} from "react";
 import Loading from "./loading";
 
 /**

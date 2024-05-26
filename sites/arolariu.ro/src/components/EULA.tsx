@@ -5,14 +5,13 @@
 import RenderPrivacyPolicyScreen from "@/app/privacy-policy/island";
 import RenderTermsOfServiceScreen from "@/app/terms-of-service/island";
 import {Button} from "@/components/ui/button";
-import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Label} from "@/components/ui/label";
 import {getCookie, setCookie} from "@/lib/actions/cookies.action";
 import {useTranslations} from "next-intl";
 import {useEffect, useState} from "react";
 import {Checkbox} from "./ui/checkbox";
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger} from "./ui/dialog";
-import {useToast} from "./ui/use-toast";
 
 /**
  * The terms of service dialog component.
@@ -70,7 +69,6 @@ function CookiesBanner({
   setCookiesState: (state: {essential: boolean; analytics: boolean}) => void | Promise<void>;
 }>) {
   const t = useTranslations("EULA.cookiesPolicy");
-  const {toast} = useToast();
 
   return (
     <Card className='m-4'>
@@ -151,29 +149,6 @@ function CookiesBanner({
           </div>
         </form>
       </CardContent>
-      <CardFooter>
-        <Button
-          variant='default'
-          onClick={() => {
-            setCookie({name: "accepted-cookies", value: JSON.stringify(cookiesState)})
-              .then(() => {
-                toast({
-                  title: "Cookies preferences saved!",
-                  description: "Your cookies preferences have been saved.",
-                  duration: 3000,
-                });
-              })
-              .catch((error: unknown) => {
-                toast({
-                  title: "Error saving cookies preferences!",
-                  description: `Error: ${String(error)}`,
-                  duration: 3000,
-                });
-              });
-          }}>
-          {t("cookies.cta")}
-        </Button>
-      </CardFooter>
     </Card>
   );
 }
@@ -211,62 +186,61 @@ export default function EULA() {
   };
 
   return (
-    <main className='overflow-y-scroll bg-black'>
-      <section className='flex flex-col items-center justify-center justify-items-center md:h-screen md:w-screen'>
-        <article className='rounded-xl bg-white shadow-inner shadow-black 2xsm:w-full lg:w-1/2 xl:w-2/3'>
-          <h1 className='pt-2 text-center text-2xl font-bold underline'>{t("title")}</h1>
+    <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center overflow-y-scroll bg-black py-24 text-center'>
+      <section className='rounded-xl bg-white shadow-inner shadow-black 2xsm:w-full lg:w-2/3'>
+        <h1 className='pt-2 text-center text-2xl font-bold text-black underline'>{t("title")}</h1>
 
-          <div className='flex justify-center gap-4'>
-            <p
-              onClick={() => {
-                setLocale("en");
-                void setCookie({name: "locale", value: "en"});
-              }}
-              className={locale === "en" ? "bg-blue-500 text-white" : "bg-white text-black"}>
-              EN
-            </p>
-            <div className='divider divider-horizontal w-1 rounded-xl bg-black' />
-            <p
-              onClick={() => {
-                setLocale("ro");
-                void setCookie({name: "locale", value: "ro"});
-              }}
-              className={locale === "ro" ? "bg-blue-500 text-white" : "bg-white text-black"}>
-              RO
-            </p>
-          </div>
+        <div className='flex justify-center gap-4'>
+          <p
+            onClick={() => {
+              setLocale("en");
+              void setCookie({name: "locale", value: "en"});
+            }}
+            className={locale === "en" ? "bg-blue-500 text-white" : "bg-white text-black"}>
+            EN
+          </p>
+          <div className='divider divider-horizontal w-1 rounded-xl bg-black' />
+          <p
+            onClick={() => {
+              setLocale("ro");
+              void setCookie({name: "locale", value: "ro"});
+            }}
+            className={locale === "ro" ? "bg-blue-500 text-white" : "bg-white text-black"}>
+            RO
+          </p>
+        </div>
 
-          <article className='mt-4 text-center text-gray-600'>
-            {t.rich("content", {
-              br: (chunks) => (
-                <>
-                  <br />
-                  {chunks}
-                </>
-              ),
-            })}
-          </article>
+        <article className='mt-4 text-center text-gray-600'>
+          {t.rich("content", {
+            br: (chunks) => (
+              <>
+                <br />
+                {chunks}
+              </>
+            ),
+          })}
           <ul className='flex list-inside list-disc flex-col items-center'>
             <li>{t("termsOfService")}</li>
             <li>{t("privacyPolicy")}</li>
           </ul>
-          <div className='justify-items-centers flex flex-row items-center justify-center gap-4'>
-            <TermsOfService />
-            <PrivacyPolicy />
-          </div>
-          <hr />
-          <CookiesBanner
-            cookiesState={cookiesState}
-            setCookiesState={setCookiesState}
-          />
-          <div className='my-8 flex justify-center'>
-            <Button
-              variant='default'
-              onClick={handleAccept}>
-              {t("accept")}
-            </Button>
-          </div>
         </article>
+
+        <div className='justify-items-centers flex flex-row items-center justify-center gap-4'>
+          <TermsOfService />
+          <PrivacyPolicy />
+        </div>
+        <hr />
+        <CookiesBanner
+          cookiesState={cookiesState}
+          setCookiesState={setCookiesState}
+        />
+        <div className='my-8 flex justify-center'>
+          <Button
+            variant='default'
+            onClick={handleAccept}>
+            {t("accept")}
+          </Button>
+        </div>
       </section>
     </main>
   );

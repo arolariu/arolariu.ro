@@ -10,7 +10,7 @@ import {NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {getLocale, getMessages} from "next-intl/server";
 import {ThemeProvider} from "next-themes";
 import {cookies} from "next/headers";
-import {ReactNode, Suspense} from "react";
+import {Suspense, type ReactNode} from "react";
 import "./globals.css";
 import Loading from "./loading";
 import {WebVitals} from "./web-vitals";
@@ -45,15 +45,9 @@ export default async function RootLayout({children}: Readonly<{children: ReactNo
               themes={["light", "dark"]}
               enableSystem={false}>
               <WebVitals />
-              {eulaAccepted ? (
-                <>
-                  <Header />
-                  <Suspense fallback={<Loading />}>{children}</Suspense>
-                  <Footer />
-                </>
-              ) : (
-                <EULA />
-              )}
+              <Header />
+              <Suspense fallback={<Loading />}>{eulaAccepted ? children : <EULA />}</Suspense>
+              <Footer />
               <Toaster />
             </ThemeProvider>
           </TranslationProvider>
