@@ -63,6 +63,7 @@
     "@vercel/otel": "1.8.2",
     "class-variance-authority": "0.7.0",
     "clsx": "2.1.1",
+    "framer-motion": "11.2.6",
     "jose": "5.3.0",
     "next": "^14.2.3",
     "next-intl": "3.14.1",

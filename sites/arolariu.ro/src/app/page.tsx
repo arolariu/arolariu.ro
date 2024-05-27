@@ -1,6 +1,7 @@
 /** @format */
 
 import Feature from "@/components/Features/Feature";
+import {BackgroundBeams} from "@/components/ui/background-beams";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 import {SiCsharp, SiGithubactions, SiMicrosoftazure, SiNextdotjs, SiOpentelemetry, SiSvelte} from "react-icons/si";
@@ -14,6 +15,7 @@ export default function Home() {
 
   return (
     <main>
+      <BackgroundBeams />
       <section className='py-12 sm:pb-16 lg:pb-20 xl:pb-24'>
         <article className='relative mx-auto max-w-full px-4 sm:px-6 lg:px-8 2xl:max-w-[120rem]'>
           <div>
