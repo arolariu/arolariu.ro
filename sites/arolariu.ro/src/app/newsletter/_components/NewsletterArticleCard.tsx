@@ -1,5 +1,9 @@
 /** @format */
 
+/**
+ * A newsletter article card.
+ * @returns  The newsletter article card.
+ */
 export default function NewsletterArticleCard() {
   return (
     <div>

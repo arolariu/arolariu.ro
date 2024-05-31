@@ -3,6 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 
+/**
+ * The invoice domain screen.
+ * @returns The invoice domain screen.
+ */
 export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<{isAuthenticated: boolean}>) {
   return (
     <main className='px-5 py-24'>

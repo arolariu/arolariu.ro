@@ -5,6 +5,10 @@ import {TypewriterEffect} from "@/components/ui/typewriter";
 import NewsletterArticleCard from "./_components/NewsletterArticleCard";
 import SubscribeForm from "./_components/SubscribeForm";
 
+/**
+ * The newsletter page.
+ * @returns The newsletter page.
+ */
 export default function NewsletterPage() {
   const attributes = ["professional", "successful", "humble", "independent"];
   return (

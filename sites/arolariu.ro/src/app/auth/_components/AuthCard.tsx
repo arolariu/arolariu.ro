@@ -9,6 +9,11 @@ interface Props {
   ctaText: string;
   cardType: "sign-up" | "sign-in";
 }
+
+/**
+ * The card component for the authentication pages.
+ * @returns The authentication card.
+ */
 export default function AuthCard({title, description, ctaText, cardType}: Readonly<Props>) {
   return (
     <article>

@@ -1,5 +1,9 @@
 /** @format */
 
+/**
+ * A form to subscribe to the newsletter.
+ * @returns The subscribe form.
+ */
 export default function SubscribeForm() {
   return (
     <div className='flex flex-col items-center justify-center justify-items-center text-center'>

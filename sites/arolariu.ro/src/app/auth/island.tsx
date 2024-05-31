@@ -2,6 +2,10 @@
 
 import AuthCard from "./_components/AuthCard";
 
+/**
+ * The authentication screen.
+ * @returns The authentication screen.
+ */
 export default function RenderAuthScreen() {
   return (
     <section className='flex gap-4 2xsm:flex-col md:flex-row'>
