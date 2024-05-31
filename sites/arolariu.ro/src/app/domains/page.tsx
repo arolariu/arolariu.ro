@@ -1,7 +1,7 @@
 /** @format */
 
-import DomainServiceCard from "@/components/Cards/DomainServiceCard";
 import {type Metadata} from "next";
+import DomainServiceCard from "./_components/DomainServiceCard";
 
 export const metadata: Metadata = {
   title: "Domain Space Services",
