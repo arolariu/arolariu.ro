@@ -23,4 +23,3 @@ const preview: Preview = {
 } satisfies Preview;
 
 export default preview;
-

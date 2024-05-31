@@ -1,24 +1,23 @@
 /** @format */
 
-import type {StorybookConfig} from "@storybook/nextjs";
+import type {FrameworkOptions, StorybookConfig} from "@storybook/nextjs";
 
 const storybookConfig: StorybookConfig = {
-  stories: ["../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
-  addons: [
-    "@storybook/addon-onboarding",
-    "@storybook/addon-links",
-    "@storybook/addon-essentials",
-    "@chromatic-com/storybook",
-    "@storybook/addon-interactions",
-  ],
   framework: {
     name: "@storybook/nextjs",
-    options: {},
+    options: {} satisfies FrameworkOptions,
   },
+  stories: ["../src/**/*.stories.@(js|jsx|ts|tsx)"],
+  addons: [
+    "@storybook/addon-interactions",
+    "@storybook/addon-onboarding",
+    "@storybook/addon-essentials",
+    "@storybook/addon-links",
+  ],
+  docs: {defaultName: "Documentation"},
   staticDirs: ["../public"],
   features: {
     experimentalRSC: true,
   },
 } satisfies StorybookConfig;
 export default storybookConfig;
-
