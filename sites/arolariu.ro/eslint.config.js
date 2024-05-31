@@ -16,13 +16,17 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 const eslintConfig = tseslint.config(
-  {languageOptions: {globals: {...globals.browser, ...globals.node}}},
+  {
+    name: "[arolariu.ro::MAIN] global main linter configuration",
+    languageOptions: {globals: {...globals.browser, ...globals.node}},
+  },
   eslint.configs.recommended,
   eslint.configs.all,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
   ...fixupConfigRules(eslintPluginReactRules),
   {
+    name: "[arolariu.ro::TSX] main linter configuration",
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
       ecmaVersion: "latest",
@@ -157,6 +161,7 @@ const eslintConfig = tseslint.config(
     },
   },
   {
+    name: "[arolariu.ro::JSX] main linter configuration",
     files: ["**/*.js", "**/*.jsx"],
     extends: [tseslint.configs.disableTypeChecked],
     rules: {
