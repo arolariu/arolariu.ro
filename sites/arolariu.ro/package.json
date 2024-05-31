@@ -43,7 +43,8 @@
     "lint:inspect": "eslint --inspect-config",
     "analyze": "ANALYZE=true next build",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "storybook:build": "storybook build",
+    "storybook:test": "test-storybook --no-cache --browsers firefox chromium webkit"
   },
   "dependencies": {
     "@azure/app-configuration": "1.6.0",
@@ -100,6 +101,7 @@
     "@storybook/nextjs": "^8.1.5",
     "@storybook/react": "^8.1.5",
     "@storybook/test": "^8.1.5",
+    "@storybook/test-runner": "0.18.2",
     "@tailwindcss/typography": "0.5.13",
     "@types/eslint": "8.56.10",
     "@types/mdx": "2.0.13",
