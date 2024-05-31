@@ -76,6 +76,7 @@ export default function Home() {
                 .map((word) => {
                   return {text: word};
                 })}
+              cursorClassName='hidden'
             />
           </div>
           <p className='mt-4 text-center text-gray-500'>{t("1stPanel.subtitle")}</p>
