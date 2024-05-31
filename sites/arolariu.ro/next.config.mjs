@@ -3,9 +3,9 @@
 // @ts-check
 
 import withBundleAnalyzerInit from "@next/bundle-analyzer";
+import nextMdx from "@next/mdx";
 import withSerwistInit from "@serwist/next";
 import createNextIntlPlugin from "next-intl/plugin";
-
 /**
  * @format
  * @type {import("next").NextConfig}
@@ -89,6 +89,7 @@ const nextConfig = {
     },
     optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
     instrumentationHook: true,
+    mdxRs: true,
   },
 
   eslint: {
@@ -100,6 +101,8 @@ const nextConfig = {
     ignoreBuildErrors: false,
     tsconfigPath: "tsconfig.json",
   },
+
+  pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
 
   assetPrefix: process.env["USE_CDN"] === "true" ? "https://cdn.arolariu.ro" : undefined,
   trailingSlash: true,
@@ -120,4 +123,12 @@ const withBundleAnalyzer = withBundleAnalyzerInit({
 });
 
 const withTranslation = createNextIntlPlugin();
-export default withTranslation(withBundleAnalyzer(withSerwist(nextConfig)));
+const withMdx = nextMdx({
+  extension: /\.mdx?$/,
+  options: {
+    remarkPlugins: [],
+    rehypePlugins: [],
+  },
+});
+
+export default withBundleAnalyzer(withSerwist(withTranslation(withMdx(nextConfig))));

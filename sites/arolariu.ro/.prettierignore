@@ -23,6 +23,7 @@ readme.md
 **/**/*.svg
 **/**/*.png
 **/**/*.jpg
+**/**/*.mdx
 **/**/*.json
 
 # Lockfiles:
