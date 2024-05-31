@@ -92,6 +92,7 @@
     "@faker-js/faker": "8.4.1",
     "@fullhuman/postcss-purgecss": "6.0.0",
     "@next/bundle-analyzer": "14.2.3",
+    "@playwright/test": "^1.44.1",
     "@storybook/addon-essentials": "^8.1.5",
     "@storybook/addon-interactions": "^8.1.5",
     "@storybook/addon-links": "^8.1.5",
