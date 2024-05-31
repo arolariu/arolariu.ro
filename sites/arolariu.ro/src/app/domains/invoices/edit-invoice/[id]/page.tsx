@@ -1,6 +1,6 @@
 /** @format */
 
-import RenderForbiddenScreen from "@/components/domains/RenderForbiddenScreen";
+import RenderForbiddenScreen from "@/app/domains/_components/RenderForbiddenScreen";
 import {fetchUser} from "@/lib/actions/fetchUser";
 import fetchInvoice from "@/lib/invoices/fetchInvoice";
 import {type Metadata} from "next";
