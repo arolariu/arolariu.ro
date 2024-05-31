@@ -39,9 +39,11 @@
     "format:fix": "prettier . --write --config-precedence prefer-file --cache --cache-strategy metadata",
     "start": "next start",
     "lint": "eslint src/",
-    "formlint": "npm run format; npm run lint",
     "lint:fix": "eslint src/ --fix",
-    "analyze": "ANALYZE=true next build"
+    "lint:inspect": "eslint --inspect-config",
+    "analyze": "ANALYZE=true next build",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@azure/app-configuration": "1.6.0",
@@ -84,11 +86,20 @@
     "zustand": "5.0.0-alpha.6"
   },
   "devDependencies": {
+    "@chromatic-com/storybook": "^1.5.0",
     "@eslint/compat": "^1.0.1",
     "@eslint/js": "^9.3.0",
     "@faker-js/faker": "8.4.1",
     "@fullhuman/postcss-purgecss": "6.0.0",
     "@next/bundle-analyzer": "14.2.3",
+    "@storybook/addon-essentials": "^8.1.5",
+    "@storybook/addon-interactions": "^8.1.5",
+    "@storybook/addon-links": "^8.1.5",
+    "@storybook/addon-onboarding": "^8.1.5",
+    "@storybook/blocks": "^8.1.5",
+    "@storybook/nextjs": "^8.1.5",
+    "@storybook/react": "^8.1.5",
+    "@storybook/test": "^8.1.5",
     "@tailwindcss/typography": "0.5.13",
     "@types/eslint": "8.56.10",
     "@types/mdx": "2.0.13",
@@ -116,6 +127,7 @@
     "prettier-plugin-organize-imports": "3.2.4",
     "prettier-plugin-tailwindcss": "0.5.14",
     "serwist": "9.0.2",
+    "storybook": "^8.1.5",
     "tailwindcss": "3.4.3",
     "typescript": "5.4.5",
     "typescript-eslint": "7.10.0"

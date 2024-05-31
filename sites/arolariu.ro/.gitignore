@@ -33,3 +33,5 @@ next-env.d.ts
 /public/swe-*.js
 
 certificates
+
+*storybook.log
