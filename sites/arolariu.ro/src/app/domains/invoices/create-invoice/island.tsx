@@ -1,157 +1,146 @@
+/** @format */
+
 "use client";
 
-import InvoiceImagePreview from "@/components/domains/invoices/InvoiceImagePreview";
-import AlertNotification from "@/components/domains/invoices/UploadAlertNotification";
-import uploadInvoice from "@/lib/invoices/uploadInvoice";
-import {extractBase64FromBlob} from "@/lib/utils.client";
-import Link from "next/link";
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
+import {ToastAction} from "@/components/ui/toast";
+import {useToast} from "@/components/ui/use-toast";
+import {useRouter} from "next/navigation";
 import {useState} from "react";
-
-type ImageState = {
-  blob: undefined | Blob;
-  identifier: string;
-  status: "NOT_UPLOADED" | "CLIENT_SIDE_UPLOAD" | "SERVER_SIDE_UPLOAD";
-};
+import InvoicePreview from "./_components/InvoicePreview";
 
 /**
  * This function renders the invoice upload page.
  * @returns The JSX for the invoice upload page.
  */
-export default function RenderInvoiceScreen() {
-  const [imageState, setImageState] = useState<ImageState>({
-    blob: undefined,
-    identifier: "",
-    status: "NOT_UPLOADED",
-  });
+export default function RenderCreateInvoiceScreen() {
+  const {toast} = useToast();
+  const router = useRouter();
+  const [image, setImage] = useState<Blob | null>(null);
+  const [isValidMimeType, setIsValidMimeType] = useState<boolean | null>(null);
+  const validMimeTypes = new Set(["image/jpeg", "image/jpg", "image/png", "application/pdf"]);
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const ctaText =
+    isValidMimeType === true
+      ? "Review the uploaded receipt photo. If it is correct, proceed to the next step."
+      : "Carefully photograph or scan your paper receipt. Attach the digital image from your device, here.";
+
+  const handleImageClientSideUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     event.preventDefault();
-    const files = event.target.files;
+    const {files} = event.target;
     if (files && files.length > 0) {
       const image = files[0] as Blob;
-      setImageState({...imageState, blob: image, status: "CLIENT_SIDE_UPLOAD"});
+      const isValidMimeType = validMimeTypes.has(image.type);
+      setImage(isValidMimeType ? image : null);
+      setIsValidMimeType(isValidMimeType);
     }
   };
 
-  switch (imageState.status) {
-    case "NOT_UPLOADED":
-      return (
-        <div>
-          <InvoiceImagePreview image={imageState.blob} />
-          <h1 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-xl font-medium text-transparent'>
-            UPLOAD A PICTURE OF THE PAPER RECEIPT
-          </h1>
-          <p className='mx-auto text-base leading-relaxed lg:w-2/3'>
-            Carefully photograph or scan your paper receipt. <br />
-            Attach the digital image from your device, here.
-          </p>
+  const handleImageServerSideUpload = async () => {
+    console.log(image);
 
-          <form className='my-5'>
-            <input
-              type='file'
-              name='file'
-              className='file-input file-input-bordered w-full max-w-xs bg-white dark:bg-black'
-              title='Upload a receipt'
-              onChange={handleImageUpload}
-            />
-            <button
-              type='submit'
-              title='Submit'
-              className='hidden'
-            />
-          </form>
-        </div>
-      );
+    // TODO: completet this action + toast router push page.
+    setImage(null);
+    setIsValidMimeType(null);
 
-    case "CLIENT_SIDE_UPLOAD":
-      return (
-        <div>
-          <InvoiceImagePreview image={imageState.blob} />
-          <h1 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-xl font-medium text-transparent'>
-            IS THIS THE CORRECT PHOTO...?!
-          </h1>
-          <p className='mx-auto text-base leading-relaxed lg:w-2/3'>
-            Carefully analyze the uploaded receipt. <br />
-            If everything is okay, proceed to the next step.
-          </p>
+    toast({
+      variant: "destructive",
+      title: "Receipt uploaded successfully!",
+      duration: 5000,
+      action: (
+        <ToastAction
+          altText='Navigate to receipt.'
+          onClick={() => router.push("/domains/invoices/view-invoice")}>
+          Navigate to receipt.
+        </ToastAction>
+      ),
+    });
+  };
 
-          <form className='my-5'>
-            <input
-              type='file'
-              name='file'
-              className='file-input file-input-bordered w-full max-w-xs'
-              title='Upload a receipt.'
-              onChange={handleImageUpload}
-            />
-            <button
-              type='submit'
-              title='Submit'
-              className='hidden'
-            />
-          </form>
-
-          {AlertNotification({imageBlob: imageState.blob}) == undefined ? (
-            <form className='flex flex-col flex-nowrap'>
-              <button
-                className='btn btn-primary mx-auto mt-4'
-                type='button'
-                onClick={async () => {
-                  const base64 = await extractBase64FromBlob(imageState.blob as Blob);
-                  const response = await uploadInvoice(base64);
-                  console.log(response);
-                }}>
-                Continue to the next step
-              </button>
-              <button
-                className='btn btn-secondary mx-auto mt-4'
-                type='button'
-                onClick={() => setImageState({blob: undefined, identifier: "", status: "NOT_UPLOADED"})}>
-                Clear the image
-              </button>
-            </form>
-          ) : (
-            <AlertNotification imageBlob={imageState.blob} />
-          )}
-        </div>
-      );
-
-    case "SERVER_SIDE_UPLOAD":
-      return (
-        <section className='mx-auto flex flex-col items-center'>
-          <div className='mb-6 w-full px-4 sm:p-4'>
-            <h1 className='mb-2 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-center text-3xl font-medium text-transparent'>
-              Invoice was uploaded successfully! 🪄
-            </h1>
-            <p className='text-center leading-relaxed'>
-              Head over to the generated invoice page to view the full details of the analysis. <br />
-              Please bear in mind that the analysis may take up to 3 minutes to complete.
-            </p>
+  return (
+    <section className='h-full w-full'>
+      <InvoicePreview image={image} />
+      <h1 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-xl font-medium text-transparent'>
+        {isValidMimeType === true ? "IS THIS THE CORRECT PHOTO...?!" : "UPLOAD A PICTURE OF THE PAPER RECEIPT"}
+      </h1>
+      <p className='mx-auto text-base leading-relaxed lg:w-2/3'>
+        {ctaText.split(".").map((text, index) => (
+          <span key={index}>
+            {text}
+            {index < ctaText.split(".").length - 1 && "."}
             <br />
-            <p className='text-center leading-relaxed'>
-              Thank you for using our service! 🎊🎊
-              <br />
-              <small>
-                Invoice identifier: <em>{imageState.identifier}</em>
-              </small>
-            </p>
-          </div>
-          <div className='flex w-full flex-row items-center justify-center gap-4 p-4 sm:w-1/2 lg:w-1/4'>
-            <Link
-              href='./create-invoice'
-              className='btn btn-secondary'
-              onClick={() => setImageState({blob: undefined, identifier: "", status: "NOT_UPLOADED"})}>
-              Upload another invoice
-            </Link>
-            <Link
-              href={`./view-invoice/${imageState.identifier}`}
-              className='btn btn-primary'>
-              View analysis
-            </Link>
-          </div>
-        </section>
-      );
+          </span>
+        ))}
+      </p>
 
-    default:
-      return;
-  }
+      {isValidMimeType !== true && (
+        <form className='my-5'>
+          <input
+            type='file'
+            name='file-upload'
+            className='file-input file-input-bordered file-input-primary w-full max-w-xs bg-white dark:bg-black'
+            title='Upload a receipt to the platform.'
+            onChange={handleImageClientSideUpload}
+          />
+          <button
+            type='submit'
+            title='Submit button.'
+            className='hidden'
+          />
+        </form>
+      )}
+
+      {isValidMimeType === false && (
+        <section className='alert alert-warning mx-auto flex w-1/2 flex-col items-center justify-center justify-items-center'>
+          <article className='text-center'>
+            The uploaded file is not a valid image or PDF. Please upload a valid scan/photo or a protected document file
+            (PDF) of the receipt.
+          </article>
+          <article className='text-start'>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Supported file types (extensions)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className='text-center'>
+                <TableRow>
+                  <TableCell>image/jpeg</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>image/jpg</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>image/png</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>application/pdf</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </article>
+        </section>
+      )}
+
+      {isValidMimeType === true && (
+        <form className='flex flex-col flex-nowrap'>
+          <button
+            className='btn btn-primary mx-auto mt-4'
+            type='button'
+            onClick={handleImageServerSideUpload}>
+            Continue to the next step
+          </button>
+          <button
+            className='btn btn-secondary mx-auto mt-4'
+            type='button'
+            onClick={() => {
+              setImage(null);
+              setIsValidMimeType(null);
+            }}>
+            Clear the image
+          </button>
+        </form>
+      )}
+    </section>
+  );
 }

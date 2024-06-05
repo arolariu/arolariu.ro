@@ -5,6 +5,13 @@
 /// </summary>
 public class AzureOptions
 {
+	#region General Azure Configuration
+	/// <summary>
+	/// The Azure Tenant ID.
+	/// </summary>
+	public string TenantId { get; set; } = string.Empty;
+	#endregion
+
 	#region Azure Key Vault configuration
 	/// <summary>
 	/// The name of the Azure Key Vault.

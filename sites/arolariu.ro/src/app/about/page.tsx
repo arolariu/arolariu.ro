@@ -1,3 +1,5 @@
+/** @format */
+
 import {type Metadata} from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,7 +13,7 @@ export const metadata: Metadata = {
  * The about page.
  * @returns The about page.
  */
-export default async function AboutPage() {
+export default function AboutPage() {
   return (
     <>
       <section>
@@ -28,8 +30,8 @@ export default async function AboutPage() {
           <br />
           <br />
           Alexandru currently works as a software engineer at Microsoft. To learn more about him, check the right
-          section of this page. The platform is built using the latest state-of-the-art technologies. To learn more
-          about it, check the left section of this page.
+          section of this page. <br /> The platform is built using the latest state-of-the-art technologies. To learn
+          more about it, check the left section of this page.
         </article>
       </section>
       <section className='mb-16 flex flex-col flex-nowrap pb-16 lg:flex-row'>

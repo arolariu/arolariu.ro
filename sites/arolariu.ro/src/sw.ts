@@ -1,6 +1,8 @@
+/** @format */
+// eslint-disable
+
 import {defaultCache} from "@serwist/next/worker";
-import type {PrecacheEntry, SerwistGlobalConfig, SerwistOptions} from "serwist";
-import {Serwist} from "serwist";
+import {Serwist, type PrecacheEntry, type SerwistGlobalConfig, type SerwistOptions} from "serwist";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -8,31 +10,37 @@ declare global {
   }
 }
 
+/**
+ * The global scope of the service worker.
+ */
 declare const self: ServiceWorkerGlobalScope;
 
+/**
+ * The main service worker instance.
+ */
 const serwist = new Serwist({
-  precacheEntries: self.__SW_MANIFEST,
-  disableDevLogs: false,
-  offlineAnalyticsConfig: false,
-  skipWaiting: true,
   clientsClaim: true,
+  disableDevLogs: false,
+  fallbacks: {
+    entries: [
+      {
+        matcher({request}) {
+          return request.destination === "document";
+        },
+        url: "/~offline",
+      },
+    ],
+  },
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  offlineAnalyticsConfig: false,
+  precacheEntries: self.__SW_MANIFEST,
   precacheOptions: {
     cleanupOutdatedCaches: true,
     concurrency: 12,
     fallbackToNetwork: true,
   },
-  fallbacks: {
-    entries: [
-      {
-        url: "/~offline",
-        matcher({request}) {
-          return request.destination === "document";
-        },
-      },
-    ],
-  },
+  runtimeCaching: defaultCache,
+  skipWaiting: true,
 } satisfies SerwistOptions);
 
 serwist.addEventListeners();

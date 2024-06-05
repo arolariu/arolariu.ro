@@ -1,3 +1,5 @@
+/** @format */
+
 const Skeleton = ({className}: Readonly<{className: string}>) => (
   <div
     aria-live='polite'
@@ -9,14 +11,14 @@ const Skeleton = ({className}: Readonly<{className: string}>) => (
 );
 
 const SVGSkeleton = ({className}: Readonly<{className: string}>) => (
-  <svg className={className + " animate-pulse rounded bg-gray-300"} />
+  <svg className={`${className} animate-pulse rounded bg-gray-300`} />
 );
 
 /**
  * This function renders the loading screen for the auth pages.
  * @returns The loading screen for the auth pages.
  */
-export default async function Loading() {
+export default function Loading() {
   return (
     <main>
       <div className='container mx-auto px-5 py-24'>
@@ -25,9 +27,9 @@ export default async function Loading() {
             <div className='flex h-64 items-center justify-center'>
               <SVGSkeleton className='h-[500px] w-[300px] object-cover' />
             </div>
-            <h2 className='mb-3 mt-6'>
+            <div className='mb-3 mt-6'>
               <Skeleton className='w-[208px] max-w-full' />
-            </h2>
+            </div>
             <div className='leading-relaxed'>
               <Skeleton className='w-[1960px] max-w-full' />
             </div>
@@ -39,9 +41,9 @@ export default async function Loading() {
             <div className='flex h-64 items-center justify-center'>
               <SVGSkeleton className='h-[500px] w-[300px] object-cover' />
             </div>
-            <h2 className='mb-3 mt-6'>
+            <div className='mb-3 mt-6'>
               <Skeleton className='w-[248px] max-w-full' />
-            </h2>
+            </div>
             <div className='leading-relaxed'>
               <Skeleton className='w-[1568px] max-w-full' />
             </div>

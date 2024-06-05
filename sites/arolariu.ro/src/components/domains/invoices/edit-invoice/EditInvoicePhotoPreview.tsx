@@ -1,3 +1,5 @@
+/** @format */
+
 import {useZustandStore} from "@/hooks/stateStore";
 import Image from "next/image";
 import {useEffect, useState} from "react";
@@ -46,15 +48,14 @@ export default function EditInvoicePhotoPreview() {
         height={1800}
       />
     );
-  } else {
-    return (
-      <Image
-        className='mb-10 block w-full rounded object-cover object-center'
-        alt='Default dummy image'
-        src='https://dummyimage.com/600x900&text=placeholder'
-        width={900}
-        height={900}
-      />
-    );
   }
+  return (
+    <Image
+      className='mb-10 block w-full rounded object-cover object-center'
+      alt='Default dummy image'
+      src='https://dummyimage.com/600x900&text=placeholder'
+      width={900}
+      height={900}
+    />
+  );
 }

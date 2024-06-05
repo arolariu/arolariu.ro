@@ -1,11 +1,11 @@
+/** @format */
+
 import "server-only";
 
 import {AppConfigurationClient} from "@azure/app-configuration";
-
-import {Blob} from "node:buffer";
-
 import {type User} from "@clerk/nextjs/server";
 import * as jose from "jose";
+import {Blob} from "node:buffer";
 import {Resend} from "resend";
 import {CONFIG_STORE} from "./utils.generic";
 
@@ -22,7 +22,7 @@ export const API_JWT = process.env["API_JWT"] ?? "";
  * @param user The user for which to generate the JWT.
  * @returns A promise of the JWT.
  */
-export async function generateJWT(user: User | null) {
+export async function generateJWT(user: Readonly<User | null>) {
   const secret = new TextEncoder().encode(API_JWT);
 
   const header = {alg: "HS256", typ: "JWT"};
@@ -35,8 +35,7 @@ export async function generateJWT(user: User | null) {
     sub: user?.username ?? "guest",
   };
 
-  const jwt = await new jose.SignJWT(payload).setProtectedHeader(header).sign(secret);
-  return jwt;
+  return await new jose.SignJWT(payload).setProtectedHeader(header).sign(secret);
 }
 
 /**
@@ -56,9 +55,9 @@ export async function fetchConfigurationValue(key: string): Promise<string> {
  * @param base64String The base64 string to extract the mime type from
  * @returns The mime type
  */
-export function getMimeTypeFromBase64(base64String: string): string | undefined {
-  const match = /^data:(.*?);base64,/.exec(base64String);
-  return match ? match[1] : undefined;
+export function getMimeTypeFromBase64(base64String: string): string | null {
+  const match = /^data:(.*?);base64,/u.exec(base64String);
+  return match ? match.at(1)! : null;
 }
 
 /**
@@ -71,13 +70,10 @@ export async function base64ToBlob(base64String: string): Promise<Blob> {
   const mimeType = getMimeTypeFromBase64(base64String) as string;
 
   // Remove the mime type from the base64 string.
-  const base64 = base64String.replace(/^data:(.*?);base64,/, "");
+  const base64 = base64String.replace(/^data:(.*?);base64,/u, "");
 
   const byteCharacters = atob(base64);
-  const byteArrays = [];
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteArrays.push(byteCharacters.codePointAt(i) as number);
-  }
+  const byteArrays = [...byteCharacters].map((char) => char.codePointAt(0) as number);
 
   const byteArray = new Uint8Array(byteArrays);
   return new Blob([byteArray], {type: mimeType});

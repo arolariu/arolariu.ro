@@ -22,6 +22,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Domain.Inv
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Core.Tests", "sites\api.arolariu.ro\tests\arolariu.Backend.Core.Tests\arolariu.Backend.Core.Tests.csproj", "{3C562B2D-B1CB-4B86-B2E5-0FE29D37BCAA}"
 	ProjectSection(ProjectDependencies) = postProject
+		{6C25CE54-46CD-4ED9-9A9E-9DD94A4F938E} = {6C25CE54-46CD-4ED9-9A9E-9DD94A4F938E}
 		{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4} = {BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4}
 		{E6984367-2B9A-48AA-9D45-8BA72871153E} = {E6984367-2B9A-48AA-9D45-8BA72871153E}
 	EndProjectSection

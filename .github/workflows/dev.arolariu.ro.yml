@@ -12,7 +12,36 @@ permissions:
   contents: read
 
 jobs:
+  test:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v4
+
+      - name: 📦 Installing Node.js v20...
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 📦 Installing dependencies...
+        working-directory: ./sites/arolariu.ro
+        run: npm install --legacy-peer-deps && npx playwright install --with-deps
+
+      - name: 🧪 Preparing tests...
+        working-directory: ./sites/arolariu.ro
+        run: npm run storybook:build --quiet
+
+      - name: 🧪 Running tests...
+        working-directory: ./sites/arolariu.ro
+        run: |
+          npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
+            "npx http-server storybook-static --port 6006 --silent" \
+            "npx wait-on tcp:6006 && npm run storybook:test"
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     environment: development
     steps:
@@ -75,3 +104,4 @@ jobs:
           slot-name: "production"
           publish-profile: ${{ secrets.AROLARIU_WEB_APP_PUBLISHER_PROFILE_DEV }}
           images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/frontend/dev.arolariu:latest"
+

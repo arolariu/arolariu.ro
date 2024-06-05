@@ -1,34 +1,34 @@
-node_modules
+# dotfiles and dotfolders:
 .next
 .yarn
 .yarnrc.yml
 .vscode
 .env
 .env.example
-.eslintignore
 .gitattributes
-.gitignore
 .prettierignore
 .editorconfig
+.gitignore
 
+# current directory exceptions:
+*.json
 public
-i18n.inlang
 src/components/ui
+readme.md
 
+# exceptions for all directories:
 **/**/readme.md
-**/**/node_modules
-**/**/.next
-**/**/public
 **/**/*.ico
 **/**/*.css
 **/**/*.svg
 **/**/*.png
 **/**/*.jpg
-**/*.json
+**/**/*.mdx
+**/**/*.json
 
-src/components/ui
-
+# Lockfiles:
 package-lock.json
 yarn.lock
-
+pnpm-lock.yaml
 Dockerfile
+

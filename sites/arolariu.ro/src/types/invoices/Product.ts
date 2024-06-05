@@ -1,18 +1,17 @@
-export default interface Product {
-  rawName: string;
-  genericName: string;
-  category: ItemCategory;
-  quantity: number;
-  quantityUnit: string;
-  productCode: string;
-  price: number;
-  totalPrice: number;
-  detectedAllergens: Allergen[];
-  metadata: ProductMetadata;
-}
+/** @format */
 
-export enum ItemCategory {
-  NOT_DEFINED = 0,
+import {Allergen} from "./Allergen";
+
+/**
+ * Represents the metadata of a product from the invoice domain system.
+ */
+export type ProductMetadata = {isEdited: boolean; isComplete: boolean; isSoftDeleted: boolean};
+
+/**
+ * Represents the category of a product from the invoice domain system.
+ */
+export enum ProductCategory {
+  NOT_DEFINED,
   BAKED_GOODS,
   GROCERIES,
   DAIRY,
@@ -29,6 +28,18 @@ export enum ItemCategory {
   OTHER,
 }
 
-export type Allergen = {name: string};
-
-export type ProductMetadata = {isEdited: boolean; isComplete: boolean; isSoftDeleted: boolean};
+/**
+ * Represents a product from the invoice domain system.
+ */
+export default interface Product {
+  rawName: string;
+  genericName: string;
+  category: ProductCategory;
+  quantity: number;
+  quantityUnit: string;
+  productCode: string;
+  price: number;
+  totalPrice: number;
+  detectedAllergens: Allergen[];
+  metadata: ProductMetadata;
+}

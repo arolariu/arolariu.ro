@@ -1,3 +1,5 @@
+/** @format */
+
 import {clerkMiddleware as authMiddleware, createRouteMatcher} from "@clerk/nextjs/server";
 import {NextRequest, NextResponse} from "next/server";
 
@@ -18,7 +20,7 @@ const cspMiddleware = (request: NextRequest) => {
     upgrade-insecure-requests;
     `;
 
-  const contentSecurityPolicyHeaderValue = cspHeader.replaceAll(/\s{2,}/g, " ").trim();
+  const contentSecurityPolicyHeaderValue = cspHeader.replaceAll(/\s{2,}/gu, " ").trim();
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);

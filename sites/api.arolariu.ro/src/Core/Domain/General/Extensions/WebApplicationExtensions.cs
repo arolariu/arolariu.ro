@@ -1,4 +1,6 @@
 ﻿namespace arolariu.Backend.Core.Domain.General.Extensions;
+
+using arolariu.Backend.Core.Auth.Modules;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 using HealthChecks.UI.Client;
@@ -44,8 +46,7 @@ internal static class WebApplicationExtensions
 		app.UseSwaggerUI(SwaggerConfigurationService.GetSwaggerUIOptions());
 		app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse });
 		app.MapGet("/terms", () => app.Configuration["CommonOptions:TermsAndConditions"]);
-		app.UseAuthentication();
-		app.UseAuthorization();
+		app.UseAuthServices();
 		return app;
 	}
 }

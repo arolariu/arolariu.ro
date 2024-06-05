@@ -1,3 +1,5 @@
+/** @format */
+
 "use server";
 
 import Invoice from "@/types/invoices/Invoice";
@@ -9,7 +11,7 @@ import {API_URL, generateJWT} from "../utils.server";
  * @param id The id of the invoice to fetch.
  * @returns A promise of the invoice, or undefined if the request failed.
  */
-export default async function fetchInvoice(id: string): Promise<Invoice | undefined> {
+export default async function fetchInvoice(id: string): Promise<Invoice | null> {
   const {user} = await fetchUser();
   const authorizationToken = await generateJWT(user);
   const headers = {
@@ -22,20 +24,18 @@ export default async function fetchInvoice(id: string): Promise<Invoice | undefi
   // If neither of the requests return a success, we will return null.
 
   const userResponse = await fetch(`${API_URL}/rest/user/${user?.id ?? ""}/invoices/${id}`, {
-    method: "GET",
-    headers: headers,
+    headers,
   });
   if (userResponse.status === 200) {
     return (await userResponse.json()) as Invoice;
   }
 
   const guestResponse = await fetch(`${API_URL}/rest/invoices/${id}`, {
-    method: "GET",
-    headers: headers,
+    headers,
   });
   if (guestResponse.status === 200) {
     return (await guestResponse.json()) as Invoice;
   }
 
-  return undefined;
+  return null;
 }

@@ -1,5 +1,8 @@
 import { cn } from "@/lib/utils.generic"
 
+/**
+ *
+ */
 function Skeleton({
   className,
   ...props

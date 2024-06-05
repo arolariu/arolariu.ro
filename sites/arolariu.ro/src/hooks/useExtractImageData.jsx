@@ -1,3 +1,5 @@
+/** @format */
+
 import {useEffect, useState} from "react";
 
 // TODO: this hook needs a major rework
@@ -27,15 +29,15 @@ export default function useExtractImageData(image) {
   };
 
   useEffect(() => {
-    if (image != null) {
+    if (image !== null) {
       extractBase64ImageData(image);
       extractImageMetadata(image);
     }
   }, [image]);
 
   return {
+    additionalMetadata,
     imageData,
     imageError,
-    additionalMetadata,
   };
 }

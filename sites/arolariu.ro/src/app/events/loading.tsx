@@ -1,3 +1,5 @@
+/** @format */
+
 const Skeleton = ({className}: Readonly<{className: string}>) => (
   <div
     aria-live='polite'
@@ -9,7 +11,7 @@ const Skeleton = ({className}: Readonly<{className: string}>) => (
 );
 
 const SVGSkeleton = ({className}: Readonly<{className: string}>) => (
-  <svg className={className + " animate-pulse rounded bg-gray-300"} />
+  <svg className={`${className} animate-pulse rounded bg-gray-300`} />
 );
 
 /**
@@ -23,95 +25,83 @@ export default async function Loading() {
         <h1 className='my-8'>
           <Skeleton className='w-[120px] max-w-full' />
         </h1>
-        <p className='2xsm:hidden md:block'>
+        <div className='2xsm:hidden md:block'>
           <Skeleton className='w-[1192px] max-w-full' />
           <code>
             <Skeleton className='w-[88px] max-w-full' />
           </code>
-        </p>
+        </div>
       </section>
       <section className='flex flex-wrap 2xsm:gap-4 md:gap-8 md:p-4 lg:flex-nowrap'>
-        <a>
-          <div className='shadow-lg'>
-            <SVGSkeleton className='h-[400px] w-[720px] object-fill object-center' />
-            <div className='p-4 md:text-left'>
-              <h1 className='mb-2'>
-                <Skeleton className='w-[192px] max-w-full' />
-              </h1>
-              <p>
-                <Skeleton className='w-[768px] max-w-full' />
-              </p>
-              <div className='mt-4 flex items-center justify-between gap-4 2xsm:flex-col md:flex-row'>
-                <div className='flex items-center'>
-                  <SVGSkeleton className='h-6 w-6' />
-                  <p className='ml-2'>
-                    <Skeleton className='w-[80px] max-w-full' />
-                  </p>
+        <div className='shadow-lg'>
+          <SVGSkeleton className='h-[400px] w-[720px] object-fill object-center' />
+          <div className='p-4 md:text-left'>
+            <h1 className='mb-2'>
+              <Skeleton className='w-[192px] max-w-full' />
+            </h1>
+            <Skeleton className='w-[768px] max-w-full' />
+            <div className='mt-4 flex items-center justify-between gap-4 2xsm:flex-col md:flex-row'>
+              <div className='flex items-center'>
+                <SVGSkeleton className='h-6 w-6' />
+                <div className='ml-2'>
+                  <Skeleton className='w-[80px] max-w-full' />
                 </div>
-                <div className='ml-4 flex items-center'>
-                  <SVGSkeleton className='h-6 w-6' />
-                  <p className='ml-2'>
-                    <Skeleton className='w-[48px] max-w-full' />
-                  </p>
+              </div>
+              <div className='ml-4 flex items-center'>
+                <SVGSkeleton className='h-6 w-6' />
+                <div className='ml-2'>
+                  <Skeleton className='w-[48px] max-w-full' />
                 </div>
               </div>
             </div>
           </div>
-        </a>
-        <a>
-          <div className='shadow-lg'>
-            <SVGSkeleton className='h-[400px] w-[720px] object-fill object-center' />
-            <div className='p-4 md:text-left'>
-              <h1 className='mb-2'>
-                <Skeleton className='w-[192px] max-w-full' />
-              </h1>
-              <p>
-                <Skeleton className='w-[768px] max-w-full' />
-              </p>
-              <div className='mt-4 flex items-center justify-between gap-4 2xsm:flex-col md:flex-row'>
-                <div className='flex items-center'>
-                  <SVGSkeleton className='h-6 w-6' />
-                  <p className='ml-2'>
-                    <Skeleton className='w-[80px] max-w-full' />
-                  </p>
+        </div>
+        <div className='shadow-lg'>
+          <SVGSkeleton className='h-[400px] w-[720px] object-fill object-center' />
+          <div className='p-4 md:text-left'>
+            <h1 className='mb-2'>
+              <Skeleton className='w-[192px] max-w-full' />
+            </h1>
+            <Skeleton className='w-[768px] max-w-full' />
+            <div className='mt-4 flex items-center justify-between gap-4 2xsm:flex-col md:flex-row'>
+              <div className='flex items-center'>
+                <SVGSkeleton className='h-6 w-6' />
+                <div className='ml-2'>
+                  <Skeleton className='w-[80px] max-w-full' />
                 </div>
-                <div className='ml-4 flex items-center'>
-                  <SVGSkeleton className='h-6 w-6' />
-                  <p className='ml-2'>
-                    <Skeleton className='w-[48px] max-w-full' />
-                  </p>
+              </div>
+              <div className='ml-4 flex items-center'>
+                <SVGSkeleton className='h-6 w-6' />
+                <div className='ml-2'>
+                  <Skeleton className='w-[48px] max-w-full' />
                 </div>
               </div>
             </div>
           </div>
-        </a>
-        <a>
-          <div className='shadow-lg'>
-            <SVGSkeleton className='h-[400px] w-[720px] object-fill object-center' />
-            <div className='p-4 md:text-left'>
-              <h1 className='mb-2'>
-                <Skeleton className='w-[192px] max-w-full' />
-              </h1>
-              <p>
-                <Skeleton className='w-[768px] max-w-full' />
-              </p>
-              <div className='mt-4 flex items-center justify-between gap-4 2xsm:flex-col md:flex-row'>
-                <div className='flex items-center'>
-                  <SVGSkeleton className='h-6 w-6' />
-                  <p className='ml-2'>
-                    <Skeleton className='w-[80px] max-w-full' />
-                  </p>
+        </div>
+        <div className='shadow-lg'>
+          <SVGSkeleton className='h-[400px] w-[720px] object-fill object-center' />
+          <div className='p-4 md:text-left'>
+            <h1 className='mb-2'>
+              <Skeleton className='w-[192px] max-w-full' />
+            </h1>
+            <Skeleton className='w-[768px] max-w-full' />
+            <div className='mt-4 flex items-center justify-between gap-4 2xsm:flex-col md:flex-row'>
+              <div className='flex items-center'>
+                <SVGSkeleton className='h-6 w-6' />
+                <div className='ml-2'>
+                  <Skeleton className='w-[80px] max-w-full' />
                 </div>
-                <div className='ml-4 flex items-center'>
-                  <SVGSkeleton className='h-6 w-6' />
-                  <p className='ml-2'>
-                    <Skeleton className='w-[48px] max-w-full' />
-                  </p>
+              </div>
+              <div className='ml-4 flex items-center'>
+                <SVGSkeleton className='h-6 w-6' />
+                <div className='ml-2'>
+                  <Skeleton className='w-[48px] max-w-full' />
                 </div>
               </div>
             </div>
           </div>
-        </a>
+        </div>
       </section>
     </div>
   );

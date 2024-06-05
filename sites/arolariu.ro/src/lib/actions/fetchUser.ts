@@ -1,3 +1,5 @@
+/** @format */
+
 "use server";
 
 import {currentUser, type User} from "@clerk/nextjs/server";

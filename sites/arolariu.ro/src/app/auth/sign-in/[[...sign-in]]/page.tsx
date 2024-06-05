@@ -1,3 +1,5 @@
+/** @format */
+
 import {SignIn} from "@clerk/nextjs";
 import {type Metadata} from "next";
 
@@ -10,7 +12,7 @@ export const metadata: Metadata = {
  * The sign in page.
  * @returns The sign in page.
  */
-export default async function SignInPage() {
+export default function SignInPage() {
   return (
     <section className='flex flex-col 2xsm:mt-16 2xsm:p-2 sm:p-4 md:mt-0 md:p-8'>
       <h1 className='my-4 text-center text-2xl font-extrabold'>

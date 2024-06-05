@@ -1,3 +1,5 @@
+/** @format */
+
 import typography from "@tailwindcss/typography";
 import daisyUI from "daisyui";
 import {type Config} from "tailwindcss";

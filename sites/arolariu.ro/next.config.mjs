@@ -1,9 +1,11 @@
+/** @format */
+
 // @ts-check
 
-import {paraglide as withTranslationInit} from "@inlang/paraglide-next/plugin";
 import withBundleAnalyzerInit from "@next/bundle-analyzer";
+import nextMdx from "@next/mdx";
 import withSerwistInit from "@serwist/next";
-
+import createNextIntlPlugin from "next-intl/plugin";
 /**
  * @format
  * @type {import("next").NextConfig}
@@ -86,6 +88,8 @@ const nextConfig = {
       bodySizeLimit: "10mb",
     },
     optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
+    instrumentationHook: true,
+    mdxRs: true,
   },
 
   eslint: {
@@ -98,7 +102,10 @@ const nextConfig = {
     tsconfigPath: "tsconfig.json",
   },
 
+  pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
+
   assetPrefix: process.env["USE_CDN"] === "true" ? "https://cdn.arolariu.ro" : undefined,
+  compress: false, // We use AFD built-in compression for static assets.
   trailingSlash: true,
 };
 
@@ -116,16 +123,13 @@ const withBundleAnalyzer = withBundleAnalyzerInit({
   enabled: process.env.ANALYZE === "true",
 });
 
-const withTranslation = withTranslationInit({
-  paraglide: {
-    project: "./i18n.inlang",
-    outdir: "./src/i18n",
+const withTranslation = createNextIntlPlugin();
+const withMdx = nextMdx({
+  extension: /\.mdx?$/,
+  options: {
+    remarkPlugins: [],
+    rehypePlugins: [],
   },
-  i18n: {
-    defaultLocale: "en",
-    locales: ["en", "ro"],
-  },
-  ...nextConfig,
 });
 
-export default withBundleAnalyzer(withSerwist(withTranslation));
+export default withBundleAnalyzer(withSerwist(withTranslation(withMdx(nextConfig))));

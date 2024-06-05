@@ -1,6 +1,10 @@
+/** @format */
+
 import {COMMIT_SHA, TIMESTAMP} from "@/lib/utils.generic";
 import {GitHubLogoIcon, LinkedInLogoIcon} from "@radix-ui/react-icons";
+import Image from "next/image";
 import Link from "next/link";
+import logo from "../../public/logo.svg";
 
 /**
  * The footer component.
@@ -26,18 +30,14 @@ export default async function Footer() {
               href='/'
               aria-label='Go home'
               title='AROLARIU.RO'
-              className='inline-flex items-center 2xsm:ml-[20%] md:ml-0'>
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                fill='none'
-                stroke='currentColor'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-                strokeWidth='2'
-                className='h-10 w-10 rounded-full bg-indigo-500 p-2'
-                viewBox='0 0 24 24'>
-                <path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' />
-              </svg>
+              className='inline-flex transform items-center transition-all duration-300 ease-in-out hover:scale-110 2xsm:ml-[20%] md:ml-0'>
+              <Image
+                src={logo}
+                alt='arolariu.ro'
+                className='rounded-full ring-2 ring-indigo-500 '
+                width={40}
+                height={40}
+              />
               <span className='ml-2 text-xl font-bold uppercase tracking-wide'>AROLARIU.RO</span>
             </Link>
             <div className='mt-4 text-sm 2xsm:px-4 2xsm:text-center md:px-0 md:text-left'>
@@ -149,16 +149,16 @@ export default async function Footer() {
               <ul className='mt-2 space-y-2'>
                 <li>
                   <Link
-                    href='/about/the-platform'
+                    href='/about'
                     className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
-                    What is <code>arolariu.ro</code>?
+                    What is this?
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href='/about/the-author'
+                    href='/acknowledgements'
                     className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
-                    Who is <code>arolariu</code>?
+                    Acknowledgements
                   </Link>
                 </li>
                 <li>

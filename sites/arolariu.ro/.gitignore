@@ -23,10 +23,22 @@
 # vercel
 .vercel
 
+# storybook
+/storybook-static
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
+
 # service worker
 /public/sw.js
 /public/swe-*.js
+
+certificates
+
+*storybook.log
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

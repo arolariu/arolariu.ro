@@ -1,14 +1,17 @@
 ﻿namespace arolariu.Backend.Core.Auth.Models;
+
+using System;
+
 using Microsoft.AspNetCore.Identity;
 
 /// <summary>
 /// To complete.
 /// </summary>
-public class AuthenticatedUser : IdentityUser
+public class AuthenticatedUser : IdentityUser<Guid>
 {
 	/// <summary>
-	/// TODO.
+	/// The name of the user.
 	/// </summary>
-	/// <returns></returns>
-	public const string Todo = "TODO";
+	[PersonalData]
+	public string? Name { get; set; }
 }

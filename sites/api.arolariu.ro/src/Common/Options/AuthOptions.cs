@@ -19,4 +19,14 @@ public class AuthOptions
 	/// The secret used to sign the JWT structure.
 	/// </summary>
 	public string Secret { get; set; } = string.Empty;
+
+	/// <summary>
+	/// The SMTP Service Principal.
+	/// </summary>
+	public string SmtpUserId { get; set; } = string.Empty;
+
+	/// <summary>
+	/// The SMTP Service Principal secret.
+	/// </summary>
+	public string SmtpUserPass { get; set; } = string.Empty;
 }

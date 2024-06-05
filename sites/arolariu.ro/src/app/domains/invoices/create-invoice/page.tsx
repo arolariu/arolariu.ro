@@ -1,6 +1,8 @@
+/** @format */
+
 import {fetchUser} from "@/lib/actions/fetchUser";
 import {type Metadata} from "next";
-import RenderInvoiceScreen from "./island";
+import RenderCreateInvoiceScreen from "./island";
 
 export const metadata: Metadata = {
   title: "Invoice Management System - Create Invoice",
@@ -17,9 +19,9 @@ export default async function CreateInvoicePage() {
 
   return (
     <main className='flex flex-col flex-wrap items-center justify-center justify-items-center px-5 py-24 text-center'>
-      <RenderInvoiceScreen />
+      <RenderCreateInvoiceScreen />
       {!isAuthenticated && (
-        <small className='2xsm:text-md mb-4 2xsm:p-8 md:text-xl lg:text-2xl'>
+        <small className='2xsm:text-md md:text-md mb-4 p-8 lg:text-xl 2xl:text-2xl'>
           (In order to save your invoice, please create an account or sign in.)
         </small>
       )}

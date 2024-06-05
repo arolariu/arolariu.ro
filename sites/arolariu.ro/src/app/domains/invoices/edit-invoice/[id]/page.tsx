@@ -1,8 +1,10 @@
-import RenderForbiddenScreen from "@/components/domains/RenderForbiddenScreen";
+/** @format */
+
+import RenderForbiddenScreen from "@/app/domains/_components/RenderForbiddenScreen";
 import {fetchUser} from "@/lib/actions/fetchUser";
 import fetchInvoice from "@/lib/invoices/fetchInvoice";
 import {type Metadata} from "next";
-import RenderEditInvoicePage from "./island";
+import RenderEditInvoiceScreen from "./island";
 
 interface Props {
   params: {id: string};
@@ -25,8 +27,8 @@ export default async function EditInvoicePage({params}: Readonly<Props>) {
     return <RenderForbiddenScreen />;
   }
   return (
-    <main>
-      <RenderEditInvoicePage invoice={invoice} />
+    <main className='px-5 py-24'>
+      <RenderEditInvoiceScreen invoice={invoice} />
     </main>
   );
 }

@@ -1,6 +1,6 @@
 ﻿namespace arolariu.Backend.Core.Tests;
 
-internal static class MocksContainer
+internal static partial class MocksContainer
 {
 
 }
