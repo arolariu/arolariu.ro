@@ -2,8 +2,8 @@
 
 import {Server as HttpServer} from "http";
 import {Server as NetServer, Socket} from "net";
-import {NextApiRequest, NextApiResponse} from "next";
-import {Server as SocketIOServer} from "socket.io";
+import {NextApiResponse} from "next";
+import {Socket as SocketIO, Server as SocketIOServer} from "socket.io";
 
 type NextApiResponseWithSocketIo = NextApiResponse & {
   socket: Socket & {
@@ -29,7 +29,7 @@ export const dynamic = "force-dynamic";
  * @param res The response object
  * @returns void
  */
-export default async function socketHandler(req: NextApiRequest, res: NextApiResponseWithSocketIo) {
+export default async function socketHandler(res: NextApiResponseWithSocketIo) {
   if (!res.socket.server.io) {
     console.log("Creating a new socket server instance...");
     const path = "/api/socket/io";
@@ -75,63 +75,63 @@ export default async function socketHandler(req: NextApiRequest, res: NextApiRes
 
 /**
  * This function listens for WebRTC events.
- * @param socket The socket object
- * @param io The socketIO server object
+ * @param _socket The socket object
+ * @param _io The socketIO server object
  */
-function listenForWebRtcEvents(socket, io) {
+function listenForWebRtcEvents(_socket: SocketIO, _io: SocketIOServer) {
   // Triggered when a peer hits the join room button.
-  socket.on("join", (roomName: string) => {
-    const {rooms} = io.sockets.adapter;
+  _socket.on("join", (roomName: string) => {
+    const {rooms} = _io.sockets.adapter;
     const room = rooms.get(roomName);
 
     if (room === undefined) {
       // Case 1: No room with the same name exists.
-      socket.join(roomName);
-      socket.emit("created");
+      _socket.join(roomName);
+      _socket.emit("created");
     } else if (room.size === 1) {
       // Case 2: Room with the same name exists and only one person is inside.
-      socket.join(roomName);
-      socket.emit("joined");
+      _socket.join(roomName);
+      _socket.emit("joined");
     } else {
       // Case 3: Room with the same name exists and two people are inside.
-      socket.emit("full");
+      _socket.emit("full");
     }
 
     console.log(rooms);
   });
 
   // Triggered when the person who joined the room is ready to communicate.
-  socket.on("ready", (roomName: string) => {
-    socket.broadcast.to(roomName).emit("ready");
+  _socket.on("ready", (roomName: string) => {
+    _socket.broadcast.to(roomName).emit("ready");
   });
 
   // Triggered when server gets an icecandidate from a peer in the room.
-  socket.on("ice-candidate", (candidate: RTCIceCandidate, roomName: string) => {
+  _socket.on("ice-candidate", (candidate: RTCIceCandidate, roomName: string) => {
     console.log(candidate);
-    socket.broadcast.to(roomName).emit("ice-candidate", candidate);
+    _socket.broadcast.to(roomName).emit("ice-candidate", candidate);
   });
 
   // Triggered when server gets an offer from a peer in the room.
-  socket.on("offer", (offer, roomName: string) => {
-    socket.broadcast.to(roomName).emit("offer", offer);
+  _socket.on("offer", (offer, roomName: string) => {
+    _socket.broadcast.to(roomName).emit("offer", offer);
   });
 
   // Triggered when server gets an answer from a peer in the room
-  socket.on("answer", (answer, roomName: string) => {
-    socket.broadcast.to(roomName).emit("answer", answer);
+  _socket.on("answer", (answer, roomName: string) => {
+    _socket.broadcast.to(roomName).emit("answer", answer);
   });
 
   // Triggered when a peer leaves the room.
-  socket.on("leave", (roomName: string) => {
-    socket.leave(roomName);
-    socket.broadcast.to(roomName).emit("leave");
+  _socket.on("leave", (roomName: string) => {
+    _socket.leave(roomName);
+    _socket.broadcast.to(roomName).emit("leave");
   });
 }
 
-function listenForWebsocketEvents(socket, io) {
+function listenForWebsocketEvents(_socket: SocketIO, _io: SocketIOServer) {
   // Triggered when a peer sends a message to the room.
-  socket.on("message", (message: string) => {
+  _socket.on("message", (message: string) => {
     console.log(`Received message: ${message}`);
-    socket.broadcast.emit("message", message);
+    _socket.broadcast.emit("message", message);
   });
 }
