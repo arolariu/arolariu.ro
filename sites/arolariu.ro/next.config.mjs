@@ -105,6 +105,7 @@ const nextConfig = {
   pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
 
   assetPrefix: process.env["USE_CDN"] === "true" ? "https://cdn.arolariu.ro" : undefined,
+  compress: false, // We use AFD built-in compression for static assets.
   trailingSlash: true,
 };
 
