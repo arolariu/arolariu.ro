@@ -27,7 +27,7 @@ jobs:
 
       - name: 📦 Installing dependencies...
         working-directory: ./sites/arolariu.ro
-        run: npm install && npx playwright install --with-deps
+        run: npm install --legacy-peer-deps && npx playwright install --with-deps
 
       - name: 🧪 Preparing tests...
         working-directory: ./sites/arolariu.ro
