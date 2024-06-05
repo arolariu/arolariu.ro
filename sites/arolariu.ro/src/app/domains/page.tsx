@@ -36,12 +36,17 @@ export default function DomainsHomepage() {
         </div>
       </section>
 
-      <section className='flex flex-row flex-wrap 2xsm:items-center 2xsm:justify-center 2xsm:justify-items-center md:items-baseline md:justify-normal md:justify-items-start'>
+      <section className='flex flex-row flex-wrap gap-4 2xsm:items-center 2xsm:justify-center 2xsm:justify-items-center md:items-baseline md:justify-normal md:justify-items-start'>
         <DomainServiceCard
           title='Invoice Management System'
           description='This domain space service assists with the digital transformation of physical receipts. It allows users to upload receipts, and get carefully-crafted insights into their spending habits.'
           linkTo='/domains/invoices'
           imageUrl='/images/domains/invoice-management-system.png'
+        />
+        <DomainServiceCard
+          title='Live Chat Rooms'
+          description='This domain space service allows users to create and join chat rooms. The chat rooms are real-time and can be accessed by room name. Chat and video call with peers.'
+          linkTo='/domains/live'
         />
       </section>
     </main>
