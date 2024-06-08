@@ -1,12 +1,12 @@
 {
-  "$schema": "https://developer.mozilla.org/en-US/docs/Web/Manifest",
+  "$schema": "https://json.schemastore.org/web-manifest",
   "background_color": "#000000",
   "categories": [
     "education",
     "productivity",
     "utilities"
   ],
-  "description": "The `arolariu.ro` website is a personal website of Alexandru-Razvan Olariu, a software engineer from Romania.",
+  "description": "The `arolariu.ro` platform consists of a complex website, made by Alexandru-Razvan Olariu, a software engineer that is based in Romania.",
   "dir": "ltr",
   "display": "standalone",
   "icons": [
@@ -46,12 +46,25 @@
       "type": "image/png"
     }
   ],
+  "shortcuts": [
+    {
+      "name": "Invoices Management System (IMS)",
+      "short_name": "IMS",
+      "description": "The Invoices Management System (IMS) is a platform that allows you to manage your invoices, in a secure and efficient way.",
+      "url": "/domains/invoices"
+    },
+    {
+      "name": "Chat Rooms",
+      "description": "The Chat Rooms service allows you to chat with other people, in real-time, using enterprise-grade technologies.",
+      "url": "/domains/live"
+    }
+  ],
   "id": "pwa.arolariu.ro",
   "lang": "en",
   "name": "arolariu.ro",
   "orientation": "portrait",
   "scope": "/",
   "short_name": "arolariu",
-  "start_url": "https://arolariu.ro/",
+  "start_url": "https://arolariu.ro/?launcher=pwa",
   "theme_color": "#9013fe"
 }
