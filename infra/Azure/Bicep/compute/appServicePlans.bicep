@@ -1,6 +1,6 @@
 targetScope = 'resourceGroup'
 
-metadata description = 'This BICEP file deploys two App Service Farms, in the same region, for production and development environments.'
+metadata description = 'This template deploys two App Service Farms, in the same region, for production and development environments.'
 metadata author = 'Alexandru-Razvan Olariu'
 
 @description('The location for the app service plans.')
@@ -11,7 +11,7 @@ param appServicePlanPrefix string
 
 var appPlans = [
   {
-    name: '${appServicePlanPrefix}-production'
+    name: '${appServicePlanPrefix}production'
     sku: {
       name: 'B2'
       tier: 'Basic'
@@ -19,7 +19,7 @@ var appPlans = [
     perSiteScaling: true
   }
   {
-    name: '${appServicePlanPrefix}-development'
+    name: '${appServicePlanPrefix}development'
     sku: {
       name: 'B1'
       tier: 'Basic'
@@ -43,8 +43,9 @@ resource appPlanFarm 'Microsoft.Web/serverfarms@2023-12-01' = [
       perSiteScaling: appPlan.perSiteScaling
     }
     tags: {
-      environment: appPlan.name == '${appServicePlanPrefix}-production' ? 'production' : 'development'
+      environment: appPlan.name == '${appServicePlanPrefix}production' ? 'production' : 'development'
       deployment: 'bicep'
+      timestamp: resourceGroup().tags.timestamp
     }
   }
 ]

@@ -6,14 +6,11 @@ metadata author = 'Alexandru-Razvan Olariu'
 @description('The location for the storage account resource.')
 param location string = resourceGroup().location
 
-@description('The prefix for the storage account name. The final name will be the prefix followed by "storageacc".')
-param storageAccountNamePrefix string
-
-@description('The name of the storage account.')
-var storageAccuntName = '${storageAccountNamePrefix}storageacc'
+@description('The storage account name.')
+param storageAccountName string
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
-  name: storageAccuntName
+  name: storageAccountName
   location: location
   sku: { name: 'Standard_LRS' }
   kind: 'StorageV2'
@@ -55,7 +52,9 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   tags: {
     environment: 'production'
     deployment: 'bicep'
+    timestamp: resourceGroup().tags.timestamp
   }
+
   resource storageAccountBlobSettings 'blobServices@2023-05-01' = {
     name: 'default'
     properties: {
@@ -113,3 +112,4 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
 }
 
 output storageAccountName string = storageAccount.name
+output storageAccountResourceId string = storageAccount.id

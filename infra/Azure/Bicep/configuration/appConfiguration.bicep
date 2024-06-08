@@ -3,20 +3,33 @@ targetScope = 'resourceGroup'
 metadata description = 'This template will deploy an Azure App Configuration resource.'
 metadata author = 'Alexandru-Razvan Olariu'
 
-@description('The prefix to use for the App Configuration name.')
-param appConfigurationNamePrefix string
+@description('The name of the App Configuration resource.')
+param appConfigurationName string
+
+@description('The back-end identity to assign to the App Configuration resource.')
+param appConfigurationBEIdentity string
+
+@description('The front-end identity to assign to the App Configuration resource.')
+param appConfigurationFEIdentity string
+
+@description('The infrastructure identity to assign to the App Configuration resource.')
+param appConfigurationInfraIdentity string
 
 @description('The location for the App Configuration resource.')
 param appConfigurationLocation string = resourceGroup().location
-
-@description('The name of the App Configuration resource.')
-var appConfigurationName = '${appConfigurationNamePrefix}-config-store'
 
 resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2023-09-01-preview' = {
   name: appConfigurationName
   location: appConfigurationLocation
   sku: { name: 'free' }
-  identity: { type: 'SystemAssigned' }
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${appConfigurationBEIdentity}': {}
+      '${appConfigurationFEIdentity}': {}
+      '${appConfigurationInfraIdentity}': {}
+    }
+  }
   properties: {
     createMode: 'Default'
     disableLocalAuth: false
@@ -30,5 +43,8 @@ resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2023-0
   tags: {
     environment: 'production'
     deployment: 'bicep'
+    timestamp: resourceGroup().tags.timestamp
   }
 }
+
+output appConfigurationResourceId string = appConfiguration.id

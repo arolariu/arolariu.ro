@@ -3,13 +3,21 @@ targetScope = 'resourceGroup'
 metadata description = 'This template will create the arolariu.ro app service site.'
 metadata author = 'Alexandru-Razvan Olariu'
 
-param location string = resourceGroup().location
+param mainWebsiteLocation string = resourceGroup().location
 param productionAppPlanId string
 
+param mainWebsiteIdentityId string
+
 resource mainWebsite 'Microsoft.Web/sites@2023-12-01' = {
-  name: 'arolariu-dot-ro'
-  location: location
+  name: 'www-arolariu-ro'
+  location: mainWebsiteLocation
   kind: 'app,linux,container'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${mainWebsiteIdentityId}': {}
+    }
+  }
   properties: {
     clientAffinityEnabled: true // Enable sticky sessions via affinity cookies.
     clientCertEnabled: false // Client certificates are not required.
@@ -74,7 +82,11 @@ resource mainWebsite 'Microsoft.Web/sites@2023-12-01' = {
       webSocketsEnabled: true // WebSockets (WSS) are enabled.
     }
   }
+  tags: {
+    environment: 'production'
+    deployment: 'bicep'
+    timestamp: resourceGroup().tags.timestamp
+  }
 }
-
 
 output mainWebsiteUrl string = mainWebsite.properties.defaultHostName

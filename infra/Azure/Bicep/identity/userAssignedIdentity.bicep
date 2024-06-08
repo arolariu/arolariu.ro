@@ -11,15 +11,15 @@ param userAssignedManagedIdentityLocation string = resourceGroup().location
 
 var identities = [
   {
-    name: '${userAssignedManagedIdentityNamePrefix}-FrontEnd'
+    name: '${userAssignedManagedIdentityNamePrefix}frontend'
     displayName: 'Front-End Identity'
   }
   {
-    name: '${userAssignedManagedIdentityNamePrefix}-BackEnd'
+    name: '${userAssignedManagedIdentityNamePrefix}backend'
     displayName: 'Back-End Identity'
   }
   {
-    name: '${userAssignedManagedIdentityNamePrefix}-Infrastructure'
+    name: '${userAssignedManagedIdentityNamePrefix}infrastructure'
     displayName: 'Infrastructure Identity'
   }
 ]
@@ -32,11 +32,13 @@ resource userAssignedManagedIdentities 'Microsoft.ManagedIdentity/userAssignedId
       displayName: identity.displayName
       environment: 'production'
       deployment: 'bicep'
+      timestamp: resourceGroup().tags.timestamp
     }
   }
 ]
 
-output userAssignedManagedIdentities array = [
+import { identity } from '../types/identity.type.bicep'
+output userAssignedManagedIdentities identity[] = [
   for identity in range(0, length(identities)): {
     name: identities[identity].name
     displayName: identities[identity].displayName
