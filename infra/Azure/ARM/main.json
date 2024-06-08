@@ -1,0 +1,2096 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.28.1.47646",
+      "templateHash": "10480487256302217780"
+    },
+    "description": "This bicep file is the main entry point for any zero-touch deployment.",
+    "author": "Alexandru-Razvan Olariu"
+  },
+  "parameters": {
+    "resourceGroupName": {
+      "type": "string",
+      "defaultValue": "myResourceGroup",
+      "metadata": {
+        "description": "The name of the resource group that will contain all the resources."
+      }
+    },
+    "resourceGroupLocation": {
+      "type": "string",
+      "defaultValue": "EastUS",
+      "metadata": {
+        "description": "The location of the resource group that will contain all the resources."
+      }
+    },
+    "resourceDeploymentDate": {
+      "type": "string",
+      "defaultValue": "[utcNow()]",
+      "metadata": {
+        "description": "The date when the deployment is executed."
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/resourceGroups",
+      "apiVersion": "2024-03-01",
+      "name": "[parameters('resourceGroupName')]",
+      "location": "[parameters('resourceGroupLocation')]",
+      "tags": {
+        "timestamp": "[parameters('resourceDeploymentDate')]"
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('mainDeployment-{0}', parameters('resourceDeploymentDate'))]",
+      "resourceGroup": "[parameters('resourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.28.1.47646",
+              "templateHash": "744050446902185227"
+            },
+            "description": "This file acts a facade that will be called by the main bicep file. This file contains all module deployments (compute, storage, identity, etc.). This file is responsible for deploying all the modules.",
+            "author": "Alexandru-Razvan Olariu"
+          },
+          "parameters": {
+            "resourceDeploymentDate": {
+              "type": "string",
+              "defaultValue": "[utcNow()]",
+              "metadata": {
+                "description": "The date when the deployment is executed."
+              }
+            },
+            "resourceConventionPrefix": {
+              "type": "string",
+              "defaultValue": "[format('{0}-arolariu', substring(uniqueString(resourceGroup().id), 0, 6))]",
+              "metadata": {
+                "description": "The prefix that will be used for all the resources."
+              }
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "resourceConventionPrefix": {
+                    "value": "[parameters('resourceConventionPrefix')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "languageVersion": "2.0",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.28.1.47646",
+                      "templateHash": "2340271951483084322"
+                    }
+                  },
+                  "definitions": {
+                    "identity": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "displayName": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "metadata": {
+                        "type": "identity",
+                        "name": "identity",
+                        "__bicep_imported_from!": {
+                          "sourceTemplate": "../types/identity.type.bicep"
+                        }
+                      }
+                    }
+                  },
+                  "parameters": {
+                    "resourceDeploymentDate": {
+                      "type": "string",
+                      "defaultValue": "[utcNow()]",
+                      "metadata": {
+                        "description": "The date when the deployment is executed."
+                      }
+                    },
+                    "resourceConventionPrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The prefix to use for the names of the resources."
+                      }
+                    }
+                  },
+                  "variables": {
+                    "managedIdentitiesNamePrefix": "[format('{0}-uami-', parameters('resourceConventionPrefix'))]"
+                  },
+                  "resources": {
+                    "managedIdentities": {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('managedIdentitiesDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "userAssignedManagedIdentityNamePrefix": {
+                            "value": "[variables('managedIdentitiesNamePrefix')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.0",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "16942714675029078823"
+                            },
+                            "description": "This template will create three user assigned managed identities: Front-End, Back-End, Infrastructure",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "definitions": {
+                            "identity": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "displayName": {
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "type": "string"
+                                }
+                              },
+                              "metadata": {
+                                "type": "identity",
+                                "name": "identity",
+                                "__bicep_imported_from!": {
+                                  "sourceTemplate": "../types/identity.type.bicep"
+                                }
+                              }
+                            }
+                          },
+                          "parameters": {
+                            "userAssignedManagedIdentityNamePrefix": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The prefix for the user assigned managed identities"
+                              }
+                            },
+                            "userAssignedManagedIdentityLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]",
+                              "metadata": {
+                                "description": "The location of the user assigned managed identities"
+                              }
+                            }
+                          },
+                          "variables": {
+                            "identities": [
+                              {
+                                "name": "[format('{0}frontend', parameters('userAssignedManagedIdentityNamePrefix'))]",
+                                "displayName": "Front-End Identity"
+                              },
+                              {
+                                "name": "[format('{0}backend', parameters('userAssignedManagedIdentityNamePrefix'))]",
+                                "displayName": "Back-End Identity"
+                              },
+                              {
+                                "name": "[format('{0}infrastructure', parameters('userAssignedManagedIdentityNamePrefix'))]",
+                                "displayName": "Infrastructure Identity"
+                              }
+                            ]
+                          },
+                          "resources": {
+                            "userAssignedManagedIdentities": {
+                              "copy": {
+                                "name": "userAssignedManagedIdentities",
+                                "count": "[length(variables('identities'))]"
+                              },
+                              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+                              "apiVersion": "2023-07-31-preview",
+                              "name": "[variables('identities')[copyIndex()].name]",
+                              "location": "[parameters('userAssignedManagedIdentityLocation')]",
+                              "tags": {
+                                "displayName": "[variables('identities')[copyIndex()].displayName]",
+                                "environment": "production",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          },
+                          "outputs": {
+                            "userAssignedManagedIdentities": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/identity"
+                              },
+                              "copy": {
+                                "count": "[length(range(0, length(variables('identities'))))]",
+                                "input": {
+                                  "name": "[variables('identities')[range(0, length(variables('identities')))[copyIndex()]].name]",
+                                  "displayName": "[variables('identities')[range(0, length(variables('identities')))[copyIndex()]].displayName]",
+                                  "id": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identities')[range(0, length(variables('identities')))[copyIndex()]].name)]"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "outputs": {
+                    "managedIdentitiesList": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/identity"
+                      },
+                      "value": "[reference('managedIdentities').outputs.userAssignedManagedIdentities.value]"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('configurationDeployment-{0}', parameters('resourceDeploymentDate'))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "resourceConventionPrefix": {
+                    "value": "[parameters('resourceConventionPrefix')]"
+                  },
+                  "managedIdentityFrontendId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[0].id]"
+                  },
+                  "managedIdentityBackendId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[1].id]"
+                  },
+                  "managedIdentityInfraId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[2].id]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.28.1.47646",
+                      "templateHash": "14735395203091400880"
+                    }
+                  },
+                  "parameters": {
+                    "resourceDeploymentDate": {
+                      "type": "string",
+                      "defaultValue": "[utcNow()]",
+                      "metadata": {
+                        "description": "The date when the deployment is executed."
+                      }
+                    },
+                    "resourceConventionPrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The prefix to use for the names of the resources."
+                      }
+                    },
+                    "managedIdentityBackendId": {
+                      "type": "string"
+                    },
+                    "managedIdentityFrontendId": {
+                      "type": "string"
+                    },
+                    "managedIdentityInfraId": {
+                      "type": "string"
+                    }
+                  },
+                  "variables": {
+                    "keyVaultName": "[format('{0}-kv', parameters('resourceConventionPrefix'))]",
+                    "appConfigurationName": "[format('{0}-appconfig', parameters('resourceConventionPrefix'))]"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('keyVaultDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "keyVaultName": {
+                            "value": "[variables('keyVaultName')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "6839227875695290889"
+                            },
+                            "description": "This template will create the necessary Azure Key Vault resources for arolariu.ro",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "keyVaultName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The name of the Azure Key Vault resource."
+                              }
+                            },
+                            "keyVaultLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]",
+                              "metadata": {
+                                "description": "The location for the Azure Key Vault resource."
+                              }
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.KeyVault/vaults",
+                              "apiVersion": "2023-07-01",
+                              "name": "[parameters('keyVaultName')]",
+                              "location": "[parameters('keyVaultLocation')]",
+                              "properties": {
+                                "sku": {
+                                  "family": "A",
+                                  "name": "standard"
+                                },
+                                "tenantId": "[subscription().tenantId]",
+                                "enabledForDeployment": false,
+                                "enabledForDiskEncryption": false,
+                                "enabledForTemplateDeployment": true,
+                                "enableSoftDelete": true,
+                                "softDeleteRetentionInDays": 90,
+                                "enablePurgeProtection": true,
+                                "createMode": "default",
+                                "publicNetworkAccess": "enabled",
+                                "provisioningState": "Succeeded",
+                                "vaultUri": "[format('https://{0}{1}', parameters('keyVaultName'), environment().suffixes.keyvaultDns)]",
+                                "accessPolicies": []
+                              },
+                              "tags": {
+                                "environment": "production",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          ],
+                          "outputs": {
+                            "mainKeyVaultUri": {
+                              "type": "string",
+                              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri]"
+                            },
+                            "mainKeyVaultResourceId": {
+                              "type": "string",
+                              "value": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+                            },
+                            "mainKeyVaultName": {
+                              "type": "string",
+                              "value": "[parameters('keyVaultName')]"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('appConfigurationDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "appConfigurationName": {
+                            "value": "[variables('appConfigurationName')]"
+                          },
+                          "appConfigurationBEIdentity": {
+                            "value": "[parameters('managedIdentityBackendId')]"
+                          },
+                          "appConfigurationFEIdentity": {
+                            "value": "[parameters('managedIdentityFrontendId')]"
+                          },
+                          "appConfigurationInfraIdentity": {
+                            "value": "[parameters('managedIdentityInfraId')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "3895773862487861653"
+                            },
+                            "description": "This template will deploy an Azure App Configuration resource.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "appConfigurationName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The name of the App Configuration resource."
+                              }
+                            },
+                            "appConfigurationBEIdentity": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The back-end identity to assign to the App Configuration resource."
+                              }
+                            },
+                            "appConfigurationFEIdentity": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The front-end identity to assign to the App Configuration resource."
+                              }
+                            },
+                            "appConfigurationInfraIdentity": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The infrastructure identity to assign to the App Configuration resource."
+                              }
+                            },
+                            "appConfigurationLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]",
+                              "metadata": {
+                                "description": "The location for the App Configuration resource."
+                              }
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.AppConfiguration/configurationStores",
+                              "apiVersion": "2023-09-01-preview",
+                              "name": "[parameters('appConfigurationName')]",
+                              "location": "[parameters('appConfigurationLocation')]",
+                              "sku": {
+                                "name": "free"
+                              },
+                              "identity": {
+                                "type": "UserAssigned",
+                                "userAssignedIdentities": {
+                                  "[format('{0}', parameters('appConfigurationBEIdentity'))]": {},
+                                  "[format('{0}', parameters('appConfigurationFEIdentity'))]": {},
+                                  "[format('{0}', parameters('appConfigurationInfraIdentity'))]": {}
+                                }
+                              },
+                              "properties": {
+                                "createMode": "Default",
+                                "disableLocalAuth": false,
+                                "softDeleteRetentionInDays": 0,
+                                "enablePurgeProtection": false,
+                                "dataPlaneProxy": {
+                                  "authenticationMode": "Local",
+                                  "privateLinkDelegation": "Disabled"
+                                }
+                              },
+                              "tags": {
+                                "environment": "production",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          ],
+                          "outputs": {
+                            "appConfigurationResourceId": {
+                              "type": "string",
+                              "value": "[resourceId('Microsoft.AppConfiguration/configurationStores', parameters('appConfigurationName'))]"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('observabilityDeployment-{0}', parameters('resourceDeploymentDate'))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "resourceConventionPrefix": {
+                    "value": "[parameters('resourceConventionPrefix')]"
+                  },
+                  "managedIdentityFrontendId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[0].id]"
+                  },
+                  "managedIdentityBackendId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[1].id]"
+                  },
+                  "managedIdentityInfraId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[2].id]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.28.1.47646",
+                      "templateHash": "2134905714917161427"
+                    }
+                  },
+                  "parameters": {
+                    "resourceDeploymentDate": {
+                      "type": "string",
+                      "defaultValue": "[utcNow()]",
+                      "metadata": {
+                        "description": "The date when the deployment is executed."
+                      }
+                    },
+                    "resourceConventionPrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The prefix to use for the names of the resources."
+                      }
+                    },
+                    "managedIdentityBackendId": {
+                      "type": "string"
+                    },
+                    "managedIdentityFrontendId": {
+                      "type": "string"
+                    },
+                    "managedIdentityInfraId": {
+                      "type": "string"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('logAnalyticsWorkspaceDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "logAnalyticsWorkspaceName": {
+                            "value": "[format('{0}-workspace', parameters('resourceConventionPrefix'))]"
+                          },
+                          "logAnalyticsWorkspaceBackendIdentity": {
+                            "value": "[parameters('managedIdentityBackendId')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "16436836244807503223"
+                            },
+                            "description": "This template will deploy a log analytics workspace that is used for Open Telemetry (OTel) data collection.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "logAnalyticsWorkspaceLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]"
+                            },
+                            "logAnalyticsWorkspaceName": {
+                              "type": "string"
+                            },
+                            "logAnalyticsWorkspaceBackendIdentity": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.OperationalInsights/workspaces",
+                              "apiVersion": "2023-09-01",
+                              "name": "[parameters('logAnalyticsWorkspaceName')]",
+                              "location": "[parameters('logAnalyticsWorkspaceLocation')]",
+                              "identity": {
+                                "type": "UserAssigned",
+                                "userAssignedIdentities": {
+                                  "[format('{0}', parameters('logAnalyticsWorkspaceBackendIdentity'))]": {}
+                                }
+                              },
+                              "properties": {
+                                "sku": {
+                                  "name": "PerGB2018"
+                                },
+                                "retentionInDays": 90,
+                                "publicNetworkAccessForIngestion": "Enabled",
+                                "publicNetworkAccessForQuery": "Enabled",
+                                "workspaceCapping": {
+                                  "dailyQuotaGb": 3
+                                },
+                                "features": {
+                                  "enableLogAccessUsingOnlyResourcePermissions": true
+                                }
+                              },
+                              "tags": {
+                                "environment": "production",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          ],
+                          "outputs": {
+                            "logAnalyticsWorkspaceId": {
+                              "type": "string",
+                              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('applicationInsightsDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "applicationInsightsName": {
+                            "value": "[format('{0}-insights', parameters('resourceConventionPrefix'))]"
+                          },
+                          "applicationInsightsWorkspaceId": {
+                            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('logAnalyticsWorkspaceDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.logAnalyticsWorkspaceId.value]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "7039267955157854588"
+                            },
+                            "description": "This template will deploy an application insights resource that is connected to the api.arolariu.ro platform (back-end) and the arolariu.ro platform (front-end).",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "applicationInsightsLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]"
+                            },
+                            "applicationInsightsWorkspaceId": {
+                              "type": "string"
+                            },
+                            "applicationInsightsName": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Insights/components",
+                              "apiVersion": "2020-02-02",
+                              "name": "[parameters('applicationInsightsName')]",
+                              "location": "[parameters('applicationInsightsLocation')]",
+                              "kind": "web",
+                              "properties": {
+                                "Application_Type": "web",
+                                "Flow_Type": "Bluefield",
+                                "Request_Source": "rest",
+                                "RetentionInDays": 90,
+                                "WorkspaceResourceId": "[parameters('applicationInsightsWorkspaceId')]",
+                                "IngestionMode": "LogAnalytics",
+                                "publicNetworkAccessForIngestion": "Enabled",
+                                "publicNetworkAccessForQuery": "Enabled",
+                                "SamplingPercentage": 30
+                              },
+                              "tags": {
+                                "environment": "production",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Resources/deployments', format('logAnalyticsWorkspaceDeployment-{0}', parameters('resourceDeploymentDate')))]"
+                      ]
+                    },
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('managedGrafanaDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "managedGrafanaName": {
+                            "value": "[format('{0}-grafana', parameters('resourceConventionPrefix'))]"
+                          },
+                          "managedGrafanaBackendIdentity": {
+                            "value": "[parameters('managedIdentityBackendId')]"
+                          },
+                          "managedGrafanaFrontendIdentity": {
+                            "value": "[parameters('managedIdentityFrontendId')]"
+                          },
+                          "managedGrafanaInfrastructureIdentity": {
+                            "value": "[parameters('managedIdentityInfraId')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "15754579563513234985"
+                            },
+                            "description": "This template will deploy an Azure Managed Grafana instance.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "managedGrafanaLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]"
+                            },
+                            "managedGrafanaName": {
+                              "type": "string"
+                            },
+                            "managedGrafanaBackendIdentity": {
+                              "type": "string"
+                            },
+                            "managedGrafanaFrontendIdentity": {
+                              "type": "string"
+                            },
+                            "managedGrafanaInfrastructureIdentity": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Dashboard/grafana",
+                              "apiVersion": "2023-09-01",
+                              "name": "[parameters('managedGrafanaName')]",
+                              "location": "[parameters('managedGrafanaLocation')]",
+                              "identity": {
+                                "type": "UserAssigned",
+                                "userAssignedIdentities": {
+                                  "[format('{0}', parameters('managedGrafanaBackendIdentity'))]": {},
+                                  "[format('{0}', parameters('managedGrafanaFrontendIdentity'))]": {},
+                                  "[format('{0}', parameters('managedGrafanaInfrastructureIdentity'))]": {}
+                                }
+                              },
+                              "sku": {
+                                "name": "Essential"
+                              },
+                              "properties": {
+                                "grafanaMajorVersion": "9",
+                                "zoneRedundancy": "Disabled",
+                                "publicNetworkAccess": "Enabled",
+                                "apiKey": "Enabled",
+                                "autoGeneratedDomainNameLabelScope": "TenantReuse",
+                                "deterministicOutboundIP": "Disabled",
+                                "grafanaConfigurations": {
+                                  "smtp": {
+                                    "enabled": false
+                                  }
+                                },
+                                "grafanaIntegrations": {
+                                  "azureMonitorWorkspaceIntegrations": []
+                                }
+                              },
+                              "tags": {
+                                "environment": "production",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          ],
+                          "outputs": {
+                            "managedGrafanaInstanceName": {
+                              "type": "string",
+                              "value": "[parameters('managedGrafanaName')]"
+                            }
+                          }
+                        }
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Resources/deployments', format('applicationInsightsDeployment-{0}', parameters('resourceDeploymentDate')))]",
+                        "[resourceId('Microsoft.Resources/deployments', format('logAnalyticsWorkspaceDeployment-{0}', parameters('resourceDeploymentDate')))]"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', format('configurationDeployment-{0}', parameters('resourceDeploymentDate')))]",
+                "[resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('storageDeployment-{0}', parameters('resourceDeploymentDate'))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "resourceConventionPrefix": {
+                    "value": "[parameters('resourceConventionPrefix')]"
+                  },
+                  "managedIdentityFrontendId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[0].id]"
+                  },
+                  "managedIdentityBackendId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[1].id]"
+                  },
+                  "managedIdentityInfraId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[2].id]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.28.1.47646",
+                      "templateHash": "10401381112225304072"
+                    }
+                  },
+                  "parameters": {
+                    "resourceDeploymentDate": {
+                      "type": "string",
+                      "defaultValue": "[utcNow()]",
+                      "metadata": {
+                        "description": "The date when the deployment is executed."
+                      }
+                    },
+                    "resourceConventionPrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The prefix to use for the names of the resources."
+                      }
+                    },
+                    "managedIdentityBackendId": {
+                      "type": "string"
+                    },
+                    "managedIdentityFrontendId": {
+                      "type": "string"
+                    },
+                    "managedIdentityInfraId": {
+                      "type": "string"
+                    }
+                  },
+                  "variables": {
+                    "storageAccountName": "[format('{0}sa', replace(parameters('resourceConventionPrefix'), '-', ''))]",
+                    "sqlServerName": "[format('{0}-sqlserver', parameters('resourceConventionPrefix'))]"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('storageAccountDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "storageAccountName": {
+                            "value": "[variables('storageAccountName')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "11170015300238861618"
+                            },
+                            "description": "This template will create a new storage account.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "location": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]",
+                              "metadata": {
+                                "description": "The location for the storage account resource."
+                              }
+                            },
+                            "storageAccountName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The storage account name."
+                              }
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Storage/storageAccounts/blobServices",
+                              "apiVersion": "2023-05-01",
+                              "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
+                              "properties": {
+                                "changeFeed": {
+                                  "enabled": false
+                                },
+                                "restorePolicy": {
+                                  "enabled": false
+                                },
+                                "containerDeleteRetentionPolicy": {
+                                  "enabled": false
+                                },
+                                "cors": {
+                                  "corsRules": [
+                                    {
+                                      "allowedOrigins": [
+                                        "arolariu.ro",
+                                        "dev.arolariu.ro"
+                                      ],
+                                      "allowedMethods": [
+                                        "GET",
+                                        "POST",
+                                        "PUT",
+                                        "DELETE",
+                                        "HEAD",
+                                        "OPTIONS",
+                                        "MERGE",
+                                        "PATCH"
+                                      ],
+                                      "allowedHeaders": [
+                                        "*"
+                                      ],
+                                      "exposedHeaders": [
+                                        "*"
+                                      ],
+                                      "maxAgeInSeconds": 3600
+                                    },
+                                    {
+                                      "allowedOrigins": [
+                                        "http://localhost:3000"
+                                      ],
+                                      "allowedMethods": [
+                                        "GET",
+                                        "POST"
+                                      ],
+                                      "allowedHeaders": [
+                                        "*"
+                                      ],
+                                      "exposedHeaders": [
+                                        "*"
+                                      ],
+                                      "maxAgeInSeconds": 3600
+                                    }
+                                  ]
+                                },
+                                "deleteRetentionPolicy": {
+                                  "enabled": true,
+                                  "days": 7,
+                                  "allowPermanentDelete": true
+                                },
+                                "isVersioningEnabled": true,
+                                "lastAccessTimeTrackingPolicy": {
+                                  "enable": false
+                                }
+                              },
+                              "dependsOn": [
+                                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+                              ]
+                            },
+                            {
+                              "type": "Microsoft.Storage/storageAccounts/fileServices",
+                              "apiVersion": "2023-05-01",
+                              "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
+                              "properties": {
+                                "shareDeleteRetentionPolicy": {
+                                  "enabled": true,
+                                  "days": 7,
+                                  "allowPermanentDelete": true
+                                }
+                              },
+                              "dependsOn": [
+                                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+                              ]
+                            },
+                            {
+                              "type": "Microsoft.Storage/storageAccounts/queueServices",
+                              "apiVersion": "2023-05-01",
+                              "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
+                              "properties": {},
+                              "dependsOn": [
+                                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+                              ]
+                            },
+                            {
+                              "type": "Microsoft.Storage/storageAccounts/tableServices",
+                              "apiVersion": "2023-05-01",
+                              "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
+                              "properties": {},
+                              "dependsOn": [
+                                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+                              ]
+                            },
+                            {
+                              "type": "Microsoft.Storage/storageAccounts",
+                              "apiVersion": "2023-05-01",
+                              "name": "[parameters('storageAccountName')]",
+                              "location": "[parameters('location')]",
+                              "sku": {
+                                "name": "Standard_LRS"
+                              },
+                              "kind": "StorageV2",
+                              "properties": {
+                                "dnsEndpointType": "Standard",
+                                "defaultToOAuthAuthentication": false,
+                                "publicNetworkAccess": "Enabled",
+                                "allowCrossTenantReplication": false,
+                                "azureFilesIdentityBasedAuthentication": {
+                                  "directoryServiceOptions": "AADKERB",
+                                  "defaultSharePermission": "StorageFileDataSmbShareReader"
+                                },
+                                "minimumTlsVersion": "TLS1_1",
+                                "allowBlobPublicAccess": true,
+                                "allowSharedKeyAccess": true,
+                                "networkAcls": {
+                                  "bypass": "AzureServices",
+                                  "defaultAction": "Allow",
+                                  "ipRules": [],
+                                  "virtualNetworkRules": []
+                                },
+                                "supportsHttpsTrafficOnly": true,
+                                "encryption": {
+                                  "keySource": "Microsoft.Storage",
+                                  "requireInfrastructureEncryption": true,
+                                  "services": {
+                                    "blob": {
+                                      "enabled": true,
+                                      "keyType": "Account"
+                                    },
+                                    "file": {
+                                      "enabled": true,
+                                      "keyType": "Account"
+                                    }
+                                  }
+                                },
+                                "accessTier": "Hot"
+                              },
+                              "tags": {
+                                "environment": "production",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          ],
+                          "outputs": {
+                            "storageAccountName": {
+                              "type": "string",
+                              "value": "[parameters('storageAccountName')]"
+                            },
+                            "storageAccountResourceId": {
+                              "type": "string",
+                              "value": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('sqlServerDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "sqlServerName": {
+                            "value": "[variables('sqlServerName')]"
+                          },
+                          "sqlServerBackendIdentity": {
+                            "value": "[parameters('managedIdentityBackendId')]"
+                          },
+                          "sqlServerFrontendIdentity": {
+                            "value": "[parameters('managedIdentityFrontendId')]"
+                          },
+                          "sqlServerInfrastructureIdentity": {
+                            "value": "[parameters('managedIdentityInfraId')]"
+                          },
+                          "sqlServerAdministratorPassword": {
+                            "value": ""
+                          },
+                          "sqlServerAdministratorUserName": {
+                            "value": ""
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "11625219106666313762"
+                            },
+                            "description": "This template will create a new Azure SQL Server resource.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "sqlServerName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The SQL Server name."
+                              }
+                            },
+                            "sqlServerLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]",
+                              "metadata": {
+                                "description": "The location for the SQL Server resource."
+                              }
+                            },
+                            "sqlServerAdministratorUserName": {
+                              "type": "securestring",
+                              "metadata": {
+                                "description": "The username for the local SQL Server administrator."
+                              }
+                            },
+                            "sqlServerAdministratorPassword": {
+                              "type": "securestring",
+                              "metadata": {
+                                "description": "The password for the local SQL Server administrator."
+                              }
+                            },
+                            "sqlServerBackendIdentity": {
+                              "type": "string"
+                            },
+                            "sqlServerFrontendIdentity": {
+                              "type": "string"
+                            },
+                            "sqlServerInfrastructureIdentity": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Sql/servers/advancedThreatProtectionSettings",
+                              "apiVersion": "2023-08-01-preview",
+                              "name": "[format('{0}/{1}', parameters('sqlServerName'), 'Default')]",
+                              "properties": {
+                                "state": "Disabled"
+                              },
+                              "dependsOn": [
+                                "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+                              ]
+                            },
+                            {
+                              "type": "Microsoft.Sql/servers/auditingPolicies",
+                              "apiVersion": "2014-04-01",
+                              "name": "[format('{0}/{1}', parameters('sqlServerName'), 'Default')]",
+                              "properties": {
+                                "auditingState": "Disabled"
+                              },
+                              "dependsOn": [
+                                "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+                              ]
+                            },
+                            {
+                              "type": "Microsoft.Sql/servers/auditingSettings",
+                              "apiVersion": "2023-08-01-preview",
+                              "name": "[format('{0}/{1}', parameters('sqlServerName'), 'default')]",
+                              "properties": {
+                                "state": "Disabled"
+                              },
+                              "dependsOn": [
+                                "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+                              ]
+                            },
+                            {
+                              "type": "Microsoft.Sql/servers/connectionPolicies",
+                              "apiVersion": "2023-08-01-preview",
+                              "name": "[format('{0}/{1}', parameters('sqlServerName'), 'Default')]",
+                              "properties": {
+                                "connectionType": "Default"
+                              },
+                              "dependsOn": [
+                                "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+                              ]
+                            },
+                            {
+                              "type": "Microsoft.Sql/servers",
+                              "apiVersion": "2023-08-01-preview",
+                              "name": "[parameters('sqlServerName')]",
+                              "location": "[parameters('sqlServerLocation')]",
+                              "identity": {
+                                "type": "UserAssigned",
+                                "userAssignedIdentities": {
+                                  "[format('{0}', parameters('sqlServerBackendIdentity'))]": {},
+                                  "[format('{0}', parameters('sqlServerFrontendIdentity'))]": {},
+                                  "[format('{0}', parameters('sqlServerInfrastructureIdentity'))]": {}
+                                }
+                              },
+                              "properties": {
+                                "minimalTlsVersion": "1.3",
+                                "publicNetworkAccess": "Enabled",
+                                "version": "12.0",
+                                "primaryUserAssignedIdentityId": "[parameters('sqlServerBackendIdentity')]",
+                                "administratorLogin": "[parameters('sqlServerAdministratorUserName')]",
+                                "administratorLoginPassword": "[parameters('sqlServerAdministratorPassword')]"
+                              },
+                              "tags": {
+                                "environment": "production",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          ],
+                          "outputs": {
+                            "sqlServerName": {
+                              "type": "string",
+                              "value": "[parameters('sqlServerName')]"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('sqlServerDatabaseDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "sqlServerName": {
+                            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('sqlServerDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.sqlServerName.value]"
+                          },
+                          "sqlDatabaseNamePrefix": {
+                            "value": "[format('{0}-sqlserver-db', parameters('resourceConventionPrefix'))]"
+                          },
+                          "sqlDatabaseBackendIdentity": {
+                            "value": "[parameters('managedIdentityBackendId')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "18111967696360211333"
+                            },
+                            "description": "This template will deploy a primary, DTU-based SQL database, and a secondary, serverless SQL database. The primary database will be created with a Standard SKU, while the secondary database will be created with a GeneralPurpose SKU. The secondary database will be created as a free database, and will be automatically paused after an hour of inactivity. The databases will be created in the same location as the resource group.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "sqlServerName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The name of the SQL Server."
+                              }
+                            },
+                            "sqlDatabaseNamePrefix": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The prefix for the SQL Database names."
+                              }
+                            },
+                            "sqlDatabaseLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]",
+                              "metadata": {
+                                "description": "The location for the SQL Database resources."
+                              }
+                            },
+                            "sqlDatabaseBackendIdentity": {
+                              "type": "string"
+                            }
+                          },
+                          "variables": {
+                            "sqlDatabasePrimaryName": "[format('{0}-primary', parameters('sqlDatabaseNamePrefix'))]",
+                            "sqlDatabaseSecondaryName": "[format('{0}-secondary', parameters('sqlDatabaseNamePrefix'))]"
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Sql/servers/databases",
+                              "apiVersion": "2023-08-01-preview",
+                              "name": "[format('{0}/{1}', parameters('sqlServerName'), variables('sqlDatabasePrimaryName'))]",
+                              "location": "[parameters('sqlDatabaseLocation')]",
+                              "identity": {
+                                "type": "UserAssigned",
+                                "userAssignedIdentities": {
+                                  "[format('{0}', parameters('sqlDatabaseBackendIdentity'))]": {}
+                                }
+                              },
+                              "sku": {
+                                "name": "Standard",
+                                "tier": "Standard",
+                                "capacity": 10
+                              },
+                              "properties": {
+                                "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+                                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                                "maxSizeBytes": 268435456000,
+                                "zoneRedundant": false,
+                                "readScale": "Disabled",
+                                "requestedBackupStorageRedundancy": "Local",
+                                "isLedgerOn": false,
+                                "availabilityZone": "NoPreference"
+                              },
+                              "tags": {
+                                "environment": "production",
+                                "deployment": "bicep"
+                              }
+                            },
+                            {
+                              "type": "Microsoft.Sql/servers/databases",
+                              "apiVersion": "2023-08-01-preview",
+                              "name": "[format('{0}/{1}', parameters('sqlServerName'), variables('sqlDatabaseSecondaryName'))]",
+                              "location": "[parameters('sqlDatabaseLocation')]",
+                              "sku": {
+                                "name": "GP_S_Gen5_2",
+                                "tier": "GeneralPurpose"
+                              },
+                              "identity": {
+                                "type": "UserAssigned",
+                                "userAssignedIdentities": {
+                                  "[format('{0}', parameters('sqlDatabaseBackendIdentity'))]": {}
+                                }
+                              },
+                              "properties": {
+                                "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+                                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                                "zoneRedundant": false,
+                                "readScale": "Disabled",
+                                "requestedBackupStorageRedundancy": "Local",
+                                "isLedgerOn": false,
+                                "availabilityZone": "NoPreference",
+                                "useFreeLimit": true,
+                                "freeLimitExhaustionBehavior": "AutoPause"
+                              },
+                              "tags": {
+                                "environment": "production",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "dependsOn": [
+                        "[resourceId('Microsoft.Resources/deployments', format('sqlServerDeployment-{0}', parameters('resourceDeploymentDate')))]"
+                      ]
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('computeDeployment-{0}', parameters('resourceDeploymentDate'))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "resourceConventionPrefix": {
+                    "value": "[format('{0}-cpu-', parameters('resourceConventionPrefix'))]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.28.1.47646",
+                      "templateHash": "8417486225089120696"
+                    }
+                  },
+                  "parameters": {
+                    "resourceDeploymentDate": {
+                      "type": "string",
+                      "defaultValue": "[utcNow()]",
+                      "metadata": {
+                        "description": "The date when the deployment is executed."
+                      }
+                    },
+                    "resourceConventionPrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The prefix to use for the names of the resources."
+                      }
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('appServicePlansDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "appServicePlanPrefix": {
+                            "value": "[parameters('resourceConventionPrefix')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "8296233131004079122"
+                            },
+                            "description": "This template deploys two App Service Farms, in the same region, for production and development environments.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "appServicePlanLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]",
+                              "metadata": {
+                                "description": "The location for the app service plans."
+                              }
+                            },
+                            "appServicePlanPrefix": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The prefix for the app service plans."
+                              }
+                            }
+                          },
+                          "variables": {
+                            "appPlans": [
+                              {
+                                "name": "[format('{0}production', parameters('appServicePlanPrefix'))]",
+                                "sku": {
+                                  "name": "B2",
+                                  "tier": "Basic"
+                                },
+                                "perSiteScaling": true
+                              },
+                              {
+                                "name": "[format('{0}development', parameters('appServicePlanPrefix'))]",
+                                "sku": {
+                                  "name": "B1",
+                                  "tier": "Basic"
+                                },
+                                "perSiteScaling": false
+                              }
+                            ]
+                          },
+                          "resources": [
+                            {
+                              "copy": {
+                                "name": "appPlanFarm",
+                                "count": "[length(variables('appPlans'))]"
+                              },
+                              "type": "Microsoft.Web/serverfarms",
+                              "apiVersion": "2023-12-01",
+                              "name": "[variables('appPlans')[copyIndex()].name]",
+                              "location": "[parameters('appServicePlanLocation')]",
+                              "sku": {
+                                "name": "[variables('appPlans')[copyIndex()].sku.name]",
+                                "tier": "[variables('appPlans')[copyIndex()].sku.tier]"
+                              },
+                              "kind": "linux",
+                              "properties": {
+                                "reserved": true,
+                                "zoneRedundant": false,
+                                "perSiteScaling": "[variables('appPlans')[copyIndex()].perSiteScaling]"
+                              },
+                              "tags": {
+                                "environment": "[if(equals(variables('appPlans')[copyIndex()].name, format('{0}production', parameters('appServicePlanPrefix'))), 'production', 'development')]",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          ],
+                          "outputs": {
+                            "productionAppPlanId": {
+                              "type": "string",
+                              "value": "[resourceId('Microsoft.Web/serverfarms', variables('appPlans')[0].name)]"
+                            },
+                            "developmentAppPlanId": {
+                              "type": "string",
+                              "value": "[resourceId('Microsoft.Web/serverfarms', variables('appPlans')[1].name)]"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "productionAppPlanId": {
+                      "type": "string",
+                      "value": "[reference(resourceId('Microsoft.Resources/deployments', format('appServicePlansDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.productionAppPlanId.value]"
+                    },
+                    "developmentAppPlanId": {
+                      "type": "string",
+                      "value": "[reference(resourceId('Microsoft.Resources/deployments', format('appServicePlansDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.developmentAppPlanId.value]"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('websiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "productionAppPlanId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('computeDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.productionAppPlanId.value]"
+                  },
+                  "developmentAppPlanId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('computeDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.developmentAppPlanId.value]"
+                  },
+                  "managedIdentityFrontendId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[0].id]"
+                  },
+                  "managedIdentityBackendId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[1].id]"
+                  },
+                  "managedIdentityInfraId": {
+                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[2].id]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.28.1.47646",
+                      "templateHash": "10037192106777107252"
+                    }
+                  },
+                  "parameters": {
+                    "resourceDeploymentDate": {
+                      "type": "string",
+                      "defaultValue": "[utcNow()]",
+                      "metadata": {
+                        "description": "The date when the deployment is executed."
+                      }
+                    },
+                    "productionAppPlanId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The ID of the production app service plan."
+                      }
+                    },
+                    "developmentAppPlanId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The ID of the development app service plan."
+                      }
+                    },
+                    "managedIdentityBackendId": {
+                      "type": "string"
+                    },
+                    "managedIdentityFrontendId": {
+                      "type": "string"
+                    },
+                    "managedIdentityInfraId": {
+                      "type": "string"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('apiWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "apiWebsiteIdentityId": {
+                            "value": "[parameters('managedIdentityBackendId')]"
+                          },
+                          "apiWebsitePlanId": {
+                            "value": "[parameters('productionAppPlanId')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "12322512060344906275"
+                            },
+                            "description": "This template will create the api.arolariu.ro app service site.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "apiWebsiteLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]"
+                            },
+                            "apiWebsitePlanId": {
+                              "type": "string"
+                            },
+                            "apiWebsiteIdentityId": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Web/sites",
+                              "apiVersion": "2023-12-01",
+                              "name": "api-arolariu-ro",
+                              "location": "[parameters('apiWebsiteLocation')]",
+                              "kind": "app,linux",
+                              "identity": {
+                                "type": "UserAssigned",
+                                "userAssignedIdentities": {
+                                  "[format('{0}', parameters('apiWebsiteIdentityId'))]": {}
+                                }
+                              },
+                              "properties": {
+                                "enabled": true,
+                                "serverFarmId": "[parameters('apiWebsitePlanId')]",
+                                "reserved": true,
+                                "isXenon": false,
+                                "hyperV": false,
+                                "dnsConfiguration": {},
+                                "vnetRouteAllEnabled": false,
+                                "vnetImagePullEnabled": false,
+                                "vnetContentShareEnabled": false,
+                                "vnetBackupRestoreEnabled": false,
+                                "siteConfig": {
+                                  "alwaysOn": true,
+                                  "numberOfWorkers": 1,
+                                  "http20Enabled": true,
+                                  "functionAppScaleLimit": 0,
+                                  "minimumElasticInstanceCount": 0,
+                                  "linuxFxVersion": "DOTNETCORE|8.0",
+                                  "requestTracingEnabled": true,
+                                  "remoteDebuggingEnabled": false,
+                                  "httpLoggingEnabled": true,
+                                  "logsDirectorySizeLimit": 35,
+                                  "detailedErrorLoggingEnabled": false,
+                                  "use32BitWorkerProcess": false,
+                                  "webSocketsEnabled": true,
+                                  "loadBalancing": "LeastRequests",
+                                  "preWarmedInstanceCount": 0,
+                                  "ftpsState": "Disabled"
+                                },
+                                "scmSiteAlsoStopped": false,
+                                "clientAffinityEnabled": false,
+                                "clientCertEnabled": false,
+                                "clientCertMode": "Required",
+                                "hostNamesDisabled": false,
+                                "containerSize": 0,
+                                "dailyMemoryTimeQuota": 0,
+                                "httpsOnly": true,
+                                "redundancyMode": "None",
+                                "publicNetworkAccess": "Enabled",
+                                "storageAccountRequired": false,
+                                "keyVaultReferenceIdentity": "[parameters('apiWebsiteIdentityId')]"
+                              },
+                              "tags": {
+                                "environment": "production",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('mainWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "productionAppPlanId": {
+                            "value": "[parameters('productionAppPlanId')]"
+                          },
+                          "mainWebsiteIdentityId": {
+                            "value": "[parameters('managedIdentityFrontendId')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "17285238599545425314"
+                            },
+                            "description": "This template will create the arolariu.ro app service site.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "mainWebsiteLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]"
+                            },
+                            "productionAppPlanId": {
+                              "type": "string"
+                            },
+                            "mainWebsiteIdentityId": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Web/sites",
+                              "apiVersion": "2023-12-01",
+                              "name": "www-arolariu-ro",
+                              "location": "[parameters('mainWebsiteLocation')]",
+                              "kind": "app,linux,container",
+                              "identity": {
+                                "type": "UserAssigned",
+                                "userAssignedIdentities": {
+                                  "[format('{0}', parameters('mainWebsiteIdentityId'))]": {}
+                                }
+                              },
+                              "properties": {
+                                "clientAffinityEnabled": true,
+                                "clientCertEnabled": false,
+                                "reserved": true,
+                                "isXenon": false,
+                                "hyperV": false,
+                                "hostNamesDisabled": false,
+                                "vnetBackupRestoreEnabled": false,
+                                "containerSize": 0,
+                                "httpsOnly": true,
+                                "redundancyMode": "None",
+                                "publicNetworkAccess": "Enabled",
+                                "storageAccountRequired": false,
+                                "enabled": true,
+                                "serverFarmId": "[parameters('productionAppPlanId')]",
+                                "siteConfig": {
+                                  "acrUseManagedIdentityCreds": false,
+                                  "publishingUsername": "$arolariu",
+                                  "autoHealEnabled": false,
+                                  "numberOfWorkers": 1,
+                                  "functionAppScaleLimit": 0,
+                                  "minimumElasticInstanceCount": 1,
+                                  "alwaysOn": true,
+                                  "cors": {
+                                    "allowedOrigins": [
+                                      "https://clerk.arolariu.ro",
+                                      "https://api.arolariu.ro",
+                                      "https://cdn.arolariu.ro"
+                                    ]
+                                  },
+                                  "localMySqlEnabled": false,
+                                  "ftpsState": "Disabled",
+                                  "healthCheckPath": "/",
+                                  "http20Enabled": true,
+                                  "httpLoggingEnabled": true,
+                                  "logsDirectorySizeLimit": 50,
+                                  "detailedErrorLoggingEnabled": false,
+                                  "scmType": "GithubAction",
+                                  "scmIpSecurityRestrictionsDefaultAction": "Allow",
+                                  "scmIpSecurityRestrictionsUseMain": false,
+                                  "use32BitWorkerProcess": false,
+                                  "loadBalancing": "LeastRequests",
+                                  "ipSecurityRestrictions": [
+                                    {
+                                      "ipAddress": "AzureFrontDoor.Backend",
+                                      "tag": "ServiceTag",
+                                      "name": "AzureFrontDoor",
+                                      "action": "Allow",
+                                      "priority": 100
+                                    },
+                                    {
+                                      "ipAddress": "Any",
+                                      "tag": "Default",
+                                      "name": "Default",
+                                      "action": "Deny",
+                                      "priority": 2147483647
+                                    }
+                                  ],
+                                  "ipSecurityRestrictionsDefaultAction": "Deny",
+                                  "minTlsVersion": "1.3",
+                                  "nodeVersion": "22",
+                                  "webSocketsEnabled": true
+                                }
+                              },
+                              "tags": {
+                                "environment": "production",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          ],
+                          "outputs": {
+                            "mainWebsiteUrl": {
+                              "type": "string",
+                              "value": "[reference(resourceId('Microsoft.Web/sites', 'www-arolariu-ro'), '2023-12-01').defaultHostName]"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('devWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "developmentAppPlanId": {
+                            "value": "[parameters('developmentAppPlanId')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "12290152182610624303"
+                            },
+                            "description": "This template will create the dev.arolariu.ro app service site.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "devWebsiteLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]"
+                            },
+                            "developmentAppPlanId": {
+                              "type": "string"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Web/sites",
+                              "apiVersion": "2023-12-01",
+                              "name": "dev-arolariu-ro",
+                              "location": "[parameters('devWebsiteLocation')]",
+                              "kind": "app,linux,container",
+                              "properties": {
+                                "clientAffinityEnabled": true,
+                                "clientCertEnabled": false,
+                                "reserved": true,
+                                "isXenon": false,
+                                "hyperV": false,
+                                "hostNamesDisabled": false,
+                                "vnetBackupRestoreEnabled": false,
+                                "containerSize": 0,
+                                "httpsOnly": true,
+                                "redundancyMode": "None",
+                                "publicNetworkAccess": "Enabled",
+                                "storageAccountRequired": false,
+                                "enabled": true,
+                                "serverFarmId": "[parameters('developmentAppPlanId')]",
+                                "siteConfig": {
+                                  "acrUseManagedIdentityCreds": false,
+                                  "publishingUsername": "$dev-arolariu",
+                                  "autoHealEnabled": false,
+                                  "numberOfWorkers": 1,
+                                  "functionAppScaleLimit": 0,
+                                  "minimumElasticInstanceCount": 0,
+                                  "alwaysOn": true,
+                                  "cors": {
+                                    "allowedOrigins": [
+                                      "https://clerk.arolariu.ro",
+                                      "https://api.arolariu.ro",
+                                      "https://cdn.arolariu.ro"
+                                    ]
+                                  },
+                                  "localMySqlEnabled": false,
+                                  "ftpsState": "Disabled",
+                                  "healthCheckPath": "/",
+                                  "http20Enabled": true,
+                                  "httpLoggingEnabled": true,
+                                  "logsDirectorySizeLimit": 50,
+                                  "detailedErrorLoggingEnabled": false,
+                                  "scmType": "GithubAction",
+                                  "scmIpSecurityRestrictionsDefaultAction": "Allow",
+                                  "scmIpSecurityRestrictionsUseMain": false,
+                                  "use32BitWorkerProcess": false,
+                                  "loadBalancing": "LeastRequests",
+                                  "ipSecurityRestrictions": [
+                                    {
+                                      "ipAddress": "Any",
+                                      "tag": "Default",
+                                      "name": "Default",
+                                      "action": "Allow",
+                                      "priority": 2147483647
+                                    }
+                                  ],
+                                  "ipSecurityRestrictionsDefaultAction": "Allow",
+                                  "minTlsVersion": "1.1",
+                                  "nodeVersion": "22",
+                                  "webSocketsEnabled": true
+                                }
+                              },
+                              "tags": {
+                                "environment": "production",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          ],
+                          "outputs": {
+                            "devWebsiteUrl": {
+                              "type": "string",
+                              "value": "[reference(resourceId('Microsoft.Web/sites', 'dev-arolariu-ro'), '2023-12-01').defaultHostName]"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('docsWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.28.1.47646",
+                              "templateHash": "4253395819688566284"
+                            },
+                            "description": "This template will create the docs.arolariu.ro static web app site.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "staticWebAppLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]"
+                            }
+                          },
+                          "resources": [
+                            {
+                              "type": "Microsoft.Web/staticSites",
+                              "apiVersion": "2023-12-01",
+                              "name": "docs-arolariu-ro",
+                              "location": "[parameters('staticWebAppLocation')]",
+                              "sku": {
+                                "name": "Free",
+                                "tier": "Free"
+                              },
+                              "properties": {
+                                "repositoryUrl": "https://github.com/arolariu/arolariu.ro",
+                                "branch": "main",
+                                "stagingEnvironmentPolicy": "Disabled",
+                                "allowConfigFileUpdates": true,
+                                "provider": "GitHub",
+                                "enterpriseGradeCdnStatus": "Disabled"
+                              },
+                              "tags": {
+                                "environment": "production",
+                                "deployment": "bicep",
+                                "timestamp": "[resourceGroup().tags.timestamp]"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', format('computeDeployment-{0}', parameters('resourceDeploymentDate')))]",
+                "[resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate')))]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('resourceGroupName'))]"
+      ]
+    }
+  ]
+}
