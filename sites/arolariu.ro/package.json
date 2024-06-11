@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@azure/app-configuration": "1.6.0",
-    "@azure/identity": "4.2.0",
+    "@azure/identity": "4.2.1",
     "@azure/storage-blob": "12.23.0",
     "@clerk/nextjs": "5.1.4",
     "@mdx-js/loader": "3.0.1",
