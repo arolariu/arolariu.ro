@@ -17,7 +17,7 @@ export default function AboutPage() {
   return (
     <>
       <section>
-        <h1 className='mb-4 bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent sm:text-3xl '>
+        <h1 className='mb-4 bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent sm:text-3xl'>
           About Us
         </h1>
         <article>

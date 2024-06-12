@@ -45,7 +45,7 @@ export default function AcknowledgementsTable({packages}: Readonly<Props>) {
         {shownPackages.map((license) => (
           <Link
             key={license.name}
-            className='group flex flex-col space-y-1 overflow-hidden rounded-lg border border-gray-200 p-4 shadow-md  transition-opacity duration-300 ease-in hover:shadow-lg'
+            className='group flex flex-col space-y-1 overflow-hidden rounded-lg border border-gray-200 p-4 shadow-md transition-opacity duration-300 ease-in hover:shadow-lg'
             href={
               license.homepage?.startsWith("https")
                 ? license.homepage

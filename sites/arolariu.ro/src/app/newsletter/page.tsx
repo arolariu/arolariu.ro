@@ -15,7 +15,7 @@ export default function NewsletterPage() {
     <main className='px-12 py-24'>
       <section className='hero'>
         <article className='flex flex-col items-center gap-20 text-center'>
-          <h1 className='pb-4 text-2xl font-black  md:text-5xl '>
+          <h1 className='pb-4 text-2xl font-black md:text-5xl'>
             Build your professional career
             <br />
             with our amazing tips and become a<br />
@@ -26,7 +26,7 @@ export default function NewsletterPage() {
             />
             software engineer.
           </h1>
-          <article className='max-w-screen-md text-lg '>
+          <article className='max-w-screen-md text-lg'>
             Lorem ipsum dolor sit amet, consectetur adipisicing elit. Hic autem, est eaque nihil necessitatibus porro
             facere ut sed dolore, iste nam? Quas minus consequuntur, beatae quis officia architecto expedita sunt?
           </article>

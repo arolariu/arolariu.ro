@@ -17,17 +17,17 @@ export const InvoiceFilters = ({filters, displayStyle, setDisplayStyle, setFilte
         Filters:
         <div className='flex flex-row gap-6 pt-2 2xsm:items-stretch 2xsm:justify-between 2xsm:justify-items-center md:items-end md:justify-end md:justify-items-end'>
           <SunIcon
-            className={`${filters.dayOnly ? "text-yellow-500" : ""} 'tooltip cursor-pointer' tooltip-bottom h-5 w-5 `}
+            className={`${filters.dayOnly ? "text-yellow-500" : ""} 'tooltip cursor-pointer' tooltip-bottom h-5 w-5`}
             data-tip='Day invoices'
             onClick={() => setFilters({...filters, dayOnly: !filters.dayOnly})}
           />
           <MoonIcon
-            className={`${filters.nightOnly ? "text-blue-500" : ""} 'tooltip cursor-pointer' tooltip-bottom h-5 w-5 `}
+            className={`${filters.nightOnly ? "text-blue-500" : ""} 'tooltip cursor-pointer' tooltip-bottom h-5 w-5`}
             data-tip='Night invoices'
             onClick={() => setFilters({...filters, nightOnly: !filters.nightOnly})}
           />
           <HeartFilledIcon
-            className={`${filters.isImportant ? "text-red-500" : ""} 'tooltip cursor-pointer' tooltip-bottom h-5 w-5 `}
+            className={`${filters.isImportant ? "text-red-500" : ""} 'tooltip cursor-pointer' tooltip-bottom h-5 w-5`}
             data-tip='Important invoices'
             onClick={() => setFilters({...filters, isImportant: !filters.isImportant})}
           />
