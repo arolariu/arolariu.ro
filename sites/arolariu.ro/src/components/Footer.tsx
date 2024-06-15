@@ -25,7 +25,7 @@ export default async function Footer() {
 
       <div className='mx-auto pt-12 text-gray-100 sm:max-w-xl md:max-w-full md:px-24 lg:max-w-screen-xl lg:px-8'>
         <div className='row-gap-10 mb-8 grid gap-16 sm:grid-cols-2 lg:grid-cols-6'>
-          <div className=' md:col-span-1 lg:col-span-2'>
+          <div className='md:col-span-1 lg:col-span-2'>
             <Link
               href='/'
               aria-label='Go home'
@@ -34,7 +34,7 @@ export default async function Footer() {
               <Image
                 src={logo}
                 alt='arolariu.ro'
-                className='rounded-full ring-2 ring-indigo-500 '
+                className='rounded-full ring-2 ring-indigo-500'
                 width={40}
                 height={40}
               />
