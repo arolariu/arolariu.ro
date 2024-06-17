@@ -49,12 +49,12 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<Invoice> CreateInvoiceObject(CreateInvoiceDto createInvoiceDto) =>
+	public async Task<Invoice> CreateInvoiceObject(Invoice invoice) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
-		var invoice = await invoiceStorageFoundationService
-			.CreateInvoiceObject(createInvoiceDto)
+		await invoiceStorageFoundationService
+			.CreateInvoiceObject(invoice)
 			.ConfigureAwait(false);
 
 		return invoice;

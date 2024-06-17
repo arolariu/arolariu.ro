@@ -1,6 +1,5 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DTOs;
 
 using System;
 using System.Collections.Generic;
@@ -17,9 +16,9 @@ public interface IInvoiceNoSqlBroker
 	/// Creates a new invoice.
 	/// This method is used to create a new invoice in the database.
 	/// </summary>
-	/// <param name="invoiceDto"></param>
+	/// <param name="invoice"></param>
 	/// <returns></returns>
-	public ValueTask<Invoice> CreateInvoiceAsync(CreateInvoiceDto invoiceDto);
+	public ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice);
 
 	/// <summary>
 	/// Reads an invoice.

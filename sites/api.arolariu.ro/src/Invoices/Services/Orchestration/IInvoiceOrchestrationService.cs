@@ -19,7 +19,10 @@ public interface IInvoiceOrchestrationService
 	/// <param name="userIdentifier"></param>
 	/// <param name="options"></param>
 	/// <returns></returns>
-	public Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, Guid userIdentifier, AnalysisOptions options);
+	public Task AnalyzeInvoiceWithOptions(
+		Guid invoiceIdentifier,
+		Guid userIdentifier,
+		AnalysisOptions options);
 	#endregion
 
 	#region Implements the Invoice Storage Foundation Service
@@ -27,9 +30,9 @@ public interface IInvoiceOrchestrationService
 	/// <summary>
 	/// Creates an invoice object.
 	/// </summary>
-	/// <param name="createInvoiceDto"></param>
+	/// <param name="invoice"></param>
 	/// <returns></returns>
-	public Task<Invoice> CreateInvoiceObject(CreateInvoiceDto createInvoiceDto);
+	public Task<Invoice> CreateInvoiceObject(Invoice invoice);
 
 	/// <summary>
 	/// Reads an invoice object.

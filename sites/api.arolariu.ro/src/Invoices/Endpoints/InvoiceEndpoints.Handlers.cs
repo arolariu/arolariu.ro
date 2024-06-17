@@ -13,6 +13,8 @@ using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
@@ -27,6 +29,7 @@ public static partial class InvoiceEndpoints
 	/// <param name="invoiceOrchestrationService"></param>
 	/// <param name="httpContext"></param>
 	/// <param name="invoiceDto"></param>
+	/// <param name="principal"></param>
 	/// <returns></returns>
 	[SwaggerOperation(
 		Summary = "Create a new invoice (receipt) in the system.",
@@ -48,13 +51,16 @@ public static partial class InvoiceEndpoints
 	private static async Task<IResult> CreateNewInvoiceAsync(
 		[FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
 		[FromServices] IHttpContextAccessor httpContext,
-		[FromBody] CreateInvoiceDto invoiceDto)
+		[FromBody] CreateInvoiceDto invoiceDto,
+		ClaimsPrincipal principal)
 	{
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(CreateNewInvoiceAsync), ActivityKind.Server);
-			var invoice = await invoiceOrchestrationService
-				.CreateInvoiceObject(invoiceDto)
+			var invoice = invoiceDto.ToInvoice();
+
+			await invoiceOrchestrationService
+				.CreateInvoiceObject(invoice)
 				.ConfigureAwait(false);
 
 			return Results.Created($"/rest/invoices/{invoice.Id}", invoice);
@@ -101,6 +107,7 @@ public static partial class InvoiceEndpoints
 	/// </summary>
 	/// <param name="invoiceOrchestrationService"></param>
 	/// <param name="httpContext"></param>
+	/// <param name="principal"></param>
 	/// <param name="id"></param>
 	/// <returns></returns>
 	[SwaggerOperation(
@@ -121,12 +128,14 @@ public static partial class InvoiceEndpoints
 	private static async Task<IResult> RetrieveSpecificInvoiceAsync(
 		[FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
 		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id)
+		[FromRoute] Guid id,
+		ClaimsPrincipal principal)
 	{
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(httpContext.HttpContext!.Request.Headers.Authorization[0]!);
+			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+
 			var invoice = await invoiceOrchestrationService
 				.ReadInvoiceObject(id, userIdentifier)
 				.ConfigureAwait(false);
@@ -175,6 +184,7 @@ public static partial class InvoiceEndpoints
 	/// </summary>
 	/// <param name="invoiceOrchestrationService"></param>
 	/// <param name="httpContext"></param>
+	/// <param name="principal"></param>
 	/// <returns></returns>
 	[SwaggerOperation(
 		Summary = "Retrieves all invoices from the system.",
@@ -192,7 +202,8 @@ public static partial class InvoiceEndpoints
 	[Authorize]
 	private static async Task<IResult> RetrieveAllInvoicesAsync(
 		[FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
-		[FromServices] IHttpContextAccessor httpContext)
+		[FromServices] IHttpContextAccessor httpContext,
+		ClaimsPrincipal principal)
 	{
 		try
 		{
@@ -247,6 +258,7 @@ public static partial class InvoiceEndpoints
 	/// <param name="httpContext"></param>
 	/// <param name="id"></param>
 	/// <param name="invoicePayload"></param>
+	/// <param name="principal"></param>
 	/// <returns></returns>
 	[SwaggerOperation(
 		Summary = "Updates a specific invoice in the system.",
@@ -266,7 +278,8 @@ public static partial class InvoiceEndpoints
 		[FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
-		[FromBody] Invoice invoicePayload)
+		[FromBody] Invoice invoicePayload,
+		ClaimsPrincipal principal)
 	{
 		try
 		{
@@ -326,6 +339,7 @@ public static partial class InvoiceEndpoints
 	/// <param name="invoiceOrchestrationService"></param>
 	/// <param name="httpContext"></param>
 	/// <param name="id"></param>
+	/// <param name="principal"></param>
 	/// <returns></returns>
 	[SwaggerOperation(
 		Summary = "Deletes a specific invoice from the system.",
@@ -345,7 +359,8 @@ public static partial class InvoiceEndpoints
 	private static async Task<IResult> DeleteInvoiceAsync(
 		[FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
 		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id)
+		[FromRoute] Guid id,
+		ClaimsPrincipal principal)
 	{
 		try
 		{
@@ -406,6 +421,7 @@ public static partial class InvoiceEndpoints
 	/// <param name="httpContext"></param>
 	/// <param name="id"></param>
 	/// <param name="options"></param>
+	/// <param name="principal"></param>
 	/// <returns></returns>
 	[SwaggerOperation(
 		Summary = "Analyzes a specific invoice from the system.",
@@ -426,7 +442,8 @@ public static partial class InvoiceEndpoints
 		[FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
-		[FromBody] AnalysisOptions options)
+		[FromBody] AnalysisOptions options,
+		ClaimsPrincipal principal)
 	{
 		try
 		{

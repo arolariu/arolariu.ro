@@ -1,6 +1,5 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DTOs;
 
 using System;
 using System.Collections.Generic;
@@ -14,9 +13,9 @@ public interface IInvoiceStorageFoundationService
 	/// <summary>
 	/// Creates an invoice object.
 	/// </summary>
-	/// <param name="invoiceDto"></param>
+	/// <param name="invoice"></param>
 	/// <returns></returns>
-	public Task<Invoice> CreateInvoiceObject(CreateInvoiceDto invoiceDto);
+	public Task<Invoice> CreateInvoiceObject(Invoice invoice);
 
 	/// <summary>
 	/// Reads an invoice object.
