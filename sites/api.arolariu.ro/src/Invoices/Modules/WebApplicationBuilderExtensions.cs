@@ -6,7 +6,9 @@ using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
-using arolariu.Backend.Domain.Invoices.Services.Orchestration;
+using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
+using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
+using arolariu.Backend.Domain.Invoices.Services.Processing;
 
 using Azure.AI.FormRecognizer.DocumentAnalysis;
 
@@ -65,5 +67,9 @@ public static class WebApplicationBuilderExtensions
 
 		// Orchestration services:
 		builder.Services.AddScoped<IInvoiceOrchestrationService, InvoiceOrchestrationService>();
+		builder.Services.AddScoped<IMerchantOrchestrationService, MerchantOrchestrationService>();
+
+		// Processing services:
+		builder.Services.AddScoped<IInvoiceProcessingService, InvoiceProcessingService>();
 	}
 }

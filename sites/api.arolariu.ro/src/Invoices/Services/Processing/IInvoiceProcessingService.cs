@@ -1,17 +1,17 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Orchestration;
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+﻿namespace arolariu.Backend.Domain.Invoices.Services.Processing;
 using arolariu.Backend.Domain.Invoices.DTOs;
-
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using System;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using System.Collections.Generic;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 /// <summary>
-/// The invoice orchestration service interface represents the orchestration service for the invoice domain.
+/// This interface represents the invoice processing service.
 /// </summary>
-public interface IInvoiceOrchestrationService
+public interface IInvoiceProcessingService
 {
-	#region Implements the Invoice Analysis Foundation Service
+	#region Invoice Orchestration Service
 	/// <summary>
 	/// Analyze an invoice.
 	/// </summary>
@@ -23,9 +23,6 @@ public interface IInvoiceOrchestrationService
 		Guid invoiceIdentifier,
 		Guid userIdentifier,
 		AnalysisOptions options);
-	#endregion
-
-	#region Implements the Invoice Storage Foundation Service
 
 	/// <summary>
 	/// Creates an invoice object.
@@ -64,4 +61,44 @@ public interface IInvoiceOrchestrationService
 	/// <returns></returns>
 	public Task DeleteInvoiceObject(Guid identifier, Guid userIdentifier);
 	#endregion
+
+	#region Merchant Orchestration Service
+	/// <summary>
+	/// Creates a merchant object.
+	/// </summary>
+	/// <param name="merchant"></param>
+	/// <returns></returns>
+	public Task<Merchant> CreateMerchantObject(Merchant merchant);
+
+	/// <summary>
+	/// Reads a merchant object.
+	/// </summary>
+	/// <param name="identifier"></param>
+	/// <param name="parentCompanyId"></param>
+	/// <returns></returns>
+	public Task<Merchant> ReadMerchantObject(Guid identifier, Guid parentCompanyId);
+
+	/// <summary>
+	/// Reads all merchant objects.
+	/// </summary>
+	/// <returns></returns>
+	public Task<IEnumerable<Merchant>> ReadAllMerchantObjects();
+
+	/// <summary>
+	/// Updates a merchant object.
+	/// </summary>
+	/// <param name="currentMerchant"></param>
+	/// <param name="updatedMerchant"></param>
+	/// <returns></returns>
+	public Task<Merchant> UpdateMerchantObject(Merchant currentMerchant, Merchant updatedMerchant);
+
+	/// <summary>
+	/// Deletes a merchant object.
+	/// </summary>
+	/// <param name="identifier"></param>
+	/// <param name="parentCompanyId"></param>
+	/// <returns></returns>
+	public Task DeleteMerchantObject(Guid identifier, Guid parentCompanyId);
+	#endregion
+
 }

@@ -26,6 +26,9 @@ public static partial class InvoiceEndpoints
 		// This group contains the standard invoice endpoints (CRUD operations)
 		MapStandardInvoiceEndpoints(router);
 
+		// This group contains the standard merchant endpoints (CRUD operations)
+		MapStandardMerchantEndpoints(router);
+
 		// This group contains the invoice analysis endpoints
 		MapInvoiceAnalysisEndpoints(router);
 	}

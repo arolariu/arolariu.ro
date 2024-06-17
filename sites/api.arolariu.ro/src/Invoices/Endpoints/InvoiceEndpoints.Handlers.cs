@@ -1,15 +1,4 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Endpoints;
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
-using arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.Services.Orchestration;
-
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-
-using Swashbuckle.AspNetCore.Annotations;
-
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -17,11 +6,22 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
+using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+using Swashbuckle.AspNetCore.Annotations;
+
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 public static partial class InvoiceEndpoints
 {
-	#region CRUD operations
+	#region CRUD operations for the Invoice Standard Endpoints
 
 	/// <summary>
 	/// Creates a new invoice.
@@ -412,6 +412,134 @@ public static partial class InvoiceEndpoints
 
 	#endregion
 
+	#region CRUD operations for the Merchant Standard Endpoints
+	[SwaggerOperation(
+		Summary = "Creates a new merchant in the system.",
+		Description = "Creates a new merchant in the Merchant Management System. " +
+		"This endpoint will validate that the input (Merchant DTO) is valid, " +
+		"and then will perform a series of operations to onboard the merchant into the Merchant Management System.",
+		OperationId = nameof(CreateNewMerchantAsync),
+		Tags = [EndpointNameTag])]
+	[Authorize]
+	private static async Task<IResult> CreateNewMerchantAsync()
+	{
+#pragma warning disable CA1031 // Do not catch general exception types
+		try
+		{
+			using var activity = InvoicePackageTracing.StartActivity(nameof(CreateNewMerchantAsync), ActivityKind.Server);
+			return await Task.FromResult(Results.Created()).ConfigureAwait(false);
+		}
+		catch (Exception exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered an unexpected internal service error.");
+		}
+#pragma warning restore CA1031 // Do not catch general exception types
+	}
+
+	[SwaggerOperation(
+		Summary = "Retrieves all merchants from the system.",
+		Description = "Retrieves all merchants from the Merchant Management System. ",
+		OperationId = nameof(RetrieveAllMerchantsAsync),
+		Tags = [EndpointNameTag])]
+	[Authorize]
+	private static async Task<IResult> RetrieveAllMerchantsAsync()
+	{
+#pragma warning disable CA1031 // Do not catch general exception types
+		try
+		{
+			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveAllMerchantsAsync), ActivityKind.Server);
+			return await Task.FromResult(Results.Ok()).ConfigureAwait(false);
+		}
+		catch (Exception exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered an unexpected internal service error.");
+		}
+#pragma warning restore CA1031 // Do not catch general exception types
+	}
+
+	[SwaggerOperation(
+		Summary = "Retrieves a specific merchant from the system.",
+		Description = "Retrieves a specific merchant from the Merchant Management System. ",
+		OperationId = nameof(RetrieveSpecificMerchantAsync),
+		Tags = [EndpointNameTag])]
+	[Authorize]
+	private static async Task<IResult> RetrieveSpecificMerchantAsync(
+		[FromRoute] Guid id)
+	{
+#pragma warning disable CA1031 // Do not catch general exception types
+		try
+		{
+			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificMerchantAsync), ActivityKind.Server);
+			return await Task.FromResult(Results.Ok(id)).ConfigureAwait(false);
+		}
+		catch (Exception exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered an unexpected internal service error.");
+		}
+#pragma warning restore CA1031 // Do not catch general exception types
+	}
+
+	[SwaggerOperation(
+		Summary = "Updates a specific merchant in the system.",
+		Description = "Updates a specific merchant in the Merchant Management System. ",
+		OperationId = nameof(UpdateSpecificMerchantAsync),
+		Tags = [EndpointNameTag])]
+	[Authorize]
+	private static async Task<IResult> UpdateSpecificMerchantAsync(
+		[FromRoute] Guid id)
+	{
+#pragma warning disable CA1031 // Do not catch general exception types
+		try
+		{
+			using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateSpecificMerchantAsync), ActivityKind.Server);
+			return await Task.FromResult(Results.Accepted()).ConfigureAwait(false);
+		}
+		catch (Exception exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered an unexpected internal service error.");
+		}
+#pragma warning restore CA1031 // Do not catch general exception types
+	}
+
+	[SwaggerOperation(
+		Summary = "Deletes a specific merchant from the system.",
+		Description = "Deletes a specific merchant from the Merchant Management System. ",
+		OperationId = nameof(DeleteMerchantAsync),
+		Tags = [EndpointNameTag])]
+	[Authorize]
+	private static async Task<IResult> DeleteMerchantAsync(
+		[FromRoute] Guid id)
+	{
+#pragma warning disable CA1031 // Do not catch general exception types
+		try
+		{
+			using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantAsync), ActivityKind.Server);
+			return await Task.FromResult(Results.NoContent()).ConfigureAwait(false);
+		}
+		catch (Exception exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered an unexpected internal service error.");
+		}
+#pragma warning restore CA1031 // Do not catch general exception types
+	}
+
+	#endregion
+
 	#region Analysis operations
 
 	/// <summary>
@@ -424,11 +552,11 @@ public static partial class InvoiceEndpoints
 	/// <param name="principal"></param>
 	/// <returns></returns>
 	[SwaggerOperation(
-		Summary = "Analyzes a specific invoice from the system.",
-		Description = "Analyzes a specific invoice from the Invoice Management System. " +
-		"If the invoice identifier passed to the route is valid, the server will start analyzing the invoice, given that the user is allowed to perform this operation.",
-		OperationId = nameof(AnalyzeInvoiceAsync),
-		Tags = [EndpointNameTag])]
+Summary = "Analyzes a specific invoice from the system.",
+Description = "Analyzes a specific invoice from the Invoice Management System. " +
+"If the invoice identifier passed to the route is valid, the server will start analyzing the invoice, given that the user is allowed to perform this operation.",
+OperationId = nameof(AnalyzeInvoiceAsync),
+Tags = [EndpointNameTag])]
 	[SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was analyzed successfully.", typeof(Invoice))]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid.", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
@@ -439,11 +567,11 @@ public static partial class InvoiceEndpoints
 	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
 	[Authorize]
 	private static async Task<IResult> AnalyzeInvoiceAsync(
-		[FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] AnalysisOptions options,
-		ClaimsPrincipal principal)
+[FromServices] IInvoiceOrchestrationService invoiceOrchestrationService,
+[FromServices] IHttpContextAccessor httpContext,
+[FromRoute] Guid id,
+[FromBody] AnalysisOptions options,
+ClaimsPrincipal principal)
 	{
 		try
 		{
