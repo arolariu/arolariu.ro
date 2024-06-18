@@ -42,7 +42,7 @@
 		<PackageReference Include="Microsoft.Extensions.Identity.Core" Version="8.0.6" />
 		<PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="8.0.6" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
-		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.6.0" />
+		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.6.1" />
 	</ItemGroup>
 
 	<ItemGroup>
