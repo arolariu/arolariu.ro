@@ -6,6 +6,7 @@ using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
@@ -64,6 +65,7 @@ public static class WebApplicationBuilderExtensions
 		// Foundation services:
 		builder.Services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
 		builder.Services.AddScoped<IInvoiceAnalysisFoundationService, InvoiceAnalysisFoundationService>();
+		builder.Services.AddScoped<IMerchantStorageFoundationService, MerchantStorageFoundationService>();
 
 		// Orchestration services:
 		builder.Services.AddScoped<IInvoiceOrchestrationService, InvoiceOrchestrationService>();

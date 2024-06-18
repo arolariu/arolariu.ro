@@ -46,8 +46,6 @@
 
 	<ItemGroup>
 		<Folder Include="Brokers\DataBrokers\StorageBroker\" />
-		<Folder Include="DDD\Entities\Merchants\Exceptions\Inner\" />
-		<Folder Include="DDD\Entities\Merchants\Exceptions\Outer\" />
 		<Folder Include="DDD\Entities\Products\Exceptions\Inner\" />
 		<Folder Include="DDD\Entities\Products\Exceptions\Outer\" />
 	</ItemGroup>

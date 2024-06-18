@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -23,8 +22,6 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 {
 	private readonly IInvoiceOrchestrationService invoiceOrchestrationService;
 	private readonly IMerchantOrchestrationService merchantOrchestrationService;
-
-	[SuppressMessage("Critical Code Smell", "S4487:Unread \"private\" fields should be removed", Justification = "<Pending>")]
 	private readonly ILogger<IInvoiceProcessingService> logger;
 
 	/// <summary>
@@ -47,117 +44,128 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	}
 
 	/// <inheritdoc/>
-	public async Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, Guid userIdentifier, AnalysisOptions options)
+	public async Task AnalyzeInvoice(Guid invoiceIdentifier, Guid userIdentifier, AnalysisOptions options) =>
+	await TryCatchAsync(async () =>
 	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceWithOptions));
+		using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoice));
 		await invoiceOrchestrationService
 			.AnalyzeInvoiceWithOptions(invoiceIdentifier, userIdentifier, options)
 			.ConfigureAwait(false);
-	}
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<Invoice> CreateInvoiceObject(Invoice invoice)
+	public async Task<Invoice> CreateInvoice(Invoice invoice) =>
+	await TryCatchAsync(async () =>
 	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
+		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoice));
 		await invoiceOrchestrationService
 			.CreateInvoiceObject(invoice)
 			.ConfigureAwait(false);
 
 		return invoice;
-	}
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<Merchant> CreateMerchantObject(Merchant merchant)
+	public async Task<Merchant> CreateMerchant(Merchant merchant) =>
+	await TryCatchAsync(async () =>
 	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantObject));
+		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchant));
 		await merchantOrchestrationService
 			.CreateMerchantObject(merchant)
 			.ConfigureAwait(false);
 
 		return merchant;
-	}
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task DeleteInvoiceObject(Guid identifier, Guid userIdentifier)
+	public async Task DeleteInvoice(Guid identifier, Guid userIdentifier) =>
+	await TryCatchAsync(async () =>
 	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
+		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoice));
 		await invoiceOrchestrationService
 			.DeleteInvoiceObject(identifier, userIdentifier)
 			.ConfigureAwait(false);
-	}
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task DeleteMerchantObject(Guid identifier, Guid parentCompanyId)
+	public async Task DeleteMerchant(Guid identifier, Guid parentCompanyId) =>
+	await TryCatchAsync(async () =>
 	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantObject));
+		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchant));
 		await merchantOrchestrationService
 			.DeleteMerchantObject(identifier, parentCompanyId)
 			.ConfigureAwait(false);
-	}
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects()
+	public async Task<IEnumerable<Invoice>> ReadInvoices() =>
+	await TryCatchAsync(async () =>
 	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoices));
 		var invoices = await invoiceOrchestrationService
 			.ReadAllInvoiceObjects()
 			.ConfigureAwait(false);
 
 		return invoices;
-	}
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects()
+	public async Task<IEnumerable<Merchant>> ReadMerchants() =>
+	await TryCatchAsync(async () =>
 	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllMerchantObjects));
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchants));
 		var merchants = await merchantOrchestrationService
 			.ReadAllMerchantObjects()
 			.ConfigureAwait(false);
 
 		return merchants;
-	}
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid userIdentifier)
+	public async Task<Invoice> ReadInvoice(Guid identifier, Guid userIdentifier) =>
+	await TryCatchAsync(async () =>
 	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoice));
 		var invoice = await invoiceOrchestrationService
 			.ReadInvoiceObject(identifier, userIdentifier)
 			.ConfigureAwait(false);
 
 		return invoice;
-	}
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid parentCompanyId)
+	public async Task<Merchant> ReadMerchant(Guid identifier, Guid parentCompanyId) =>
+	await TryCatchAsync(async () =>
 	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObject));
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchant));
 		var merchant = await merchantOrchestrationService
 			.ReadMerchantObject(identifier, parentCompanyId)
 			.ConfigureAwait(false);
 
 		return merchant;
-	}
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice)
+	public async Task<Invoice> UpdateInvoice(Invoice currentInvoice, Invoice updatedInvoice) =>
+	await TryCatchAsync(async () =>
 	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
+		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoice));
 		var invoice = await invoiceOrchestrationService
 			.UpdateInvoiceObject(currentInvoice, updatedInvoice)
 			.ConfigureAwait(false);
 
 		return invoice;
-	}
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<Merchant> UpdateMerchantObject(Merchant currentMerchant, Merchant updatedMerchant)
+	public async Task<Merchant> UpdateMerchant(Merchant currentMerchant, Merchant updatedMerchant) =>
+	await TryCatchAsync(async () =>
 	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
+		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchant));
 		var merchant = await merchantOrchestrationService
 			.UpdateMerchantObject(currentMerchant, updatedMerchant)
 			.ConfigureAwait(false);
 
 		return merchant;
-	}
+	}).ConfigureAwait(false);
 }

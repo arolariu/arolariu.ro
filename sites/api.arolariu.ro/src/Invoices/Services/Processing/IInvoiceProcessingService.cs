@@ -19,7 +19,7 @@ public interface IInvoiceProcessingService
 	/// <param name="userIdentifier"></param>
 	/// <param name="options"></param>
 	/// <returns></returns>
-	public Task AnalyzeInvoiceWithOptions(
+	public Task AnalyzeInvoice(
 		Guid invoiceIdentifier,
 		Guid userIdentifier,
 		AnalysisOptions options);
@@ -29,7 +29,7 @@ public interface IInvoiceProcessingService
 	/// </summary>
 	/// <param name="invoice"></param>
 	/// <returns></returns>
-	public Task<Invoice> CreateInvoiceObject(Invoice invoice);
+	public Task<Invoice> CreateInvoice(Invoice invoice);
 
 	/// <summary>
 	/// Reads an invoice object.
@@ -37,13 +37,13 @@ public interface IInvoiceProcessingService
 	/// <param name="identifier"></param>
 	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
-	public Task<Invoice> ReadInvoiceObject(Guid identifier, Guid userIdentifier);
+	public Task<Invoice> ReadInvoice(Guid identifier, Guid userIdentifier);
 
 	/// <summary>
 	/// Reads all invoice objects.
 	/// </summary>
 	/// <returns></returns>
-	public Task<IEnumerable<Invoice>> ReadAllInvoiceObjects();
+	public Task<IEnumerable<Invoice>> ReadInvoices();
 
 	/// <summary>
 	/// Updates an invoice object.
@@ -51,7 +51,7 @@ public interface IInvoiceProcessingService
 	/// <param name="currentInvoice"></param>
 	/// <param name="updatedInvoice"></param>
 	/// <returns></returns>
-	public Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice);
+	public Task<Invoice> UpdateInvoice(Invoice currentInvoice, Invoice updatedInvoice);
 
 	/// <summary>
 	/// Deletes an invoice object.
@@ -59,7 +59,7 @@ public interface IInvoiceProcessingService
 	/// <param name="identifier"></param>
 	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
-	public Task DeleteInvoiceObject(Guid identifier, Guid userIdentifier);
+	public Task DeleteInvoice(Guid identifier, Guid userIdentifier);
 	#endregion
 
 	#region Merchant Orchestration Service
@@ -68,7 +68,7 @@ public interface IInvoiceProcessingService
 	/// </summary>
 	/// <param name="merchant"></param>
 	/// <returns></returns>
-	public Task<Merchant> CreateMerchantObject(Merchant merchant);
+	public Task<Merchant> CreateMerchant(Merchant merchant);
 
 	/// <summary>
 	/// Reads a merchant object.
@@ -76,13 +76,13 @@ public interface IInvoiceProcessingService
 	/// <param name="identifier"></param>
 	/// <param name="parentCompanyId"></param>
 	/// <returns></returns>
-	public Task<Merchant> ReadMerchantObject(Guid identifier, Guid parentCompanyId);
+	public Task<Merchant> ReadMerchant(Guid identifier, Guid parentCompanyId);
 
 	/// <summary>
 	/// Reads all merchant objects.
 	/// </summary>
 	/// <returns></returns>
-	public Task<IEnumerable<Merchant>> ReadAllMerchantObjects();
+	public Task<IEnumerable<Merchant>> ReadMerchants();
 
 	/// <summary>
 	/// Updates a merchant object.
@@ -90,7 +90,7 @@ public interface IInvoiceProcessingService
 	/// <param name="currentMerchant"></param>
 	/// <param name="updatedMerchant"></param>
 	/// <returns></returns>
-	public Task<Merchant> UpdateMerchantObject(Merchant currentMerchant, Merchant updatedMerchant);
+	public Task<Merchant> UpdateMerchant(Merchant currentMerchant, Merchant updatedMerchant);
 
 	/// <summary>
 	/// Deletes a merchant object.
@@ -98,7 +98,7 @@ public interface IInvoiceProcessingService
 	/// <param name="identifier"></param>
 	/// <param name="parentCompanyId"></param>
 	/// <returns></returns>
-	public Task DeleteMerchantObject(Guid identifier, Guid parentCompanyId);
+	public Task DeleteMerchant(Guid identifier, Guid parentCompanyId);
 	#endregion
 
 }

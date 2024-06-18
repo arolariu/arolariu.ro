@@ -1,11 +1,11 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
+﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 
 using Microsoft.Extensions.Logging;
 
@@ -13,25 +13,25 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 
 /// <summary>
-/// This class represents the merchant orchestration service.
+/// Class that implements the merchant storage foundation service.
 /// </summary>
-public partial class MerchantOrchestrationService : IMerchantOrchestrationService
+public partial class MerchantStorageFoundationService : IMerchantStorageFoundationService
 {
-	private readonly IMerchantStorageFoundationService merchantStorage;
-	private readonly ILogger<IMerchantOrchestrationService> logger;
+	private readonly IInvoiceNoSqlBroker invoiceNoSqlBroker;
+	private readonly ILogger<IMerchantStorageFoundationService> logger;
 
 	/// <summary>
 	/// Public constructor.
 	/// </summary>
-	/// <param name="merchantStorage"></param>
+	/// <param name="invoiceNoSqlBroker"></param>
 	/// <param name="loggerFactory"></param>
-	public MerchantOrchestrationService(
-		IMerchantStorageFoundationService merchantStorage,
+	public MerchantStorageFoundationService(
+		IInvoiceNoSqlBroker invoiceNoSqlBroker,
 		ILoggerFactory loggerFactory)
 	{
-		ArgumentNullException.ThrowIfNull(merchantStorage);
-		this.merchantStorage = merchantStorage;
-		this.logger = loggerFactory.CreateLogger<IMerchantOrchestrationService>();
+		ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);
+		this.invoiceNoSqlBroker = invoiceNoSqlBroker;
+		this.logger = loggerFactory.CreateLogger<IMerchantStorageFoundationService>();
 	}
 
 	/// <inheritdoc/>
@@ -39,15 +39,15 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantObject));
-		await merchantStorage
-			.CreateMerchantObject(merchant)
-			.ConfigureAwait(false);
 
-		var createdMerchant = await merchantStorage
-			.ReadMerchantObject(merchant.Id, merchant.ParentCompanyId)
-			.ConfigureAwait(false);
+		ValidateMerchantIdentifierIsSet(merchant.Id);
 
-		return createdMerchant;
+		await invoiceNoSqlBroker.CreateMerchantAsync(merchant).ConfigureAwait(false);
+		var retrievedMerchant = await invoiceNoSqlBroker
+				.ReadMerchantAsync(merchant.Id)
+				.ConfigureAwait(false);
+
+		return retrievedMerchant;
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
@@ -55,9 +55,11 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantObject));
-		await merchantStorage
-			.DeleteMerchantObject(identifier, parentCompanyId)
-			.ConfigureAwait(false);
+
+		ValidateMerchantIdentifierIsSet(identifier);
+		ValidateParentCompanyIdentifierIsSet(parentCompanyId);
+
+		await invoiceNoSqlBroker.DeleteMerchantAsync(identifier).ConfigureAwait(false);
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
@@ -65,21 +67,21 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllMerchantObjects));
-		var merchants = await merchantStorage
-			.ReadAllMerchantObjects()
-			.ConfigureAwait(false);
+		var merchants = await invoiceNoSqlBroker.ReadMerchantsAsync().ConfigureAwait(false);
 
 		return merchants;
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid userIdentifier) =>
+	public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid parentCompanyId) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObject));
-		var merchant = await merchantStorage
-			.ReadMerchantObject(identifier, userIdentifier)
-			.ConfigureAwait(false);
+
+		ValidateMerchantIdentifierIsSet(identifier);
+		ValidateParentCompanyIdentifierIsSet(parentCompanyId);
+
+		var merchant = await invoiceNoSqlBroker.ReadMerchantAsync(identifier).ConfigureAwait(false);
 
 		return merchant;
 	}).ConfigureAwait(false);
@@ -89,12 +91,9 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
-		await merchantStorage
-			.UpdateMerchantObject(currentMerchant, updatedMerchant)
-			.ConfigureAwait(false);
 
-		var merchant = await merchantStorage
-			.ReadMerchantObject(updatedMerchant.Id, updatedMerchant.ParentCompanyId)
+		var merchant = await invoiceNoSqlBroker
+			.UpdateMerchantAsync(currentMerchant, updatedMerchant)
 			.ConfigureAwait(false);
 
 		return merchant;
