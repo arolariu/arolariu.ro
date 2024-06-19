@@ -11,19 +11,13 @@ using System.Threading.Tasks;
 /// </summary>
 public interface IInvoiceOrchestrationService
 {
-	#region Implements the Invoice Analysis Foundation Service
 	/// <summary>
 	/// Analyze an invoice.
 	/// </summary>
-	/// <param name="invoiceIdentifier"></param>
-	/// <param name="userIdentifier"></param>
+	/// <param name="invoice"></param>
 	/// <param name="options"></param>
 	/// <returns></returns>
-	public Task AnalyzeInvoiceWithOptions(
-		Guid invoiceIdentifier,
-		Guid userIdentifier,
-		AnalysisOptions options);
-	#endregion
+	public Task AnalyzeInvoiceWithOptions(Invoice invoice, AnalysisOptions options);
 
 	#region Implements the Invoice Storage Foundation Service
 

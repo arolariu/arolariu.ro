@@ -44,12 +44,12 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	}
 
 	/// <inheritdoc/>
-	public async Task AnalyzeInvoice(Guid invoiceIdentifier, Guid userIdentifier, AnalysisOptions options) =>
+	public async Task AnalyzeInvoice(Invoice invoice, AnalysisOptions options) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoice));
 		await invoiceOrchestrationService
-			.AnalyzeInvoiceWithOptions(invoiceIdentifier, userIdentifier, options)
+			.AnalyzeInvoiceWithOptions(invoice, options)
 			.ConfigureAwait(false);
 	}).ConfigureAwait(false);
 

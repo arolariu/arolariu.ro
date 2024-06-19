@@ -15,14 +15,10 @@ public interface IInvoiceProcessingService
 	/// <summary>
 	/// Analyze an invoice.
 	/// </summary>
-	/// <param name="invoiceIdentifier"></param>
-	/// <param name="userIdentifier"></param>
+	/// <param name="invoice"></param>
 	/// <param name="options"></param>
 	/// <returns></returns>
-	public Task AnalyzeInvoice(
-		Guid invoiceIdentifier,
-		Guid userIdentifier,
-		AnalysisOptions options);
+	public Task AnalyzeInvoice(Invoice invoice, AnalysisOptions options);
 
 	/// <summary>
 	/// Creates an invoice object.

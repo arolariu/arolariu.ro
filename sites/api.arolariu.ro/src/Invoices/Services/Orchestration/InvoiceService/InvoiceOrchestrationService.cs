@@ -40,11 +40,10 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 	}
 
 	/// <inheritdoc/>
-	public async Task AnalyzeInvoiceWithOptions(Guid invoiceIdentifier, Guid userIdentifier, AnalysisOptions options) =>
+	public async Task AnalyzeInvoiceWithOptions(Invoice invoice, AnalysisOptions options) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceWithOptions));
-		var invoice = await ReadInvoiceObject(invoiceIdentifier, userIdentifier).ConfigureAwait(false);
 		await invoiceAnalysisFoundationService.AnalyzeInvoiceAsync(invoice, options).ConfigureAwait(false);
 	}).ConfigureAwait(false);
 
