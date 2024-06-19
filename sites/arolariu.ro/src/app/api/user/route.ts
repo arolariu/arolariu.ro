@@ -1,7 +1,6 @@
 /** @format */
 
-import {SITE_URL} from "@/lib/utils.generic";
-import {API_JWT, API_URL} from "@/lib/utils.server";
+import {API_JWT} from "@/lib/utils.server";
 import {auth, currentUser} from "@clerk/nextjs/server";
 import * as jose from "jose";
 import {NextResponse} from "next/server";
@@ -24,12 +23,13 @@ export async function GET() {
   const secret = new TextEncoder().encode(API_JWT);
   const header = {alg: "HS256", typ: "JWT"};
   const payload = {
-    iss: SITE_URL,
-    aud: API_URL,
+    iss: "https://auth.arolariu.ro",
+    aud: "https://api.arolariu.ro",
     iat: Math.floor(Date.now() / 1000),
     nbf: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 180,
     sub: user?.username ?? "guest",
+    userIdentifier: user?.id ?? "00000000-0000-0000-0000-000000000000",
   } satisfies jose.JWTPayload;
   const userJwt = await new jose.SignJWT(payload).setProtectedHeader(header).sign(secret);
 
