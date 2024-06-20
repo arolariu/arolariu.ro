@@ -1,7 +1,8 @@
 /** @format */
 
+import {generateGuid} from "@/lib/utils.generic";
 import {API_JWT} from "@/lib/utils.server";
-import {auth, currentUser} from "@clerk/nextjs/server";
+import {currentUser} from "@clerk/nextjs/server";
 import * as jose from "jose";
 import {NextResponse} from "next/server";
 
@@ -12,13 +13,10 @@ export const dynamic = "force-dynamic";
  * @returns The auth response that contains the user object.
  */
 export async function GET() {
-  const {userId} = auth();
-
-  if (!userId) {
-    return new NextResponse("Unauthorized", {status: 401});
-  }
-
   const user = await currentUser();
+
+  const idHash = user?.id ? await crypto.subtle.digest("SHA-256", new TextEncoder().encode(user.id)) : null;
+  const userId = idHash ? generateGuid(idHash) : "00000000-0000-0000-0000-000000000000";
 
   const secret = new TextEncoder().encode(API_JWT);
   const header = {alg: "HS256", typ: "JWT"};
@@ -28,8 +26,8 @@ export async function GET() {
     iat: Math.floor(Date.now() / 1000),
     nbf: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 180,
-    sub: user?.username ?? "guest",
-    userIdentifier: user?.id ?? "00000000-0000-0000-0000-000000000000",
+    sub: user?.id ?? "guest",
+    userIdentifier: userId,
   } satisfies jose.JWTPayload;
   const userJwt = await new jose.SignJWT(payload).setProtectedHeader(header).sign(secret);
 
