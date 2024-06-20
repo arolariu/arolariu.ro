@@ -14,4 +14,10 @@ public class AuthenticatedUser : IdentityUser<Guid>
 	/// </summary>
 	[PersonalData]
 	public string? Name { get; set; }
+
+	/// <summary>
+	/// The date of birth of the user.
+	/// </summary>
+	[PersonalData]
+	public DateOnly DateOfBirth { get; set; }
 }
