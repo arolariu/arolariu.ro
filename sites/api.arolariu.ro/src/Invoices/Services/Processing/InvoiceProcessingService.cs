@@ -14,7 +14,6 @@ using Microsoft.Extensions.Logging;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
-
 /// <summary>
 /// This class represents the invoice processing service.
 /// </summary>

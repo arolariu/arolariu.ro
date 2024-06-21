@@ -11,8 +11,6 @@ using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
 
-using Azure.AI.FormRecognizer.DocumentAnalysis;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,8 +55,8 @@ public static class WebApplicationBuilderExtensions
 		});
 
 		// Broker services:
-		builder.Services.AddScoped<IClassifierBroker, AzureOpenAiBroker>();
-		builder.Services.AddScoped<IIdentifierBroker<AnalyzedDocument>, AzureFormRecognizerBroker>();
+		builder.Services.AddScoped<IOpenAiBroker, AzureOpenAiBroker>();
+		builder.Services.AddScoped<IFormRecognizerBroker, AzureFormRecognizerBroker>();
 		builder.Services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
 		builder.Services.AddScoped<ITranslatorBroker, AzureTranslatorBroker>();
 

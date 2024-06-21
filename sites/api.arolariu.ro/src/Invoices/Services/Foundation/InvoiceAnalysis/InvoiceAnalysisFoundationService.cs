@@ -5,11 +5,9 @@ using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
-using Azure.AI.FormRecognizer.DocumentAnalysis;
 
 using Microsoft.Extensions.Logging;
 
-using System;
 using System.Threading.Tasks;
 
 /// <summary>
@@ -17,9 +15,9 @@ using System.Threading.Tasks;
 /// </summary>
 public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundationService
 {
-	private readonly IClassifierBroker analysisBroker;
+	private readonly IOpenAiBroker analysisBroker;
 	private readonly ITranslatorBroker translatorBroker;
-	private readonly IIdentifierBroker<AnalyzedDocument> receiptRecognizerBroker;
+	private readonly IFormRecognizerBroker receiptRecognizerBroker;
 	private readonly ILogger<IInvoiceAnalysisFoundationService> logger;
 
 	/// <summary>
@@ -30,9 +28,9 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
 	/// <param name="receiptRecognizerBroker"></param>
 	/// <param name="loggerFactory"></param>
 	public InvoiceAnalysisFoundationService(
-		IClassifierBroker analysisBroker,
+		IOpenAiBroker analysisBroker,
 		ITranslatorBroker translatorBroker,
-		IIdentifierBroker<AnalyzedDocument> receiptRecognizerBroker,
+		IFormRecognizerBroker receiptRecognizerBroker,
 		ILoggerFactory loggerFactory)
 	{
 		this.analysisBroker = analysisBroker;
@@ -42,14 +40,41 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
 	}
 
 	/// <inheritdoc/>
-	public async Task AnalyzeInvoiceAsync(Invoice invoice, AnalysisOptions options) =>
+	public async Task<Invoice> AnalyzeInvoiceAsync(Invoice invoice, AnalysisOptions options) =>
 	await TryCatchAsync(async () =>
 	{
 		ValidateInvoiceExists(invoice);
 		ValidateAnalysisOptionsAreSet(options);
 
-		await Task.CompletedTask.ConfigureAwait(false);
+		invoice = await PerformOcrAnalysis(invoice, options).ConfigureAwait(false);
+		invoice = await PerformTranslationAnalysis(invoice).ConfigureAwait(false);
+		invoice = await PerformGptAnalysis(invoice, options).ConfigureAwait(false);
 
-		throw new NotImplementedException(nameof(AnalyzeInvoiceAsync));
+		return invoice;
 	}).ConfigureAwait(false);
+
+	private async Task<Invoice> PerformOcrAnalysis(Invoice invoice, AnalysisOptions options)
+	{
+		return await receiptRecognizerBroker
+			.PerformOcrAnalysisOnSingleInvoice(invoice, options)
+			.ConfigureAwait(false);
+	}
+
+	private async Task<Invoice> PerformTranslationAnalysis(Invoice invoice)
+	{
+		foreach (var product in invoice.Items)
+		{
+			var productRawName = product.RawName;
+			product.RawName = await translatorBroker
+				.Translate(productRawName)
+				.ConfigureAwait(false);
+		}
+		return invoice;
+	}
+	private async Task<Invoice> PerformGptAnalysis(Invoice invoice, AnalysisOptions options)
+	{
+		return await analysisBroker
+			.PerformGptAnalysisOnSingleInvoice(invoice, options)
+			.ConfigureAwait(false);
+	}
 }

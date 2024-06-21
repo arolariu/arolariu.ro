@@ -66,7 +66,7 @@ public class Invoice : NamedEntity<Guid>
 	/// Metadata is used to generate the invoice statistics.
 	/// </summary>
 	[JsonPropertyOrder(11)]
-	public IEnumerable<KeyValuePair<string, object>> AdditionalMetadata { get; } = new List<KeyValuePair<string, object>>();
+	public IEnumerable<KeyValuePair<string, object>> AdditionalMetadata { get; set; } = new List<KeyValuePair<string, object>>();
 
 	/// <inheritdoc/>
 	public override bool Equals(object? obj)
