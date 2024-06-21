@@ -4,9 +4,12 @@
 import {Button} from "@/components/ui/button";
 import {useUser} from "@clerk/nextjs";
 import {randomBytes} from "crypto";
+import {useRouter} from "next/navigation";
 
 export default function CreateRoomForm() {
+  const router = useRouter();
   const {user} = useUser();
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -15,7 +18,10 @@ export default function CreateRoomForm() {
       (formData.get("room") as string) !== ""
         ? formData.get("room")
         : document.getElementById("room")!.getAttribute("placeholder");
-    console.log("Creating room with the following properties: ", {roomOwner, roomName});
+
+    console.log({roomOwner, roomName});
+
+    router.push(`rooms/${roomName}`);
   };
 
   return (

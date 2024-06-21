@@ -6,7 +6,7 @@ import {io} from "socket.io-client";
 
 let socket: any;
 
-export default function Chat() {
+export default function RenderChatRoomScreen({roomName}: Readonly<{roomName: string}>) {
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [transport, setTransport] = useState<string>("");
   const [messages, setMessages] = useState<string[]>([]);
