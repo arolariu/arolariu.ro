@@ -1,6 +1,6 @@
 /** @format */
 
-import fetchInvoice from "@/lib/invoices/fetchInvoice";
+import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
 import {type Metadata} from "next";
 import Image from "next/image";
 import RenderViewInvoiceScreen from "./island";

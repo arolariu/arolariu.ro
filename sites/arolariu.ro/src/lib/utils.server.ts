@@ -3,8 +3,6 @@
 import "server-only";
 
 import {AppConfigurationClient} from "@azure/app-configuration";
-import {type User} from "@clerk/nextjs/server";
-import * as jose from "jose";
 import {Blob} from "node:buffer";
 import {Resend} from "resend";
 import {CONFIG_STORE} from "./utils.generic";
@@ -16,27 +14,6 @@ export const resend = new Resend(process.env["RESEND_API_KEY"]);
 
 export const API_URL = process.env["API_URL"] ?? "";
 export const API_JWT = process.env["API_JWT"] ?? "";
-
-/**
- * Generate a JWT for a user.
- * @param user The user for which to generate the JWT.
- * @returns A promise of the JWT.
- */
-export async function generateJWT(user: Readonly<User | null>) {
-  const secret = new TextEncoder().encode(API_JWT);
-
-  const header = {alg: "HS256", typ: "JWT"};
-
-  const payload = {
-    iss: "https://arolariu.ro",
-    aud: "https://api.arolariu.ro",
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 180,
-    sub: user?.username ?? "guest",
-  };
-
-  return await new jose.SignJWT(payload).setProtectedHeader(header).sign(secret);
-}
 
 /**
  * Function to fetch a configuration value from Azure App Configuration.

@@ -1,7 +1,7 @@
 /** @format */
 
 import {fetchUser} from "@/lib/actions/fetchUser";
-import fetchInvoices from "@/lib/invoices/fetchInvoices";
+import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
 import {type Metadata} from "next";
 import Link from "next/link";
 import RenderViewInvoicesScreen from "./island";

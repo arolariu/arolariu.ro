@@ -2,6 +2,7 @@
 
 import {generateGuid} from "@/lib/utils.generic";
 import {API_JWT} from "@/lib/utils.server";
+import {UserInformation} from "@/types/UserInformation";
 import {currentUser} from "@clerk/nextjs/server";
 import * as jose from "jose";
 import {NextResponse} from "next/server";
@@ -31,5 +32,5 @@ export async function GET() {
   } satisfies jose.JWTPayload;
   const userJwt = await new jose.SignJWT(payload).setProtectedHeader(header).sign(secret);
 
-  return NextResponse.json({user, userJwt}, {status: 200});
+  return NextResponse.json({user, userIdentifier: userId, userJwt} satisfies UserInformation, {status: 200});
 }
