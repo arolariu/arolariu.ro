@@ -2,8 +2,8 @@
 
 "use server";
 
-import {SITE_URL} from "@/lib/utils.generic";
 import type {UserInformation} from "@/types/UserInformation";
+import {InvoicePayload} from "@/types/invoices/Invoice";
 import {API_URL} from "../../utils.server";
 import {BlobStorageResponse} from "../azure/uploadBlob";
 
@@ -16,26 +16,23 @@ import {BlobStorageResponse} from "../azure/uploadBlob";
  * 4. Send a full analysis request to the server.
  * @returns The result of the upload.
  */
-export default async function uploadInvoice(blobInformation: BlobStorageResponse) {
+export default async function uploadInvoice(blobInformation: BlobStorageResponse, userInformation: UserInformation) {
   try {
-    const userInformationResponse = await fetch(`${SITE_URL}/api/user`);
-    const userInformation = (await userInformationResponse.json()) as UserInformation;
-
     const invoicePayload = {
       userIdentfier: userInformation.userIdentifier,
       photoIdentifier: blobInformation.blobIdentifier,
       photoLocation: blobInformation.blobUrl,
-      photoMetadata: blobInformation.blobMetadata,
-    };
+      photoMetadata: [{key: "dateOfUploadToServer", value: new Date().toISOString()}],
+    } satisfies InvoicePayload;
+
+    for (const metadataKey in blobInformation.blobMetadata) {
+      invoicePayload.photoMetadata.push({key: metadataKey, value: blobInformation.blobMetadata[metadataKey]!});
+    }
 
     const invoiceHttpHeaders = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${userInformation.userJwt}`,
     };
-
-    console.log("userInformation", userInformation);
-    console.log("invoicePayload", invoicePayload);
-    console.log("invoiceHttpHeaders", invoiceHttpHeaders);
 
     const invoiceResponse = await fetch(`${API_URL}/rest/v1/invoices`, {
       method: "POST",

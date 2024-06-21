@@ -15,9 +15,11 @@ export const dynamic = "force-dynamic";
  */
 export async function GET() {
   const user = await currentUser();
+  let userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
 
-  const idHash = user?.id ? await crypto.subtle.digest("SHA-256", new TextEncoder().encode(user.id)) : null;
-  const userId = idHash ? generateGuid(idHash) : "00000000-0000-0000-0000-000000000000";
+  const isGuestUser = userId === "00000000-0000-0000-0000-000000000000";
+  const idHash = isGuestUser ? null : await crypto.subtle.digest("SHA-256", new TextEncoder().encode(userId));
+  const userIdentifier = idHash ? generateGuid(idHash) : "00000000-0000-0000-0000-000000000000";
 
   const secret = new TextEncoder().encode(API_JWT);
   const header = {alg: "HS256", typ: "JWT"};
@@ -28,9 +30,9 @@ export async function GET() {
     nbf: Math.floor(Date.now() / 1000),
     exp: Math.floor(Date.now() / 1000) + 180,
     sub: user?.id ?? "guest",
-    userIdentifier: userId,
+    userIdentifier: userIdentifier,
   } satisfies jose.JWTPayload;
   const userJwt = await new jose.SignJWT(payload).setProtectedHeader(header).sign(secret);
 
-  return NextResponse.json({user, userIdentifier: userId, userJwt} satisfies UserInformation, {status: 200});
+  return NextResponse.json({user, userIdentifier, userJwt} satisfies UserInformation, {status: 200});
 }

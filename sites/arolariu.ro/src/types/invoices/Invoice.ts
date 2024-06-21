@@ -39,3 +39,10 @@ export default interface Invoice extends NamedEntity<string> {
   estimatedSurvivalDays: number;
   additionalMetadata: Record<string, object>[];
 }
+
+export interface InvoicePayload {
+  userIdentfier: string;
+  photoIdentifier: string;
+  photoLocation: string;
+  photoMetadata: [{key: string; value: string}];
+}

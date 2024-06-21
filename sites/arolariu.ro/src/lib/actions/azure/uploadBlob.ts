@@ -28,14 +28,17 @@ export default async function uploadBlobToAzureStorage(
   const containerClient = storageClient.getContainerClient(containerName);
 
   const uuid = crypto.randomUUID();
-  blobName = `${uuid}.${originalFile.type.split("/")[1] as string}`;
+  let officialBlobName = blobName;
+  if (officialBlobName === undefined) {
+    officialBlobName = `${uuid}.${originalFile.type.split("/")[1] as string}`;
+  }
 
-  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+  const blockBlobClient = containerClient.getBlockBlobClient(officialBlobName);
 
   const arrayBuffer = await originalFile.arrayBuffer();
   const blobMetadata = {
     ...metadata,
-    blobName,
+    officialBlobName,
     approximateSizeInMb: (originalFile.size / 1024 / 1024).toPrecision(4),
     type: originalFile.type,
   };
@@ -51,10 +54,13 @@ export default async function uploadBlobToAzureStorage(
     console.error("Error uploading blob to Azure Storage", blobUploadResponse);
   }
 
-  return {
+  const response = {
     blobIdentifier: uuid,
-    blobName,
+    blobName: officialBlobName,
     blobUrl: blockBlobClient.url,
     blobMetadata,
-  };
+  } satisfies BlobStorageResponse;
+  console.log(response);
+
+  return response;
 }

@@ -8,8 +8,10 @@ import fetchBlobFromAzureStorage from "@/lib/actions/azure/fetchBlob";
 import uploadBlobToAzureStorage from "@/lib/actions/azure/uploadBlob";
 import uploadInvoice from "@/lib/actions/invoices/uploadInvoice";
 import {extractBase64FromBlob} from "@/lib/utils.client";
+import {SITE_URL} from "@/lib/utils.generic";
+import {UserInformation} from "@/types/UserInformation";
 import {useRouter} from "next/navigation";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import InvoiceExtensionAlert from "./_components/InvoiceExtensionAlert";
 import InvoicePreview from "./_components/InvoicePreview";
 
@@ -71,6 +73,8 @@ export default function RenderCreateInvoiceScreen() {
   const {toast} = useToast();
   const router = useRouter();
   const [image, setImage] = useState<Blob | null>(null);
+  const [userInformation, setUserInformation] = useState<UserInformation | null>(null);
+  const [imageIdentifier, setImageIdentifier] = useState<string | null>(null);
   const [isValidMimeType, setIsValidMimeType] = useState<boolean | null>(null);
   const [uploadStatus, setUploadStatus] = useState<"SUCCESS" | "PENDING" | null>(null);
   const validMimeTypes = new Set(["image/jpeg", "image/jpg", "image/png", "application/pdf"]);
@@ -80,6 +84,19 @@ export default function RenderCreateInvoiceScreen() {
     setIsValidMimeType(null);
     setUploadStatus(null);
   };
+
+  useEffect(() => {
+    const fetchUserInformation = async () => {
+      const userInformationResponse = await fetch(`${SITE_URL}/api/user`);
+      setUserInformation((await userInformationResponse.json()) as UserInformation);
+    };
+
+    fetchUserInformation();
+
+    return () => {
+      setUserInformation(null);
+    };
+  }, []);
 
   const ctaText =
     isValidMimeType === true
@@ -100,14 +117,17 @@ export default function RenderCreateInvoiceScreen() {
         title: "Please wait for the photo to be processed...",
         duration: 5000,
       });
+      setUploadStatus("PENDING");
       const blobStorageResponse = await uploadBlobToAzureStorage("invoices", imageAsBase64);
+      setUploadStatus("SUCCESS");
+      setImageIdentifier(blobStorageResponse.blobName);
     }
   };
 
   const handleImageServerSideUpload = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     const blobInformation = await fetchBlobFromAzureStorage("invoices", imageIdentifier!);
-    const {status, identifier} = await uploadInvoice(blobInformation);
+    const {status, identifier} = await uploadInvoice(blobInformation, userInformation!);
 
     toast({
       variant: "destructive",
