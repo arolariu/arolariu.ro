@@ -3,7 +3,8 @@
 "use client";
 
 import {ViewInvoiceImageModal} from "@/components/domains/invoices/view-invoice/ViewInvoiceImageModal";
-import {useZustandStore} from "@/hooks/stateStore";
+import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
+import {UserInformation} from "@/types/UserInformation";
 import Invoice from "@/types/invoices/Invoice";
 import Link from "next/link";
 import {useEffect, useState} from "react";
@@ -15,19 +16,30 @@ import {InvoiceSummary} from "./_components/InvoiceSummary";
  * This function renders the view invoice page.
  * @returns The JSX for the view invoice page.
  */
-export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: Invoice}>) {
-  const setSelectedInvoice = useZustandStore((state) => state.setSelectedInvoice);
-  const selectedInvoice = useZustandStore((state) => state.selectedInvoice);
-  const {id, description, paymentInformation, isImportant} = invoice;
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const buttonStyle = ["border-indigo-500", "border-gray-300"];
-  const isDifferentInvoice = selectedInvoice !== invoice;
+export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [userInformation, setUserInformation] = useState<UserInformation | null>(null);
 
   useEffect(() => {
-    setSelectedInvoice(invoice);
-  }, [isDifferentInvoice]);
+    const fetchUserInformation = async () => {
+      const response = await fetch(`/api/user-information`);
+      const data = await response.json();
+      setUserInformation(data as UserInformation);
+    };
 
-  if (isDifferentInvoice) return;
+    fetchUserInformation();
+    fetchInvoice(invoiceIdentifier, userInformation!);
+
+    return () => {
+      setInvoice(null);
+      setUserInformation(null);
+    };
+  }, [invoiceIdentifier]);
+
+  const {id, description, paymentInformation, isImportant} = invoice!;
+  const [currentStep, setCurrentStep] = useState<number>(1);
+  const buttonStyle = ["border-indigo-500", "border-gray-300"];
+
   return (
     <section className='mx-auto py-12'>
       <div className='mx-auto flex flex-wrap justify-center'>

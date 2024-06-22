@@ -1,6 +1,5 @@
 /** @format */
 
-import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
 import {type Metadata} from "next";
 import RenderViewInvoiceScreen from "./island";
 
@@ -18,12 +17,11 @@ export const metadata: Metadata = {
  * @returns Render the view invoice page.
  */
 export default async function ViewInvoicePage({params}: Readonly<Props>) {
-  // TODO: Add user information.
-  const invoice = await fetchInvoice(params.id, userInformation);
+  const invoiceIdentifier = params.id;
 
   return (
     <main className='overflow-hidden px-5 py-24'>
-      <RenderViewInvoiceScreen invoice={invoice} />
+      <RenderViewInvoiceScreen invoiceIdentifier={invoiceIdentifier} />
     </main>
   );
 }
