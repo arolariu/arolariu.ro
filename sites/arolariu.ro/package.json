@@ -44,7 +44,9 @@
     "analyze": "ANALYZE=true next build",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
-    "storybook:test": "test-storybook --no-cache --browsers firefox chromium webkit"
+    "storybook:test": "test-storybook --no-cache --browsers firefox chromium webkit",
+    "test": "npm run test:unit",
+    "test:unit": "playwright test --config=playwright.config.ts"
   },
   "dependencies": {
     "@azure/app-configuration": "1.6.0",
