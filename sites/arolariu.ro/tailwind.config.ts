@@ -44,6 +44,7 @@ const tailwindConfig = {
     },
   },
   plugins: [typography, animate, daisyUI],
+  future: {hoverOnlyWhenSupported: true},
 } satisfies Config;
 
 export default tailwindConfig;
