@@ -25,6 +25,8 @@ export const SocketProvider = ({children}: {children: ReactNode}) => {
 
   useEffect(() => {
     const socketInstance = io({
+      // Polling is primary since AFD doesn't support websockets
+      transports: ["polling", "websocket"],
       path: "/api/socket/io",
       addTrailingSlash: false,
     });
