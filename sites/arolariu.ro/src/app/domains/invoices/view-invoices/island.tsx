@@ -2,22 +2,23 @@
 
 "use client";
 
+import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
+import {UserInformation} from "@/types/UserInformation";
 import Invoice from "@/types/invoices/Invoice";
-import {useLayoutEffect, useState} from "react";
+import Link from "next/link";
+import {useEffect, useLayoutEffect, useState} from "react";
 import {InvoiceFilters} from "./_components/InvoiceFilters";
 import {InvoiceList} from "./_components/InvoiceList";
-
-interface Props {
-  invoices: Invoice[] | null;
-}
 
 /**
  * This function renders the view invoices page.
  * @returns This function renders the view invoices page.
  */
-export default function RenderViewInvoicesScreen({invoices}: Readonly<Props>) {
+export default function RenderViewInvoicesScreen() {
+  const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [displayStyle, setDisplayStyle] = useState<"grid" | "list">("list");
   const [shownInvoices, setShownInvoices] = useState<Invoice[]>(invoices!);
+  const [userInformation, setUserInformation] = useState<UserInformation | null>(null);
   const [filters, setFilters] = useState({
     isImportant: false,
     dayOnly: false,
@@ -45,6 +46,43 @@ export default function RenderViewInvoicesScreen({invoices}: Readonly<Props>) {
     }
     setShownInvoices(filteredInvoices);
   }, [filters, invoices]);
+
+  useEffect(() => {
+    const fetchUserInformation = async () => {
+      const response = await fetch(`/api/user-information`);
+      const data = await response.json();
+      setUserInformation(data as UserInformation);
+    };
+
+    const fetchInvoicesForUser = async () => {
+      const invoices = await fetchInvoices(userInformation!);
+      setInvoices(invoices);
+    };
+
+    fetchUserInformation();
+    fetchInvoicesForUser();
+
+    return () => {
+      setInvoices(null);
+      setUserInformation(null);
+    };
+  }, [invoices]);
+
+  if (!invoices)
+    return (
+      <div className='mb-20 flex w-full flex-col text-center'>
+        <h1 className='mb-4 text-2xl font-medium sm:text-3xl'>Something is missing here... 😰</h1>
+        <article className='mx-auto text-base leading-relaxed lg:w-2/3'>
+          It seems that you do not have any invoices associated with your account... <br />
+          Please upload some invoices and come back later. <br /> <br />
+        </article>
+        <Link
+          href='./create-invoice'
+          className='mx-auto mt-8 inline-flex rounded border-0 bg-indigo-500 px-6 py-2 text-lg text-white hover:bg-indigo-600 focus:outline-none'>
+          Upload an invoice here.
+        </Link>
+      </div>
+    );
 
   const calculateInvoiceTotalCost = (): number => {
     return shownInvoices.reduce((totalCost, invoice) => totalCost + invoice.paymentInformation.totalAmount, 0);

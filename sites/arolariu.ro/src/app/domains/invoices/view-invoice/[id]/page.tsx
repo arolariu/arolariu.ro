@@ -17,11 +17,9 @@ export const metadata: Metadata = {
  * @returns Render the view invoice page.
  */
 export default async function ViewInvoicePage({params}: Readonly<Props>) {
-  const invoiceIdentifier = params.id;
-
   return (
     <main className='overflow-hidden px-5 py-24'>
-      <RenderViewInvoiceScreen invoiceIdentifier={invoiceIdentifier} />
+      <RenderViewInvoiceScreen invoiceIdentifier={params.id} />
     </main>
   );
 }

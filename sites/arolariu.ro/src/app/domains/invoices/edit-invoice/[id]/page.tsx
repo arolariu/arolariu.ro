@@ -2,7 +2,6 @@
 
 import RenderForbiddenScreen from "@/app/domains/_components/RenderForbiddenScreen";
 import {fetchUser} from "@/lib/actions/fetchUser";
-import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
 import {type Metadata} from "next";
 import RenderEditInvoiceScreen from "./island";
 
@@ -21,14 +20,11 @@ export const metadata: Metadata = {
  */
 export default async function EditInvoicePage({params}: Readonly<Props>) {
   const {isAuthenticated} = await fetchUser();
-  const invoice = await fetchInvoice(params.id);
 
-  if (!isAuthenticated || !invoice) {
-    return <RenderForbiddenScreen />;
-  }
+  if (!isAuthenticated) return <RenderForbiddenScreen />;
   return (
     <main className='px-5 py-24'>
-      <RenderEditInvoiceScreen invoice={invoice} />
+      <RenderEditInvoiceScreen invoiceIdentifier={params.id} />
     </main>
   );
 }

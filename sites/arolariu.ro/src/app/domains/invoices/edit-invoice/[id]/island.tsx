@@ -4,16 +4,39 @@
 
 import EditInvoicePhotoPreview from "@/components/domains/invoices/edit-invoice/EditInvoicePhotoPreview";
 import useWindowSize from "@/hooks/useWindowSize";
+import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
+import {UserInformation} from "@/types/UserInformation";
 import Invoice from "@/types/invoices/Invoice";
+import {useEffect, useState} from "react";
 import ProductTable from "./_components/ProductTable";
 
 /**
  * This function renders the edit invoice page.
  * @returns The view for the edit invoice page.
  */
-export default function RenderEditInvoiceScreen({invoice}: Readonly<{invoice: Invoice}>) {
+export default function RenderEditInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
   const {windowSize} = useWindowSize();
-  const {merchant, additionalMetadata, description, isImportant, estimatedSurvivalDays, paymentInformation} = invoice;
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [userInformation, setUserInformation] = useState<UserInformation | null>(null);
+
+  useEffect(() => {
+    const fetchUserInformation = async () => {
+      const response = await fetch(`/api/user-information`);
+      const data = await response.json();
+      setUserInformation(data as UserInformation);
+    };
+
+    fetchUserInformation();
+    fetchInvoice(invoiceIdentifier, userInformation!);
+
+    return () => {
+      setInvoice(null);
+      setUserInformation(null);
+    };
+  }, [invoiceIdentifier]);
+
+  if (!invoice) return null;
+  const {description, paymentInformation, isImportant, merchant, estimatedSurvivalDays, additionalMetadata} = invoice;
   const {name, address, phoneNumber} = merchant;
 
   return (
