@@ -136,9 +136,10 @@ jobs:
       - name: 🚧 Adding environment variables...
         run: |
           touch .env
-          for kvPair in ${{ toJson(env) }}; do
-            key=$(echo $kvPair | jq -r 'keys[0]')
-            value=$(echo $kvPair | jq -r '.'$key)
+          echo "TIMESTAMP=$(date -u  +"%Y-%m-%dT%H:%M:%S"Z)" >> .env
+          json='${{ toJson(env) }}' # We convert the env object to it's JSON representation.
+          for key in $(echo $json | jq -r 'keys[]'); do
+            value=$(echo $json | jq -r '.'$key)
             echo "$key=$value" >> .env
           done
 
