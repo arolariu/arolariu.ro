@@ -34,12 +34,11 @@ permissions:
   contents: read
 
 env:
-  SITE_NAME: ${{ inputs.environment == 'DEVELOPMENT' && 'dev.arolariu.ro' || 'arolariu.ro' }}
-  SITE_URL: ${{ inputs.environment == 'DEVELOPMENT' && 'https://dev.arolariu.ro' || 'https://arolariu.ro' }}
-  SITE_ENV: ${{ inputs.environment }}
+  SITE_NAME: ${{ inputs.environment == 'PRODUCTION' && 'arolariu.ro' || 'dev.arolariu.ro' }}
+  SITE_URL: ${{ inputs.environment == 'PRODUCTION' && 'https://arolariu.ro' || 'https://dev.arolariu.ro' }}
+  SITE_ENV: ${{ inputs.environment || 'development'}}
   API_NAME: "api.arolariu.ro"
   API_URL: "https://api.arolariu.ro"
-  API_ENV: ${{ inputs.environment }}
   COMMIT_SHA: ${{ github.sha }}
 
 defaults:
@@ -50,7 +49,7 @@ jobs:
   test:
     name: Test phase (1/2)
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment || 'development'}}
     timeout-minutes: 10
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
@@ -103,7 +102,7 @@ jobs:
     name: Build phase (2/2)
     needs: test
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment || 'development'}}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4.1.7
