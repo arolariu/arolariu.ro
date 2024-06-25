@@ -75,12 +75,12 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects() =>
+	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
 		var invoices = await invoiceStorageFoundationService
-			.ReadAllInvoiceObjects()
+			.ReadAllInvoiceObjects(userIdentifier)
 			.ConfigureAwait(false);
 
 		return invoices;

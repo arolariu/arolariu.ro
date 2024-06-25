@@ -39,8 +39,9 @@ public interface IInvoiceOrchestrationService
 	/// <summary>
 	/// Reads all invoice objects.
 	/// </summary>
+	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
-	public Task<IEnumerable<Invoice>> ReadAllInvoiceObjects();
+	public Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier);
 
 	/// <summary>
 	/// Updates an invoice object.

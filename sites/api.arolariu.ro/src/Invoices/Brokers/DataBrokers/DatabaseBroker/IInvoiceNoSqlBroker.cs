@@ -38,8 +38,9 @@ public interface IInvoiceNoSqlBroker
 	/// This method is used to read all the invoices from the database.
 	/// The invoices are returned as an enumerable.
 	/// </summary>
+	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
-	public ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync();
+	public ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier);
 
 	/// <summary>
 	/// Updates an invoice.

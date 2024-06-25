@@ -134,8 +134,10 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveAllInvoicesAsync), ActivityKind.Server);
+			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+
 			var invoices = await invoiceProcessingService
-				.ReadInvoices()
+				.ReadInvoices(userIdentifier)
 				.ConfigureAwait(false);
 
 			return Results.Ok(invoices);

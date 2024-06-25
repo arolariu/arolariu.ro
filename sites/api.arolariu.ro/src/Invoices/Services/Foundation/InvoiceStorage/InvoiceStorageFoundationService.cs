@@ -57,12 +57,12 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects() =>
+	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
 		var invoices = await invoiceNoSqlBroker
-			.ReadInvoicesAsync()
+			.ReadInvoicesAsync(userIdentifier)
 			.ConfigureAwait(false);
 
 		return invoices;

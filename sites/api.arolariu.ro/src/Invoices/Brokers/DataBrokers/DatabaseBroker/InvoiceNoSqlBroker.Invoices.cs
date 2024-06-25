@@ -30,12 +30,13 @@ public partial class InvoiceNoSqlBroker
 	}
 
 	/// <inheritdoc/>
-	public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync()
+	public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier)
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));
 
 		// dotnet/efcore#16920 - EF Core Cosmos DB provider does not support Include/ThenInclude.
 		var invoices = await SelectAll<Invoice>().ToListAsync().ConfigureAwait(false);
+		invoices = invoices.FindAll(i => i.UserIdentifier == userIdentifier);
 		foreach (var invoice in invoices)
 			await Entry(invoice).Reference(i => i.Merchant).LoadAsync().ConfigureAwait(false);
 
