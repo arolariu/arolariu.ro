@@ -52,11 +52,17 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4
 
-      - name: 📦 Installing Node.js v22...
+      - name: 📦 Installing performant NPM...
+        run: |
+          eval export $(echo PNPM_HOME=$HOME/.pnpm | tee -a $GITHUB_ENV);
+          echo "$PNPM_HOME" >> $GITHUB_PATH
+          curl -fsSL https://get.pnpm.io/install.sh | bash -
+
+      - name: 📦 Installing Node.js...
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: "npm"
+          node-version: latest
+          cache: "pnpm"
 
       - name: 🚧 Adding environment variables...
         run: |
@@ -76,16 +82,16 @@ jobs:
           echo "CONFIG_STORE=${{ secrets.CONFIG_STORE }}" >> .env
 
       - name: 📦 Installing dependencies...
-        run: npm install --legacy-peer-deps && npx playwright install --with-deps
+        run: pnpm install --legacy-peer-deps && npx playwright install --with-deps
 
       - name: 🧪 Preparing tests...
-        run: npm run storybook:build --quiet
+        run: pnpm storybook:build --quiet
 
       - name: 🧪 Running Smoke & Integration tests...
         run: |
-          npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
-            "npx http-server storybook-static --port 6006 --silent" \
-            "npx wait-on tcp:6006 && npm run storybook:test"
+          pnpm dlx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
+            "pnpm dlx http-server storybook-static --port 6006 --silent" \
+            "pnpm dlx wait-on tcp:6006 && npm run storybook:test"
 
   build:
     name: Build phase (2/2)
