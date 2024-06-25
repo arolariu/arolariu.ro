@@ -63,6 +63,7 @@ jobs:
         with:
           node-version: latest
           cache: "pnpm"
+          cache-dependency-path: "./sites/arolariu.ro/pnpm-lock.yaml"
 
       - name: 🚧 Adding environment variables...
         run: |
