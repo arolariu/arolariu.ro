@@ -2,12 +2,12 @@
 
 "use client";
 
-import {ViewInvoiceImageModal} from "@/components/domains/invoices/view-invoice/ViewInvoiceImageModal";
+import useUserInformation from "@/hooks/useUserInformation";
 import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
-import {UserInformation} from "@/types/UserInformation";
 import Invoice from "@/types/invoices/Invoice";
 import Link from "next/link";
 import {useEffect, useState} from "react";
+import {InvoiceImagePreview} from "./_components/InvoiceImagePreview";
 import {InvoiceInformation} from "./_components/InvoiceInformation";
 import {InvoiceProducts} from "./_components/InvoiceProducts";
 import {InvoiceSummary} from "./_components/InvoiceSummary";
@@ -17,27 +17,25 @@ import {InvoiceSummary} from "./_components/InvoiceSummary";
  * @returns The JSX for the view invoice page.
  */
 export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
+  const {userInformation} = useUserInformation();
+  const [currentStep, setCurrentStep] = useState<number>(1);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
-  const [userInformation, setUserInformation] = useState<UserInformation | null>(null);
 
   useEffect(() => {
-    const fetchUserInformation = async () => {
-      const response = await fetch(`/api/user-information`);
-      const data = await response.json();
-      setUserInformation(data as UserInformation);
+    const fetchInvoiceInformation = async () => {
+      if (userInformation === null) return console.info("User information is not available.");
+      const invoiceInformation = await fetchInvoice(invoiceIdentifier, userInformation);
+      if (invoiceInformation) setInvoice(invoiceInformation);
     };
 
-    fetchUserInformation();
-    fetchInvoice(invoiceIdentifier, userInformation!);
+    fetchInvoiceInformation();
+  }, [userInformation]);
 
-    return () => {
-      setInvoice(null);
-      setUserInformation(null);
-    };
-  }, [invoiceIdentifier]);
+  if (!invoice) {
+    return <div>Loading...</div>;
+  }
 
-  const {id, description, paymentInformation, isImportant} = invoice!;
-  const [currentStep, setCurrentStep] = useState<number>(1);
+  const {id, description, paymentInformation, isImportant} = invoice;
   const buttonStyle = ["border-indigo-500", "border-gray-300"];
 
   return (
@@ -48,7 +46,7 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
             Invoice id: <span>{id}</span>{" "}
           </h2>
           <h3 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-3xl font-medium text-transparent'>
-            {description}
+            {description?.length && description.length > 0 ? description : "NO DESCRIPTION AVAILABLE"}
           </h3>
           <div className='mb-4 flex'>
             <button
@@ -70,16 +68,16 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
               Additional Information
             </button>
           </div>
-          {currentStep === 1 && <InvoiceSummary />}
-          {currentStep === 2 && <InvoiceProducts />}
-          {currentStep === 3 && <InvoiceInformation />}
+          {currentStep === 1 && <InvoiceSummary invoice={invoice} />}
+          {currentStep === 2 && <InvoiceProducts invoice={invoice} />}
+          {currentStep === 3 && <InvoiceInformation invoice={invoice} />}
           <div className='flex'>
             <span className='title-font text-2xl font-medium dark:text-gray-300'>
-              Total Cost: {paymentInformation.totalAmount}
-              {paymentInformation.currency.symbol}
+              Total Cost: {paymentInformation?.totalAmount}
+              {paymentInformation?.currency?.symbol}
             </span>
             <Link
-              href={`../edit-invoice/${id}`}
+              href={`/domains/invoices/edit-invoice/${id}`}
               className='ml-auto flex rounded border-0 bg-indigo-500 px-6 py-2 text-white hover:bg-indigo-600 focus:outline-none'>
               Edit this invoice
             </Link>
@@ -100,7 +98,7 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
           </div>
         </div>
       </div>
-      <ViewInvoiceImageModal />
+      <InvoiceImagePreview invoice={invoice} />
     </section>
   );
 }

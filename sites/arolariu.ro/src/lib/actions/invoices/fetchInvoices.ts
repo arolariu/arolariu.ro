@@ -12,6 +12,7 @@ import {API_URL} from "../../utils.server";
  * @returns A promise of the invoices, or null if the request failed.
  */
 export default async function fetchInvoices(userInformation: UserInformation): Promise<Invoice[] | null> {
+  console.info(">>> Fetching invoices for user:", userInformation);
   const response = await fetch(`${API_URL}/rest/v1/invoices/`, {
     headers: {
       Authorization: `Bearer ${userInformation.userJwt}`,

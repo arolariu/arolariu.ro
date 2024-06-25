@@ -4,14 +4,13 @@
 
 import {ToastAction} from "@/components/ui/toast";
 import {useToast} from "@/components/ui/use-toast";
+import useUserInformation from "@/hooks/useUserInformation";
 import fetchBlobFromAzureStorage from "@/lib/actions/azure/fetchBlob";
 import uploadBlobToAzureStorage from "@/lib/actions/azure/uploadBlob";
 import uploadInvoice from "@/lib/actions/invoices/uploadInvoice";
 import {extractBase64FromBlob} from "@/lib/utils.client";
-import {SITE_URL} from "@/lib/utils.generic";
-import {UserInformation} from "@/types/UserInformation";
 import {useRouter} from "next/navigation";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import InvoiceExtensionAlert from "./_components/InvoiceExtensionAlert";
 import InvoicePreview from "./_components/InvoicePreview";
 
@@ -73,7 +72,7 @@ export default function RenderCreateInvoiceScreen() {
   const {toast} = useToast();
   const router = useRouter();
   const [image, setImage] = useState<Blob | null>(null);
-  const [userInformation, setUserInformation] = useState<UserInformation | null>(null);
+  const {userInformation} = useUserInformation({dependencyArray: [image]});
   const [imageIdentifier, setImageIdentifier] = useState<string | null>(null);
   const [isValidMimeType, setIsValidMimeType] = useState<boolean | null>(null);
   const [uploadStatus, setUploadStatus] = useState<"SUCCESS" | "PENDING" | null>(null);
@@ -84,19 +83,6 @@ export default function RenderCreateInvoiceScreen() {
     setIsValidMimeType(null);
     setUploadStatus(null);
   };
-
-  useEffect(() => {
-    const fetchUserInformation = async () => {
-      const userInformationResponse = await fetch(`${SITE_URL}/api/user`);
-      setUserInformation((await userInformationResponse.json()) as UserInformation);
-    };
-
-    fetchUserInformation();
-
-    return () => {
-      setUserInformation(null);
-    };
-  }, []);
 
   const ctaText =
     isValidMimeType === true

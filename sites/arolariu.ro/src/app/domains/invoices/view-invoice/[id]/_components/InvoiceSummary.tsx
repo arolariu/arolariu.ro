@@ -2,28 +2,30 @@
 
 "use client";
 
-import {useZustandStore} from "@/hooks/stateStore";
+import Invoice from "@/types/invoices/Invoice";
 
-export const InvoiceSummary = () => {
-  const invoice = useZustandStore((state) => state.selectedInvoice);
+export const InvoiceSummary = ({invoice}: Readonly<{invoice: Invoice}>) => {
   const {merchant, items, estimatedSurvivalDays, lastUpdatedAt, createdAt, possibleRecipes, paymentInformation} =
     invoice;
-  const productsWithAllergens = items.filter((item) => item.detectedAllergens.length > 0);
-  const allergensList = productsWithAllergens.flatMap((item) => item.detectedAllergens);
+  const productsWithAllergens = items?.filter((item) => item.detectedAllergens.length > 0);
+  const allergensList = productsWithAllergens?.flatMap((item) => item.detectedAllergens);
 
   const allergensText =
-    allergensList.length > 0
-      ? allergensList.map((allergen) => allergen.name).join(", ")
+    allergensList?.length && allergensList.length > 0
+      ? allergensList?.map((allergen) => allergen.name).join(", ")
       : "no identified allergens... input allergens manually or analyze again.";
 
   const recipesText =
-    possibleRecipes.length > 0
+    possibleRecipes?.length && possibleRecipes.length > 0
       ? possibleRecipes.map((recipe) => recipe.name).join(", ")
       : "no identified recipes... input recipes manually or analyze again.";
 
-  const boughtItems = items
-    .filter((item) => item.totalPrice > 0 && item.quantity > 0)
-    .reduce((counter, item) => counter + item.quantity, 0);
+  const boughtItems =
+    items !== null
+      ? items
+          .filter((item) => item.totalPrice > 0 && item.quantity > 0)
+          .reduce((counter, item) => counter + item.quantity, 0)
+      : -1;
 
   return (
     <section>
@@ -43,7 +45,7 @@ export const InvoiceSummary = () => {
       </div>
       <div className='flex border-b border-gray-200 py-2'>
         <span>Merchant Name</span>
-        <span className='ml-auto dark:text-gray-300'>{merchant.name}</span>
+        <span className='ml-auto dark:text-gray-300'>{merchant?.name}</span>
       </div>
       <div className='flex border-b border-gray-200 py-2'>
         <span>Invoice Last Analysis</span>
@@ -55,7 +57,9 @@ export const InvoiceSummary = () => {
       </div>
       <div className='mb-6 flex border-b border-gray-200 py-2'>
         <span>Invoice Identified Date</span>
-        <span className='ml-auto dark:text-gray-300'>{new Date(paymentInformation.dateOfPurchase).toUTCString()}</span>
+        <span className='ml-auto dark:text-gray-300'>
+          {new Date(paymentInformation?.dateOfPurchase ?? Date.now()).toUTCString()}
+        </span>
       </div>
     </section>
   );

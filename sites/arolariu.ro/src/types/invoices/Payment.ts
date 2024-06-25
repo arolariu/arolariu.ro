@@ -7,8 +7,8 @@
 import type {Currency} from "../DDD/SharedKernel/Currency";
 
 export type PaymentInformation = {
-  dateOfPurchase: Date;
-  currency: Currency;
-  totalAmount: number;
-  totalTax: number;
+  dateOfPurchase: Date | null;
+  currency: Currency | null;
+  totalAmount: number | null;
+  totalTax: number | null;
 };

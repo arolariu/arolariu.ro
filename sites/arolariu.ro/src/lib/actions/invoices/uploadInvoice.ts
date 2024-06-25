@@ -19,7 +19,7 @@ import {BlobStorageResponse} from "../azure/uploadBlob";
 export default async function uploadInvoice(blobInformation: BlobStorageResponse, userInformation: UserInformation) {
   try {
     const invoicePayload = {
-      userIdentfier: userInformation.userIdentifier,
+      userIdentifier: userInformation.userIdentifier,
       photoIdentifier: blobInformation.blobIdentifier,
       photoLocation: blobInformation.blobUrl,
       photoMetadata: [{key: "dateOfUploadToServer", value: new Date().toISOString()}],
