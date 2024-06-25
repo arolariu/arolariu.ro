@@ -1,41 +1,30 @@
 name: "[BUILD]::arolariu.ro"
-run-name: "[BUILD]::[LINUX] Building artifact for main platform, as requested by @${{ github.actor }}."
+run-name: "[BUILD]::[LINUX] Building artifact for main platform, as requested by @${{ github.actor }}"
 
 on:
   push:
     branches: ["main", "preview"]
     paths: ["sites/arolariu.ro/**"]
-  workflow_call:
-    inputs:
-      environment:
-        description: "The environment to deploy to. (e.g. 'development', 'production')"
-        default: "development"
-        required: true
-        type: string
-      container_name:
-        description: "The name of the container to build and deploy."
-        default: "frontend/dev.arolariu"
-        required: true
-        type: string
-      container_tag:
-        description: "The tag of the container to build and deploy."
-        default: "latest"
-        required: true
-        type: string
   workflow_dispatch:
     inputs:
       environment:
         description: "The environment to deploy to. (e.g. 'development', 'production')"
-        default: "development"
+        options:
+          - "DEVELOPMENT"
+          - "PRODUCTION"
+        default: "DEVELOPMENT"
         required: true
-        type: string
+        type: choice
       container_name:
-        description: "The name of the container to build and deploy."
+        description: "The name of the container to build and deploy. (e.g. 'frontend/dev.arolariu', 'frontend/arolariu')"
+        options:
+          - "frontend/dev.arolariu"
+          - "frontend/arolariu"
         default: "frontend/dev.arolariu"
         required: true
-        type: string
+        type: choice
       container_tag:
-        description: "The tag of the container to build and deploy."
+        description: "The tag (SHA) of the container to build and deploy."
         default: "latest"
         required: true
         type: string
@@ -45,8 +34,8 @@ permissions:
   contents: read
 
 env:
-  SITE_NAME: "arolariu.ro"
-  SITE_URL: "https://arolariu.ro"
+  SITE_NAME: ${{ inputs.environment == 'DEVELOPMENT' && 'dev.arolariu.ro' || 'arolariu.ro' }}
+  SITE_URL: ${{ inputs.environment == 'DEVELOPMENT' && 'https://dev.arolariu.ro' || 'https://arolariu.ro' }}
   SITE_ENV: ${{ inputs.environment }}
   API_NAME: "api.arolariu.ro"
   API_URL: "https://api.arolariu.ro"
@@ -65,7 +54,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.1.7
 
       - name: 📦 Installing performant NPM...
         run: |
@@ -74,7 +63,7 @@ jobs:
           curl -fsSL https://get.pnpm.io/install.sh | bash -
 
       - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4.0.2
         with:
           node-version: latest
           cache: "pnpm"
@@ -117,17 +106,17 @@ jobs:
     environment: ${{ inputs.environment }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.1.7
 
       - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v2
+        uses: Azure/login@v2.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: 🔒 Performing auth against private Azure Container Registry...
-        uses: Azure/docker-login@v1
+        uses: Azure/docker-login@v2
         with:
           login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
           username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
