@@ -3,7 +3,7 @@ run-name: "[BUILD]::[LINUX] Building artifact for main platform, as requested by
 
 on:
   push:
-    branches: ["main", "preview"]
+    branches: ["preview"]
     paths: ["sites/arolariu.ro/**"]
   workflow_dispatch:
     inputs:
