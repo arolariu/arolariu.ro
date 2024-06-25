@@ -68,7 +68,7 @@ jobs:
       - name: 🚧 Adding environment variables...
         run: |
           touch .env
-          json=${{ toJson(env) }}
+          json='${{ toJson(env) }}'
           for key in $(echo $json | jq -r 'keys[]'); do
             value=$(echo $json | jq -r '.'$key)
             echo "$key=$value" >> .env
