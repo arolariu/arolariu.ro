@@ -36,7 +36,6 @@ env:
   API_URL: "https://api.arolariu.ro"
   API_ENV: ${{ inputs.environment }}
   COMMIT_SHA: ${{ github.sha }}
-  TIMESTAMP: ${{ github.event.head_commit.timestamp }}
 
 defaults:
   run:
@@ -68,7 +67,8 @@ jobs:
       - name: 🚧 Adding environment variables...
         run: |
           touch .env
-          json='${{ toJson(env) }}'
+          echo "TIMESTAMP=$(date -u  +"%Y-%m-%dT%H:%M:%S"Z)" >> .env
+          json='${{ toJson(env) }}' # We convert the env object to it's JSON representation.
           for key in $(echo $json | jq -r 'keys[]'); do
             value=$(echo $json | jq -r '.'$key)
             echo "$key=$value" >> .env
