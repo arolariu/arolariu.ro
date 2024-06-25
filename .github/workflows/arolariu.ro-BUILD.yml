@@ -5,7 +5,6 @@ on:
   push:
     branches: ["main", "preview"]
     paths: ["sites/arolariu.ro/**"]
-  workflow_dispatch:
   workflow_call:
     inputs:
       environment:
@@ -21,6 +20,20 @@ on:
       container_tag:
         description: "The tag of the container to build and deploy."
         default: "latest"
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "The environment to deploy to. (e.g. 'development', 'production')"
+        required: true
+        type: string
+      container_name:
+        description: "The name of the container to build and deploy."
+        required: true
+        type: string
+      container_tag:
+        description: "The tag of the container to build and deploy."
         required: true
         type: string
 
@@ -83,7 +96,7 @@ jobs:
           echo "CONFIG_STORE=${{ secrets.CONFIG_STORE }}" >> .env
 
       - name: 📦 Installing dependencies...
-        run: pnpm install --legacy-peer-deps && npx playwright install --with-deps
+        run: pnpm install && pnpm dlx playwright install --with-deps
 
       - name: 🧪 Preparing tests...
         run: pnpm storybook:build --quiet
