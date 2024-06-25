@@ -2,7 +2,6 @@
 using arolariu.Backend.Common.Validators;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
-using arolariu.Backend.Domain.Invoices.DTOs;
 
 using System;
 
@@ -31,7 +30,7 @@ public partial class InvoiceStorageFoundationService
 		// TODO: complete all other cases if needed.
 	}
 
-	private static void ValidateDtoIsValid(CreateInvoiceDto? invoiceDto)
+	private static void ValidateInvoiceInformationIsValid(Invoice invoice)
 	{
 		// TODO: complete in the future, if needed.
 	}

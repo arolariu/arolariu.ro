@@ -1,4 +1,6 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
+
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 
 using System;
@@ -7,13 +9,13 @@ using System.Threading.Tasks;
 
 public partial class InvoiceAnalysisFoundationService
 {
-	private delegate Task ReturningAnalysisFunction();
+	private delegate Task<Invoice> ReturningAnalysisFunction();
 
-	private async Task TryCatchAsync(ReturningAnalysisFunction returningAnalysisFunction)
+	private async Task<Invoice> TryCatchAsync(ReturningAnalysisFunction returningAnalysisFunction)
 	{
 		try
 		{
-			await returningAnalysisFunction().ConfigureAwait(false);
+			return await returningAnalysisFunction().ConfigureAwait(false);
 		}
 		catch (Exception exception)
 		{

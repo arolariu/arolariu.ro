@@ -6,9 +6,10 @@ using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
-using arolariu.Backend.Domain.Invoices.Services.Orchestration;
-
-using Azure.AI.FormRecognizer.DocumentAnalysis;
+using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
+using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
+using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
+using arolariu.Backend.Domain.Invoices.Services.Processing;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
@@ -54,16 +55,21 @@ public static class WebApplicationBuilderExtensions
 		});
 
 		// Broker services:
-		builder.Services.AddScoped<IClassifierBroker, AzureOpenAiBroker>();
-		builder.Services.AddScoped<IIdentifierBroker<AnalyzedDocument>, AzureFormRecognizerBroker>();
+		builder.Services.AddScoped<IOpenAiBroker, AzureOpenAiBroker>();
+		builder.Services.AddScoped<IFormRecognizerBroker, AzureFormRecognizerBroker>();
 		builder.Services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
 		builder.Services.AddScoped<ITranslatorBroker, AzureTranslatorBroker>();
 
 		// Foundation services:
 		builder.Services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
 		builder.Services.AddScoped<IInvoiceAnalysisFoundationService, InvoiceAnalysisFoundationService>();
+		builder.Services.AddScoped<IMerchantStorageFoundationService, MerchantStorageFoundationService>();
 
 		// Orchestration services:
 		builder.Services.AddScoped<IInvoiceOrchestrationService, InvoiceOrchestrationService>();
+		builder.Services.AddScoped<IMerchantOrchestrationService, MerchantOrchestrationService>();
+
+		// Processing services:
+		builder.Services.AddScoped<IInvoiceProcessingService, InvoiceProcessingService>();
 	}
 }

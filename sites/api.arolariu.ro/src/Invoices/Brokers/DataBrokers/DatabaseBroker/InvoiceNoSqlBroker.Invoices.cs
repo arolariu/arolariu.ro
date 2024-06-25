@@ -1,6 +1,5 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -13,10 +12,9 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public partial class InvoiceNoSqlBroker
 {
 	/// <inheritdoc/>
-	public async ValueTask<Invoice> CreateInvoiceAsync(CreateInvoiceDto invoiceDto)
+	public async ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice)
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceAsync));
-		var invoice = invoiceDto.ToInvoice();
 		return await InsertAsync(invoice).ConfigureAwait(false);
 	}
 
@@ -32,12 +30,13 @@ public partial class InvoiceNoSqlBroker
 	}
 
 	/// <inheritdoc/>
-	public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync()
+	public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier)
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));
 
 		// dotnet/efcore#16920 - EF Core Cosmos DB provider does not support Include/ThenInclude.
 		var invoices = await SelectAll<Invoice>().ToListAsync().ConfigureAwait(false);
+		invoices = invoices.FindAll(i => i.UserIdentifier == userIdentifier);
 		foreach (var invoice in invoices)
 			await Entry(invoice).Reference(i => i.Merchant).LoadAsync().ConfigureAwait(false);
 

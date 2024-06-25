@@ -32,13 +32,13 @@ public abstract class BaseEntity<T> : IAuditable
 
 	/// <inheritdoc/>
 	[JsonPropertyOrder(byte.MaxValue - 06)]
-	public int NumberOfUpdates { get; protected set; }
+	public int NumberOfUpdates { get; protected set; } = 0;
 
 	/// <inheritdoc/>
 	[JsonPropertyOrder(byte.MaxValue - 05)]
-	public bool IsImportant { get; set; }
+	public bool IsImportant { get; set; } = false;
 
 	/// <inheritdoc/>
 	[JsonPropertyOrder(byte.MaxValue - 04)]
-	public bool IsSoftDeleted { get; protected set; }
+	public bool IsSoftDeleted { get; protected set; } = false;
 }

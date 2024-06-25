@@ -1,7 +1,6 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Microsoft.Extensions.Logging;
 
@@ -34,13 +33,13 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 	}
 
 	/// <inheritdoc/>
-	public async Task<Invoice> CreateInvoiceObject(CreateInvoiceDto invoiceDto) =>
+	public async Task<Invoice> CreateInvoiceObject(Invoice invoice) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
-		ValidateDtoIsValid(invoiceDto);
+		ValidateInvoiceInformationIsValid(invoice);
 
-		var invoice = await invoiceNoSqlBroker.CreateInvoiceAsync(invoiceDto).ConfigureAwait(false);
+		await invoiceNoSqlBroker.CreateInvoiceAsync(invoice).ConfigureAwait(false);
 		return invoice;
 	}).ConfigureAwait(false);
 
@@ -58,12 +57,12 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects() =>
+	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
 		var invoices = await invoiceNoSqlBroker
-			.ReadInvoicesAsync()
+			.ReadInvoicesAsync(userIdentifier)
 			.ConfigureAwait(false);
 
 		return invoices;

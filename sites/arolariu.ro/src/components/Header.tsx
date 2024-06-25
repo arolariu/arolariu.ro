@@ -103,7 +103,7 @@ export default function Header() {
             <Image
               src={logo}
               alt='arolariu.ro'
-              className='rounded-full ring-2 ring-indigo-500 2xsm:hidden lg:block '
+              className='rounded-full ring-2 ring-indigo-500 2xsm:hidden lg:block'
               width={40}
               height={40}
             />

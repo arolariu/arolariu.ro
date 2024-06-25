@@ -1,6 +1,6 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 using System;
 using System.Collections.Generic;
@@ -13,13 +13,15 @@ using System.Threading.Tasks;
 /// </summary>
 public interface IInvoiceNoSqlBroker
 {
+	#region Invoice Storage Broker
+
 	/// <summary>
 	/// Creates a new invoice.
 	/// This method is used to create a new invoice in the database.
 	/// </summary>
-	/// <param name="invoiceDto"></param>
+	/// <param name="invoice"></param>
 	/// <returns></returns>
-	public ValueTask<Invoice> CreateInvoiceAsync(CreateInvoiceDto invoiceDto);
+	public ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice);
 
 	/// <summary>
 	/// Reads an invoice.
@@ -36,8 +38,9 @@ public interface IInvoiceNoSqlBroker
 	/// This method is used to read all the invoices from the database.
 	/// The invoices are returned as an enumerable.
 	/// </summary>
+	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
-	public ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync();
+	public ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier);
 
 	/// <summary>
 	/// Updates an invoice.
@@ -58,4 +61,43 @@ public interface IInvoiceNoSqlBroker
 	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
 	public ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
+	#endregion
+
+	#region Merchant Storage Broker
+
+	/// <summary>
+	///	Creates a new merchant.
+	/// </summary>
+	/// <param name="merchant"></param>
+	/// <returns></returns>
+	public ValueTask<Merchant> CreateMerchantAsync(Merchant merchant);
+
+	/// <summary>
+	/// Reads a merchant.
+	/// </summary>
+	/// <param name="merchantIdentifier"></param>
+	/// <returns></returns>
+	public ValueTask<Merchant> ReadMerchantAsync(Guid merchantIdentifier);
+
+	/// <summary>
+	/// Reads all the merchants.
+	/// </summary>
+	/// <returns></returns>
+	public ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync();
+
+	/// <summary>
+	/// Updates a merchant.
+	/// </summary>
+	/// <param name="currentMerchant"></param>
+	/// <param name="updatedMerchant"></param>
+	/// <returns></returns>
+	public ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant);
+
+	/// <summary>
+	/// Deletes a merchant.
+	/// </summary>
+	/// <param name="merchantIdentifier"></param>
+	/// <returns></returns>
+	public ValueTask DeleteMerchantAsync(Guid merchantIdentifier);
+	#endregion
 }

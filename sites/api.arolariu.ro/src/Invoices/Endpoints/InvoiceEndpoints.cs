@@ -1,4 +1,6 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Endpoints;
+
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 
 using System.Diagnostics.CodeAnalysis;
@@ -9,7 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 [ExcludeFromCodeCoverage]
 public static partial class InvoiceEndpoints
 {
-	private const string SemanticVersioning = "0.4.0-rc1";
+	private const string SemanticVersioning = "1.0.0-rc1";
 	private const string EndpointNameTag = "Invoices Management System v" + SemanticVersioning;
 
 	/// <summary>
@@ -23,10 +25,8 @@ public static partial class InvoiceEndpoints
 	/// <param name="router">The <see cref="IEndpointRouteBuilder"/> used for mapping the endpoints.</param>
 	public static void MapInvoiceEndpoints(this IEndpointRouteBuilder router)
 	{
-		// This group contains the standard invoice endpoints (CRUD operations)
-		MapStandardInvoiceEndpoints(router);
-
-		// This group contains the invoice analysis endpoints
-		MapInvoiceAnalysisEndpoints(router);
+		router.MapGroup("rest/v1").MapStandardInvoiceEndpoints();
+		router.MapGroup("rest/v1").MapInvoiceAnalysisEndpoints();
+		router.MapGroup("rest/v1").MapStandardMerchantEndpoints();
 	}
 }

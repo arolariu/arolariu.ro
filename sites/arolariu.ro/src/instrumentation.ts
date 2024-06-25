@@ -1,12 +1,10 @@
 /** @format */
 
-import {registerOTel, type Configuration} from "@vercel/otel";
-
 /**
  *
  */
-export function register() {
-  registerOTel({
-    serviceName: "arolariu.ro",
-  } satisfies Configuration);
+export async function register() {
+  if (process.env["NEXT_RUNTIME"] === "nodejs") {
+    await import("./instrumentation.node.ts");
+  }
 }

@@ -41,7 +41,9 @@ public sealed partial class InvoiceNoSqlBroker(DbContextOptions<InvoiceNoSqlBrok
 	{
 		ArgumentNullException.ThrowIfNull(@object);
 		this.Entry(@object).State = entityState;
-		if (@object is Invoice invoice && entityState == EntityState.Added)
+		if (@object is Invoice invoice
+			&& entityState == EntityState.Added
+			&& invoice.Merchant is not null)
 		{
 			this.Entry(invoice.Merchant).State = entityState;
 		}

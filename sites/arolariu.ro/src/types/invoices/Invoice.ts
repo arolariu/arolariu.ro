@@ -29,13 +29,20 @@ export enum InvoiceCategory {
  * Represents an invoice (the main entity) from the invoice domain system.
  */
 export default interface Invoice extends NamedEntity<string> {
-  category: InvoiceCategory;
   userIdentifier: string;
+  category: InvoiceCategory;
   photoLocation: string;
-  paymentInformation: PaymentInformation;
-  merchant: Merchant;
-  items: Product[];
-  possibleRecipes: Recipe[];
-  estimatedSurvivalDays: number;
+  paymentInformation: PaymentInformation | null;
+  merchant: Merchant | null;
+  items: Product[] | null;
+  possibleRecipes: Recipe[] | null;
+  estimatedSurvivalDays: number | null;
   additionalMetadata: Record<string, object>[];
+}
+
+export interface InvoicePayload {
+  userIdentifier: string;
+  photoIdentifier: string;
+  photoLocation: string;
+  photoMetadata: [{key: string; value: string}];
 }

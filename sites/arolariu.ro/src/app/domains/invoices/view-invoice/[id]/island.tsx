@@ -2,11 +2,12 @@
 
 "use client";
 
-import {ViewInvoiceImageModal} from "@/components/domains/invoices/view-invoice/ViewInvoiceImageModal";
-import {useZustandStore} from "@/hooks/stateStore";
+import useUserInformation from "@/hooks/useUserInformation";
+import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
 import Invoice from "@/types/invoices/Invoice";
 import Link from "next/link";
 import {useEffect, useState} from "react";
+import {InvoiceImagePreview} from "./_components/InvoiceImagePreview";
 import {InvoiceInformation} from "./_components/InvoiceInformation";
 import {InvoiceProducts} from "./_components/InvoiceProducts";
 import {InvoiceSummary} from "./_components/InvoiceSummary";
@@ -15,19 +16,28 @@ import {InvoiceSummary} from "./_components/InvoiceSummary";
  * This function renders the view invoice page.
  * @returns The JSX for the view invoice page.
  */
-export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: Invoice}>) {
-  const setSelectedInvoice = useZustandStore((state) => state.setSelectedInvoice);
-  const selectedInvoice = useZustandStore((state) => state.selectedInvoice);
-  const {id, description, paymentInformation, isImportant} = invoice;
+export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
+  const {userInformation} = useUserInformation();
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const buttonStyle = ["border-indigo-500", "border-gray-300"];
-  const isDifferentInvoice = selectedInvoice !== invoice;
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
 
   useEffect(() => {
-    setSelectedInvoice(invoice);
-  }, [isDifferentInvoice]);
+    const fetchInvoiceInformation = async () => {
+      if (userInformation === null) return console.info("User information is not available.");
+      const invoiceInformation = await fetchInvoice(invoiceIdentifier, userInformation);
+      if (invoiceInformation) setInvoice(invoiceInformation);
+    };
 
-  if (isDifferentInvoice) return;
+    fetchInvoiceInformation();
+  }, [userInformation]);
+
+  if (!invoice) {
+    return <div>Loading...</div>;
+  }
+
+  const {id, description, paymentInformation, isImportant} = invoice;
+  const buttonStyle = ["border-indigo-500", "border-gray-300"];
+
   return (
     <section className='mx-auto py-12'>
       <div className='mx-auto flex flex-wrap justify-center'>
@@ -36,7 +46,7 @@ export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: In
             Invoice id: <span>{id}</span>{" "}
           </h2>
           <h3 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-3xl font-medium text-transparent'>
-            {description}
+            {description?.length && description.length > 0 ? description : "NO DESCRIPTION AVAILABLE"}
           </h3>
           <div className='mb-4 flex'>
             <button
@@ -58,16 +68,16 @@ export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: In
               Additional Information
             </button>
           </div>
-          {currentStep === 1 && <InvoiceSummary />}
-          {currentStep === 2 && <InvoiceProducts />}
-          {currentStep === 3 && <InvoiceInformation />}
+          {currentStep === 1 && <InvoiceSummary invoice={invoice} />}
+          {currentStep === 2 && <InvoiceProducts invoice={invoice} />}
+          {currentStep === 3 && <InvoiceInformation invoice={invoice} />}
           <div className='flex'>
             <span className='title-font text-2xl font-medium dark:text-gray-300'>
-              Total Cost: {paymentInformation.totalAmount}
-              {paymentInformation.currency.symbol}
+              Total Cost: {paymentInformation?.totalAmount}
+              {paymentInformation?.currency?.symbol}
             </span>
             <Link
-              href={`../edit-invoice/${id}`}
+              href={`/domains/invoices/edit-invoice/${id}`}
               className='ml-auto flex rounded border-0 bg-indigo-500 px-6 py-2 text-white hover:bg-indigo-600 focus:outline-none'>
               Edit this invoice
             </Link>
@@ -80,7 +90,7 @@ export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: In
                 strokeLinecap='round'
                 strokeLinejoin='round'
                 strokeWidth='2'
-                className={`${isImportant ? "text-red-600" : ""}  h-5 w-5`}
+                className={`${isImportant ? "text-red-600" : ""} h-5 w-5`}
                 viewBox='0 0 24 24'>
                 <path d='M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z' />
               </svg>
@@ -88,7 +98,7 @@ export default function RenderViewInvoiceScreen({invoice}: Readonly<{invoice: In
           </div>
         </div>
       </div>
-      <ViewInvoiceImageModal />
+      <InvoiceImagePreview invoice={invoice} />
     </section>
   );
 }

@@ -1,8 +1,6 @@
 /** @format */
 
-import fetchInvoice from "@/lib/invoices/fetchInvoice";
 import {type Metadata} from "next";
-import Image from "next/image";
 import RenderViewInvoiceScreen from "./island";
 
 interface Props {
@@ -19,21 +17,9 @@ export const metadata: Metadata = {
  * @returns Render the view invoice page.
  */
 export default async function ViewInvoicePage({params}: Readonly<Props>) {
-  const invoice = await fetchInvoice(params.id);
-
-  if (!invoice) {
-    return (
-      <Image
-        src='/images/domains/invoices/403.svg'
-        alt='Forbidden SVG'
-        width='500'
-        height='500'
-      />
-    );
-  }
   return (
     <main className='overflow-hidden px-5 py-24'>
-      <RenderViewInvoiceScreen invoice={invoice} />
+      <RenderViewInvoiceScreen invoiceIdentifier={params.id} />
     </main>
   );
 }

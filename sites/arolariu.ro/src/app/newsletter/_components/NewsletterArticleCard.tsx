@@ -7,15 +7,15 @@
 export default function NewsletterArticleCard() {
   return (
     <div>
-      <p className='mb-3 pt-12 text-sm font-normal '>April 16, 2020</p>
-      <h2 className='mb-2 text-xl font-extrabold leading-snug tracking-tight  md:text-3xl'>
+      <p className='mb-3 pt-12 text-sm font-normal'>April 16, 2020</p>
+      <h2 className='mb-2 text-xl font-extrabold leading-snug tracking-tight md:text-3xl'>
         <a
           href='#'
-          className=' hover:underline'>
+          className='hover:underline'>
           Lorem, ipsum dolor sit amet consectetur adipisicing.
         </a>
       </h2>
-      <p className='mb-4 text-base font-normal '>
+      <p className='mb-4 text-base font-normal'>
         Lorem ipsum dolor, sit amet consectetur adipisicing elit. Adipisci corrupti laudantium enim quas ab ratione
         repellendus itaque nobis, nisi sit reprehenderit cupiditate eligendi possimus. Fuga assumenda reiciendis
         doloremque, maxime dolor quo voluptatem rerum quis architecto distinctio pariatur nemo fugiat quod ipsa labore

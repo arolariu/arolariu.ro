@@ -2,14 +2,13 @@
 
 "use client";
 
-import {useZustandStore} from "@/hooks/stateStore";
+import Invoice from "@/types/invoices/Invoice";
 
 /**
  * This function renders the view invoice additional information.
  * @returns The JSX for the view invoice additional information.
  */
-export const InvoiceInformation = () => {
-  const invoice = useZustandStore((state) => state.selectedInvoice);
+export const InvoiceInformation = ({invoice}: Readonly<{invoice: Invoice}>) => {
   const {additionalMetadata, userIdentifier, lastUpdatedAt} = invoice;
 
   return (
@@ -26,8 +25,8 @@ export const InvoiceInformation = () => {
         <div
           key={index}
           className='flex border-b border-gray-200 py-2'>
-          <span>{Object.keys(kvPair)[index]}</span>
-          <span className='ml-auto dark:text-gray-300'>{String(Object.values(kvPair)[index])}</span>
+          <span>{String(kvPair["key"])}</span>
+          <span className='ml-auto dark:text-gray-300'>{String(kvPair["value"])}</span>
         </div>
       ))}
       <div>

@@ -3,11 +3,12 @@
 "use client";
 
 import {Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "@/components/ui/table";
-import {useZustandStore} from "@/hooks/stateStore";
+import Invoice from "@/types/invoices/Invoice";
 
-export const InvoiceProducts = () => {
-  const invoice = useZustandStore((state) => state.selectedInvoice);
+export const InvoiceProducts = ({invoice}: Readonly<{invoice: Invoice}>) => {
   const {items} = invoice;
+  const totalQuantity = items?.reduce((acc, item) => acc + item.quantity, 0);
+  const totalPrice = items?.reduce((acc, item) => acc + item.totalPrice, 0);
 
   return (
     <Table className='mx-auto mb-8 border-b border-gray-200'>
@@ -20,7 +21,7 @@ export const InvoiceProducts = () => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {items.map((item, index) => (
+        {items?.map((item, index) => (
           <TableRow
             key={`${item.rawName}#${String(index)}`}
             className='text-center odd:bg-gray-900'>
@@ -38,8 +39,8 @@ export const InvoiceProducts = () => {
             className='text-center'>
             <strong>TOTAL</strong>
           </TableCell>
-          <TableCell className='text-center'>{items.reduce((acc, item) => acc + item.quantity, 0)}</TableCell>
-          <TableCell className='text-center'>{items.reduce((acc, item) => acc + item.totalPrice, 0)}</TableCell>
+          <TableCell className='text-center'>{totalQuantity}</TableCell>
+          <TableCell className='text-center'>{totalPrice}</TableCell>
         </TableRow>
       </TableFooter>
     </Table>

@@ -48,11 +48,11 @@ export const InvoiceList = ({invoices, displayStyle}: Readonly<Props>) => {
                 className={`${invoice.isImportant ? "bg-red-700" : ""} cursor-pointer`}
                 onClick={() => router.push(`/domains/invoices/view-invoice/${invoice.id}`)}>
                 <TableCell>{invoice.id}</TableCell>
-                <TableCell>{invoice.merchant.name}</TableCell>
+                <TableCell>{invoice.merchant?.name ?? "No merchant found.."}</TableCell>
                 <TableCell>{InvoiceCategory[invoice.category]}</TableCell>
-                <TableCell>{invoice.items.length}</TableCell>
-                <TableCell>{invoice.paymentInformation.totalAmount}</TableCell>
-                <TableCell>{invoice.paymentInformation.totalTax}</TableCell>
+                <TableCell>{invoice.items?.length}</TableCell>
+                <TableCell>{invoice.paymentInformation?.totalAmount}</TableCell>
+                <TableCell>{invoice.paymentInformation?.totalTax}</TableCell>
                 <TableCell>{invoice.estimatedSurvivalDays}</TableCell>
               </TableRow>
             ))}

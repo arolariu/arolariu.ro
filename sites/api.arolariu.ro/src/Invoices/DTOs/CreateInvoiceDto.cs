@@ -29,11 +29,12 @@ public readonly record struct CreateInvoiceDto(
 		var invoice = new Invoice()
 		{
 			Id = PhotoIdentifier,
+			UserIdentifier = UserIdentifier,
 			Category = InvoiceCategory.NOT_DEFINED,
 			PaymentInformation = new PaymentInformation(),
 			PhotoLocation = PhotoLocation,
-			UserIdentifier = UserIdentifier,
 			CreatedBy = UserIdentifier,
+			AdditionalMetadata = PhotoMetadata
 		};
 
 		return invoice;
