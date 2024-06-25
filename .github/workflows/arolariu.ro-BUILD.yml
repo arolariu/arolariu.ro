@@ -140,10 +140,16 @@ jobs:
           echo "CONFIG_STORE=${{ secrets.CONFIG_STORE }}" >> .env
 
       - name: 🏗️ Building the docker container...
-        run: docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{inputs.container_name}}:${{inputs.container_tag}} .
+        env:
+          CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
+          CONTAINER_TAG: ${{inputs.container_tag || 'latest'}}
+        run: docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} .
 
       - name: ⏫ Pushing the docker container...
-        run: docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{inputs.container_name}}:${{inputs.container_tag}}
+        env:
+          CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
+          CONTAINER_TAG: ${{inputs.container_tag || 'latest'}}
+        run: docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}
 
   # deploy:
   #   runs-on: ubuntu-latest
