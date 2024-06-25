@@ -26,14 +26,17 @@ on:
     inputs:
       environment:
         description: "The environment to deploy to. (e.g. 'development', 'production')"
+        default: "development"
         required: true
         type: string
       container_name:
         description: "The name of the container to build and deploy."
+        default: "frontend/dev.arolariu"
         required: true
         type: string
       container_tag:
         description: "The tag of the container to build and deploy."
+        default: "latest"
         required: true
         type: string
 
