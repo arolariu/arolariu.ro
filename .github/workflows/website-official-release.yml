@@ -26,12 +26,27 @@ permissions:
 
 jobs:
   release:
+    name: 🚀 Release phase (1/1)
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.environment || 'development'}}
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
+      - name: 🔒 Performing auth against Azure Public Cloud...
+        uses: Azure/login@v2.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: 🔒 Performing auth against private Azure Container Registry...
+        uses: Azure/docker-login@v2
+        with:
+          username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
+          password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
+          login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+
       - name: ⚓ Releasing docker container to Azure App Service...
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3.0.1
