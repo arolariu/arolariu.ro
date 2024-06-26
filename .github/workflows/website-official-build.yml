@@ -1,4 +1,4 @@
-name: "[BUILD]::arolariu.ro"
+name: "[BUILD]::[arolariu.ro]"
 
 on:
   push:
