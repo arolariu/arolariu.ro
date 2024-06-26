@@ -49,13 +49,13 @@ jobs:
 
       - name: ⚓ Releasing docker container to Azure App Service...
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3.0.1
+        uses: azure/webapps-deploy@v3
         env:
           PUBLISH_PROFILE: ${{ inputs.environment == 'production' && secrets.AROLARIU_WEB_APP_PUBLISHER_PROFILE || secrets.AROLARIU_WEB_APP_PUBLISHER_PROFILE_DEV}}
           CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
           CONTAINER_TAG: ${{inputs.environment == 'PRODUCTION' && github.sha || 'latest'}}
         with:
           app-name: ${{ inputs.container_name == 'frontend/arolariu' && 'arolariu' || 'dev-arolariu' }}
-          slot-name: ${{ inputs.environment || 'development'}}
+          slot-name: "production" # This is the slot name for the production environment of the App Service.
           publish-profile: ${{ secrets.AROLARIU_WEB_APP_PUBLISHER_PROFILE }}
           images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
