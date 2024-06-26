@@ -112,9 +112,9 @@ jobs:
       - name: 🔒 Performing auth against private Azure Container Registry...
         uses: Azure/docker-login@v2
         with:
-          login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
           username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
           password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
+          login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
       - name: 🚧 Adding environment variables...
         run: |
