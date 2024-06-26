@@ -1,8 +1,8 @@
-name: "[RELEASE]::[arolariu.ro]"
+name: "website-official-release"
 
 on:
   workflow_run:
-    workflows: ["[BUILD]::[arolariu.ro]"]
+    workflows: ["website-official-build"]
     types: ["completed"]
     branches: ["preview"]
   workflow_dispatch:
