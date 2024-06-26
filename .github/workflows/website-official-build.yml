@@ -1,0 +1,147 @@
+name: "[BUILD]::arolariu.ro"
+
+on:
+  push:
+    branches: ["preview"]
+    paths: ["sites/arolariu.ro/**"]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "The environment to deploy to. (e.g. 'development', 'production')"
+        options:
+          - "DEVELOPMENT"
+          - "PRODUCTION"
+        default: "DEVELOPMENT"
+        required: true
+        type: choice
+      container_name:
+        description: "The name of the container to build and deploy. (e.g. 'frontend/dev.arolariu', 'frontend/arolariu')"
+        options:
+          - "frontend/dev.arolariu"
+          - "frontend/arolariu"
+        default: "frontend/dev.arolariu"
+        required: true
+        type: choice
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  SITE_NAME: ${{ inputs.environment == 'PRODUCTION' && 'arolariu.ro' || 'dev.arolariu.ro' }}
+  SITE_URL: ${{ inputs.environment == 'PRODUCTION' && 'https://arolariu.ro' || 'https://dev.arolariu.ro' }}
+  SITE_ENV: ${{ inputs.environment || 'development'}}
+  API_NAME: "api.arolariu.ro"
+  API_URL: "https://api.arolariu.ro"
+  COMMIT_SHA: ${{ github.sha }}
+  USE_CDN: ${{ inputs.environment == 'PRODUCTION' && 'true' || 'false' }}
+
+defaults:
+  run:
+    working-directory: ./sites/arolariu.ro
+
+jobs:
+  test:
+    name: 🧪 Test phase (1/2)
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'development'}}
+    timeout-minutes: 10
+    steps:
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v4.1.7
+
+      - name: 📦 Installing performant NPM...
+        run: |
+          eval export $(echo PNPM_HOME=$HOME/.pnpm | tee -a $GITHUB_ENV);
+          echo "$PNPM_HOME" >> $GITHUB_PATH
+          curl -fsSL https://get.pnpm.io/install.sh | bash -
+
+      - name: 📦 Installing Node.js...
+        uses: actions/setup-node@v4.0.2
+        with:
+          node-version: latest
+          cache: "pnpm"
+          cache-dependency-path: "./sites/arolariu.ro/pnpm-lock.yaml"
+
+      - name: 🚧 Adding environment variables...
+        run: |
+          touch .env
+          echo "TIMESTAMP=$(date -u  +"%Y-%m-%dT%H:%M:%S"Z)" >> .env
+          json='${{ toJson(env) }}' # We convert the env object to it's JSON representation.
+          for key in $(echo $json | jq -r 'keys[]'); do
+            value=$(echo $json | jq -r '.'$key)
+            echo "$key=$value" >> .env
+          done
+
+      - name: 🚧 Adding environment secrets...
+        run: |
+          echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" >> .env
+          echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env
+          echo "API_JWT=${{ secrets.API_JWT }}" >> .env
+          echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env
+          echo "CONFIG_STORE=${{ secrets.CONFIG_STORE }}" >> .env
+
+      - name: 📦 Installing dependencies...
+        run: pnpm install && pnpm dlx playwright install --with-deps
+
+      - name: 🧪 Preparing tests...
+        run: pnpm storybook:build --quiet
+
+      - name: 🧪 Running Smoke & Integration tests...
+        run: |
+          pnpm dlx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
+            "pnpm dlx http-server storybook-static --port 6006 --silent" \
+            "pnpm dlx wait-on tcp:6006 && npm run storybook:test"
+
+  build:
+    name: ⚒️ Build phase (2/2)
+    needs: test
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'development'}}
+    steps:
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v4.1.7
+
+      - name: 🔒 Performing auth against Azure Public Cloud...
+        uses: Azure/login@v2.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: 🔒 Performing auth against private Azure Container Registry...
+        uses: Azure/docker-login@v2
+        with:
+          login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
+          username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
+          password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
+
+      - name: 🚧 Adding environment variables...
+        run: |
+          touch .env
+          echo "TIMESTAMP=$(date -u  +"%Y-%m-%dT%H:%M:%S"Z)" >> .env
+          json='${{ toJson(env) }}' # We convert the env object to it's JSON representation.
+          for key in $(echo $json | jq -r 'keys[]'); do
+            value=$(echo $json | jq -r '.'$key)
+            echo "$key=$value" >> .env
+          done
+
+      - name: 🚧 Adding environment secrets...
+        run: |
+          echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" >> .env
+          echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env
+          echo "API_JWT=${{ secrets.API_JWT }}" >> .env
+          echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env
+          echo "CONFIG_STORE=${{ secrets.CONFIG_STORE }}" >> .env
+
+      - name: 🏗️ Building the docker container...
+        env:
+          CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
+          CONTAINER_TAG: ${{inputs.environment == 'PRODUCTION' && github.sha || 'latest'}}
+        run: docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} .
+
+      - name: ⏫ Pushing the docker container...
+        env:
+          CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
+          CONTAINER_TAG: ${{inputs.environment == 'PRODUCTION' && github.sha || 'latest'}}
+        run: docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}
