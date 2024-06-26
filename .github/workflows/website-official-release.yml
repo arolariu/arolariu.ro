@@ -1,10 +1,9 @@
-name: "[RELEASE]::arolariu.ro"
+name: "[RELEASE]::[arolariu.ro]"
 
 on:
   workflow_run:
-    workflows: ["[BUILD]::arolariu.ro"]
-    types:
-      - completed
+    workflows: ["[BUILD]::[arolariu.ro]"]
+    types: ["completed"]
     branches: ["preview"]
   workflow_dispatch:
     inputs:
