@@ -1,0 +1,46 @@
+name: "[RELEASE]::arolariu.ro"
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "The environment to release to. (e.g. 'development', 'production')"
+        options:
+          - "development"
+          - "production"
+        default: "development"
+        required: true
+        type: choice
+      container_name:
+        description: "The name of the container to release. (e.g. 'frontend/dev.arolariu', 'frontend/arolariu')"
+        options:
+          - "frontend/dev.arolariu"
+          - "frontend/arolariu"
+        default: "frontend/dev.arolariu"
+        required: true
+        type: choice
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment || 'development'}}
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+      - name: ⚓ Releasing docker container to Azure App Service...
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3.0.1
+        env:
+          PUBLISH_PROFILE: ${{ inputs.environment == 'production' && secrets.AROLARIU_WEB_APP_PUBLISHER_PROFILE || secrets.AROLARIU_WEB_APP_PUBLISHER_PROFILE_DEV}}
+          CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
+          CONTAINER_TAG: ${{inputs.environment == 'PRODUCTION' && github.sha || 'latest'}}
+        with:
+          app-name: ${{ inputs.container_name == 'frontend/arolariu' && 'arolariu' || 'dev-arolariu' }}
+          slot-name: ${{ inputs.environment || 'development'}}
+          publish-profile: ${{ secrets.AROLARIU_WEB_APP_PUBLISHER_PROFILE }}
+          images: "${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}"
