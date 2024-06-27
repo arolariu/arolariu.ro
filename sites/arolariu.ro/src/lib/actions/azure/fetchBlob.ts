@@ -1,8 +1,7 @@
 /** @format */
 "use server";
 
-import {fetchConfigurationValue} from "@/lib/utils.server";
-import {DefaultAzureCredential} from "@azure/identity";
+import {fetchConfigurationValue, generateAzureCredentials} from "@/lib/utils.server";
 import {BlobServiceClient} from "@azure/storage-blob";
 import {BlobStorageResponse} from "./uploadBlob";
 
@@ -10,7 +9,7 @@ export default async function fetchBlobFromAzureStorage(
   containerName: string,
   blobName: string,
 ): Promise<BlobStorageResponse> {
-  const credentials = new DefaultAzureCredential();
+  const credentials = await generateAzureCredentials();
   const storageEndpoint = await fetchConfigurationValue("AzureOptions:StorageAccountEndpoint");
   const storageClient = new BlobServiceClient(storageEndpoint, credentials);
 
