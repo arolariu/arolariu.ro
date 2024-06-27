@@ -28,7 +28,6 @@ permissions:
   contents: read
 
 env:
-  AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
   SITE_NAME: ${{ inputs.environment == 'PRODUCTION' && 'arolariu.ro' || 'dev.arolariu.ro' }}
   SITE_URL: ${{ inputs.environment == 'PRODUCTION' && 'https://arolariu.ro' || 'https://dev.arolariu.ro' }}
   SITE_ENV: ${{ inputs.environment || 'development'}}
@@ -36,6 +35,8 @@ env:
   API_URL: "https://api.arolariu.ro"
   COMMIT_SHA: ${{ github.sha }}
   USE_CDN: ${{ inputs.environment == 'PRODUCTION' && 'true' || 'false' }}
+  AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
+  AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
 
 defaults:
   run:

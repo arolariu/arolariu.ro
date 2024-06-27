@@ -3,7 +3,6 @@
 import "server-only";
 
 import {AppConfigurationClient} from "@azure/app-configuration";
-import {DefaultAzureCredential} from "@azure/identity";
 import {Blob} from "node:buffer";
 import {Resend} from "resend";
 import {CONFIG_STORE} from "./utils.generic";
@@ -55,16 +54,4 @@ export async function base64ToBlob(base64String: string): Promise<Blob> {
 
   const byteArray = new Uint8Array(byteArrays);
   return new Blob([byteArray], {type: mimeType});
-}
-
-export async function generateAzureCredentials(): Promise<DefaultAzureCredential> {
-  switch (process.env["SITE_ENV"]?.toLowerCase() ?? "development") {
-    case "production":
-      const managedIdentityClientId = await fetchConfigurationValue("AzureOptions:FrontendIdentityClientId");
-      return new DefaultAzureCredential({managedIdentityClientId});
-    case "development":
-      return new DefaultAzureCredential();
-    default:
-      return new DefaultAzureCredential();
-  }
 }
