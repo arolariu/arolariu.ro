@@ -3,7 +3,7 @@
 "use server";
 
 import type {UserInformation} from "@/types/UserInformation";
-import {InvoicePayload} from "@/types/invoices/Invoice";
+import Invoice, {InvoicePayload} from "@/types/invoices/Invoice";
 import {API_URL} from "../../utils.server";
 import {BlobStorageResponse} from "../azure/uploadBlob";
 
@@ -49,10 +49,11 @@ export default async function uploadInvoice(blobInformation: BlobStorageResponse
       };
     }
 
+    const {id} = (await invoiceResponse.json()) as Invoice;
     return {
       status: "SUCCESS",
       message: "Invoice uploaded successfully.",
-      identifier: crypto.randomUUID(),
+      identifier: id,
     };
   } catch (error) {
     console.error("Error uploading the invoice to the server:", error);
