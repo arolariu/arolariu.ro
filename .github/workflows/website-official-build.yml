@@ -35,6 +35,8 @@ env:
   API_URL: "https://api.arolariu.ro"
   COMMIT_SHA: ${{ github.sha }}
   USE_CDN: ${{ inputs.environment == 'PRODUCTION' && 'true' || 'false' }}
+  AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
+  AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
 
 defaults:
   run:
@@ -75,6 +77,7 @@ jobs:
 
       - name: 🚧 Adding environment secrets...
         run: |
+
           echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" >> .env
           echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env
           echo "API_JWT=${{ secrets.API_JWT }}" >> .env

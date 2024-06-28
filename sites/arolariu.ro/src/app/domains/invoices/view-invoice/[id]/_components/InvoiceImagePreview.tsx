@@ -93,7 +93,7 @@ export const InvoiceImagePreview = ({invoice}: Readonly<{invoice: Invoice}>) => 
           src={invoice.photoLocation}
           width={800}
           height={600}
-          className='z-10 h-full w-full rounded-xl object-contain'
+          className='z-10 h-full w-full rounded-2xl object-contain'
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           onClick={() => setIsFrozen(!isFrozen)}

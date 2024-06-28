@@ -1,0 +1,32 @@
+/** @format */
+
+"use server";
+
+import {API_URL} from "@/lib/utils.server";
+import Invoice from "@/types/invoices/Invoice";
+import {UserInformation} from "@/types/UserInformation";
+
+/**
+ * Server Action that updates an invoice.
+ * @param invoiceInformation The invoice information to update.
+ * @param userInformation The user information to use for the request.
+ * @returns The updated invoice, or null if the request failed.
+ */
+export default async function updateInvoice(
+  invoiceInformation: Invoice,
+  userInformation: UserInformation,
+): Promise<Invoice | null> {
+  console.info(">>> Updating invoice for user:", userInformation);
+
+  const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceInformation.id}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${userInformation.userJwt}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(invoiceInformation),
+  });
+
+  if (response.ok) return (await response.json()) as Invoice;
+  return null;
+}

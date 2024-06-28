@@ -27,8 +27,8 @@ public static class Validator
 		string message)
 		where TException : Exception, new()
 	{
-		var meetsCriteria = @object is not null && predicate(@object);
-		if (!meetsCriteria)
+		var objectIsValid = @object is not null && predicate(@object);
+		if (!objectIsValid)
 		{
 			var exception = Activator.CreateInstance(typeof(TException), message);
 			throw (TException)exception!;
@@ -44,8 +44,7 @@ public static class Validator
 	/// <param name="predicate"></param>
 	/// <param name="message"></param>
 	[SuppressMessage("Naming", "CA1720:Identifier contains type name", Justification = "Not applicable in current context")]
-	public static void ValidateAndThrow<TObject,
-		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TException>(
+	public static void ValidateAndThrow<TObject, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TException>(
 		TObject? @object,
 		Func<TObject?, bool> predicate,
 		string message)

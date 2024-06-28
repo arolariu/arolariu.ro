@@ -11,7 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 [ExcludeFromCodeCoverage]
 public static partial class InvoiceEndpoints
 {
-	private const string SemanticVersioning = "1.0.0-rc1";
+	private const string SemanticVersioning = "1.0.0-rc2";
 	private const string EndpointNameTag = "Invoices Management System v" + SemanticVersioning;
 
 	/// <summary>
