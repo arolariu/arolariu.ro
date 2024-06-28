@@ -783,11 +783,11 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(httpContext.HttpContext!.Request.Headers.Authorization[0]!);
-
+			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
 			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
-			await invoiceProcessingService.AnalyzeInvoice(invoice, options).ConfigureAwait(false);
 
+			// We will analyze the invoice without blocking the request (fire and forget).
+			await invoiceProcessingService.AnalyzeInvoice(invoice, options).ConfigureAwait(false);
 			return Results.Accepted(value: $"Invoice with id: {id} sent for analysis.");
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
