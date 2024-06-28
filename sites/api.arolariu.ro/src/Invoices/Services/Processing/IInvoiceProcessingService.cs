@@ -5,6 +5,7 @@ using System;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using System.Collections.Generic;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 
 /// <summary>
 /// This interface represents the invoice processing service.
@@ -57,6 +58,37 @@ public interface IInvoiceProcessingService
 	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
 	public Task DeleteInvoice(Guid identifier, Guid userIdentifier);
+
+	/// <summary>
+	/// Adds a product to an invoice.
+	/// </summary>
+	/// <param name="invoice"></param>
+	/// <param name="product"></param>
+	/// <returns></returns>
+	public Task<Invoice> AddProduct(Invoice invoice, Product product);
+
+	/// <summary>
+	/// Gets the products from an invoice.
+	/// </summary>
+	/// <param name="invoice"></param>
+	/// <returns></returns>
+	public Task<IEnumerable<Product>> GetProducts(Invoice invoice);
+
+	/// <summary>
+	/// Gets a product from an invoice.
+	/// </summary>
+	/// <param name="invoice"></param>
+	/// <param name="productName"></param>
+	/// <returns></returns>
+	public Task<Product> GetProduct(Invoice invoice, string productName);
+
+	/// <summary>
+	/// Deletes a product.
+	/// </summary>
+	/// <param name="invoice"></param>
+	/// <param name="product"></param>
+	/// <returns></returns>
+	public Task<Invoice> DeleteProduct(Invoice invoice, Product product);
 	#endregion
 
 	#region Merchant Orchestration Service

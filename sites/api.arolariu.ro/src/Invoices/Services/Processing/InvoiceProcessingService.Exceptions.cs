@@ -1,13 +1,14 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Services.Processing;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
-
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 
 public partial class InvoiceProcessingService
 {
@@ -16,6 +17,10 @@ public partial class InvoiceProcessingService
 	private delegate Task<Invoice> CallbackFunctionForTasksWithInvoiceReturn();
 
 	private delegate Task<IEnumerable<Invoice>> CallbackFunctionForTasksWithInvoiceListReturn();
+
+	private delegate Task<Product> CallbackFunctionForTasksWithProductReturn();
+
+	private delegate Task<IEnumerable<Product>> CallbackFunctionForTasksWithProductListReturn();
 
 	private delegate Task<Merchant> CallbackFunctionForTasksWithMerchantReturn();
 
@@ -78,6 +83,62 @@ public partial class InvoiceProcessingService
 	}
 
 	private async Task<IEnumerable<Invoice>> TryCatchAsync(CallbackFunctionForTasksWithInvoiceListReturn callbackFunction)
+	{
+		try
+		{
+			return await callbackFunction().ConfigureAwait(false);
+		}
+		catch (InvoiceOrchestrationValidationException exception)
+		{
+			throw CreateAndLogValidationException(exception.InnerException!);
+		}
+		catch (InvoiceOrchestrationDependencyException exception)
+		{
+			throw CreateAndLogDependencyException(exception.InnerException!);
+		}
+		catch (InvoiceOrchestrationDependencyValidationException exception)
+		{
+			throw CreateAndLogDependencyValidationException(exception.InnerException!);
+		}
+		catch (InvoiceOrchestrationServiceException exception)
+		{
+			throw CreateAndLogServiceException(exception.InnerException!);
+		}
+		catch (Exception exception)
+		{
+			throw CreateAndLogServiceException(exception);
+		}
+	}
+
+	private async Task<Product> TryCatchAsync(CallbackFunctionForTasksWithProductReturn callbackFunction)
+	{
+		try
+		{
+			return await callbackFunction().ConfigureAwait(false);
+		}
+		catch (InvoiceOrchestrationValidationException exception)
+		{
+			throw CreateAndLogValidationException(exception.InnerException!);
+		}
+		catch (InvoiceOrchestrationDependencyException exception)
+		{
+			throw CreateAndLogDependencyException(exception.InnerException!);
+		}
+		catch (InvoiceOrchestrationDependencyValidationException exception)
+		{
+			throw CreateAndLogDependencyValidationException(exception.InnerException!);
+		}
+		catch (InvoiceOrchestrationServiceException exception)
+		{
+			throw CreateAndLogServiceException(exception.InnerException!);
+		}
+		catch (Exception exception)
+		{
+			throw CreateAndLogServiceException(exception);
+		}
+	}
+
+	private async Task<IEnumerable<Product>> TryCatchAsync(CallbackFunctionForTasksWithProductListReturn callbackFunction)
 	{
 		try
 		{

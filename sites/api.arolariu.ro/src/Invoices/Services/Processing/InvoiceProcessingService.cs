@@ -2,10 +2,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
@@ -166,5 +168,63 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 			.ConfigureAwait(false);
 
 		return merchant;
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public async Task<Invoice> AddProduct(Invoice invoice, Product product) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(AddProduct));
+		var currentProductsList = invoice.Items.ToList();
+		currentProductsList.Add(product);
+
+		Invoice updatedInvoice = (Invoice)invoice.Clone();
+		updatedInvoice.Items = currentProductsList;
+
+		await invoiceOrchestrationService
+			.UpdateInvoiceObject(invoice, updatedInvoice)
+			.ConfigureAwait(false);
+
+		return updatedInvoice;
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public async Task<IEnumerable<Product>> GetProducts(Invoice invoice) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(GetProducts));
+		var products = invoice.Items;
+		return await Task.FromResult(products).ConfigureAwait(false);
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public async Task<Product> GetProduct(Invoice invoice, string productName) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(GetProduct));
+		var product = invoice.Items
+			.FirstOrDefault(p => p.RawName.Contains(productName, StringComparison.InvariantCultureIgnoreCase) ||
+										p.GenericName.Contains(productName, StringComparison.InvariantCultureIgnoreCase),
+							new Product());
+
+		return await Task.FromResult(product).ConfigureAwait(false);
+	}).ConfigureAwait(false);
+
+
+	/// <inheritdoc/>
+	public async Task<Invoice> DeleteProduct(Invoice invoice, Product product) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteProduct));
+		var currentProductsList = invoice.Items.ToList();
+		currentProductsList.Remove(product);
+
+		Invoice updatedInvoice = (Invoice)invoice.Clone();
+		updatedInvoice.Items = currentProductsList;
+
+		var currentInvoice = await invoiceOrchestrationService
+			.UpdateInvoiceObject(invoice, updatedInvoice)
+			.ConfigureAwait(false);
+		return currentInvoice;
 	}).ConfigureAwait(false);
 }

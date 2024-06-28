@@ -4,6 +4,7 @@
 
 import useUserInformation from "@/hooks/useUserInformation";
 import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
+import updateInvoice from "@/lib/actions/invoices/updateInvoice";
 import Invoice from "@/types/invoices/Invoice";
 import Link from "next/link";
 import {useEffect, useState} from "react";
@@ -84,7 +85,11 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
             <button
               type='button'
               className='my-auto ml-4 inline-flex h-10 w-10 items-center justify-center rounded-full border-0 bg-gray-200 p-0 text-gray-500'
-              title='Bookmark (mark as important) the invoice'>
+              title='Bookmark (mark as important) the invoice'
+              onClick={() => {
+                setInvoice((prev) => ({...prev!, isImportant: !isImportant}));
+                updateInvoice(invoice, userInformation!);
+              }}>
               <svg
                 fill='currentColor'
                 strokeLinecap='round'

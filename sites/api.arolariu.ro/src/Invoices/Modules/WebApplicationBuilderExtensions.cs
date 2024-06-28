@@ -47,11 +47,13 @@ public static class WebApplicationBuilderExtensions
 		ArgumentNullException.ThrowIfNull(builder);
 
 		// Add Entity Framework Core services.
-		builder.Services.AddDbContextPool<InvoiceNoSqlBroker>(options =>
+		builder.Services.AddDbContext<InvoiceNoSqlBroker>(options =>
 		{
 			options.UseCosmos(
 				connectionString: builder.Configuration[$"{nameof(AzureOptions)}:NoSqlConnectionString"]!,
 				databaseName: "arolariu");
+
+			options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 		});
 
 		// Broker services:

@@ -2,6 +2,7 @@
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
 
@@ -163,6 +164,133 @@ public static partial class InvoiceEndpoints
 		IInvoiceProcessingService invoiceProcessingService,
 		IHttpContextAccessor httpContext,
 		Guid id,
+		ClaimsPrincipal principal);
+
+	/// <summary>
+	/// Adds a product to a specific invoice.
+	/// </summary>
+	/// <param name="invoiceProcessingService"></param>
+	/// <param name="httpContext"></param>
+	/// <param name="id"></param>
+	/// <param name="product"></param>
+	/// <param name="principal"></param>
+	/// <returns></returns>
+	[SwaggerOperation(
+		Summary = "Adds a product to a specific invoice in the system.",
+		Description = "Adds a product to a specific invoice in the Invoice Management System. " +
+		"If the invoice identifier passed to the route is valid, the server will add the product to the invoice, given that the user is allowed to add products to this invoice.",
+		OperationId = nameof(AddProductToInvoiceAsync),
+		Tags = [EndpointNameTag])]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The product was added to the invoice successfully.", typeof(Invoice))]
+	[SwaggerResponse(StatusCodes.Status400BadRequest, "The product information is not valid (please respect the product schema).", typeof(ValidationProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The product could not be added to the invoice due to the invoice not being found.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status409Conflict, "The product could not be added to the invoice due to a conflict (the product is already in the invoice).", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The product could not be added to the invoice due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The product could not be added to the invoice due to an internal service error.", typeof(ProblemDetails))]
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+	[Authorize]
+	private static partial Task<IResult> AddProductToInvoiceAsync(
+		IInvoiceProcessingService invoiceProcessingService,
+		IHttpContextAccessor httpContext,
+		Guid id,
+		Product product,
+		ClaimsPrincipal principal);
+
+	/// <summary>
+	/// Retrieves all products from a specific invoice.
+	/// </summary>
+	/// <param name="invoiceProcessingService"></param>
+	/// <param name="httpContext"></param>
+	/// <param name="id"></param>
+	/// <param name="principal"></param>
+	/// <returns></returns>
+	[SwaggerOperation(
+		Summary = "Retrieves all products from a specific invoice in the system.",
+		Description = "Retrieves all products from a specific invoice in the Invoice Management System. " +
+		"If the invoice identifier passed to the route is valid, the server will retrieve all products from the invoice, given that the user is allowed to see the products.",
+		OperationId = nameof(RetrieveProductsFromInvoiceAsync),
+		Tags = [EndpointNameTag])]
+	[SwaggerResponse(StatusCodes.Status200OK, "The products were retrieved successfully from the invoice.", typeof(Product[]))]
+	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access the products from this invoice.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The products could not be retrieved due to the invoice not being found.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The products could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+	[Authorize]
+	private static partial Task<IResult> RetrieveProductsFromInvoiceAsync(
+		IInvoiceProcessingService invoiceProcessingService,
+		IHttpContextAccessor httpContext,
+		Guid id,
+		ClaimsPrincipal principal);
+
+	/// <summary>
+	/// Removes a product from a specific invoice.
+	/// </summary>
+	/// <param name="invoiceProcessingService"></param>
+	/// <param name="httpContext"></param>
+	/// <param name="id"></param>
+	/// <param name="productName"></param>
+	/// <param name="principal"></param>
+	/// <returns></returns>
+	[SwaggerOperation(
+		Summary = "Removes a product from a specific invoice in the system.",
+		Description = "Removes a product from a specific invoice in the Invoice Management System. " +
+		"If the invoice identifier passed to the route is valid, the server will remove the product from the invoice, given that the user is allowed to remove products from this invoice.",
+		OperationId = nameof(RemoveProductFromInvoiceAsync),
+		Tags = [EndpointNameTag])]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The product was removed from the invoice successfully.", typeof(Invoice))]
+	[SwaggerResponse(StatusCodes.Status400BadRequest, "The product information is not valid (please respect the product schema).", typeof(ValidationProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The product could not be removed from the invoice due to the invoice not being found.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status409Conflict, "The product could not be removed from the invoice due to a conflict (the product is not in the invoice).", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The product could not be removed from the invoice due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The product could not be deleted due to an internal service error", typeof(ProblemDetails))]
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+	[Authorize]
+	private static partial Task<IResult> RemoveProductFromInvoiceAsync(
+		IInvoiceProcessingService invoiceProcessingService,
+		IHttpContextAccessor httpContext,
+		Guid id,
+		string productName,
+		ClaimsPrincipal principal);
+
+	/// <summary>
+	/// Updates a product in a specific invoice.
+	/// </summary>
+	/// <param name="invoiceProcessingService"></param>
+	/// <param name="httpContext"></param>
+	/// <param name="id"></param>
+	/// <param name="productName"></param>
+	/// <param name="productInformation"></param>
+	/// <param name="principal"></param>
+	/// <returns></returns>
+	[SwaggerOperation(
+		Summary = "Updates a product in a specific invoice in the system.",
+		Description = "Updates a product in a specific invoice in the Invoice Management System. " +
+		"If the invoice identifier passed to the route is valid, the server will update the product in the invoice, given that the user is allowed to update products in this invoice.",
+		OperationId = nameof(UpdateProductInInvoiceAsync),
+		Tags = [EndpointNameTag])]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The product was updated in the invoice successfully.", typeof(Invoice))]
+	[SwaggerResponse(StatusCodes.Status400BadRequest, "The product information is not valid (please respect the product schema).", typeof(ValidationProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The product could not be updated in the invoice due to the invoice not being found.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status409Conflict, "The product could not be updated in the invoice due to a conflict (the product is not in the invoice).", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The product could not be updated in the invoice due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The product could not be updated due to an internal service error", typeof(ProblemDetails))]
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+	[Authorize]
+	private static partial Task<IResult> UpdateProductInInvoiceAsync(
+		IInvoiceProcessingService invoiceProcessingService,
+		IHttpContextAccessor httpContext,
+		Guid id,
+		string productName,
+		Product productInformation,
 		ClaimsPrincipal principal);
 	#endregion
 	#region CRUD operations for the Merchant Standard Endpoints

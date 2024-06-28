@@ -15,7 +15,7 @@ using System.Text.Json.Serialization;
 /// The Invoice model as "represented" in the Application Domain.
 /// </summary>
 [ExcludeFromCodeCoverage] // Entities are not tested - they are used to represent the data in the application domain.
-public class Invoice : NamedEntity<Guid>
+public sealed class Invoice : NamedEntity<Guid>, ICloneable, IEquatable<Invoice>
 {
 	/// <summary>
 	/// The invoice 1:1 user relationship (owner).
@@ -58,7 +58,7 @@ public class Invoice : NamedEntity<Guid>
 	/// Possible recipes for the invoice.
 	/// </summary>
 	[JsonPropertyOrder(9)]
-	public IEnumerable<Recipe> PossibleRecipes { get; } = new List<Recipe>();
+	public IEnumerable<Recipe> PossibleRecipes { get; set; } = new List<Recipe>();
 
 	/// <summary>
 	/// The invoice additional metadata.
@@ -67,6 +67,9 @@ public class Invoice : NamedEntity<Guid>
 	/// </summary>
 	[JsonPropertyOrder(11)]
 	public IEnumerable<KeyValuePair<string, object>> AdditionalMetadata { get; set; } = new List<KeyValuePair<string, object>>();
+
+	/// <inheritdoc/>
+	public bool Equals(Invoice? other) => Equals(other as object);
 
 	/// <inheritdoc/>
 	public override bool Equals(object? obj)
@@ -82,4 +85,36 @@ public class Invoice : NamedEntity<Guid>
 	{
 		return HashCode.Combine(Id, UserIdentifier);
 	}
+
+	/// <inheritdoc/>
+	public object Clone()
+	{
+		return new Invoice
+		{
+			Id = Id,
+			Name = Name,
+			Description = Description,
+			CreatedAt = CreatedAt,
+			CreatedBy = CreatedBy,
+			IsImportant = IsImportant,
+			IsSoftDeleted = IsSoftDeleted,
+			LastUpdatedAt = LastUpdatedAt,
+			LastUpdatedBy = LastUpdatedBy,
+			NumberOfUpdates = NumberOfUpdates,
+			UserIdentifier = UserIdentifier,
+			Category = Category,
+			PhotoLocation = PhotoLocation,
+			Merchant = Merchant, // intentionally shallow copy - merchant is an independent entity and should not be race condition prone
+			Items = new List<Product>(Items),
+			PossibleRecipes = new List<Recipe>(PossibleRecipes),
+			AdditionalMetadata = new List<KeyValuePair<string, object>>(AdditionalMetadata),
+			PaymentInformation = new PaymentInformation
+			{
+				Currency = PaymentInformation.Currency,
+				TotalAmount = PaymentInformation.TotalAmount,
+				TotalTax = PaymentInformation.TotalTax
+			},
+		};
+	}
+
 }

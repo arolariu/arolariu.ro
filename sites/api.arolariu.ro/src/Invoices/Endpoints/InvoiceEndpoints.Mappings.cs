@@ -1,6 +1,7 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Endpoints;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Microsoft.AspNetCore.Builder;
@@ -82,6 +83,62 @@ public static partial class InvoiceEndpoints
 			.ProducesProblem(StatusCodes.Status429TooManyRequests)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.WithName(nameof(DeleteInvoiceAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapPost("/invoices/{id}/products", AddProductToInvoiceAsync)
+			.Accepts<Product>("application/json")
+			.Produces<Invoice>(StatusCodes.Status201Created)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status409Conflict)
+			.ProducesProblem(StatusCodes.Status413PayloadTooLarge)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(AddProductToInvoiceAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapGet("/invoices/{id}/products", RetrieveProductsFromInvoiceAsync)
+			.Produces<IEnumerable<Product>>(StatusCodes.Status200OK)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(RetrieveProductsFromInvoiceAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapDelete("/invoices/{id}/products", RemoveProductFromInvoiceAsync)
+			.Produces<Invoice>(StatusCodes.Status204NoContent)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(RemoveProductFromInvoiceAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapPatch("/invoices/{id}/products", UpdateProductInInvoiceAsync)
+			.Accepts<Product>("application/json")
+			.Produces<Invoice>(StatusCodes.Status202Accepted)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(UpdateProductInInvoiceAsync))
 			.RequireAuthorization()
 			.WithOpenApi();
 	}

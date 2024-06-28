@@ -1,4 +1,8 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
@@ -7,12 +11,6 @@ using arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
 
 using Microsoft.EntityFrameworkCore;
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Threading.Tasks;
-
 /// <summary>
 /// The Entity Framework Invoice SQL broker.
 /// </summary>
@@ -20,36 +18,9 @@ using System.Threading.Tasks;
 public sealed partial class InvoiceNoSqlBroker(DbContextOptions<InvoiceNoSqlBroker> options)
 	: DbContext(options), IInvoiceNoSqlBroker
 {
-	internal async ValueTask<T> InsertAsync<T>(T @object) =>
-	await ChangeEntityStateAndSaveChangesAsync(@object, EntityState.Added)
-			.ConfigureAwait(false);
+	private DbSet<Invoice> InvoicesContext => Set<Invoice>();
 
-	internal async ValueTask<T> UpdateAsync<T>(T @object) =>
-	await ChangeEntityStateAndSaveChangesAsync(@object, EntityState.Modified)
-			.ConfigureAwait(false);
-
-	internal async ValueTask<T> DeleteAsync<T>(T @object) =>
-	await ChangeEntityStateAndSaveChangesAsync(@object, EntityState.Deleted)
-			.ConfigureAwait(false);
-
-	internal IQueryable<T> SelectAll<T>() where T : class => this.Set<T>();
-
-	internal async ValueTask<T?> SelectAsync<T>(params object[] @objectIds) where T : class =>
-	await this.FindAsync<T>(objectIds).ConfigureAwait(false);
-
-	internal async ValueTask<T> ChangeEntityStateAndSaveChangesAsync<T>(T @object, EntityState entityState)
-	{
-		ArgumentNullException.ThrowIfNull(@object);
-		this.Entry(@object).State = entityState;
-		if (@object is Invoice invoice
-			&& entityState == EntityState.Added
-			&& invoice.Merchant is not null)
-		{
-			this.Entry(invoice.Merchant).State = entityState;
-		}
-		await SaveChangesAsync().ConfigureAwait(false);
-		return @object;
-	}
+	private DbSet<Merchant> MerchantContext => Set<Merchant>();
 
 	private static void SetModelReferences(ModelBuilder modelBuilder)
 	{
@@ -60,15 +31,27 @@ public sealed partial class InvoiceNoSqlBroker(DbContextOptions<InvoiceNoSqlBrok
 		{
 			entity.ToContainer("merchants");
 
-			entity.Property(merchant => merchant.Id)
-				.HasConversion<string>();
+			entity.Property(m => m.Id).HasConversion<string>();
+			entity.Property(m => m.ParentCompanyId).HasConversion<string>();
 
-			entity.Property(merchant => merchant.ParentCompanyId)
-				.HasConversion<string>();
+			#region Base types
+			entity.Property(m => m.Name).HasConversion<string>();
+			entity.Property(m => m.Address).HasConversion<string>();
+			entity.Property(m => m.Category).HasConversion<string>();
+			entity.Property(m => m.CreatedBy).HasConversion<string>();
+			entity.Property(m => m.IsImportant).HasConversion<bool>();
+			entity.Property(m => m.IsSoftDeleted).HasConversion<bool>();
+			entity.Property(m => m.Description).HasConversion<string>();
+			entity.Property(m => m.PhoneNumber).HasConversion<string>();
+			entity.Property(m => m.NumberOfUpdates).HasConversion<int>();
+			entity.Property(m => m.LastUpdatedBy).HasConversion<string>();
+			entity.Property(m => m.CreatedAt).HasConversion<DateTimeOffset>();
+			entity.Property(m => m.LastUpdatedAt).HasConversion<DateTimeOffset>();
+			#endregion
 
 			entity.HasIndex(merchant => merchant.Id);
 			entity.HasPartitionKey(merchant => merchant.ParentCompanyId);
-			entity.HasNoDiscriminator();
+			entity.HasNoDiscriminator(); // we will only store merchants in this container
 		});
 
 		// Map the invoice entity to the invoices container.
@@ -76,44 +59,77 @@ public sealed partial class InvoiceNoSqlBroker(DbContextOptions<InvoiceNoSqlBrok
 		{
 			entity.ToContainer("invoices");
 
-			entity.Property(invoice => invoice.Id)
-				.HasConversion<string>();
+			entity.Property(i => i.Id).HasConversion<string>();
+			entity.Property(i => i.UserIdentifier).HasConversion<string>();
 
-			entity.Property(invoice => invoice.UserIdentifier)
-				.HasConversion<string>();
+			#region Base types
+			entity.Property(i => i.Name).HasConversion<string>();
+			entity.Property(i => i.Category).HasConversion<string>();
+			entity.Property(i => i.CreatedBy).HasConversion<string>();
+			entity.Property(i => i.IsImportant).HasConversion<bool>();
+			entity.Property(i => i.IsSoftDeleted).HasConversion<bool>();
+			entity.Property(i => i.Description).HasConversion<string>();
+			entity.Property(i => i.NumberOfUpdates).HasConversion<int>();
+			entity.Property(i => i.LastUpdatedBy).HasConversion<string>();
+			entity.Property(i => i.PhotoLocation).HasConversion<string>();
+			entity.Property(i => i.CreatedAt).HasConversion<DateTimeOffset>();
+			entity.Property(i => i.LastUpdatedAt).HasConversion<DateTimeOffset>();
+			#endregion
 
-			entity.Property(invoice => invoice.PhotoLocation)
-				.HasConversion<string>();
-
-			entity.Property(invoice => invoice.PaymentInformation)
+			#region Complex types
+			entity.Property(i => i.PaymentInformation)
 				.HasConversion(new PaymentInformationValueConverter());
-
-			entity.Property(invoice => invoice.PossibleRecipes)
-				.HasConversion(new IEnumerableOfStructTypeValueConverter<Recipe>());
-
-			entity.Property(invoice => invoice.AdditionalMetadata)
-				.HasConversion(new IEnumerableOfStructTypeValueConverter<KeyValuePair<string, object>>());
+			entity.Property(i => i.PossibleRecipes)
+				.HasConversion(new IEnumerableOfXTypeValueConverter<Recipe>());
+			entity.Property(i => i.AdditionalMetadata)
+				.HasConversion(new IEnumerableOfXTypeValueConverter<KeyValuePair<string, object>>());
+			#endregion
 
 			entity.HasIndex(invoice => invoice.Id);
 			entity.HasPartitionKey(invoice => invoice.UserIdentifier);
-			entity.HasNoDiscriminator();
+			entity.HasNoDiscriminator(); // we will only store invoices in this container
 		});
 
-		// Embed (configure the 1:M) relationship between invoice and merchant:
-		modelBuilder.Entity<Invoice>()
-			.HasOne(invoice => invoice.Merchant)
-			.WithMany(merchant => merchant.Invoices)
-			.IsRequired(false);
-
-		// Embed the product entity into the invoice entity:
 		modelBuilder.Entity<Invoice>().OwnsMany<Product>(invoice => invoice.Items,
 		items =>
 		{
 			items.ToJsonProperty("Items");
 
+			items.Property(item => item.RawName)
+				.ToJsonProperty("RawName")
+				.HasConversion<string>();
+
+			items.Property(item => item.GenericName)
+				.ToJsonProperty("GenericName")
+				.HasConversion<string>();
+
+			items.Property(item => item.Category)
+				.ToJsonProperty("Category")
+				.HasConversion<string>();
+
+			items.Property(item => item.Quantity)
+				.ToJsonProperty("Quantity")
+				.HasConversion<int>();
+
+			items.Property(items => items.QuantityUnit)
+				.ToJsonProperty("QuantityUnit")
+				.HasConversion<string>();
+
+			items.Property(item => item.ProductCode)
+				.ToJsonProperty("ProductCode")
+				.HasConversion<string>();
+
+			items.Property(item => item.Price)
+				.ToJsonProperty("Price")
+				.HasConversion<decimal>();
+
+			items.Property(item => item.TotalPrice)
+				.ToJsonProperty("TotalPrice")
+				.HasConversion<decimal>();
+
 			items.Property(item => item.DetectedAllergens)
 				.ToJsonProperty("DetectedAllergens")
-				.HasConversion(new IEnumerableOfStructTypeValueConverter<Allergen>());
+				.HasConversion(new IEnumerableOfXTypeValueConverter<Allergen>());
 		});
 	}
 
