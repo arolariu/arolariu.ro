@@ -10,6 +10,7 @@ import {Suspense, type ReactNode} from "react";
 import "./globals.css";
 import Loading from "./loading";
 import ContextProviders from "./providers";
+import Tracking from "./tracking";
 
 export {metadata} from "@/metadata";
 
@@ -27,6 +28,7 @@ export default async function RootLayout({children}: Readonly<{children: ReactNo
       suppressHydrationWarning
       className={fonts[0]?.className}
       dir='ltr'>
+      <Tracking />
       <body className='bg-white text-black dark:bg-black dark:text-white'>
         <ContextProviders>
           <Header />
