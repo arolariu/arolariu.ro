@@ -28,7 +28,7 @@ export default async function RootLayout({children}: Readonly<{children: ReactNo
       suppressHydrationWarning
       className={fonts[0]?.className}
       dir='ltr'>
-      <Tracking />
+      {eulaAccepted && <Tracking />}
       <body className='bg-white text-black dark:bg-black dark:text-white'>
         <ContextProviders>
           <Header />
