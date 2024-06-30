@@ -9,7 +9,7 @@ export const InvoiceCard = ({invoice}: Readonly<{invoice: Invoice}>) => {
   const isAnalyzed = invoice.numberOfUpdates > 0;
 
   return (
-    <article className='p-2 md:w-1/3 lg:w-1/4'>
+    <article className='w-full p-2 md:w-1/3 lg:w-1/4'>
       <Link
         href={`/domains/invoices/view-invoice/${invoice.id}`}
         className='relative block h-48 overflow-hidden rounded'>
