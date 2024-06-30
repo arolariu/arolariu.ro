@@ -15,7 +15,7 @@ const cspHeader = `
     worker-src 'self' blob: data: https: ${trustedDomains};
     base-uri 'none';
     object-src 'none';
-    frame-ancestors 'none';
+    frame-ancestors 'self';
     block-all-mixed-content;
     upgrade-insecure-requests;
 `;
