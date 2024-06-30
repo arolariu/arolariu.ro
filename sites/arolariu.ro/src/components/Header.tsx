@@ -52,12 +52,12 @@ const Navigation = ({className}: Readonly<{className?: string}>) => {
         </details>
       </li>
       <li className='hover:text-yellow-300'>
-        <Link href='/events h'>Events</Link>
+        <Link href='/events'>Events</Link>
       </li>
 
       <li>
         <Link
-          href={isSignedIn ? `/account/${user.id}` : "/auth"}
+          href={isSignedIn ? `/accounts/${user.id}` : "/auth"}
           className='indicator mr-5 hover:text-yellow-300'>
           {isSignedIn ? "Account" : "Auth"}
         </Link>
