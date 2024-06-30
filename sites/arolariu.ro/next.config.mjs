@@ -12,6 +12,8 @@ const cspHeader = `
     default-src 'self' blob: data: https: ${trustedDomains};
     script-src 'self' 'unsafe-inline' 'unsafe-eval' https: ${trustedDomains};
     style-src 'self' 'unsafe-inline' https: ${trustedDomains};
+    worker-src 'self' blob: data: https: ${trustedDomains};
+    base-uri 'none';
     object-src 'none';
     frame-ancestors 'none';
     block-all-mixed-content;
