@@ -2,6 +2,7 @@
 
 "use client";
 
+import useWindowSize from "@/hooks/useWindowSize";
 import {SignedIn, SignedOut, UserButton, useUser} from "@clerk/nextjs";
 import {HamburgerMenuIcon} from "@radix-ui/react-icons";
 import Image from "next/image";
@@ -11,12 +12,6 @@ import ThemeSwitcherButton from "./Buttons/ThemeButton";
 import {Button} from "./ui/button";
 import {Popover, PopoverContent, PopoverTrigger} from "./ui/popover";
 import {Skeleton} from "./ui/skeleton";
-
-const NavigationLinks = [
-  {href: "/domains", label: "Domains"},
-  {href: "/events", label: "Events"},
-];
-
 const HeaderSkeleton = () => (
   <header>
     <nav className='navbar bg-white dark:bg-black 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto'>
@@ -40,35 +35,33 @@ const Navigation = ({className}: Readonly<{className?: string}>) => {
   if (!isLoaded) return;
 
   return (
-    <ul className={className}>
-      {NavigationLinks.map(({href, label}) => (
-        <li key={href}>
-          <Link
-            href={href}
-            className='indicator mr-5 hover:text-yellow-300'>
-            {label}
-          </Link>
-        </li>
-      ))}
+    <ul className={`${className}`}>
+      <li>
+        <details>
+          <summary>
+            <Link href='/domains'>Domains</Link>
+          </summary>
+          <ul className='rounded-b-xl bg-white dark:bg-black'>
+            <li className='hover:text-yellow-300'>
+              <Link href='/domains/invoices'>Invoices</Link>
+            </li>
+            <li className='hover:text-yellow-300'>
+              <Link href='/domains/live'>Chat Rooms</Link>
+            </li>
+          </ul>
+        </details>
+      </li>
+      <li className='hover:text-yellow-300'>
+        <Link href='/events h'>Events</Link>
+      </li>
 
-      {!isSignedIn && (
-        <li>
-          <Link
-            href='/auth'
-            className='indicator mr-5 hover:text-yellow-300'>
-            Auth
-          </Link>
-        </li>
-      )}
-      {Boolean(isSignedIn) && (
-        <li>
-          <Link
-            href={`/accounts/${user!.id}`}
-            className='indicator mr-5 hover:text-yellow-300'>
-            Account
-          </Link>
-        </li>
-      )}
+      <li>
+        <Link
+          href={isSignedIn ? `/account/${user.id}` : "/auth"}
+          className='indicator mr-5 hover:text-yellow-300'>
+          {isSignedIn ? "Account" : "Auth"}
+        </Link>
+      </li>
     </ul>
   );
 };
@@ -78,6 +71,7 @@ const Navigation = ({className}: Readonly<{className?: string}>) => {
  * @returns The header component.
  */
 export default function Header() {
+  const {isMobile, isDesktop} = useWindowSize();
   const {isLoaded, isSignedIn} = useUser();
   if (!isLoaded) return <HeaderSkeleton />;
 
@@ -85,7 +79,7 @@ export default function Header() {
     <header>
       <nav className='navbar bg-white dark:bg-black 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto'>
         <div className='navbar-start flex flex-row flex-nowrap'>
-          <div className='lg:hidden'>
+          {isMobile && (
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant='outline'>
@@ -96,7 +90,7 @@ export default function Header() {
                 <Navigation className='menu menu-vertical' />
               </PopoverContent>
             </Popover>
-          </div>
+          )}
           <Link
             href='/'
             className='ml-2 flex items-center font-medium hover:text-yellow-300'>
@@ -111,9 +105,7 @@ export default function Header() {
           </Link>
         </div>
 
-        <div className='navbar-center 2xsm:hidden lg:relative lg:flex'>
-          <Navigation className='menu menu-horizontal' />
-        </div>
+        <div className='navbar-center flex'>{isDesktop && <Navigation className='menu menu-horizontal' />}</div>
 
         <div className='navbar-end flex flex-row flex-wrap'>
           <div className='mr-4 mt-2'>
@@ -126,7 +118,7 @@ export default function Header() {
                 </Link>
               </SignedOut>
             )}
-            {Boolean(isSignedIn) && (
+            {isSignedIn && (
               <SignedIn>
                 <UserButton />
               </SignedIn>
