@@ -47,6 +47,7 @@ export default function DomainsHomepage() {
           title='Live Chat Rooms'
           description='This domain space service allows users to create and join chat rooms. The chat rooms are real-time and can be accessed by room name. Chat and video call with peers.'
           linkTo='/domains/live'
+          imageUrl='/images/domains/live-chat-rooms.jpeg'
         />
       </section>
     </main>
