@@ -2,10 +2,11 @@
 
 "use client";
 
+import useInvoice from "@/hooks/useInvoice";
 import useUserInformation from "@/hooks/useUserInformation";
-import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
-import Invoice from "@/types/invoices/Invoice";
-import {useEffect, useState} from "react";
+import InvoiceNotAnalyzed from "../../_components/InvoiceNotAnalyzed";
+import InvoiceNotFound from "../../_components/InvoiceNotFound";
+import LoadingInvoice from "../../_components/LoadingInvoice";
 import InvoicePhotoPreview from "./_components/InvoicePhotoPreview";
 import ProductTable from "./_components/ProductTable";
 
@@ -15,22 +16,13 @@ import ProductTable from "./_components/ProductTable";
  */
 export default function RenderEditInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
   const {userInformation} = useUserInformation();
-  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const {invoice, isLoading} = useInvoice({invoiceIdentifier});
 
-  useEffect(() => {
-    const fetchInvoiceInformation = async () => {
-      if (userInformation === null) return console.info("User information is not available.");
-      const invoiceInformation = await fetchInvoice(invoiceIdentifier, userInformation);
-      if (invoiceInformation) setInvoice(invoiceInformation);
-    };
-
-    fetchInvoiceInformation();
-  }, [userInformation]);
-
-  if (!invoice) return null;
+  if (isLoading) return <LoadingInvoice invoiceIdentifier={invoiceIdentifier} />;
+  if (invoice === null) return <InvoiceNotFound invoiceIdentifier={invoiceIdentifier} />;
+  if (invoice.numberOfUpdates === 0) return <InvoiceNotAnalyzed invoiceIdentifier={invoiceIdentifier} />;
 
   const {description, paymentInformation, isImportant, merchant, estimatedSurvivalDays} = invoice;
-
   return (
     <section className='mx-auto rounded-2xl border-2'>
       <div className='flex flex-row flex-nowrap'>
