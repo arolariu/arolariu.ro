@@ -2,9 +2,7 @@
 
 import Image from "next/image";
 
-interface Props {
-  image: Blob | null;
-}
+type Props = {image: Blob | null};
 
 /**
  * This function renders the invoice image preview.
@@ -12,8 +10,7 @@ interface Props {
  * @returns The JSX for the invoice image preview.
  */
 export default function InvoicePreview({image}: Readonly<Props>) {
-  const allowedFormats = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
-  if (image !== null && allowedFormats.includes(image.type)) {
+  if (image !== null) {
     return image.type === "application/pdf" ? (
       <div className='mx-auto mb-10 w-2/3 md:w-1/2 lg:w-1/3 xl:w-1/4'>
         <iframe
@@ -21,7 +18,6 @@ export default function InvoicePreview({image}: Readonly<Props>) {
           src={URL.createObjectURL(image)}
           width='100%'
           height='600px'
-          sandbox=''
         />
       </div>
     ) : (

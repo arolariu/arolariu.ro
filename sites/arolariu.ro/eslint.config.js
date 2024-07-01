@@ -32,10 +32,9 @@ const eslintConfig = tseslint.config(
       ecmaVersion: "latest",
       parser: typescriptParser,
       parserOptions: {
-        EXPERIMENTAL_useProjectService: {
-          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 1000,
+        projectService: {
+          defaultProject: "./tsconfig.json",
         },
-        project: "tsconfig.json",
         tsconfigRootDir: import.meta.dirname,
         ecmaVersion: "latest",
         errorOnTypeScriptSyntacticAndSemanticIssues: true,
@@ -63,7 +62,6 @@ const eslintConfig = tseslint.config(
       ...eslintPluginSonarJs.configs.recommended.rules,
       ...eslintPluginJsDoc.configs["recommended-typescript"].rules,
       ...eslintPluginPerfectionist.configs["recommended-alphabetical"].rules,
-      "@typescript-eslint/ban-types": "warn", // substitute for `Don't use `{}` as a type. `{}` actually means "any non-nullish value".`
       "@typescript-eslint/consistent-type-definitions": "off",
       "@typescript-eslint/no-confusing-void-expression": "off",
       "@typescript-eslint/no-misused-promises": "off",
@@ -95,7 +93,6 @@ const eslintConfig = tseslint.config(
       "no-inline-comments": "off", // inline comments are useful, sometimes.
       "no-magic-numbers": "off", // this rule is not needed; we have magic numbers regarding request status in our code.
       "no-plusplus": "off", // plusplus is useful for iterators.
-      "no-shadow": "off",
       "no-shadow": "off", // this rule seems to not behave well with TSX.
       "no-ternary": "off",
       "no-void": "off",

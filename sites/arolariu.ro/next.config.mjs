@@ -6,6 +6,20 @@ import withBundleAnalyzerInit from "@next/bundle-analyzer";
 import nextMdx from "@next/mdx";
 import withSerwistInit from "@serwist/next";
 import createNextIntlPlugin from "next-intl/plugin";
+
+const trustedDomains = "*.arolariu.ro clerk.com *.clerk.com accounts.dev *.accounts.dev";
+const cspHeader = `
+    default-src 'self' blob: data: https: ${trustedDomains};
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https: ${trustedDomains};
+    style-src 'self' 'unsafe-inline' https: ${trustedDomains};
+    worker-src 'self' blob: data: https: ${trustedDomains};
+    base-uri 'none';
+    object-src 'none';
+    frame-ancestors 'self';
+    block-all-mixed-content;
+    upgrade-insecure-requests;
+`;
+
 /**
  * @format
  * @type {import("next").NextConfig}
@@ -52,6 +66,10 @@ const nextConfig = {
             value: "max-age=63072000; includeSubDomains; preload",
           },
           {
+            key: "Content-Security-Policy",
+            value: cspHeader.replace(/\n/gu, "").trim(),
+          },
+          {
             key: "X-Content-Type-Options",
             value: "nosniff",
           },
@@ -84,12 +102,11 @@ const nextConfig = {
   output: "standalone",
 
   experimental: {
+    mdxRs: true,
+    instrumentationHook: true,
     serverActions: {
       bodySizeLimit: "10mb",
     },
-    optimizePackageImports: ["@mantine/core", "@mantine/hooks"],
-    instrumentationHook: true,
-    mdxRs: true,
   },
 
   eslint: {

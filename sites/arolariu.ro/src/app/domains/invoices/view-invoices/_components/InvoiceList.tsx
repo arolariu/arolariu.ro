@@ -61,7 +61,7 @@ export const InvoiceList = ({invoices, displayStyle}: Readonly<Props>) => {
       );
     case "list":
       return (
-        <section className='-m-4 flex flex-wrap'>
+        <section className='-m-4 flex flex-row flex-wrap'>
           {invoices.map((invoice) => (
             <InvoiceCard
               key={invoice.id}
