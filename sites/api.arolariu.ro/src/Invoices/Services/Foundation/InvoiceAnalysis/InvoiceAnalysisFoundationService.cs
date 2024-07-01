@@ -43,9 +43,6 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
 	public async Task<Invoice> AnalyzeInvoiceAsync(Invoice invoice, AnalysisOptions options) =>
 	await TryCatchAsync(async () =>
 	{
-		ValidateInvoiceExists(invoice);
-		ValidateAnalysisOptionsAreSet(options);
-
 		invoice = await PerformOcrAnalysis(invoice, options).ConfigureAwait(false);
 		invoice = await PerformTranslationAnalysis(invoice).ConfigureAwait(false);
 		invoice = await PerformGptAnalysis(invoice, options).ConfigureAwait(false);
