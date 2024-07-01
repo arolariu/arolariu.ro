@@ -3,7 +3,6 @@
 "use client";
 
 import useInvoice from "@/hooks/useInvoice";
-import useUserInformation from "@/hooks/useUserInformation";
 import InvoiceNotAnalyzed from "../../_components/InvoiceNotAnalyzed";
 import InvoiceNotFound from "../../_components/InvoiceNotFound";
 import LoadingInvoice from "../../_components/LoadingInvoice";
