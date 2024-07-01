@@ -5,6 +5,7 @@
 .vscode
 .env
 .env.example
+.node-version
 .gitattributes
 .prettierignore
 .editorconfig
