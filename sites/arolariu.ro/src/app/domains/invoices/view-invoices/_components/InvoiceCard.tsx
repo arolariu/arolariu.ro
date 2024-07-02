@@ -13,7 +13,7 @@ export const InvoiceCard = ({invoice}: Readonly<{invoice: Invoice}>) => {
       <Link
         href={`/domains/invoices/view-invoice/${invoice.id}`}
         className='relative block h-48 overflow-hidden rounded'>
-        {isPdfDocument && (
+        {Boolean(isPdfDocument) && (
           <div className='flex h-full w-full items-center justify-center bg-gray-100'>
             <p className='text-2xl text-gray-500'>PDF</p>
           </div>
@@ -29,8 +29,8 @@ export const InvoiceCard = ({invoice}: Readonly<{invoice: Invoice}>) => {
         )}
       </Link>
       <div className='mt-4'>
-        {isAnalyzed === false && <h3 className='mb-1 text-center text-xs tracking-widest'>INVOICE NOT ANALYZED !</h3>}
-        {isAnalyzed && (
+        {!isAnalyzed && <h3 className='mb-1 text-center text-xs tracking-widest'>INVOICE NOT ANALYZED !</h3>}
+        {Boolean(isAnalyzed) && (
           <>
             <h3 className='mb-1 text-xs tracking-widest dark:text-gray-500'>
               DATE: {new Date(invoice.paymentInformation?.dateOfPurchase ?? Date.now()).toUTCString()}

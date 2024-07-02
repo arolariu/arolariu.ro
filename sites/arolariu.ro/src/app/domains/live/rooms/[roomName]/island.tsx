@@ -2,6 +2,10 @@
 
 "use client";
 
+/**
+ * This function renders the room screen.
+ * @returns The JSX for the room screen.
+ */
 export default function RenderRoomScreen({roomId}: Readonly<{roomId: string}>) {
   return (
     <section className='flex flex-col items-center justify-center justify-items-center'>
@@ -17,5 +21,3 @@ export default function RenderRoomScreen({roomId}: Readonly<{roomId: string}>) {
     </section>
   );
 }
-
-///src/app/components/chat/chat-layout.tsx, chat.tsx, chat-topbar.tsx, chat-list.tsx & chat-bottombar.tsx

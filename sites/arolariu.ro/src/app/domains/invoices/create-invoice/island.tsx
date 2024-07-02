@@ -13,6 +13,7 @@ import {useRouter} from "next/navigation";
 import {useState} from "react";
 import InvoicePreview from "./_components/InvoicePreview";
 import InvoiceSubmitForm from "./_components/InvoiceSubmitForm";
+import InvoiceCallToAction from "./_components/InvoiceCallToAction";
 
 /**
  * This function renders the invoice upload page.
@@ -30,11 +31,6 @@ export default function RenderCreateInvoiceScreen() {
     setImage(null);
     setUploadStatus(null);
   };
-
-  const ctaText =
-    image !== null
-      ? "Review the uploaded receipt photo. If it is correct, proceed to the next step."
-      : "Carefully photograph or scan your paper receipt. Attach the digital image from your device, here.";
 
   const handleImageClientSideUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     event.preventDefault();
@@ -93,19 +89,7 @@ export default function RenderCreateInvoiceScreen() {
   return (
     <section className='h-full w-full'>
       <InvoicePreview image={image} />
-      <h1 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-xl font-medium text-transparent'>
-        {image !== null ? "IS THIS THE CORRECT PHOTO...?!" : "UPLOAD A PICTURE OF THE PAPER RECEIPT"}
-      </h1>
-      <p className='mx-auto text-base leading-relaxed lg:w-2/3'>
-        {ctaText.split(".").map((text, index) => (
-          <span key={index}>
-            {text}
-            {index < ctaText.split(".").length - 1 && "."}
-            <br />
-          </span>
-        ))}
-      </p>
-
+      <InvoiceCallToAction image={image} />
       <InvoiceSubmitForm
         image={image}
         uploadStatus={uploadStatus}

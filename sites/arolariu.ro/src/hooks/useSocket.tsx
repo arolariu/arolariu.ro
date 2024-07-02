@@ -2,10 +2,11 @@
 "use client";
 
 import {createContext, ReactNode, useContext, useEffect, useRef, useState} from "react";
+import {Socket} from "socket.io";
 import {io} from "socket.io-client";
 
 type SocketContextType = {
-  socket: any | null;
+  socket: Socket | null;
   isConnected: boolean;
   latency: number;
 };
@@ -18,8 +19,8 @@ const SocketContext = createContext<SocketContextType>({
 
 export const useSocket = () => useContext(SocketContext);
 
-export const SocketProvider = ({children}: {children: ReactNode}) => {
-  const [socket, setSocket] = useState(null);
+export const SocketProvider = ({children}: Readonly<{children: ReactNode}>) => {
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [latency, setLatency] = useState<number>(0);
 
@@ -39,11 +40,11 @@ export const SocketProvider = ({children}: {children: ReactNode}) => {
       setIsConnected(false);
     });
 
-    setSocket(socketInstance as any);
+    setSocket(socketInstance);
 
     const startDate = new Date();
     socketInstance.emit("ping", () => {
-      const duration = new Date().getTime() - startDate.getTime();
+      const duration = Date.now() - startDate.getTime();
       setLatency(duration);
     });
 
@@ -64,7 +65,7 @@ export function useSocketForVideo() {
         await fetch("/api/socket/io");
       };
       try {
-        socketInitializer();
+        void socketInitializer();
         socketCreated.current = true;
       } catch (error) {
         console.log(error);
@@ -74,7 +75,7 @@ export function useSocketForVideo() {
 }
 
 export function useSocketForChat() {
-  const [messages, setMessages] = useState<Array<string>>([]);
+  const [messages, setMessages] = useState<string[]>([]);
 
   useEffect(() => {
     // Create a socket connection

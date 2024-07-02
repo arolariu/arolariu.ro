@@ -35,7 +35,7 @@ const Navigation = ({className}: Readonly<{className?: string}>) => {
   if (!isLoaded) return;
 
   return (
-    <ul className={`${className}`}>
+    <ul className={className}>
       <li>
         <details>
           <summary>
@@ -79,7 +79,7 @@ export default function Header() {
     <header>
       <nav className='navbar bg-white dark:bg-black 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto'>
         <div className='navbar-start flex flex-row flex-nowrap'>
-          {isMobile && (
+          {Boolean(isMobile) && (
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant='outline'>
@@ -105,7 +105,9 @@ export default function Header() {
           </Link>
         </div>
 
-        <div className='navbar-center flex'>{isDesktop && <Navigation className='menu menu-horizontal' />}</div>
+        <div className='navbar-center flex'>
+          {Boolean(isDesktop) && <Navigation className='menu menu-horizontal' />}
+        </div>
 
         <div className='navbar-end flex flex-row flex-wrap'>
           <div className='mr-4 mt-2'>
@@ -118,7 +120,7 @@ export default function Header() {
                 </Link>
               </SignedOut>
             )}
-            {isSignedIn && (
+            {Boolean(isSignedIn) && (
               <SignedIn>
                 <UserButton />
               </SignedIn>

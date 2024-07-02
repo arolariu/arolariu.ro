@@ -80,7 +80,7 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
               title='Bookmark (mark as important) the invoice'
               onClick={() => {
                 // TODO: Update the invoice in the database.
-                updateInvoice(invoice, userInformation!);
+                void updateInvoice(invoice, userInformation!);
               }}>
               <svg
                 fill='currentColor'

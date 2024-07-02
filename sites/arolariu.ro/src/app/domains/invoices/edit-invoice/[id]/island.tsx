@@ -3,7 +3,6 @@
 "use client";
 
 import useInvoice from "@/hooks/useInvoice";
-import useUserInformation from "@/hooks/useUserInformation";
 import InvoiceNotAnalyzed from "../../_components/InvoiceNotAnalyzed";
 import InvoiceNotFound from "../../_components/InvoiceNotFound";
 import LoadingInvoice from "../../_components/LoadingInvoice";
@@ -15,7 +14,6 @@ import ProductTable from "./_components/ProductTable";
  * @returns The view for the edit invoice page.
  */
 export default function RenderEditInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
-  const {userInformation} = useUserInformation();
   const {invoice, isLoading} = useInvoice({invoiceIdentifier});
 
   if (isLoading) return <LoadingInvoice invoiceIdentifier={invoiceIdentifier} />;

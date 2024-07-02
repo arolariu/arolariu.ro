@@ -5,6 +5,10 @@ import Invoice from "@/types/invoices/Invoice";
 import {useEffect, useState} from "react";
 import useUserInformation from "./useUserInformation";
 
+/**
+ * This hook fetches the invoices for the user.
+ * @returns The invoices and loading state.
+ */
 export default function useInvoices() {
   const {userInformation} = useUserInformation();
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
@@ -18,7 +22,7 @@ export default function useInvoices() {
       setIsLoading(false);
     };
 
-    fetchInvoicesForUser();
+    fetchInvoicesForUser().catch((error: unknown) => console.error("useInvoices", error));
   }, [userInformation]);
 
   return {invoices, isLoading};

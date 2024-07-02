@@ -12,7 +12,7 @@ export const InvoiceSummary = ({invoice}: Readonly<{invoice: Invoice}>) => {
 
   const allergensText =
     allergensList?.length && allergensList.length > 0
-      ? allergensList?.map((allergen) => allergen.name).join(", ")
+      ? allergensList.map((allergen) => allergen.name).join(", ")
       : "no identified allergens... input allergens manually or analyze again.";
 
   const recipesText =
@@ -21,11 +21,11 @@ export const InvoiceSummary = ({invoice}: Readonly<{invoice: Invoice}>) => {
       : "no identified recipes... input recipes manually or analyze again.";
 
   const boughtItems =
-    items !== null
-      ? items
+    items === null
+      ? -1
+      : items
           .filter((item) => item.totalPrice > 0 && item.quantity > 0)
-          .reduce((counter, item) => counter + item.quantity, 0)
-      : -1;
+          .reduce((counter, item) => counter + item.quantity, 0);
 
   return (
     <section>

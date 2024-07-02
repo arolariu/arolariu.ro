@@ -3,12 +3,16 @@
 
 import {Button} from "@/components/ui/button";
 
+/**
+ * This component renders a form that allows users to join a chat room.
+ * @returns The JSX for the join room form.
+ */
 export default function JoinRoomForm() {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const roomName = formData.get("room");
-    console.log("Joining room with the following properties: ", {roomName});
+    console.log("Joining room with the following properties:", {roomName});
   };
 
   return (

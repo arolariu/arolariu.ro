@@ -1,5 +1,9 @@
 /** @format */
 
+/**
+ * This component is used to display a message when an invoice is not found.
+ * @returns The JSX for the invoice not found view.
+ */
 export default function InvoiceNotFound({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
   return (
     <section className='flex flex-row flex-nowrap'>

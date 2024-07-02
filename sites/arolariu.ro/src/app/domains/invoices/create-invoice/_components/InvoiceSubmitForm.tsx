@@ -8,19 +8,10 @@ type Props = {
   handleImageServerSideUpload?: (event: React.MouseEvent<HTMLButtonElement>) => Promise<void>;
 };
 
-export default function InvoiceSubmitForm(props: Readonly<Props>) {
-  const {image, uploadStatus, resetState, handleImageClientSideUpload, handleImageServerSideUpload} = props;
-
-  if (image === null) return <ClientSideUpload handleImageClientSideUpload={handleImageClientSideUpload} />;
-  return (
-    <ServerSideUpload
-      uploadStatus={uploadStatus}
-      handleImageServerSideUpload={handleImageServerSideUpload}
-      resetState={resetState}
-    />
-  );
-}
-
+/**
+ * This function renders the client-side upload form.
+ * @returns The JSX for the client-side upload form.
+ */
 function ClientSideUpload(props: Readonly<Props>) {
   const {handleImageClientSideUpload} = props;
   return (
@@ -43,6 +34,10 @@ function ClientSideUpload(props: Readonly<Props>) {
   );
 }
 
+/**
+ * This function renders the server-side upload form.
+ * @returns The JSX for the server-side upload form.
+ */
 function ServerSideUpload(props: Readonly<Props>) {
   const {uploadStatus, handleImageServerSideUpload, resetState} = props;
   return (
@@ -62,5 +57,22 @@ function ServerSideUpload(props: Readonly<Props>) {
         Clear the image
       </button>
     </form>
+  );
+}
+
+/**
+ * This function renders the invoice submit form.
+ * @returns The JSX for the invoice submit form.
+ */
+export default function InvoiceSubmitForm(props: Readonly<Props>) {
+  const {image, uploadStatus, resetState, handleImageClientSideUpload, handleImageServerSideUpload} = props;
+
+  if (image === null) return <ClientSideUpload handleImageClientSideUpload={handleImageClientSideUpload} />;
+  return (
+    <ServerSideUpload
+      uploadStatus={uploadStatus}
+      handleImageServerSideUpload={handleImageServerSideUpload}
+      resetState={resetState}
+    />
   );
 }

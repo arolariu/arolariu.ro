@@ -4,8 +4,12 @@ import {SITE_URL} from "@/lib/utils.generic";
 import type {UserInformation} from "@/types/UserInformation";
 import {useEffect, useState, type DependencyList} from "react";
 
+/**
+ * This hook fetches the user information.
+ * @returns The user information and loading state.
+ */
 export default function useUserInformation(
-  {dependencyArray}: Readonly<{dependencyArray: DependencyList}> = {dependencyArray: []},
+  {dependencyArray}: Readonly<{dependencyArray: DependencyList}> = {dependencyArray: []} as const,
 ) {
   const [userInformation, setUserInformation] = useState<UserInformation | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -13,7 +17,7 @@ export default function useUserInformation(
 
   useEffect(() => {
     const abortController = new AbortController();
-    const signal = abortController.signal;
+    const {signal} = abortController;
 
     const fetchUserInformation = async () => {
       try {
@@ -29,7 +33,7 @@ export default function useUserInformation(
       }
     };
 
-    fetchUserInformation();
+    fetchUserInformation().catch((error: unknown) => console.error("useUserInformation", error));
 
     return () => abortController.abort();
   }, dependencyArray);

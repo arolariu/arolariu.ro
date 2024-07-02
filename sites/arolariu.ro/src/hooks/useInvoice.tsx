@@ -1,10 +1,14 @@
 /** @format */
 
+import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
+import Invoice from "@/types/invoices/Invoice";
 import {useEffect, useState} from "react";
 import useUserInformation from "./useUserInformation";
-import Invoice from "@/types/invoices/Invoice";
-import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
 
+/**
+ * This hook fetches the invoice information.
+ * @returns The invoice information and loading state.
+ */
 export default function useInvoice({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
   const {userInformation} = useUserInformation();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
@@ -18,7 +22,7 @@ export default function useInvoice({invoiceIdentifier}: Readonly<{invoiceIdentif
       setIsLoading(false);
     };
 
-    fetchInvoiceInformation();
+    fetchInvoiceInformation().catch((error: unknown) => console.error("useInvoice", error));
   }, [userInformation]);
 
   return {invoice, isLoading};

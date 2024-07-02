@@ -2,6 +2,10 @@
 
 "use client";
 
+/**
+ * Component that renders the invoice not analyzed view.
+ * @returns The JSX for the invoice not analyzed view.
+ */
 export default function InvoiceNotAnalyzed({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
   return (
     <section className='flex flex-col flex-nowrap items-center justify-center justify-items-center'>
@@ -11,10 +15,14 @@ export default function InvoiceNotAnalyzed({invoiceIdentifier}: Readonly<{invoic
       <article>
         <p className='text-center'>The invoice with the identifier {invoiceIdentifier} has not been analyzed yet.</p>
         <div className='mx-auto flex flex-nowrap items-center justify-center'>
-          <button className='mx-auto rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700'>
+          <button
+            type='button'
+            className='mx-auto rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700'>
             Analyze Invoice
           </button>
-          <button className='mx-auto rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700'>
+          <button
+            type='button'
+            className='mx-auto rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700'>
             Delete Invoice
           </button>
         </div>

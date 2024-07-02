@@ -83,10 +83,10 @@ export const InvoiceImagePreview = ({invoice}: Readonly<{invoice: Invoice}>) => 
         <Button
           type='button'
           className='mx-auto'>
-          {isPdfExtension && (
+          {Boolean(isPdfExtension) && (
             <Link
               href={invoice.photoLocation}
-              target={"_blank"}>
+              target='_blank'>
               {previewText}
             </Link>
           )}
