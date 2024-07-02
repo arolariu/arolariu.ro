@@ -47,6 +47,8 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
 		invoice = await PerformTranslationAnalysis(invoice).ConfigureAwait(false);
 		invoice = await PerformGptAnalysis(invoice, options).ConfigureAwait(false);
 
+		invoice.NumberOfUpdates++;
+
 		return invoice;
 	}).ConfigureAwait(false);
 
@@ -62,9 +64,11 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
 		foreach (var product in invoice.Items)
 		{
 			var productRawName = product.RawName;
-			product.RawName = await translatorBroker
+			var translatedName = await translatorBroker
 				.Translate(productRawName)
 				.ConfigureAwait(false);
+
+			product.GenericName = translatedName;
 		}
 		return invoice;
 	}

@@ -26,34 +26,6 @@ public sealed partial class InvoiceNoSqlBroker(DbContextOptions<InvoiceNoSqlBrok
 	{
 		ArgumentNullException.ThrowIfNull(modelBuilder);
 
-		// Map the merchant entity to the merchants container.
-		modelBuilder.Entity<Merchant>(entity =>
-		{
-			entity.ToContainer("merchants");
-
-			entity.Property(m => m.Id).HasConversion<string>();
-			entity.Property(m => m.ParentCompanyId).HasConversion<string>();
-
-			#region Base types
-			entity.Property(m => m.Name).HasConversion<string>();
-			entity.Property(m => m.Address).HasConversion<string>();
-			entity.Property(m => m.Category).HasConversion<string>();
-			entity.Property(m => m.CreatedBy).HasConversion<string>();
-			entity.Property(m => m.IsImportant).HasConversion<bool>();
-			entity.Property(m => m.IsSoftDeleted).HasConversion<bool>();
-			entity.Property(m => m.Description).HasConversion<string>();
-			entity.Property(m => m.PhoneNumber).HasConversion<string>();
-			entity.Property(m => m.NumberOfUpdates).HasConversion<int>();
-			entity.Property(m => m.LastUpdatedBy).HasConversion<string>();
-			entity.Property(m => m.CreatedAt).HasConversion<DateTimeOffset>();
-			entity.Property(m => m.LastUpdatedAt).HasConversion<DateTimeOffset>();
-			#endregion
-
-			entity.HasIndex(merchant => merchant.Id);
-			entity.HasPartitionKey(merchant => merchant.ParentCompanyId);
-			entity.HasNoDiscriminator(); // we will only store merchants in this container
-		});
-
 		// Map the invoice entity to the invoices container.
 		modelBuilder.Entity<Invoice>(entity =>
 		{
@@ -130,6 +102,29 @@ public sealed partial class InvoiceNoSqlBroker(DbContextOptions<InvoiceNoSqlBrok
 			items.Property(item => item.DetectedAllergens)
 				.ToJsonProperty("DetectedAllergens")
 				.HasConversion(new IEnumerableOfXTypeValueConverter<Allergen>());
+		});
+
+		modelBuilder.Entity<Invoice>().OwnsOne<Merchant>(invoice => invoice.Merchant,
+			merchant =>
+		{
+			merchant.ToJsonProperty("Merchant");
+			merchant.Property(m => m.Id).HasConversion<string>();
+			merchant.Property(m => m.ParentCompanyId).HasConversion<string>();
+
+			#region Base types
+			merchant.Property(m => m.Name).HasConversion<string>();
+			merchant.Property(m => m.Address).HasConversion<string>();
+			merchant.Property(m => m.Category).HasConversion<string>();
+			merchant.Property(m => m.CreatedBy).HasConversion<string>();
+			merchant.Property(m => m.IsImportant).HasConversion<bool>();
+			merchant.Property(m => m.IsSoftDeleted).HasConversion<bool>();
+			merchant.Property(m => m.Description).HasConversion<string>();
+			merchant.Property(m => m.PhoneNumber).HasConversion<string>();
+			merchant.Property(m => m.NumberOfUpdates).HasConversion<int>();
+			merchant.Property(m => m.LastUpdatedBy).HasConversion<string>();
+			merchant.Property(m => m.CreatedAt).HasConversion<DateTimeOffset>();
+			merchant.Property(m => m.LastUpdatedAt).HasConversion<DateTimeOffset>();
+			#endregion
 		});
 	}
 

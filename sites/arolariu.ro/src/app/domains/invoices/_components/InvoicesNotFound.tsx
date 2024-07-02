@@ -15,7 +15,7 @@ export default function InvoicesNotFound() {
         Please upload some invoices and come back later. <br /> <br />
       </article>
       <Link
-        href='./create-invoice'
+        href='/domains/invoices/create-invoice'
         className='mx-auto mt-8 inline-flex rounded border-0 bg-indigo-500 px-6 py-2 text-lg text-white hover:bg-indigo-600 focus:outline-none'>
         Upload an invoice here.
       </Link>

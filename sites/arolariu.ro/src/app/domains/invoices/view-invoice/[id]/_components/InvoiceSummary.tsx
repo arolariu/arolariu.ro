@@ -32,7 +32,6 @@ export const InvoiceSummary = ({invoice}: Readonly<{invoice: Invoice}>) => {
       <article className='mb-4 leading-relaxed'>
         ⚠️ ALLERGENS: <em>{allergensText}</em> <br />
         🍳 RECIPES: <em>{recipesText}</em> <br />
-        💚 ESTIMATED SURVIVAL (<strong>1 adult</strong>): <em>{estimatedSurvivalDays} days</em>
       </article>
       <center className='mx-auto mb-2 mt-4'>
         <em>If you feel that some of the details are not correct, feel free to edit the invoice.</em>

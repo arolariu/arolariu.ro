@@ -34,6 +34,7 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 	{
 		ArgumentNullException.ThrowIfNull(invoiceAnalysisFoundationService);
 		ArgumentNullException.ThrowIfNull(invoiceStorageFoundationService);
+
 		this.invoiceAnalysisFoundationService = invoiceAnalysisFoundationService;
 		this.invoiceStorageFoundationService = invoiceStorageFoundationService;
 		logger = loggerFactory.CreateLogger<IInvoiceOrchestrationService>();

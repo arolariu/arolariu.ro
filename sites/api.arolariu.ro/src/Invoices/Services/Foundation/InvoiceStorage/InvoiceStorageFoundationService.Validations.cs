@@ -16,7 +16,7 @@ public partial class InvoiceStorageFoundationService
 
 	private static void ValidateInvoiceInformationIsCorrect(Invoice? invoice)
 	{
-		Validator.ValidateAndThrow<Invoice?, InvoiceDescriptionNotSetException>(invoice, invoice => string.IsNullOrEmpty(invoice?.Description), "Invoice description not set!");
+		Validator.ValidateAndThrow<Invoice?, InvoiceDescriptionNotSetException>(invoice, invoice => !string.IsNullOrEmpty(invoice?.Description), "Invoice description not set!");
 
 		// Validate invoice payment information.
 		Validator.ValidateAndThrow<Invoice?, InvoicePaymentInformationNotCorrectException>(invoice, invoice => invoice?.PaymentInformation is not null, "Invoice payment information not set!");

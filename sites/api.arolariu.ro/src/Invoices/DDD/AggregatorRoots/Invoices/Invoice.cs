@@ -45,7 +45,6 @@ public sealed class Invoice : NamedEntity<Guid>, ICloneable, IEquatable<Invoice>
 	/// The invoice 1:1? merchant relationship.
 	/// </summary>
 	[JsonPropertyOrder(7)]
-	[DeleteBehavior(DeleteBehavior.ClientNoAction)]
 	public Merchant Merchant { get; set; } = null!;
 
 	/// <summary>
@@ -116,5 +115,4 @@ public sealed class Invoice : NamedEntity<Guid>, ICloneable, IEquatable<Invoice>
 			},
 		};
 	}
-
 }

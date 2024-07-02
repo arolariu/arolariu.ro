@@ -27,6 +27,7 @@ public partial class InvoiceNoSqlBroker
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceAsync));
 		var invoice = await InvoicesContext.FindAsync(invoiceIdentifier, userIdentifier)
 										.ConfigureAwait(false);
+
 		return invoice!;
 	}
 
@@ -38,15 +39,20 @@ public partial class InvoiceNoSqlBroker
 										.Where(i => i.UserIdentifier == userIdentifier)
 										.ToListAsync()
 										.ConfigureAwait(false);
+
 		return invoices;
 	}
 
 	/// <inheritdoc/>
 	public async ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice)
 	{
+		ArgumentNullException.ThrowIfNull(currentInvoice, nameof(currentInvoice));
+		ArgumentNullException.ThrowIfNull(updatedInvoice, nameof(updatedInvoice));
+
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
 		InvoicesContext.Update(updatedInvoice);
 		await SaveChangesAsync().ConfigureAwait(false);
+		
 		return updatedInvoice;
 	}
 
