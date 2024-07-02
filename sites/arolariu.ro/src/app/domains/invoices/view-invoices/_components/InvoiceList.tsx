@@ -36,9 +36,6 @@ export const InvoiceList = ({invoices, displayStyle}: Readonly<Props>) => {
               <TableHead>
                 <TableCell>Total Savings</TableCell>
               </TableHead>
-              <TableHead>
-                <TableCell>Survival Days</TableCell>
-              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -53,7 +50,6 @@ export const InvoiceList = ({invoices, displayStyle}: Readonly<Props>) => {
                 <TableCell>{invoice.items?.length}</TableCell>
                 <TableCell>{invoice.paymentInformation?.totalAmount}</TableCell>
                 <TableCell>{invoice.paymentInformation?.totalTax}</TableCell>
-                <TableCell>{invoice.estimatedSurvivalDays}</TableCell>
               </TableRow>
             ))}
           </TableBody>

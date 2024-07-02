@@ -5,8 +5,7 @@
 import Invoice from "@/types/invoices/Invoice";
 
 export const InvoiceSummary = ({invoice}: Readonly<{invoice: Invoice}>) => {
-  const {merchant, items, estimatedSurvivalDays, lastUpdatedAt, createdAt, possibleRecipes, paymentInformation} =
-    invoice;
+  const {merchant, items, lastUpdatedAt, createdAt, possibleRecipes, paymentInformation} = invoice;
   const productsWithAllergens = items?.filter((item) => item.detectedAllergens.length > 0);
   const allergensList = productsWithAllergens?.flatMap((item) => item.detectedAllergens);
 

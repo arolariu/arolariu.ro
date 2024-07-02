@@ -40,7 +40,7 @@ export const SocketProvider = ({children}: Readonly<{children: ReactNode}>) => {
       setIsConnected(false);
     });
 
-    setSocket(socketInstance);
+    setSocket(socketInstance as any);
 
     const startDate = new Date();
     socketInstance.emit("ping", () => {
