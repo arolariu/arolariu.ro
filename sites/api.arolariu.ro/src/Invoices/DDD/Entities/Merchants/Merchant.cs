@@ -45,4 +45,19 @@ public sealed class Merchant : NamedEntity<Guid>
 	/// </summary>
 	[JsonIgnore]
 	public ICollection<Invoice> Invoices { get; } = new List<Invoice>();
+
+	/// <summary>
+	/// Parameterless constructor.
+	/// </summary>
+	public Merchant()
+	{
+		Id = Guid.NewGuid();
+		Name = string.Empty;
+		Description = string.Empty;
+		Category = MerchantCategory.OTHER;
+		Address = string.Empty;
+		PhoneNumber = string.Empty;
+		ParentCompanyId = Guid.Empty;
+		Invoices = new List<Invoice>();
+	}
 }

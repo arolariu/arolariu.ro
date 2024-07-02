@@ -1,5 +1,7 @@
 /** @format */
 
+"use client";
+
 import {Button} from "@/components/ui/button";
 import {
   Dialog,
@@ -12,14 +14,18 @@ import {
 } from "@/components/ui/dialog";
 import Invoice from "@/types/invoices/Invoice";
 import Image from "next/image";
+import Link from "next/link";
 import {useState} from "react";
 
 export const InvoiceImagePreview = ({invoice}: Readonly<{invoice: Invoice}>) => {
+  const isPdfExtension = invoice.photoLocation.endsWith(".pdf");
   const [isFrozen, setIsFrozen] = useState<boolean>(false);
   const [zoomStyle, setZoomStyle] = useState({
     transform: "scale(1)",
     transformOrigin: "0 0",
   });
+
+  const previewText = isPdfExtension ? "Preview uploaded receipt PDF" : "Preview uploaded receipt photo";
 
   const handleMouseMove = (event: Readonly<React.MouseEvent<HTMLImageElement>>) => {
     if (isFrozen) return;
@@ -77,33 +83,42 @@ export const InvoiceImagePreview = ({invoice}: Readonly<{invoice: Invoice}>) => 
         <Button
           type='button'
           className='mx-auto'>
-          Preview uploaded receipt photo
+          {Boolean(isPdfExtension) && (
+            <Link
+              href={invoice.photoLocation}
+              target='_blank'>
+              {previewText}
+            </Link>
+          )}
+          {!isPdfExtension && previewText}
         </Button>
       </DialogTrigger>
-      <DialogContent className='flex h-3/4 w-3/4 flex-col items-center justify-center justify-items-center'>
-        <DialogHeader>
-          <DialogTitle>Invoice Preview: {invoice.id}</DialogTitle>
-        </DialogHeader>
-        <Image
-          alt='Invoice photo'
-          style={{
-            transition: "transform 0.3s ease, transform-origin 0s",
-            ...zoomStyle,
-          }}
-          src={invoice.photoLocation}
-          width={800}
-          height={600}
-          className='z-10 h-full w-full rounded-2xl object-contain'
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-          onClick={() => setIsFrozen(!isFrozen)}
-        />
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type='submit'>Close preview.</Button>
-          </DialogClose>
-        </DialogFooter>
-      </DialogContent>
+      {!isPdfExtension && (
+        <DialogContent className='flex h-3/4 w-3/4 flex-col items-center justify-center justify-items-center'>
+          <DialogHeader>
+            <DialogTitle>Invoice Preview: {invoice.id}</DialogTitle>
+          </DialogHeader>
+          <Image
+            alt='Invoice photo'
+            style={{
+              transition: "transform 0.3s ease, transform-origin 0s",
+              ...zoomStyle,
+            }}
+            src={invoice.photoLocation}
+            width={800}
+            height={600}
+            className='z-10 h-full w-full rounded-2xl object-contain'
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            onClick={() => setIsFrozen(!isFrozen)}
+          />
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type='submit'>Close preview.</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      )}
     </Dialog>
   );
 };

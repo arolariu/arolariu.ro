@@ -2,10 +2,10 @@
 
 "use client";
 
-import useUserInformation from "@/hooks/useUserInformation";
-import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
-import Invoice from "@/types/invoices/Invoice";
-import {useEffect, useState} from "react";
+import useInvoice from "@/hooks/useInvoice";
+import InvoiceNotAnalyzed from "../../_components/InvoiceNotAnalyzed";
+import InvoiceNotFound from "../../_components/InvoiceNotFound";
+import LoadingInvoice from "../../_components/LoadingInvoice";
 import InvoicePhotoPreview from "./_components/InvoicePhotoPreview";
 import ProductTable from "./_components/ProductTable";
 
@@ -14,23 +14,13 @@ import ProductTable from "./_components/ProductTable";
  * @returns The view for the edit invoice page.
  */
 export default function RenderEditInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
-  const {userInformation} = useUserInformation();
-  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const {invoice, isLoading} = useInvoice({invoiceIdentifier});
 
-  useEffect(() => {
-    const fetchInvoiceInformation = async () => {
-      if (userInformation === null) return console.info("User information is not available.");
-      const invoiceInformation = await fetchInvoice(invoiceIdentifier, userInformation);
-      if (invoiceInformation) setInvoice(invoiceInformation);
-    };
+  if (isLoading) return <LoadingInvoice invoiceIdentifier={invoiceIdentifier} />;
+  if (invoice === null) return <InvoiceNotFound invoiceIdentifier={invoiceIdentifier} />;
+  if (invoice.numberOfUpdates === 0) return <InvoiceNotAnalyzed invoiceIdentifier={invoiceIdentifier} />;
 
-    fetchInvoiceInformation();
-  }, [userInformation]);
-
-  if (!invoice) return null;
-
-  const {description, paymentInformation, isImportant, merchant, estimatedSurvivalDays} = invoice;
-
+  const {description, paymentInformation, isImportant, merchant} = invoice;
   return (
     <section className='mx-auto rounded-2xl border-2'>
       <div className='flex flex-row flex-nowrap'>
@@ -57,10 +47,6 @@ export default function RenderEditInvoiceScreen({invoiceIdentifier}: Readonly<{i
                 <tr>
                   <td>Description</td>
                   <td>{description}</td>
-                </tr>
-                <tr>
-                  <td>Estimated Survival Days</td>
-                  <td>{estimatedSurvivalDays}</td>
                 </tr>
                 <tr className='table-row'>
                   <td>Is Important</td>

@@ -25,9 +25,13 @@ public class AzureTranslatorBroker : ITranslatorBroker
 	public AzureTranslatorBroker(IOptionsMonitor<AzureOptions> options)
 	{
 		ArgumentNullException.ThrowIfNull(options);
+
+		var cognitiveServicesEndpoint = options.CurrentValue.CognitiveServicesEndpoint;
+		var cognitiveServicesApiKey = options.CurrentValue.CognitiveServicesKey;
+
 		textTranslationClient = new TextTranslationClient(
-			new AzureKeyCredential(options.CurrentValue.CognitiveServicesKey),
-			new Uri(options.CurrentValue.CognitiveServicesEndpoint));
+			new AzureKeyCredential(cognitiveServicesApiKey),
+			new Uri(cognitiveServicesEndpoint));
 	}
 
 	/// <inheritdoc/>

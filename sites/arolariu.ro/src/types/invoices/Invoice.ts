@@ -36,7 +36,6 @@ export default interface Invoice extends NamedEntity<string> {
   merchant: Merchant | null;
   items: Product[] | null;
   possibleRecipes: Recipe[] | null;
-  estimatedSurvivalDays: number | null;
   additionalMetadata: Record<string, object>[];
 }
 

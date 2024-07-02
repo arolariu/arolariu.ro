@@ -5,14 +5,13 @@
 import Invoice from "@/types/invoices/Invoice";
 
 export const InvoiceSummary = ({invoice}: Readonly<{invoice: Invoice}>) => {
-  const {merchant, items, estimatedSurvivalDays, lastUpdatedAt, createdAt, possibleRecipes, paymentInformation} =
-    invoice;
+  const {merchant, items, lastUpdatedAt, createdAt, possibleRecipes, paymentInformation} = invoice;
   const productsWithAllergens = items?.filter((item) => item.detectedAllergens.length > 0);
   const allergensList = productsWithAllergens?.flatMap((item) => item.detectedAllergens);
 
   const allergensText =
     allergensList?.length && allergensList.length > 0
-      ? allergensList?.map((allergen) => allergen.name).join(", ")
+      ? allergensList.map((allergen) => allergen.name).join(", ")
       : "no identified allergens... input allergens manually or analyze again.";
 
   const recipesText =
@@ -21,18 +20,17 @@ export const InvoiceSummary = ({invoice}: Readonly<{invoice: Invoice}>) => {
       : "no identified recipes... input recipes manually or analyze again.";
 
   const boughtItems =
-    items !== null
-      ? items
+    items === null
+      ? -1
+      : items
           .filter((item) => item.totalPrice > 0 && item.quantity > 0)
-          .reduce((counter, item) => counter + item.quantity, 0)
-      : -1;
+          .reduce((counter, item) => counter + item.quantity, 0);
 
   return (
     <section>
       <article className='mb-4 leading-relaxed'>
         ⚠️ ALLERGENS: <em>{allergensText}</em> <br />
         🍳 RECIPES: <em>{recipesText}</em> <br />
-        💚 ESTIMATED SURVIVAL (<strong>1 adult</strong>): <em>{estimatedSurvivalDays} days</em>
       </article>
       <center className='mx-auto mb-2 mt-4'>
         <em>If you feel that some of the details are not correct, feel free to edit the invoice.</em>

@@ -2,12 +2,14 @@
 
 "use client";
 
+import useInvoice from "@/hooks/useInvoice";
 import useUserInformation from "@/hooks/useUserInformation";
-import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
 import updateInvoice from "@/lib/actions/invoices/updateInvoice";
-import Invoice from "@/types/invoices/Invoice";
 import Link from "next/link";
-import {useEffect, useState} from "react";
+import {useState} from "react";
+import InvoiceNotAnalyzed from "../../_components/InvoiceNotAnalyzed";
+import InvoiceNotFound from "../../_components/InvoiceNotFound";
+import LoadingInvoice from "../../_components/LoadingInvoice";
 import {InvoiceImagePreview} from "./_components/InvoiceImagePreview";
 import {InvoiceInformation} from "./_components/InvoiceInformation";
 import {InvoiceProducts} from "./_components/InvoiceProducts";
@@ -19,22 +21,12 @@ import {InvoiceSummary} from "./_components/InvoiceSummary";
  */
 export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
   const {userInformation} = useUserInformation();
+  const {invoice, isLoading} = useInvoice({invoiceIdentifier});
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [invoice, setInvoice] = useState<Invoice | null>(null);
 
-  useEffect(() => {
-    const fetchInvoiceInformation = async () => {
-      if (userInformation === null) return console.info("User information is not available.");
-      const invoiceInformation = await fetchInvoice(invoiceIdentifier, userInformation);
-      if (invoiceInformation) setInvoice(invoiceInformation);
-    };
-
-    fetchInvoiceInformation();
-  }, [userInformation]);
-
-  if (!invoice) {
-    return <div>Loading...</div>;
-  }
+  if (isLoading) return <LoadingInvoice invoiceIdentifier={invoiceIdentifier} />;
+  if (invoice === null) return <InvoiceNotFound invoiceIdentifier={invoiceIdentifier} />;
+  if (invoice.numberOfUpdates === 0) return <InvoiceNotAnalyzed invoiceIdentifier={invoiceIdentifier} />;
 
   const {id, description, paymentInformation, isImportant} = invoice;
   const buttonStyle = ["border-indigo-500", "border-gray-300"];
@@ -87,8 +79,8 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
               className='my-auto ml-4 inline-flex h-10 w-10 items-center justify-center rounded-full border-0 bg-gray-200 p-0 text-gray-500'
               title='Bookmark (mark as important) the invoice'
               onClick={() => {
-                setInvoice((prev) => ({...prev!, isImportant: !isImportant}));
-                updateInvoice(invoice, userInformation!);
+                // TODO: Update the invoice in the database.
+                void updateInvoice(invoice, userInformation!);
               }}>
               <svg
                 fill='currentColor'

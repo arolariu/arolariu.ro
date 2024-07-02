@@ -19,7 +19,6 @@ const generateFakeInvoice = (): Invoice => {
     merchant: generateFakeMerchant(),
     createdBy: fake.string.uuid(),
     description: fake.lorem.sentence(7),
-    estimatedSurvivalDays: fake.number.int({min: totalAmount / 30, max: totalAmount / 10}),
     isImportant: fake.datatype.boolean(),
     isSoftDeleted: fake.datatype.boolean(),
     lastUpdatedAt: fake.date.recent(),

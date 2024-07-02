@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 /// This package is used to interact with the Azure Form Recognizer service.
 /// </summary>
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
-public partial class AzureFormRecognizerBroker : IFormRecognizerBroker
+public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
 {
 	private readonly DocumentAnalysisClient client;
 

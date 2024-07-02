@@ -70,7 +70,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<{i
               </svg>
             </div>
             <div className='flex-grow pl-4'>
-              <h2 className='title-font mb-1 text-sm font-medium tracking-wider dark:text-gray-300'>
+              <h2 className='title-font mb-1 text-sm font-medium tracking-wider underline underline-offset-2'>
                 STEP 1 - Onboard yourself
               </h2>
               <p className='leading-relaxed'>
@@ -102,7 +102,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<{i
               </svg>
             </div>
             <div className='flex-grow pl-4'>
-              <h2 className='title-font mb-1 text-sm font-medium tracking-wider text-gray-300'>
+              <h2 className='title-font mb-1 text-sm font-medium tracking-wider underline underline-offset-2'>
                 STEP 2 - Start your journey
               </h2>
               <p className='leading-relaxed'>
@@ -133,7 +133,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<{i
               </svg>
             </div>
             <div className='flex-grow pl-4'>
-              <h2 className='title-font mb-1 text-sm font-medium tracking-wider text-gray-300'>
+              <h2 className='title-font mb-1 text-sm font-medium tracking-wider underline underline-offset-2'>
                 STEP 3 - Explore the digital receipt
               </h2>
               <p className='leading-relaxed'>
@@ -164,7 +164,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<{i
               </svg>
             </div>
             <div className='flex-grow pl-4'>
-              <h2 className='title-font mb-1 text-sm font-medium tracking-wider text-gray-300'>
+              <h2 className='title-font mb-1 text-sm font-medium tracking-wider underline underline-offset-2'>
                 STEP 4 - Gather powerful knowledge
               </h2>
               <p className='leading-relaxed'>
@@ -188,7 +188,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<{i
               </svg>
             </div>
             <div className='flex-grow pl-4'>
-              <h2 className='title-font mb-1 text-sm font-medium tracking-wider text-gray-300'>
+              <h2 className='title-font mb-1 text-sm font-medium tracking-wider underline underline-offset-2'>
                 STEP 5 - Offer your feedback
               </h2>
               <p className='leading-relaxed'>

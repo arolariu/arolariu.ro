@@ -4,6 +4,10 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import RoomForm from "./_components/RoomForm";
 
+/**
+ * This function renders the live screen.
+ * @returns The JSX for the live screen.
+ */
 export default function RenderLiveScreen() {
   return (
     <section className='flex py-12 2xsm:flex-col 2xsm:gap-4 lg:flex-row lg:gap-8'>

@@ -3,6 +3,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 using Microsoft.EntityFrameworkCore;
 
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
@@ -17,6 +18,11 @@ using System.Text.Json.Serialization;
 [ExcludeFromCodeCoverage]
 public class Product
 {
+	/// <summary>
+	/// Product id - used internally by EF Core.
+	/// </summary>
+	public Guid	Id { get; set; }
+
 	/// <summary>
 	/// The invoice item raw name (as seen on the digital invoice).
 	/// The raw name is the name of the item as seen on the invoice.
@@ -42,7 +48,7 @@ public class Product
 	/// The item quantity.
 	/// </summary>
 	[JsonPropertyOrder(3)]
-	public int Quantity { get; set; } = int.MinValue;
+	public int Quantity { get; set; } = 0;
 
 	/// <summary>
 	/// The item quantity unit (e.g. kg, ml).
@@ -65,13 +71,13 @@ public class Product
 	/// The price is represents the price of a single item.
 	/// </summary>
 	[JsonPropertyOrder(6)]
-	public decimal Price { get; set; } = decimal.MinValue;
+	public decimal Price { get; set; } = 0;
 
 	/// <summary>
 	/// The total price of the item, (Total = quantity x price).
 	/// </summary>
 	[JsonPropertyOrder(7)]
-	public decimal TotalPrice { get; set; } = decimal.MinValue;
+	public decimal TotalPrice { get; set; } = 0;
 
 	/// <summary>
 	/// The product's detected allergens.

@@ -9,6 +9,10 @@ interface Props {
   params: {roomName: string};
 }
 
+/**
+ * This function generates the metadata for the room page.
+ * @returns The metadata for the room page.
+ */
 export async function generateMetadata({params}: Readonly<Props>): Promise<Metadata> {
   return {
     title: `Room #${params.roomName}`,
@@ -16,6 +20,10 @@ export async function generateMetadata({params}: Readonly<Props>): Promise<Metad
   };
 }
 
+/**
+ * This function returns the room page JSX.
+ * @returns The room page JSX.
+ */
 export default async function RoomPage({params}: Readonly<Props>) {
   const {isAuthenticated} = await fetchUser();
   if (isAuthenticated) return <RenderRoomScreen roomId={params.roomName} />;

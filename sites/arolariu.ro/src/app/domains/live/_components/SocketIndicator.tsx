@@ -23,8 +23,8 @@ export const SocketIndicator = () => {
             className='cursor-help rounded-xl border bg-green-600 p-1'
             onClick={() => {
               const startDate = new Date();
-              socket.emit("ping", () => {
-                const duration = new Date().getTime() - startDate.getTime();
+              socket!.emit("ping", () => {
+                const duration = Date.now() - startDate.getTime();
                 setRefreshLatency(duration);
               });
             }}>

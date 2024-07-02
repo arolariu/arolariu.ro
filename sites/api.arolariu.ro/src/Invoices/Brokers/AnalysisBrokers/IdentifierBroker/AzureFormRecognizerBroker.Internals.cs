@@ -8,14 +8,14 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
 
-public partial class AzureFormRecognizerBroker
+public sealed partial class AzureFormRecognizerBroker
 {
 	internal static Merchant IdentifyMerchant(AnalyzedDocument photo)
 	{
 		ArgumentNullException.ThrowIfNull(photo);
 
 		var photoFields = photo.Fields;
-		var merchant = new Merchant();
+		var merchant = new Merchant() { CreatedAt = DateTime.UtcNow };
 
 		// Step 1. Extract the merchant name from the analyzed document.
 		if (photoFields.TryGetValue("MerchantName", out var merchantNameField)
@@ -127,6 +127,7 @@ public partial class AzureFormRecognizerBroker
 					product.TotalPrice = (decimal)totalPriceField.Value.AsDouble();
 				}
 
+				product.Id = Guid.NewGuid(); // Id is only used internally by EF Core.
 				products.Add(product);
 			}
 		}

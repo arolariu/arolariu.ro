@@ -18,14 +18,14 @@ type Package = {
 };
 
 interface Props {
-  packages: Readonly<Package[]>;
+  packages: readonly Package[];
 }
 
 /**
  * Table of acknowledgements for the third-party packages used in this project.
  */
 export default function AcknowledgementsTable({packages}: Readonly<Props>) {
-  const [shownPackages, setShownPackages] = useState<Readonly<Package[]>>(packages);
+  const [shownPackages, setShownPackages] = useState<readonly Package[]>(packages);
   const productionPackages = packages.filter((pkg) => pkg.dependecyType === "production");
   const developmentPackages = packages.filter((pkg) => pkg.dependecyType === "development");
   const isShowingAllPackages = shownPackages.length === packages.length;
