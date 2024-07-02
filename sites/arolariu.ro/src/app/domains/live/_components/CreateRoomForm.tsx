@@ -3,7 +3,7 @@
 
 import {Button} from "@/components/ui/button";
 import {useUser} from "@clerk/nextjs";
-import {randomBytes} from "node:crypto";
+import {randomBytes} from "crypto";
 import {useRouter} from "next/navigation";
 
 export default function CreateRoomForm() {
