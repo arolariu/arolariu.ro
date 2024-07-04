@@ -46,4 +46,3 @@ export const InvoiceProducts = ({invoice}: Readonly<{invoice: Invoice}>) => {
     </Table>
   );
 };
-
