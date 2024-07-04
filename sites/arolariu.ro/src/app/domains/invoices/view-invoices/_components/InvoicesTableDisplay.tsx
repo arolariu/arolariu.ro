@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
+import {Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import Invoice, {InvoiceCategory} from "@/types/invoices/Invoice";
 import {ArrowUpIcon, DotsHorizontalIcon} from "@radix-ui/react-icons";
 import {
@@ -243,6 +243,31 @@ export function InvoicesTableDisplay({invoices}: Readonly<{invoices: Invoice[]}>
             </TableRow>
           )}
         </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell
+              colSpan={table.getVisibleFlatColumns().length - 2}
+              className='w-full'>
+              <span className='bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-center font-medium tracking-widest text-transparent'>
+                You can download your invoices in .PDF, .CSV and .XLSX file formats.
+              </span>
+            </TableCell>
+            <TableCell>
+              <Button
+                className='items-end justify-end justify-items-end'
+                variant='outline'>
+                Share
+              </Button>
+            </TableCell>
+            <TableCell>
+              <Button
+                className='items-end justify-end justify-items-end'
+                variant='destructive'>
+                Download
+              </Button>
+            </TableCell>
+          </TableRow>
+        </TableFooter>
       </Table>
     </article>
   );
