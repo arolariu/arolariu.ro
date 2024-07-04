@@ -24,7 +24,7 @@ export const InvoiceProducts = ({invoice}: Readonly<{invoice: Invoice}>) => {
         {items?.map((item, index) => (
           <TableRow
             key={`${item.rawName}#${String(index)}`}
-            className='text-center odd:bg-gray-900'>
+            className='text-center text-black odd:bg-gray-400 even:bg-gray-100'>
             <TableCell>{item.rawName}</TableCell>
             <TableCell>{item.price}</TableCell>
             <TableCell>{item.quantity}</TableCell>

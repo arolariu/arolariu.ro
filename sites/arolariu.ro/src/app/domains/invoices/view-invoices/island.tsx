@@ -53,7 +53,7 @@ export default function RenderViewInvoicesScreen() {
     setShownInvoices(filteredInvoices);
   }, [filters, previousInvoices, currentInvoices, isLoading]);
 
-  if (shownInvoices.length === 0) return <InvoicesNotFound />;
+  if (currentInvoices?.length === 0 || previousInvoices.length === 0) return <InvoicesNotFound />;
   return (
     <section>
       <InvoicesHeader shownInvoices={shownInvoices} />

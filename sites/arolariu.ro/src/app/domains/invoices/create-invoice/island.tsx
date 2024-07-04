@@ -11,9 +11,9 @@ import uploadInvoice from "@/lib/actions/invoices/uploadInvoice";
 import {extractBase64FromBlob} from "@/lib/utils.client";
 import {useRouter} from "next/navigation";
 import {useState} from "react";
+import InvoiceCallToAction from "./_components/InvoiceCallToAction";
 import InvoicePreview from "./_components/InvoicePreview";
 import InvoiceSubmitForm from "./_components/InvoiceSubmitForm";
-import InvoiceCallToAction from "./_components/InvoiceCallToAction";
 
 /**
  * This function renders the invoice upload page.
