@@ -110,7 +110,7 @@ public sealed partial class AzureFormRecognizerBroker
 				// Step 3. Extract the quantity of the product.
 				if (itemFields.TryGetValue("Quantity", out var quantityField))
 				{
-					product.Quantity = (int)quantityField.Value.AsDouble();
+					product.Quantity = (decimal)quantityField.Value.AsDouble();
 				}
 
 				// Step 4. Extract the quantity unit, if possible.

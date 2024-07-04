@@ -81,7 +81,7 @@ public sealed partial class InvoiceNoSqlBroker(DbContextOptions<InvoiceNoSqlBrok
 
 			items.Property(item => item.Quantity)
 				.ToJsonProperty("Quantity")
-				.HasConversion<int>();
+				.HasConversion<decimal>();
 
 			items.Property(items => items.QuantityUnit)
 				.ToJsonProperty("QuantityUnit")

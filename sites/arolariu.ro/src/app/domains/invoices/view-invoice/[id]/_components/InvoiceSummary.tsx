@@ -37,7 +37,7 @@ export const InvoiceSummary = ({invoice}: Readonly<{invoice: Invoice}>) => {
       <div className='flex border-b border-t border-gray-200 py-2'>
         <span>Items Purchased</span>
         <span className='ml-auto dark:text-gray-300'>
-          {boughtItems > 0 ? `${String(boughtItems)} items.` : "No purchase identified."}
+          {boughtItems > 0 ? `${boughtItems.toFixed(0)} items.` : "No purchase identified."}
         </span>
       </div>
       <div className='flex border-b border-gray-200 py-2'>
@@ -61,3 +61,4 @@ export const InvoiceSummary = ({invoice}: Readonly<{invoice: Invoice}>) => {
     </section>
   );
 };
+

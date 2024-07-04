@@ -7,8 +7,8 @@ import Invoice from "@/types/invoices/Invoice";
 
 export const InvoiceProducts = ({invoice}: Readonly<{invoice: Invoice}>) => {
   const {items} = invoice;
-  const totalQuantity = items?.reduce((acc, item) => acc + item.quantity, 0);
-  const totalPrice = items?.reduce((acc, item) => acc + item.totalPrice, 0);
+  const totalQuantity = items?.reduce((acc, item) => acc + item.quantity, 0).toPrecision(4);
+  const totalPrice = items?.reduce((acc, item) => acc + item.totalPrice, 0).toPrecision(4);
 
   return (
     <Table className='mx-auto mb-8 border-b border-gray-200'>
@@ -46,3 +46,4 @@ export const InvoiceProducts = ({invoice}: Readonly<{invoice: Invoice}>) => {
     </Table>
   );
 };
+

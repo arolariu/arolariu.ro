@@ -21,7 +21,7 @@ public static class Validator
 	/// </example>
 	/// <returns></returns>
 	private static void ValidateObjectAndThrow<TObject,
-		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TException>(
+		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TException>(
 		TObject? @object,
 		Func<TObject?, bool> predicate,
 		string message)

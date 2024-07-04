@@ -73,8 +73,6 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
-		ValidateInvoiceInformationIsCorrect(currentInvoice);
-		ValidateInvoiceInformationIsCorrect(updatedInvoice);
 		var invoice = await invoiceNoSqlBroker
 			.UpdateInvoiceAsync(currentInvoice, updatedInvoice)
 			.ConfigureAwait(false);

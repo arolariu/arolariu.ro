@@ -1,5 +1,7 @@
 /** @format */
 
+"use client";
+
 import {Button} from "@/components/ui/button";
 import {DashboardIcon, HeartFilledIcon, MoonIcon, SunIcon, TextAlignJustifyIcon} from "@radix-ui/react-icons";
 
@@ -73,7 +75,7 @@ export const InvoiceFilters = ({filters, displayStyle, setDisplayStyle, setFilte
       <div className='w-full 2xsm:block md:hidden'>
         <input
           className='w-full rounded border border-gray-200 p-2'
-          placeholder='Search for a specific invoice...'
+          placeholder='Search for a specific product...'
         />
       </div>
     </article>

@@ -48,7 +48,7 @@ public class Product
 	/// The item quantity.
 	/// </summary>
 	[JsonPropertyOrder(3)]
-	public int Quantity { get; set; } = 0;
+	public decimal Quantity { get; set; } = 0;
 
 	/// <summary>
 	/// The item quantity unit (e.g. kg, ml).
@@ -83,7 +83,7 @@ public class Product
 	/// The product's detected allergens.
 	/// </summary>
 	[JsonPropertyOrder(8)]
-	public IEnumerable<Allergen> DetectedAllergens { get; } = new List<Allergen>();
+	public IEnumerable<Allergen> DetectedAllergens { get; set; } = new List<Allergen>();
 
 	/// <summary>
 	/// Product metadata.
