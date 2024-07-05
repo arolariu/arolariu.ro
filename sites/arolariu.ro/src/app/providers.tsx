@@ -1,7 +1,7 @@
 /** @format */
 
 import {Toaster as ToastProvider} from "@/components/ui/toaster";
-import {ClerkProvider} from "@clerk/nextjs";
+import {ClerkProvider, GoogleOneTap} from "@clerk/nextjs";
 import {NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {getLocale, getMessages} from "next-intl/server";
 import {ThemeProvider} from "next-themes";
@@ -29,6 +29,7 @@ export default async function ContextProviders({children}: Readonly<{children: R
           themes={["light", "dark"]}
           enableSystem={false}>
           <VitalsProvider />
+          <GoogleOneTap />
           {children}
           <ToastProvider />
         </ThemeProvider>
