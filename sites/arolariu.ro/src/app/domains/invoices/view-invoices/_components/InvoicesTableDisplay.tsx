@@ -2,6 +2,16 @@
 
 import {Button} from "@/components/ui/button";
 import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
@@ -12,6 +22,7 @@ import {
 import {Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import Invoice, {InvoiceCategory} from "@/types/invoices/Invoice";
 import {ArrowUpIcon, DotsHorizontalIcon} from "@radix-ui/react-icons";
+import {PDFDownloadLink} from "@react-pdf/renderer";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -25,17 +36,58 @@ import {
 } from "@tanstack/react-table";
 import Link from "next/link";
 import {useState} from "react";
+import {InvoicesAsPdf} from "./InvoiceConversions";
 
 const columns: ColumnDef<Invoice>[] = [
   {
     id: "id",
     header: "Identifier",
     accessorKey: "id",
+    cell: ({row}) => {
+      return <Link href={`/domains/invoices/view-invoice/${row.original.id}`}>{row.original.id}</Link>;
+    },
   },
   {
     id: "merchant",
-    header: "Merchant",
     accessorKey: "merchant.name",
+    header: ({column, table}) => {
+      const allMerchantsAvailable = table.getRowModel().rows.map((row) => row.original.merchant?.name) as string[];
+      const uniqueMerchants = [...new Set(allMerchantsAvailable), "All merchants"];
+
+      return (
+        <>
+          Merchant
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='ghost'>#</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='center'>
+              {uniqueMerchants.map((merchant) => {
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={merchant}
+                    checked={column.getFilterValue() === merchant}
+                    onCheckedChange={(_) => column.setFilterValue(_ && merchant)}>
+                    {merchant}
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
+      );
+    },
+    filterFn: (row, _columnId, filterValue) => {
+      if (filterValue === "All merchants") {
+        return true;
+      }
+      const merchantName = row.original.merchant?.name;
+      const filteredName = (filterValue as string).toLowerCase();
+      return Boolean(merchantName?.toLowerCase().includes(filteredName));
+    },
+    cell: ({row}) => {
+      return row.original.merchant?.name;
+    },
   },
   {
     id: "category",
@@ -181,7 +233,7 @@ export function InvoicesTableDisplay({invoices}: Readonly<{invoices: Invoice[]}>
       <div className='flex w-full flex-row items-stretch justify-between justify-items-stretch pb-4'>
         <input
           className='w-2/3 rounded border border-gray-200 p-2'
-          placeholder='Search for a specific product...'
+          placeholder='Search for a specific merchant...'
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- This is a bug in the eslint plugin.
           value={(table.getColumn("merchant")?.getFilterValue() as string) ?? ""}
           onChange={(event) => table.getColumn("merchant")?.setFilterValue(event.target.value)}
@@ -253,18 +305,65 @@ export function InvoicesTableDisplay({invoices}: Readonly<{invoices: Invoice[]}>
               </span>
             </TableCell>
             <TableCell>
-              <Button
-                className='items-end justify-end justify-items-end'
-                variant='outline'>
-                Share
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    className='items-end justify-end justify-items-end'
+                    variant='outline'>
+                    Share
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Share invoices</DialogTitle>
+                    <DialogDescription>
+                      Share the invoices with your friends or colleagues. <br /> You can share the invoices via email.
+                    </DialogDescription>
+                    <form className='rounded-xl border p-2'>
+                      <input
+                        className='w-full rounded-xl border-none p-2 outline-none'
+                        type='email'
+                        placeholder='Enter email address...'
+                      />
+                    </form>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant='default'>Share via email!</Button>
+                    <DialogClose asChild>
+                      <Button variant='outline'>Cancel.</Button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </TableCell>
             <TableCell>
-              <Button
-                className='items-end justify-end justify-items-end'
-                variant='destructive'>
-                Download
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    className='items-end justify-end justify-items-end'
+                    variant='destructive'>
+                    Download
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Download invoices</DialogTitle>
+                    <DialogDescription>
+                      Select the format that you want to save the invoice list as. <br /> We currently support PDF, CSV
+                      and XLSX formats.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <PDFDownloadLink
+                      document={<InvoicesAsPdf invoices={table.getRowModel().rows.map((row) => row.original)} />}
+                      fileName={`invoices-${new Date().toISOString()}.pdf`}>
+                      <Button variant='default'>PDF.</Button>
+                    </PDFDownloadLink>
+                    <Button variant='outline'>CSV.</Button>
+                    <Button variant='outline'>XLSX.</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </TableCell>
           </TableRow>
         </TableFooter>

@@ -80,6 +80,7 @@
     "@radix-ui/react-toast": "1.2.1",
     "@radix-ui/react-tooltip": "1.1.2",
     "@react-email/components": "0.0.21",
+    "@react-pdf/renderer": "^3.4.4",
     "@serwist/next": "9.0.3",
     "@tanstack/react-table": "8.19.2",
     "class-variance-authority": "0.7.0",
