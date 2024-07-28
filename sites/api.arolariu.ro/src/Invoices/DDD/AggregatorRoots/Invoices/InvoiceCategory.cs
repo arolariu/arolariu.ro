@@ -13,9 +13,24 @@ public enum InvoiceCategory
 	NOT_DEFINED = 0,
 
 	/// <summary>
-	/// Personal = the invoice is a personal invoice.
+	/// Grocery = the invoice is a grocery invoice.
 	/// </summary>
-	PERSONAL = 10,
+	GROCERY = 10,
+
+	/// <summary>
+	/// Fast food = the invoice is a fast food invoice.
+	/// </summary>
+	FAST_FOOD = 20,
+
+	/// <summary>
+	/// Home cleaning = the invoice is made of home cleaning products.
+	/// </summary>
+	HOME_CLEANING = 30,
+
+	/// <summary>
+	/// Car auto = the invoice is made of car parts / automotive products.
+	/// </summary>
+	CAR_AUTO = 40,
 
 	/// <summary>
 	/// Other = the invoice is an other invoice.

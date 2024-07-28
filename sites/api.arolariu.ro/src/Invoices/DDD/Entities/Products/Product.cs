@@ -1,13 +1,13 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-
-using Microsoft.EntityFrameworkCore;
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+
+using Microsoft.EntityFrameworkCore;
 
 /// <summary>
 /// The invoice item record represents a single item from the invoice.
@@ -21,7 +21,7 @@ public class Product
 	/// <summary>
 	/// Product id - used internally by EF Core.
 	/// </summary>
-	public Guid	Id { get; set; }
+	public Guid Id { get; set; }
 
 	/// <summary>
 	/// The invoice item raw name (as seen on the digital invoice).
@@ -48,7 +48,7 @@ public class Product
 	/// The item quantity.
 	/// </summary>
 	[JsonPropertyOrder(3)]
-	public int Quantity { get; set; } = 0;
+	public decimal Quantity { get; set; } = 0;
 
 	/// <summary>
 	/// The item quantity unit (e.g. kg, ml).
@@ -83,7 +83,7 @@ public class Product
 	/// The product's detected allergens.
 	/// </summary>
 	[JsonPropertyOrder(8)]
-	public IEnumerable<Allergen> DetectedAllergens { get; } = new List<Allergen>();
+	public IEnumerable<Allergen> DetectedAllergens { get; set; } = new List<Allergen>();
 
 	/// <summary>
 	/// Product metadata.

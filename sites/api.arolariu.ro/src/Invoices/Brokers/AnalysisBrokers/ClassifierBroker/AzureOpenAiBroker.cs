@@ -41,12 +41,29 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
 	/// <inheritdoc/>
 	public async ValueTask<Invoice> PerformGptAnalysisOnSingleInvoice(Invoice invoice, AnalysisOptions options)
 	{
-		ArgumentNullException.ThrowIfNull(invoice, nameof(invoice));
+		ArgumentNullException.ThrowIfNull(invoice);
 
 		invoice.Name = await GenerateInvoiceName(invoice).ConfigureAwait(false);
 		invoice.Description = await GenerateInvoiceDescription(invoice).ConfigureAwait(false);
 		invoice.PossibleRecipes = await GenerateInvoiceRecipes(invoice).ConfigureAwait(false);
 
+		var products = invoice.Items;
+		foreach (var product in products)
+		{
+			product.Category = await GenerateProductCategory(product).ConfigureAwait(false);
+			product.DetectedAllergens = await GenerateProductAllergens(product).ConfigureAwait(false);
+		}
+
+		var merchant = invoice.Merchant;
+		if (merchant is not null)
+		{
+			merchant.Category = await GenerateMerchantCategory(merchant).ConfigureAwait(false);
+			merchant.Description = await GenerateMerchantDescription(merchant).ConfigureAwait(false);
+			invoice.Merchant = merchant;
+		}
+
+		invoice.Items = products;
+		invoice.Category = await GenerateInvoiceCategory(invoice).ConfigureAwait(false);
 		return invoice;
 	}
 }

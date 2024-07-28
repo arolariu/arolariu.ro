@@ -4,7 +4,6 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
-using Microsoft.EntityFrameworkCore;
 
 using System;
 using System.Collections.Generic;

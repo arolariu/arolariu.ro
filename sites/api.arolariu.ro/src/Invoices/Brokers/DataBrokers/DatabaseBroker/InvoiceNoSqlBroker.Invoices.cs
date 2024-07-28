@@ -46,13 +46,13 @@ public partial class InvoiceNoSqlBroker
 	/// <inheritdoc/>
 	public async ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice)
 	{
-		ArgumentNullException.ThrowIfNull(currentInvoice, nameof(currentInvoice));
-		ArgumentNullException.ThrowIfNull(updatedInvoice, nameof(updatedInvoice));
+		ArgumentNullException.ThrowIfNull(currentInvoice);
+		ArgumentNullException.ThrowIfNull(updatedInvoice);
 
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
 		InvoicesContext.Update(updatedInvoice);
 		await SaveChangesAsync().ConfigureAwait(false);
-		
+
 		return updatedInvoice;
 	}
 
