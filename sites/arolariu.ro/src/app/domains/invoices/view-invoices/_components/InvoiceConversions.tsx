@@ -116,3 +116,4 @@ export const InvoicesAsPdf = ({invoices}: Readonly<{invoices: Invoice[]}>) => {
     </Document>
   );
 };
+

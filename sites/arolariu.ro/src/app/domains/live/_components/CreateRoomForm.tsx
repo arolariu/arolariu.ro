@@ -6,6 +6,10 @@ import {useUser} from "@clerk/nextjs";
 import {randomBytes} from "crypto";
 import {useRouter} from "next/navigation";
 
+/**
+ * This function renders the create room form.
+ * @returns  The JSX for the create room form.
+ */
 export default function CreateRoomForm() {
   const router = useRouter();
   const {user} = useUser();
@@ -15,9 +19,9 @@ export default function CreateRoomForm() {
     const formData = new FormData(event.currentTarget);
     const roomOwner = user?.primaryEmailAddress?.emailAddress ?? "anonymous";
     const roomName =
-      (formData.get("room") as string) !== ""
-        ? formData.get("room")
-        : document.getElementById("room")!.getAttribute("placeholder");
+      (formData.get("room") as string) === ""
+        ? (document.querySelector("#room")?.getAttribute("placeholder") ?? "")
+        : (formData.get("room")?.toString() ?? "");
 
     console.log({roomOwner, roomName});
 
