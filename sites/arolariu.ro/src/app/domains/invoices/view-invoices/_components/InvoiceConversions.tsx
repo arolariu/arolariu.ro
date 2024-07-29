@@ -17,9 +17,9 @@ const styles = StyleSheet.create({
 
 /**
  * This component is used to convert the invoices to pdf format.
- * @returns {JSX.Element} The component to convert the invoices to pdf format.
+ * @returns The component to convert the invoices to pdf format.
  */
-export const InvoicesAsPdf = ({invoices}: {invoices: Invoice[]}) => {
+export const InvoicesAsPdf = ({invoices}: Readonly<{invoices: Invoice[]}>) => {
   return (
     <Document>
       <Page

@@ -1,17 +1,17 @@
 /** @format */
 "use client";
 
-import {createContext, ReactNode, useContext, useEffect, useRef, useState} from "react";
+import {createContext, ReactNode, useContext, useEffect, useState} from "react";
 import {Socket} from "socket.io";
 import {io} from "socket.io-client";
 
-type SocketContextType = {
+type SocketContextValueType = {
   socket: Socket | null;
   isConnected: boolean;
   latency: number;
 };
 
-const SocketContext = createContext<SocketContextType>({
+const SocketContext = createContext<SocketContextValueType>({
   socket: null,
   isConnected: false,
   latency: -1,
@@ -19,6 +19,10 @@ const SocketContext = createContext<SocketContextType>({
 
 export const useSocket = () => useContext(SocketContext);
 
+/**
+ * The socket provider.
+ * @returns The socket provider.
+ */
 export const SocketProvider = ({children}: Readonly<{children: ReactNode}>) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
@@ -26,8 +30,8 @@ export const SocketProvider = ({children}: Readonly<{children: ReactNode}>) => {
 
   useEffect(() => {
     const socketInstance = io({
-      // Polling is primary since AFD doesn't support websockets
-      transports: ["polling", "websocket"],
+      // Polling is primary since AFD doesn't support websockets.
+      transports: ["polling", "webtransport"],
       path: "/api/socket/io",
       addTrailingSlash: false,
     });
@@ -40,6 +44,9 @@ export const SocketProvider = ({children}: Readonly<{children: ReactNode}>) => {
       setIsConnected(false);
     });
 
+    /* This is converted to any as there is a type difference between socket and socketInstance. */
+    /* eslint "@typescript-eslint/no-unsafe-argument": "off" */
+    /* eslint "@typescript-eslint/no-explicit-any": "off" */
     setSocket(socketInstance as any);
 
     const startDate = new Date();
@@ -53,44 +60,6 @@ export const SocketProvider = ({children}: Readonly<{children: ReactNode}>) => {
     };
   }, []);
 
-  return <SocketContext.Provider value={{socket, isConnected, latency}}>{children}</SocketContext.Provider>;
+  const value = {socket, isConnected, latency} satisfies SocketContextValueType;
+  return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
 };
-
-export function useSocketForVideo() {
-  const socketCreated = useRef<boolean>(false);
-
-  useEffect(() => {
-    if (!socketCreated.current) {
-      const socketInitializer = async () => {
-        await fetch("/api/socket/io");
-      };
-      try {
-        void socketInitializer();
-        socketCreated.current = true;
-      } catch (error) {
-        console.log(error);
-      }
-    }
-  }, []);
-}
-
-export function useSocketForChat() {
-  const [messages, setMessages] = useState<string[]>([]);
-
-  useEffect(() => {
-    // Create a socket connection
-    const socket = io();
-
-    // Listen for incoming messages
-    socket.on("message", (message: string) => {
-      setMessages((messages) => [...messages, message]);
-    });
-
-    // Clean up the socket connection on unmount
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
-
-  return {messages};
-}
