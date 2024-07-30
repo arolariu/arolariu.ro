@@ -18,7 +18,7 @@ const ThemeSwitcherButton = () => {
   return (
     <div
       title='Theme switcher element'
-      className='text-yellow-500'>
+      className='mx-2 text-yellow-500'>
       <label
         className='swap swap-rotate'
         aria-label=''>

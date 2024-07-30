@@ -27,9 +27,9 @@ const LanguagePicker = ({
     <div className='flex flex-row flex-nowrap items-center justify-center justify-items-center gap-4'>
       <Button
         title='English Language'
-        variant='default'
+        variant='link'
         onClick={() => setLocaleHandler("en")}
-        className={locale === "en" ? "bg-blue-500 text-white" : "bg-white text-black"}>
+        className={`${locale === "en" && "bg-blue-700"}`}>
         ENGLISH
       </Button>
       <Separator
@@ -38,9 +38,9 @@ const LanguagePicker = ({
       />
       <Button
         title='Romanian Language'
-        variant='default'
+        variant='link'
         onClick={() => setLocaleHandler("ro")}
-        className={locale === "ro" ? "bg-blue-500 text-white" : "bg-white text-black"}>
+        className={`${locale === "ro" && "bg-blue-700"}`}>
         ROMÂNĂ
       </Button>
     </div>
@@ -65,7 +65,9 @@ const LoadingScreen = () => {
       </section>
       <br />
       <section className='rounded-xl border-2 2xsm:w-full lg:w-2/3'>
-        <Skeleton className='mx-auto my-2 h-80 w-5/6 animate-pulse' />
+        <Skeleton className='mx-auto my-2 h-20 w-5/6 animate-pulse' />
+        <Separator orientation='horizontal' />
+        <Skeleton className='mx-auto my-2 h-96 w-5/6 animate-pulse' />
       </section>
     </main>
   );
@@ -100,7 +102,7 @@ export default function EULA() {
   if (eulaAccepted) return null;
 
   return (
-    <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center overflow-y-scroll py-24 text-center'>
+    <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center py-24 text-center'>
       <section className='rounded-xl border-2 2xsm:w-full lg:w-2/3'>
         <h1 className='py-4 text-center text-2xl font-bold underline'>{t("title")}</h1>
         <LanguagePicker
@@ -128,6 +130,7 @@ export default function EULA() {
       <br />
 
       <section className='rounded-xl border-2 2xsm:w-full lg:w-2/3'>
+        <h2 className='pt-4 text-center text-xl font-bold'>Additional Information</h2>
         <Tabs
           defaultValue='cookies'
           className='py-4'>

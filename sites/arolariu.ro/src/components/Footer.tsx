@@ -30,10 +30,10 @@ export default async function Footer() {
               href='/'
               aria-label='Go home'
               title='AROLARIU.RO'
-              className='inline-flex transform items-center transition-all duration-300 ease-in-out hover:scale-110 hover:text-[#fff388] 2xsm:ml-[20%] md:ml-0'>
+              className='inline-flex transform items-center transition-all duration-300 ease-in-out hover:scale-110 hover:text-yellow-500 2xsm:ml-[20%] md:ml-0'>
               <Image
                 src={logo}
-                alt='arolariu.ro'
+                alt='The `arolariu.ro` logo.'
                 className='rounded-full'
                 width={40}
                 height={40}
@@ -51,7 +51,7 @@ export default async function Footer() {
 
           <div className='flex gap-16 2xsm:flex-col 2xsm:text-center lg:flex-row lg:text-left'>
             <div>
-              <p className='font-semibold tracking-wide text-black'>Subdomains</p>
+              <p className='cursor-default font-semibold tracking-wide text-white hover:text-yellow-500'>Subdomains</p>
               <ul className='mt-2 space-y-2'>
                 <li>
                   <Link
@@ -84,7 +84,7 @@ export default async function Footer() {
               </ul>
             </div>
             <div>
-              <p className='font-semibold tracking-wide text-black'>About</p>
+              <p className='cursor-default font-semibold tracking-wide text-white hover:text-yellow-500'>About</p>
               <ul className='mt-2 space-y-2'>
                 <li>
                   <Link
@@ -128,7 +128,7 @@ export default async function Footer() {
               <Link
                 href='https://github.com/arolariu/arolariu.ro/'
                 target='_blank'
-                className='italic text-red-200'>
+                className='italic text-yellow-500'>
                 here (GitHub repo)
               </Link>
               .
@@ -140,21 +140,21 @@ export default async function Footer() {
               target='_blank'
               about='GitHub'
               aria-label="Select this link to navigate to the author's GitHub page.">
-              <GitHubLogoIcon className='h-7 w-7' />
+              <GitHubLogoIcon className='h-7 w-7 hover:text-yellow-500' />
             </Link>
             <Link
               href='https://linkedin.com/in/olariu-alexandru'
               target='_blank'
               about='LinkedIn'
               aria-label="Select this link to navigate to the author's LinkedIn page.">
-              <LinkedInLogoIcon className='h-7 w-7' />
+              <LinkedInLogoIcon className='h-7 w-7 hover:text-yellow-500' />
             </Link>
           </div>
         </div>
         <p className='text-sm text-slate-300 2xsm:text-center md:text-end'>
           Built on{" "}
           <code
-            className='tooltip'
+            className='tooltip cursor-help'
             data-tip={new Date(TIMESTAMP)}>
             {TIMESTAMP.split("T")[0]}
           </code>

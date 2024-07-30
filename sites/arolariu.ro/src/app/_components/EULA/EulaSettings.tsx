@@ -75,7 +75,7 @@ export function CookiesSettings({
             />
             <Label
               htmlFor='essential'
-              className='ml-2 text-gray-700'>
+              className='ml-2 text-gray-700 dark:text-gray-200'>
               {t("cookies.essential.checkbox")}
             </Label>
           </div>
@@ -91,7 +91,7 @@ export function CookiesSettings({
             />
             <Label
               htmlFor='analytics'
-              className='ml-2 text-gray-400'>
+              className='ml-2 text-gray-700 dark:text-gray-200'>
               {t("cookies.analytics.checkbox")}
             </Label>
           </div>
