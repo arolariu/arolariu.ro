@@ -12,9 +12,9 @@ import logo from "../../public/logo.svg";
  */
 export default async function Footer() {
   return (
-    <footer className='relative bottom-0 w-full bg-indigo-600'>
+    <footer className='relative bottom-0 w-full bg-indigo-700'>
       <svg
-        className='absolute top-0 -mt-5 h-6 w-full text-indigo-600 sm:-mt-10 sm:h-16'
+        className='absolute top-0 -mt-5 h-6 w-full text-indigo-700 sm:-mt-10 sm:h-16'
         preserveAspectRatio='none'
         viewBox='0 0 1440 54'>
         <path
@@ -30,7 +30,7 @@ export default async function Footer() {
               href='/'
               aria-label='Go home'
               title='AROLARIU.RO'
-              className='inline-flex transform items-center transition-all duration-300 ease-in-out hover:scale-110 hover:text-yellow-300 2xsm:ml-[20%] md:ml-0'>
+              className='inline-flex transform items-center transition-all duration-300 ease-in-out hover:scale-110 hover:text-[#fff388] 2xsm:ml-[20%] md:ml-0'>
               <Image
                 src={logo}
                 alt='arolariu.ro'
@@ -138,18 +138,20 @@ export default async function Footer() {
             <Link
               href='https://github.com/arolariu'
               target='_blank'
-              about='GitHub'>
+              about='GitHub'
+              aria-label="Select this link to navigate to the author's GitHub page.">
               <GitHubLogoIcon className='h-7 w-7' />
             </Link>
             <Link
               href='https://linkedin.com/in/olariu-alexandru'
               target='_blank'
-              about='LinkedIn'>
+              about='LinkedIn'
+              aria-label="Select this link to navigate to the author's LinkedIn page.">
               <LinkedInLogoIcon className='h-7 w-7' />
             </Link>
           </div>
         </div>
-        <p className='text-sm text-gray-800 2xsm:text-center md:text-end'>
+        <p className='text-sm text-slate-300 2xsm:text-center md:text-end'>
           Built on{" "}
           <code
             className='tooltip'

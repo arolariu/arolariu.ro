@@ -19,8 +19,11 @@ const ThemeSwitcherButton = () => {
     <div
       title='Theme switcher element'
       className='text-yellow-500'>
-      <label className='swap swap-rotate'>
+      <label
+        className='swap swap-rotate'
+        aria-label=''>
         <input
+          aria-label='Theme Switcher Button'
           type='checkbox'
           checked={theme === "dark"}
           onChange={() => setTheme(theme === "dark" ? "light" : "dark")}

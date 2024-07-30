@@ -56,10 +56,11 @@ export default function AboutPage() {
           </article>
           <Link
             href='/about/the-platform'
-            className='rounded-lg bg-indigo-500 p-4 text-white hover:bg-indigo-600 focus:outline-none dark:text-black'>
+            className='rounded-lg bg-indigo-600 p-4 text-white hover:bg-indigo-700 focus:outline-none dark:text-black'>
             Learn more about the platform...
           </Link>
         </div>
+        s
         <div className='p-4 lg:w-1/2'>
           <Image
             alt='content'
@@ -80,7 +81,7 @@ export default function AboutPage() {
           </article>
           <Link
             href='/about/the-author'
-            className='rounded-lg bg-indigo-500 p-4 text-white hover:bg-indigo-600 focus:outline-none dark:text-black'>
+            className='rounded-lg bg-indigo-600 p-4 text-white hover:bg-indigo-700 focus:outline-none dark:text-black'>
             Learn more about the author...
           </Link>
         </div>

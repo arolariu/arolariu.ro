@@ -1,6 +1,5 @@
 /** @format */
 
-import EULA from "@/components/EULA";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {fonts} from "@/fonts";
@@ -11,6 +10,7 @@ import "./globals.css";
 import Loading from "./loading";
 import ContextProviders from "./providers";
 import Tracking from "./tracking";
+import EULA from "./_components/EULA/EULA";
 
 export {metadata} from "@/metadata";
 

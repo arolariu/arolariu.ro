@@ -30,7 +30,7 @@ export default function AuthCard({title, description, ctaText, cardType}: Readon
       <p className='text-base leading-relaxed'>{description}</p>
       <Link
         href={`/auth/${cardType}/`}
-        className='btn btn-primary mt-6 rounded border-0 p-4 text-white hover:bg-indigo-600 focus:outline-none'>
+        className='btn btn-primary mt-6 rounded border-0 bg-indigo-600 p-4 text-white hover:bg-indigo-700 focus:outline-none'>
         {ctaText}
       </Link>
     </article>
