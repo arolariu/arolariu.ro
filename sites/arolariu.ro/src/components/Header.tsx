@@ -117,7 +117,7 @@ export default function Header() {
               <SignedOut>
                 <Link
                   href='/auth'
-                  className='mr-5 hover:text-yellow-300 2xsm:mr-3'>
+                  className='mr-5 p-2 hover:text-yellow-300 2xsm:mr-3'>
                   Login
                 </Link>
               </SignedOut>
