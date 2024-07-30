@@ -60,7 +60,6 @@ export default function AboutPage() {
             Learn more about the platform...
           </Link>
         </div>
-        s
         <div className='p-4 lg:w-1/2'>
           <Image
             alt='content'
