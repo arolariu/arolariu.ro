@@ -13,6 +13,11 @@ type NextApiResponseWithSocketIo = NextApiResponse & {
   };
 };
 
+type RoomInformation = {
+  roomName: string;
+  roomType: "chat" | "video" | "audio";
+};
+
 export const config = {
   api: {
     bodyParser: false,
@@ -79,25 +84,71 @@ export default async function socketHandler(res: NextApiResponseWithSocketIo) {
  * @param _io The socketIO server object
  */
 function listenForWebRtcEvents(_socket: SocketIO, _io: SocketIOServer) {
-  // Triggered when a peer hits the join room button.
-  _socket.on("join", (roomName: string) => {
+  // Triggered when a peer hits the create room button.
+  _socket.on("create-room", (roomInformation: RoomInformation) => {
+    console.log(`Got create-room request with name: ${roomInformation.roomName}`);
+    const {roomName} = roomInformation;
     const {rooms} = _io.sockets.adapter;
     const room = rooms.get(roomName);
 
     if (room === undefined) {
-      // Case 1: No room with the same name exists.
+      console.log("No existing room found; creating a new room...");
       _socket.join(roomName);
       _socket.emit("created");
     } else if (room.size === 1) {
-      // Case 2: Room with the same name exists and only one person is inside.
+      console.log("Room found with one person; joining the room...");
       _socket.join(roomName);
       _socket.emit("joined");
     } else {
-      // Case 3: Room with the same name exists and two people are inside.
+      console.log("Room found with two people; room is full...");
       _socket.emit("full");
     }
 
     console.log(rooms);
+  });
+
+  // Triggered when a peer hits the join room button.
+  _socket.on("join-room", (roomInformation: RoomInformation) => {
+    console.log(`Got join-room request with name: ${roomInformation.roomName}`);
+    const {roomName} = roomInformation;
+    const {rooms} = _io.sockets.adapter;
+    const room = rooms.get(roomName);
+
+    if (room === undefined) {
+      console.log("No existing room found; creating a new room...");
+      _socket.join(roomName);
+      _socket.emit("created");
+    } else if (room.size === 1) {
+      console.log("Room found with one person; joining the room...");
+      _socket.join(roomName);
+      _socket.emit("joined");
+    } else {
+      console.log("Room found with two people; room is full...");
+      _socket.emit("full");
+    }
+
+    console.log(rooms);
+  });
+
+  // Triggered when a peer wants to get room informaiton.
+  _socket.on("get-room", (roomName: string) => {
+    console.log(`Got get-room request with name: ${roomName}`);
+    const {rooms} = _io.sockets.adapter;
+    const room = rooms.get(roomName);
+
+    if (room === undefined) {
+      console.log("No existing room found.");
+      _socket.emit("room-information", {
+        roomName,
+        roomType: "chat",
+      } satisfies RoomInformation);
+    } else {
+      console.log("Room found.");
+      _socket.emit("room-information", {
+        roomName,
+        roomType: "chat",
+      } satisfies RoomInformation);
+    }
   });
 
   // Triggered when the person who joined the room is ready to communicate.
