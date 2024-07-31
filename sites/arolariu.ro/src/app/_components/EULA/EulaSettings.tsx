@@ -101,6 +101,9 @@ export function CookiesSettings({
   );
 }
 
+/**
+ * The additional settings component.
+ */
 export function AdditionalSettings() {
   return (
     <div>

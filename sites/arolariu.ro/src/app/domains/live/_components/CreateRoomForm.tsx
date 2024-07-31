@@ -3,7 +3,6 @@
 
 import {Button} from "@/components/ui/button";
 import {useUser} from "@clerk/nextjs";
-import {randomBytes} from "crypto";
 import {useRouter} from "next/navigation";
 
 /**
@@ -41,7 +40,7 @@ export default function CreateRoomForm() {
         name='room'
         type='text'
         className='rounded-lg border text-center'
-        placeholder={randomBytes(4).toString("hex")}
+        placeholder={Math.random().toString(36).slice(0, 7)}
       />
       <Button
         type='submit'

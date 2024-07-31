@@ -35,7 +35,7 @@ const Navigation = ({className}: Readonly<{className?: string}>) => {
   if (!isLoaded) return;
 
   return (
-    <ul className={`${className} flex items-center justify-center justify-items-center gap-4`}>
+    <ul className={`${className as string} flex items-center justify-center justify-items-center gap-4`}>
       <li>
         <details>
           <summary>

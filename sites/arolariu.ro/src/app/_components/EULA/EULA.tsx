@@ -7,7 +7,7 @@ import {Skeleton} from "@/components/ui/skeleton";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {getCookie, setCookie} from "@/lib/actions/cookies.action";
 import {useTranslations} from "next-intl";
-import {useEffect, useState} from "react";
+import {Dispatch, SetStateAction, useEffect, useState} from "react";
 import {PrivacyPolicyDialogButton, TermsOfServiceDialogButton} from "./EulaDialogs";
 import {CookiesSettings} from "./EulaSettings";
 
@@ -16,7 +16,7 @@ const LanguagePicker = ({
   setLocale,
 }: Readonly<{
   locale: string;
-  setLocale: (locale: string) => void | Promise<void>;
+  setLocale: Dispatch<SetStateAction<string>>;
 }>) => {
   const setLocaleHandler = (locale: string) => {
     void setCookie({name: "locale", value: locale});
@@ -29,7 +29,7 @@ const LanguagePicker = ({
         title='English Language'
         variant='link'
         onClick={() => setLocaleHandler("en")}
-        className={`${locale === "en" && "bg-blue-700"}`}>
+        className={locale === "en" ? "bg-blue-700" : ""}>
         ENGLISH
       </Button>
       <Separator
@@ -40,7 +40,7 @@ const LanguagePicker = ({
         title='Romanian Language'
         variant='link'
         onClick={() => setLocaleHandler("ro")}
-        className={`${locale === "ro" && "bg-blue-700"}`}>
+        className={locale === "ro" ? "bg-blue-700" : ""}>
         ROMÂNĂ
       </Button>
     </div>
