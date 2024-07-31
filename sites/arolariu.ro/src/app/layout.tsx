@@ -15,7 +15,7 @@ import Tracking from "./tracking";
 export {metadata} from "@/metadata";
 
 /** Lazy loading the EULA to prevent LCP issues. */
-const EULA = dynamic(() => import("@/app/_components/EULA/EULA"), {ssr: false});
+const EULA = dynamic(() => import("@/app/_components/EULA/EULA"));
 
 /**
  * The root layout.
