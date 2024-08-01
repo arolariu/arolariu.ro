@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+﻿namespace arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 

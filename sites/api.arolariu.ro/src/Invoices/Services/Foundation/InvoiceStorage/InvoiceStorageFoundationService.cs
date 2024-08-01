@@ -1,5 +1,6 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
-using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+
+using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 using Microsoft.Extensions.Logging;

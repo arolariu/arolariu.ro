@@ -3,8 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
-using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 using Microsoft.Extensions.Logging;
