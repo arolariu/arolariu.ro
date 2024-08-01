@@ -1,5 +1,6 @@
 /** @format */
 
+import {RoomInformation, RoomMessage} from "@/types/RoomInformation";
 import {Server as HttpServer} from "http";
 import {Server as NetServer, Socket} from "net";
 import {NextApiResponse} from "next";
@@ -11,11 +12,6 @@ type NextApiResponseWithSocketIo = NextApiResponse & {
       io: SocketIOServer;
     };
   };
-};
-
-type RoomInformation = {
-  roomName: string;
-  roomType: "chat" | "video" | "audio";
 };
 
 export const config = {
@@ -41,6 +37,10 @@ export default async function socketHandler(res: NextApiResponseWithSocketIo) {
     const httpServer: HttpServer = res.socket.server as any;
     const io = new SocketIOServer(httpServer, {
       path,
+      connectionStateRecovery: {
+        maxDisconnectionDuration: 120000 /* (2 minutes) */,
+        skipMiddlewares: false,
+      },
       addTrailingSlash: false,
     });
     console.log("Socket server instance created successfully.");
@@ -62,7 +62,7 @@ export default async function socketHandler(res: NextApiResponseWithSocketIo) {
   io.on("connection", (socket) => {
     console.log(`Socket ${socket.id} has been connected.`);
 
-    listenForWebRtcEvents(socket, io);
+    listenForChatRoomEvents(socket, io);
     listenForWebsocketEvents(socket, io);
 
     socket.on("ping", (callback) => {
@@ -83,7 +83,7 @@ export default async function socketHandler(res: NextApiResponseWithSocketIo) {
  * @param _socket The socket object
  * @param _io The socketIO server object
  */
-function listenForWebRtcEvents(_socket: SocketIO, _io: SocketIOServer) {
+function listenForChatRoomEvents(_socket: SocketIO, _io: SocketIOServer) {
   // Triggered when a peer hits the create room button.
   _socket.on("create-room", (roomInformation: RoomInformation) => {
     console.log(`Got create-room request with name: ${roomInformation.roomName}`);
@@ -94,17 +94,11 @@ function listenForWebRtcEvents(_socket: SocketIO, _io: SocketIOServer) {
     if (room === undefined) {
       console.log("No existing room found; creating a new room...");
       _socket.join(roomName);
-      _socket.emit("created");
-    } else if (room.size === 1) {
-      console.log("Room found with one person; joining the room...");
-      _socket.join(roomName);
-      _socket.emit("joined");
+      _socket.emit("created-room");
     } else {
-      console.log("Room found with two people; room is full...");
-      _socket.emit("full");
+      console.log("Room found; warn user...");
+      _socket.emit("invalid-room", "Message: Room already exists.");
     }
-
-    console.log(rooms);
   });
 
   // Triggered when a peer hits the join room button.
@@ -116,39 +110,18 @@ function listenForWebRtcEvents(_socket: SocketIO, _io: SocketIOServer) {
 
     if (room === undefined) {
       console.log("No existing room found; creating a new room...");
-      _socket.join(roomName);
-      _socket.emit("created");
-    } else if (room.size === 1) {
-      console.log("Room found with one person; joining the room...");
+      _socket.emit("invalid-room", "Message: Room does not exist.");
+    } else {
+      console.log("Room found; joining the room...");
       _socket.join(roomName);
       _socket.emit("joined");
-    } else {
-      console.log("Room found with two people; room is full...");
-      _socket.emit("full");
     }
-
-    console.log(rooms);
   });
 
-  // Triggered when a peer wants to get room informaiton.
-  _socket.on("get-room", (roomName: string) => {
-    console.log(`Got get-room request with name: ${roomName}`);
-    const {rooms} = _io.sockets.adapter;
-    const room = rooms.get(roomName);
-
-    if (room === undefined) {
-      console.log("No existing room found.");
-      _socket.emit("room-information", {
-        roomName,
-        roomType: "chat",
-      } satisfies RoomInformation);
-    } else {
-      console.log("Room found.");
-      _socket.emit("room-information", {
-        roomName,
-        roomType: "chat",
-      } satisfies RoomInformation);
-    }
+  // Triggered when a peer sends a message to the room.
+  _socket.on("message-room", (message: RoomMessage, roomName: string) => {
+    console.log(`{${roomName}}:: message from ${message.username}: ${message.message}`);
+    _socket.broadcast.to(roomName).emit("message-room", message);
   });
 
   // Triggered when the person who joined the room is ready to communicate.
