@@ -69,5 +69,20 @@ public enum PaymentType
 	/// <summary>
 	/// The payment type is transfer.
 	/// </summary>
-	TRANSFER = 3
+	TRANSFER = 3,
+
+	/// <summary>
+	/// The payment type is mobile payment.
+	/// </summary>
+	MobilePayment = 4,
+
+	/// <summary>
+	/// The payment type is voucher.
+	/// </summary>
+	Voucher,
+
+	/// <summary>
+	/// The payment type is other.
+	/// </summary>
+	Other,
 }
