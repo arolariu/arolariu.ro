@@ -24,7 +24,7 @@ export default function SharedInvoice({username, invoice}: Readonly<{username: s
 
   const merchantName = invoice?.merchant?.name ?? "N/A";
   const totalAmount = invoice?.paymentInformation?.totalAmount ?? 0;
-  const currencySymbol = invoice?.paymentInformation?.currency?.symbol ?? "N/A";
+  const currencySymbol = invoice?.paymentInformation?.currencySymbol ?? "N/A";
   const dateOfPurchase = invoice?.paymentInformation?.dateOfPurchase?.toLocaleDateString("en-gb") ?? "N/A";
 
   return (

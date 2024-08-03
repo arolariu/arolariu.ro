@@ -38,7 +38,7 @@ export const InvoiceCard = ({invoice}: Readonly<{invoice: Invoice}>) => {
             <h2 className='title-font text-base font-medium text-gray-500'>MERCHANT: {invoice.merchant?.name}</h2>
             <p className='mt-1'>
               Total: {invoice.paymentInformation?.totalAmount}
-              {invoice.paymentInformation?.currency?.symbol} ({invoice.items?.length} items)
+              {invoice.paymentInformation?.currencySymbol} ({invoice.items.length} items)
             </p>
           </>
         )}

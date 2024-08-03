@@ -4,11 +4,21 @@
  * @format
  */
 
-import type {Currency} from "../DDD/SharedKernel/Currency";
+export enum PaymentType {
+  Unknown,
+  Cash,
+  Card,
+  Transfer,
+  MobilePayment,
+  Voucher,
+  Other,
+}
 
 export type PaymentInformation = {
-  dateOfPurchase: Date | null;
-  currency: Currency | null;
-  totalAmount: number | null;
-  totalTax: number | null;
+  dateOfPurchase: Date;
+  paymentType: PaymentType;
+  currencyName: string;
+  currencySymbol: string;
+  totalAmount: number;
+  totalTax: number;
 };
