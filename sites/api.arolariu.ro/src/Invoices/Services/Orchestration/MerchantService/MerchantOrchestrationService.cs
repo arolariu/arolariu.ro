@@ -39,12 +39,10 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantObject));
-		await merchantStorage
-			.CreateMerchantObject(merchant)
-			.ConfigureAwait(false);
+		await merchantStorage.CreateMerchantObject(merchant).ConfigureAwait(false);
 
 		var createdMerchant = await merchantStorage
-			.ReadMerchantObject(merchant.Id, merchant.ParentCompanyId)
+			.ReadMerchantObject(merchant.id, merchant.ParentCompanyId)
 			.ConfigureAwait(false);
 
 		return createdMerchant;
@@ -55,19 +53,15 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantObject));
-		await merchantStorage
-			.DeleteMerchantObject(identifier, parentCompanyId)
-			.ConfigureAwait(false);
+		await merchantStorage.DeleteMerchantObject(identifier, parentCompanyId).ConfigureAwait(false);
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects() =>
+	public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllMerchantObjects));
-		var merchants = await merchantStorage
-			.ReadAllMerchantObjects()
-			.ConfigureAwait(false);
+		var merchants = await merchantStorage.ReadAllMerchantObjects(parentCompanyId).ConfigureAwait(false);
 
 		return merchants;
 	}).ConfigureAwait(false);
@@ -77,9 +71,8 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObject));
-		var merchant = await merchantStorage
-			.ReadMerchantObject(identifier, userIdentifier)
-			.ConfigureAwait(false);
+		var merchant = await merchantStorage.ReadMerchantObject(identifier, userIdentifier)
+														.ConfigureAwait(false);
 
 		return merchant;
 	}).ConfigureAwait(false);
@@ -89,13 +82,10 @@ public partial class MerchantOrchestrationService : IMerchantOrchestrationServic
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
-		await merchantStorage
-			.UpdateMerchantObject(currentMerchant, updatedMerchant)
-			.ConfigureAwait(false);
+		await merchantStorage.UpdateMerchantObject(currentMerchant, updatedMerchant).ConfigureAwait(false);
 
-		var merchant = await merchantStorage
-			.ReadMerchantObject(updatedMerchant.Id, updatedMerchant.ParentCompanyId)
-			.ConfigureAwait(false);
+		var merchant = await merchantStorage.ReadMerchantObject(updatedMerchant.id, updatedMerchant.ParentCompanyId)
+														.ConfigureAwait(false);
 
 		return merchant;
 	}).ConfigureAwait(false);

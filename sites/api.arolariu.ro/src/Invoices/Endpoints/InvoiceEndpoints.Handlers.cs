@@ -35,7 +35,7 @@ public static partial class InvoiceEndpoints
 				.CreateInvoice(invoice)
 				.ConfigureAwait(false);
 
-			return Results.Created($"/rest/invoices/{invoice.Id}", invoice);
+			return Results.Created($"/rest/invoices/{invoice.id}", invoice);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -522,7 +522,7 @@ public static partial class InvoiceEndpoints
 					.CreateMerchant(merchant)
 					.ConfigureAwait(false);
 
-			return Results.Created($"/rest/merchants/{merchant.Id}", merchant);
+			return Results.Created($"/rest/merchants/{merchant.id}", merchant);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -564,12 +564,13 @@ public static partial class InvoiceEndpoints
 	private static async partial Task<IResult> RetrieveAllMerchantsAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
+		[FromBody] Guid parentCompanyId,
 		ClaimsPrincipal principal)
 	{
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveAllMerchantsAsync), ActivityKind.Server);
-			var merchants = await invoiceProcessingService.ReadMerchants().ConfigureAwait(false);
+			var merchants = await invoiceProcessingService.ReadMerchants(parentCompanyId).ConfigureAwait(false);
 
 			return Results.Ok(merchants);
 		}

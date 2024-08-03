@@ -14,8 +14,13 @@ using System.Text.Json.Serialization;
 /// The Invoice model as "represented" in the Application Domain.
 /// </summary>
 [ExcludeFromCodeCoverage] // Entities are not tested - they are used to represent the data in the application domain.
-public sealed class Invoice : NamedEntity<Guid>, ICloneable, IEquatable<Invoice>
+public sealed class Invoice : NamedEntity<Guid>
 {
+	/// <inheritdoc/>
+	[JsonPropertyName("id")]
+	[JsonPropertyOrder(0)]
+	public required override Guid id { get; init; }
+
 	/// <summary>
 	/// The invoice 1:1 user relationship (owner).
 	/// </summary>
@@ -38,7 +43,7 @@ public sealed class Invoice : NamedEntity<Guid>, ICloneable, IEquatable<Invoice>
 	/// Payment information (currency, total amount, total tax).
 	/// </summary>
 	[JsonPropertyOrder(6)]
-	public PaymentInformation PaymentInformation { get; set; }
+	public PaymentInformation PaymentInformation { get; set; } = null!;
 
 	/// <summary>
 	/// The invoice 1:1? merchant relationship.
@@ -50,68 +55,21 @@ public sealed class Invoice : NamedEntity<Guid>, ICloneable, IEquatable<Invoice>
 	/// The invoice 1:*? - item relationship.
 	/// </summary>
 	[JsonPropertyOrder(8)]
-	public IEnumerable<Product> Items { get; set; } = new List<Product>();
+#pragma warning disable CA2227 // Collection properties should be read only
+	public ICollection<Product> Items { get; set; } = new List<Product>();
 
 	/// <summary>
 	/// Possible recipes for the invoice.
 	/// </summary>
 	[JsonPropertyOrder(9)]
-	public IEnumerable<Recipe> PossibleRecipes { get; set; } = new List<Recipe>();
+	public ICollection<Recipe> PossibleRecipes { get; set; } = new List<Recipe>();
+#pragma warning restore CA2227 // Collection properties should be read only
 
 	/// <summary>
 	/// The invoice additional metadata.
 	/// This metadata is used to store additional information about the invoice.
 	/// Metadata is used to generate the invoice statistics.
 	/// </summary>
-	[JsonPropertyOrder(11)]
-	public IEnumerable<KeyValuePair<string, object>> AdditionalMetadata { get; set; } = new List<KeyValuePair<string, object>>();
-
-	/// <inheritdoc/>
-	public bool Equals(Invoice? other) => Equals(other as object);
-
-	/// <inheritdoc/>
-	public override bool Equals(object? obj)
-	{
-		if (obj is not Invoice other) return false;
-		return
-			Id.Equals(other.Id) &&
-			UserIdentifier.Equals(other.UserIdentifier);
-	}
-
-	/// <inheritdoc/>
-	public override int GetHashCode()
-	{
-		return HashCode.Combine(Id, UserIdentifier);
-	}
-
-	/// <inheritdoc/>
-	public object Clone()
-	{
-		return new Invoice
-		{
-			Id = Id,
-			Name = Name,
-			Description = Description,
-			CreatedAt = CreatedAt,
-			CreatedBy = CreatedBy,
-			IsImportant = IsImportant,
-			IsSoftDeleted = IsSoftDeleted,
-			LastUpdatedAt = LastUpdatedAt,
-			LastUpdatedBy = LastUpdatedBy,
-			NumberOfUpdates = NumberOfUpdates,
-			UserIdentifier = UserIdentifier,
-			Category = Category,
-			PhotoLocation = PhotoLocation,
-			Merchant = Merchant, // intentionally shallow copy - merchant is an independent entity and should not be race condition prone
-			Items = new List<Product>(Items),
-			PossibleRecipes = new List<Recipe>(PossibleRecipes),
-			AdditionalMetadata = new List<KeyValuePair<string, object>>(AdditionalMetadata),
-			PaymentInformation = new PaymentInformation
-			{
-				Currency = PaymentInformation.Currency,
-				TotalAmount = PaymentInformation.TotalAmount,
-				TotalTax = PaymentInformation.TotalTax
-			},
-		};
-	}
+	[JsonPropertyOrder(10)]
+	public IDictionary<string, string> AdditionalMetadata { get; private set; } = new Dictionary<string, string>();
 }

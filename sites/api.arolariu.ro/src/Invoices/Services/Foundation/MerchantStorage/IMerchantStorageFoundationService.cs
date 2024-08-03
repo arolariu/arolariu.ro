@@ -27,8 +27,9 @@ public interface IMerchantStorageFoundationService
 	/// <summary>
 	/// Reads all merchant objects.
 	/// </summary>
+	/// <param name="parentCompanyId"></param>
 	/// <returns></returns>
-	public Task<IEnumerable<Merchant>> ReadAllMerchantObjects();
+	public Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId);
 
 	/// <summary>
 	/// Updates a merchant object.

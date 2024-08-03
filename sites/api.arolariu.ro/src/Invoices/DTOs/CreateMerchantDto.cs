@@ -28,7 +28,7 @@ public readonly record struct CreateMerchantDto(
 	{
 		var merchant = new Merchant()
 		{
-			Id = Guid.NewGuid(),
+			id = Guid.NewGuid(),
 			Address = Address,
 			Category = MerchantCategory.OTHER,
 			CreatedAt = DateTime.Now,

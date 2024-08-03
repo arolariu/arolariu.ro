@@ -14,7 +14,6 @@ using System.Threading.Tasks;
 public interface IInvoiceNoSqlBroker
 {
 	#region Invoice Storage Broker
-
 	/// <summary>
 	/// Creates a new invoice.
 	/// This method is used to create a new invoice in the database.
@@ -64,7 +63,6 @@ public interface IInvoiceNoSqlBroker
 	#endregion
 
 	#region Merchant Storage Broker
-
 	/// <summary>
 	///	Creates a new merchant.
 	/// </summary>
@@ -77,13 +75,14 @@ public interface IInvoiceNoSqlBroker
 	/// </summary>
 	/// <param name="merchantIdentifier"></param>
 	/// <returns></returns>
-	public ValueTask<Merchant> ReadMerchantAsync(Guid merchantIdentifier);
+	public ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier);
 
 	/// <summary>
 	/// Reads all the merchants.
 	/// </summary>
+	/// <param name="parentCompanyId"></param>
 	/// <returns></returns>
-	public ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync();
+	public ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId);
 
 	/// <summary>
 	/// Updates a merchant.

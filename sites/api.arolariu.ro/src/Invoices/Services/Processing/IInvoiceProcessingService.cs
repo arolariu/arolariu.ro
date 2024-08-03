@@ -110,8 +110,9 @@ public interface IInvoiceProcessingService
 	/// <summary>
 	/// Reads all merchant objects.
 	/// </summary>
+	/// <param name="parentCompanyId"></param>
 	/// <returns></returns>
-	public Task<IEnumerable<Merchant>> ReadMerchants();
+	public Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId);
 
 	/// <summary>
 	/// Updates a merchant object.

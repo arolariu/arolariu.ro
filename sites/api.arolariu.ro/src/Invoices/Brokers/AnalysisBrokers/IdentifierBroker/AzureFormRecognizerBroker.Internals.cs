@@ -77,7 +77,7 @@ public sealed partial class AzureFormRecognizerBroker
 		return paymentInformation;
 	}
 
-	internal static IEnumerable<Product> IdentifyProducts(AnalyzedDocument photo)
+	internal static ICollection<Product> IdentifyProducts(AnalyzedDocument photo)
 	{
 		ArgumentNullException.ThrowIfNull(photo);
 		var photoFields = photo.Fields;
@@ -120,14 +120,6 @@ public sealed partial class AzureFormRecognizerBroker
 					product.QuantityUnit = quantityUnitField.Value.AsString();
 				}
 
-				// Step 5. Extract the total price of the product(s).
-				if (itemFields.TryGetValue("TotalPrice", out var totalPriceField)
-											&& totalPriceField.FieldType is DocumentFieldType.Double)
-				{
-					product.TotalPrice = (decimal)totalPriceField.Value.AsDouble();
-				}
-
-				product.Id = Guid.NewGuid(); // Id is only used internally by EF Core.
 				products.Add(product);
 			}
 		}

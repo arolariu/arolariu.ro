@@ -49,9 +49,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoice));
-		await invoiceOrchestrationService
-			.AnalyzeInvoiceWithOptions(invoice, options)
-			.ConfigureAwait(false);
+		await invoiceOrchestrationService.AnalyzeInvoiceWithOptions(invoice, options)
+											.ConfigureAwait(false);
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
@@ -59,10 +58,9 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoice));
-		await invoiceOrchestrationService
-			.CreateInvoiceObject(invoice)
-			.ConfigureAwait(false);
-
+		await invoiceOrchestrationService.CreateInvoiceObject(invoice)
+											.ConfigureAwait(false);
+		
 		return invoice;
 	}).ConfigureAwait(false);
 
@@ -71,9 +69,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchant));
-		await merchantOrchestrationService
-			.CreateMerchantObject(merchant)
-			.ConfigureAwait(false);
+		await merchantOrchestrationService.CreateMerchantObject(merchant)
+											.ConfigureAwait(false);
 
 		return merchant;
 	}).ConfigureAwait(false);
@@ -83,9 +80,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoice));
-		await invoiceOrchestrationService
-			.DeleteInvoiceObject(identifier, userIdentifier)
-			.ConfigureAwait(false);
+		await invoiceOrchestrationService.DeleteInvoiceObject(identifier, userIdentifier)
+											.ConfigureAwait(false);
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
@@ -93,9 +89,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchant));
-		await merchantOrchestrationService
-			.DeleteMerchantObject(identifier, parentCompanyId)
-			.ConfigureAwait(false);
+		await merchantOrchestrationService.DeleteMerchantObject(identifier, parentCompanyId)
+											.ConfigureAwait(false);
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
@@ -103,21 +98,19 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoices));
-		var invoices = await invoiceOrchestrationService
-			.ReadAllInvoiceObjects(userIdentifier)
-			.ConfigureAwait(false);
+		var invoices = await invoiceOrchestrationService.ReadAllInvoiceObjects(userIdentifier)
+																			.ConfigureAwait(false);
 
 		return invoices;
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<IEnumerable<Merchant>> ReadMerchants() =>
+	public async Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchants));
-		var merchants = await merchantOrchestrationService
-			.ReadAllMerchantObjects()
-			.ConfigureAwait(false);
+		var merchants = await merchantOrchestrationService.ReadAllMerchantObjects(parentCompanyId)
+																				.ConfigureAwait(false);
 
 		return merchants;
 	}).ConfigureAwait(false);
@@ -127,9 +120,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoice));
-		var invoice = await invoiceOrchestrationService
-			.ReadInvoiceObject(identifier, userIdentifier)
-			.ConfigureAwait(false);
+		var invoice = await invoiceOrchestrationService.ReadInvoiceObject(identifier, userIdentifier)
+																.ConfigureAwait(false);
 
 		return invoice;
 	}).ConfigureAwait(false);
@@ -139,9 +131,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchant));
-		var merchant = await merchantOrchestrationService
-			.ReadMerchantObject(identifier, parentCompanyId)
-			.ConfigureAwait(false);
+		var merchant = await merchantOrchestrationService.ReadMerchantObject(identifier, parentCompanyId)
+																	.ConfigureAwait(false);
 
 		return merchant;
 	}).ConfigureAwait(false);
@@ -151,9 +142,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoice));
-		var invoice = await invoiceOrchestrationService
-			.UpdateInvoiceObject(currentInvoice, updatedInvoice)
-			.ConfigureAwait(false);
+		var invoice = await invoiceOrchestrationService.UpdateInvoiceObject(currentInvoice, updatedInvoice)
+																.ConfigureAwait(false);
 
 		return invoice;
 	}).ConfigureAwait(false);
@@ -163,9 +153,8 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchant));
-		var merchant = await merchantOrchestrationService
-			.UpdateMerchantObject(currentMerchant, updatedMerchant)
-			.ConfigureAwait(false);
+		var merchant = await merchantOrchestrationService.UpdateMerchantObject(currentMerchant, updatedMerchant)
+																	.ConfigureAwait(false);
 
 		return merchant;
 	}).ConfigureAwait(false);
@@ -175,17 +164,13 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(AddProduct));
-		var currentProductsList = invoice.Items.ToList();
-		currentProductsList.Add(product);
+		var newInvoice = invoice;
+		newInvoice.Items.Add(product);
 
-		Invoice updatedInvoice = (Invoice)invoice.Clone();
-		updatedInvoice.Items = currentProductsList;
+		await invoiceOrchestrationService.UpdateInvoiceObject(invoice, newInvoice)
+											.ConfigureAwait(false);
 
-		await invoiceOrchestrationService
-			.UpdateInvoiceObject(invoice, updatedInvoice)
-			.ConfigureAwait(false);
-
-		return updatedInvoice;
+		return invoice;
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
@@ -202,9 +187,9 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(GetProduct));
-		var product = invoice.Items
-			.FirstOrDefault(p => p.RawName.Contains(productName, StringComparison.InvariantCultureIgnoreCase) ||
-										p.GenericName.Contains(productName, StringComparison.InvariantCultureIgnoreCase),
+		var product = invoice.Items.FirstOrDefault(
+							p => p.RawName.Contains(productName, StringComparison.InvariantCultureIgnoreCase) ||
+												p.GenericName.Contains(productName, StringComparison.InvariantCultureIgnoreCase),
 							new Product());
 
 		return await Task.FromResult(product).ConfigureAwait(false);
@@ -216,15 +201,12 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteProduct));
-		var currentProductsList = invoice.Items.ToList();
-		currentProductsList.Remove(product);
+		var newInvoice = invoice;
+		newInvoice.Items.Remove(product);
 
-		Invoice updatedInvoice = (Invoice)invoice.Clone();
-		updatedInvoice.Items = currentProductsList;
+		var currentInvoice = await invoiceOrchestrationService.UpdateInvoiceObject(invoice, newInvoice)
+																		.ConfigureAwait(false);
 
-		var currentInvoice = await invoiceOrchestrationService
-			.UpdateInvoiceObject(invoice, updatedInvoice)
-			.ConfigureAwait(false);
 		return currentInvoice;
 	}).ConfigureAwait(false);
 }

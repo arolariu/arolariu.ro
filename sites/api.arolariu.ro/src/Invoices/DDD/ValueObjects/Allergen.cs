@@ -5,5 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 /// The allergen model.
 /// </summary>
 /// <param name="Name"></param>
+/// <param name="Description"></param>
 [ExcludeFromCodeCoverage]
-public record struct Allergen(string Name);
+public record struct Allergen(string Name, string Description);

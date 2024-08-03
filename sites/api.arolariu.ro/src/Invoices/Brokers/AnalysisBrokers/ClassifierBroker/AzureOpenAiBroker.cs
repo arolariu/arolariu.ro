@@ -46,6 +46,7 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
 		invoice.Name = await GenerateInvoiceName(invoice).ConfigureAwait(false);
 		invoice.Description = await GenerateInvoiceDescription(invoice).ConfigureAwait(false);
 		invoice.PossibleRecipes = await GenerateInvoiceRecipes(invoice).ConfigureAwait(false);
+		
 
 		var products = invoice.Items;
 		foreach (var product in products)

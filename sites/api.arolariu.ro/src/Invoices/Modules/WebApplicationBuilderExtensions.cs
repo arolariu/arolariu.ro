@@ -1,4 +1,7 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Modules;
+using System;
+using System.Diagnostics.CodeAnalysis;
+
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
@@ -13,11 +16,9 @@ using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-
-using System;
-using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
 /// Extension methods for the <see cref="WebApplicationBuilder"/> builder.
@@ -47,7 +48,15 @@ public static class WebApplicationBuilderExtensions
 	{
 		ArgumentNullException.ThrowIfNull(builder);
 
-		// Add Entity Framework Core services.
+		// Add Cosmos Client and Entity Framework Core --- data layer services.
+		builder.Services.AddSingleton<CosmosClient>(options =>
+		{
+			var connectionString = builder.Configuration[$"{nameof(AzureOptions)}:NoSqlConnectionString"]!;
+
+			var cosmosClient = new CosmosClient(connectionString);
+			return cosmosClient;
+		});
+
 		builder.Services.AddDbContext<InvoiceNoSqlBroker>(options =>
 		{
 			options.UseCosmos(

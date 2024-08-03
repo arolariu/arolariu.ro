@@ -1,5 +1,6 @@
 ﻿namespace arolariu.Backend.Common.DDD.Contracts;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 /// <summary>
@@ -12,7 +13,8 @@ public abstract class BaseEntity<T> : IAuditable
 	/// The identity of the entity.
 	/// </summary>
 	[JsonPropertyOrder(0)]
-	public T? Id { get; init; } = default(T?);
+	[SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Cosmos DB limitation.")]
+	public virtual T? id { get; init; } = default(T?);
 
 	/// <inheritdoc/>
 	[JsonPropertyOrder(byte.MaxValue - 10)]
@@ -41,4 +43,9 @@ public abstract class BaseEntity<T> : IAuditable
 	/// <inheritdoc/>
 	[JsonPropertyOrder(byte.MaxValue - 04)]
 	public bool IsSoftDeleted { get; protected set; } = false;
+
+	/// <summary>
+	/// Soft delete the entity.
+	/// </summary>
+	public virtual void SoftDelete() => IsSoftDeleted = true;
 }
