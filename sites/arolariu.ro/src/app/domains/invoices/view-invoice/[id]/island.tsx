@@ -67,11 +67,11 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
           <div className='flex'>
             <span className='title-font text-2xl font-medium dark:text-gray-300'>
               Total Cost: {paymentInformation?.totalAmount}
-              {paymentInformation?.currency?.symbol}
+              {paymentInformation?.currencySymbol}
             </span>
             <Link
               href={`/domains/invoices/edit-invoice/${id}`}
-              className='ml-auto flex rounded border-0 bg-indigo-500 px-6 py-2 text-white hover:bg-indigo-600 focus:outline-none'>
+              className='ml-auto flex rounded border-0 bg-indigo-600 px-6 py-2 text-white hover:bg-indigo-700 focus:outline-none'>
               Edit this invoice
             </Link>
             <button

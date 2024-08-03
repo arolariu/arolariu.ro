@@ -1,5 +1,6 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
-using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+
+using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 using Microsoft.Extensions.Logging;
@@ -73,9 +74,8 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
-		var invoice = await invoiceNoSqlBroker
-			.UpdateInvoiceAsync(currentInvoice, updatedInvoice)
-			.ConfigureAwait(false);
+		var invoice = await invoiceNoSqlBroker.UpdateInvoiceAsync(currentInvoice, updatedInvoice)
+														.ConfigureAwait(false);
 
 		return invoice;
 	}).ConfigureAwait(false);

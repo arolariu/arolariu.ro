@@ -3,8 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
-using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 using Microsoft.Extensions.Logging;
@@ -40,14 +39,14 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantObject));
 
-		ValidateMerchantIdentifierIsSet(merchant.Id);
+		ValidateMerchantIdentifierIsSet(merchant.id);
 
 		await invoiceNoSqlBroker.CreateMerchantAsync(merchant).ConfigureAwait(false);
 		var retrievedMerchant = await invoiceNoSqlBroker
-				.ReadMerchantAsync(merchant.Id)
+				.ReadMerchantAsync(merchant.id)
 				.ConfigureAwait(false);
 
-		return retrievedMerchant;
+		return retrievedMerchant!;
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
@@ -63,11 +62,11 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects() =>
+	public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllMerchantObjects));
-		var merchants = await invoiceNoSqlBroker.ReadMerchantsAsync().ConfigureAwait(false);
+		var merchants = await invoiceNoSqlBroker.ReadMerchantsAsync(parentCompanyId).ConfigureAwait(false);
 
 		return merchants;
 	}).ConfigureAwait(false);
@@ -83,7 +82,7 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 
 		var merchant = await invoiceNoSqlBroker.ReadMerchantAsync(identifier).ConfigureAwait(false);
 
-		return merchant;
+		return merchant!;
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>

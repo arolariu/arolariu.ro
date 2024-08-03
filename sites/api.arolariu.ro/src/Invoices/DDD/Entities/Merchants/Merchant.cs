@@ -15,6 +15,11 @@ using System.Text.Json.Serialization;
 [ExcludeFromCodeCoverage]
 public sealed class Merchant : NamedEntity<Guid>
 {
+	/// <inheritdoc/>
+	[JsonPropertyName("id")]
+	[JsonPropertyOrder(0)]
+	public override Guid id { get; init; }
+
 	/// <summary>
 	/// The merchant category.
 	/// </summary>
@@ -35,29 +40,21 @@ public sealed class Merchant : NamedEntity<Guid>
 
 	/// <summary>
 	/// The merchant parent company.
-	/// The parent company is used to generate the invoice statistics.
 	/// </summary>
 	[JsonPropertyOrder(6)]
 	public Guid ParentCompanyId { get; set; }
-
-	/// <summary>
-	/// Navigation property for invoices.
-	/// </summary>
-	[JsonIgnore]
-	public ICollection<Invoice> Invoices { get; } = new List<Invoice>();
 
 	/// <summary>
 	/// Parameterless constructor.
 	/// </summary>
 	public Merchant()
 	{
-		Id = Guid.NewGuid();
+		id = Guid.NewGuid();
 		Name = string.Empty;
 		Description = string.Empty;
 		Category = MerchantCategory.OTHER;
 		Address = string.Empty;
 		PhoneNumber = string.Empty;
 		ParentCompanyId = Guid.Empty;
-		Invoices = new List<Invoice>();
 	}
 }

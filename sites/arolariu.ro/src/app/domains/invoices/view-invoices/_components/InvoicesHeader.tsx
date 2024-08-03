@@ -14,8 +14,8 @@ export default function InvoicesHeader({shownInvoices}: Readonly<{shownInvoices:
 
   const totalSavingsOfShownInvoices = () => {
     const products = shownInvoices.flatMap((invoice) => invoice.items);
-    const productsWithDiscount = products.filter((product) => (product?.price as number) < 0);
-    return productsWithDiscount.reduce((acc, product) => acc + (product?.price as number), 0);
+    const productsWithDiscount = products.filter((product) => product.price < 0);
+    return productsWithDiscount.reduce((acc, product) => acc + product.price, 0);
   };
 
   const numberOfProductsBought = () => shownInvoices.flatMap((invoice) => invoice.items).length;

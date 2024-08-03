@@ -18,7 +18,7 @@ public readonly record struct CreateInvoiceDto(
 	[Required] Guid UserIdentifier,
 	[Required] Guid PhotoIdentifier,
 	[Required] Uri PhotoLocation,
-	IEnumerable<KeyValuePair<string, object>> PhotoMetadata)
+	IDictionary<string, object> PhotoMetadata)
 {
 	/// <summary>
 	/// Method used to convert the DTO to an invoice.
@@ -28,14 +28,18 @@ public readonly record struct CreateInvoiceDto(
 	{
 		var invoice = new Invoice()
 		{
-			Id = PhotoIdentifier,
+			id = PhotoIdentifier,
 			UserIdentifier = UserIdentifier,
 			Category = InvoiceCategory.NOT_DEFINED,
-			PaymentInformation = new PaymentInformation(),
 			PhotoLocation = PhotoLocation,
 			CreatedBy = UserIdentifier,
-			AdditionalMetadata = PhotoMetadata
 		};
+
+		foreach (var (key, value) in PhotoMetadata)
+		{
+			string valueAsString = value.ToString() ?? "";
+			invoice.AdditionalMetadata.Add(key, valueAsString);
+		}
 
 		return invoice;
 	}

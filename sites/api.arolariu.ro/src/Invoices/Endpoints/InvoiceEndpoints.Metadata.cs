@@ -330,6 +330,7 @@ public static partial class InvoiceEndpoints
 	/// </summary>
 	/// <param name="invoiceProcessingService"></param>
 	/// <param name="httpContext"></param>
+	/// <param name="parentCompanyId"></param>
 	/// <param name="principal"></param>
 	/// <returns></returns>
 	[SwaggerOperation(
@@ -347,6 +348,7 @@ public static partial class InvoiceEndpoints
 	private static partial Task<IResult> RetrieveAllMerchantsAsync(
 		IInvoiceProcessingService invoiceProcessingService,
 		IHttpContextAccessor httpContext,
+		Guid parentCompanyId,
 		ClaimsPrincipal principal);
 
 	/// <summary>

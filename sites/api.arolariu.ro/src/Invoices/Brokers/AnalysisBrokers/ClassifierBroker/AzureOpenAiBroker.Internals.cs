@@ -114,7 +114,7 @@ public sealed partial class AzureOpenAiBroker
 		}
 	}
 
-	internal async Task<IEnumerable<Recipe>> GenerateInvoiceRecipes(Invoice invoice)
+	internal async Task<ICollection<Recipe>> GenerateInvoiceRecipes(Invoice invoice)
 	{
 		var client = openAIClient.GetChatClient("gpt-4");
 		var invoiceProducts = invoice.Items.Select(item => item.RawName).ToList();
@@ -136,7 +136,7 @@ public sealed partial class AzureOpenAiBroker
 
 			var recipesList = new List<Recipe>();
 			foreach (var recipeName in invoiceRecipesAsList)
-				recipesList.Add(new Recipe(recipeName));
+				recipesList.Add(new Recipe() { Name = recipeName });
 
 			return recipesList;
 		}
@@ -209,7 +209,7 @@ public sealed partial class AzureOpenAiBroker
 
 			var allergensList = new List<Allergen>();
 			foreach (var allergenName in productAllergensAsList)
-				allergensList.Add(new Allergen(allergenName));
+				allergensList.Add(new Allergen() { Name = allergenName });
 
 			return allergensList;
 		}

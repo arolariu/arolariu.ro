@@ -16,7 +16,7 @@ const HeaderSkeleton = () => (
   <header>
     <nav className='navbar bg-white dark:bg-black 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto'>
       <div className='navbar-start flex flex-row flex-nowrap'>
-        <Skeleton className='h-10 w-10 rounded-full bg-indigo-500 p-2 text-white' />
+        <Skeleton className='h-10 w-10 rounded-full bg-indigo-700 p-2 text-white' />
       </div>
       <div className='navbar-center gap-8 2xsm:hidden lg:relative lg:flex'>
         <Skeleton className='h-10 w-10 text-white' />
@@ -24,7 +24,7 @@ const HeaderSkeleton = () => (
         <Skeleton className='h-10 w-10 text-white' />
       </div>
       <div className='navbar-end flex flex-row flex-wrap'>
-        <Skeleton className='h-10 w-10 rounded-full bg-indigo-500 p-2 text-white' />
+        <Skeleton className='h-10 w-10 rounded-full bg-indigo-700 p-2 text-white' />
       </div>
     </nav>
   </header>
@@ -35,18 +35,18 @@ const Navigation = ({className}: Readonly<{className?: string}>) => {
   if (!isLoaded) return;
 
   return (
-    <ul className={className}>
+    <ul className={`${className as string} flex items-center justify-center justify-items-center gap-4`}>
       <li>
         <details>
           <summary>
-            <Link href='/domains'>Domains</Link>
+            <Link href='/domains'>Domains </Link>
           </summary>
-          <ul className='rounded-b-xl bg-white dark:bg-black'>
+          <ul className='mx-2 rounded-xl bg-white dark:bg-black 2xsm:border-0 md:border'>
             <li className='hover:text-yellow-300'>
-              <Link href='/domains/invoices'>Invoices</Link>
+              <Link href='/domains/invoices'>&gt; Invoices</Link>
             </li>
             <li className='hover:text-yellow-300'>
-              <Link href='/domains/live'>Chat Rooms</Link>
+              <Link href='/domains/live'>&gt; Chat Rooms</Link>
             </li>
           </ul>
         </details>
@@ -58,7 +58,7 @@ const Navigation = ({className}: Readonly<{className?: string}>) => {
       <li>
         <Link
           href={isSignedIn ? `/accounts/${user.id}` : "/auth"}
-          className='indicator mr-5 hover:text-yellow-300'>
+          className='indicator hover:text-yellow-300'>
           {isSignedIn ? "Account" : "Auth"}
         </Link>
       </li>
@@ -82,7 +82,9 @@ export default function Header() {
           {Boolean(isMobile) && (
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant='outline'>
+                <Button
+                  variant='outline'
+                  title='Mobile Navigation Menu'>
                   <HamburgerMenuIcon />
                 </Button>
               </PopoverTrigger>
@@ -96,7 +98,7 @@ export default function Header() {
             className='ml-2 flex items-center font-medium hover:text-yellow-300'>
             <Image
               src={logo}
-              alt='arolariu.ro'
+              alt='The `arolariu.ro` logo.'
               className='rounded-full ring-2 ring-indigo-500 2xsm:hidden lg:block'
               width={40}
               height={40}
@@ -115,7 +117,7 @@ export default function Header() {
               <SignedOut>
                 <Link
                   href='/auth'
-                  className='mr-5 hover:text-yellow-300 2xsm:mr-1'>
+                  className='mr-5 p-2 hover:text-yellow-300 2xsm:mr-3'>
                   Login
                 </Link>
               </SignedOut>

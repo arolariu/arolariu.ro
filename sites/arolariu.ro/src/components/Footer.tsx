@@ -12,9 +12,9 @@ import logo from "../../public/logo.svg";
  */
 export default async function Footer() {
   return (
-    <footer className='relative bottom-0 w-full bg-indigo-500'>
+    <footer className='relative bottom-0 w-full bg-indigo-700'>
       <svg
-        className='absolute top-0 -mt-5 h-6 w-full text-indigo-500 sm:-mt-10 sm:h-16'
+        className='absolute top-0 -mt-5 h-6 w-full text-indigo-700 sm:-mt-10 sm:h-16'
         preserveAspectRatio='none'
         viewBox='0 0 1440 54'>
         <path
@@ -23,25 +23,25 @@ export default async function Footer() {
         />
       </svg>
 
-      <div className='mx-auto pt-12 text-gray-100 sm:max-w-xl md:max-w-full md:px-24 lg:max-w-screen-xl lg:px-8'>
-        <div className='row-gap-10 mb-8 grid gap-16 sm:grid-cols-2 lg:grid-cols-6'>
+      <div className='mx-auto pt-12 text-white sm:max-w-xl md:max-w-full md:px-24 lg:max-w-screen-xl lg:px-8'>
+        <div className='mb-8 grid gap-16 sm:grid-cols-2 lg:grid-cols-3'>
           <div className='md:col-span-1 lg:col-span-2'>
             <Link
               href='/'
               aria-label='Go home'
               title='AROLARIU.RO'
-              className='inline-flex transform items-center transition-all duration-300 ease-in-out hover:scale-110 2xsm:ml-[20%] md:ml-0'>
+              className='inline-flex transform items-center transition-all duration-300 ease-in-out hover:scale-110 hover:text-yellow-500 2xsm:ml-[20%] md:ml-0'>
               <Image
                 src={logo}
-                alt='arolariu.ro'
-                className='rounded-full ring-2 ring-indigo-500'
+                alt='The `arolariu.ro` logo.'
+                className='rounded-full'
                 width={40}
                 height={40}
               />
               <span className='ml-2 text-xl font-bold uppercase tracking-wide'>AROLARIU.RO</span>
             </Link>
             <div className='mt-4 text-sm 2xsm:px-4 2xsm:text-center md:px-0 md:text-left'>
-              <p>
+              <p className='prose text-pretty text-white 2xsm:text-center md:text-start'>
                 The platform is built using the latest stable, state-of-the-art technologies and with enterprise-grade
                 experience. <br /> <br />
                 We hope that you have a great experience when exploring this platform.
@@ -51,68 +51,7 @@ export default async function Footer() {
 
           <div className='flex gap-16 2xsm:flex-col 2xsm:text-center lg:flex-row lg:text-left'>
             <div>
-              <p className='font-semibold tracking-wide text-black'>Domain Services</p>
-              <ul className='mt-2 space-y-2'>
-                <li>
-                  <Link
-                    href='/domains/invoices'
-                    className='tooltip tooltip-top transition-colors duration-300 hover:text-teal-400'
-                    data-tip='Invoice Management System (IMS)'>
-                    <span>I M S</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href='/domains/links'
-                    className='tooltip tooltip-top transition-colors duration-300 hover:text-teal-400'
-                    data-tip='Link Analysis & Insights System (LAIS)'>
-                    <span>L A I S</span>
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <p className='font-semibold tracking-wide text-black'>Libraries</p>
-              <ul className='mt-2 space-y-2'>
-                <li>
-                  <a
-                    href='/'
-                    className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
-                    Web
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href='/'
-                    className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
-                    eCommerce
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href='/'
-                    className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
-                    Business
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href='/'
-                    className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
-                    Entertainment
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href='/'
-                    className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
-                    Portfolio
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <p className='font-semibold tracking-wide text-black'>Public subdomains</p>
+              <p className='cursor-default font-semibold tracking-wide text-white hover:text-yellow-500'>Subdomains</p>
               <ul className='mt-2 space-y-2'>
                 <li>
                   <Link
@@ -145,7 +84,7 @@ export default async function Footer() {
               </ul>
             </div>
             <div>
-              <p className='font-semibold tracking-wide text-black'>About</p>
+              <p className='cursor-default font-semibold tracking-wide text-white hover:text-yellow-500'>About</p>
               <ul className='mt-2 space-y-2'>
                 <li>
                   <Link
@@ -189,8 +128,8 @@ export default async function Footer() {
               <Link
                 href='https://github.com/arolariu/arolariu.ro/'
                 target='_blank'
-                className='italic text-red-200'>
-                here (GitHub public repository)
+                className='italic text-yellow-500'>
+                here (GitHub repo)
               </Link>
               .
             </span>
@@ -199,21 +138,23 @@ export default async function Footer() {
             <Link
               href='https://github.com/arolariu'
               target='_blank'
-              about='GitHub'>
-              <GitHubLogoIcon className='h-7 w-7' />
+              about='GitHub'
+              aria-label="Select this link to navigate to the author's GitHub page.">
+              <GitHubLogoIcon className='h-7 w-7 hover:text-yellow-500' />
             </Link>
             <Link
               href='https://linkedin.com/in/olariu-alexandru'
               target='_blank'
-              about='LinkedIn'>
-              <LinkedInLogoIcon className='h-7 w-7' />
+              about='LinkedIn'
+              aria-label="Select this link to navigate to the author's LinkedIn page.">
+              <LinkedInLogoIcon className='h-7 w-7 hover:text-yellow-500' />
             </Link>
           </div>
         </div>
-        <p className='text-sm text-gray-600 2xsm:text-center md:text-end'>
+        <p className='text-sm text-slate-300 2xsm:text-center md:text-end'>
           Built on{" "}
           <code
-            className='tooltip'
+            className='tooltip cursor-help'
             data-tip={new Date(TIMESTAMP)}>
             {TIMESTAMP.split("T")[0]}
           </code>

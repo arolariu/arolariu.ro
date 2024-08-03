@@ -42,7 +42,7 @@ export default function RenderEditInvoiceScreen({invoiceIdentifier}: Readonly<{i
               <tbody>
                 <tr>
                   <td>Currency</td>
-                  <td>{paymentInformation?.currency?.name}</td>
+                  <td>{paymentInformation?.currencyName}</td>
                 </tr>
                 <tr>
                   <td>Description</td>

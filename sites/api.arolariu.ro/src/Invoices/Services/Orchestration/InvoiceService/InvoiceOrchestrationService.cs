@@ -45,13 +45,11 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceWithOptions));
-		var analyzedInvoice = await invoiceAnalysisFoundationService
-				.AnalyzeInvoiceAsync(invoice, options)
-				.ConfigureAwait(false);
+		var analyzedInvoice = await invoiceAnalysisFoundationService.AnalyzeInvoiceAsync(invoice, options)
+																			.ConfigureAwait(false);
 
-		await invoiceStorageFoundationService
-				.UpdateInvoiceObject(invoice, analyzedInvoice)
-				.ConfigureAwait(false);
+		await invoiceStorageFoundationService.UpdateInvoiceObject(invoice, analyzedInvoice)
+												.ConfigureAwait(false);
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
@@ -72,7 +70,7 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
 		var invoice = await ReadInvoiceObject(identifier, userIdentifier).ConfigureAwait(false);
-		await invoiceStorageFoundationService.DeleteInvoiceObject(invoice.Id, userIdentifier).ConfigureAwait(false);
+		await invoiceStorageFoundationService.DeleteInvoiceObject(invoice.id, userIdentifier).ConfigureAwait(false);
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
@@ -104,9 +102,8 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
-		var invoice = await invoiceStorageFoundationService
-			.UpdateInvoiceObject(currentInvoice, updatedInvoice)
-			.ConfigureAwait(false);
+		var invoice = await invoiceStorageFoundationService.UpdateInvoiceObject(currentInvoice, updatedInvoice)
+																.ConfigureAwait(false);
 
 		return invoice;
 	}).ConfigureAwait(false);

@@ -9,20 +9,23 @@ import type {Recipe} from "./Recipe";
 /**
  * Represents the options for the invoice analysis.
  */
-export type InvoiceAnalysisOptions = {
-  completeAnalysis: boolean;
-  invoiceOnly: boolean;
-  invoiceItemsOnly: boolean;
-};
-
+export enum InvoiceAnalysisOptions {
+  NoAnalysis,
+  CompleteAnalysis,
+  InvoiceOnly,
+  InvoiceItemsOnly,
+  InvoiceMerchantOnly,
+}
 /**
  * Represents the category of an invoice from the invoice domain system.
  */
 export enum InvoiceCategory {
-  NOT_DEFINED,
-  FOOD,
-  DRINKS,
-  OTHER,
+  NOT_DEFINED = 0,
+  GROCERY = 10,
+  FAST_FOOD = 20,
+  HOME_CLEANING = 30,
+  CAR_AUTO = 40,
+  OTHER = 9999,
 }
 
 /**
@@ -34,14 +37,14 @@ export default interface Invoice extends NamedEntity<string> {
   photoLocation: string;
   paymentInformation: PaymentInformation | null;
   merchant: Merchant | null;
-  items: Product[] | null;
-  possibleRecipes: Recipe[] | null;
-  additionalMetadata: Record<string, object>[];
+  items: Product[];
+  possibleRecipes: Recipe[];
+  additionalMetadata: Record<string, string>[];
 }
 
 export interface InvoicePayload {
   userIdentifier: string;
   photoIdentifier: string;
   photoLocation: string;
-  photoMetadata: [{key: string; value: string}];
+  photoMetadata: Record<string, string>[];
 }

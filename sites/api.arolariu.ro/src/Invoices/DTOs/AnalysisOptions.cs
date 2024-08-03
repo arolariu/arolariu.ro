@@ -26,4 +26,9 @@ public enum AnalysisOptions
 	/// Analyze the invoice items only.
 	/// </summary>
 	InvoiceItemsOnly,
+
+	/// <summary>
+	/// Analyze the invoice merchant only.
+	/// </summary>
+	InvoiceMerchantOnly,
 }

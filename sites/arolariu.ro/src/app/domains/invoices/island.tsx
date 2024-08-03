@@ -36,7 +36,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<{i
           <div className='flex flex-col items-center justify-center justify-items-center gap-4 md:flex-row'>
             <Link
               href='/domains/invoices/create-invoice'
-              className='rounded border-0 bg-indigo-500 px-6 py-2 text-lg text-white hover:bg-indigo-600 focus:outline-none'>
+              className='rounded border-0 bg-indigo-600 px-6 py-2 text-lg text-white hover:bg-indigo-700 focus:outline-none'>
               Upload receipt
             </Link>
 

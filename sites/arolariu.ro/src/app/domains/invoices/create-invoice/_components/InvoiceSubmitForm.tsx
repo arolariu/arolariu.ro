@@ -22,7 +22,6 @@ function ClientSideUpload(props: Readonly<Props>) {
         className='file-input file-input-bordered file-input-primary w-full max-w-xs bg-white dark:bg-black'
         title='Upload a receipt to the platform.'
         accept='image/jpeg, image/jpg, image/png, application/pdf'
-        capture='environment'
         onChange={handleImageClientSideUpload}
       />
       <button

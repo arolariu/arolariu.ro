@@ -14,7 +14,8 @@ export const metadata: Metadata = {
  * @returns The 404 page.
  */
 export default async function NotFound() {
-  // TODO: complete QR code with OTel data.
+  const qrCodeData =
+    "Lorem ipsum dolor sit amet consectetur, adipisicing elit. Quos vitae deserunt sint aliquid non architecto eos temporibus fugit nobis itaque animi eveniet tenetur odio rerum et culpa, praesentium assumenda asperiores officiis laudantium? Accusamus ratione quos iure, blanditiis porro ut, voluptatum, totam culpa eveniet perspiciatis placeat aperiam debitis quas neque sapiente!";
 
   return (
     <main className='flex flex-col items-center justify-center justify-items-center px-5 py-24 text-xl 2xsm:text-lg'>
@@ -28,7 +29,7 @@ export default async function NotFound() {
       <hr className='rouned border-2' />
       <section className='my-4 py-4'>
         <h2 className='my-4 text-center text-xl font-bold'>Additional Information:</h2>
-        <QRCode value='Lorem ipsum dolor sit amet consectetur adipisicing elit. Necessitatibus soluta libero, minima nulla ipsum blanditiis nesciunt beatae reprehenderit deserunt mollitia, eos repudiandae maiores, cumque delectus veniam deleniti in consequuntur eius. Deleniti totam optio distinctio tempore necessitatibus temporibus soluta excepturi placeat architecto! Vitae consequatur modi eveniet officia nemo. Sequi, beatae eligendi?' />
+        <QRCode value={qrCodeData} />
       </section>
       <section>
         <p className='text-center text-xs'>

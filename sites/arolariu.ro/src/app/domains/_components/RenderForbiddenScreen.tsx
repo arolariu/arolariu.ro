@@ -32,7 +32,7 @@ export default async function RenderForbiddenScreen() {
         <div className='mb-12 flex justify-center'>
           <Link
             href={`${SITE_URL}/auth`}
-            className='inline-flex rounded border-0 bg-indigo-500 px-6 py-2 text-lg text-white hover:bg-indigo-600 focus:outline-none'>
+            className='inline-flex rounded border-0 bg-indigo-600 px-6 py-2 text-lg text-white hover:bg-indigo-700 focus:outline-none'>
             Join the <code className='mx-2'>arolariu.ro</code> domain.
           </Link>
         </div>

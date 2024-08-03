@@ -56,7 +56,7 @@ export default function AboutPage() {
           </article>
           <Link
             href='/about/the-platform'
-            className='rounded-lg bg-indigo-500 p-4 text-white hover:bg-indigo-600 focus:outline-none dark:text-black'>
+            className='rounded-lg bg-indigo-600 p-4 text-white hover:bg-indigo-700 focus:outline-none dark:text-black'>
             Learn more about the platform...
           </Link>
         </div>
@@ -68,7 +68,7 @@ export default function AboutPage() {
             height={500}
             src='/images/about/author-thumbnail.svg'
           />
-          <h2 className='title-font mb-3 mt-6 text-2xl font-medium'>
+          <h2 className='mb-3 mt-6 text-2xl font-medium'>
             Who is <code>arolariu</code>?
           </h2>
           <article className='pb-8 text-base leading-relaxed'>
@@ -80,7 +80,7 @@ export default function AboutPage() {
           </article>
           <Link
             href='/about/the-author'
-            className='rounded-lg bg-indigo-500 p-4 text-white hover:bg-indigo-600 focus:outline-none dark:text-black'>
+            className='rounded-lg bg-indigo-600 p-4 text-white hover:bg-indigo-700 focus:outline-none dark:text-black'>
             Learn more about the author...
           </Link>
         </div>
