@@ -21,12 +21,12 @@ export const InvoiceInformation = ({invoice}: Readonly<{invoice: Invoice}>) => {
         <span>User Identifier</span>
         <span className='ml-auto dark:text-gray-300'>{userIdentifier}</span>
       </div>
-      {additionalMetadata.map((kvPair, index) => (
+      {Object.entries(additionalMetadata).map(([key, value], index) => (
         <div
           key={index}
           className='flex border-b border-gray-200 py-2'>
-          <span>{String(kvPair["key"])}</span>
-          <span className='ml-auto dark:text-gray-300'>{String(kvPair["value"])}</span>
+          <span>{key}</span>
+          <span className='ml-auto dark:text-gray-300'>{value}</span>
         </div>
       ))}
       <div>
