@@ -20,8 +20,6 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 {
 	private CosmosClient CosmosClient { get; }
 
-	private DbSet<Invoice> InvoicesContext => Set<Invoice>();
-
 	/// <summary>
 	/// Entity Framework Invoice NoSQL broker constructor.
 	/// </summary>

@@ -51,9 +51,21 @@ public partial class InvoiceNoSqlBroker
 	public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier)
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));
-		var invoices = await InvoicesContext
-										.Where(i => i.UserIdentifier == userIdentifier)
-										.ToListAsync().ConfigureAwait(false);
+		var database = CosmosClient.GetDatabase("arolariu");
+		var container = database.GetContainer("invoices");
+		var partitionKey = new PartitionKey(userIdentifier.ToString());
+
+		var query = new QueryDefinition("SELECT * FROM c WHERE c.UserIdentifier = @userIdentifier")
+			.WithParameter("@userIdentifier", userIdentifier);
+
+		var invoices = new List<Invoice>();
+		var iterator = container.GetItemQueryIterator<Invoice>(query, requestOptions: new QueryRequestOptions { PartitionKey = partitionKey });
+
+		while (iterator.HasMoreResults)
+		{
+			var response = await iterator.ReadNextAsync().ConfigureAwait(false);
+			invoices.AddRange(response.ToList());
+		}
 
 		return invoices;
 	}
