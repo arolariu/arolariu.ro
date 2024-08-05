@@ -48,13 +48,11 @@ const generateFakeInvoice = (): Invoice => {
           duration: `${fake.number.int({min: 5, max: 120})} minutes`,
         }) satisfies Recipe,
     ),
-    additionalMetadata: Array.from(
-      {length: fake.number.int({min: 0, max: 2})},
-      () =>
-        ({
-          [fake.lorem.word(4)]: fake.lorem.sentence(5),
-        }) as unknown as Record<string, string>,
-    ),
+    additionalMetadata: {
+      isComplete: fake.string.nanoid(),
+      isEdited: fake.string.nanoid(),
+      isSoftDeleted: fake.string.nanoid(),
+    },
   } satisfies Invoice;
 };
 

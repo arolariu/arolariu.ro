@@ -39,12 +39,12 @@ export default interface Invoice extends NamedEntity<string> {
   merchant: Merchant | null;
   items: Product[];
   possibleRecipes: Recipe[];
-  additionalMetadata: Record<string, string>[];
+  additionalMetadata: Record<string, string>;
 }
 
 export interface InvoicePayload {
   userIdentifier: string;
   photoIdentifier: string;
   photoLocation: string;
-  photoMetadata: Record<string, string>[];
+  photoMetadata: Record<string, string>;
 }

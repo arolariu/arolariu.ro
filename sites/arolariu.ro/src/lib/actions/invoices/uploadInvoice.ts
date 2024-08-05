@@ -22,12 +22,16 @@ export default async function uploadInvoice(blobInformation: BlobStorageResponse
       userIdentifier: userInformation.userIdentifier,
       photoIdentifier: blobInformation.blobIdentifier,
       photoLocation: blobInformation.blobUrl,
-      photoMetadata: [{key: "dateOfUploadToServer", value: new Date().toISOString()}],
+      photoMetadata: {} as Record<string, string>,
     } satisfies InvoicePayload;
 
+    const photoMetadata = {dateOfUploadToServer: new Date().toISOString()} as Record<string, string>;
     for (const metadataKey in blobInformation.blobMetadata) {
-      invoicePayload.photoMetadata.push({key: metadataKey, value: blobInformation.blobMetadata[metadataKey]!});
+      const metadataValue = blobInformation.blobMetadata[metadataKey] as string;
+      photoMetadata[metadataKey] = metadataValue;
     }
+
+    invoicePayload.photoMetadata = photoMetadata;
 
     const invoiceHttpHeaders = {
       "Content-Type": "application/json",
