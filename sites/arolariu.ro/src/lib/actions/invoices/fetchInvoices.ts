@@ -12,14 +12,19 @@ import {API_URL} from "../../utils.server";
  * @returns A promise of the invoices, or null if the request failed.
  */
 export default async function fetchInvoices(userInformation: UserInformation): Promise<Invoice[] | null> {
-  console.info(">>> Fetching invoices for user:", userInformation);
-  const response = await fetch(`${API_URL}/rest/v1/invoices/`, {
-    headers: {
-      Authorization: `Bearer ${userInformation.userJwt}`,
-      "Content-Type": "application/json",
-    },
-  });
+  try {
+    console.info(">>> Fetching invoices for user:", userInformation);
+    const response = await fetch(`${API_URL}/rest/v1/invoices/`, {
+      headers: {
+        Authorization: `Bearer ${userInformation.userJwt}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-  if (response.status === 200) return (await response.json()) as Invoice[];
-  return null;
+    if (response.status === 200) return (await response.json()) as Invoice[];
+    else return null;
+  } catch (error) {
+    console.error("Error fetching the invoices from the server:", error);
+    return null;
+  }
 }

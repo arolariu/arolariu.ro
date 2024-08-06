@@ -1,8 +1,10 @@
 /** @format */
 
+import {UploadStatus} from "@/types/UploadStatus";
+
 type Props = {
-  image?: Blob | null;
-  uploadStatus?: "SUCCESS" | "PENDING" | null;
+  images?: Blob[] | null;
+  uploadStatus?: UploadStatus;
   resetState?: () => void;
   handleImageClientSideUpload?: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   handleImageServerSideUpload?: (event: React.MouseEvent<HTMLButtonElement>) => Promise<void>;
@@ -17,6 +19,7 @@ function ClientSideUpload(props: Readonly<Props>) {
   return (
     <form className='my-5'>
       <input
+        multiple
         type='file'
         name='file-upload'
         className='file-input file-input-bordered file-input-primary w-full max-w-xs bg-white dark:bg-black'
@@ -44,14 +47,14 @@ function ServerSideUpload(props: Readonly<Props>) {
       <button
         className='btn btn-primary mx-auto mt-4'
         type='button'
-        disabled={uploadStatus === "PENDING"}
+        disabled={uploadStatus === UploadStatus.PENDING}
         onClick={handleImageServerSideUpload}>
         Continue to the next step
       </button>
       <button
         className='btn btn-secondary mx-auto mt-4'
         type='button'
-        disabled={uploadStatus === "PENDING"}
+        disabled={uploadStatus === UploadStatus.PENDING}
         onClick={resetState}>
         Clear the image
       </button>
@@ -64,9 +67,9 @@ function ServerSideUpload(props: Readonly<Props>) {
  * @returns The JSX for the invoice submit form.
  */
 export default function InvoiceSubmitForm(props: Readonly<Props>) {
-  const {image, uploadStatus, resetState, handleImageClientSideUpload, handleImageServerSideUpload} = props;
+  const {images, uploadStatus, resetState, handleImageClientSideUpload, handleImageServerSideUpload} = props;
 
-  if (image === null) return <ClientSideUpload handleImageClientSideUpload={handleImageClientSideUpload} />;
+  if (images?.length === 0) return <ClientSideUpload handleImageClientSideUpload={handleImageClientSideUpload} />;
   return (
     <ServerSideUpload
       uploadStatus={uploadStatus}

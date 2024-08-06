@@ -42,7 +42,7 @@ export function getMimeTypeFromBase64(base64String: string): string | null {
  * @param base64String The base64 string to convert
  * @returns The Blob object
  */
-export async function base64ToBlob(base64String: string): Promise<Blob> {
+export async function convertBase64ToBlob(base64String: string): Promise<Blob> {
   // Extract and store the mime type.
   const mimeType = getMimeTypeFromBase64(base64String) as string;
 
