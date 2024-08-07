@@ -3,7 +3,7 @@
 import {fixupConfigRules, fixupPluginRules} from "@eslint/compat";
 import eslint from "@eslint/js";
 import typescriptParser from "@typescript-eslint/parser";
-import eslintPluginFunctional from "eslint-plugin-functional/flat";
+import eslintPluginFunctional from "eslint-plugin-functional";
 import eslintPluginJsDoc from "eslint-plugin-jsdoc";
 import eslintPluginPerfectionist from "eslint-plugin-perfectionist";
 import eslintPluginReact from "eslint-plugin-react";
