@@ -19,7 +19,7 @@ public sealed class Invoice : NamedEntity<Guid>
 	/// <inheritdoc/>
 	[JsonPropertyName("id")]
 	[JsonPropertyOrder(0)]
-	public required override Guid id { get; init; }
+	public override required Guid id { get; init; }
 
 	/// <summary>
 	/// The invoice 1:1 user relationship (owner).

@@ -1,7 +1,7 @@
 /** @format */
 
+import SubscriptionEmail from "@/../emails/newsletter/Subscription";
 import {resend} from "@/lib/utils.server";
-import SubscriptionEmail from "../../../../../emails/newsletter/Subscription";
 
 /**
  * Method to send a newsletter subscription e-mail.
