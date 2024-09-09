@@ -29,9 +29,11 @@
   "scripts": {
     "clean": "npx tsx scripts/clean.ts",
     "dev": "next dev --turbo --experimental-https",
-    "license": "npx tsx scripts/generateAcknowledgements.ts",
+    "generate-licenses": "npx tsx scripts/generateAcknowledgements.ts",
     "email": "email dev",
-    "build": "next build",
+    "build:before": "npm run clean && npm run generate-licenses",
+    "build": "npm run build:before && next build && npm run build:after",
+    "build:after": "echo 'Build completed!'",
     "format": "npx tsx scripts/format.ts",
     "start": "next start",
     "lint": "eslint src/",
