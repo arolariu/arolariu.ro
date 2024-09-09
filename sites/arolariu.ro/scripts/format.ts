@@ -18,15 +18,17 @@ if (!fs.existsSync(prettierConfig)) {
 
 console.log("Checking the code with Prettier...");
 
-execSync(`npx prettier --check . --config-precedence prefer-file --cache --cache-strategy metadata`, {
-  stdio: "inherit",
-});
+try {
+  execSync(`npx prettier --check . --config-precedence prefer-file --cache --cache-strategy metadata`, {
+    stdio: "inherit",
+  });
+} catch (error) {
+  console.error("The code is not formatted with Prettier!.");
+  console.log("Formatting the code with Prettier...");
 
-console.log("Formatting the code with Prettier...");
+  execSync(`npx prettier --write . --config-precedence prefer-file --cache --cache-strategy metadata`, {
+    stdio: "inherit",
+  });
 
-execSync(`npx prettier --write . --config-precedence prefer-file --cache --cache-strategy metadata`, {
-  stdio: "inherit",
-});
-
-console.log("The code has been formatted with Prettier.");
-
+  console.log("The code has been formatted with Prettier.");
+}

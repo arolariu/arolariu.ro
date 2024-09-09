@@ -22,4 +22,3 @@ if (fs.existsSync(nextFolder)) {
   }
   console.log("The .next folder has been cleaned.");
 }
-
