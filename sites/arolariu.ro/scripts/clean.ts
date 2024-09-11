@@ -21,4 +21,6 @@ if (fs.existsSync(nextFolder)) {
     execSync(`rm -rf ${nextFolder}`);
   }
   console.log("The .next folder has been cleaned.");
+} else {
+  console.log("The .next folder does not exist!");
 }

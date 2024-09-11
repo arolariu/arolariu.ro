@@ -1,6 +1,5 @@
 /** @format */
 
-import {fixupConfigRules, fixupPluginRules} from "@eslint/compat";
 import eslint from "@eslint/js";
 import typescriptParser from "@typescript-eslint/parser";
 import eslintPluginFunctional from "eslint-plugin-functional";
@@ -8,7 +7,6 @@ import eslintPluginJsDoc from "eslint-plugin-jsdoc";
 import eslintPluginPerfectionist from "eslint-plugin-perfectionist";
 import eslintPluginReact from "eslint-plugin-react";
 import eslintPluginReactHooks from "eslint-plugin-react-hooks";
-import eslintPluginReactRules from "eslint-plugin-react/configs/recommended.js";
 import eslintPluginSecurity from "eslint-plugin-security";
 import eslintPluginSonarJs from "eslint-plugin-sonarjs";
 import eslintPluginUnicorn from "eslint-plugin-unicorn";
@@ -22,9 +20,12 @@ const eslintConfig = tseslint.config(
   },
   eslint.configs.recommended,
   eslint.configs.all,
+  eslintPluginFunctional.configs.all,
+  eslintPluginSecurity.configs.recommended,
+  eslintPluginJsDoc.configs["flat/recommended-typescript"],
+  eslintPluginSonarJs.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
-  ...fixupConfigRules(eslintPluginReactRules),
   {
     name: "[arolariu.ro::TSX] main linter configuration",
     files: ["**/*.ts", "**/*.tsx"],
@@ -35,6 +36,9 @@ const eslintConfig = tseslint.config(
         projectService: {
           defaultProject: "./tsconfig.json",
         },
+        ecmaFeatures: {
+          jsx: true,
+        },
         tsconfigRootDir: import.meta.dirname,
         ecmaVersion: "latest",
         errorOnTypeScriptSyntacticAndSemanticIssues: true,
@@ -42,15 +46,13 @@ const eslintConfig = tseslint.config(
         errorOnUnknownASTType: true,
         comment: true,
       },
+      globals: {...globals.browser, ...globals.node},
     },
     plugins: {
-      perfectionist: fixupPluginRules(eslintPluginPerfectionist),
-      "react-hooks": fixupPluginRules(eslintPluginReactHooks),
-      functional: fixupPluginRules(eslintPluginFunctional),
-      security: fixupPluginRules(eslintPluginSecurity),
-      unicorn: fixupPluginRules(eslintPluginUnicorn),
-      jsdoc: fixupPluginRules(eslintPluginJsDoc),
-      sonarjs: fixupPluginRules(eslintPluginSonarJs),
+      react: eslintPluginReact,
+      perfectionist: eslintPluginPerfectionist,
+      unicorn: eslintPluginUnicorn,
+      "react-hooks": eslintPluginReactHooks,
     },
     rules: {
       ...eslintPluginFunctional.configs.recommended.rules,
@@ -58,6 +60,8 @@ const eslintConfig = tseslint.config(
       ...eslintPluginReact.configs.all.rules,
       ...eslintPluginUnicorn.configs.all.rules,
       ...eslintPluginReactHooks.configs.recommended.rules,
+      ...eslintPluginPerfectionist.configs["recommended-alphabetical"].rules,
+      ...eslintPluginPerfectionist.configs["recommended-natural"].rules,
       ...eslintPluginSecurity.configs.recommended.rules,
       ...eslintPluginSonarJs.configs.recommended.rules,
       ...eslintPluginJsDoc.configs["recommended-typescript"].rules,
@@ -107,7 +111,6 @@ const eslintConfig = tseslint.config(
       "perfectionist/sort-objects": "off", // prettier sorts objects automatically.
       "perfectionist/sort-union-types": "off", // prettier sorts union types automatically.
       "prefer-named-capture-group": "off",
-      "react-hooks/exhaustive-deps": "off", // sometimes useEffect hooks depend on a prop that is not in the dependency array.
       "react/forbid-component-props": "off",
       "react/function-component-definition": "off",
       "react/jsx-child-element-spacing": "off",
