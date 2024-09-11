@@ -4,6 +4,10 @@ type Props = {
   images: Blob[];
 };
 
+/**
+ * The subtitle for the invoice upload page.
+ * @returns The JSX for the invoice upload page subtitle.
+ */
 export default function InvoiceSubtitle({images}: Readonly<Props>) {
   const titleText: string =
     images.length === 0 ? "UPLOAD A PICTURE OF THE PAPER RECEIPT!" : "ARE THESE THE CORRECT PHOTOS...?!";
