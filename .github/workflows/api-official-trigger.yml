@@ -1,0 +1,116 @@
+name: "api-official-trigger"
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["sites/api.arolariu/**"]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "The environment to deploy to. (e.g. 'development', 'production')"
+        options:
+          - "DEVELOPMENT"
+          - "PRODUCTION"
+        default: "PRODUCTION"
+        required: true
+        type: choice
+      container_name:
+        description: "The name of the container to build and deploy. (e.g. 'backend/dev.arolariu', 'backend/arolariu')"
+        options:
+          - "backend/dev.arolariu"
+          - "backend/arolariu"
+        default: "backend/arolariu"
+        required: true
+        type: choice
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  SITE_NAME: ${{ inputs.environment == 'PRODUCTION' && 'arolariu.ro' || 'dev.arolariu.ro' }}
+  SITE_URL: ${{ inputs.environment == 'PRODUCTION' && 'https://arolariu.ro' || 'https://dev.arolariu.ro' }}
+  SITE_ENV: ${{ inputs.environment || 'development'}}
+  API_NAME: "api.arolariu.ro"
+  API_URL: "https://api.arolariu.ro"
+  COMMIT_SHA: ${{ github.sha }}
+  AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
+  AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
+
+defaults:
+  run:
+    working-directory: ./sites/api.arolariu.ro
+
+jobs:
+  test:
+    name: 🧪 Test phase (1/3)
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'development'}}
+    timeout-minutes: 10
+    steps:
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v4.1.7
+
+      - name: 📦 Installing the .NET runtime...
+        uses: actions/setup-dotnet@v4.0.1
+        with:
+          dotnet-version: "8.x"
+
+  build:
+    name: 🛠️ Build phase (2/3)
+    needs: test
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'development'}}
+    steps:
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v4.1.7
+
+      - name: 📦 Installing the .NET runtime...
+        uses: actions/setup-dotnet@v4.0.1
+        with:
+          dotnet-version: "8.x"
+
+      - name: 🛠️ Building the main artifact...
+        working-directory: ./sites/api.arolariu.ro/src/Core
+        run: dotnet build --configuration Release
+
+      - name: 🏗️ Publishing the main artifact...
+        working-directory: ./sites/api.arolariu.ro/src/Core
+        run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/backend
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4.4.0
+        with:
+          name: .net-backend
+          path: ${{env.DOTNET_ROOT}}/backend
+
+  deploy:
+    name: 🚀 Deploy phase (3/3)
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: "production"
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4.1.8
+        with:
+          name: .net-backend
+
+      - name: 🔒 Handling the auth process to Azure Public Cloud...
+        uses: Azure/login@v2.1.1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3.0.1
+        with:
+          app-name: "api-arolariu"
+          slot-name: "production"
+          package: .
+          clean: true
+          restart: true

@@ -60,7 +60,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoice));
 		await invoiceOrchestrationService.CreateInvoiceObject(invoice)
 											.ConfigureAwait(false);
-		
+
 		return invoice;
 	}).ConfigureAwait(false);
 

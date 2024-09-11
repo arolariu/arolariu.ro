@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 using Microsoft.Azure.Cosmos;
-using Microsoft.EntityFrameworkCore;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
@@ -41,7 +40,8 @@ public partial class InvoiceNoSqlBroker
 		if (response.StatusCode == HttpStatusCode.NotFound)
 		{
 			return null;
-		} else
+		}
+		else
 		{
 			return response.First();
 		}

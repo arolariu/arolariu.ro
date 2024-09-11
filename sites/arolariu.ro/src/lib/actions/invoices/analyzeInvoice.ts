@@ -10,17 +10,22 @@ export default async function analyzeInvoice(
   invoiceIdentifier: string,
   userInformation: UserInformation,
 ): Promise<Invoice | null> {
-  console.info(">>> Analyzing invoice for user:", userInformation);
+  try {
+    console.info(">>> Analyzing invoice for user:", userInformation);
 
-  const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceIdentifier}/analyze`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${userInformation.userJwt}`,
-      "Content-Type": "application/json",
-    },
-    body: "1",
-  });
+    const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceIdentifier}/analyze`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${userInformation.userJwt}`,
+        "Content-Type": "application/json",
+      },
+      body: "1",
+    });
 
-  if (response.ok) return (await response.json()) as Invoice;
-  return null;
+    if (response.ok) return (await response.json()) as Invoice;
+    else return null;
+  } catch (error) {
+    console.error("Error analyzing the invoice:", error);
+    return null;
+  }
 }

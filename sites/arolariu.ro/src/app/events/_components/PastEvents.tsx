@@ -23,7 +23,17 @@ export const PastEvents = () => {
           date='2020-08-01'
           location='Online'
           imagePath='https://dummyimage.com/720x400&text=Learning+C%2FC%2B%2B11'
-          formLink='https://forms.gle/45kMjeTqbbqdDaE68'
+          buttons={{
+            internal: {
+              label: "View event recap.",
+              href: "/events/learning-c-cpp11",
+            },
+            external: {
+              label: "Registration closed.",
+              href: "https://forms.gle/45kMjeTqbbqdDaE68",
+              disabled: true,
+            },
+          }}
         />
         <EventCard
           title='System Design 101 - L100'
@@ -31,7 +41,17 @@ export const PastEvents = () => {
           date='2024-03-01'
           location='Online'
           imagePath='https://dummyimage.com/720x400&text=System+Design+101+%2D+L100'
-          formLink='https://forms.office.com/r/m1KGUNs5A8'
+          buttons={{
+            internal: {
+              label: "View event recap.",
+              href: "/events/system-design-101-l100",
+            },
+            external: {
+              label: "Registration closed.",
+              href: "https://forms.office.com/r/m1KGUNs5A8",
+              disabled: true,
+            },
+          }}
         />
         <EventCard
           title='System Design 101 - L200'
@@ -39,7 +59,53 @@ export const PastEvents = () => {
           date='2024-05-01'
           location='Online'
           imagePath='https://dummyimage.com/720x400&text=System+Design+101+%2D+L200'
-          formLink='https://forms.office.com/r/m1KGUNs5A8'
+          buttons={{
+            internal: {
+              label: "View event recap.",
+              href: "/events/system-design-101-l200",
+            },
+            external: {
+              label: "Registration closed.",
+              href: "https://forms.office.com/r/m1KGUNs5A8",
+              disabled: true,
+            },
+          }}
+        />
+        <EventCard
+          title='System Design 101 - L100'
+          description='Learn the basics of system design and how to approach any architecture interview with no stress.'
+          date='2024-06-01'
+          location='Online'
+          imagePath='https://dummyimage.com/720x400&text=System+Design+101+%2D+L100'
+          buttons={{
+            internal: {
+              label: "View event recap.",
+              href: "/events/system-design-101-l100",
+            },
+            external: {
+              label: "Registration closed.",
+              href: "https://forms.office.com/r/m1KGUNs5A8",
+              disabled: true,
+            },
+          }}
+        />
+        <EventCard
+          title='System Design 101 - L200'
+          description='Learn the basics of system design and how to approach any architecture interview with no stress.'
+          date='2024-07-01'
+          location='Online'
+          imagePath='https://dummyimage.com/720x400&text=System+Design+101+%2D+L200'
+          buttons={{
+            internal: {
+              label: "View event recap.",
+              href: "/events/system-design-101-l200",
+            },
+            external: {
+              label: "Registration closed.",
+              href: "https://forms.office.com/r/m1KGUNs5A8",
+              disabled: true,
+            },
+          }}
         />
       </section>
     </section>

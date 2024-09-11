@@ -2,13 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 using Microsoft.Azure.Cosmos;
-using Microsoft.EntityFrameworkCore;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 

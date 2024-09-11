@@ -1,7 +1,7 @@
 /** @format */
 
+import SubscriptionEmail from "@/../emails/newsletter/Subscription";
 import {resend} from "@/lib/utils.server";
-import SubscriptionEmail from "../../../../../emails/newsletter/Subscription";
 
 /**
  * Method to send a newsletter subscription e-mail.
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       from: "AROLARIU.RO <doNotReply@mail.arolariu.ro>",
       to: email,
       cc: "admin@arolariu.ro",
-      reply_to: "admin@arolariu.ro",
+      replyTo: "admin@arolariu.ro",
       subject: "Thank you for subscribing to arolariu.ro! 🎉🎉",
       react: SubscriptionEmail({username}),
     });

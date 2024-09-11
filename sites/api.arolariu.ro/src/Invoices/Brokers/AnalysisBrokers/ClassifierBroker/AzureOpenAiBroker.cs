@@ -1,5 +1,9 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
 
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
+
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DTOs;
@@ -8,10 +12,6 @@ using Azure;
 using Azure.AI.OpenAI;
 
 using Microsoft.Extensions.Options;
-
-using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
 
 /// <summary>
 /// The Azure OpenAI broker service.
@@ -46,7 +46,7 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
 		invoice.Name = await GenerateInvoiceName(invoice).ConfigureAwait(false);
 		invoice.Description = await GenerateInvoiceDescription(invoice).ConfigureAwait(false);
 		invoice.PossibleRecipes = await GenerateInvoiceRecipes(invoice).ConfigureAwait(false);
-		
+
 
 		var products = invoice.Items;
 		foreach (var product in products)

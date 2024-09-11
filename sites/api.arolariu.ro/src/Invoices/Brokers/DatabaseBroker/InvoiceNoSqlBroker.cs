@@ -26,13 +26,13 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 	/// <param name="client"></param>
 	/// <param name="options"></param>
 	public InvoiceNoSqlBroker(CosmosClient client, DbContextOptions<InvoiceNoSqlBroker> options) : base(options)
-    {
+	{
 		ArgumentNullException.ThrowIfNull(client);
 		ArgumentNullException.ThrowIfNull(options);
 		CosmosClient = client;
 	}
 
-    private static void SetModelReferences(ModelBuilder modelBuilder)
+	private static void SetModelReferences(ModelBuilder modelBuilder)
 	{
 		ArgumentNullException.ThrowIfNull(modelBuilder);
 

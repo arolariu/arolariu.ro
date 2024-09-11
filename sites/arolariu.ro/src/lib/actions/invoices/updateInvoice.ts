@@ -16,17 +16,22 @@ export default async function updateInvoice(
   invoiceInformation: Invoice,
   userInformation: UserInformation,
 ): Promise<Invoice | null> {
-  console.info(">>> Updating invoice for user:", userInformation);
+  try {
+    console.info(">>> Updating invoice for user:", userInformation);
 
-  const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceInformation.id}`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${userInformation.userJwt}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(invoiceInformation),
-  });
+    const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceInformation.id}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${userInformation.userJwt}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(invoiceInformation),
+    });
 
-  if (response.ok) return (await response.json()) as Invoice;
-  return null;
+    if (response.ok) return (await response.json()) as Invoice;
+    else return null;
+  } catch (error) {
+    console.error("Error updating the invoice:", error);
+    return null;
+  }
 }

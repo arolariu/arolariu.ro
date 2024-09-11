@@ -11,27 +11,27 @@ public record PaymentInformation
 	/// <summary>
 	/// The date of purchase.
 	/// </summary>
-	public DateTimeOffset DateOfPurchase {get;set;}
+	public DateTimeOffset DateOfPurchase { get; set; }
 
 	/// <summary>
 	/// The payment type.
 	/// </summary>
-	public PaymentType PaymentType {get;set;}
+	public PaymentType PaymentType { get; set; }
 
 	/// <summary>
 	/// The currency name.
 	/// </summary>
-	public string CurrencyName {get;set;} = "N/A";
+	public string CurrencyName { get; set; } = "N/A";
 
 	/// <summary>
 	/// The currency symbol.
 	/// </summary>
-	public string CurrencySymbol {get;set;} = string.Empty;
+	public string CurrencySymbol { get; set; } = string.Empty;
 
 	/// <summary>
 	/// The total amount.
 	/// </summary>
-	public decimal TotalAmount {get;set;} = 0;
+	public decimal TotalAmount { get; set; } = 0;
 
 	/// <summary>
 	/// The total tax.
