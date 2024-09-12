@@ -17,33 +17,20 @@ param sqlServerAdministratorUserName string
 @secure()
 param sqlServerAdministratorPassword string
 
-param sqlServerBackendIdentity string
-param sqlServerFrontendIdentity string
-param sqlServerInfrastructureIdentity string
-
 resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
   name: sqlServerName
   location: sqlServerLocation
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${sqlServerBackendIdentity}': {}
-      '${sqlServerFrontendIdentity}': {}
-      '${sqlServerInfrastructureIdentity}': {}
-    }
-  }
+  identity: { type: 'None', userAssignedIdentities: {} }
   properties: {
-    minimalTlsVersion: '1.3'
+    minimalTlsVersion: '1.2'
     publicNetworkAccess: 'Enabled'
     version: '12.0'
-    primaryUserAssignedIdentityId: sqlServerBackendIdentity
     administratorLogin: sqlServerAdministratorUserName
     administratorLoginPassword: sqlServerAdministratorPassword
   }
   tags: {
-    environment: 'production'
-    deployment: 'bicep'
-    timestamp: resourceGroup().tags.timestamp
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
   }
 
   resource sqlServerAdvancedThreatProtection 'advancedThreatProtectionSettings@2023-08-01-preview' = {

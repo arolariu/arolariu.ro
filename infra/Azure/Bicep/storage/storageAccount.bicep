@@ -23,7 +23,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
       directoryServiceOptions: 'AADKERB'
       defaultSharePermission: 'StorageFileDataSmbShareReader'
     }
-    minimumTlsVersion: 'TLS1_1'
+    minimumTlsVersion: 'TLS1_2'
     allowBlobPublicAccess: true
     allowSharedKeyAccess: true
     networkAcls: {
@@ -50,9 +50,8 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     accessTier: 'Hot'
   }
   tags: {
-    environment: 'production'
-    deployment: 'bicep'
-    timestamp: resourceGroup().tags.timestamp
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
   }
 
   resource storageAccountBlobSettings 'blobServices@2023-05-01' = {

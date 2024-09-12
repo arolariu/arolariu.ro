@@ -5,7 +5,6 @@ metadata author = 'Alexandru-Razvan Olariu'
 
 param mainWebsiteLocation string = resourceGroup().location
 param productionAppPlanId string
-
 param mainWebsiteIdentityId string
 
 resource mainWebsite 'Microsoft.Web/sites@2023-12-01' = {
@@ -83,9 +82,8 @@ resource mainWebsite 'Microsoft.Web/sites@2023-12-01' = {
     }
   }
   tags: {
-    environment: 'production'
-    deployment: 'bicep'
-    timestamp: resourceGroup().tags.timestamp
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
   }
 }
 

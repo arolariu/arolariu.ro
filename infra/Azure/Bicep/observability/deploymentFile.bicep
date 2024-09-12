@@ -6,22 +6,15 @@ param resourceDeploymentDate string = utcNow()
 @description('The prefix to use for the names of the resources.')
 param resourceConventionPrefix string
 
-param managedIdentityBackendId string
-param managedIdentityFrontendId string
-param managedIdentityInfraId string
-
 module logAnalyticsWorkspaceDeployment 'log-analytics.bicep' = {
-  name: 'logAnalyticsWorkspaceDeployment-${resourceDeploymentDate}'
   scope: resourceGroup()
-  params: {
-    logAnalyticsWorkspaceName: '${resourceConventionPrefix}-workspace'
-    logAnalyticsWorkspaceBackendIdentity: managedIdentityBackendId
-  }
+  name: 'logAnalyticsWorkspaceDeployment-${resourceDeploymentDate}'
+  params: { logAnalyticsWorkspaceName: '${resourceConventionPrefix}-workspace' }
 }
 
 module applicationInsightsDeployment 'application-insights.bicep' = {
-  name: 'applicationInsightsDeployment-${resourceDeploymentDate}'
   scope: resourceGroup()
+  name: 'applicationInsightsDeployment-${resourceDeploymentDate}'
   dependsOn: [logAnalyticsWorkspaceDeployment]
   params: {
     applicationInsightsName: '${resourceConventionPrefix}-insights'
@@ -30,13 +23,8 @@ module applicationInsightsDeployment 'application-insights.bicep' = {
 }
 
 module managedGrafanaDeployment 'grafana.bicep' = {
-  name: 'managedGrafanaDeployment-${resourceDeploymentDate}'
   scope: resourceGroup()
+  name: 'managedGrafanaDeployment-${resourceDeploymentDate}'
   dependsOn: [applicationInsightsDeployment, logAnalyticsWorkspaceDeployment]
-  params: {
-    managedGrafanaName: '${resourceConventionPrefix}-grafana'
-    managedGrafanaBackendIdentity: managedIdentityBackendId
-    managedGrafanaFrontendIdentity: managedIdentityFrontendId
-    managedGrafanaInfrastructureIdentity: managedIdentityInfraId
-  }
+  params: { managedGrafanaName: '${resourceConventionPrefix}-grafana' }
 }

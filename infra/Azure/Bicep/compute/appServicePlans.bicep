@@ -11,27 +11,29 @@ param appServicePlanPrefix string
 
 var appPlans = [
   {
-    name: '${appServicePlanPrefix}production'
+    name: '${appServicePlanPrefix}-production'
+    location: appServicePlanLocation
+    perSiteScaling: true
     sku: {
       name: 'B2'
       tier: 'Basic'
     }
-    perSiteScaling: true
   }
   {
-    name: '${appServicePlanPrefix}development'
+    name: '${appServicePlanPrefix}-development'
+    location: appServicePlanLocation
+    perSiteScaling: false
     sku: {
       name: 'B1'
       tier: 'Basic'
     }
-    perSiteScaling: false
   }
 ]
 
 resource appPlanFarm 'Microsoft.Web/serverfarms@2023-12-01' = [
   for appPlan in appPlans: {
     name: appPlan.name
-    location: appServicePlanLocation
+    location: appPlan.location
     sku: {
       name: appPlan.sku.name
       tier: appPlan.sku.tier
@@ -39,13 +41,12 @@ resource appPlanFarm 'Microsoft.Web/serverfarms@2023-12-01' = [
     kind: 'linux' // Linux will be used for the app service plan.
     properties: {
       reserved: true // reserved means that the app service plan is running on Linux underneath.
-      zoneRedundant: false // Azure Front Door will offer redundancy via CDN; no need for this.
+      zoneRedundant: false
       perSiteScaling: appPlan.perSiteScaling
     }
     tags: {
-      environment: appPlan.name == '${appServicePlanPrefix}production' ? 'production' : 'development'
-      deployment: 'bicep'
-      timestamp: resourceGroup().tags.timestamp
+      environment: appPlan.name == '${appServicePlanPrefix}-production' ? 'PRODUCTION' : 'DEVELOPMENT'
+      deployment: 'Bicep'
     }
   }
 ]

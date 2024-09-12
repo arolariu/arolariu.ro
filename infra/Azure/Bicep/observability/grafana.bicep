@@ -6,21 +6,10 @@ metadata author = 'Alexandru-Razvan Olariu'
 param managedGrafanaLocation string = resourceGroup().location
 param managedGrafanaName string
 
-param managedGrafanaBackendIdentity string
-param managedGrafanaFrontendIdentity string
-param managedGrafanaInfrastructureIdentity string
-
 resource managedGrafanaInstance 'Microsoft.Dashboard/grafana@2023-09-01' = {
   name: managedGrafanaName
   location: managedGrafanaLocation
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${managedGrafanaBackendIdentity}': {}
-      '${managedGrafanaFrontendIdentity}': {}
-      '${managedGrafanaInfrastructureIdentity}': {}
-    }
-  }
+  identity: { type: 'None', userAssignedIdentities: {} }
   sku: { name: 'Essential' }
   properties: {
     grafanaMajorVersion: '9'
@@ -33,9 +22,8 @@ resource managedGrafanaInstance 'Microsoft.Dashboard/grafana@2023-09-01' = {
     grafanaIntegrations: { azureMonitorWorkspaceIntegrations: [] }
   }
   tags: {
-    environment: 'production'
-    deployment: 'bicep'
-    timestamp: resourceGroup().tags.timestamp
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
   }
 }
 

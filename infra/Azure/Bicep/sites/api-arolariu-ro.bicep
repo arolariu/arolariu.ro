@@ -60,8 +60,7 @@ resource apiWebsite 'Microsoft.Web/sites@2023-12-01' = {
     keyVaultReferenceIdentity: apiWebsiteIdentityId
   }
   tags: {
-    environment: 'production'
-    deployment: 'bicep'
-    timestamp: resourceGroup().tags.timestamp
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
   }
 }

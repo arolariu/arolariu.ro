@@ -11,20 +11,19 @@ param developmentAppPlanId string
 
 param managedIdentityBackendId string
 param managedIdentityFrontendId string
-param managedIdentityInfraId string
 
 module apiWebsiteDeployment 'api-arolariu-ro.bicep' = {
+  scope: resourceGroup()
   name: 'apiWebsiteDeployment-${resourceDeploymentDate}'
   params: {
     apiWebsiteIdentityId: managedIdentityBackendId
     apiWebsitePlanId: productionAppPlanId
   }
-  scope: resourceGroup()
 }
 
 module mainWebsiteDeployment 'arolariu-ro.bicep' = {
-  name: 'mainWebsiteDeployment-${resourceDeploymentDate}'
   scope: resourceGroup()
+  name: 'mainWebsiteDeployment-${resourceDeploymentDate}'
   params: {
     productionAppPlanId: productionAppPlanId
     mainWebsiteIdentityId: managedIdentityFrontendId
@@ -32,14 +31,15 @@ module mainWebsiteDeployment 'arolariu-ro.bicep' = {
 }
 
 module devWebsiteDeployment 'dev-arolariu-ro.bicep' = {
-  name: 'devWebsiteDeployment-${resourceDeploymentDate}'
   scope: resourceGroup()
+  name: 'devWebsiteDeployment-${resourceDeploymentDate}'
   params: {
     developmentAppPlanId: developmentAppPlanId
+    devWebsiteIdentityId: managedIdentityFrontendId
   }
 }
 
 module docsWebsiteDeployment 'docs-arolariu-ro.bicep' = {
-  name: 'docsWebsiteDeployment-${resourceDeploymentDate}'
   scope: resourceGroup()
+  name: 'docsWebsiteDeployment-${resourceDeploymentDate}'
 }

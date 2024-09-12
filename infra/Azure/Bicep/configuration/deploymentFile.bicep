@@ -6,26 +6,17 @@ param resourceDeploymentDate string = utcNow()
 @description('The prefix to use for the names of the resources.')
 param resourceConventionPrefix string
 
-param managedIdentityBackendId string
-param managedIdentityFrontendId string
-param managedIdentityInfraId string
-
 var keyVaultName = '${resourceConventionPrefix}-kv'
 var appConfigurationName = '${resourceConventionPrefix}-appconfig'
 
 module keyVaultDeployment 'keyVault.bicep' = {
+  scope: resourceGroup()
   name: 'keyVaultDeployment-${resourceDeploymentDate}'
   params: { keyVaultName: keyVaultName }
-  scope: resourceGroup()
 }
 
 module appConfigurationDeployment 'appConfiguration.bicep' = {
-  name: 'appConfigurationDeployment-${resourceDeploymentDate}'
   scope: resourceGroup()
-  params: {
-    appConfigurationName: appConfigurationName
-    appConfigurationBEIdentity: managedIdentityBackendId
-    appConfigurationFEIdentity: managedIdentityFrontendId
-    appConfigurationInfraIdentity: managedIdentityInfraId
-  }
+  name: 'appConfigurationDeployment-${resourceDeploymentDate}'
+  params: { appConfigurationName: appConfigurationName }
 }

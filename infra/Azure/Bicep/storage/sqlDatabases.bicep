@@ -13,8 +13,6 @@ param sqlDatabaseNamePrefix string
 @description('The location for the SQL Database resources.')
 param sqlDatabaseLocation string = resourceGroup().location
 
-param sqlDatabaseBackendIdentity string
-
 var sqlDatabasePrimaryName = '${sqlDatabaseNamePrefix}-primary'
 var sqlDatabaseSecondaryName = '${sqlDatabaseNamePrefix}-secondary'
 
@@ -27,12 +25,7 @@ resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2023-08-01-preview'
   parent: sqlServer
   name: sqlDatabasePrimaryName
   location: sqlDatabaseLocation
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${sqlDatabaseBackendIdentity}': {}
-    }
-  }
+  identity: { type: 'None', userAssignedIdentities: {} }
   sku: {
     name: 'Standard'
     tier: 'Standard'
@@ -49,8 +42,8 @@ resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2023-08-01-preview'
     availabilityZone: 'NoPreference'
   }
   tags: {
-    environment: 'production'
-    deployment: 'bicep'
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
   }
 }
 
@@ -62,12 +55,7 @@ resource sqlDatabaseSecondary 'Microsoft.Sql/servers/databases@2023-08-01-previe
     name: 'GP_S_Gen5_2'
     tier: 'GeneralPurpose'
   }
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${sqlDatabaseBackendIdentity}': {}
-    }
-  }
+  identity: { type: 'None', userAssignedIdentities: {} }
   properties: {
     catalogCollation: 'SQL_Latin1_General_CP1_CI_AS'
     collation: 'SQL_Latin1_General_CP1_CI_AS'
@@ -80,8 +68,7 @@ resource sqlDatabaseSecondary 'Microsoft.Sql/servers/databases@2023-08-01-previe
     freeLimitExhaustionBehavior: 'AutoPause'
   }
   tags: {
-    environment: 'production'
-    deployment: 'bicep'
-    timestamp: resourceGroup().tags.timestamp
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
   }
 }

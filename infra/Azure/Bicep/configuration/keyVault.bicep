@@ -13,24 +13,25 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
   location: keyVaultLocation
   properties: {
-    sku: { family: 'A', name: 'standard' }
-    tenantId: subscription().tenantId
+    accessPolicies: []
+    createMode: 'default'
     enabledForDeployment: false
     enabledForDiskEncryption: false
     enabledForTemplateDeployment: true
-    enableSoftDelete: true
-    softDeleteRetentionInDays: 90
     enablePurgeProtection: true
-    createMode: 'default'
-    publicNetworkAccess: 'enabled'
+    enableRbacAuthorization: false
+    enableSoftDelete: true
+    networkAcls: {}
     provisioningState: 'Succeeded'
+    publicNetworkAccess: 'enabled'
+    sku: { family: 'A', name: 'standard' }
+    softDeleteRetentionInDays: 90
+    tenantId: subscription().tenantId
     vaultUri: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}'
-    accessPolicies: []
   }
   tags: {
-    environment: 'production'
-    deployment: 'bicep'
-    timestamp: resourceGroup().tags.timestamp
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
   }
 }
 

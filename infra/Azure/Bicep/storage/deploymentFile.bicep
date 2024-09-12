@@ -6,27 +6,20 @@ param resourceDeploymentDate string = utcNow()
 @description('The prefix to use for the names of the resources.')
 param resourceConventionPrefix string
 
-param managedIdentityBackendId string
-param managedIdentityFrontendId string
-param managedIdentityInfraId string
-
 var storageAccountName = '${replace(resourceConventionPrefix, '-', '')}sa'
 var sqlServerName = '${resourceConventionPrefix}-sqlserver'
 
 module storageAccountDeployment 'storageAccount.bicep' = {
+  scope: resourceGroup()
   name: 'storageAccountDeployment-${resourceDeploymentDate}'
   params: { storageAccountName: storageAccountName }
-  scope: resourceGroup()
 }
 
 module sqlServerDeployment 'sqlServer.bicep' = {
-  name: 'sqlServerDeployment-${resourceDeploymentDate}'
   scope: resourceGroup()
+  name: 'sqlServerDeployment-${resourceDeploymentDate}'
   params: {
     sqlServerName: sqlServerName
-    sqlServerBackendIdentity: managedIdentityBackendId
-    sqlServerFrontendIdentity: managedIdentityFrontendId
-    sqlServerInfrastructureIdentity: managedIdentityInfraId
     sqlServerAdministratorPassword: ''
     sqlServerAdministratorUserName: ''
   }
@@ -39,6 +32,5 @@ module sqlServerDatabaseDeployment 'sqlDatabases.bicep' = {
   params: {
     sqlServerName: sqlServerDeployment.outputs.sqlServerName
     sqlDatabaseNamePrefix: '${resourceConventionPrefix}-sqlserver-db'
-    sqlDatabaseBackendIdentity: managedIdentityBackendId
   }
 }

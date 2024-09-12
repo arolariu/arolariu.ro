@@ -18,8 +18,7 @@ resource docsStaticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
     enterpriseGradeCdnStatus: 'Disabled'
   }
   tags: {
-    environment: 'production'
-    deployment: 'bicep'
-    timestamp: resourceGroup().tags.timestamp
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
   }
 }
