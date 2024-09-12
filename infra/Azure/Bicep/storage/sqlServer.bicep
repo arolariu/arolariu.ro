@@ -20,7 +20,6 @@ param sqlServerAdministratorPassword string
 resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
   name: sqlServerName
   location: sqlServerLocation
-  identity: { type: 'None', userAssignedIdentities: {} }
   properties: {
     minimalTlsVersion: '1.2'
     publicNetworkAccess: 'Enabled'

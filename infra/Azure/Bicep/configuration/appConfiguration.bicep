@@ -12,7 +12,6 @@ param appConfigurationLocation string = resourceGroup().location
 resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2023-09-01-preview' = {
   name: appConfigurationName
   location: appConfigurationLocation
-  identity: { type: 'None', userAssignedIdentities: {} }
   sku: { name: 'free' }
   properties: {
     createMode: 'Default'

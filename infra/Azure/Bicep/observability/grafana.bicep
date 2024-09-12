@@ -9,10 +9,9 @@ param managedGrafanaName string
 resource managedGrafanaInstance 'Microsoft.Dashboard/grafana@2023-09-01' = {
   name: managedGrafanaName
   location: managedGrafanaLocation
-  identity: { type: 'None', userAssignedIdentities: {} }
   sku: { name: 'Essential' }
   properties: {
-    grafanaMajorVersion: '9'
+    grafanaMajorVersion: '10'
     zoneRedundancy: 'Disabled'
     publicNetworkAccess: 'Enabled'
     apiKey: 'Enabled'

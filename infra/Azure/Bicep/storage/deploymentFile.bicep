@@ -20,8 +20,8 @@ module sqlServerDeployment 'sqlServer.bicep' = {
   name: 'sqlServerDeployment-${resourceDeploymentDate}'
   params: {
     sqlServerName: sqlServerName
-    sqlServerAdministratorPassword: ''
-    sqlServerAdministratorUserName: ''
+    sqlServerAdministratorPassword: 'adminUsername1234!' // This is a placeholder, replace it with a secret
+    sqlServerAdministratorUserName: 'adminPa$$w0rd1234!' // This is a placeholder, replace it with a secret
   }
 }
 

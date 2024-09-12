@@ -10,7 +10,7 @@ param resourceGroupName string = 'myResourceGroup'
 param resourceGroupAuthor string = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 
 @description('The location of the resource group that will contain all the resources.')
-param resourceGroupLocation string = 'EastUS'
+param resourceGroupLocation string = 'swedencentral'
 
 @description('The date when the deployment is executed.')
 param resourceDeploymentDate string = utcNow()

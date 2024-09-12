@@ -25,7 +25,6 @@ resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2023-08-01-preview'
   parent: sqlServer
   name: sqlDatabasePrimaryName
   location: sqlDatabaseLocation
-  identity: { type: 'None', userAssignedIdentities: {} }
   sku: {
     name: 'Standard'
     tier: 'Standard'
