@@ -1,6 +1,6 @@
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will create a new Azure SQL Server resource.'
+metadata description = 'This template will create a new Azure SQL server resource.'
 metadata author = 'Alexandru-Razvan Olariu'
 
 @description('The SQL Server name.')

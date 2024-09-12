@@ -7,12 +7,20 @@ param resourceDeploymentDate string = utcNow()
 param resourceConventionPrefix string
 
 var storageAccountName = '${replace(resourceConventionPrefix, '-', '')}sa'
+
 var sqlServerName = '${resourceConventionPrefix}-sqlserver'
+var noSqlServerName = '${resourceConventionPrefix}-nosqlserver'
 
 module storageAccountDeployment 'storageAccount.bicep' = {
   scope: resourceGroup()
   name: 'storageAccountDeployment-${resourceDeploymentDate}'
   params: { storageAccountName: storageAccountName }
+}
+
+module containerRegistryDeployment 'containerRegistry.bicep' = {
+  scope: resourceGroup()
+  name: 'containerRegistryDeployment-${resourceDeploymentDate}'
+  params: { containerRegistryName: '${resourceConventionPrefix}-acr' }
 }
 
 module sqlServerDeployment 'sqlServer.bicep' = {
@@ -33,4 +41,17 @@ module sqlServerDatabaseDeployment 'sqlDatabases.bicep' = {
     sqlServerName: sqlServerDeployment.outputs.sqlServerName
     sqlDatabaseNamePrefix: '${resourceConventionPrefix}-sqlserver-db'
   }
+}
+
+module noSqlServerDeployment 'noSqlServer.bicep' = {
+  scope: resourceGroup()
+  name: 'noSqlServerDeployment-${resourceDeploymentDate}'
+  params: { noSqlServerName: noSqlServerName }
+}
+
+module noSqlServerDatabaseDeployment 'noSqlDatabases.bicep' = {
+  scope: resourceGroup()
+  name: 'noSqlServerDatabaseDeployment-${resourceDeploymentDate}'
+  dependsOn: [noSqlServerDeployment]
+  params: { noSqlServerName: noSqlServerDeployment.outputs.noSqlServerName }
 }

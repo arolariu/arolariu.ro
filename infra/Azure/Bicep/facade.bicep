@@ -15,6 +15,12 @@ module identitiesDeployment 'identity/deploymentFile.bicep' = {
   params: { resourceConventionPrefix: resourceConventionPrefix }
 }
 
+module networkDeployment 'network/deploymentFile.bicep' = {
+  scope: resourceGroup()
+  name: 'networkDeployment-${resourceDeploymentDate}'
+  params: { resourceConventionPrefix: resourceConventionPrefix }
+}
+
 module configurationDeployment 'configuration/deploymentFile.bicep' = {
   scope: resourceGroup()
   name: 'configurationDeployment-${resourceDeploymentDate}'
