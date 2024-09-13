@@ -2,18 +2,17 @@
 
 "use client";
 
+import {Button} from "@/components/ui/button";
 import {ToastAction} from "@/components/ui/toast";
 import {useToast} from "@/components/ui/use-toast";
 import useUserInformation from "@/hooks/useUserInformation";
-import fetchBlobFromAzureStorage from "@/lib/actions/azure/fetchBlob";
-import uploadBlobToAzureStorage from "@/lib/actions/azure/uploadBlob";
 import uploadInvoice from "@/lib/actions/invoices/uploadInvoice";
 import {extractBase64FromBlob} from "@/lib/utils.client";
-import {useRouter} from "next/navigation";
+import {UploadStatus} from "@/types/UploadStatus";
 import {useState} from "react";
-import InvoiceCallToAction from "./_components/InvoiceCallToAction";
 import InvoicePreview from "./_components/InvoicePreview";
 import InvoiceSubmitForm from "./_components/InvoiceSubmitForm";
+import InvoiceSubtitle from "./_components/InvoiceSubtitle";
 
 /**
  * This function renders the invoice upload page.
@@ -21,77 +20,56 @@ import InvoiceSubmitForm from "./_components/InvoiceSubmitForm";
  */
 export default function RenderCreateInvoiceScreen() {
   const {toast} = useToast();
-  const router = useRouter();
-  const [image, setImage] = useState<Blob | null>(null);
-  const {userInformation} = useUserInformation({dependencyArray: [image]});
-  const [imageIdentifier, setImageIdentifier] = useState<string | null>(null);
-  const [uploadStatus, setUploadStatus] = useState<"SUCCESS" | "PENDING" | null>(null);
+  const [images, setImages] = useState<Blob[]>([]);
+  const {userInformation} = useUserInformation({dependencyArray: [images]});
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>(UploadStatus.UNKNOWN);
 
   const resetState = () => {
-    setImage(null);
-    setUploadStatus(null);
+    setImages([]);
+    setUploadStatus(UploadStatus.UNKNOWN);
   };
 
   const handleImageClientSideUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     event.preventDefault();
     const {files} = event.target;
     if (files && files.length > 0) {
-      const image = files[0] as Blob;
-      setImage(image);
-      const imageAsBase64 = await extractBase64FromBlob(image);
+      const images = [...files] as Blob[];
+      setImages(images);
       toast({
+        title: `You have uploaded ${images.length} image${images.length > 1 ? "s" : ""}.`,
         variant: "default",
-        title: "Please wait for the photo to be processed...",
-        duration: 5000,
+        duration: 3000,
+        action: (
+          <ToastAction
+            altText='Clear'
+            className='flex flex-row items-center justify-center justify-items-center gap-2'>
+            <Button onClick={resetState}>Clear.</Button>
+          </ToastAction>
+        ),
       });
-      setUploadStatus("PENDING");
-      const blobStorageResponse = await uploadBlobToAzureStorage("invoices", imageAsBase64);
-      setUploadStatus("SUCCESS");
-      setImageIdentifier(blobStorageResponse.blobName);
     }
   };
 
   const handleImageServerSideUpload = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    const blobInformation = await fetchBlobFromAzureStorage("invoices", imageIdentifier!);
-    const {status, identifier} = await uploadInvoice(blobInformation, userInformation!);
-
-    if (status === "SUCCESS")
-      toast({
-        variant: "destructive",
-        title: "Receipt uploaded successfully!",
-        duration: 5000,
-        action: (
-          <ToastAction
-            altText='Navigate to receipt.'
-            onClick={() => router.push(`/domains/invoices/view-invoice/${identifier}`)}>
-            Navigate to receipt.
-          </ToastAction>
-        ),
-      });
-    else
-      toast({
-        variant: "destructive",
-        title: "Receipt upload failed!",
-        duration: 5000,
-        action: (
-          <ToastAction
-            altText='Try again.'
-            onClick={() => {
-              resetState();
-            }}>
-            Try again.
-          </ToastAction>
-        ),
-      });
+    const imagesCopy = [...images];
+    for (const image of imagesCopy) {
+      const base64 = await extractBase64FromBlob(image); // client-action
+      const {status} = await uploadInvoice(base64, userInformation!); // server-action
+      if (status === "SUCCESS") {
+        setImages((images) => {
+          return images.filter((imageInState) => imageInState !== image);
+        });
+      }
+    }
   };
 
   return (
     <section className='h-full w-full'>
-      <InvoicePreview image={image} />
-      <InvoiceCallToAction image={image} />
+      <InvoicePreview images={images} />
+      <InvoiceSubtitle images={images} />
       <InvoiceSubmitForm
-        image={image}
+        images={images}
         uploadStatus={uploadStatus}
         resetState={resetState}
         handleImageClientSideUpload={handleImageClientSideUpload}

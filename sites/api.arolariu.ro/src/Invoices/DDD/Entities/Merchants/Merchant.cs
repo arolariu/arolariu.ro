@@ -1,9 +1,7 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Common.DDD.Contracts;
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 

@@ -18,28 +18,17 @@ export const PresentEvents = () => {
 
       <section className='flex flex-col flex-wrap items-center justify-center justify-items-center gap-8 p-8 md:flex-row'>
         <EventCard
-          title='System Design 101 - L100'
-          description='Learn the basics of system design and how to approach any architecture interview with no stress.'
-          date='2024-06-01'
-          location='Online'
-          imagePath='https://dummyimage.com/720x400&text=System+Design+101+%2D+L100'
-          formLink='https://forms.office.com/r/m1KGUNs5A8'
-        />
-        <EventCard
-          title='System Design 101 - L200'
-          description='Learn the basics of system design and how to approach any architecture interview with no stress.'
-          date='2024-07-01'
-          location='Online'
-          imagePath='https://dummyimage.com/720x400&text=System+Design+101+%2D+L200'
-          formLink='https://forms.office.com/r/m1KGUNs5A8'
-        />
-        <EventCard
-          title='System Design 101 - L300'
-          description='Learn the basics of system design and how to approach any architecture interview with no stress.'
-          date='2024-08-01'
-          location='Online'
-          imagePath='https://dummyimage.com/720x400&text=System+Design+101+%2D+L300'
-          formLink='https://forms.office.com/r/m1KGUNs5A8'
+          date='2024-09-26'
+          title="The 'OmniOpenCon' open-source conference!"
+          description='The conference will cover a wide range of topics, from open-source software to hardware and more. I will be speaking about Open Telemetry and observability.'
+          location='Politehnica Bucuresti, Bucharest, Romania'
+          buttons={{
+            external: {
+              label: "Learn more.",
+              href: "https://omniopencon.org",
+            },
+          }}
+          imagePath='https://dummyimage.com/720x400&text=OmniOpenCon+%2D+2024'
         />
       </section>
     </section>

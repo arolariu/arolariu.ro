@@ -1,6 +1,5 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 
 using System;
 using System.Collections.Generic;

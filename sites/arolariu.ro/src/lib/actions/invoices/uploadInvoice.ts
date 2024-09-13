@@ -5,7 +5,7 @@
 import type {UserInformation} from "@/types/UserInformation";
 import Invoice, {InvoicePayload} from "@/types/invoices/Invoice";
 import {API_URL} from "../../utils.server";
-import {BlobStorageResponse} from "../azure/uploadBlob";
+import uploadBlobToAzureStorage from "../storage/uploadBlob";
 
 /**
  * This function uploads the invoice to the server.
@@ -16,18 +16,20 @@ import {BlobStorageResponse} from "../azure/uploadBlob";
  * 4. Send a full analysis request to the server.
  * @returns The result of the upload.
  */
-export default async function uploadInvoice(blobInformation: BlobStorageResponse, userInformation: UserInformation) {
+export default async function uploadInvoice(blobInformation: string, userInformation: UserInformation) {
   try {
+    const storageResponse = await uploadBlobToAzureStorage("invoices", blobInformation);
+
     const invoicePayload = {
       userIdentifier: userInformation.userIdentifier,
-      photoIdentifier: blobInformation.blobIdentifier,
-      photoLocation: blobInformation.blobUrl,
+      photoIdentifier: storageResponse.blobIdentifier,
+      photoLocation: storageResponse.blobUrl,
       photoMetadata: {} as Record<string, string>,
     } satisfies InvoicePayload;
 
     const photoMetadata = {dateOfUploadToServer: new Date().toISOString()} as Record<string, string>;
-    for (const metadataKey in blobInformation.blobMetadata) {
-      const metadataValue = blobInformation.blobMetadata[metadataKey] as string;
+    for (const metadataKey in storageResponse.blobMetadata) {
+      const metadataValue = storageResponse.blobMetadata[metadataKey] as string;
       photoMetadata[metadataKey] = metadataValue;
     }
 
@@ -43,15 +45,6 @@ export default async function uploadInvoice(blobInformation: BlobStorageResponse
       headers: invoiceHttpHeaders,
       body: JSON.stringify(invoicePayload),
     });
-
-    if (!invoiceResponse.ok) {
-      console.error("Error uploading the invoice to the server:", invoiceResponse.statusText);
-      return {
-        status: "FAILURE",
-        message: "Error uploading the invoice to the server.",
-        identifier: "",
-      };
-    }
 
     const {id} = (await invoiceResponse.json()) as Invoice;
     return {

@@ -15,7 +15,7 @@
 		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
 		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
 		<Deterministic>True</Deterministic>
-		<NoWarn>S1135</NoWarn>
+		<NoWarn>S1135, NU1903, NU1902</NoWarn>
 		<!-- S1135 - SonarLint "Complete TODOs" -->
 	</PropertyGroup>
 
@@ -34,11 +34,11 @@
 		<PackageReference Include="Azure.AI.OpenAI" Version="2.0.0-beta.2" />
 		<PackageReference Include="Azure.AI.OpenAI.Assistants" Version="1.0.0-beta.4" />
 		<PackageReference Include="Azure.AI.Translation.Text" Version="1.0.0" />
-		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.3.1" />
-		<PackageReference Include="Azure.Storage.Blobs" Version="12.21.1" />
+		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.3.2" />
+		<PackageReference Include="Azure.Storage.Blobs" Version="12.21.2" />
 		<PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" Version="7.0.1" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.42.0" />
-		<PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.4" />
+		<PackageReference Include="Microsoft.Extensions.Azure" Version="1.7.5" />
 	</ItemGroup>
 
 	<ItemGroup>
