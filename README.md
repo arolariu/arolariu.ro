@@ -23,27 +23,53 @@
 
 ## Table of Contents
 
-- [What is this repository?](#what-is-this-repository)
-- [CI/CD Status](#cicd-status)
-- [Repository Statistics](#repository-statistics)
-  - [Repository activity](#repository-activity)
-  - [Repository contributors](#repository-contributors)
+- [AROLARIU.RO Monorepo](#arolariuro-monorepo)
+  - [Platform screenshots](#platform-screenshots)
+  - [Table of Contents](#table-of-contents)
+    - [What is this repository?](#what-is-this-repository)
+    - [High Level Infrastructure overview (using Bicep Visualizer)](#high-level-infrastructure-overview-using-bicep-visualizer)
+    - [Current CI/CD status](#current-cicd-status)
+    - [Repository Statistics](#repository-statistics)
+      - [Repository activity](#repository-activity)
+      - [Repository contributors](#repository-contributors)
 
 ### What is this repository?
 
 The `arolariu.ro` repository contains the open-source code for different services and workers that are running under the domain umbrella. The repository is organized as a monorepo, and it contains the following services:
 
-- [Next.JS v14 Production Platform](https://arolariu.ro) - is the main point of contact and the primary entry point for users.
-- [Next.JS v14 Development Platform](https://dev.arolariu.ro) - is the development platform for the main website.
-- [ASP.NET 8 Public API](https://api.arolariu.ro) - acts as the main backend; it is able to serve REST, GraphQL, and gRPC requests.
+- [Next.JS Production Platform](https://arolariu.ro) - is the main point of contact and the primary entry point for users.
+- [Next.JS Development Platform](https://dev.arolariu.ro) - is the development platform for the main website.
+- [ASP.NET (LTS) Public API](https://api.arolariu.ro) - acts as the main backend; it is able to serve REST, GraphQL, and gRPC requests.
 
-### CI/CD Status
+### High Level Infrastructure overview (using Bicep Visualizer)
 
-| Service                                          | Deployment Status                                                                                     |
-|--------------------------------------------------|------------------------------------------------------------------------------------------------------|
-| .NET 8 API                   | [![API platform (api.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/api.arolariu.ro.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/api.arolariu.ro.yml) |
-| DocFX SSG                 | [![Docs platform (docs.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/docs.arolariu.ro.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/docs.arolariu.ro.yml) |
-| Hugo Blog                | [![About platform (about.arolariu.ro) deployment](https://github.com/arolariu/arolariu.ro/actions/workflows/about.arolariu.ro.yml/badge.svg)](https://github.com/arolariu/arolariu.ro/actions/workflows/about.arolariu.ro.yml) |
+![High Level Infrastructure overview](./design/high-level-infra.png)
+
+The infrastructure is deployed using Azure Bicep, and it is organized in a way that allows for easy management and scaling. The main components of the infrastructure are:
+
+- **Azure Front Door** - acts as the main entry point for the platform, and it is able to route traffic to different services based on the request.
+- **Azure App Service** - is used to host the main website and the API.
+- **Azure CDN** - is used to cache and serve static content to users.
+- **Azure Key Vault** - is used to store and manage secrets and certificates.
+- **Azure Application Insights** - is used to monitor and track the performance of the services.
+- **Azure SQL Database** - is used to store and manage the data for the API.
+- **Azure Storage Account** - is used to store and manage the static files for the website.
+- **Azure Monitor** - is used to monitor and track the performance of the services.
+- **Azure App Configuration** - is used to store and manage the configuration settings for the services.
+- **Azure Cosmos DB** - is used to store and manage the data for the API.
+
+---
+
+### Current CI/CD status
+
+| Service              | Build Status                                                                                                                                                                                                                                          | Release Status                                                                                                                                                                                                                                                 |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Main Platform (DEV)  | [![website-official-build](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-build.yml/badge.svg?branch=preview&event=push)](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-build.yml)           | [![website-official-release](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-release.yml/badge.svg?branch=preview&event=workflow_dispatch)](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-release.yml) |
+| Main Platform (PROD) | [![website-official-build](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-build.yml/badge.svg?branch=main&event=workflow_dispatch)](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-build.yml) | [![website-official-release](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-release.yml/badge.svg?branch=main&event=workflow_dispatch)](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-release.yml)    |
+| API Platform (PROD)  | [![api-official-trigger](https://github.com/arolariu/arolariu.ro/actions/workflows/api-official-trigger.yml/badge.svg?branch=main&event=workflow_dispatch)](https://github.com/arolariu/arolariu.ro/actions/workflows/api-official-trigger.yml)       | [![api-official-trigger](https://github.com/arolariu/arolariu.ro/actions/workflows/api-official-trigger.yml/badge.svg?branch=main&event=workflow_dispatch)](https://github.com/arolariu/arolariu.ro/actions/workflows/api-official-trigger.yml)                |
+
+> [!NOTE]
+> The `PROD` environment is the production environment, and the `DEV` environment is the development environment.
 
 ---
 
