@@ -1,11 +1,16 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+  "languageVersion": "2.1-experimental",
   "contentVersion": "1.0.0.0",
   "metadata": {
+    "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+    "_EXPERIMENTAL_FEATURES_ENABLED": [
+      "Extensibility"
+    ],
     "_generator": {
       "name": "bicep",
       "version": "0.29.47.4906",
-      "templateHash": "17722769565714126202"
+      "templateHash": "449587986474581878"
     },
     "description": "This bicep file is the main entry point for any zero-touch deployment.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>"
@@ -40,8 +45,8 @@
       }
     }
   },
-  "resources": [
-    {
+  "resources": {
+    "resourceGroup": {
       "type": "Microsoft.Resources/resourceGroups",
       "apiVersion": "2024-03-01",
       "name": "[parameters('resourceGroupName')]",
@@ -52,7 +57,7 @@
         "deploymentDate": "[parameters('resourceDeploymentDate')]"
       }
     },
-    {
+    "mainDeployment": {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
       "name": "[format('mainDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -64,12 +69,17 @@
         "mode": "Incremental",
         "template": {
           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "languageVersion": "2.1-experimental",
           "contentVersion": "1.0.0.0",
           "metadata": {
+            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+            "_EXPERIMENTAL_FEATURES_ENABLED": [
+              "Extensibility"
+            ],
             "_generator": {
               "name": "bicep",
               "version": "0.29.47.4906",
-              "templateHash": "17235891982154740784"
+              "templateHash": "1456848408711017719"
             },
             "description": "This file acts a facade that will be called by the main bicep file. This file contains all module deployments (compute, storage, identity, etc.). This file is responsible for deploying all the modules.",
             "author": "Alexandru-Razvan Olariu"
@@ -86,8 +96,8 @@
           "variables": {
             "resourceConventionPrefix": "[substring(uniqueString(parameters('resourceDeploymentDate')), 0, 6)]"
           },
-          "resources": [
-            {
+          "resources": {
+            "identitiesDeployment": {
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2022-09-01",
               "name": "[format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -103,13 +113,17 @@
                 },
                 "template": {
                   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-                  "languageVersion": "2.0",
+                  "languageVersion": "2.1-experimental",
                   "contentVersion": "1.0.0.0",
                   "metadata": {
+                    "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                    "_EXPERIMENTAL_FEATURES_ENABLED": [
+                      "Extensibility"
+                    ],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.29.47.4906",
-                      "templateHash": "6311476933594998769"
+                      "templateHash": "170037938176958415"
                     }
                   },
                   "definitions": {
@@ -170,13 +184,17 @@
                         },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-                          "languageVersion": "2.0",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "16989346103895241351"
+                              "templateHash": "14410066069712512936"
                             },
                             "description": "This template will create three user assigned managed identities: Front-End, Back-End, Infrastructure",
                             "author": "Alexandru-Razvan Olariu"
@@ -273,6 +291,204 @@
                           }
                         }
                       }
+                    },
+                    "federatedIdentities": {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('federatedIdentitiesDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "infrastructureManagedIdentity": {
+                            "value": "[reference('managedIdentities').outputs.userAssignedManagedIdentities.value[2]]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.29.47.4906",
+                              "templateHash": "15488053504591133577"
+                            },
+                            "description": "This template will create a federated managed identity for the Azure resources.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "definitions": {
+                            "identity": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "displayName": {
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "type": "string"
+                                }
+                              },
+                              "metadata": {
+                                "type": "identity",
+                                "name": "identity",
+                                "__bicep_imported_from!": {
+                                  "sourceTemplate": "../types/identity.type.bicep"
+                                }
+                              }
+                            }
+                          },
+                          "parameters": {
+                            "infrastructureManagedIdentity": {
+                              "$ref": "#/definitions/identity"
+                            }
+                          },
+                          "resources": {
+                            "managedIdentity": {
+                              "existing": true,
+                              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+                              "apiVersion": "2023-07-31-preview",
+                              "name": "[parameters('infrastructureManagedIdentity').name]"
+                            },
+                            "federatedIdentityForGitHub": {
+                              "type": "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials",
+                              "apiVersion": "2023-07-31-preview",
+                              "name": "[format('{0}/{1}', parameters('infrastructureManagedIdentity').name, 'FederatedGithubCredential')]",
+                              "properties": {
+                                "issuer": "https://token.actions.githubusercontent.com",
+                                "subject": "repo:arolariu/arolariu.ro:environment:production",
+                                "audiences": [
+                                  "api://AzureADTokenExchange"
+                                ]
+                              },
+                              "dependsOn": [
+                                "managedIdentity"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "dependsOn": [
+                        "managedIdentities"
+                      ]
+                    },
+                    "securityGroups": {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('securityGroupsDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "identities": {
+                            "value": "[reference('managedIdentities').outputs.userAssignedManagedIdentities.value]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.29.47.4906",
+                              "templateHash": "2522207686698910504"
+                            },
+                            "description": "This template will create security groups for specific access to resources.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "definitions": {
+                            "identity": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "displayName": {
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "type": "string"
+                                }
+                              },
+                              "metadata": {
+                                "type": "identity",
+                                "name": "identity",
+                                "__bicep_imported_from!": {
+                                  "sourceTemplate": "../types/identity.type.bicep"
+                                }
+                              }
+                            }
+                          },
+                          "parameters": {
+                            "identities": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/identity"
+                              }
+                            }
+                          },
+                          "variables": {
+                            "copy": [
+                              {
+                                "name": "identitiesArray",
+                                "count": "[length(parameters('identities'))]",
+                                "input": "[parameters('identities')[copyIndex('identitiesArray')].id]"
+                              }
+                            ]
+                          },
+                          "imports": {
+                            "microsoftGraph": {
+                              "provider": "MicrosoftGraph",
+                              "version": "1.0.0"
+                            }
+                          },
+                          "resources": {
+                            "securityGroupForUsers": {
+                              "import": "microsoftGraph",
+                              "type": "Microsoft.Graph/groups@v1.0",
+                              "properties": {
+                                "displayName": "arolariu-JIT-Users",
+                                "mailEnabled": true,
+                                "mailNickname": "arolariu-JIT-Users",
+                                "securityEnabled": true,
+                                "uniqueName": "arolariu-JIT-Users",
+                                "description": "Security group for Just-In-Time access to resources, for users."
+                              }
+                            },
+                            "securityGroupForApps": {
+                              "import": "microsoftGraph",
+                              "type": "Microsoft.Graph/groups@v1.0",
+                              "properties": {
+                                "displayName": "arolariu-JIT-Apps",
+                                "mailEnabled": false,
+                                "mailNickname": "arolariu-JIT-Apps",
+                                "securityEnabled": true,
+                                "uniqueName": "arolariu-JIT-Apps",
+                                "description": "Security group for Just-In-Time access to resources, for User Assigned Managed Identities (UAMIs).",
+                                "members": "[variables('identitiesArray')]"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "dependsOn": [
+                        "managedIdentities"
+                      ]
                     }
                   },
                   "outputs": {
@@ -287,10 +503,10 @@
                 }
               }
             },
-            {
+            "networkDeployment": {
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2022-09-01",
-              "name": "[format('configurationDeployment-{0}', parameters('resourceDeploymentDate'))]",
+              "name": "[format('networkDeployment-{0}', parameters('resourceDeploymentDate'))]",
               "properties": {
                 "expressionEvaluationOptions": {
                   "scope": "inner"
@@ -303,12 +519,17 @@
                 },
                 "template": {
                   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "languageVersion": "2.1-experimental",
                   "contentVersion": "1.0.0.0",
                   "metadata": {
+                    "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                    "_EXPERIMENTAL_FEATURES_ENABLED": [
+                      "Extensibility"
+                    ],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.29.47.4906",
-                      "templateHash": "77366628292291764"
+                      "templateHash": "6213429616598586422"
                     }
                   },
                   "parameters": {
@@ -327,11 +548,333 @@
                     }
                   },
                   "variables": {
+                    "azureFrontDoorName": "[format('{0}-afd', parameters('resourceConventionPrefix'))]"
+                  },
+                  "resources": {
+                    "azureFrontDoorDeployment": {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('azureFrontDoorDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "frontDoorName": {
+                            "value": "[variables('azureFrontDoorName')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.29.47.4906",
+                              "templateHash": "14559458048198434714"
+                            },
+                            "description": "This template will deploy an Azure Front Door resource.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "frontDoorName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The name of the Front Door resource."
+                              }
+                            }
+                          },
+                          "variables": {
+                            "frontDoorCdnOrigins": [
+                              {
+                                "name": "apex-domain",
+                                "hostName": "arolariu.ro",
+                                "httpPort": 80,
+                                "httpsPort": 443,
+                                "originHostHeader": "arolariu.ro",
+                                "priority": 1,
+                                "weight": 1000,
+                                "enabledState": "Enabled",
+                                "enforceCertificateNameCheck": false
+                              },
+                              {
+                                "name": "www-subdomain",
+                                "hostName": "www.arolariu.ro",
+                                "httpPort": 80,
+                                "httpsPort": 443,
+                                "originHostHeader": "www.arolariu.ro",
+                                "priority": 2,
+                                "weight": 1000,
+                                "enabledState": "Enabled",
+                                "enforceCertificateNameCheck": false
+                              }
+                            ]
+                          },
+                          "resources": {
+                            "frontDoor": {
+                              "type": "Microsoft.Network/frontDoors",
+                              "apiVersion": "2021-06-01",
+                              "name": "[parameters('frontDoorName')]",
+                              "location": "Global",
+                              "properties": {
+                                "friendlyName": "[parameters('frontDoorName')]",
+                                "backendPools": [],
+                                "frontendEndpoints": [],
+                                "routingRules": [],
+                                "loadBalancingSettings": [],
+                                "healthProbeSettings": [],
+                                "backendPoolsSettings": [],
+                                "enabledState": "Enabled",
+                                "webApplicationFirewallPolicyLink": null,
+                                "webApplicationFirewallPolicy": null,
+                                "webApplicationFirewallPolicyCustom": null,
+                                "webApplicationFirewallPolicyScope": null,
+                                "webApplicationFirewallPolicyVersion": null
+                              },
+                              "tags": {
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
+                              }
+                            },
+                            "frontDoorProfile": {
+                              "type": "Microsoft.Cdn/profiles",
+                              "apiVersion": "2024-05-01-preview",
+                              "name": "[parameters('frontDoorName')]",
+                              "location": "Global",
+                              "sku": {
+                                "name": "Standard_AzureFrontDoor"
+                              },
+                              "properties": {
+                                "originResponseTimeoutSeconds": 16
+                              },
+                              "dependsOn": [
+                                "frontDoor"
+                              ]
+                            },
+                            "frontDoorProfileRuleSet": {
+                              "type": "Microsoft.Cdn/profiles/ruleSets",
+                              "apiVersion": "2024-05-01-preview",
+                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'CdnRuleSet')]",
+                              "dependsOn": [
+                                "frontDoorProfile"
+                              ]
+                            },
+                            "frontDoorProfileRuleSetRules": {
+                              "type": "Microsoft.Cdn/profiles/ruleSets/rules",
+                              "apiVersion": "2024-05-01-preview",
+                              "name": "[format('{0}/{1}/{2}', parameters('frontDoorName'), 'CdnRuleSet', 'CdnRules')]",
+                              "properties": {
+                                "order": 3,
+                                "conditions": [
+                                  {
+                                    "name": "RequestHeader",
+                                    "parameters": {
+                                      "typeName": "DeliveryRuleRequestHeaderConditionParameters",
+                                      "operator": "Equal",
+                                      "selector": "Origin",
+                                      "negateCondition": false,
+                                      "matchValues": [
+                                        "https://arolariu.ro",
+                                        "https://www.arolariu.ro"
+                                      ],
+                                      "transforms": []
+                                    }
+                                  }
+                                ],
+                                "actions": [
+                                  {
+                                    "name": "ModifyResponseHeader",
+                                    "parameters": {
+                                      "typeName": "DeliveryRuleHeaderActionParameters",
+                                      "headerAction": "Overwrite",
+                                      "headerName": "Access-Control-Allow-Origin",
+                                      "value": "https://arolariu.ro"
+                                    }
+                                  },
+                                  {
+                                    "name": "ModifyResponseHeader",
+                                    "parameters": {
+                                      "typeName": "DeliveryRuleHeaderActionParameters",
+                                      "headerAction": "Append",
+                                      "headerName": "X-Woff2-Access",
+                                      "value": "ALLOW"
+                                    }
+                                  }
+                                ],
+                                "matchProcessingBehavior": "Continue"
+                              },
+                              "dependsOn": [
+                                "frontDoorProfileRuleSet"
+                              ]
+                            },
+                            "frontDoorProductionEndpoint": {
+                              "type": "Microsoft.Cdn/profiles/afdEndpoints",
+                              "apiVersion": "2024-05-01-preview",
+                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'production')]",
+                              "location": "Global",
+                              "dependsOn": [
+                                "frontDoorProfile"
+                              ]
+                            },
+                            "frontDoorCdnEndpoint": {
+                              "type": "Microsoft.Cdn/profiles/afdEndpoints",
+                              "apiVersion": "2024-05-01-preview",
+                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'cdn')]",
+                              "location": "Global",
+                              "dependsOn": [
+                                "frontDoorProfile"
+                              ]
+                            },
+                            "frontDoorProductionOriginGroups": {
+                              "type": "Microsoft.Cdn/profiles/originGroups",
+                              "apiVersion": "2024-05-01-preview",
+                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'production')]",
+                              "properties": {
+                                "sessionAffinityState": "Enabled",
+                                "loadBalancingSettings": {
+                                  "sampleSize": 4,
+                                  "successfulSamplesRequired": 3,
+                                  "additionalLatencyInMilliseconds": 50
+                                }
+                              },
+                              "dependsOn": [
+                                "frontDoorProfile"
+                              ]
+                            },
+                            "frontDoorCdnOriginGroups": {
+                              "type": "Microsoft.Cdn/profiles/originGroups",
+                              "apiVersion": "2024-05-01-preview",
+                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'cdn')]",
+                              "properties": {
+                                "sessionAffinityState": "Disabled",
+                                "loadBalancingSettings": {
+                                  "sampleSize": 4,
+                                  "successfulSamplesRequired": 3,
+                                  "additionalLatencyInMilliseconds": 50
+                                }
+                              },
+                              "dependsOn": [
+                                "frontDoorProfile"
+                              ]
+                            },
+                            "frontDoorCdnOriginGroupOrigins": {
+                              "copy": {
+                                "name": "frontDoorCdnOriginGroupOrigins",
+                                "count": "[length(variables('frontDoorCdnOrigins'))]"
+                              },
+                              "type": "Microsoft.Cdn/profiles/originGroups/origins",
+                              "apiVersion": "2024-05-01-preview",
+                              "name": "[format('{0}/{1}/{2}', parameters('frontDoorName'), 'cdn', variables('frontDoorCdnOrigins')[copyIndex()].name)]",
+                              "properties": {
+                                "hostName": "[variables('frontDoorCdnOrigins')[copyIndex()].hostName]",
+                                "httpPort": "[variables('frontDoorCdnOrigins')[copyIndex()].httpPort]",
+                                "httpsPort": "[variables('frontDoorCdnOrigins')[copyIndex()].httpsPort]",
+                                "originHostHeader": "[variables('frontDoorCdnOrigins')[copyIndex()].originHostHeader]",
+                                "priority": "[variables('frontDoorCdnOrigins')[copyIndex()].priority]",
+                                "weight": "[variables('frontDoorCdnOrigins')[copyIndex()].weight]",
+                                "enabledState": "[variables('frontDoorCdnOrigins')[copyIndex()].enabledState]",
+                                "enforceCertificateNameCheck": "[variables('frontDoorCdnOrigins')[copyIndex()].enforceCertificateNameCheck]"
+                              },
+                              "dependsOn": [
+                                "frontDoorCdnOriginGroups"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "configurationDeployment": {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('configurationDeployment-{0}', parameters('resourceDeploymentDate'))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "resourceConventionPrefix": {
+                    "value": "[variables('resourceConventionPrefix')]"
+                  },
+                  "identities": {
+                    "value": "[reference('identitiesDeployment').outputs.managedIdentitiesList.value]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "languageVersion": "2.1-experimental",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                    "_EXPERIMENTAL_FEATURES_ENABLED": [
+                      "Extensibility"
+                    ],
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.29.47.4906",
+                      "templateHash": "8244185427099036878"
+                    }
+                  },
+                  "definitions": {
+                    "identity": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "displayName": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "metadata": {
+                        "type": "identity",
+                        "name": "identity",
+                        "__bicep_imported_from!": {
+                          "sourceTemplate": "../types/identity.type.bicep"
+                        }
+                      }
+                    }
+                  },
+                  "parameters": {
+                    "identities": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/identity"
+                      }
+                    },
+                    "resourceConventionPrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The prefix to use for the names of the resources."
+                      }
+                    },
+                    "resourceDeploymentDate": {
+                      "type": "string",
+                      "defaultValue": "[utcNow()]",
+                      "metadata": {
+                        "description": "The date when the deployment is executed."
+                      }
+                    }
+                  },
+                  "variables": {
                     "keyVaultName": "[format('{0}-kv', parameters('resourceConventionPrefix'))]",
                     "appConfigurationName": "[format('{0}-appconfig', parameters('resourceConventionPrefix'))]"
                   },
-                  "resources": [
-                    {
+                  "resources": {
+                    "keyVaultDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
                       "name": "[format('keyVaultDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -343,21 +886,58 @@
                         "parameters": {
                           "keyVaultName": {
                             "value": "[variables('keyVaultName')]"
+                          },
+                          "identities": {
+                            "value": "[parameters('identities')]"
                           }
                         },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "1828094768615859135"
+                              "templateHash": "17008375341902111870"
                             },
                             "description": "This template will create the necessary Azure Key Vault resources for arolariu.ro",
                             "author": "Alexandru-Razvan Olariu"
                           },
+                          "definitions": {
+                            "identity": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "displayName": {
+                                  "type": "string"
+                                },
+                                "id": {
+                                  "type": "string"
+                                }
+                              },
+                              "metadata": {
+                                "type": "identity",
+                                "name": "identity",
+                                "__bicep_imported_from!": {
+                                  "sourceTemplate": "../types/identity.type.bicep"
+                                }
+                              }
+                            }
+                          },
                           "parameters": {
+                            "identities": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/identity"
+                              }
+                            },
                             "keyVaultName": {
                               "type": "string",
                               "metadata": {
@@ -372,14 +952,80 @@
                               }
                             }
                           },
-                          "resources": [
-                            {
+                          "variables": {
+                            "copy": [
+                              {
+                                "name": "accessPolicies",
+                                "count": "[length(parameters('identities'))]",
+                                "input": {
+                                  "objectId": "[parameters('identities')[copyIndex('accessPolicies')].id]",
+                                  "tenantId": "[subscription().tenantId]",
+                                  "permissions": {
+                                    "certificates": [
+                                      "GET",
+                                      "LIST",
+                                      "UPDATE",
+                                      "CREATE",
+                                      "IMPORT",
+                                      "DELETE",
+                                      "RECOVER",
+                                      "BACKUP",
+                                      "RESTORE",
+                                      "MANAGECONTACTS",
+                                      "MANAGEISSUERS",
+                                      "GETISSUERS",
+                                      "LISTISSUERS",
+                                      "SETISSUERS",
+                                      "DELETEISSUERS"
+                                    ],
+                                    "keys": [
+                                      "GET",
+                                      "LIST",
+                                      "UPDATE",
+                                      "CREATE",
+                                      "IMPORT",
+                                      "DELETE",
+                                      "RECOVER",
+                                      "BACKUP",
+                                      "RESTORE",
+                                      "ROTATE"
+                                    ],
+                                    "secrets": [
+                                      "GET",
+                                      "LIST",
+                                      "SET",
+                                      "DELETE",
+                                      "RECOVER",
+                                      "BACKUP",
+                                      "RESTORE"
+                                    ]
+                                  }
+                                }
+                              }
+                            ],
+                            "keyVaultSecretNames": [
+                              "ConfigurationStore",
+                              "jwt-secret",
+                              "DEV-AzureOptions-StorageAccountConnectionString",
+                              "PROD-AzureOptions-StorageAccountConnectionString",
+                              "DEV-AzureOptions-SqlConnectionString",
+                              "PROD-AzureOptions-SqlConnectionString",
+                              "DEV-AzureOptions-NoSqlConnectionString",
+                              "PROD-AzureOptions-NoSqlConnectionString",
+                              "DEV-AzureOptions-CognitiveServicesKey",
+                              "PROD-AzureOptions-CognitiveServicesKey",
+                              "DEV-AzureOptions-OpenAIKey",
+                              "PROD-AzureOptions-OpenAIKey"
+                            ]
+                          },
+                          "resources": {
+                            "keyVault": {
                               "type": "Microsoft.KeyVault/vaults",
-                              "apiVersion": "2023-07-01",
+                              "apiVersion": "2024-04-01-preview",
                               "name": "[parameters('keyVaultName')]",
                               "location": "[parameters('keyVaultLocation')]",
                               "properties": {
-                                "accessPolicies": [],
+                                "accessPolicies": "[variables('accessPolicies')]",
                                 "createMode": "default",
                                 "enabledForDeployment": false,
                                 "enabledForDiskEncryption": false,
@@ -402,12 +1048,29 @@
                                 "environment": "PRODUCTION",
                                 "deployment": "Bicep"
                               }
+                            },
+                            "keyVaultItems": {
+                              "copy": {
+                                "name": "keyVaultItems",
+                                "count": "[length(variables('keyVaultSecretNames'))]"
+                              },
+                              "type": "Microsoft.KeyVault/vaults/secrets",
+                              "apiVersion": "2024-04-01-preview",
+                              "name": "[format('{0}/{1}', parameters('keyVaultName'), variables('keyVaultSecretNames')[copyIndex()])]",
+                              "properties": {
+                                "attributes": {
+                                  "enabled": true
+                                }
+                              },
+                              "dependsOn": [
+                                "keyVault"
+                              ]
                             }
-                          ],
+                          },
                           "outputs": {
                             "mainKeyVaultUri": {
                               "type": "string",
-                              "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName')), '2023-07-01').vaultUri]"
+                              "value": "[reference('keyVault').vaultUri]"
                             },
                             "mainKeyVaultResourceId": {
                               "type": "string",
@@ -421,7 +1084,7 @@
                         }
                       }
                     },
-                    {
+                    "appConfigurationDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
                       "name": "[format('appConfigurationDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -437,12 +1100,17 @@
                         },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "14488771976581624273"
+                              "templateHash": "17624147354943947746"
                             },
                             "description": "This template will deploy an Azure App Configuration resource.",
                             "author": "Alexandru-Razvan Olariu"
@@ -462,8 +1130,8 @@
                               }
                             }
                           },
-                          "resources": [
-                            {
+                          "resources": {
+                            "appConfiguration": {
                               "type": "Microsoft.AppConfiguration/configurationStores",
                               "apiVersion": "2023-09-01-preview",
                               "name": "[parameters('appConfigurationName')]",
@@ -486,7 +1154,7 @@
                                 "deployment": "Bicep"
                               }
                             }
-                          ],
+                          },
                           "outputs": {
                             "appConfigurationResourceId": {
                               "type": "string",
@@ -496,11 +1164,14 @@
                         }
                       }
                     }
-                  ]
+                  }
                 }
-              }
+              },
+              "dependsOn": [
+                "identitiesDeployment"
+              ]
             },
-            {
+            "observabilityDeployment": {
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2022-09-01",
               "name": "[format('observabilityDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -516,12 +1187,17 @@
                 },
                 "template": {
                   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "languageVersion": "2.1-experimental",
                   "contentVersion": "1.0.0.0",
                   "metadata": {
+                    "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                    "_EXPERIMENTAL_FEATURES_ENABLED": [
+                      "Extensibility"
+                    ],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.29.47.4906",
-                      "templateHash": "14549827264771872336"
+                      "templateHash": "1029481785962253405"
                     }
                   },
                   "parameters": {
@@ -539,8 +1215,8 @@
                       }
                     }
                   },
-                  "resources": [
-                    {
+                  "resources": {
+                    "logAnalyticsWorkspaceDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
                       "name": "[format('logAnalyticsWorkspaceDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -556,12 +1232,17 @@
                         },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "9267798541008441710"
+                              "templateHash": "265742238846064726"
                             },
                             "description": "This template will deploy a log analytics workspace that is used for Open Telemetry (OTel) data collection.",
                             "author": "Alexandru-Razvan Olariu"
@@ -575,8 +1256,8 @@
                               "type": "string"
                             }
                           },
-                          "resources": [
-                            {
+                          "resources": {
+                            "logAnalyticsWorkspace": {
                               "type": "Microsoft.OperationalInsights/workspaces",
                               "apiVersion": "2023-09-01",
                               "name": "[parameters('logAnalyticsWorkspaceName')]",
@@ -600,7 +1281,7 @@
                                 "deployment": "Bicep"
                               }
                             }
-                          ],
+                          },
                           "outputs": {
                             "logAnalyticsWorkspaceId": {
                               "type": "string",
@@ -610,7 +1291,7 @@
                         }
                       }
                     },
-                    {
+                    "applicationInsightsDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
                       "name": "[format('applicationInsightsDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -624,17 +1305,22 @@
                             "value": "[format('{0}-insights', parameters('resourceConventionPrefix'))]"
                           },
                           "applicationInsightsWorkspaceId": {
-                            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('logAnalyticsWorkspaceDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.logAnalyticsWorkspaceId.value]"
+                            "value": "[reference('logAnalyticsWorkspaceDeployment').outputs.logAnalyticsWorkspaceId.value]"
                           }
                         },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "11476100639891580886"
+                              "templateHash": "10387477493553055485"
                             },
                             "description": "This template will deploy an application insights resource that is connected to the api.arolariu.ro platform (back-end) and the arolariu.ro platform (front-end).",
                             "author": "Alexandru-Razvan Olariu"
@@ -651,8 +1337,8 @@
                               "type": "string"
                             }
                           },
-                          "resources": [
-                            {
+                          "resources": {
+                            "applicationInsights": {
                               "type": "Microsoft.Insights/components",
                               "apiVersion": "2020-02-02",
                               "name": "[parameters('applicationInsightsName')]",
@@ -674,14 +1360,14 @@
                                 "deployment": "Bicep"
                               }
                             }
-                          ]
+                          }
                         }
                       },
                       "dependsOn": [
-                        "[resourceId('Microsoft.Resources/deployments', format('logAnalyticsWorkspaceDeployment-{0}', parameters('resourceDeploymentDate')))]"
+                        "logAnalyticsWorkspaceDeployment"
                       ]
                     },
-                    {
+                    "managedGrafanaDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
                       "name": "[format('managedGrafanaDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -697,12 +1383,17 @@
                         },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "4391880526905831428"
+                              "templateHash": "3410272464144841296"
                             },
                             "description": "This template will deploy an Azure Managed Grafana instance.",
                             "author": "Alexandru-Razvan Olariu"
@@ -716,8 +1407,8 @@
                               "type": "string"
                             }
                           },
-                          "resources": [
-                            {
+                          "resources": {
+                            "managedGrafanaInstance": {
                               "type": "Microsoft.Dashboard/grafana",
                               "apiVersion": "2023-09-01",
                               "name": "[parameters('managedGrafanaName')]",
@@ -746,7 +1437,7 @@
                                 "deployment": "Bicep"
                               }
                             }
-                          ],
+                          },
                           "outputs": {
                             "managedGrafanaInstanceName": {
                               "type": "string",
@@ -756,19 +1447,19 @@
                         }
                       },
                       "dependsOn": [
-                        "[resourceId('Microsoft.Resources/deployments', format('applicationInsightsDeployment-{0}', parameters('resourceDeploymentDate')))]",
-                        "[resourceId('Microsoft.Resources/deployments', format('logAnalyticsWorkspaceDeployment-{0}', parameters('resourceDeploymentDate')))]"
+                        "applicationInsightsDeployment",
+                        "logAnalyticsWorkspaceDeployment"
                       ]
                     }
-                  ]
+                  }
                 }
               },
               "dependsOn": [
-                "[resourceId('Microsoft.Resources/deployments', format('configurationDeployment-{0}', parameters('resourceDeploymentDate')))]",
-                "[resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate')))]"
+                "configurationDeployment",
+                "identitiesDeployment"
               ]
             },
-            {
+            "storageDeployment": {
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2022-09-01",
               "name": "[format('storageDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -784,12 +1475,17 @@
                 },
                 "template": {
                   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "languageVersion": "2.1-experimental",
                   "contentVersion": "1.0.0.0",
                   "metadata": {
+                    "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                    "_EXPERIMENTAL_FEATURES_ENABLED": [
+                      "Extensibility"
+                    ],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.29.47.4906",
-                      "templateHash": "6067264279405359348"
+                      "templateHash": "1327706005640724220"
                     }
                   },
                   "parameters": {
@@ -809,10 +1505,11 @@
                   },
                   "variables": {
                     "storageAccountName": "[format('{0}sa', replace(parameters('resourceConventionPrefix'), '-', ''))]",
-                    "sqlServerName": "[format('{0}-sqlserver', parameters('resourceConventionPrefix'))]"
+                    "sqlServerName": "[format('{0}-sqlserver', parameters('resourceConventionPrefix'))]",
+                    "noSqlServerName": "[format('{0}-nosqlserver', parameters('resourceConventionPrefix'))]"
                   },
-                  "resources": [
-                    {
+                  "resources": {
+                    "storageAccountDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
                       "name": "[format('storageAccountDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -828,12 +1525,17 @@
                         },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "2268304654518792624"
+                              "templateHash": "2952643308093271052"
                             },
                             "description": "This template will create a new storage account.",
                             "author": "Alexandru-Razvan Olariu"
@@ -853,8 +1555,8 @@
                               }
                             }
                           },
-                          "resources": [
-                            {
+                          "resources": {
+                            "storageAccount::storageAccountBlobSettings": {
                               "type": "Microsoft.Storage/storageAccounts/blobServices",
                               "apiVersion": "2023-05-01",
                               "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
@@ -922,10 +1624,10 @@
                                 }
                               },
                               "dependsOn": [
-                                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+                                "storageAccount"
                               ]
                             },
-                            {
+                            "storageAccount::storageAccountFileSettings": {
                               "type": "Microsoft.Storage/storageAccounts/fileServices",
                               "apiVersion": "2023-05-01",
                               "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
@@ -937,28 +1639,28 @@
                                 }
                               },
                               "dependsOn": [
-                                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+                                "storageAccount"
                               ]
                             },
-                            {
+                            "storageAccount::storageAccountQueueSettings": {
                               "type": "Microsoft.Storage/storageAccounts/queueServices",
                               "apiVersion": "2023-05-01",
                               "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
                               "properties": {},
                               "dependsOn": [
-                                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+                                "storageAccount"
                               ]
                             },
-                            {
+                            "storageAccount::storageAccountTableSettings": {
                               "type": "Microsoft.Storage/storageAccounts/tableServices",
                               "apiVersion": "2023-05-01",
                               "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
                               "properties": {},
                               "dependsOn": [
-                                "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+                                "storageAccount"
                               ]
                             },
-                            {
+                            "storageAccount": {
                               "type": "Microsoft.Storage/storageAccounts",
                               "apiVersion": "2023-05-01",
                               "name": "[parameters('storageAccountName')]",
@@ -1007,7 +1709,7 @@
                                 "deployment": "Bicep"
                               }
                             }
-                          ],
+                          },
                           "outputs": {
                             "storageAccountName": {
                               "type": "string",
@@ -1021,7 +1723,99 @@
                         }
                       }
                     },
-                    {
+                    "containerRegistryDeployment": {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('containerRegistryDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "containerRegistryName": {
+                            "value": "[format('{0}-acr', parameters('resourceConventionPrefix'))]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.29.47.4906",
+                              "templateHash": "12374761448115833363"
+                            },
+                            "description": "This template will deploy the Azure Container Registry resource.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "containerRegistryName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The name of the Azure Container Registry."
+                              }
+                            },
+                            "containerRegistryLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]",
+                              "metadata": {
+                                "description": "The location for the Azure Container Registry resource."
+                              }
+                            }
+                          },
+                          "resources": {
+                            "containerRegistry": {
+                              "type": "Microsoft.ContainerRegistry/registries",
+                              "apiVersion": "2023-11-01-preview",
+                              "name": "[parameters('containerRegistryName')]",
+                              "location": "[parameters('containerRegistryLocation')]",
+                              "sku": {
+                                "name": "Basic"
+                              },
+                              "properties": {
+                                "adminUserEnabled": true,
+                                "policies": {
+                                  "quarantinePolicy": {
+                                    "status": "Disabled"
+                                  },
+                                  "trustPolicy": {
+                                    "status": "Disabled"
+                                  },
+                                  "retentionPolicy": {
+                                    "status": "Disabled"
+                                  },
+                                  "exportPolicy": {
+                                    "status": "Enabled"
+                                  },
+                                  "azureADAuthenticationAsArmPolicy": {
+                                    "status": "Enabled"
+                                  },
+                                  "softDeletePolicy": {
+                                    "status": "Disabled"
+                                  }
+                                },
+                                "encryption": {
+                                  "status": "Disabled"
+                                },
+                                "dataEndpointEnabled": false,
+                                "publicNetworkAccess": "Enabled",
+                                "networkRuleBypassOptions": "AzureServices",
+                                "zoneRedundancy": "Disabled",
+                                "anonymousPullEnabled": false,
+                                "metadataSearch": "Disabled"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "sqlServerDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
                       "name": "[format('sqlServerDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -1043,14 +1837,19 @@
                         },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "16986678197295311172"
+                              "templateHash": "17151496828770449585"
                             },
-                            "description": "This template will create a new Azure SQL Server resource.",
+                            "description": "This template will create a new Azure SQL server resource.",
                             "author": "Alexandru-Razvan Olariu"
                           },
                           "parameters": {
@@ -1080,8 +1879,8 @@
                               }
                             }
                           },
-                          "resources": [
-                            {
+                          "resources": {
+                            "sqlServer::sqlServerAdvancedThreatProtection": {
                               "type": "Microsoft.Sql/servers/advancedThreatProtectionSettings",
                               "apiVersion": "2023-08-01-preview",
                               "name": "[format('{0}/{1}', parameters('sqlServerName'), 'Default')]",
@@ -1089,10 +1888,10 @@
                                 "state": "Disabled"
                               },
                               "dependsOn": [
-                                "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+                                "sqlServer"
                               ]
                             },
-                            {
+                            "sqlServer::sqlServerAuditPolicy": {
                               "type": "Microsoft.Sql/servers/auditingPolicies",
                               "apiVersion": "2014-04-01",
                               "name": "[format('{0}/{1}', parameters('sqlServerName'), 'Default')]",
@@ -1100,10 +1899,10 @@
                                 "auditingState": "Disabled"
                               },
                               "dependsOn": [
-                                "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+                                "sqlServer"
                               ]
                             },
-                            {
+                            "sqlServer::sqlServerAuditSettings": {
                               "type": "Microsoft.Sql/servers/auditingSettings",
                               "apiVersion": "2023-08-01-preview",
                               "name": "[format('{0}/{1}', parameters('sqlServerName'), 'default')]",
@@ -1111,10 +1910,10 @@
                                 "state": "Disabled"
                               },
                               "dependsOn": [
-                                "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+                                "sqlServer"
                               ]
                             },
-                            {
+                            "sqlServer::sqlServerConnectionPolicies": {
                               "type": "Microsoft.Sql/servers/connectionPolicies",
                               "apiVersion": "2023-08-01-preview",
                               "name": "[format('{0}/{1}', parameters('sqlServerName'), 'Default')]",
@@ -1122,10 +1921,21 @@
                                 "connectionType": "Default"
                               },
                               "dependsOn": [
-                                "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+                                "sqlServer"
                               ]
                             },
-                            {
+                            "sqlServer::sqlServerAzureAdOnlyAuth": {
+                              "type": "Microsoft.Sql/servers/azureADOnlyAuthentications",
+                              "apiVersion": "2023-08-01-preview",
+                              "name": "[format('{0}/{1}', parameters('sqlServerName'), 'Default')]",
+                              "properties": {
+                                "azureADOnlyAuthentication": false
+                              },
+                              "dependsOn": [
+                                "sqlServer"
+                              ]
+                            },
+                            "sqlServer": {
                               "type": "Microsoft.Sql/servers",
                               "apiVersion": "2023-08-01-preview",
                               "name": "[parameters('sqlServerName')]",
@@ -1135,14 +1945,20 @@
                                 "publicNetworkAccess": "Enabled",
                                 "version": "12.0",
                                 "administratorLogin": "[parameters('sqlServerAdministratorUserName')]",
-                                "administratorLoginPassword": "[parameters('sqlServerAdministratorPassword')]"
+                                "administratorLoginPassword": "[parameters('sqlServerAdministratorPassword')]",
+                                "administrators": {
+                                  "administratorType": "ActiveDirectory",
+                                  "login": "admin@arolariu.ro",
+                                  "sid": "ee9acc3d-8a79-489d-b4bf-aaae428b29db",
+                                  "tenantId": "[subscription().tenantId]"
+                                }
                               },
                               "tags": {
                                 "environment": "PRODUCTION",
                                 "deployment": "Bicep"
                               }
                             }
-                          ],
+                          },
                           "outputs": {
                             "sqlServerName": {
                               "type": "string",
@@ -1152,7 +1968,7 @@
                         }
                       }
                     },
-                    {
+                    "sqlServerDatabaseDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
                       "name": "[format('sqlServerDatabaseDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -1163,7 +1979,7 @@
                         "mode": "Incremental",
                         "parameters": {
                           "sqlServerName": {
-                            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('sqlServerDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.sqlServerName.value]"
+                            "value": "[reference('sqlServerDeployment').outputs.sqlServerName.value]"
                           },
                           "sqlDatabaseNamePrefix": {
                             "value": "[format('{0}-sqlserver-db', parameters('resourceConventionPrefix'))]"
@@ -1171,12 +1987,17 @@
                         },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "10763144671243990498"
+                              "templateHash": "11943473315343976964"
                             },
                             "description": "This template will deploy a primary, DTU-based SQL database, and a secondary, serverless SQL database. The primary database will be created with a Standard SKU, while the secondary database will be created with a GeneralPurpose SKU. The secondary database will be created as a free database, and will be automatically paused after an hour of inactivity. The databases will be created in the same location as the resource group.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1206,8 +2027,14 @@
                             "sqlDatabasePrimaryName": "[format('{0}-primary', parameters('sqlDatabaseNamePrefix'))]",
                             "sqlDatabaseSecondaryName": "[format('{0}-secondary', parameters('sqlDatabaseNamePrefix'))]"
                           },
-                          "resources": [
-                            {
+                          "resources": {
+                            "sqlServer": {
+                              "existing": true,
+                              "type": "Microsoft.Sql/servers",
+                              "apiVersion": "2023-08-01-preview",
+                              "name": "[parameters('sqlServerName')]"
+                            },
+                            "sqlDatabasePrimary": {
                               "type": "Microsoft.Sql/servers/databases",
                               "apiVersion": "2023-08-01-preview",
                               "name": "[format('{0}/{1}', parameters('sqlServerName'), variables('sqlDatabasePrimaryName'))]",
@@ -1230,9 +2057,12 @@
                               "tags": {
                                 "environment": "PRODUCTION",
                                 "deployment": "Bicep"
-                              }
+                              },
+                              "dependsOn": [
+                                "sqlServer"
+                              ]
                             },
-                            {
+                            "sqlDatabaseSecondary": {
                               "type": "Microsoft.Sql/servers/databases",
                               "apiVersion": "2023-08-01-preview",
                               "name": "[format('{0}/{1}', parameters('sqlServerName'), variables('sqlDatabaseSecondaryName'))]",
@@ -1248,31 +2078,321 @@
                               "properties": {
                                 "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
                                 "collation": "SQL_Latin1_General_CP1_CI_AS",
+                                "maxSizeBytes": 2147483648,
                                 "zoneRedundant": false,
                                 "readScale": "Disabled",
                                 "requestedBackupStorageRedundancy": "Local",
                                 "isLedgerOn": false,
                                 "availabilityZone": "NoPreference",
+                                "autoPauseDelay": 60,
                                 "useFreeLimit": true,
                                 "freeLimitExhaustionBehavior": "AutoPause"
                               },
                               "tags": {
                                 "environment": "PRODUCTION",
                                 "deployment": "Bicep"
-                              }
+                              },
+                              "dependsOn": [
+                                "sqlServer"
+                              ]
                             }
-                          ]
+                          }
                         }
                       },
                       "dependsOn": [
-                        "[resourceId('Microsoft.Resources/deployments', format('sqlServerDeployment-{0}', parameters('resourceDeploymentDate')))]"
+                        "sqlServerDeployment"
+                      ]
+                    },
+                    "noSqlServerDeployment": {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('noSqlServerDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "noSqlServerName": {
+                            "value": "[variables('noSqlServerName')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.29.47.4906",
+                              "templateHash": "13506680752947826128"
+                            },
+                            "description": "This template will create a new Azure NoSQL server resource.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "noSqlServerName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The NoSQL Server name."
+                              }
+                            },
+                            "noSqlServerLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]",
+                              "metadata": {
+                                "description": "The location for the NoSQL Server resource."
+                              }
+                            }
+                          },
+                          "resources": {
+                            "noSqlServer": {
+                              "type": "Microsoft.DocumentDB/databaseAccounts",
+                              "apiVersion": "2024-05-15",
+                              "name": "[parameters('noSqlServerName')]",
+                              "location": "[parameters('noSqlServerLocation')]",
+                              "properties": {
+                                "publicNetworkAccess": "Enabled",
+                                "enableAutomaticFailover": false,
+                                "enableMultipleWriteLocations": false,
+                                "isVirtualNetworkFilterEnabled": false,
+                                "virtualNetworkRules": [],
+                                "disableKeyBasedMetadataWriteAccess": false,
+                                "enableFreeTier": true,
+                                "enableAnalyticalStorage": false,
+                                "analyticalStorageConfiguration": {
+                                  "schemaType": "WellDefined"
+                                },
+                                "createMode": "Default",
+                                "databaseAccountOfferType": "Standard",
+                                "defaultIdentity": "FirstPartyIdentity",
+                                "networkAclBypass": "None",
+                                "disableLocalAuth": false,
+                                "enablePartitionMerge": false,
+                                "enableBurstCapacity": false,
+                                "minimalTlsVersion": "Tls12",
+                                "consistencyPolicy": {
+                                  "defaultConsistencyLevel": "Session",
+                                  "maxIntervalInSeconds": 5,
+                                  "maxStalenessPrefix": 100
+                                },
+                                "locations": [
+                                  {
+                                    "locationName": "[parameters('noSqlServerLocation')]",
+                                    "failoverPriority": 0,
+                                    "isZoneRedundant": false
+                                  }
+                                ],
+                                "cors": [],
+                                "capabilities": [],
+                                "ipRules": [],
+                                "backupPolicy": {
+                                  "type": "Continuous",
+                                  "continuousModeProperties": {
+                                    "tier": "Continuous7Days"
+                                  }
+                                },
+                                "networkAclBypassResourceIds": [],
+                                "capacity": {
+                                  "totalThroughputLimit": 1000
+                                }
+                              },
+                              "tags": {
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
+                              }
+                            }
+                          },
+                          "outputs": {
+                            "noSqlServerName": {
+                              "type": "string",
+                              "value": "[parameters('noSqlServerName')]"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "noSqlServerDatabaseDeployment": {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('noSqlServerDatabaseDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "noSqlServerName": {
+                            "value": "[reference('noSqlServerDeployment').outputs.noSqlServerName.value]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.29.47.4906",
+                              "templateHash": "2246377779885134754"
+                            },
+                            "description": "This template will deploy the NoSQL server database resources.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "noSqlServerName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The name of the NoSQL server."
+                              }
+                            },
+                            "noSqlServerLocation": {
+                              "type": "string",
+                              "defaultValue": "[resourceGroup().location]",
+                              "metadata": {
+                                "description": "The location for the NoSQL server resource."
+                              }
+                            }
+                          },
+                          "resources": {
+                            "noSqlServer": {
+                              "existing": true,
+                              "type": "Microsoft.DocumentDB/databaseAccounts",
+                              "apiVersion": "2024-05-15",
+                              "name": "[parameters('noSqlServerName')]"
+                            },
+                            "primaryNoSqlDatabase": {
+                              "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
+                              "apiVersion": "2024-05-15",
+                              "name": "[format('{0}/{1}', parameters('noSqlServerName'), 'primary')]",
+                              "location": "[parameters('noSqlServerLocation')]",
+                              "properties": {
+                                "resource": {
+                                  "id": "primary"
+                                }
+                              },
+                              "dependsOn": [
+                                "noSqlServer"
+                              ]
+                            },
+                            "primaryNoSqlDatabaseSettings": {
+                              "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/throughputSettings",
+                              "apiVersion": "2024-05-15",
+                              "name": "[format('{0}/{1}/{2}', parameters('noSqlServerName'), 'primary', 'default')]",
+                              "properties": {
+                                "resource": {
+                                  "throughput": 100,
+                                  "autoscaleSettings": {
+                                    "maxThroughput": 1000
+                                  }
+                                }
+                              },
+                              "dependsOn": [
+                                "primaryNoSqlDatabase"
+                              ]
+                            },
+                            "primaryNoSqlDatabaseInvoiceContainer": {
+                              "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+                              "apiVersion": "2024-05-15",
+                              "name": "[format('{0}/{1}/{2}', parameters('noSqlServerName'), 'primary', 'invoices')]",
+                              "properties": {
+                                "resource": {
+                                  "id": "invoices",
+                                  "indexingPolicy": {
+                                    "indexingMode": "consistent",
+                                    "automatic": true,
+                                    "includedPaths": [
+                                      {
+                                        "path": "/*"
+                                      }
+                                    ],
+                                    "excludedPaths": [
+                                      {
+                                        "path": "/_etag/?"
+                                      }
+                                    ]
+                                  },
+                                  "partitionKey": {
+                                    "paths": [
+                                      "/UserIdentifier"
+                                    ],
+                                    "kind": "Hash",
+                                    "version": 2
+                                  },
+                                  "uniqueKeyPolicy": {
+                                    "uniqueKeys": []
+                                  },
+                                  "conflictResolutionPolicy": {
+                                    "mode": "LastWriterWins",
+                                    "conflictResolutionPath": "_ts"
+                                  }
+                                }
+                              },
+                              "dependsOn": [
+                                "primaryNoSqlDatabase"
+                              ]
+                            },
+                            "primaryNoSqlDatabaseMerchantContainer": {
+                              "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
+                              "apiVersion": "2024-05-15",
+                              "name": "[format('{0}/{1}/{2}', parameters('noSqlServerName'), 'primary', 'merchants')]",
+                              "properties": {
+                                "resource": {
+                                  "id": "merchants",
+                                  "indexingPolicy": {
+                                    "indexingMode": "consistent",
+                                    "automatic": true,
+                                    "includedPaths": [
+                                      {
+                                        "path": "/*"
+                                      }
+                                    ],
+                                    "excludedPaths": [
+                                      {
+                                        "path": "/_etag/?"
+                                      }
+                                    ]
+                                  },
+                                  "partitionKey": {
+                                    "paths": [
+                                      "/ParentCompanyId"
+                                    ],
+                                    "kind": "Hash",
+                                    "version": 2
+                                  },
+                                  "uniqueKeyPolicy": {
+                                    "uniqueKeys": []
+                                  },
+                                  "conflictResolutionPolicy": {
+                                    "mode": "LastWriterWins",
+                                    "conflictResolutionPath": "_ts"
+                                  }
+                                }
+                              },
+                              "dependsOn": [
+                                "primaryNoSqlDatabase"
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "dependsOn": [
+                        "noSqlServerDeployment"
                       ]
                     }
-                  ]
+                  }
                 }
               }
             },
-            {
+            "computeDeployment": {
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2022-09-01",
               "name": "[format('computeDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -1288,12 +2408,17 @@
                 },
                 "template": {
                   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "languageVersion": "2.1-experimental",
                   "contentVersion": "1.0.0.0",
                   "metadata": {
+                    "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                    "_EXPERIMENTAL_FEATURES_ENABLED": [
+                      "Extensibility"
+                    ],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.29.47.4906",
-                      "templateHash": "14183397278673708298"
+                      "templateHash": "858108191966003443"
                     }
                   },
                   "parameters": {
@@ -1311,8 +2436,8 @@
                       }
                     }
                   },
-                  "resources": [
-                    {
+                  "resources": {
+                    "appServicePlansDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
                       "name": "[format('appServicePlansDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -1328,12 +2453,17 @@
                         },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "6224107397473533911"
+                              "templateHash": "14335566199227485647"
                             },
                             "description": "This template deploys two App Service Farms, in the same region, for production and development environments.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1375,8 +2505,8 @@
                               }
                             ]
                           },
-                          "resources": [
-                            {
+                          "resources": {
+                            "appPlanFarm": {
                               "copy": {
                                 "name": "appPlanFarm",
                                 "count": "[length(variables('appPlans'))]"
@@ -1400,7 +2530,7 @@
                                 "deployment": "Bicep"
                               }
                             }
-                          ],
+                          },
                           "outputs": {
                             "productionAppPlanId": {
                               "type": "string",
@@ -1414,21 +2544,21 @@
                         }
                       }
                     }
-                  ],
+                  },
                   "outputs": {
                     "productionAppPlanId": {
                       "type": "string",
-                      "value": "[reference(resourceId('Microsoft.Resources/deployments', format('appServicePlansDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.productionAppPlanId.value]"
+                      "value": "[reference('appServicePlansDeployment').outputs.productionAppPlanId.value]"
                     },
                     "developmentAppPlanId": {
                       "type": "string",
-                      "value": "[reference(resourceId('Microsoft.Resources/deployments', format('appServicePlansDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.developmentAppPlanId.value]"
+                      "value": "[reference('appServicePlansDeployment').outputs.developmentAppPlanId.value]"
                     }
                   }
                 }
               }
             },
-            {
+            "websiteDeployment": {
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2022-09-01",
               "name": "[format('websiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -1439,26 +2569,31 @@
                 "mode": "Incremental",
                 "parameters": {
                   "productionAppPlanId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('computeDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.productionAppPlanId.value]"
+                    "value": "[reference('computeDeployment').outputs.productionAppPlanId.value]"
                   },
                   "developmentAppPlanId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('computeDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.developmentAppPlanId.value]"
+                    "value": "[reference('computeDeployment').outputs.developmentAppPlanId.value]"
                   },
                   "managedIdentityFrontendId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[0].id]"
+                    "value": "[reference('identitiesDeployment').outputs.managedIdentitiesList.value[0].id]"
                   },
                   "managedIdentityBackendId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[1].id]"
+                    "value": "[reference('identitiesDeployment').outputs.managedIdentitiesList.value[1].id]"
                   }
                 },
                 "template": {
                   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "languageVersion": "2.1-experimental",
                   "contentVersion": "1.0.0.0",
                   "metadata": {
+                    "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                    "_EXPERIMENTAL_FEATURES_ENABLED": [
+                      "Extensibility"
+                    ],
                     "_generator": {
                       "name": "bicep",
                       "version": "0.29.47.4906",
-                      "templateHash": "10995870715379111112"
+                      "templateHash": "359743324915484857"
                     }
                   },
                   "parameters": {
@@ -1488,8 +2623,8 @@
                       "type": "string"
                     }
                   },
-                  "resources": [
-                    {
+                  "resources": {
+                    "apiWebsiteDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
                       "name": "[format('apiWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -1508,12 +2643,17 @@
                         },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "4851810780273784938"
+                              "templateHash": "924184241233436265"
                             },
                             "description": "This template will create the api.arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1530,8 +2670,8 @@
                               "type": "string"
                             }
                           },
-                          "resources": [
-                            {
+                          "resources": {
+                            "apiWebsite": {
                               "type": "Microsoft.Web/sites",
                               "apiVersion": "2023-12-01",
                               "name": "api-arolariu-ro",
@@ -1590,11 +2730,11 @@
                                 "deployment": "Bicep"
                               }
                             }
-                          ]
+                          }
                         }
                       }
                     },
-                    {
+                    "mainWebsiteDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
                       "name": "[format('mainWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -1613,12 +2753,17 @@
                         },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "16236602489252692693"
+                              "templateHash": "8480467476651007027"
                             },
                             "description": "This template will create the arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1635,8 +2780,8 @@
                               "type": "string"
                             }
                           },
-                          "resources": [
-                            {
+                          "resources": {
+                            "mainWebsite": {
                               "type": "Microsoft.Web/sites",
                               "apiVersion": "2023-12-01",
                               "name": "www-arolariu-ro",
@@ -1717,17 +2862,17 @@
                                 "deployment": "Bicep"
                               }
                             }
-                          ],
+                          },
                           "outputs": {
                             "mainWebsiteUrl": {
                               "type": "string",
-                              "value": "[reference(resourceId('Microsoft.Web/sites', 'www-arolariu-ro'), '2023-12-01').defaultHostName]"
+                              "value": "[reference('mainWebsite').defaultHostName]"
                             }
                           }
                         }
                       }
                     },
-                    {
+                    "devWebsiteDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
                       "name": "[format('devWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -1746,12 +2891,17 @@
                         },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "9056460057060692225"
+                              "templateHash": "15765247554023368134"
                             },
                             "description": "This template will create the dev.arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1768,8 +2918,8 @@
                               "type": "string"
                             }
                           },
-                          "resources": [
-                            {
+                          "resources": {
+                            "devWebsite": {
                               "type": "Microsoft.Web/sites",
                               "apiVersion": "2023-12-01",
                               "name": "dev-arolariu-ro",
@@ -1843,17 +2993,17 @@
                                 "deployment": "Bicep"
                               }
                             }
-                          ],
+                          },
                           "outputs": {
                             "devWebsiteUrl": {
                               "type": "string",
-                              "value": "[reference(resourceId('Microsoft.Web/sites', 'dev-arolariu-ro'), '2023-12-01').defaultHostName]"
+                              "value": "[reference('devWebsite').defaultHostName]"
                             }
                           }
                         }
                       }
                     },
-                    {
+                    "docsWebsiteDeployment": {
                       "type": "Microsoft.Resources/deployments",
                       "apiVersion": "2022-09-01",
                       "name": "[format('docsWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
@@ -1864,12 +3014,17 @@
                         "mode": "Incremental",
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.1-experimental",
                           "contentVersion": "1.0.0.0",
                           "metadata": {
+                            "_EXPERIMENTAL_WARNING": "This template uses ARM features that are experimental. Experimental features should be enabled for testing purposes only, as there are no guarantees about the quality or stability of these features. Do not enable these settings for any production usage, or your production environment may be subject to breaking.",
+                            "_EXPERIMENTAL_FEATURES_ENABLED": [
+                              "Extensibility"
+                            ],
                             "_generator": {
                               "name": "bicep",
                               "version": "0.29.47.4906",
-                              "templateHash": "11119463461224074664"
+                              "templateHash": "14707093974466314857"
                             },
                             "description": "This template will create the docs.arolariu.ro static web app site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1880,8 +3035,8 @@
                               "defaultValue": "[resourceGroup().location]"
                             }
                           },
-                          "resources": [
-                            {
+                          "resources": {
+                            "docsStaticWebApp": {
                               "type": "Microsoft.Web/staticSites",
                               "apiVersion": "2023-12-01",
                               "name": "docs-arolariu-ro",
@@ -1903,24 +3058,24 @@
                                 "deployment": "Bicep"
                               }
                             }
-                          ]
+                          }
                         }
                       }
                     }
-                  ]
+                  }
                 }
               },
               "dependsOn": [
-                "[resourceId('Microsoft.Resources/deployments', format('computeDeployment-{0}', parameters('resourceDeploymentDate')))]",
-                "[resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate')))]"
+                "computeDeployment",
+                "identitiesDeployment"
               ]
             }
-          ]
+          }
         }
       },
       "dependsOn": [
-        "[subscriptionResourceId('Microsoft.Resources/resourceGroups', parameters('resourceGroupName'))]"
+        "resourceGroup"
       ]
     }
-  ]
+  }
 }
