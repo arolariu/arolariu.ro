@@ -5,11 +5,18 @@ metadata author = 'Alexandru-Razvan Olariu'
 
 param devWebsiteLocation string = resourceGroup().location
 param developmentAppPlanId string
+param devWebsiteIdentityId string
 
 resource devWebsite 'Microsoft.Web/sites@2023-12-01' = {
   name: 'dev-arolariu-ro'
   location: devWebsiteLocation
   kind: 'app,linux,container'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${devWebsiteIdentityId}': {}
+    }
+  }
   properties: {
     clientAffinityEnabled: true // Enable sticky sessions via affinity cookies.
     clientCertEnabled: false // Client certificates are not required.
@@ -68,9 +75,8 @@ resource devWebsite 'Microsoft.Web/sites@2023-12-01' = {
     }
   }
   tags: {
-    environment: 'production'
-    deployment: 'bicep'
-    timestamp: resourceGroup().tags.timestamp
+    environment: 'DEVELOPMENT'
+    deployment: 'Bicep'
   }
 }
 

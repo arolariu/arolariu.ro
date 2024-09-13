@@ -24,8 +24,7 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
     SamplingPercentage: 30
   }
   tags: {
-    environment: 'production'
-    deployment: 'bicep'
-    timestamp: resourceGroup().tags.timestamp
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
   }
 }

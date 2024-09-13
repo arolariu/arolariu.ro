@@ -1,5 +1,13 @@
 name: "website-official-build"
 
+permissions:
+  id-token: write
+  contents: read
+
+defaults:
+  run:
+    working-directory: ./sites/arolariu.ro
+
 on:
   push:
     branches: ["preview"]
@@ -11,7 +19,7 @@ on:
         options:
           - "DEVELOPMENT"
           - "PRODUCTION"
-        default: "PRODUCTION"
+        default: "DEVELOPMENT"
         required: true
         type: choice
       container_name:
@@ -19,13 +27,9 @@ on:
         options:
           - "frontend/dev.arolariu"
           - "frontend/arolariu"
-        default: "frontend/arolariu"
+        default: "frontend/dev.arolariu"
         required: true
         type: choice
-
-permissions:
-  id-token: write
-  contents: read
 
 env:
   SITE_NAME: ${{ inputs.environment == 'PRODUCTION' && 'arolariu.ro' || 'dev.arolariu.ro' }}
@@ -37,10 +41,6 @@ env:
   USE_CDN: ${{ inputs.environment == 'PRODUCTION' && 'true' || 'false' }}
   AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
   AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
-
-defaults:
-  run:
-    working-directory: ./sites/arolariu.ro
 
 jobs:
   test:

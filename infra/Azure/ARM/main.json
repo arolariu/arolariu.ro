@@ -4,11 +4,11 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.28.1.47646",
-      "templateHash": "10480487256302217780"
+      "version": "0.29.47.4906",
+      "templateHash": "17722769565714126202"
     },
     "description": "This bicep file is the main entry point for any zero-touch deployment.",
-    "author": "Alexandru-Razvan Olariu"
+    "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>"
   },
   "parameters": {
     "resourceGroupName": {
@@ -18,9 +18,16 @@
         "description": "The name of the resource group that will contain all the resources."
       }
     },
+    "resourceGroupAuthor": {
+      "type": "string",
+      "defaultValue": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
+      "metadata": {
+        "description": "The author of the resource group // deployment."
+      }
+    },
     "resourceGroupLocation": {
       "type": "string",
-      "defaultValue": "EastUS",
+      "defaultValue": "swedencentral",
       "metadata": {
         "description": "The location of the resource group that will contain all the resources."
       }
@@ -40,7 +47,9 @@
       "name": "[parameters('resourceGroupName')]",
       "location": "[parameters('resourceGroupLocation')]",
       "tags": {
-        "timestamp": "[parameters('resourceDeploymentDate')]"
+        "deploymentType": "Bicep",
+        "deploymentAuthor": "[parameters('resourceGroupAuthor')]",
+        "deploymentDate": "[parameters('resourceDeploymentDate')]"
       }
     },
     {
@@ -59,8 +68,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.28.1.47646",
-              "templateHash": "744050446902185227"
+              "version": "0.29.47.4906",
+              "templateHash": "17235891982154740784"
             },
             "description": "This file acts a facade that will be called by the main bicep file. This file contains all module deployments (compute, storage, identity, etc.). This file is responsible for deploying all the modules.",
             "author": "Alexandru-Razvan Olariu"
@@ -72,14 +81,10 @@
               "metadata": {
                 "description": "The date when the deployment is executed."
               }
-            },
-            "resourceConventionPrefix": {
-              "type": "string",
-              "defaultValue": "[format('{0}-arolariu', substring(uniqueString(resourceGroup().id), 0, 6))]",
-              "metadata": {
-                "description": "The prefix that will be used for all the resources."
-              }
             }
+          },
+          "variables": {
+            "resourceConventionPrefix": "[substring(uniqueString(parameters('resourceDeploymentDate')), 0, 6)]"
           },
           "resources": [
             {
@@ -93,7 +98,7 @@
                 "mode": "Incremental",
                 "parameters": {
                   "resourceConventionPrefix": {
-                    "value": "[parameters('resourceConventionPrefix')]"
+                    "value": "[variables('resourceConventionPrefix')]"
                   }
                 },
                 "template": {
@@ -103,8 +108,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.28.1.47646",
-                      "templateHash": "2340271951483084322"
+                      "version": "0.29.47.4906",
+                      "templateHash": "6311476933594998769"
                     }
                   },
                   "definitions": {
@@ -146,7 +151,7 @@
                     }
                   },
                   "variables": {
-                    "managedIdentitiesNamePrefix": "[format('{0}-uami-', parameters('resourceConventionPrefix'))]"
+                    "managedIdentitiesNamePrefix": "[format('{0}-uami', parameters('resourceConventionPrefix'))]"
                   },
                   "resources": {
                     "managedIdentities": {
@@ -170,8 +175,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "16942714675029078823"
+                              "version": "0.29.47.4906",
+                              "templateHash": "16989346103895241351"
                             },
                             "description": "This template will create three user assigned managed identities: Front-End, Back-End, Infrastructure",
                             "author": "Alexandru-Razvan Olariu"
@@ -217,15 +222,18 @@
                           "variables": {
                             "identities": [
                               {
-                                "name": "[format('{0}frontend', parameters('userAssignedManagedIdentityNamePrefix'))]",
+                                "name": "[format('{0}-frontend', parameters('userAssignedManagedIdentityNamePrefix'))]",
+                                "location": "[parameters('userAssignedManagedIdentityLocation')]",
                                 "displayName": "Front-End Identity"
                               },
                               {
-                                "name": "[format('{0}backend', parameters('userAssignedManagedIdentityNamePrefix'))]",
+                                "name": "[format('{0}-backend', parameters('userAssignedManagedIdentityNamePrefix'))]",
+                                "location": "[parameters('userAssignedManagedIdentityLocation')]",
                                 "displayName": "Back-End Identity"
                               },
                               {
-                                "name": "[format('{0}infrastructure', parameters('userAssignedManagedIdentityNamePrefix'))]",
+                                "name": "[format('{0}-infrastructure', parameters('userAssignedManagedIdentityNamePrefix'))]",
+                                "location": "[parameters('userAssignedManagedIdentityLocation')]",
                                 "displayName": "Infrastructure Identity"
                               }
                             ]
@@ -239,12 +247,11 @@
                               "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
                               "apiVersion": "2023-07-31-preview",
                               "name": "[variables('identities')[copyIndex()].name]",
-                              "location": "[parameters('userAssignedManagedIdentityLocation')]",
+                              "location": "[variables('identities')[copyIndex()].location]",
                               "tags": {
-                                "displayName": "[variables('identities')[copyIndex()].displayName]",
-                                "environment": "production",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep",
+                                "displayName": "[variables('identities')[copyIndex()].displayName]"
                               }
                             }
                           },
@@ -291,16 +298,7 @@
                 "mode": "Incremental",
                 "parameters": {
                   "resourceConventionPrefix": {
-                    "value": "[parameters('resourceConventionPrefix')]"
-                  },
-                  "managedIdentityFrontendId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[0].id]"
-                  },
-                  "managedIdentityBackendId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[1].id]"
-                  },
-                  "managedIdentityInfraId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[2].id]"
+                    "value": "[variables('resourceConventionPrefix')]"
                   }
                 },
                 "template": {
@@ -309,8 +307,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.28.1.47646",
-                      "templateHash": "14735395203091400880"
+                      "version": "0.29.47.4906",
+                      "templateHash": "77366628292291764"
                     }
                   },
                   "parameters": {
@@ -326,15 +324,6 @@
                       "metadata": {
                         "description": "The prefix to use for the names of the resources."
                       }
-                    },
-                    "managedIdentityBackendId": {
-                      "type": "string"
-                    },
-                    "managedIdentityFrontendId": {
-                      "type": "string"
-                    },
-                    "managedIdentityInfraId": {
-                      "type": "string"
                     }
                   },
                   "variables": {
@@ -362,8 +351,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "6839227875695290889"
+                              "version": "0.29.47.4906",
+                              "templateHash": "1828094768615859135"
                             },
                             "description": "This template will create the necessary Azure Key Vault resources for arolariu.ro",
                             "author": "Alexandru-Razvan Olariu"
@@ -390,27 +379,28 @@
                               "name": "[parameters('keyVaultName')]",
                               "location": "[parameters('keyVaultLocation')]",
                               "properties": {
+                                "accessPolicies": [],
+                                "createMode": "default",
+                                "enabledForDeployment": false,
+                                "enabledForDiskEncryption": false,
+                                "enabledForTemplateDeployment": true,
+                                "enablePurgeProtection": true,
+                                "enableRbacAuthorization": false,
+                                "enableSoftDelete": true,
+                                "networkAcls": {},
+                                "provisioningState": "Succeeded",
+                                "publicNetworkAccess": "enabled",
                                 "sku": {
                                   "family": "A",
                                   "name": "standard"
                                 },
-                                "tenantId": "[subscription().tenantId]",
-                                "enabledForDeployment": false,
-                                "enabledForDiskEncryption": false,
-                                "enabledForTemplateDeployment": true,
-                                "enableSoftDelete": true,
                                 "softDeleteRetentionInDays": 90,
-                                "enablePurgeProtection": true,
-                                "createMode": "default",
-                                "publicNetworkAccess": "enabled",
-                                "provisioningState": "Succeeded",
-                                "vaultUri": "[format('https://{0}{1}', parameters('keyVaultName'), environment().suffixes.keyvaultDns)]",
-                                "accessPolicies": []
+                                "tenantId": "[subscription().tenantId]",
+                                "vaultUri": "[format('https://{0}{1}', parameters('keyVaultName'), environment().suffixes.keyvaultDns)]"
                               },
                               "tags": {
-                                "environment": "production",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
                               }
                             }
                           ],
@@ -443,15 +433,6 @@
                         "parameters": {
                           "appConfigurationName": {
                             "value": "[variables('appConfigurationName')]"
-                          },
-                          "appConfigurationBEIdentity": {
-                            "value": "[parameters('managedIdentityBackendId')]"
-                          },
-                          "appConfigurationFEIdentity": {
-                            "value": "[parameters('managedIdentityFrontendId')]"
-                          },
-                          "appConfigurationInfraIdentity": {
-                            "value": "[parameters('managedIdentityInfraId')]"
                           }
                         },
                         "template": {
@@ -460,8 +441,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "3895773862487861653"
+                              "version": "0.29.47.4906",
+                              "templateHash": "14488771976581624273"
                             },
                             "description": "This template will deploy an Azure App Configuration resource.",
                             "author": "Alexandru-Razvan Olariu"
@@ -471,24 +452,6 @@
                               "type": "string",
                               "metadata": {
                                 "description": "The name of the App Configuration resource."
-                              }
-                            },
-                            "appConfigurationBEIdentity": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The back-end identity to assign to the App Configuration resource."
-                              }
-                            },
-                            "appConfigurationFEIdentity": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The front-end identity to assign to the App Configuration resource."
-                              }
-                            },
-                            "appConfigurationInfraIdentity": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The infrastructure identity to assign to the App Configuration resource."
                               }
                             },
                             "appConfigurationLocation": {
@@ -508,28 +471,19 @@
                               "sku": {
                                 "name": "free"
                               },
-                              "identity": {
-                                "type": "UserAssigned",
-                                "userAssignedIdentities": {
-                                  "[format('{0}', parameters('appConfigurationBEIdentity'))]": {},
-                                  "[format('{0}', parameters('appConfigurationFEIdentity'))]": {},
-                                  "[format('{0}', parameters('appConfigurationInfraIdentity'))]": {}
-                                }
-                              },
                               "properties": {
                                 "createMode": "Default",
                                 "disableLocalAuth": false,
-                                "softDeleteRetentionInDays": 0,
                                 "enablePurgeProtection": false,
+                                "softDeleteRetentionInDays": 0,
                                 "dataPlaneProxy": {
                                   "authenticationMode": "Local",
                                   "privateLinkDelegation": "Disabled"
                                 }
                               },
                               "tags": {
-                                "environment": "production",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
                               }
                             }
                           ],
@@ -544,10 +498,7 @@
                     }
                   ]
                 }
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate')))]"
-              ]
+              }
             },
             {
               "type": "Microsoft.Resources/deployments",
@@ -560,16 +511,7 @@
                 "mode": "Incremental",
                 "parameters": {
                   "resourceConventionPrefix": {
-                    "value": "[parameters('resourceConventionPrefix')]"
-                  },
-                  "managedIdentityFrontendId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[0].id]"
-                  },
-                  "managedIdentityBackendId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[1].id]"
-                  },
-                  "managedIdentityInfraId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[2].id]"
+                    "value": "[variables('resourceConventionPrefix')]"
                   }
                 },
                 "template": {
@@ -578,8 +520,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.28.1.47646",
-                      "templateHash": "2134905714917161427"
+                      "version": "0.29.47.4906",
+                      "templateHash": "14549827264771872336"
                     }
                   },
                   "parameters": {
@@ -595,15 +537,6 @@
                       "metadata": {
                         "description": "The prefix to use for the names of the resources."
                       }
-                    },
-                    "managedIdentityBackendId": {
-                      "type": "string"
-                    },
-                    "managedIdentityFrontendId": {
-                      "type": "string"
-                    },
-                    "managedIdentityInfraId": {
-                      "type": "string"
                     }
                   },
                   "resources": [
@@ -619,9 +552,6 @@
                         "parameters": {
                           "logAnalyticsWorkspaceName": {
                             "value": "[format('{0}-workspace', parameters('resourceConventionPrefix'))]"
-                          },
-                          "logAnalyticsWorkspaceBackendIdentity": {
-                            "value": "[parameters('managedIdentityBackendId')]"
                           }
                         },
                         "template": {
@@ -630,8 +560,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "16436836244807503223"
+                              "version": "0.29.47.4906",
+                              "templateHash": "9267798541008441710"
                             },
                             "description": "This template will deploy a log analytics workspace that is used for Open Telemetry (OTel) data collection.",
                             "author": "Alexandru-Razvan Olariu"
@@ -643,9 +573,6 @@
                             },
                             "logAnalyticsWorkspaceName": {
                               "type": "string"
-                            },
-                            "logAnalyticsWorkspaceBackendIdentity": {
-                              "type": "string"
                             }
                           },
                           "resources": [
@@ -654,12 +581,6 @@
                               "apiVersion": "2023-09-01",
                               "name": "[parameters('logAnalyticsWorkspaceName')]",
                               "location": "[parameters('logAnalyticsWorkspaceLocation')]",
-                              "identity": {
-                                "type": "UserAssigned",
-                                "userAssignedIdentities": {
-                                  "[format('{0}', parameters('logAnalyticsWorkspaceBackendIdentity'))]": {}
-                                }
-                              },
                               "properties": {
                                 "sku": {
                                   "name": "PerGB2018"
@@ -675,9 +596,8 @@
                                 }
                               },
                               "tags": {
-                                "environment": "production",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
                               }
                             }
                           ],
@@ -713,8 +633,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "7039267955157854588"
+                              "version": "0.29.47.4906",
+                              "templateHash": "11476100639891580886"
                             },
                             "description": "This template will deploy an application insights resource that is connected to the api.arolariu.ro platform (back-end) and the arolariu.ro platform (front-end).",
                             "author": "Alexandru-Razvan Olariu"
@@ -750,9 +670,8 @@
                                 "SamplingPercentage": 30
                               },
                               "tags": {
-                                "environment": "production",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
                               }
                             }
                           ]
@@ -774,15 +693,6 @@
                         "parameters": {
                           "managedGrafanaName": {
                             "value": "[format('{0}-grafana', parameters('resourceConventionPrefix'))]"
-                          },
-                          "managedGrafanaBackendIdentity": {
-                            "value": "[parameters('managedIdentityBackendId')]"
-                          },
-                          "managedGrafanaFrontendIdentity": {
-                            "value": "[parameters('managedIdentityFrontendId')]"
-                          },
-                          "managedGrafanaInfrastructureIdentity": {
-                            "value": "[parameters('managedIdentityInfraId')]"
                           }
                         },
                         "template": {
@@ -791,8 +701,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "15754579563513234985"
+                              "version": "0.29.47.4906",
+                              "templateHash": "4391880526905831428"
                             },
                             "description": "This template will deploy an Azure Managed Grafana instance.",
                             "author": "Alexandru-Razvan Olariu"
@@ -804,15 +714,6 @@
                             },
                             "managedGrafanaName": {
                               "type": "string"
-                            },
-                            "managedGrafanaBackendIdentity": {
-                              "type": "string"
-                            },
-                            "managedGrafanaFrontendIdentity": {
-                              "type": "string"
-                            },
-                            "managedGrafanaInfrastructureIdentity": {
-                              "type": "string"
                             }
                           },
                           "resources": [
@@ -821,19 +722,11 @@
                               "apiVersion": "2023-09-01",
                               "name": "[parameters('managedGrafanaName')]",
                               "location": "[parameters('managedGrafanaLocation')]",
-                              "identity": {
-                                "type": "UserAssigned",
-                                "userAssignedIdentities": {
-                                  "[format('{0}', parameters('managedGrafanaBackendIdentity'))]": {},
-                                  "[format('{0}', parameters('managedGrafanaFrontendIdentity'))]": {},
-                                  "[format('{0}', parameters('managedGrafanaInfrastructureIdentity'))]": {}
-                                }
-                              },
                               "sku": {
                                 "name": "Essential"
                               },
                               "properties": {
-                                "grafanaMajorVersion": "9",
+                                "grafanaMajorVersion": "10",
                                 "zoneRedundancy": "Disabled",
                                 "publicNetworkAccess": "Enabled",
                                 "apiKey": "Enabled",
@@ -849,9 +742,8 @@
                                 }
                               },
                               "tags": {
-                                "environment": "production",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
                               }
                             }
                           ],
@@ -887,16 +779,7 @@
                 "mode": "Incremental",
                 "parameters": {
                   "resourceConventionPrefix": {
-                    "value": "[parameters('resourceConventionPrefix')]"
-                  },
-                  "managedIdentityFrontendId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[0].id]"
-                  },
-                  "managedIdentityBackendId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[1].id]"
-                  },
-                  "managedIdentityInfraId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[2].id]"
+                    "value": "[variables('resourceConventionPrefix')]"
                   }
                 },
                 "template": {
@@ -905,8 +788,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.28.1.47646",
-                      "templateHash": "10401381112225304072"
+                      "version": "0.29.47.4906",
+                      "templateHash": "6067264279405359348"
                     }
                   },
                   "parameters": {
@@ -922,15 +805,6 @@
                       "metadata": {
                         "description": "The prefix to use for the names of the resources."
                       }
-                    },
-                    "managedIdentityBackendId": {
-                      "type": "string"
-                    },
-                    "managedIdentityFrontendId": {
-                      "type": "string"
-                    },
-                    "managedIdentityInfraId": {
-                      "type": "string"
                     }
                   },
                   "variables": {
@@ -958,8 +832,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "11170015300238861618"
+                              "version": "0.29.47.4906",
+                              "templateHash": "2268304654518792624"
                             },
                             "description": "This template will create a new storage account.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1102,7 +976,7 @@
                                   "directoryServiceOptions": "AADKERB",
                                   "defaultSharePermission": "StorageFileDataSmbShareReader"
                                 },
-                                "minimumTlsVersion": "TLS1_1",
+                                "minimumTlsVersion": "TLS1_2",
                                 "allowBlobPublicAccess": true,
                                 "allowSharedKeyAccess": true,
                                 "networkAcls": {
@@ -1129,9 +1003,8 @@
                                 "accessTier": "Hot"
                               },
                               "tags": {
-                                "environment": "production",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
                               }
                             }
                           ],
@@ -1161,20 +1034,11 @@
                           "sqlServerName": {
                             "value": "[variables('sqlServerName')]"
                           },
-                          "sqlServerBackendIdentity": {
-                            "value": "[parameters('managedIdentityBackendId')]"
-                          },
-                          "sqlServerFrontendIdentity": {
-                            "value": "[parameters('managedIdentityFrontendId')]"
-                          },
-                          "sqlServerInfrastructureIdentity": {
-                            "value": "[parameters('managedIdentityInfraId')]"
-                          },
                           "sqlServerAdministratorPassword": {
-                            "value": ""
+                            "value": "adminUsername1234!"
                           },
                           "sqlServerAdministratorUserName": {
-                            "value": ""
+                            "value": "adminPa$$w0rd1234!"
                           }
                         },
                         "template": {
@@ -1183,8 +1047,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "11625219106666313762"
+                              "version": "0.29.47.4906",
+                              "templateHash": "16986678197295311172"
                             },
                             "description": "This template will create a new Azure SQL Server resource.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1214,15 +1078,6 @@
                               "metadata": {
                                 "description": "The password for the local SQL Server administrator."
                               }
-                            },
-                            "sqlServerBackendIdentity": {
-                              "type": "string"
-                            },
-                            "sqlServerFrontendIdentity": {
-                              "type": "string"
-                            },
-                            "sqlServerInfrastructureIdentity": {
-                              "type": "string"
                             }
                           },
                           "resources": [
@@ -1275,26 +1130,16 @@
                               "apiVersion": "2023-08-01-preview",
                               "name": "[parameters('sqlServerName')]",
                               "location": "[parameters('sqlServerLocation')]",
-                              "identity": {
-                                "type": "UserAssigned",
-                                "userAssignedIdentities": {
-                                  "[format('{0}', parameters('sqlServerBackendIdentity'))]": {},
-                                  "[format('{0}', parameters('sqlServerFrontendIdentity'))]": {},
-                                  "[format('{0}', parameters('sqlServerInfrastructureIdentity'))]": {}
-                                }
-                              },
                               "properties": {
-                                "minimalTlsVersion": "1.3",
+                                "minimalTlsVersion": "1.2",
                                 "publicNetworkAccess": "Enabled",
                                 "version": "12.0",
-                                "primaryUserAssignedIdentityId": "[parameters('sqlServerBackendIdentity')]",
                                 "administratorLogin": "[parameters('sqlServerAdministratorUserName')]",
                                 "administratorLoginPassword": "[parameters('sqlServerAdministratorPassword')]"
                               },
                               "tags": {
-                                "environment": "production",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
                               }
                             }
                           ],
@@ -1322,9 +1167,6 @@
                           },
                           "sqlDatabaseNamePrefix": {
                             "value": "[format('{0}-sqlserver-db', parameters('resourceConventionPrefix'))]"
-                          },
-                          "sqlDatabaseBackendIdentity": {
-                            "value": "[parameters('managedIdentityBackendId')]"
                           }
                         },
                         "template": {
@@ -1333,8 +1175,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "18111967696360211333"
+                              "version": "0.29.47.4906",
+                              "templateHash": "10763144671243990498"
                             },
                             "description": "This template will deploy a primary, DTU-based SQL database, and a secondary, serverless SQL database. The primary database will be created with a Standard SKU, while the secondary database will be created with a GeneralPurpose SKU. The secondary database will be created as a free database, and will be automatically paused after an hour of inactivity. The databases will be created in the same location as the resource group.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1358,9 +1200,6 @@
                               "metadata": {
                                 "description": "The location for the SQL Database resources."
                               }
-                            },
-                            "sqlDatabaseBackendIdentity": {
-                              "type": "string"
                             }
                           },
                           "variables": {
@@ -1373,12 +1212,6 @@
                               "apiVersion": "2023-08-01-preview",
                               "name": "[format('{0}/{1}', parameters('sqlServerName'), variables('sqlDatabasePrimaryName'))]",
                               "location": "[parameters('sqlDatabaseLocation')]",
-                              "identity": {
-                                "type": "UserAssigned",
-                                "userAssignedIdentities": {
-                                  "[format('{0}', parameters('sqlDatabaseBackendIdentity'))]": {}
-                                }
-                              },
                               "sku": {
                                 "name": "Standard",
                                 "tier": "Standard",
@@ -1395,8 +1228,8 @@
                                 "availabilityZone": "NoPreference"
                               },
                               "tags": {
-                                "environment": "production",
-                                "deployment": "bicep"
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
                               }
                             },
                             {
@@ -1409,10 +1242,8 @@
                                 "tier": "GeneralPurpose"
                               },
                               "identity": {
-                                "type": "UserAssigned",
-                                "userAssignedIdentities": {
-                                  "[format('{0}', parameters('sqlDatabaseBackendIdentity'))]": {}
-                                }
+                                "type": "None",
+                                "userAssignedIdentities": {}
                               },
                               "properties": {
                                 "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
@@ -1426,9 +1257,8 @@
                                 "freeLimitExhaustionBehavior": "AutoPause"
                               },
                               "tags": {
-                                "environment": "production",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
                               }
                             }
                           ]
@@ -1440,10 +1270,7 @@
                     }
                   ]
                 }
-              },
-              "dependsOn": [
-                "[resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate')))]"
-              ]
+              }
             },
             {
               "type": "Microsoft.Resources/deployments",
@@ -1456,7 +1283,7 @@
                 "mode": "Incremental",
                 "parameters": {
                   "resourceConventionPrefix": {
-                    "value": "[format('{0}-cpu-', parameters('resourceConventionPrefix'))]"
+                    "value": "[variables('resourceConventionPrefix')]"
                   }
                 },
                 "template": {
@@ -1465,8 +1292,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.28.1.47646",
-                      "templateHash": "8417486225089120696"
+                      "version": "0.29.47.4906",
+                      "templateHash": "14183397278673708298"
                     }
                   },
                   "parameters": {
@@ -1505,8 +1332,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "8296233131004079122"
+                              "version": "0.29.47.4906",
+                              "templateHash": "6224107397473533911"
                             },
                             "description": "This template deploys two App Service Farms, in the same region, for production and development environments.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1529,20 +1356,22 @@
                           "variables": {
                             "appPlans": [
                               {
-                                "name": "[format('{0}production', parameters('appServicePlanPrefix'))]",
+                                "name": "[format('{0}-production', parameters('appServicePlanPrefix'))]",
+                                "location": "[parameters('appServicePlanLocation')]",
+                                "perSiteScaling": true,
                                 "sku": {
                                   "name": "B2",
                                   "tier": "Basic"
-                                },
-                                "perSiteScaling": true
+                                }
                               },
                               {
-                                "name": "[format('{0}development', parameters('appServicePlanPrefix'))]",
+                                "name": "[format('{0}-development', parameters('appServicePlanPrefix'))]",
+                                "location": "[parameters('appServicePlanLocation')]",
+                                "perSiteScaling": false,
                                 "sku": {
                                   "name": "B1",
                                   "tier": "Basic"
-                                },
-                                "perSiteScaling": false
+                                }
                               }
                             ]
                           },
@@ -1555,7 +1384,7 @@
                               "type": "Microsoft.Web/serverfarms",
                               "apiVersion": "2023-12-01",
                               "name": "[variables('appPlans')[copyIndex()].name]",
-                              "location": "[parameters('appServicePlanLocation')]",
+                              "location": "[variables('appPlans')[copyIndex()].location]",
                               "sku": {
                                 "name": "[variables('appPlans')[copyIndex()].sku.name]",
                                 "tier": "[variables('appPlans')[copyIndex()].sku.tier]"
@@ -1567,9 +1396,8 @@
                                 "perSiteScaling": "[variables('appPlans')[copyIndex()].perSiteScaling]"
                               },
                               "tags": {
-                                "environment": "[if(equals(variables('appPlans')[copyIndex()].name, format('{0}production', parameters('appServicePlanPrefix'))), 'production', 'development')]",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "[if(equals(variables('appPlans')[copyIndex()].name, format('{0}-production', parameters('appServicePlanPrefix'))), 'PRODUCTION', 'DEVELOPMENT')]",
+                                "deployment": "Bicep"
                               }
                             }
                           ],
@@ -1621,9 +1449,6 @@
                   },
                   "managedIdentityBackendId": {
                     "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[1].id]"
-                  },
-                  "managedIdentityInfraId": {
-                    "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identitiesDeployment-{0}', parameters('resourceDeploymentDate'))), '2022-09-01').outputs.managedIdentitiesList.value[2].id]"
                   }
                 },
                 "template": {
@@ -1632,8 +1457,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.28.1.47646",
-                      "templateHash": "10037192106777107252"
+                      "version": "0.29.47.4906",
+                      "templateHash": "10995870715379111112"
                     }
                   },
                   "parameters": {
@@ -1661,9 +1486,6 @@
                     },
                     "managedIdentityFrontendId": {
                       "type": "string"
-                    },
-                    "managedIdentityInfraId": {
-                      "type": "string"
                     }
                   },
                   "resources": [
@@ -1690,8 +1512,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "12322512060344906275"
+                              "version": "0.29.47.4906",
+                              "templateHash": "4851810780273784938"
                             },
                             "description": "This template will create the api.arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1764,9 +1586,8 @@
                                 "keyVaultReferenceIdentity": "[parameters('apiWebsiteIdentityId')]"
                               },
                               "tags": {
-                                "environment": "production",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
                               }
                             }
                           ]
@@ -1796,8 +1617,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "17285238599545425314"
+                              "version": "0.29.47.4906",
+                              "templateHash": "16236602489252692693"
                             },
                             "description": "This template will create the arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1892,9 +1713,8 @@
                                 }
                               },
                               "tags": {
-                                "environment": "production",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
                               }
                             }
                           ],
@@ -1919,6 +1739,9 @@
                         "parameters": {
                           "developmentAppPlanId": {
                             "value": "[parameters('developmentAppPlanId')]"
+                          },
+                          "devWebsiteIdentityId": {
+                            "value": "[parameters('managedIdentityFrontendId')]"
                           }
                         },
                         "template": {
@@ -1927,8 +1750,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "12290152182610624303"
+                              "version": "0.29.47.4906",
+                              "templateHash": "9056460057060692225"
                             },
                             "description": "This template will create the dev.arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1940,6 +1763,9 @@
                             },
                             "developmentAppPlanId": {
                               "type": "string"
+                            },
+                            "devWebsiteIdentityId": {
+                              "type": "string"
                             }
                           },
                           "resources": [
@@ -1949,6 +1775,12 @@
                               "name": "dev-arolariu-ro",
                               "location": "[parameters('devWebsiteLocation')]",
                               "kind": "app,linux,container",
+                              "identity": {
+                                "type": "UserAssigned",
+                                "userAssignedIdentities": {
+                                  "[format('{0}', parameters('devWebsiteIdentityId'))]": {}
+                                }
+                              },
                               "properties": {
                                 "clientAffinityEnabled": true,
                                 "clientCertEnabled": false,
@@ -2007,9 +1839,8 @@
                                 }
                               },
                               "tags": {
-                                "environment": "production",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "DEVELOPMENT",
+                                "deployment": "Bicep"
                               }
                             }
                           ],
@@ -2037,8 +1868,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.28.1.47646",
-                              "templateHash": "4253395819688566284"
+                              "version": "0.29.47.4906",
+                              "templateHash": "11119463461224074664"
                             },
                             "description": "This template will create the docs.arolariu.ro static web app site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -2068,9 +1899,8 @@
                                 "enterpriseGradeCdnStatus": "Disabled"
                               },
                               "tags": {
-                                "environment": "production",
-                                "deployment": "bicep",
-                                "timestamp": "[resourceGroup().tags.timestamp]"
+                                "environment": "PRODUCTION",
+                                "deployment": "Bicep"
                               }
                             }
                           ]

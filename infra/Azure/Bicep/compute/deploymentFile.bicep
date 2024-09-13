@@ -7,9 +7,9 @@ param resourceDeploymentDate string = utcNow()
 param resourceConventionPrefix string
 
 module appServicePlansDeployment 'appServicePlans.bicep' = {
+  scope: resourceGroup()
   name: 'appServicePlansDeployment-${resourceDeploymentDate}'
   params: { appServicePlanPrefix: resourceConventionPrefix }
-  scope: resourceGroup()
 }
 
 output productionAppPlanId string = appServicePlansDeployment.outputs.productionAppPlanId

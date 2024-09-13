@@ -1,5 +1,9 @@
 name: "website-official-release"
 
+permissions:
+  id-token: write
+  contents: read
+
 on:
   workflow_run:
     workflows: ["website-official-build"]
@@ -12,7 +16,7 @@ on:
         options:
           - "development"
           - "production"
-        default: "production"
+        default: "development"
         required: true
         type: choice
       container_name:
@@ -20,13 +24,9 @@ on:
         options:
           - "frontend/dev.arolariu"
           - "frontend/arolariu"
-        default: "frontend/arolariu"
+        default: "frontend/dev.arolariu"
         required: true
         type: choice
-
-permissions:
-  id-token: write
-  contents: read
 
 jobs:
   release:

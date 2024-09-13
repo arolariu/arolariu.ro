@@ -1,6 +1,6 @@
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will create a new Azure SQL Server resource.'
+metadata description = 'This template will create a new Azure SQL server resource.'
 metadata author = 'Alexandru-Razvan Olariu'
 
 @description('The SQL Server name.')
@@ -17,33 +17,25 @@ param sqlServerAdministratorUserName string
 @secure()
 param sqlServerAdministratorPassword string
 
-param sqlServerBackendIdentity string
-param sqlServerFrontendIdentity string
-param sqlServerInfrastructureIdentity string
-
 resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
   name: sqlServerName
   location: sqlServerLocation
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${sqlServerBackendIdentity}': {}
-      '${sqlServerFrontendIdentity}': {}
-      '${sqlServerInfrastructureIdentity}': {}
-    }
-  }
   properties: {
-    minimalTlsVersion: '1.3'
+    minimalTlsVersion: '1.2'
     publicNetworkAccess: 'Enabled'
     version: '12.0'
-    primaryUserAssignedIdentityId: sqlServerBackendIdentity
     administratorLogin: sqlServerAdministratorUserName
     administratorLoginPassword: sqlServerAdministratorPassword
+    administrators: {
+      administratorType: 'ActiveDirectory'
+      login: 'admin@arolariu.ro'
+      sid: 'ee9acc3d-8a79-489d-b4bf-aaae428b29db'
+      tenantId: subscription().tenantId
+    }
   }
   tags: {
-    environment: 'production'
-    deployment: 'bicep'
-    timestamp: resourceGroup().tags.timestamp
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
   }
 
   resource sqlServerAdvancedThreatProtection 'advancedThreatProtectionSettings@2023-08-01-preview' = {
@@ -64,6 +56,11 @@ resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
   resource sqlServerConnectionPolicies 'connectionPolicies@2023-08-01-preview' = {
     name: 'Default'
     properties: { connectionType: 'Default' }
+  }
+
+  resource sqlServerAzureAdOnlyAuth 'azureADOnlyAuthentications@2023-08-01-preview' = {
+    name: 'Default'
+    properties: { azureADOnlyAuthentication: false }
   }
 }
 

@@ -6,17 +6,9 @@ metadata author = 'Alexandru-Razvan Olariu'
 param logAnalyticsWorkspaceLocation string = resourceGroup().location
 param logAnalyticsWorkspaceName string
 
-param logAnalyticsWorkspaceBackendIdentity string
-
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: logAnalyticsWorkspaceName
   location: logAnalyticsWorkspaceLocation
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${logAnalyticsWorkspaceBackendIdentity}': {}
-    }
-  }
   properties: {
     sku: { name: 'PerGB2018' }
     retentionInDays: 90
@@ -26,9 +18,8 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09
     features: { enableLogAccessUsingOnlyResourcePermissions: true }
   }
   tags: {
-    environment: 'production'
-    deployment: 'bicep'
-    timestamp: resourceGroup().tags.timestamp
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
   }
 }
 

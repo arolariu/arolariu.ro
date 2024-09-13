@@ -5,14 +5,12 @@
 # 3. Builds the static site using HUGO.
 # 4. Uploads the built artifact to an Azure Static Web Application.
 
-
 name: About platform (about.arolariu.ro) deployment
 
 on:
   push:
     branches: ["main"]
     paths: ["sites/about.arolariu.ro/**"]
-
 
 env: # To double check we're running the build in production env.
   HUGO_ENV: production
@@ -35,7 +33,7 @@ jobs:
         run: |
           cd ./sites/about.arolariu.ro
           hugo --config hugo.yaml
-        
+
       - name: 🌐 Deploying the about.arolariu.ro website...
         uses: azure/static-web-apps-deploy@v1
         with:
@@ -44,4 +42,3 @@ jobs:
           action: "upload"
           app_location: "/sites/about.arolariu.ro/public" # App source code path
           app_artifact_location: .
-      
