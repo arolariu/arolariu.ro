@@ -14,5 +14,11 @@ module managedIdentities 'userAssignedIdentity.bicep' = {
   params: { userAssignedManagedIdentityNamePrefix: managedIdentitiesNamePrefix }
 }
 
+module federatedIdentities 'federatedIdentity.bicep' = {
+  scope: resourceGroup()
+  name: 'federatedIdentitiesDeployment-${resourceDeploymentDate}'
+  params: { infrastructureManagedIdentity: managedIdentities.outputs.userAssignedManagedIdentities[2] }
+}
+
 import { identity } from '../types/identity.type.bicep'
 output managedIdentitiesList identity[] = managedIdentities.outputs.userAssignedManagedIdentities

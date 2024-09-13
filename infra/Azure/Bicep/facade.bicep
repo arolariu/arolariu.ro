@@ -24,7 +24,10 @@ module networkDeployment 'network/deploymentFile.bicep' = {
 module configurationDeployment 'configuration/deploymentFile.bicep' = {
   scope: resourceGroup()
   name: 'configurationDeployment-${resourceDeploymentDate}'
-  params: { resourceConventionPrefix: resourceConventionPrefix }
+  params: {
+    resourceConventionPrefix: resourceConventionPrefix
+    identities: identitiesDeployment.outputs.managedIdentitiesList
+  }
 }
 
 module observabilityDeployment 'observability/deploymentFile.bicep' = {

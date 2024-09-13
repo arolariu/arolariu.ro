@@ -26,6 +26,12 @@ resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
     version: '12.0'
     administratorLogin: sqlServerAdministratorUserName
     administratorLoginPassword: sqlServerAdministratorPassword
+    administrators: {
+      administratorType: 'ActiveDirectory'
+      login: 'admin@arolariu.ro'
+      sid: 'ee9acc3d-8a79-489d-b4bf-aaae428b29db'
+      tenantId: subscription().tenantId
+    }
   }
   tags: {
     environment: 'PRODUCTION'
@@ -50,6 +56,11 @@ resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
   resource sqlServerConnectionPolicies 'connectionPolicies@2023-08-01-preview' = {
     name: 'Default'
     properties: { connectionType: 'Default' }
+  }
+
+  resource sqlServerAzureAdOnlyAuth 'azureADOnlyAuthentications@2023-08-01-preview' = {
+    name: 'Default'
+    properties: { azureADOnlyAuthentication: false }
   }
 }
 

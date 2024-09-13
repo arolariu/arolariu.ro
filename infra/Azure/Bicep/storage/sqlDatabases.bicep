@@ -58,11 +58,13 @@ resource sqlDatabaseSecondary 'Microsoft.Sql/servers/databases@2023-08-01-previe
   properties: {
     catalogCollation: 'SQL_Latin1_General_CP1_CI_AS'
     collation: 'SQL_Latin1_General_CP1_CI_AS'
+    maxSizeBytes: 2147483648 // 2 GB
     zoneRedundant: false
     readScale: 'Disabled'
     requestedBackupStorageRedundancy: 'Local'
     isLedgerOn: false
     availabilityZone: 'NoPreference'
+    autoPauseDelay: 60 // 1 hour
     useFreeLimit: true // the secondary database will be created as a free database
     freeLimitExhaustionBehavior: 'AutoPause'
   }
