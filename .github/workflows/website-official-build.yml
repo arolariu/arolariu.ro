@@ -56,7 +56,8 @@ jobs:
         uses: actions/setup-node@v4.0.2
         with:
           node-version: latest
-          cache: "yarn"
+          cache: "pnpm"
+          cache-dependency-path: "./sites/arolariu.ro/yarn.lock"
 
       - name: 🚧 Adding environment variables...
         run: |
@@ -77,16 +78,16 @@ jobs:
           echo "CONFIG_STORE=${{ secrets.CONFIG_STORE }}" >> .env
 
       - name: 📦 Installing dependencies...
-        run: yarn && yarn dlx playwright install --with-deps
+        run: pnpm install && pnpm dlx playwright install --with-deps
 
       - name: 🧪 Preparing UI tests...
-        run: yarn storybook:build --quiet
+        run: pnpm storybook:build --quiet
 
       - name: 🧪 Running Smoke & Integration tests...
         run: |
-          yarn dlx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
-            "yarn dlx http-server storybook-static --port 6006 --silent" \
-            "yarn dlx wait-on tcp:6006 && npm run storybook:test"
+          pnpm dlx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
+            "pnpm dlx http-server storybook-static --port 6006 --silent" \
+            "pnpm dlx wait-on tcp:6006 && npm run storybook:test"
 
   build:
     name: ⚒️ Build phase (2/2)
