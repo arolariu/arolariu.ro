@@ -52,6 +52,9 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4.1.7
 
+      - name: 📦 Enabling Corepack...
+        run: corepack enable
+
       - name: 📦 Installing Node.js...
         uses: actions/setup-node@v4.0.2
         with:
