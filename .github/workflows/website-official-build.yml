@@ -52,18 +52,11 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4.1.7
 
-      - name: 📦 Installing performant NPM...
-        run: |
-          eval export $(echo PNPM_HOME=$HOME/.pnpm | tee -a $GITHUB_ENV);
-          echo "$PNPM_HOME" >> $GITHUB_PATH
-          curl -fsSL https://get.pnpm.io/install.sh | bash -
-
       - name: 📦 Installing Node.js...
         uses: actions/setup-node@v4.0.2
         with:
           node-version: latest
-          cache: "pnpm"
-          cache-dependency-path: "./sites/arolariu.ro/pnpm-lock.yaml"
+          cache: "yarn"
 
       - name: 🚧 Adding environment variables...
         run: |
@@ -84,16 +77,16 @@ jobs:
           echo "CONFIG_STORE=${{ secrets.CONFIG_STORE }}" >> .env
 
       - name: 📦 Installing dependencies...
-        run: pnpm install && pnpm dlx playwright install --with-deps
+        run: yarn && yarn dlx playwright install --with-deps
 
       - name: 🧪 Preparing UI tests...
-        run: pnpm storybook:build --quiet
+        run: yarn storybook:build --quiet
 
       - name: 🧪 Running Smoke & Integration tests...
         run: |
-          pnpm dlx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
-            "pnpm dlx http-server storybook-static --port 6006 --silent" \
-            "pnpm dlx wait-on tcp:6006 && npm run storybook:test"
+          yarn dlx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
+            "yarn dlx http-server storybook-static --port 6006 --silent" \
+            "yarn dlx wait-on tcp:6006 && npm run storybook:test"
 
   build:
     name: ⚒️ Build phase (2/2)
