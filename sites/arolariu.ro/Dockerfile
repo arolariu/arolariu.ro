@@ -1,15 +1,13 @@
 FROM node:22-alpine AS base
 
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-
+# Install dumb-init and corepack, update and upgrade the system
 RUN corepack enable && \
   apk update && apk upgrade && \
   apk add --no-cache libc6-compat && apk add dumb-init && rm -rf /var/cache/apk/*
 
+# Create a non-root user and group
 RUN addgroup --system --gid 1001 nodejs && \
   adduser --system --uid 1001 nextjs
-
 
 FROM base AS builder
 WORKDIR /app
@@ -17,6 +15,7 @@ WORKDIR /app
 COPY . .
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
 
+# Install dependencies
 RUN \
   if [ -f yarn.lock ]; then yarn install --immutable; \
   elif [ -f package-lock.json ]; then npm ci; \
@@ -24,6 +23,7 @@ RUN \
   else echo "Lockfile not found." && exit 1; \
   fi
 
+# Build the project, after dependencies are installed
 RUN \
   if [ -f yarn.lock ]; then yarn build; \
   elif [ -f package-lock.json ]; then npm run build; \
