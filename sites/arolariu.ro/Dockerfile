@@ -1,48 +1,42 @@
-FROM --platform=linux/amd64 node:22-alpine AS base
+FROM node:22-alpine AS base
 
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
+# Install dumb-init and corepack, update and upgrade the system
+RUN corepack enable && \
+  apk update && apk upgrade && \
+  apk add --no-cache libc6-compat && apk add dumb-init && rm -rf /var/cache/apk/*
 
-# Install dependencies
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN \
-  if [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  elif [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+# Create a non-root user and group
+RUN addgroup --system --gid 1001 nodejs && \
+  adduser --system --uid 1001 nextjs
 
-# Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
 
+# Install dependencies
 RUN \
-  if [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  elif [ -f yarn.lock ]; then yarn run build; \
+  if [ -f yarn.lock ]; then yarn install --immutable; \
+  elif [ -f package-lock.json ]; then npm ci; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
   else echo "Lockfile not found." && exit 1; \
   fi
 
-# Production image, copy all the files and run next
+# Build the project, after dependencies are installed
+RUN \
+  if [ -f yarn.lock ]; then yarn build; \
+  elif [ -f package-lock.json ]; then npm run build; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
+  else echo "Lockfile not found." && exit 1; \
+  fi
+
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV=production
-
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-
-# Set the correct permission for prerender cache
 RUN mkdir .next && chown nextjs:nodejs .next
 
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
@@ -53,4 +47,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["dumb-init","node","server.js"]
