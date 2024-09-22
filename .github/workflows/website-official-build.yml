@@ -52,9 +52,6 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4.1.7
 
-      - name: 📦 Enabling Corepack...
-        run: corepack enable
-
       - name: 📦 Installing Node.js...
         uses: actions/setup-node@v4.0.2
         with:
@@ -79,7 +76,9 @@ jobs:
           echo "CONFIG_STORE=${{ secrets.CONFIG_STORE }}" >> .env
 
       - name: 📦 Installing dependencies...
-        run: yarn && yarn dlx playwright install --with-deps
+        run: |
+          corepack enable && \
+          yarn && yarn dlx playwright install --with-deps
 
       - name: 🧪 Preparing UI tests...
         run: yarn storybook:build --quiet
