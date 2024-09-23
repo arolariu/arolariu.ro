@@ -1,0 +1,31 @@
+# This docker compose will spin up the following management containers:
+# - Traefik (Reverse Proxy);
+# - Network for external use (by other docker-compose files);
+
+name: "arolariu-management"
+
+networks:
+  default:
+    name: "arolariu-network"
+    driver: "bridge"
+
+services:
+  traefik:
+    image: "traefik:v3.1.4"
+    container_name: "traefik"
+    command:
+      - "--api.insecure=true" # Enable the Traefik API over HTTP
+      - "--providers.docker=true" # Enable Docker as a container provider
+    ports:
+      - "80:80" # HTTP traffic entrypoint
+      - "8080:8080" # Traefik API Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - "traefik.http.routers.api.rule=Host(`traefik.arolariu.ro.localhost`)"
+
+  whoami:
+    image: traefik/whoami
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.arolariu.ro.localhost`)"

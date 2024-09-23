@@ -1,0 +1,54 @@
+# This docker-compose will spin up the following data storage containers:
+# - Microsoft SQL Server (MSSQL);
+# - Microsoft NoSQL Server (CosmosDB);
+
+name: "arolariu-storage"
+
+volumes:
+  storage:
+
+networks: # 2 networks: default (internal) and arolariu-network (external)
+  default:
+  external:
+    name: "arolariu-network"
+    external: true
+
+services:
+  mssql:
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    container_name: "mssql"
+    environment:
+      MSSQL_SA_PASSWORD: "Pa$$w0rd1234!"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433" # MSSQL default port
+    networks:
+      - default
+      - external
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mssql.rule=Host(`sql.arolariu.ro.localhost`)"
+      - "traefik.http.services.mssql.loadbalancer.server.port=1433"
+
+  cosmosdb:
+    image: "mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest"
+    container_name: "cosmosdb"
+    ports:
+      - "8081:8081" # CosmosDB default port
+      # the following ports are used for the data explorer
+      - "10250:10250"
+      - "10251:10251"
+      - "10252:10252"
+      - "10253:10253"
+      - "10254:10254"
+      - "10255:10255"
+    volumes:
+      - "storage:/var/opt/cosmosdb"
+      - "storage:/var/opt/cosmosdb/data"
+      - "storage:/var/opt/cosmosdb/logs"
+    networks:
+      - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cosmosdb.rule=Host(`nosql.arolariu.ro.localhost`)"
+      - "traefik.http.services.cosmosdb.loadbalancer.server.port=8081"
