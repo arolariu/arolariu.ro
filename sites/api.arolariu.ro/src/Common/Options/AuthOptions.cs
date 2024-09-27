@@ -3,7 +3,7 @@
 /// <summary>
 /// Options for the authentication.
 /// </summary>
-public class AuthOptions
+public sealed class AuthOptions
 {
 	/// <summary>
 	/// The JWT structure issuer.

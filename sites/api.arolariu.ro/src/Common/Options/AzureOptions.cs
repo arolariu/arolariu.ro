@@ -3,7 +3,7 @@
 /// <summary>
 /// Options for the Azure services.
 /// </summary>
-public class AzureOptions
+public sealed class AzureOptions
 {
 	#region General Azure Configuration
 	/// <summary>
