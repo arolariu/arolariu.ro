@@ -28,6 +28,11 @@
 		<NoWarn>S1135</NoWarn>
 		<!-- S1135 - SonarLint "Complete TODOs" -->
 	</PropertyGroup>
+	<ItemGroup>
+	  <Compile Remove="DDD\ValueObjects\Products\Exceptions\**" />
+	  <EmbeddedResource Remove="DDD\ValueObjects\Products\Exceptions\**" />
+	  <None Remove="DDD\ValueObjects\Products\Exceptions\**" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Azure.AI.FormRecognizer" Version="4.1.0" />
@@ -43,11 +48,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Folder Include="DDD\Entities\Products\Exceptions\Inner\" />
-		<Folder Include="DDD\Entities\Products\Exceptions\Outer\" />
 	</ItemGroup>
 
 </Project>
