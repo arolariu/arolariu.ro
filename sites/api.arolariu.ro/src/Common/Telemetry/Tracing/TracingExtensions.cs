@@ -23,9 +23,7 @@ public static class TracingExtensions
 	public static void AddOTelTracing(this WebApplicationBuilder builder)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
-		builder.Services
-		.AddOpenTelemetry()
-		.WithTracing(tracingOptions =>
+		builder.Services.AddOpenTelemetry().WithTracing(tracingOptions =>
 		{
 			tracingOptions.AddAspNetCoreInstrumentation();
 			tracingOptions.AddHttpClientInstrumentation();

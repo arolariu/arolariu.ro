@@ -23,8 +23,7 @@ public static class MeteringExtensions
 	public static void AddOTelMetering(this WebApplicationBuilder builder)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
-		builder.Services.AddOpenTelemetry()
-		.WithMetrics(metricsOptions =>
+		builder.Services.AddOpenTelemetry().WithMetrics(metricsOptions =>
 		{
 			metricsOptions.AddAspNetCoreInstrumentation();
 			metricsOptions.AddHttpClientInstrumentation();
