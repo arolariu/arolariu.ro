@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
 
 public sealed partial class AzureFormRecognizerBroker

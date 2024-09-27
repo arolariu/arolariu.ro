@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
+﻿namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
