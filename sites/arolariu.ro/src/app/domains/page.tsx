@@ -43,12 +43,6 @@ export default function DomainsHomepage() {
           linkTo='/domains/invoices'
           imageUrl='/images/domains/invoice-management-system.png'
         />
-        <DomainServiceCard
-          title='Live Chat Rooms'
-          description='This domain space service allows users to create and join chat rooms. The chat rooms are real-time and can be accessed by room name. Chat and video call with peers.'
-          linkTo='/domains/live'
-          imageUrl='/images/domains/live-chat-rooms.jpeg'
-        />
       </section>
     </main>
   );
