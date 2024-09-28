@@ -3,7 +3,6 @@
 // @ts-check
 
 import withBundleAnalyzerInit from "@next/bundle-analyzer";
-import nextMdx from "@next/mdx";
 import withSerwistInit from "@serwist/next";
 import createNextIntlPlugin from "next-intl/plugin";
 
@@ -102,7 +101,6 @@ const nextConfig = {
   output: "standalone",
 
   experimental: {
-    mdxRs: true,
     instrumentationHook: true,
     serverActions: {
       bodySizeLimit: "10mb",
@@ -119,7 +117,7 @@ const nextConfig = {
     tsconfigPath: "tsconfig.json",
   },
 
-  pageExtensions: ["js", "jsx", "ts", "tsx", "md", "mdx"],
+  pageExtensions: ["js", "jsx", "ts", "tsx"],
 
   assetPrefix: process.env["USE_CDN"] === "true" ? "https://cdn.arolariu.ro" : undefined,
   compress: false, // We use AFD built-in compression for static assets.
@@ -141,12 +139,5 @@ const withBundleAnalyzer = withBundleAnalyzerInit({
 });
 
 const withTranslation = createNextIntlPlugin();
-const withMdx = nextMdx({
-  extension: /\.mdx?$/,
-  options: {
-    remarkPlugins: [],
-    rehypePlugins: [],
-  },
-});
 
-export default withBundleAnalyzer(withSerwist(withTranslation(withMdx(nextConfig))));
+export default withBundleAnalyzer(withSerwist(withTranslation(nextConfig)));

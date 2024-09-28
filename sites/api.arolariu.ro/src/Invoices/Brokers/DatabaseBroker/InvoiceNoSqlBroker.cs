@@ -5,8 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
 
 using Microsoft.Azure.Cosmos;

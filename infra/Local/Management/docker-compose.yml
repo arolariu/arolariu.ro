@@ -5,27 +5,23 @@
 name: "arolariu-management"
 
 networks:
-  default:
+  arolariu-network:
     name: "arolariu-network"
     driver: "bridge"
+    attachable: true
+    internal: false
 
 services:
-  traefik:
-    image: "traefik:v3.1.4"
-    container_name: "traefik"
-    command:
-      - "--api.insecure=true" # Enable the Traefik API over HTTP
-      - "--providers.docker=true" # Enable Docker as a container provider
-    ports:
-      - "80:80" # HTTP traffic entrypoint
-      - "8080:8080" # Traefik API Dashboard
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    labels:
-      - "traefik.http.routers.api.rule=Host(`traefik.arolariu.ro.localhost`)"
-
   whoami:
     image: traefik/whoami
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.whoami.rule=Host(`whoami.arolariu.ro.localhost`)"
+    container_name: whoami
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-v", "http://localhost:50607/health"]
+      interval: 3s
+      timeout: 1s
+      retries: 10
+    networks:
+      - arolariu-network
+    ports:
+      - "8080:80"

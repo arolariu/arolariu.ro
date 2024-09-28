@@ -5,7 +5,7 @@ using System;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using System.Collections.Generic;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Products;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
 /// This interface represents the invoice processing service.

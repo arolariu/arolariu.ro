@@ -23,8 +23,7 @@ public static class LoggingExtensions
 	public static void AddOTelLogging(this WebApplicationBuilder builder)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
-		builder.Logging
-		.AddOpenTelemetry(otelOptions =>
+		builder.Logging.AddOpenTelemetry(otelOptions =>
 		{
 			otelOptions.IncludeFormattedMessage = true;
 			otelOptions.IncludeScopes = true;

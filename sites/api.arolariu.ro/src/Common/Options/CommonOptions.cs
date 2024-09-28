@@ -3,7 +3,7 @@
 /// <summary>
 /// Common options for the application.
 /// </summary>
-public class CommonOptions
+public sealed class CommonOptions
 {
 	#region General configuration
 	/// <summary>

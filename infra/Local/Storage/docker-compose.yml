@@ -7,10 +7,8 @@ name: "arolariu-storage"
 volumes:
   storage:
 
-networks: # 2 networks: default (internal) and arolariu-network (external)
-  default:
-  external:
-    name: "arolariu-network"
+networks:
+  arolariu-network:
     external: true
 
 services:
@@ -18,17 +16,20 @@ services:
     image: "mcr.microsoft.com/mssql/server:2022-latest"
     container_name: "mssql"
     environment:
-      MSSQL_SA_PASSWORD: "Pa$$w0rd1234!"
+      MSSQL_SA_PASSWORD: "P@ssw0rd1234!"
       ACCEPT_EULA: "Y"
+    healthcheck:
+      test:
+        ["CMD", "sqlcmd", "-U", "sa", "-P", "P@ssw0rd1234!", "-Q", "SELECT 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 2
+    restart: "unless-stopped"
     ports:
-      - "1433:1433" # MSSQL default port
+      - "8082:1433" # MSSQL default port
     networks:
       - default
-      - external
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.mssql.rule=Host(`sql.arolariu.ro.localhost`)"
-      - "traefik.http.services.mssql.loadbalancer.server.port=1433"
+      - arolariu-network
 
   cosmosdb:
     image: "mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest"
@@ -48,7 +49,4 @@ services:
       - "storage:/var/opt/cosmosdb/logs"
     networks:
       - default
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.cosmosdb.rule=Host(`nosql.arolariu.ro.localhost`)"
-      - "traefik.http.services.cosmosdb.loadbalancer.server.port=8081"
+      - arolariu-network
