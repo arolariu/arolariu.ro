@@ -11,16 +11,31 @@ networks:
     attachable: true
     internal: false
 
+volumes:
+  caddy-data:
+  caddy-config:
+
 services:
+  caddy:
+    image: caddy:2.8.4-alpine
+    container_name: caddy
+    restart: unless-stopped
+    networks:
+      - arolariu-network
+    ports:
+      - "80:80" # HTTP
+      - "443:443" # HTTPS
+      - "443:443/udp" # QUIC
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+
   whoami:
     image: traefik/whoami
     container_name: whoami
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-v", "http://localhost:50607/health"]
-      interval: 3s
-      timeout: 1s
-      retries: 10
     networks:
       - arolariu-network
     ports:
