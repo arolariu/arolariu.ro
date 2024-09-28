@@ -24,4 +24,4 @@ services:
     networks:
       - arolariu-network
     ports:
-      - "50607:80"
+      - "8080:80"

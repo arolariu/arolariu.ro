@@ -26,7 +26,7 @@ services:
       retries: 2
     restart: "unless-stopped"
     ports:
-      - "1433:1433" # MSSQL default port
+      - "8082:1433" # MSSQL default port
     networks:
       - default
       - arolariu-network
