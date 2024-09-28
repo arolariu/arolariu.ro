@@ -38,7 +38,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@azure/abort-controller@npm:^2.0.0":
+"@azure/abort-controller@npm:^2.0.0, @azure/abort-controller@npm:^2.1.2":
   version: 2.1.2
   resolution: "@azure/abort-controller@npm:2.1.2"
   dependencies:
@@ -159,7 +159,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@azure/core-xml@npm:^1.3.2":
+"@azure/core-xml@npm:^1.4.3":
   version: 1.4.3
   resolution: "@azure/core-xml@npm:1.4.3"
   dependencies:
@@ -227,11 +227,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@azure/storage-blob@npm:12.24.0":
-  version: 12.24.0
-  resolution: "@azure/storage-blob@npm:12.24.0"
+"@azure/storage-blob@npm:12.25.0":
+  version: 12.25.0
+  resolution: "@azure/storage-blob@npm:12.25.0"
   dependencies:
-    "@azure/abort-controller": "npm:^1.0.0"
+    "@azure/abort-controller": "npm:^2.1.2"
     "@azure/core-auth": "npm:^1.4.0"
     "@azure/core-client": "npm:^1.6.2"
     "@azure/core-http-compat": "npm:^2.0.0"
@@ -240,11 +240,11 @@ __metadata:
     "@azure/core-rest-pipeline": "npm:^1.10.1"
     "@azure/core-tracing": "npm:^1.1.2"
     "@azure/core-util": "npm:^1.6.1"
-    "@azure/core-xml": "npm:^1.3.2"
+    "@azure/core-xml": "npm:^1.4.3"
     "@azure/logger": "npm:^1.0.0"
     events: "npm:^3.0.0"
     tslib: "npm:^2.2.0"
-  checksum: 10c0/d42d476ff54b6a24172d487dc7c05543a9f6402ee85bc3e7a68356159d70821d2db8f0f4e2238c6004c91c11b6ee4d8b573ac9f198dcbd0ee76f87eac13f13ff
+  checksum: 10c0/25ffb7dfbb2efca5f30780c1e877712b0285c815f8e049c77d47983341692968fe057c8bb97f4ca3f722b8927e06f7cae170db7efcd435488e7ac5b5d6e53f9f
   languageName: node
   linkType: hard
 
@@ -1743,41 +1743,41 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@clerk/backend@npm:1.13.2":
-  version: 1.13.2
-  resolution: "@clerk/backend@npm:1.13.2"
+"@clerk/backend@npm:1.13.5":
+  version: 1.13.5
+  resolution: "@clerk/backend@npm:1.13.5"
   dependencies:
-    "@clerk/shared": "npm:2.8.1"
-    "@clerk/types": "npm:4.21.0"
+    "@clerk/shared": "npm:2.8.4"
+    "@clerk/types": "npm:4.23.0"
     cookie: "npm:0.5.0"
     snakecase-keys: "npm:5.4.4"
     tslib: "npm:2.4.1"
-  checksum: 10c0/dec81455c975c7590c028d1c9c2b6c6de5d21729c73ddf1296843c22f66ab9178294d4e478b29cb76b92f48c331bbdff449ccf30894509a0d8e33885c96a81ba
+  checksum: 10c0/7e58069e710be0e0217e6436120381da0e73e0f3627b95204e72c9f5bba5b0e7267d188f88a2561064f6918dd569a6098f419099d228746e5e3962985c39ec8f
   languageName: node
   linkType: hard
 
-"@clerk/clerk-react@npm:5.9.1":
-  version: 5.9.1
-  resolution: "@clerk/clerk-react@npm:5.9.1"
+"@clerk/clerk-react@npm:5.9.4":
+  version: 5.9.4
+  resolution: "@clerk/clerk-react@npm:5.9.4"
   dependencies:
-    "@clerk/shared": "npm:2.8.1"
-    "@clerk/types": "npm:4.21.0"
+    "@clerk/shared": "npm:2.8.4"
+    "@clerk/types": "npm:4.23.0"
     tslib: "npm:2.4.1"
   peerDependencies:
     react: ">=18 || >=19.0.0-beta"
     react-dom: ">=18 || >=19.0.0-beta"
-  checksum: 10c0/c6ef1468e3ae9995462a140bb8f66d6d436f4ea55453329c4688c9e5d87c918c5e7094625b543642101f9728f46e2062942692248cef48bf51d54526f0e1421e
+  checksum: 10c0/da73237acbf9b8454ec19d98b810ad84e81bb48f50fc6a240dc057eaccff600dfe5e21ea8f4f3d8778a64fd2d784050fdb96a868f201947ca6211d4780eaca47
   languageName: node
   linkType: hard
 
-"@clerk/nextjs@npm:5.6.0":
-  version: 5.6.0
-  resolution: "@clerk/nextjs@npm:5.6.0"
+"@clerk/nextjs@npm:5.6.3":
+  version: 5.6.3
+  resolution: "@clerk/nextjs@npm:5.6.3"
   dependencies:
-    "@clerk/backend": "npm:1.13.2"
-    "@clerk/clerk-react": "npm:5.9.1"
-    "@clerk/shared": "npm:2.8.1"
-    "@clerk/types": "npm:4.21.0"
+    "@clerk/backend": "npm:1.13.5"
+    "@clerk/clerk-react": "npm:5.9.4"
+    "@clerk/shared": "npm:2.8.4"
+    "@clerk/types": "npm:4.23.0"
     crypto-js: "npm:4.2.0"
     server-only: "npm:0.0.1"
     tslib: "npm:2.4.1"
@@ -1785,15 +1785,15 @@ __metadata:
     next: ^13.5.4 || ^14.0.3 || >=15.0.0-rc
     react: ">=18 || >=19.0.0-beta"
     react-dom: ">=18 || >=19.0.0-beta"
-  checksum: 10c0/f1265e39c2d23a2c4059090bad3b49634e41622bce12e02ddca6dce4314ddd2ca10fa02baeaafd599413f18cdbdb0c7d5fd6ef343639e3fb66140a20b12bfd68
+  checksum: 10c0/bfdd7f8ce19c4e4308ebdfe2ea094ae7aaddc1fbb7dd302bb70585d609d128928d220cc73a0afcf63d22e2f0ccc8f7ea0184f05c1095f79af41b3bfdc75d7197
   languageName: node
   linkType: hard
 
-"@clerk/shared@npm:2.8.1":
-  version: 2.8.1
-  resolution: "@clerk/shared@npm:2.8.1"
+"@clerk/shared@npm:2.8.4":
+  version: 2.8.4
+  resolution: "@clerk/shared@npm:2.8.4"
   dependencies:
-    "@clerk/types": "npm:4.21.0"
+    "@clerk/types": "npm:4.23.0"
     glob-to-regexp: "npm:0.4.1"
     js-cookie: "npm:3.0.5"
     std-env: "npm:^3.7.0"
@@ -1806,16 +1806,16 @@ __metadata:
       optional: true
     react-dom:
       optional: true
-  checksum: 10c0/968e531e22bc41913752c27b007e003a2e1f84450647fd500a105cbb33ccf2d00e3cc1a07e14bc206fa83d71b7fb75f9e7aaf8b86867c05d2c22492e488e0c81
+  checksum: 10c0/553ad2dbe17e9a852e2ad286c11456bd3a0d2fef3d40682c05ee4991545644fcf3b0a1e8e3ba0fd6f92bf0007d99f4e50ecc525ae30bc70158d67511d0eff5e9
   languageName: node
   linkType: hard
 
-"@clerk/types@npm:4.21.0":
-  version: 4.21.0
-  resolution: "@clerk/types@npm:4.21.0"
+"@clerk/types@npm:4.23.0":
+  version: 4.23.0
+  resolution: "@clerk/types@npm:4.23.0"
   dependencies:
     csstype: "npm:3.1.1"
-  checksum: 10c0/9c305751d72c64af95536893d71f564efded610a67aa41994f919813e19ba71709bbbb77a1f236c798f703ce7738b6fe64844601a68ef40d4910aacd74e76988
+  checksum: 10c0/9cac485aa02157c2fe9f3bcc9ee6bbe7e175f3e78a9074aa9b0d133c16ea7d9dfa928571395c490974f269b61b529b798e2b650363cf20d30d8afacfb76ab4ec
   languageName: node
   linkType: hard
 
@@ -6672,8 +6672,8 @@ __metadata:
   dependencies:
     "@azure/app-configuration": "npm:1.7.0"
     "@azure/identity": "npm:4.4.1"
-    "@azure/storage-blob": "npm:12.24.0"
-    "@clerk/nextjs": "npm:5.6.0"
+    "@azure/storage-blob": "npm:12.25.0"
+    "@clerk/nextjs": "npm:5.6.3"
     "@eslint/compat": "npm:1.1.1"
     "@eslint/js": "npm:9.10.0"
     "@faker-js/faker": "npm:9.0.1"
