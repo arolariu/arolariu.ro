@@ -1,12 +1,9 @@
 /** @format */
 
-import type {FrameworkOptions, StorybookConfig} from "@storybook/nextjs";
+import type {StorybookConfig} from "@storybook/nextjs";
 
 const storybookConfig: StorybookConfig = {
-  framework: {
-    name: "@storybook/nextjs",
-    options: {} satisfies FrameworkOptions,
-  },
+  framework: "@storybook/nextjs",
   stories: ["../src/**/*.stories.@(js|jsx|ts|tsx)"],
   addons: [
     "@storybook/addon-interactions",
