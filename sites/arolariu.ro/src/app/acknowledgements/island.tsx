@@ -2,10 +2,10 @@
 
 "use client";
 
-import {Button} from "@/components/ui/button";
-import {ExternalLinkIcon} from "@radix-ui/react-icons";
 import Link from "next/link";
 import {useState} from "react";
+import {Button} from "react-aria-components";
+import {FaExternalLinkAlt} from "react-icons/fa";
 
 type Package = {
   name: string;
@@ -17,9 +17,7 @@ type Package = {
   dependecyType: string;
 };
 
-interface Props {
-  packages: readonly Package[];
-}
+type Props = {packages: readonly Package[]};
 
 /**
  * Table of acknowledgements for the third-party packages used in this project.
@@ -33,11 +31,17 @@ export default function AcknowledgementsTable({packages}: Readonly<Props>) {
   return (
     <section>
       <div className='flex items-center justify-between justify-items-center gap-4 2xsm:flex-col md:flex-row'>
-        <Button onClick={() => setShownPackages(productionPackages)}>Show Production Packages</Button>
-        <Button onClick={() => setShownPackages(developmentPackages)}>Show Development Packages</Button>
         <Button
-          variant='outline'
-          onClick={() => setShownPackages(packages)}>
+          className='rounded-xl border bg-gray-200 p-2 dark:bg-gray-800'
+          onPress={() => setShownPackages(productionPackages)}>
+          Show Production Packages
+        </Button>
+        <Button
+          className='rounded-xl border bg-gray-200 p-2 dark:bg-gray-800'
+          onPress={() => setShownPackages(developmentPackages)}>
+          Show Development Packages
+        </Button>
+        <Button onPress={() => setShownPackages(packages)}>
           Show all packages {!isShowingAllPackages && "(RESET)"}
         </Button>
       </div>
@@ -61,7 +65,7 @@ export default function AcknowledgementsTable({packages}: Readonly<Props>) {
               </div>
 
               <div className='absolute mb-1 -translate-x-4 text-blue-600 opacity-0 duration-300 ease-in group-hover:translate-x-0 group-hover:opacity-100'>
-                <ExternalLinkIcon className='inline' />
+                <FaExternalLinkAlt className='inline' />
                 <span className='text-sm'> {license.homepage} </span>
               </div>
             </div>

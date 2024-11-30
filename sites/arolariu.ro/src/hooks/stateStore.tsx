@@ -3,7 +3,7 @@
  * @format
  */
 
-import Invoice from "@/types/invoices/Invoice";
+import type Invoice from "@/types/invoices/Invoice";
 import {create} from "zustand";
 import {createJSONStorage, devtools, persist} from "zustand/middleware";
 

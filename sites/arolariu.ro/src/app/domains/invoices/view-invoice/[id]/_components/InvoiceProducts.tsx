@@ -2,8 +2,8 @@
 
 "use client";
 
-import {Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "@/components/ui/table";
-import Invoice from "@/types/invoices/Invoice";
+import type Invoice from "@/types/invoices/Invoice";
+import {Cell, Column, Row, Table, TableBody, TableHeader} from "react-aria-components";
 
 export const InvoiceProducts = ({invoice}: Readonly<{invoice: Invoice}>) => {
   const {items} = invoice;
@@ -13,36 +13,31 @@ export const InvoiceProducts = ({invoice}: Readonly<{invoice: Invoice}>) => {
   return (
     <Table className='mx-auto mb-8 border-b border-gray-200'>
       <TableHeader>
-        <TableRow>
-          <TableHead className='text-center'>Name</TableHead>
-          <TableHead className='text-center'>Price</TableHead>
-          <TableHead className='text-center'>Quantity</TableHead>
-          <TableHead className='text-center'>Total</TableHead>
-        </TableRow>
+        <Column className='text-center'>Name</Column>
+        <Column className='text-center'>Price</Column>
+        <Column className='text-center'>Quantity</Column>
+        <Column className='text-center'>Total</Column>
       </TableHeader>
       <TableBody>
         {items.map((item, index) => (
-          <TableRow
+          <Row
             key={`${item.rawName}#${String(index)}`}
             className='text-center text-black odd:bg-gray-400 even:bg-gray-100'>
-            <TableCell>{item.rawName}</TableCell>
-            <TableCell>{item.price}</TableCell>
-            <TableCell>{item.quantity}</TableCell>
-            <TableCell>{item.totalPrice}</TableCell>
-          </TableRow>
+            <Cell>{item.rawName}</Cell>
+            <Cell>{item.price}</Cell>
+            <Cell>{item.quantity}</Cell>
+            <Cell>{item.totalPrice}</Cell>
+          </Row>
         ))}
       </TableBody>
-      <TableFooter>
-        <TableRow>
-          <TableCell
-            colSpan={2}
-            className='text-center'>
-            <strong>TOTAL</strong>
-          </TableCell>
-          <TableCell className='text-center'>{totalQuantity}</TableCell>
-          <TableCell className='text-center'>{totalPrice}</TableCell>
-        </TableRow>
-      </TableFooter>
+      <Row>
+        <Cell>---</Cell>
+        <Cell className='text-center'>
+          <strong>TOTAL</strong>
+        </Cell>
+        <Cell className='text-center'>{totalQuantity}</Cell>
+        <Cell className='text-center'>{totalPrice}</Cell>
+      </Row>
     </Table>
   );
 };

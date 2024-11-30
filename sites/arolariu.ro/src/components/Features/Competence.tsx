@@ -1,12 +1,12 @@
 /** @format */
 
-import {ReactNode} from "react";
+import type {ReactNode} from "react";
 
-interface Props {
+type Props = {
   title: string;
   description: string;
   children: ReactNode;
-}
+};
 
 /**
  * The competence component.

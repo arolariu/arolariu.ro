@@ -3,12 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 
-interface Props {
+type Props = {
   title: string;
   description: string;
   ctaText: string;
   cardType: "sign-up" | "sign-in";
-}
+};
 
 /**
  * The card component for the authentication pages.

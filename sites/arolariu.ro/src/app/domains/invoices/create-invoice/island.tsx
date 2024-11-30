@@ -2,9 +2,6 @@
 
 "use client";
 
-import {Button} from "@/components/ui/button";
-import {ToastAction} from "@/components/ui/toast";
-import {useToast} from "@/components/ui/use-toast";
 import useUserInformation from "@/hooks/useUserInformation";
 import uploadInvoice from "@/lib/actions/invoices/uploadInvoice";
 import {extractBase64FromBlob} from "@/lib/utils.client";
@@ -19,7 +16,6 @@ import InvoiceSubtitle from "./_components/InvoiceSubtitle";
  * @returns The JSX for the invoice upload page.
  */
 export default function RenderCreateInvoiceScreen() {
-  const {toast} = useToast();
   const [images, setImages] = useState<Blob[]>([]);
   const {userInformation} = useUserInformation({dependencyArray: [images]});
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>(UploadStatus.UNKNOWN);
@@ -35,18 +31,7 @@ export default function RenderCreateInvoiceScreen() {
     if (files && files.length > 0) {
       const images = [...files] as Blob[];
       setImages(images);
-      toast({
-        title: `You have uploaded ${images.length} image${images.length > 1 ? "s" : ""}.`,
-        variant: "default",
-        duration: 3000,
-        action: (
-          <ToastAction
-            altText='Clear'
-            className='flex flex-row items-center justify-center justify-items-center gap-2'>
-            <Button onClick={resetState}>Clear.</Button>
-          </ToastAction>
-        ),
-      });
+      // TODO: toast that informs user that images have been uploaded with action to clear images.
     }
   };
 

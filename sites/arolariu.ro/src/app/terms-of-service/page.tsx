@@ -1,6 +1,6 @@
 /** @format */
 
-import {type Metadata} from "next";
+import type {Metadata} from "next";
 import {useTranslations} from "next-intl";
 import RenderTermsOfServiceScreen from "./island";
 

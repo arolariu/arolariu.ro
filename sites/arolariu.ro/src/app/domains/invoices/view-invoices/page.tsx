@@ -1,7 +1,7 @@
 /** @format */
 
-import {fetchUser} from "@/lib/actions/fetchUser";
-import {type Metadata} from "next";
+import {fetchUser} from "@/lib/actions/user/fetchUser";
+import type {Metadata} from "next";
 import RenderViewInvoicesScreen from "./island";
 
 export const metadata: Metadata = {
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
  */
 export default async function ViewInvoicesPage() {
   const {user} = await fetchUser();
-  const username = user?.username ?? "dear guest";
+  const username = user?.name ?? "dear guest";
 
   return (
     <main className='container mx-auto px-5 py-24'>

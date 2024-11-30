@@ -2,8 +2,8 @@
 
 "use client";
 
-import {Button} from "@/components/ui/button";
-import {DashboardIcon, HeartFilledIcon, MoonIcon, SunIcon, TextAlignJustifyIcon} from "@radix-ui/react-icons";
+import {Button} from "react-aria-components";
+import {GoColumns, GoHeart, GoMoon, GoServer, GoSun} from "react-icons/go";
 
 interface Props {
   filters: Readonly<{isImportant: boolean; dayOnly: boolean; nightOnly: boolean}>;
@@ -18,17 +18,17 @@ export const InvoiceFilters = ({filters, displayStyle, setDisplayStyle, setFilte
       <div>
         Filters:
         <div className='flex flex-row gap-6 pt-2 2xsm:items-stretch 2xsm:justify-between 2xsm:justify-items-center md:items-end md:justify-end md:justify-items-end'>
-          <SunIcon
+          <GoSun
             className={`${filters.dayOnly ? "text-yellow-500" : ""} 'tooltip cursor-pointer' tooltip-bottom h-5 w-5`}
             data-tip='Day invoices'
             onClick={() => setFilters({...filters, dayOnly: !filters.dayOnly})}
           />
-          <MoonIcon
+          <GoMoon
             className={`${filters.nightOnly ? "text-blue-500" : ""} 'tooltip cursor-pointer' tooltip-bottom h-5 w-5`}
             data-tip='Night invoices'
             onClick={() => setFilters({...filters, nightOnly: !filters.nightOnly})}
           />
-          <HeartFilledIcon
+          <GoHeart
             className={`${filters.isImportant ? "text-red-500" : ""} 'tooltip cursor-pointer' tooltip-bottom h-5 w-5`}
             data-tip='Important invoices'
             onClick={() => setFilters({...filters, isImportant: !filters.isImportant})}
@@ -38,12 +38,12 @@ export const InvoiceFilters = ({filters, displayStyle, setDisplayStyle, setFilte
       <div>
         Display mode:
         <div className='flex-row items-end justify-end justify-items-end gap-6 pt-2 2xsm:hidden md:flex'>
-          <DashboardIcon
+          <GoColumns
             className='tooltip tooltip-bottom h-5 w-5 cursor-pointer'
             data-tip='List display'
             onClick={() => setDisplayStyle("list")}
           />
-          <TextAlignJustifyIcon
+          <GoServer
             className='tooltip tooltip-bottom h-5 w-5 cursor-pointer'
             data-tip='Grid display'
             onClick={() => setDisplayStyle("grid")}
@@ -51,17 +51,15 @@ export const InvoiceFilters = ({filters, displayStyle, setDisplayStyle, setFilte
         </div>
         <div className='flex-row items-center justify-center justify-items-center gap-6 pt-2 2xsm:flex md:hidden'>
           <Button
-            className='w-1/2'
-            onClick={() => setDisplayStyle("list")}
-            disabled={displayStyle === "list"}
-            variant={displayStyle === "list" ? "outline" : "secondary"}>
+            className={`${displayStyle === "list" ? "" : "bg-blue"} w-1/2`}
+            onPress={() => setDisplayStyle("list")}
+            isDisabled={displayStyle === "list"}>
             List
           </Button>
           <Button
-            className='w-1/2'
-            onClick={() => setDisplayStyle("grid")}
-            disabled={displayStyle === "grid"}
-            variant={displayStyle === "grid" ? "outline" : "secondary"}>
+            className={`${displayStyle === "grid" ? "" : "bg-blue"} w-1/2`}
+            onPress={() => setDisplayStyle("grid")}
+            isDisabled={displayStyle === "grid"}>
             Grid
           </Button>
         </div>

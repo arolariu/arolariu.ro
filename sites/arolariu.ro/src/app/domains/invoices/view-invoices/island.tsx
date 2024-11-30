@@ -4,7 +4,7 @@
 
 import {useZustandStore} from "@/hooks/stateStore";
 import useInvoices from "@/hooks/useInvoices";
-import Invoice from "@/types/invoices/Invoice";
+import type Invoice from "@/types/invoices/Invoice";
 import {useEffect, useState} from "react";
 import InvoicesNotFound from "../_components/InvoicesNotFound";
 import {InvoiceFilters} from "./_components/InvoiceFilters";

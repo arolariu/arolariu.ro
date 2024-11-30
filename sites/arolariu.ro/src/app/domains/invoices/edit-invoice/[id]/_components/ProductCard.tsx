@@ -2,21 +2,21 @@
 
 "use client";
 
-import {Button} from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-
-import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from "@/components/ui/table";
 import Product, {ProductCategory} from "@/types/invoices/Product";
-import {useState} from "react";
+import {
+  Button,
+  Cell,
+  Column,
+  Dialog,
+  DialogTrigger,
+  Heading,
+  Modal,
+  Row,
+  Table,
+  TableBody,
+  TableHeader,
+  Text,
+} from "react-aria-components";
 
 /**
  * This function renders the edit invoice item card.
@@ -24,7 +24,7 @@ import {useState} from "react";
  */
 export default function ProductCard({item}: Readonly<{item: Product}>) {
   // TODO: Implement the edit invoice item (product) card.
-  const [itemState, setItemState] = useState<Product>(item);
+  const itemState = item;
   const isModified = itemState !== item;
 
   const capitalizeFirst15Words = (str: string) => {
@@ -38,119 +38,90 @@ export default function ProductCard({item}: Readonly<{item: Product}>) {
     <div className='m-4 flex flex-col rounded-lg border border-gray-800 p-4 font-semibold dark:border-gray-200'>
       <Table className='table table-xs text-center'>
         <TableHeader>
-          <TableRow>
-            <TableHead className='text-center'>Attribute</TableHead>
-            <TableHead className='text-center'>Value</TableHead>
-          </TableRow>
+          <Column className='text-center'>Attribute</Column>
+          <Column className='text-center'>Value</Column>
         </TableHeader>
         <TableBody>
-          <TableRow>
-            <TableCell>Raw Name</TableCell>
-            <TableCell
+          <Row>
+            <Cell>Raw Name</Cell>
+            <Cell
               className='tooltip tooltip-top'
-              data-tip={itemState.rawName}
-              contentEditable
-              onInput={(e) => setItemState({...itemState, rawName: e.currentTarget.textContent!})}>
+              data-tip={itemState.rawName}>
               {capitalizeFirst15Words(itemState.rawName)}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Generic Name</TableCell>
-            <TableCell
+            </Cell>
+          </Row>
+          <Row>
+            <Cell>Generic Name</Cell>
+            <Cell
               className='tooltip tooltip-bottom'
-              data-tip={itemState.genericName}
-              contentEditable
-              onInput={(e) => setItemState({...itemState, rawName: e.currentTarget.textContent!})}>
+              data-tip={itemState.genericName}>
               {capitalizeFirst15Words(itemState.genericName)}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Category</TableCell>
-            <TableCell>{ProductCategory[itemState.category]}</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Quantity</TableCell>
-            <TableCell
-              contentEditable
-              onInput={(e) => setItemState({...itemState, quantity: Number.parseInt(e.currentTarget.textContent!)})}>
-              {itemState.quantity}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Quantity Unit</TableCell>
-            <TableCell
-              contentEditable
-              onInput={(e) => setItemState({...itemState, quantityUnit: e.currentTarget.textContent!})}>
-              {itemState.quantityUnit}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Price</TableCell>
-            <TableCell
-              contentEditable
-              onInput={(e) => setItemState({...itemState, price: Number.parseFloat(e.currentTarget.textContent!)})}>
-              {itemState.price}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Total Price</TableCell>
-            <TableCell>{itemState.price * itemState.quantity}</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell>Product Code</TableCell>
-            <TableCell
-              contentEditable
-              onInput={(e) => setItemState({...itemState, productCode: e.currentTarget.textContent!})}>
-              {itemState.productCode}
-            </TableCell>
-          </TableRow>
+            </Cell>
+          </Row>
+          <Row>
+            <Cell>Category</Cell>
+            <Cell>{ProductCategory[itemState.category]}</Cell>
+          </Row>
+          <Row>
+            <Cell>Quantity</Cell>
+            <Cell>{itemState.quantity}</Cell>
+          </Row>
+          <Row>
+            <Cell>Quantity Unit</Cell>
+            <Cell>{itemState.quantityUnit}</Cell>
+          </Row>
+          <Row>
+            <Cell>Price</Cell>
+            <Cell>{itemState.price}</Cell>
+          </Row>
+          <Row>
+            <Cell>Total Price</Cell>
+            <Cell>{itemState.price * itemState.quantity}</Cell>
+          </Row>
+          <Row>
+            <Cell>Product Code</Cell>
+            <Cell>{itemState.productCode}</Cell>
+          </Row>
         </TableBody>
       </Table>
       <div className='mx-auto mt-4 flex flex-row gap-4'>
         {isModified ? (
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className='mb-4 font-black'>✅ Save Changes</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Save Item</DialogTitle>
-                <DialogDescription>
+          <DialogTrigger>
+            <Button className='btn btn-primary mb-4 font-black'>✅ Save Changes</Button>
+            <Modal>
+              <Dialog>
+                <Heading>Save Item</Heading>
+                <Text>
                   You can edit the item details here. <br />
                   Make sure to save or discard your changes.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button
-                    type='submit'
-                    className='btn btn-success'>
-                    💾 Save item changes
-                  </Button>
-                </DialogClose>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        ) : null}
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className='mb-4 font-black'>⚠️ Delete Item</Button>
+                </Text>
+                <Button
+                  slot='close'
+                  type='submit'
+                  className='btn btn-success'>
+                  💾 Save item changes
+                </Button>
+              </Dialog>
+            </Modal>
           </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className='mb-4'>⚠️ WARNING: Delete Item</DialogTitle>
-              <DialogDescription>
+        ) : null}
+        <DialogTrigger>
+          <Button className='mb-4 font-black'>⚠️ Delete Item</Button>
+          <Modal>
+            <Dialog>
+              <Heading className='mb-4'>⚠️ WARNING: Delete Item</Heading>
+              <Text>
                 This action is irreversible. <br />
                 Deleting this item will remove it from the invoice.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type='submit'>🗑️ Delete item</Button>
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              </Text>
+              <Button
+                type='submit'
+                className='btn btn-warning'>
+                🗑️ Delete item
+              </Button>
+            </Dialog>
+          </Modal>
+        </DialogTrigger>
       </div>
     </div>
   );

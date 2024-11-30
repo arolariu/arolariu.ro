@@ -1,13 +1,11 @@
 /** @format */
 "use client";
 
-import {Button} from "@/components/ui/button";
-import {Separator} from "@/components/ui/separator";
 import {Skeleton} from "@/components/ui/skeleton";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {getCookie, setCookie} from "@/lib/actions/cookies.action";
 import {useTranslations} from "next-intl";
 import {Dispatch, SetStateAction, useEffect, useState} from "react";
+import {Button, Separator, Tab, TabList, TabPanel, Tabs} from "react-aria-components";
 import {PrivacyPolicyDialogButton, TermsOfServiceDialogButton} from "./EulaDialogs";
 import {CookiesSettings} from "./EulaSettings";
 
@@ -26,9 +24,7 @@ const LanguagePicker = ({
   return (
     <div className='flex flex-row flex-nowrap items-center justify-center justify-items-center gap-4'>
       <Button
-        title='English Language'
-        variant='link'
-        onClick={() => setLocaleHandler("en")}
+        onPress={() => setLocaleHandler("en")}
         className={locale === "en" ? "bg-blue-700" : ""}>
         ENGLISH
       </Button>
@@ -37,9 +33,7 @@ const LanguagePicker = ({
         className='h-6 w-1 rounded bg-black dark:bg-white'
       />
       <Button
-        title='Romanian Language'
-        variant='link'
-        onClick={() => setLocaleHandler("ro")}
+        onPress={() => setLocaleHandler("ro")}
         className={locale === "ro" ? "bg-blue-700" : ""}>
         ROMÂNĂ
       </Button>
@@ -131,36 +125,28 @@ export default function EULA() {
 
       <section className='rounded-xl border-2 2xsm:w-full lg:w-2/3'>
         <h2 className='pt-4 text-center text-xl font-bold'>Additional Information</h2>
-        <Tabs
-          defaultValue='cookies'
-          className='py-4'>
-          <TabsList className='flex flex-row flex-nowrap items-center justify-center justify-items-center gap-4 bg-white dark:bg-black'>
-            <TabsTrigger value='cookies'>
-              <Button title='Cookies Preference'>Cookies Preference</Button>
-            </TabsTrigger>
-            <TabsTrigger value='settings'>
-              <Button title='Additional Settings'>Additional Settings</Button>
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value='cookies'>
+        <Tabs className='py-4'>
+          <TabList className='flex flex-row flex-nowrap items-center justify-center justify-items-center gap-4 bg-white dark:bg-black'>
+            <Tab id='cookies'>Cookies Preference</Tab>
+            <Tab id='settings'>Additional Settings</Tab>
+          </TabList>
+          <TabPanel id='cookies'>
             <CookiesSettings
               cookiesState={cookiesState}
               setCookiesState={setCookiesState}
             />
-          </TabsContent>
-          <TabsContent value='settings'>
+          </TabPanel>
+          <TabPanel id='settings'>
             Lorem ipsum, dolor sit amet consectetur adipisicing elit. Cupiditate perspiciatis voluptates culpa natus qui
             dicta iure beatae. Necessitatibus ipsam enim at maiores, odio minima ratione!
-          </TabsContent>
+          </TabPanel>
         </Tabs>
       </section>
 
       <section>
         <div className='my-8 flex justify-center'>
           <Button
-            variant='default'
-            title={t("accept")}
-            onClick={() => {
+            onPress={() => {
               void setCookie({name: "eula-accepted", value: "true"});
               void setCookie({name: "accepted-cookies", value: JSON.stringify(cookiesState)});
               void setCookie({name: "locale", value: locale});

@@ -3,16 +3,8 @@
 
 import RenderPrivacyPolicyScreen from "@/app/privacy-policy/island";
 import RenderTermsOfServiceScreen from "@/app/terms-of-service/island";
-import {Button} from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {useTranslations} from "next-intl";
+import {Button, Dialog, DialogTrigger, Heading, Modal, ModalOverlay} from "react-aria-components";
 
 const DialogMenu = ({
   children,
@@ -22,21 +14,24 @@ const DialogMenu = ({
   title: string;
 }>) => {
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button
-          title={title}
-          className='m-4 w-1/2 p-4'>
-          {title}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className='overflow-y-scroll 2xsm:max-h-[90vh] 2xsm:max-w-[90vw] md:max-h-[75vh] md:max-w-[75vw]'>
-        <DialogHeader>
-          <DialogTitle className='text-center'>{title}</DialogTitle>
-          <DialogDescription>{children}</DialogDescription>
-        </DialogHeader>
-      </DialogContent>
-    </Dialog>
+    <DialogTrigger>
+      <Button className='m-4 w-1/2 p-4'>{title}</Button>
+      <ModalOverlay className='center fixed inset-0 h-full w-full overflow-y-scroll bg-white bg-opacity-95 dark:bg-black'>
+        <Modal
+          isDismissable
+          className='flex flex-col items-center justify-center justify-items-center'>
+          <Dialog className='flex w-1/2 flex-col items-center justify-center justify-items-center'>
+            <Heading className='m-4 text-center text-3xl font-black'>{title}</Heading>
+            <article className='m-4 text-balance'>{children}</article>
+            <Button
+              slot='close'
+              className='mx-auto my-4 h-4 w-4'>
+              OK.
+            </Button>
+          </Dialog>
+        </Modal>
+      </ModalOverlay>
+    </DialogTrigger>
   );
 };
 

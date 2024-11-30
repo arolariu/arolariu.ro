@@ -59,7 +59,6 @@
     },
     "types": [
       "@types/node",
-      "@serwist/next/typings"
     ],
     "stripInternal": true
   },

@@ -1,11 +1,9 @@
 /** @format */
 
-import {type Metadata} from "next";
+import type {Metadata} from "next";
 import RenderViewInvoiceScreen from "./island";
 
-interface Props {
-  params: {id: string};
-}
+type Params = Promise<{id: string}>;
 
 export const metadata: Metadata = {
   title: "View Invoice",
@@ -16,7 +14,8 @@ export const metadata: Metadata = {
  * The view invoice page.
  * @returns Render the view invoice page.
  */
-export default async function ViewInvoicePage({params}: Readonly<Props>) {
+export default async function ViewInvoicePage(props: Readonly<{params: Params}>) {
+  const params = await props.params;
   return (
     <main className='overflow-hidden px-5 py-24'>
       <RenderViewInvoiceScreen invoiceIdentifier={params.id} />

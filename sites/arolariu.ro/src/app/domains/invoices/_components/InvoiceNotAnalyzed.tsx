@@ -2,38 +2,19 @@
 
 "use client";
 
-import {ToastAction} from "@/components/ui/toast";
-import {useToast} from "@/components/ui/use-toast";
 import useUserInformation from "@/hooks/useUserInformation";
 import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
-import {useRouter} from "next/navigation";
 
 /**
  * Component that renders the invoice not analyzed view.
  * @returns The JSX for the invoice not analyzed view.
  */
 export default function InvoiceNotAnalyzed({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
-  const {toast} = useToast();
-  const router = useRouter();
   const {userInformation} = useUserInformation();
   const handleAnalysis = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     await analyzeInvoice(invoiceIdentifier, userInformation!);
-    toast({
-      title: "Invoice Analyzed",
-      description: `The invoice with the identifier ${invoiceIdentifier} has been analyzed.`,
-      duration: 5000,
-      action: (
-        <ToastAction
-          altText='View invoice'
-          onClick={() => {
-            router.push(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
-            router.refresh();
-          }}>
-          View invoice
-        </ToastAction>
-      ),
-    });
+    // TODO: toast that redirects user to view-invoice page.
   };
 
   return (

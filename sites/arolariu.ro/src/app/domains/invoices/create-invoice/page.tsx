@@ -1,7 +1,7 @@
 /** @format */
 
-import {fetchUser} from "@/lib/actions/fetchUser";
-import {type Metadata} from "next";
+import {fetchUser} from "@/lib/actions/user/fetchUser";
+import type {Metadata} from "next";
 import RenderCreateInvoiceScreen from "./island";
 
 export const metadata: Metadata = {

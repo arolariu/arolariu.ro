@@ -3,7 +3,8 @@
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {fonts} from "@/fonts";
-import {getLocale} from "next-intl/server";
+import {NextIntlClientProvider as TranslationProvider} from "next-intl";
+import {getLocale, getMessages} from "next-intl/server";
 import dynamic from "next/dynamic";
 import {cookies} from "next/headers";
 import {Suspense, type ReactNode} from "react";
@@ -15,15 +16,17 @@ import Tracking from "./tracking";
 export {metadata} from "@/metadata";
 
 /** Lazy loading the EULA to prevent LCP issues. */
-const EULA = dynamic(() => import("@/app/_components/EULA/EULA"));
+const Eula = dynamic(() => import("@/app/_components/EULA/EULA"));
 
 /**
  * The root layout.
  * @returns The root layout.
  */
 export default async function RootLayout({children}: Readonly<{children: ReactNode}>) {
-  const eulaAccepted = cookies().get("eula-accepted")?.value === "true";
+  const eulaAccepted = (await cookies()).get("eula-accepted")?.value === "true";
+
   const locale = await getLocale();
+  const messages = await getMessages({locale});
 
   return (
     <html
@@ -33,11 +36,13 @@ export default async function RootLayout({children}: Readonly<{children: ReactNo
       dir='ltr'>
       {Boolean(eulaAccepted) && <Tracking />}
       <body className='bg-white text-black dark:bg-black dark:text-white'>
-        <ContextProviders>
-          <Header />
-          <Suspense fallback={<Loading />}>{eulaAccepted ? children : <EULA />}</Suspense>
-          <Footer />
-        </ContextProviders>
+        <TranslationProvider messages={messages}>
+          <ContextProviders>
+            <Header />
+            <Suspense fallback={<Loading />}>{eulaAccepted ? children : <Eula />}</Suspense>
+            <Footer />
+          </ContextProviders>
+        </TranslationProvider>
       </body>
     </html>
   );

@@ -1,7 +1,7 @@
 /** @format */
 
 import Competence from "@/components/Features/Competence";
-import {type Metadata} from "next";
+import type {Metadata} from "next";
 import Image from "next/image";
 import Link from "next/link";
 import {FaRegSun, FaUserCheck} from "react-icons/fa";
@@ -37,11 +37,12 @@ export default function AuthorPage() {
           the Sovereign Clouds line of business.
           <br />
           <br />
-          Alexandru was born on the 8th of January, year 2000 in a small city called <code>Curtea de Arges</code> in
-          Romania. He got his first computer when he was just 5 years old - a Pentium 4 E2220 Dual-Core 2.4 GHz with 512
-          MB of RAM and 10 GB of storage, running Windows 98. He learnt most of his computer skills by playing video
-          games and tinkering with his personal computer. He also learnt a good amount of English and was able to
-          fluently read, write and speak in English by the age of 7.
+          Alexandru was born on the 8th of January, year 2000 in a small city called <code>
+            Curtea de Arges
+          </code> in Romania. He got his first computer when he was just 5 years old - a Pentium 4 E2220 Dual-Core 2.4
+          GHz with 512 MB of RAM and 10 GB of storage, running Windows 98. He learnt most of his computer skills by
+          playing video games and tinkering with his personal computer. He also learnt a good amount of English and was
+          able to fluently read, write and speak in English by the age of 7.
           <br />
           <br />
           Alexandru is a video game enthusiast. He used to be a &quot;professional&quot; player, ranking at #70 in

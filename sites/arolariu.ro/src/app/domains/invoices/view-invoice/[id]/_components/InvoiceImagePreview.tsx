@@ -2,20 +2,11 @@
 
 "use client";
 
-import {Button} from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import Invoice from "@/types/invoices/Invoice";
+import type Invoice from "@/types/invoices/Invoice";
 import Image from "next/image";
 import Link from "next/link";
 import {useState} from "react";
+import {Button, Dialog, DialogTrigger, Heading, Modal} from "react-aria-components";
 
 export const InvoiceImagePreview = ({invoice}: Readonly<{invoice: Invoice}>) => {
   const isPdfExtension = invoice.photoLocation.endsWith(".pdf");
@@ -76,49 +67,46 @@ export const InvoiceImagePreview = ({invoice}: Readonly<{invoice: Invoice}>) => 
   };
 
   return (
-    <Dialog>
-      <DialogTrigger
-        asChild
-        className='flex flex-row items-center justify-center justify-items-center'>
-        <Button
-          type='button'
-          className='mx-auto'>
-          {Boolean(isPdfExtension) && (
-            <Link
-              href={invoice.photoLocation}
-              target='_blank'>
-              {previewText}
-            </Link>
-          )}
-          {!isPdfExtension && previewText}
-        </Button>
-      </DialogTrigger>
+    <DialogTrigger>
+      <Button
+        type='button'
+        className='mx-auto'>
+        {Boolean(isPdfExtension) && (
+          <Link
+            href={invoice.photoLocation}
+            target='_blank'>
+            {previewText}
+          </Link>
+        )}
+        {!isPdfExtension && previewText}
+      </Button>
       {!isPdfExtension && (
-        <DialogContent className='flex h-3/4 w-3/4 flex-col items-center justify-center justify-items-center'>
-          <DialogHeader>
-            <DialogTitle>Invoice Preview: {invoice.id}</DialogTitle>
-          </DialogHeader>
-          <Image
-            alt='Invoice photo'
-            style={{
-              transition: "transform 0.3s ease, transform-origin 0s",
-              ...zoomStyle,
-            }}
-            src={invoice.photoLocation}
-            width={800}
-            height={600}
-            className='z-10 h-full w-full rounded-2xl object-contain'
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-            onClick={() => setIsFrozen(!isFrozen)}
-          />
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type='submit'>Close preview.</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
+        <Modal className='flex h-3/4 w-3/4 flex-col items-center justify-center justify-items-center'>
+          <Dialog>
+            <Heading>Invoice Preview: {invoice.id}</Heading>
+            <Image
+              alt='Invoice photo'
+              style={{
+                transition: "transform 0.3s ease, transform-origin 0s",
+                ...zoomStyle,
+              }}
+              src={invoice.photoLocation}
+              width={800}
+              height={600}
+              className='z-10 h-full w-full rounded-2xl object-contain'
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+              onClick={() => setIsFrozen(!isFrozen)}
+            />
+            <Button
+              slot='close'
+              type='submit'
+              className='btn btn-secondary'>
+              Close preview.
+            </Button>
+          </Dialog>
+        </Modal>
       )}
-    </Dialog>
+    </DialogTrigger>
   );
 };

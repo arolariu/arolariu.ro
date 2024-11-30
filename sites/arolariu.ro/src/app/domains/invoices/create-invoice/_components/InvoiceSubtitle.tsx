@@ -1,8 +1,6 @@
 /** @format */
 
-type Props = {
-  images: Blob[];
-};
+type Props = {images: Blob[]};
 
 /**
  * The subtitle for the invoice upload page.

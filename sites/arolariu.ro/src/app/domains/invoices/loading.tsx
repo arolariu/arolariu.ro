@@ -1,18 +1,6 @@
 /** @format */
 
-const Skeleton = ({className}: Readonly<{className: string}>) => (
-  <div
-    aria-live='polite'
-    aria-busy='true'
-    className={className}>
-    <span className='inline-flex w-full animate-pulse select-none rounded-md bg-gray-300 leading-none'>‌</span>
-    <br />
-  </div>
-);
-
-const SVGSkeleton = ({className}: Readonly<{className: string}>) => (
-  <svg className={`${className} animate-pulse rounded bg-gray-300`} />
-);
+import {Skeleton} from "@/components/ui/skeleton";
 
 /**
  * This function renders the loading screen for the invoices domain.
@@ -22,7 +10,7 @@ export default function Loading() {
   return (
     <section>
       <div className='container mx-auto flex flex-col items-center justify-center px-5 py-24'>
-        <SVGSkeleton className='h-[500px] w-[500px] object-cover object-center' />
+        <Skeleton className='h-[500px] w-[500px] object-cover object-center' />
         <div className='mt-2 w-full lg:w-2/3'>
           <div className='mb-4 from-pink-400 bg-clip-text'>
             <Skeleton className='w-[456px] max-w-full' />

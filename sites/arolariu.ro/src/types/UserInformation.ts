@@ -1,6 +1,6 @@
 /** @format */
 
-import {User} from "@clerk/nextjs/server";
+import type {User} from "next-auth";
 
 export type UserInformation = {
   user: User | null;

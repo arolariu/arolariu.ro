@@ -1,8 +1,7 @@
 /** @format */
 
-import Invoice from "@/types/invoices/Invoice";
+import type Invoice from "@/types/invoices/Invoice";
 import {InvoiceCard} from "./InvoiceCard";
-import {InvoicesTableDisplay} from "./InvoicesTableDisplay";
 
 interface Props {
   invoices: Invoice[];
@@ -11,7 +10,7 @@ interface Props {
 export const InvoiceList = ({invoices, displayStyle}: Readonly<Props>) => {
   switch (displayStyle) {
     case "grid":
-      return <InvoicesTableDisplay invoices={invoices} />;
+      return <></>; // TODO.
     case "list":
       return (
         <section className='-m-4 flex flex-row flex-wrap'>

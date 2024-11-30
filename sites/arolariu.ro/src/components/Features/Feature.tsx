@@ -1,14 +1,14 @@
 /** @format */
 
 import Link from "next/link";
-import {ReactNode} from "react";
+import type {ReactNode} from "react";
 
-interface Props {
+type Props = {
   link: string;
   title: string;
   children: ReactNode;
   description: string;
-}
+};
 
 /**
  * The feature component

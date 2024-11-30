@@ -2,7 +2,7 @@
 
 "use client";
 
-import Invoice from "@/types/invoices/Invoice";
+import type Invoice from "@/types/invoices/Invoice";
 
 /**
  * This function renders the view invoice additional information.

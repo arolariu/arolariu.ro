@@ -1,9 +1,6 @@
 /** @format */
 "use client";
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Checkbox} from "@/components/ui/checkbox";
-import {Label} from "@/components/ui/label";
 import {useTranslations} from "next-intl";
 
 /**
@@ -38,8 +35,8 @@ export function CookiesSettings({
   });
 
   return (
-    <Card className='m-4 flex flex-col items-center justify-center justify-items-center bg-white dark:bg-black'>
-      <CardHeader className='mb-4 items-center justify-center justify-items-center pb-4'>
+    <div className='m-4 flex flex-col items-center justify-center justify-items-center bg-white dark:bg-black'>
+      <div className='mb-4 items-center justify-center justify-items-center pb-4'>
         <svg
           xmlns='http://www.w3.org/2000/svg'
           width='24'
@@ -58,46 +55,49 @@ export function CookiesSettings({
           <path d='M11 17v.01' />
           <path d='M7 14v.01' />
         </svg>
-        <CardTitle className='tracking-wide'>{t("title")}</CardTitle>
-        <CardDescription>{t("subtitle")}</CardDescription>
-      </CardHeader>
-      <CardContent className='flex flex-col flex-wrap items-center justify-center justify-items-center gap-4'>
+        <h2 className='tracking-wide'>{t("title")}</h2>
+        <article>{t("subtitle")}</article>
+      </div>
+      <div className='flex flex-col flex-wrap items-center justify-center justify-items-center gap-4'>
         <form>
           <div className='pb-4'>
             {t("cookies.essential.title")}
             <small className='mb-2 block leading-tight tracking-wider'>{essentialsDescription}</small>
-            <Checkbox
+            <input
+              type='checkbox'
               title='Essential Cookies'
               id='essential'
               className='size-6'
               checked={cookiesState.essential}
               disabled
+              readOnly
             />
-            <Label
+            <label
               htmlFor='essential'
               className='ml-2 text-gray-700 dark:text-gray-200'>
               {t("cookies.essential.checkbox")}
-            </Label>
+            </label>
           </div>
           <div className='pt-4'>
             {t("cookies.analytics.title")}
             <small className='mb-2 block leading-tight tracking-wider'>{analyticsDescription}</small>
-            <Checkbox
+            <input
+              type='checkbox'
               title='Analytics Cookies'
               className='size-6'
-              onClick={() => setCookiesState({...cookiesState, analytics: !cookiesState.analytics})}
+              onChange={() => setCookiesState({...cookiesState, analytics: !cookiesState.analytics})}
               checked={cookiesState.analytics}
               id='analytics'
             />
-            <Label
+            <label
               htmlFor='analytics'
               className='ml-2 text-gray-700 dark:text-gray-200'>
               {t("cookies.analytics.checkbox")}
-            </Label>
+            </label>
           </div>
         </form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

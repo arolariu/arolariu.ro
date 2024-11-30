@@ -1,6 +1,6 @@
 /** @format */
 
-import Invoice from "@/types/invoices/Invoice";
+import type Invoice from "@/types/invoices/Invoice";
 import Image from "next/image";
 import {useEffect, useState} from "react";
 

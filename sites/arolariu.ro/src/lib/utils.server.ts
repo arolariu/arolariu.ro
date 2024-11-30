@@ -1,9 +1,8 @@
 /** @format */
 
-import "server-only";
-
 import {AppConfigurationClient} from "@azure/app-configuration";
 import {Blob} from "node:buffer";
+import crypto from "node:crypto";
 import {Resend} from "resend";
 import {CONFIG_STORE} from "./utils.generic";
 
@@ -54,4 +53,32 @@ export async function convertBase64ToBlob(base64String: string): Promise<Blob> {
 
   const byteArray = new Uint8Array(byteArrays);
   return new Blob([byteArray], {type: mimeType});
+}
+
+function __base64UrlEncode(str: string): string {
+  return Buffer.from(str).toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+
+type JwtHeader = {alg: string; typ: string};
+type JwtPayload = {[key: string]: any};
+
+/**
+ * This function creates a JWT token.
+ * @param header  The header of the JWT token.
+ * @param payload  The payload of the JWT token.
+ * @param secret  The secret to sign the JWT token with.
+ * @returns  The JWT token signed with the secret, header, and payload.
+ */
+export function createJwtToken(header: JwtHeader, payload: JwtPayload, secret: string): string {
+  const encodedHeader = __base64UrlEncode(JSON.stringify(header));
+  const encodedPayload = __base64UrlEncode(JSON.stringify(payload));
+  const signature = crypto
+    .createHmac("sha256", secret)
+    .update(`${encodedHeader}.${encodedPayload}`)
+    .digest("base64")
+    .replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+
+  return `${encodedHeader}.${encodedPayload}.${signature}`;
 }

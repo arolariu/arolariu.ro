@@ -2,7 +2,7 @@
 
 import typography from "@tailwindcss/typography";
 import daisyUI from "daisyui";
-import {type Config} from "tailwindcss";
+import type {Config} from "tailwindcss";
 import animate from "tailwindcss-animate";
 
 const tailwindConfig = {

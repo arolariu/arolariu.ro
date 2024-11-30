@@ -1,9 +1,9 @@
 /** @format */
 
 import {COMMIT_SHA, TIMESTAMP} from "@/lib/utils.generic";
-import {GitHubLogoIcon, LinkedInLogoIcon} from "@radix-ui/react-icons";
 import Image from "next/image";
 import Link from "next/link";
+import {SiGithub, SiLinkedin} from "react-icons/si";
 import logo from "../../public/logo.svg";
 
 /**
@@ -140,14 +140,14 @@ export default async function Footer() {
               target='_blank'
               about='GitHub'
               aria-label="Select this link to navigate to the author's GitHub page.">
-              <GitHubLogoIcon className='h-7 w-7 hover:text-yellow-500' />
+              <SiGithub className='h-7 w-7 hover:text-yellow-500' />
             </Link>
             <Link
               href='https://linkedin.com/in/olariu-alexandru'
               target='_blank'
               about='LinkedIn'
               aria-label="Select this link to navigate to the author's LinkedIn page.">
-              <LinkedInLogoIcon className='h-7 w-7 hover:text-yellow-500' />
+              <SiLinkedin className='h-7 w-7 hover:text-yellow-500' />
             </Link>
           </div>
         </div>
