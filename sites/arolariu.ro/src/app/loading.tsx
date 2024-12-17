@@ -1,6 +1,7 @@
 /** @format */
 
-import {Skeleton} from "@/components/ui/skeleton";
+import { Skeleton } from "@fluentui/react-components";
+
 
 /**
  * A loading component.

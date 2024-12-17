@@ -1,11 +1,11 @@
 /** @format */
 
 import Feature from "@/components/Features/Feature";
-import {BackgroundBeams} from "@/components/ui/background-beams";
-import {TypewriterEffect} from "@/components/ui/typewriter";
-import {useTranslations} from "next-intl";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
-import {SiCsharp, SiGithubactions, SiMicrosoftazure, SiNextdotjs, SiOpentelemetry, SiSvelte} from "react-icons/si";
+import { CgShapeRhombus } from "react-icons/cg";
+import { SiGithubactions, SiNextdotjs, SiOpentelemetry, SiSvelte } from "react-icons/si";
+import { TbBrandAzure } from "react-icons/tb";
 
 /**
  * The home page component.
@@ -74,7 +74,7 @@ export default function Home() {
               words={t("1stPanel.title")
                 .split(" ")
                 .map((word) => {
-                  return {text: word};
+                  return { text: word };
                 })}
               cursorClassName='hidden'
             />
@@ -93,14 +93,14 @@ export default function Home() {
               link='https://portal.azure.com'
               title='Microsoft Azure'
               description='The Microsoft Azure cloud is used to host the platform and all of its services. This ensures that the platform is always available and that it can scale on demand.'>
-              <SiMicrosoftazure className='inline h-10 w-10' />
+              <TbBrandAzure className='inline h-10 w-10' />
             </Feature>
 
             <Feature
               link='https://learn.microsoft.com/en-us/dotnet'
               title='.NET 8 Ecosystem'
               description='The backend services are built using the latest LTS version of .NET 8'>
-              <SiCsharp className='inline h-10 w-10' />
+              <CgShapeRhombus className='inline h-10 w-10' />
             </Feature>
 
             <Feature

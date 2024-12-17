@@ -3,7 +3,6 @@
 import typography from "@tailwindcss/typography";
 import daisyUI from "daisyui";
 import type {Config} from "tailwindcss";
-import animate from "tailwindcss-animate";
 
 const tailwindConfig = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
@@ -27,7 +26,7 @@ const tailwindConfig = {
       "3xl": "1976px",
     },
   },
-  plugins: [typography, animate, daisyUI],
+  plugins: [typography, daisyUI],
   future: {hoverOnlyWhenSupported: true},
 } satisfies Config;
 

@@ -1,13 +1,11 @@
 /** @format */
 "use client";
 
-import {Skeleton} from "@/components/ui/skeleton";
-import {getCookie, setCookie} from "@/lib/actions/cookies.action";
-import {useTranslations} from "next-intl";
-import {Dispatch, SetStateAction, useEffect, useState} from "react";
-import {Button, Separator, Tab, TabList, TabPanel, Tabs} from "react-aria-components";
-import {PrivacyPolicyDialogButton, TermsOfServiceDialogButton} from "./EulaDialogs";
-import {CookiesSettings} from "./EulaSettings";
+import { getCookie, setCookie } from "@/lib/actions/cookies.action";
+import { useTranslations } from "next-intl";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { PrivacyPolicyDialogButton, TermsOfServiceDialogButton } from "./EulaDialogs";
+import { CookiesSettings } from "./EulaSettings";
 
 const LanguagePicker = ({
   locale,
@@ -17,7 +15,7 @@ const LanguagePicker = ({
   setLocale: Dispatch<SetStateAction<string>>;
 }>) => {
   const setLocaleHandler = (locale: string) => {
-    void setCookie({name: "locale", value: locale});
+    void setCookie({ name: "locale", value: locale });
     setLocale(locale);
   };
 
@@ -83,7 +81,7 @@ export default function EULA() {
   });
 
   useEffect(() => {
-    getCookie({name: "eula-accepted"})
+    getCookie({ name: "eula-accepted" })
       .then((value) => {
         setEulaAccepted(value === "true");
       })
@@ -147,9 +145,9 @@ export default function EULA() {
         <div className='my-8 flex justify-center'>
           <Button
             onPress={() => {
-              void setCookie({name: "eula-accepted", value: "true"});
-              void setCookie({name: "accepted-cookies", value: JSON.stringify(cookiesState)});
-              void setCookie({name: "locale", value: locale});
+              void setCookie({ name: "eula-accepted", value: "true" });
+              void setCookie({ name: "accepted-cookies", value: JSON.stringify(cookiesState) });
+              void setCookie({ name: "locale", value: locale });
               setEulaAccepted(true);
             }}>
             {t("accept")}

@@ -98,7 +98,17 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "10mb",
     },
+    swcPlugins: [
+      [
+        "fluentui-next-appdir-directive",
+        {
+          paths: ["@griffel", "@fluentui"],
+        },
+      ],
+    ],
   },
+
+  transpilePackages: ["@fluentui/react-components"],
 
   eslint: {
     // We run ESLint V9 which is not yet supported by the NextJS v14 framework.

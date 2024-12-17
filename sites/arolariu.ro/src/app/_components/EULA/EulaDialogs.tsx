@@ -3,8 +3,7 @@
 
 import RenderPrivacyPolicyScreen from "@/app/privacy-policy/island";
 import RenderTermsOfServiceScreen from "@/app/terms-of-service/island";
-import {useTranslations} from "next-intl";
-import {Button, Dialog, DialogTrigger, Heading, Modal, ModalOverlay} from "react-aria-components";
+import { useTranslations } from "next-intl";
 
 const DialogMenu = ({
   children,
