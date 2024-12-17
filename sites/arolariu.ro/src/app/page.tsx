@@ -1,11 +1,11 @@
 /** @format */
 
 import Feature from "@/components/Features/Feature";
-import { useTranslations } from "next-intl";
+import {useTranslations} from "next-intl";
 import Link from "next/link";
-import { CgShapeRhombus } from "react-icons/cg";
-import { SiGithubactions, SiNextdotjs, SiOpentelemetry, SiSvelte } from "react-icons/si";
-import { TbBrandAzure } from "react-icons/tb";
+import {CgShapeRhombus} from "react-icons/cg";
+import {SiGithubactions, SiNextdotjs, SiOpentelemetry, SiSvelte} from "react-icons/si";
+import {TbBrandAzure} from "react-icons/tb";
 
 /**
  * The home page component.
@@ -16,7 +16,6 @@ export default function Home() {
 
   return (
     <main>
-      <BackgroundBeams />
       <section className='py-12 sm:pb-16 lg:pb-20 xl:pb-24'>
         <article className='relative mx-auto max-w-full px-4 sm:px-6 lg:px-8 2xl:max-w-[120rem]'>
           <div>
@@ -69,16 +68,7 @@ export default function Home() {
       </section>
       <section className='py-12 sm:pb-16 lg:pb-20 xl:pb-24'>
         <article className='mx-auto max-w-screen-xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16'>
-          <div className='text-center text-3xl font-bold sm:text-4xl'>
-            <TypewriterEffect
-              words={t("1stPanel.title")
-                .split(" ")
-                .map((word) => {
-                  return { text: word };
-                })}
-              cursorClassName='hidden'
-            />
-          </div>
+          <div className='text-center text-3xl font-bold sm:text-4xl'></div>
           <p className='mt-4 text-center text-gray-500'>{t("1stPanel.subtitle")}</p>
 
           <div className='mt-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3'>

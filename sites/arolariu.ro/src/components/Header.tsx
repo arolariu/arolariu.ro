@@ -3,9 +3,10 @@
 "use client";
 
 import useWindowSize from "@/hooks/useWindowSize";
+import {MenuWrapper} from "@/presentation/MenuWrapper";
 import Image from "next/image";
 import Link from "next/link";
-import {Button, MenuTrigger, Popover} from "react-aria-components";
+import {Button} from "react-aria-components";
 import logo from "../../public/logo.svg";
 import AuthButton from "./Buttons/AuthButton";
 import ThemeSwitcherButton from "./Buttons/ThemeButton";
@@ -23,14 +24,10 @@ export default function Header() {
       <nav className='navbar bg-white dark:bg-black 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto'>
         <div className='navbar-start flex flex-row flex-nowrap'>
           {Boolean(isMobile) && (
-            <MenuTrigger>
-              <Button className='flex size-10 flex-col items-center justify-center justify-items-center align-middle'>
-                ☰
-              </Button>
-              <Popover className='rounded-b-xl bg-white dark:bg-black'>
-                <Navigation className='menu menu-vertical' />
-              </Popover>
-            </MenuTrigger>
+            <MenuWrapper
+              callToActionButton={<Button className='flex items-center font-medium hover:text-yellow-300'>☰</Button>}>
+              <Navigation className='menu menu-vertical' />
+            </MenuWrapper>
           )}
           <Link
             href='/'

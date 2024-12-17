@@ -1,11 +1,13 @@
 /** @format */
 "use client";
 
-import { getCookie, setCookie } from "@/lib/actions/cookies.action";
-import { useTranslations } from "next-intl";
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
-import { PrivacyPolicyDialogButton, TermsOfServiceDialogButton } from "./EulaDialogs";
-import { CookiesSettings } from "./EulaSettings";
+import {getCookie, setCookie} from "@/lib/actions/cookies.action";
+import {ShimmerWrapper} from "@/presentation/ShimmerWrapper";
+import {useTranslations} from "next-intl";
+import {Dispatch, SetStateAction, useEffect, useState} from "react";
+import {Button, Separator, Tab, TabList, TabPanel, Tabs} from "react-aria-components";
+import {PrivacyPolicyDialogButton, TermsOfServiceDialogButton} from "./EulaDialogs";
+import {CookiesSettings} from "./EulaSettings";
 
 const LanguagePicker = ({
   locale,
@@ -15,7 +17,7 @@ const LanguagePicker = ({
   setLocale: Dispatch<SetStateAction<string>>;
 }>) => {
   const setLocaleHandler = (locale: string) => {
-    void setCookie({ name: "locale", value: locale });
+    void setCookie({name: "locale", value: locale});
     setLocale(locale);
   };
 
@@ -53,13 +55,13 @@ const LoadingScreen = () => {
     <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center overflow-y-scroll py-24 text-center'>
       <section className='rounded-xl border-2 2xsm:w-full lg:w-2/3'>
         <h1 className='py-4 text-center text-2xl font-bold underline'>Loading...</h1>
-        <Skeleton className='mx-auto my-2 h-44 w-5/6 animate-pulse' />
+        <ShimmerWrapper className='mx-auto my-2 h-44 w-5/6 animate-pulse' />
       </section>
       <br />
       <section className='rounded-xl border-2 2xsm:w-full lg:w-2/3'>
-        <Skeleton className='mx-auto my-2 h-20 w-5/6 animate-pulse' />
+        <ShimmerWrapper className='mx-auto my-2 h-20 w-5/6 animate-pulse' />
         <Separator orientation='horizontal' />
-        <Skeleton className='mx-auto my-2 h-96 w-5/6 animate-pulse' />
+        <ShimmerWrapper className='mx-auto my-2 h-96 w-5/6 animate-pulse' />
       </section>
     </main>
   );
@@ -81,7 +83,7 @@ export default function EULA() {
   });
 
   useEffect(() => {
-    getCookie({ name: "eula-accepted" })
+    getCookie({name: "eula-accepted"})
       .then((value) => {
         setEulaAccepted(value === "true");
       })
@@ -145,9 +147,9 @@ export default function EULA() {
         <div className='my-8 flex justify-center'>
           <Button
             onPress={() => {
-              void setCookie({ name: "eula-accepted", value: "true" });
-              void setCookie({ name: "accepted-cookies", value: JSON.stringify(cookiesState) });
-              void setCookie({ name: "locale", value: locale });
+              void setCookie({name: "eula-accepted", value: "true"});
+              void setCookie({name: "accepted-cookies", value: JSON.stringify(cookiesState)});
+              void setCookie({name: "locale", value: locale});
               setEulaAccepted(true);
             }}>
             {t("accept")}

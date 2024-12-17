@@ -1,7 +1,8 @@
 /** @format */
 
+import {ForwardRefComponent, MenuItemProps} from "@fluentui/react-components";
 import Link from "next/link";
-import type {JSX} from "react";
+import React from "react";
 
 type NavigationItem = {
   label: string;
@@ -30,7 +31,9 @@ const NavigationItems: NavigationItem[] = [
   },
 ];
 
-const buildHtmlForNavigation = (items: NavigationItem[], className?: string): JSX.Element => {
+const NavigationItemsAsFluentInternal: ForwardRefComponent<MenuItemProps>[] = [{}];
+
+const buildHtmlForNavigation = (items: NavigationItem[], className?: string): React.JSX.Element => {
   return (
     <ul className={`${className as string} flex items-center justify-center justify-items-center gap-4`}>
       {items.map((item) => (
