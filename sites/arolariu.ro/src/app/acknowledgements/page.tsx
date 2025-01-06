@@ -1,19 +1,10 @@
 /** @format */
 
 import {TIMESTAMP} from "@/lib/utils.generic";
+import type {NodePackageInformation} from "@/types/common/types";
 import type {Metadata} from "next";
 import licenses from "../../../licenses.json";
 import AcknowledgementsTable from "./island";
-
-type Package = {
-  name: string;
-  author: string;
-  description: string;
-  homepage?: string;
-  version: string;
-  license: string;
-  dependecyType: string;
-};
 
 export const metadata: Metadata = {
   title: "Acknowledgements",
@@ -24,7 +15,7 @@ export const metadata: Metadata = {
  * Acknowledgements page for the third-party packages used in this project.
  */
 export default function AcknowledgementsPage() {
-  const packages: Package[] = licenses;
+  const packages: NodePackageInformation[] = licenses;
 
   return (
     <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-8 px-12 py-24'>

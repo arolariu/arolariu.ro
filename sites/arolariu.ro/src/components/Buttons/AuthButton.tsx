@@ -23,7 +23,8 @@ function AuthButton() {
     return (
       <button
         type='button'
-        className='hidden'></button>
+        className='hidden'
+      />
     );
   if (session)
     return (

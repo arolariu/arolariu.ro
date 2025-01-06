@@ -33,9 +33,7 @@ export default async function SignInPage(props: Readonly<{searchParams: SearchPa
           action={async () => {
             "use server";
             try {
-              await signIn("keycloak", {
-                redirectTo: callbackUrl ?? "",
-              });
+              await signIn("keycloak", {redirectTo: callbackUrl});
             } catch (error) {
               if (error instanceof AuthError) {
                 return redirect(`/?error=${error.type}`);

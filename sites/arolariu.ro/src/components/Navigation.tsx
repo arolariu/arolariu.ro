@@ -1,6 +1,5 @@
 /** @format */
 
-import {ForwardRefComponent, MenuItemProps} from "@fluentui/react-components";
 import Link from "next/link";
 import React from "react";
 
@@ -21,17 +20,7 @@ const NavigationItems: NavigationItem[] = [
       },
     ],
   },
-  {
-    label: "About",
-    href: "/about",
-  },
-  {
-    label: "Account",
-    href: "/accounts",
-  },
 ];
-
-const NavigationItemsAsFluentInternal: ForwardRefComponent<MenuItemProps>[] = [{}];
 
 const buildHtmlForNavigation = (items: NavigationItem[], className?: string): React.JSX.Element => {
   return (

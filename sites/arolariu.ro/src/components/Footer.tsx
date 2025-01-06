@@ -1,10 +1,10 @@
 /** @format */
 
+import logo from "@/../public/logo.svg";
 import {COMMIT_SHA, TIMESTAMP} from "@/lib/utils.generic";
 import Image from "next/image";
 import Link from "next/link";
 import {SiGithub, SiLinkedin} from "react-icons/si";
-import logo from "../../public/logo.svg";
 
 /**
  * The footer component.

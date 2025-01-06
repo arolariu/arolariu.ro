@@ -1,7 +1,7 @@
 /** @format */
 
-import RenderForbiddenScreen from "@/app/domains/_components/RenderForbiddenScreen";
 import {fetchUser} from "@/lib/actions/user/fetchUser";
+import ForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";
 import RenderEditInvoiceScreen from "./island";
 
@@ -20,7 +20,7 @@ export default async function EditInvoicePage(props: Readonly<{params: Params}>)
   const params = await props.params;
   const {isAuthenticated} = await fetchUser();
 
-  if (!isAuthenticated) return <RenderForbiddenScreen />;
+  if (!isAuthenticated) return <ForbiddenScreen />;
   return (
     <main className='px-5 py-24'>
       <RenderEditInvoiceScreen invoiceIdentifier={params.id} />

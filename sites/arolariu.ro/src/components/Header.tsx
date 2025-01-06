@@ -2,12 +2,12 @@
 
 "use client";
 
+import logo from "@/../public/logo.svg";
 import useWindowSize from "@/hooks/useWindowSize";
 import {MenuWrapper} from "@/presentation/MenuWrapper";
 import Image from "next/image";
 import Link from "next/link";
 import {Button} from "react-aria-components";
-import logo from "../../public/logo.svg";
 import AuthButton from "./Buttons/AuthButton";
 import ThemeSwitcherButton from "./Buttons/ThemeButton";
 import {Navigation} from "./Navigation";

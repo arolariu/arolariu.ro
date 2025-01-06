@@ -147,5 +147,19 @@
         }
       }
     }
+  },
+  "Forbidden": {
+    "Screen": {
+      "title": "You're missing out on the fun!",
+      "description": "Unfortunately, this functionality requires you to have an account on our domain. By creating an account on our platform or signing in with an existing account, you will be able to access our whole arsenal of services, including this one.",
+      "callToAction": "Join the arolariu.ro domain."
+    }
+  },
+  "Authentication": {
+    "Island": {
+      "title": "Authenticate with our secure OAuth 2.0 auth server.",
+      "description": "Sign in using our secure OAuth 2.0 auth server. Your profile will be kept in sync during this browser session. You can use your social media accounts to sign in.",
+      "callToAction": "Perform auth"
+    }
   }
 }

@@ -2,28 +2,19 @@
 
 "use client";
 
+import type {NodePackageInformation} from "@/types/common/types";
 import Link from "next/link";
 import {useState} from "react";
 import {Button} from "react-aria-components";
 import {FaExternalLinkAlt} from "react-icons/fa";
 
-type Package = {
-  name: string;
-  author: string;
-  description: string;
-  homepage?: string;
-  version: string;
-  license: string;
-  dependecyType: string;
-};
-
-type Props = {packages: readonly Package[]};
+type Props = {packages: NodePackageInformation[]};
 
 /**
  * Table of acknowledgements for the third-party packages used in this project.
  */
 export default function AcknowledgementsTable({packages}: Readonly<Props>) {
-  const [shownPackages, setShownPackages] = useState<readonly Package[]>(packages);
+  const [shownPackages, setShownPackages] = useState<NodePackageInformation[]>(packages);
   const productionPackages = packages.filter((pkg) => pkg.dependecyType === "production");
   const developmentPackages = packages.filter((pkg) => pkg.dependecyType === "development");
   const isShowingAllPackages = shownPackages.length === packages.length;

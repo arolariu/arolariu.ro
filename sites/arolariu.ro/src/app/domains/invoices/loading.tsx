@@ -1,6 +1,6 @@
 /** @format */
 
-import {Skeleton} from "@/components/ui/skeleton";
+import {Skeleton} from "@/presentation/Skeleton";
 
 /**
  * This function renders the loading screen for the invoices domain.

@@ -16,7 +16,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<{i
           alt='Invoice top SVG'
           width='500'
           height='500'
-          className='w-full object-fill object-center'
+          className='object-fill object-center 2xsm:pt-4 md:mx-auto md:h-full lg:h-1/2'
           priority
         />
         <div className='mt-2 w-full lg:w-2/3'>
