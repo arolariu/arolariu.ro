@@ -14,7 +14,6 @@
 # current directory exceptions:
 *.json
 public
-src/components/ui
 readme.md
 
 # exceptions for all directories:
@@ -26,6 +25,7 @@ readme.md
 **/**/*.jpg
 **/**/*.mdx
 **/**/*.json
+**/**/*.txt
 
 # Lockfiles:
 package-lock.json
