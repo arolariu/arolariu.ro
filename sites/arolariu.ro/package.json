@@ -36,7 +36,7 @@
     "build:after": "echo 'Build completed!'",
     "format": "npx tsx scripts/format.ts",
     "start": "next start",
-    "lint": "eslint src/",
+    "lint": "eslint src/ --no-cache",
     "lint:fix": "eslint src/ --fix",
     "lint:inspect": "eslint --inspect-config",
     "analyze": "ANALYZE=true next build",
