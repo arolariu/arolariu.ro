@@ -2,13 +2,14 @@
 
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
-import {fonts} from "@/fonts";
+import {FontContextProvider} from "@/contexts/FontContext";
 import {NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {getLocale, getMessages} from "next-intl/server";
 import {Suspense, type ReactNode} from "react";
 import "./globals.css";
 import Loading from "./loading";
 import ContextProviders from "./providers";
+import {HtmlWrapper} from "./wrapper";
 
 export {metadata} from "@/metadata";
 
@@ -21,12 +22,8 @@ export default async function RootLayout({children}: Readonly<{children: ReactNo
   const messages = await getMessages({locale});
 
   return (
-    <html
-      lang={locale}
-      suppressHydrationWarning
-      className={fonts[0]?.className}
-      dir='ltr'>
-      <body className='bg-white text-black dark:bg-black dark:text-white'>
+    <FontContextProvider>
+      <HtmlWrapper locale={locale}>
         <TranslationProvider messages={messages}>
           <ContextProviders>
             <Header />
@@ -34,7 +31,7 @@ export default async function RootLayout({children}: Readonly<{children: ReactNo
             <Footer />
           </ContextProviders>
         </TranslationProvider>
-      </body>
-    </html>
+      </HtmlWrapper>
+    </FontContextProvider>
   );
 }
