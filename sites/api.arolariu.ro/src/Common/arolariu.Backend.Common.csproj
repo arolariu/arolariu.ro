@@ -37,6 +37,7 @@
 	<!-- Dependency Injection & Configuration packages -->
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Azure.AppConfiguration.AspNetCore" Version="8.0.0-preview.2" />
+		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.46.1" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.AzureAppConfiguration" Version="8.0.0-preview.2" />
@@ -64,6 +65,7 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	</ItemGroup>
 
 	<!-- Open Telemetry & Application Insights packages -->
@@ -83,11 +85,11 @@
 
 	<!-- Swagger & OpenAPI packages -->
 	<ItemGroup>
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.8.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="6.8.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.8.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.8.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="7.2.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="7.2.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="7.2.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.8" />
 	</ItemGroup>
 
