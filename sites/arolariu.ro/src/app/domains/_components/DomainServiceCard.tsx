@@ -1,5 +1,6 @@
 /** @format */
 
+import {useTranslations} from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -15,6 +16,8 @@ type Props = {
  * @returns The domain service card.
  */
 export default function DomainServiceCard({title, description, imageUrl, linkTo}: Readonly<Props>) {
+  const t = useTranslations("Domains.services");
+
   return (
     <section className='mb-6 max-w-80 rounded-xl border p-4 sm:mb-0'>
       <article className='h-64 overflow-hidden rounded-lg'>
@@ -32,7 +35,7 @@ export default function DomainServiceCard({title, description, imageUrl, linkTo}
         <Link
           href={linkTo}
           className='mt-3 inline-flex items-center text-indigo-500'>
-          Visit this domain service
+          {t("callToAction")}
           <svg
             fill='none'
             stroke='currentColor'

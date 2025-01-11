@@ -1,5 +1,7 @@
 /** @format */
 
+import {useTranslations} from "next-intl";
+
 type Props = {images: Blob[]};
 
 /**
@@ -7,13 +9,11 @@ type Props = {images: Blob[]};
  * @returns The JSX for the invoice upload page subtitle.
  */
 export default function InvoiceSubtitle({images}: Readonly<Props>) {
-  const titleText: string =
-    images.length === 0 ? "UPLOAD A PICTURE OF THE PAPER RECEIPT!" : "ARE THESE THE CORRECT PHOTOS...?!";
+  const t = useTranslations("Domains.services.invoices.service.create-page");
 
-  const subtitleText: string =
-    images.length === 0
-      ? "Carefully photograph or scan your paper receipt. Attach the digital image from your device, here."
-      : "Review the uploaded receipt photo. If it is correct, proceed to the next step.";
+  const imagesLength: number = images.length;
+  const titleText: string = imagesLength === 0 ? t("title__before") : t("title__after");
+  const subtitleText: string = imagesLength === 0 ? t("subtitle__before") : t("subtitle__after");
 
   return (
     <div>

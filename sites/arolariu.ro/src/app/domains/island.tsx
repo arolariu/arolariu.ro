@@ -1,0 +1,50 @@
+/** @format */
+
+"use client";
+import {useTranslations} from "next-intl";
+import React from "react";
+import DomainServiceCard from "./_components/DomainServiceCard";
+
+const Subtitle = () => {
+  const t = useTranslations("Domains");
+  return t.rich("subtitle", {
+    br: (chunks: React.ReactNode) => (
+      <React.Fragment>
+        <br />
+        {chunks}
+      </React.Fragment>
+    ),
+    code: (chunks: React.ReactNode) => <code className='font-extrabold text-blue-400'>{chunks}</code>,
+  });
+};
+
+export default function RenderDomainsScreen() {
+  const t = useTranslations("Domains");
+
+  return (
+    <main className='container mx-auto px-5 py-24'>
+      <section className='flex flex-col'>
+        <div className='h-1 overflow-hidden rounded bg-gray-200'>
+          <div className='h-full w-24 bg-indigo-700' />
+        </div>
+        <div className='mb-12 flex flex-col flex-wrap py-6 sm:flex-row'>
+          <h1 className='align-center mb-2 justify-items-center bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-center text-5xl font-bold text-transparent sm:mb-0 sm:w-2/5'>
+            {t("title")}
+          </h1>
+          <article className='pl-0 leading-relaxed 2xsm:mt-8 sm:w-3/5 sm:pl-10 md:mt-0'>
+            <Subtitle />
+          </article>
+        </div>
+      </section>
+
+      <section className='flex flex-row flex-wrap gap-4 2xsm:items-center 2xsm:justify-center 2xsm:justify-items-center md:items-baseline md:justify-normal md:justify-items-start'>
+        <DomainServiceCard
+          title={t("services.invoices.card.title")}
+          description={t("services.invoices.card.description")}
+          linkTo={t("services.invoices.card.linkTo")}
+          imageUrl={t("services.invoices.card.imageUrl")}
+        />
+      </section>
+    </main>
+  );
+}

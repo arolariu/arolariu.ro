@@ -6,8 +6,10 @@ type Props = {
   images?: Blob[] | null;
   uploadStatus?: UploadStatus;
   resetState?: () => void;
-  handleImageClientSideUpload?: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
-  handleImageServerSideUpload?: (event: React.MouseEvent<HTMLButtonElement>) => Promise<void>;
+  handleImageClientSideUpload?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  handleImageServerSideUpload?: (
+    event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>,
+  ) => Promise<void>;
 };
 
 /**
@@ -47,14 +49,14 @@ function ServerSideUpload(props: Readonly<Props>) {
       <button
         className='btn btn-primary mx-auto mt-4'
         type='button'
-        disabled={uploadStatus === UploadStatus.PENDING}
+        disabled={uploadStatus === "PENDING__SERVERSIDE"}
         onClick={handleImageServerSideUpload}>
         Continue to the next step
       </button>
       <button
         className='btn btn-secondary mx-auto mt-4'
         type='button'
-        disabled={uploadStatus === UploadStatus.PENDING}
+        disabled={uploadStatus === "PENDING__SERVERSIDE"}
         onClick={resetState}>
         Clear the image
       </button>
@@ -68,8 +70,9 @@ function ServerSideUpload(props: Readonly<Props>) {
  */
 export default function InvoiceSubmitForm(props: Readonly<Props>) {
   const {images, uploadStatus, resetState, handleImageClientSideUpload, handleImageServerSideUpload} = props;
+  const imagesLength = images?.length;
 
-  if (images?.length === 0) return <ClientSideUpload handleImageClientSideUpload={handleImageClientSideUpload} />;
+  if (imagesLength === 0) return <ClientSideUpload handleImageClientSideUpload={handleImageClientSideUpload} />;
   return (
     <ServerSideUpload
       uploadStatus={uploadStatus}

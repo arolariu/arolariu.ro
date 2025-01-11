@@ -156,10 +156,80 @@
     }
   },
   "Authentication": {
+    "Button": {
+      "logout": "Logout",
+      "login": "Login"
+    },
     "Island": {
       "title": "Authenticate with our secure OAuth 2.0 auth server.",
       "description": "Sign in using our secure OAuth 2.0 auth server. Your profile will be kept in sync during this browser session. You can use your social media accounts to sign in.",
       "callToAction": "Perform auth"
     }
+  },
+  "Domains": {
+    "title": "Domain Space Services",
+    "subtitle": "The <code>arolariu.ro</code> platform offers a wide range of services under it&apos;s umbrella. <br></br> Most of the services require that you have an account created on this platform, so that your data can be safely synchronized between all of the domain services. <br></br> <br></br> Here you can see a showcase of all domain services that are available for exploration.",
+    "services": {
+      "callToAction": "Visit this domain service",
+      "invoices": {
+        "card": {
+          "title": "Invoice Management System",
+          "description": "This domain space service assists with the digital transformation of physical receipts. It allows users to upload receipts, and get carefully-crafted insights into their spending habits.",
+          "linkTo": "/domains/invoices",
+          "imageUrl": "/images/domains/invoice-management-system.png"
+        },
+        "service": {
+          "main-page": {
+            "title": "Turn your paper receipts into powerful digital knowledge.",
+            "description": "Receipts are great for keeping your own accounting. However, what if you could upload these receipts somewhere, and get powerful insights into your habits? What if you could automatically get a list of all the products you bought in the last year? <br></br> <br></br> Unleash the power of our platform! <br></br> Throw away the Excel tables and hop on the digital train now!",
+            "callToAction": "Upload receipt",
+            "showInvoices": "My receipts",
+            "steps": {
+              "step-1": {
+                "title": "STEP 1 - Onboard yourself",
+                "description": "Create an account on our platform, so that you can store and manage your own receipts securely. We adhere to the best industry standards in terms of security. Your receipt information is safe."
+              },
+              "step-2": {
+                "title": "STEP 2 - Start your journey",
+                "description": "Upload your paper receipt. The system will then perform the full analysis. We try as much as possible to have a fully automated process, but sometimes we may need your help."
+              },
+              "step-3": {
+                "title": "STEP 3 - Explore the digital receipt",
+                "description": "Delve into the analysis provided by us. You can download the full analysis report as a PDF file for your own records."
+              },
+              "step-4": {
+                "title": "STEP 4 - Gather powerful knowledge",
+                "description": "Augment your analysis with our AI-powered insights. Collect knowledge into your purchase habits and discover new recipes specifically crafted from your day-to-day shopping list."
+              },
+              "step-5": {
+                "title": "STEP 5 - Offer your feedback",
+                "description": "We aim to create one of the best, open-source receipt-scanning platform. We would love to hear your feedback on how we can improve our platform."
+              }
+            }
+          },
+          "create-page": {
+            "disclaimer": "In order to save your invoice, please create an account or sign in.",
+            "title__before": "UPLOAD A PICTURE OF THE PAPER RECEIPT!",
+            "title__after": "ARE THESE THE CORRECT PHOTOS...?!",
+            "subtitle__before": "Carefully photograph or scan your paper receipt. Attach the digital image from your device, here.",
+            "subtitle__after": "Review the uploaded receipt photo. If it is correct, proceed to the next step."
+          }
+        }
+      }
+    }
+  },
+  "Footer": {
+    "subtitle": "The platform is built using the latest stable, state-of-the-art technologies and with enterprise-grade experience. <br></br> <br></br> We hope that you have a great experience when exploring this platform.",
+    "navigation": {
+      "subdomains": "Subdomains",
+      "about": "About",
+      "what": "What is this?",
+      "acknowledgements": "Acknowledgements",
+      "termsOfService": "Terms of Service",
+      "privacyPolicy": "Privacy Policy"
+    },
+    "copyright": "Copyright",
+    "sourceCode": "Source code is available ",
+    "sourceCodeAnchor": "here (GitHub repo)"
   }
 }

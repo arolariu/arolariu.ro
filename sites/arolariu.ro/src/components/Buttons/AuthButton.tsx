@@ -2,6 +2,7 @@
 
 "use client";
 import {SessionProvider, signIn, signOut, useSession} from "next-auth/react";
+import {useTranslations} from "next-intl";
 
 const withSessionProvider = (Component: React.ComponentType) => {
   return function WrappedComponent(props: React.ComponentProps<typeof Component>) {
@@ -18,6 +19,7 @@ const withSessionProvider = (Component: React.ComponentType) => {
  */
 function AuthButton() {
   const {data: session, status} = useSession();
+  const t = useTranslations("Authentication.Button");
 
   if (status === "loading")
     return (
@@ -31,14 +33,14 @@ function AuthButton() {
       <button
         type='button'
         onClick={() => signOut()}>
-        Logout
+        {t("logout")}
       </button>
     );
   return (
     <button
       type='button'
       onClick={() => signIn()}>
-      Login
+      {t("login")}
     </button>
   );
 }

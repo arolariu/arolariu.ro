@@ -147,5 +147,89 @@
         }
       }
     }
+  },
+  "Forbidden": {
+    "Screen": {
+      "title": null,
+      "description": null,
+      "callToAction": null
+    }
+  },
+  "Authentication": {
+    "Button": {
+      "logout": null,
+      "login": null
+    },
+    "Island": {
+      "title": null,
+      "description": null,
+      "callToAction": null
+    }
+  },
+  "Domains": {
+    "title": null,
+    "subtitle": null,
+    "services": {
+      "callToAction": null,
+      "invoices": {
+        "card": {
+          "title": null,
+          "description": null,
+          "linkTo": null,
+          "imageUrl": null
+        },
+        "service": {
+          "main-page": {
+            "title": null,
+            "description": null,
+            "callToAction": null,
+            "showInvoices": null,
+            "steps": {
+              "step-1": {
+                "title": null,
+                "description": null
+              },
+              "step-2": {
+                "title": null,
+                "description": null
+              },
+              "step-3": {
+                "title": null,
+                "description": null
+              },
+              "step-4": {
+                "title": null,
+                "description": null
+              },
+              "step-5": {
+                "title": null,
+                "description": null
+              }
+            }
+          },
+          "create-page": {
+            "disclaimer": null,
+            "title__before": null,
+            "title__after": null,
+            "subtitle__before": null,
+            "subtitle__after": null
+          }
+        }
+      }
+    }
+  },
+  "Footer": {
+    "subtitle": null,
+    "navigation": {
+      "subdomains": null,
+      "about": null,
+      "what": null,
+      "acknowledgements": null,
+      "termsOfService": null,
+      "privacyPolicy": null
+    },
+    "copyright": null,
+    "sourceCode": null,
+    "sourceCodeAnchor": null
   }
 }

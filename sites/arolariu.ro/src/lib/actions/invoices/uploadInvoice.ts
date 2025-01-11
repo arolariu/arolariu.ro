@@ -7,6 +7,17 @@ import Invoice, {InvoicePayload} from "@/types/invoices/Invoice";
 import {API_URL} from "../../utils.server";
 import uploadBlobToAzureStorage from "../storage/uploadBlob";
 
+type ActionInput = {
+  blobInformation: string;
+  userInformation: UserInformation;
+};
+
+type ActionOutput = {
+  status: "SUCCESS" | "FAILURE";
+  message: string;
+  identifier: string;
+};
+
 /**
  * This function uploads the invoice to the server.
  * There are four main steps:
@@ -16,7 +27,10 @@ import uploadBlobToAzureStorage from "../storage/uploadBlob";
  * 4. Send a full analysis request to the server.
  * @returns The result of the upload.
  */
-export default async function uploadInvoice(blobInformation: string, userInformation: UserInformation) {
+export default async function uploadInvoice({
+  blobInformation,
+  userInformation,
+}: Readonly<ActionInput>): Promise<ActionOutput> {
   try {
     const storageResponse = await uploadBlobToAzureStorage("invoices", blobInformation);
 
@@ -35,14 +49,12 @@ export default async function uploadInvoice(blobInformation: string, userInforma
 
     invoicePayload.photoMetadata = photoMetadata;
 
-    const invoiceHttpHeaders = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${userInformation.userJwt}`,
-    };
-
     const invoiceResponse = await fetch(`${API_URL}/rest/v1/invoices`, {
       method: "POST",
-      headers: invoiceHttpHeaders,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userInformation.userJwt}`,
+      },
       body: JSON.stringify(invoicePayload),
     });
 
@@ -53,7 +65,7 @@ export default async function uploadInvoice(blobInformation: string, userInforma
       identifier: id,
     };
   } catch (error) {
-    console.error("Error uploading the invoice to the server:", error);
+    console.error(">>> Error uploading the invoice to the server:", error);
     return {
       status: "FAILURE",
       message: "Error uploading the invoice to the server.",
