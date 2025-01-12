@@ -1,12 +1,10 @@
-/**
- * Function that extracts a base64 string from a blob
- * @format
- * @param blob The blob to extract the base64 string from
- * @returns The base64 string
- */
+/** @format */
 
 /**
+ * Extracts a Base64-encoded string from a Blob object.
  *
+ * @param {Blob} blob - The Blob object to extract the Base64 string from.
+ * @returns {Promise<string>} A promise that resolves to the Base64-encoded string.
  */
 export async function extractBase64FromBlob(blob: Blob): Promise<string> {
   return new Promise((resolve) => {
