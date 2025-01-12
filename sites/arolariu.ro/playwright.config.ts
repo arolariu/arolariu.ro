@@ -6,9 +6,7 @@ import {defineConfig, devices} from "@playwright/test";
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: "./tests",
-  fullyParallel: true,
-  forbidOnly: !!process.env["CI"],
+  testMatch: "**/*.spec.ts",
   retries: process.env["CI"] ? 2 : 0,
   workers: process.env["CI"] ? 1 : undefined,
   reporter: "html",
@@ -36,6 +34,7 @@ export default defineConfig({
 
   webServer: {
     command: "npm run dev",
+    timeout: 60000 * 3, // 3 minutes
     url: "http://localhost:3000",
     reuseExistingServer: true,
   },

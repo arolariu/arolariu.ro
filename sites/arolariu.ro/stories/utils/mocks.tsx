@@ -9,10 +9,17 @@ type TranslationProviderDecoratorProps = {
   messages: AbstractIntlMessages;
 };
 
-export const getTranslationProviderDecorator = ({
-  locale = "en",
-  messages = englishMessages,
-}: Readonly<TranslationProviderDecoratorProps>): DecoratorFunction => {
+/**
+ * Returns a decorator function for wrapping a story with a TranslationProvider.
+ *
+ * @param {TranslationProviderDecoratorProps} [props={locale: "en", messages: englishMessages}] - The properties for the TranslationProvider.
+ * @param {string} props.locale - The locale to be used by the TranslationProvider.
+ * @param {object} props.messages - The messages to be used by the TranslationProvider.
+ * @returns {DecoratorFunction} A decorator function that wraps a story with a TranslationProvider.
+ */
+export const getTranslationProviderDecorator = (
+  {locale, messages}: TranslationProviderDecoratorProps = {locale: "en", messages: englishMessages},
+): DecoratorFunction => {
   return (storyFn, context) => {
     return (
       <TranslationProvider

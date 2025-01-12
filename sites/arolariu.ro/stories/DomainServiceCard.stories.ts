@@ -13,7 +13,7 @@ const meta: Meta<typeof DomainServiceCard> = {
     imageUrl: {control: "text"},
     linkTo: {control: "text"},
   },
-  decorators: [getTranslationProviderDecorator({locale: "en", messages: {}})],
+  decorators: [getTranslationProviderDecorator()],
 };
 
 type Story = StoryObj<typeof DomainServiceCard>;
