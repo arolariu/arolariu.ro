@@ -13,15 +13,8 @@ const nextConfig = nextJest({
 });
 
 const config: Config = {
-  // All imported modules in your tests should be mocked automatically
-  // automock: false,
-
-  // Stop running tests after `n` failures
-  // bail: 0,
-
-  // The directory where Jest should store its cached dependency information
-  // cacheDirectory: "",
-
+  automock: false,
+  bail: 0,
   clearMocks: true,
   collectCoverage: true,
   coverageDirectory: "coverage",

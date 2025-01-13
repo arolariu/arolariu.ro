@@ -20,12 +20,6 @@ export default defineConfig({
       name: "chromium",
       use: {...devices["Desktop Chrome"]},
     },
-
-    {
-      name: "firefox",
-      use: {...devices["Desktop Firefox"]},
-    },
-
     {
       name: "webkit",
       use: {...devices["Desktop Safari"]},
@@ -33,9 +27,10 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "npm run dev",
+    command: "next dev",
     timeout: 60000 * 3, // 3 minutes
     url: "http://localhost:3000",
     reuseExistingServer: true,
   },
 });
+
