@@ -17,6 +17,7 @@ interface FontContextType {
   setFont: Dispatch<SetStateAction<NextFont>>;
 }
 
+// eslint-disable-next-line no-undefined
 const FontContext = createContext<FontContextType | undefined>(undefined);
 
 interface FontContextProviderProps {

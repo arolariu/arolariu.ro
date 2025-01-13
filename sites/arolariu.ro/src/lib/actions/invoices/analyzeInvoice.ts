@@ -6,6 +6,15 @@ import {API_URL} from "@/lib/utils.server";
 import Invoice from "@/types/invoices/Invoice";
 import {UserInformation} from "@/types/UserInformation";
 
+/**
+ * Analyzes an invoice for a given user.
+ *
+ * @param invoiceIdentifier - The identifier of the invoice to be analyzed.
+ * @param userInformation - The information of the user requesting the analysis.
+ * @returns A promise that resolves to the analyzed Invoice object or null if the analysis fails.
+ *
+ * @throws Will log an error message if the analysis process encounters an error.
+ */
 export default async function analyzeInvoice(
   invoiceIdentifier: string,
   userInformation: UserInformation,

@@ -1,6 +1,5 @@
 /** @format */
 
-import eslint from "@eslint/js";
 import typescriptParser from "@typescript-eslint/parser";
 import eslintPluginFunctional from "eslint-plugin-functional";
 import eslintPluginJsDoc from "eslint-plugin-jsdoc";
@@ -14,18 +13,6 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 const eslintConfig = tseslint.config(
-  {
-    name: "[arolariu.ro::MAIN] global main linter configuration",
-    languageOptions: {globals: {...globals.browser, ...globals.node}},
-  },
-  eslint.configs.recommended,
-  eslint.configs.all,
-  eslintPluginFunctional.configs.all,
-  eslintPluginSecurity.configs.recommended,
-  eslintPluginJsDoc.configs["flat/recommended-typescript"],
-  eslintPluginSonarJs.configs.recommended,
-  ...tseslint.configs.strictTypeChecked,
-  ...tseslint.configs.stylisticTypeChecked,
   {
     name: "[arolariu.ro::TSX] main linter configuration",
     files: ["**/*.ts", "**/*.tsx"],
@@ -50,22 +37,32 @@ const eslintConfig = tseslint.config(
     },
     plugins: {
       react: eslintPluginReact,
-      perfectionist: eslintPluginPerfectionist,
-      unicorn: eslintPluginUnicorn,
       "react-hooks": eslintPluginReactHooks,
+      perfectionist: eslintPluginPerfectionist,
+      functional: eslintPluginFunctional,
+      jsdoc: eslintPluginJsDoc,
+      sonarjs: eslintPluginSonarJs,
+      security: eslintPluginSecurity,
+      unicorn: eslintPluginUnicorn,
+      "@typescript-eslint": tseslint.plugin,
     },
     rules: {
       ...eslintPluginFunctional.configs.recommended.rules,
       ...eslintPluginFunctional.configs.stylistic.rules,
+      ...eslintPluginFunctional.configs["all"].rules,
       ...eslintPluginReact.configs.all.rules,
-      ...eslintPluginUnicorn.configs.all.rules,
       ...eslintPluginReactHooks.configs.recommended.rules,
+      ...eslintPluginUnicorn.configs.all.rules,
       ...eslintPluginPerfectionist.configs["recommended-alphabetical"].rules,
       ...eslintPluginPerfectionist.configs["recommended-natural"].rules,
+      ...eslintPluginPerfectionist.configs["recommended-line-length"].rules,
       ...eslintPluginSecurity.configs.recommended.rules,
       ...eslintPluginSonarJs.configs.recommended.rules,
-      ...eslintPluginJsDoc.configs["recommended-typescript"].rules,
-      ...eslintPluginPerfectionist.configs["recommended-alphabetical"].rules,
+      ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
+      ...eslintPluginJsDoc.configs["flat/recommended-typescript-error"].rules,
+      ...eslintPluginJsDoc.configs["flat/stylistic-typescript-error"].rules,
+      ...eslintPluginJsDoc.configs["flat/contents-typescript-error"].rules,
+      ...eslintPluginJsDoc.configs["flat/logical-typescript-error"].rules,
       "@typescript-eslint/consistent-type-definitions": "off",
       "@typescript-eslint/no-confusing-void-expression": "off",
       "@typescript-eslint/no-misused-promises": "off",
@@ -153,7 +150,7 @@ const eslintConfig = tseslint.config(
     },
     settings: {
       react: {
-        version: "18.3.0",
+        version: "19.0.0",
       },
     },
     linterOptions: {
@@ -180,7 +177,7 @@ const eslintConfig = tseslint.config(
 
 // Add the global ignores to the default config.
 eslintConfig.forEach((config) => {
-  const ignoreList = ["*.config.{js,ts}", "**/node_modules/**", "**/ui/**", "**/*.ts"];
+  const ignoreList = ["*.config.{js,ts}", "**/node_modules/**", "**/*.test.{ts,tsx}", "**/*.ts"];
   config.ignores = config.ignores ? [...config.ignores, ...ignoreList] : [...ignoreList];
 });
 

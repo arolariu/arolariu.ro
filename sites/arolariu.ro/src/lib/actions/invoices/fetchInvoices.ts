@@ -7,9 +7,12 @@ import Invoice from "@/types/invoices/Invoice";
 import {API_URL} from "../../utils.server";
 
 /**
- * Server action that fetches all invoices for a user.
- * @param user The user for which to fetch the invoices.
- * @returns A promise of the invoices, or null if the request failed.
+ * Fetches invoices for a given user.
+ *
+ * @param {UserInformation} userInformation - The information of the user whose invoices are to be fetched.
+ * @returns {Promise<Invoice[] | null>} A promise that resolves to an array of invoices if the fetch is successful, or null if an error occurs or the response status is not 200.
+ *
+ * @throws {Error} If there is an issue with the fetch operation.
  */
 export default async function fetchInvoices(userInformation: UserInformation): Promise<Invoice[] | null> {
   try {

@@ -9,10 +9,10 @@ const Description = () => {
   const t = useTranslations("Domains.services.invoices.service.main-page");
   return t.rich("description", {
     br: (chunks: React.ReactNode) => (
-      <React.Fragment>
+      <>
         <br />
         {chunks}
-      </React.Fragment>
+      </>
     ),
   });
 };
@@ -118,7 +118,7 @@ const Steps = () => {
   ];
 
   return (
-    <React.Fragment>
+    <>
       {steps.map((step, index) => (
         <div
           className='relative flex pb-12'
@@ -137,7 +137,7 @@ const Steps = () => {
           </div>
         </div>
       ))}
-    </React.Fragment>
+    </>
   );
 };
 
