@@ -4,16 +4,22 @@ import {SITE_URL} from "@/lib/utils.generic";
 import type {UserInformation} from "@/types/UserInformation";
 import {useEffect, useRef, useState, type DependencyList} from "react";
 
+type HookReturnType = Readonly<{
+  userInformation: UserInformation | null;
+  isLoading: boolean;
+  isError: boolean;
+}>;
+
 /**
  * This hook fetches the user information.
  * @returns The user information and loading state.
  */
 export default function useUserInformation(
   {dependencyArray}: Readonly<{dependencyArray: DependencyList}> = {dependencyArray: []} as const,
-) {
-  const [userInformation, setUserInformation] = useState<UserInformation>({} as UserInformation);
+): HookReturnType {
+  const [userInformation, setUserInformation] = useState<UserInformation | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
 
   useEffect(() => {
@@ -27,16 +33,11 @@ export default function useUserInformation(
     const fetchUserInformation = async () => {
       try {
         setIsLoading(true);
-        try {
-          const userInformationResponse = await fetch(`${SITE_URL}/api/user`, {signal});
-          const userInformationAsJson = await userInformationResponse.json();
-          setUserInformation(userInformationAsJson as UserInformation);
-        } catch (error) {
-          console.error("useUserInformation", error as Error);
-          setIsError(true);
-        }
-      } catch (error) {
-        console.error("useUserInformation", error as Error);
+        const userInformationResponse = await fetch(`${SITE_URL}/api/user`, {signal});
+        const userInformationAsJson = await userInformationResponse.json();
+        setUserInformation(userInformationAsJson as UserInformation);
+      } catch (error: unknown) {
+        console.error(">>> Error fetching user information in useUserInformation hook:", error as Error);
         setIsError(true);
       } finally {
         setIsLoading(false);

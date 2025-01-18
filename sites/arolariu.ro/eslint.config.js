@@ -2,7 +2,9 @@
 
 import typescriptParser from "@typescript-eslint/parser";
 import eslintPluginFunctional from "eslint-plugin-functional";
+import eslintPluginJest from "eslint-plugin-jest";
 import eslintPluginJsDoc from "eslint-plugin-jsdoc";
+import eslintPluginJsxA11y from "eslint-plugin-jsx-a11y";
 import eslintPluginPerfectionist from "eslint-plugin-perfectionist";
 import eslintPluginReact from "eslint-plugin-react";
 import eslintPluginReactHooks from "eslint-plugin-react-hooks";
@@ -37,10 +39,13 @@ const eslintConfig = tseslint.config(
     },
     plugins: {
       react: eslintPluginReact,
+      // @ts-ignore - the plugin is not typed correctly.
       "react-hooks": eslintPluginReactHooks,
       perfectionist: eslintPluginPerfectionist,
       functional: eslintPluginFunctional,
+      jest: eslintPluginJest,
       jsdoc: eslintPluginJsDoc,
+      "jsx-a11y": eslintPluginJsxA11y,
       sonarjs: eslintPluginSonarJs,
       security: eslintPluginSecurity,
       unicorn: eslintPluginUnicorn,
@@ -63,90 +68,59 @@ const eslintConfig = tseslint.config(
       ...eslintPluginJsDoc.configs["flat/stylistic-typescript-error"].rules,
       ...eslintPluginJsDoc.configs["flat/contents-typescript-error"].rules,
       ...eslintPluginJsDoc.configs["flat/logical-typescript-error"].rules,
-      "@typescript-eslint/consistent-type-definitions": "off",
-      "@typescript-eslint/no-confusing-void-expression": "off",
-      "@typescript-eslint/no-misused-promises": "off",
-      "@typescript-eslint/no-non-null-assertion": "off", // this rule is not needed when working with TSX.
-      "@typescript-eslint/no-unsafe-assignment": "off", // unsafe assignment is useful for type casting.
-      "@typescript-eslint/non-nullable-type-assertion-style": "off",
-      "@typescript-eslint/require-await": "off",
-      "arrow-body-style": "off", // arrow body style is not needed; we use both arrow and function expressions.
-      "capitalized-comments": "off", // capitalized comments are not needed; we have comments in lowercase.
-      "consistent-return": "off", // TSX components do not always have a return statement.
-      "func-style": "off", // function style is not needed; we use both arrow and function expressions.
-      "functional/functional-parameters": "off", // Not applicable to TSX functions.
-      "functional/no-conditional-statements": "off", // conditional statements are used for conditional rendering.
-      "functional/no-expression-statements": "off", // side-effects are needed by 3rd party libraries.
-      "functional/no-let": "off", // let is useful for iterators and ahead-of-time computing.
-      "functional/no-mixed-types": "off", // TSX components have mixed types used for props.
-      "functional/no-return-void": "off", // TSX components do not always have a return statement.
-      "functional/prefer-immutable-types": "off", // typescript v5 does not offer a deep readonly type; TBD.
-      "id-length": "off", // mayfly variables like iterators tend to have 'i' or 'j' as iterator names.
-      "jsdoc/check-param-names": "off",
-      "jsdoc/check-tag-names": "off", // prettier's @format tag is not recognized.
-      "jsdoc/require-returns": "off",
-      "jsdoc/require-param": "off",
-      "jsdoc/tag-lines": "off", // prettier automatically adds a newline after block description; this rule is not needed.
-      "max-lines": "off",
-      "max-lines-per-function": "off", // TSX components are not always small.
-      "new-cap": "off",
-      "no-console": "off", // console logs are stripped out in production.
-      "no-inline-comments": "off", // inline comments are useful, sometimes.
-      "no-magic-numbers": "off", // this rule is not needed; we have magic numbers regarding request status in our code.
-      "no-plusplus": "off", // plusplus is useful for iterators.
-      "no-shadow": "off", // this rule seems to not behave well with TSX.
-      "no-ternary": "off",
-      "no-void": "off",
-      "no-warning-comments": "warn",
-      "one-var": "off", // this rule is not needed; we have more than one variable per exported file.
-      "perfectionist/sort-imports": "off", // prettier sorts imports automatically.
-      "perfectionist/sort-interfaces": "off", // prettier sorts interfaces automatically.
-      "perfectionist/sort-intersection-types": "off", // prettier sorts intersection types automatically.
-      "perfectionist/sort-jsx-props": "off", // prettier sorts JSX props automatically.
-      "perfectionist/sort-named-imports": "off", // prettier sorts named imports automatically.
-      "perfectionist/sort-object-types": "off", // prettier sorts object types automatically.
-      "perfectionist/sort-objects": "off", // prettier sorts objects automatically.
-      "perfectionist/sort-union-types": "off", // prettier sorts union types automatically.
-      "prefer-named-capture-group": "off",
-      "react/forbid-component-props": "off",
-      "react/function-component-definition": "off",
-      "react/jsx-child-element-spacing": "off",
-      "react/jsx-closing-bracket-location": "off",
-      "react/jsx-closing-tag-location": "off",
-      "react/jsx-curly-newline": "off",
-      "react/jsx-filename-extension": "off",
-      "react/jsx-indent": "off",
-      "react/jsx-indent-props": "off",
-      "react/jsx-max-depth": "off",
-      "react/jsx-max-props-per-line": "off",
-      "react/jsx-newline": "off",
-      "react/jsx-no-bind": "off",
-      "react/jsx-no-literals": "off", // this is a good rule for I18N.
-      "react/jsx-one-expression-per-line": "off",
-      "react/jsx-pascal-case": "off",
-      "react/jsx-props-no-spreading": "off",
-      "react/jsx-sort-props": "off",
-      "react/jsx-tag-spacing": "off",
-      "react/no-adjacent-inline-elements": "off",
-      "react/no-array-index-key": "off", // this is a good rule that we violate for some components.
-      "react/no-multi-comp": "off",
-      "react/no-unstable-nested-components": "off", // next-intl (i18n) uses nested components for structured messages.
-      "react/prop-types": "off",
-      "react/react-in-jsx-scope": "off",
-      "react/require-default-props": "off",
-      "sort-imports": "off", // prettier sorts imports automatically.
-      "sort-keys": "off", // prettier sorts keys automatically.
-      "unicorn/consistent-function-scoping": "off",
-      "unicorn/filename-case": "off",
-      "unicorn/no-abusive-eslint-disable": "off",
-      "unicorn/no-array-reduce": "off", // array reduce is useful for reducing arrays and in FP.
-      "unicorn/no-keyword-prefix": "off",
-      "unicorn/no-null": "off",
-      "unicorn/prevent-abbreviations": "off",
-      "unicorn/switch-case-braces": "off",
-      camelcase: "off",
-      curly: "off", // curly braces are not needed for single-line blocks.
-      radix: "off",
+      ...eslintPluginJsxA11y.configs.recommended.rules,
+      ...eslintPluginJsxA11y.configs.strict.rules,
+      ...eslintPluginJest.configs["flat/style"].rules,
+      ...eslintPluginJest.configs["flat/recommended"].rules,
+      ...eslintPluginJest.configs["flat/all"].rules,
+
+      "functional/no-return-void": "off", // this rule is too strict; some functions return void.
+      "functional/no-mixed-types": "off", // this rule is too strict; mixed types are allowed.
+      "functional/no-try-statements": "off", // this rule is too strict.
+      "functional/no-throw-statements": "off", // this rule is too strict; useContext needs to throw.
+      "functional/functional-parameters": "off", // this rule is too strict.
+      "functional/prefer-immutable-types": "off", // this rule is too strict.
+      "functional/no-expression-statements": "off", // this rule contradicts React's `use` hook.
+      "functional/no-conditional-statements": "off", // this rule is too strict.
+      "functional/type-declaration-immutability": "off", // we enforce readonly types, not immutability.
+
+      "react/jsx-indent": "off", // this rule is not needed, we use Prettier for formatting.
+      "react/jsx-newline": "off", // this rule is not needed, we use Prettier for formatting.
+      "react/no-multi-comp": "off", // this rule is too strict; there are files where siblings are defined.
+      "react/jsx-sort-props": "off", // this rule is not needed, we use Prettier for formatting.
+      "react/jsx-no-literals": "off", // this rule is too strict; literals like emojis are allowed.
+      "react/jsx-indent-props": "off", // this rule is not needed, we use Prettier for formatting.
+      "react/react-in-jsx-scope": "off", // Next.js automatically injects React into the scope.
+      "react/forbid-component-props": "off", // this rule is too strict; we use custom components.
+      "react/jsx-props-no-spreading": "off", // prop spreading is allowed.
+      "react/jsx-one-expression-per-line": "off", // this rule is not needed, we use Prettier for formatting.
+      "react/jsx-closing-bracket-location": "off", // this rule is not needed, we use Prettier for formatting.
+      "react/function-component-definition": "off", // this rule is too strict; we use custom components.
+      "react/jsx-max-depth": ["error", {max: 12}], // enforce a maximum depth of 12 components.
+      "react/jsx-filename-extension": ["error", {extensions: [".tsx"]}], // enforce .tsx extension for JSX files.
+
+      "unicorn/no-null": "off", // this rule is too strict; null is allowed.
+      "unicorn/filename-case": "off", // we use custom filename casing.
+      "unicorn/no-keyword-prefix": "off", // this rule is too strict.
+      "unicorn/switch-case-braces": "off", // this rule is too strict; some case statements just return.
+      "unicorn/prevent-abbreviations": "off", // this rule is too strict.
+      "unicorn/no-array-callback-reference": "off", // this rule is too strict.
+
+      "perfectionist/sort-objects": "off", // this rule is biased; we use Prettier for sorting.
+      "perfectionist/sort-modules": "off", // this rule is biased; we use Prettier for sorting.
+      "perfectionist/sort-imports": "off", // this rule is biased; we use Prettier for sorting.
+      "perfectionist/sort-jsx-props": "off", // this rule is biased; we use Prettier for sorting.
+      "perfectionist/sort-interfaces": "off", // this rule is biased; we use Prettier for sorting.
+      "perfectionist/sort-union-types": "off", // this rule is biased; we use Prettier for sorting.
+      "perfectionist/sort-object-types": "off", // this rule is biased; we use Prettier for sorting.
+      "perfectionist/sort-named-imports": "off", // this rule is biased; we use Prettier for sorting.
+      "perfectionist/sort-intersection-types": "off", // this rule is biased; we use Prettier for sorting.
+
+      "jsdoc/require-param": "off", // JSDocs are not required for every function.
+      "jsdoc/text-escaping": "off", // JSDocs are not required for every function.
+      "jsdoc/check-tag-names": "off", // JSDocs are not required for every function.
+      "jsdoc/require-returns": "off", // JSDocs are not required for every function.
+      "jsdoc/check-param-names": "off", // JSDocs are not required for every function.
     },
     settings: {
       react: {

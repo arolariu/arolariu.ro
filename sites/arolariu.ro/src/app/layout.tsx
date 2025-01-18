@@ -9,13 +9,13 @@ import {Suspense, type ReactNode} from "react";
 import "./globals.css";
 import Loading from "./loading";
 import ContextProviders from "./providers";
-import {HtmlWrapper} from "./wrapper";
+import HtmlWrapper from "./wrapper";
 
 export {metadata} from "@/metadata";
 
 /**
- * The root layout.
- * @returns The root layout.
+ * The root layout of the website that wraps the entire app.
+ * @returns The root layout of the website.
  */
 export default async function RootLayout({children}: Readonly<{children: ReactNode}>) {
   const locale = await getLocale();

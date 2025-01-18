@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 /**
- * The sign in page.
- * @returns The sign in page.
+ * The sign in page, SSR'ed, where users can sign in to the platform.
+ * @returns The sign in page, SSR'ed.
  */
 export default async function SignInPage(props: Readonly<{searchParams: SearchParams}>) {
   const {isAuthenticated} = await fetchUser();

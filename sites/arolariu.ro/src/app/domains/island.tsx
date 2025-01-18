@@ -2,22 +2,13 @@
 
 "use client";
 import {useTranslations} from "next-intl";
-import React from "react";
 import DomainServiceCard from "./_components/DomainServiceCard";
 
-const Subtitle = () => {
-  const t = useTranslations("Domains");
-  return t.rich("subtitle", {
-    br: (chunks: React.ReactNode) => (
-      <React.Fragment>
-        <br />
-        {chunks}
-      </React.Fragment>
-    ),
-    code: (chunks: React.ReactNode) => <code className='font-extrabold text-blue-400'>{chunks}</code>,
-  });
-};
-
+/**
+ * The Domains screen, client side rendered.
+ * It displays the services available for the domain.
+ * @returns The Domains home screen.
+ */
 export default function RenderDomainsScreen() {
   const t = useTranslations("Domains");
 
@@ -32,7 +23,15 @@ export default function RenderDomainsScreen() {
             {t("title")}
           </h1>
           <article className='pl-0 leading-relaxed 2xsm:mt-8 sm:w-3/5 sm:pl-10 md:mt-0'>
-            <Subtitle />
+            {t.rich("subtitle", {
+              br: (chunks: React.ReactNode) => (
+                <>
+                  <br />
+                  {chunks}
+                </>
+              ),
+              code: (chunks: React.ReactNode) => <code className='font-extrabold text-blue-400'>{chunks}</code>,
+            })}
           </article>
         </div>
       </section>

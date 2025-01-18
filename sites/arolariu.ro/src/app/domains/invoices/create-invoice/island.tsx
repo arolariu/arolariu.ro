@@ -31,7 +31,7 @@ export default function RenderCreateInvoiceScreen() {
       setUploadStatus("PENDING__CLIENTSIDE");
       const {files} = event.target;
       if (files && files.length > 0) {
-        const images = Array.from(files) as Blob[];
+        const images = [...files] as Blob[];
         setImages(images);
         // TODO: toast that informs user that images have been uploaded with action to clear images.
         setUploadStatus("SUCCESS__CLIENTSIDE");

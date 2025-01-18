@@ -7,14 +7,18 @@ import React from "react";
 
 const Description = () => {
   const t = useTranslations("Domains.services.invoices.service.main-page");
-  return t.rich("description", {
-    br: (chunks: React.ReactNode) => (
-      <>
-        <br />
-        {chunks}
-      </>
-    ),
-  });
+  return (
+    <>
+      {t.rich("description", {
+        br: (chunks: React.ReactNode) => (
+          <>
+            <br />
+            {chunks}
+          </>
+        ),
+      })}
+    </>
+  );
 };
 
 const Steps = () => {

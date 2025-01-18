@@ -3,11 +3,11 @@
 import Link from "next/link";
 import React from "react";
 
-type NavigationItem = {
+type NavigationItem = Readonly<{
   label: string;
   href: string;
   children?: NavigationItem[];
-};
+}>;
 
 const NavigationItems: NavigationItem[] = [
   {

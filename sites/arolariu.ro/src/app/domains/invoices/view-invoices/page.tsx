@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * The view invoices page.
- * @returns The view invoices page.
+ * The view invoices page, SSR'ed.
+ * @returns The view invoices page server-side component.
  */
 export default async function ViewInvoicesPage() {
   const {user} = await fetchUser();

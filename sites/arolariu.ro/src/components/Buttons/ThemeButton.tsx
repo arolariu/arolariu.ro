@@ -3,9 +3,14 @@
 "use client";
 
 import {useTheme} from "next-themes";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 
-const ThemeSwitcherButton = () => {
+/**
+ * The theme switcher button component.
+ * This component allows the user to switch between light and dark themes.
+ * @returns The theme switcher button that holds the theme switcher logic.
+ */
+export default function ThemeSwitcherButton() {
   const [mounted, setMounted] = useState<boolean>(false);
   const {theme, setTheme} = useTheme();
 
@@ -13,8 +18,11 @@ const ThemeSwitcherButton = () => {
     setMounted(true);
   }, []);
 
-  if (!mounted) return;
+  const handleSetTheme = useCallback(() => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  }, [theme, setTheme]);
 
+  if (!mounted) return;
   return (
     <div
       title='Theme switcher element'
@@ -26,7 +34,7 @@ const ThemeSwitcherButton = () => {
           aria-label='Theme Switcher Button'
           type='checkbox'
           checked={theme === "dark"}
-          onChange={() => setTheme(theme === "dark" ? "light" : "dark")}
+          onChange={handleSetTheme}
         />
 
         {/* sun icon */}
@@ -47,6 +55,4 @@ const ThemeSwitcherButton = () => {
       </label>
     </div>
   );
-};
-
-export default ThemeSwitcherButton;
+}

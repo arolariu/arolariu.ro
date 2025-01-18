@@ -231,5 +231,9 @@
     "copyright": "Copyright",
     "sourceCode": "Source code is available ",
     "sourceCodeAnchor": "here (GitHub repo)"
+  },
+  "Acknowledgements": {
+    "title": "Acknowledgements",
+    "lastUpdate": "Last updated on: "
   }
 }

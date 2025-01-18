@@ -10,7 +10,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * The privacy policy page.
+ * The privacy policy page, which outlines the privacy policy for the `arolariu.ro` platform.
+ * This component is SSR'ed.
  */
 export default function PrivacyPolicyPage() {
   const t = useTranslations("privacyPolicy");

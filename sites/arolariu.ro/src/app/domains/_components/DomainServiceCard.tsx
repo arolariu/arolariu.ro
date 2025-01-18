@@ -12,8 +12,9 @@ type Props = {
 };
 
 /**
- * The card component for the domain services
- * @returns The domain service card.
+ * The card component for the domain services section.
+ * This card wraps a service and displays its title, description, and a call to action button.
+ * @returns The domain service card, with the service title, description, and call to action button.
  */
 export default function DomainServiceCard({title, description, imageUrl, linkTo}: Readonly<Props>) {
   const t = useTranslations("Domains.services");

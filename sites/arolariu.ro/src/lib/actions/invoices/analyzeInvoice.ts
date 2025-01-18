@@ -3,7 +3,7 @@
 "use server";
 
 import {API_URL} from "@/lib/utils.server";
-import Invoice from "@/types/invoices/Invoice";
+import type Invoice from "@/types/invoices/Invoice";
 import {UserInformation} from "@/types/UserInformation";
 
 /**

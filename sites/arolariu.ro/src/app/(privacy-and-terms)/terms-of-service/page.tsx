@@ -9,7 +9,6 @@ export const metadata: Metadata = {
   description: "The terms of service for arolariu.ro",
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TermsSectionProps = {titleKey: any; contentKey: any};
 const TermsSection = React.memo(({titleKey, contentKey}: Readonly<TermsSectionProps>) => {
   const t = useTranslations("termsOfService");
@@ -20,6 +19,7 @@ const TermsSection = React.memo(({titleKey, contentKey}: Readonly<TermsSectionPr
     </section>
   );
 });
+TermsSection.displayName = "TermsSection";
 
 const sections = [
   {titleKey: "terms.generalTerms.title", contentKey: "terms.generalTerms.content"},
@@ -48,8 +48,8 @@ const sections = [
 ];
 
 /**
- * The terms of service page.
- * @returns The terms of service page.
+ * The terms of service page, which outlines the terms of service for arolariu.ro.
+ * @returns The terms of service page, with the terms of service for arolariu.ro.
  */
 export default function TermsOfServicePage() {
   const t = useTranslations("termsOfService");

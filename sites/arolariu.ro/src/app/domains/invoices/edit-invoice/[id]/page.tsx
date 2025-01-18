@@ -13,8 +13,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * The edit invoice page.
- * @returns The edit invoice page.
+ * The edit invoice page, for editing a specific invoice.
+ * This page uses a dynamic route to display a specific invoice.
+ * @returns The edit invoice page, SSR'ed.
  */
 export default async function EditInvoicePage(props: Readonly<{params: Params}>) {
   const params = await props.params;

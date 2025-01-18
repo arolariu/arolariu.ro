@@ -13,7 +13,7 @@ type HtmlWrapperProps = {
  * This is done to ensure that the font is applied to the entire page.
  * @returns The HTML wrapper component.
  */
-export const HtmlWrapper = ({children, locale}: Readonly<HtmlWrapperProps>) => {
+export default function HtmlWrapper({children, locale}: Readonly<HtmlWrapperProps>) {
   const {
     font: {className},
   } = useFontContext();
@@ -27,4 +27,4 @@ export const HtmlWrapper = ({children, locale}: Readonly<HtmlWrapperProps>) => {
       <body className='bg-white text-black dark:bg-black dark:text-white'>{children}</body>
     </html>
   );
-};
+}

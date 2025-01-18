@@ -4,7 +4,8 @@ import Link from "next/link";
 
 /**
  * This function renders the privacy policy screen.
- * @returns The privacy policy screen.
+ * The privacy policy screen is a static page that informs users about the privacy practices of the website.
+ * @returns The privacy policy screen component, client-side rendered.
  */
 export default function RenderPrivacyPolicyScreen() {
   return (
@@ -209,7 +210,7 @@ export default function RenderPrivacyPolicyScreen() {
         <h2 className='text-xl font-black tracking-widest underline'>Data we collect from third parties</h2>
         <article className='text-pretty italic'>
           We may receive your Personal Data from third parties such as companies subscribing to
-          <code> AROLARIU.RO </code>
+          <code>AROLARIU.RO</code>
           services, partners and other sources. This Personal Data is not collected by us but by a third party and is
           subject to the relevant third party&quot;s own separate privacy and data collection policies. We do not have
           any control or input on how your Personal Data is handled by third parties. As always, you have the right to

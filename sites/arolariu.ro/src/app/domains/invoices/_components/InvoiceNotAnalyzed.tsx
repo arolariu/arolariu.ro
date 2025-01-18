@@ -4,6 +4,7 @@
 
 import useUserInformation from "@/hooks/useUserInformation";
 import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
+import {useCallback} from "react";
 
 /**
  * Component that renders the invoice not analyzed view.
@@ -11,11 +12,15 @@ import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
  */
 export default function InvoiceNotAnalyzed({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
   const {userInformation} = useUserInformation();
-  const handleAnalysis = async (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    await analyzeInvoice(invoiceIdentifier, userInformation!);
-    // TODO: toast that redirects user to view-invoice page.
-  };
+
+  const handleAnalysis = useCallback(
+    async (event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      await analyzeInvoice(invoiceIdentifier, userInformation!);
+      // TODO: toast that redirects user to view-invoice page.
+    },
+    [invoiceIdentifier, userInformation],
+  );
 
   return (
     <section className='flex flex-col flex-nowrap items-center justify-center justify-items-center'>

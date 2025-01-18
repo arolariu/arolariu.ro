@@ -12,8 +12,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * The create invoice page.
- * @returns The create invoice page.
+ * The create invoice page, where users can create a new invoice.
+ * Unaunthenticated users have a small disclaimer at the bottom of the page.
+ * @returns The create invoice page, SSR'ed.
  */
 export default async function CreateInvoicePage() {
   const t = await getTranslations("Domains.services.invoices.service.create-page");

@@ -1,9 +1,17 @@
 /** @format */
 "use client";
 
-import {NextFont} from "next/dist/compiled/@next/font";
+import type {NextFont} from "next/dist/compiled/@next/font";
 import {Caudex} from "next/font/google";
-import React, {createContext, Dispatch, SetStateAction, useContext, useEffect, useMemo, useState} from "react";
+import React, {
+  createContext,
+  type Dispatch,
+  type SetStateAction,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 const defaultFont: NextFont = Caudex({
   weight: "700",
@@ -17,23 +25,17 @@ interface FontContextType {
   setFont: Dispatch<SetStateAction<NextFont>>;
 }
 
-// eslint-disable-next-line no-undefined
 const FontContext = createContext<FontContextType | undefined>(undefined);
 
 interface FontContextProviderProps {
-  children: React.ReactNode;
-  currentFont?: NextFont;
+  readonly children: React.ReactNode;
+  //eslint-disable-next-line react/require-default-props
+  readonly currentFont?: NextFont;
 }
 
 /**
  * FontContextProvider component provides a context for managing font selection.
- *
- * @param {FontContextProviderProps} props - The properties for the FontContextProvider component.
- * @param {React.ReactNode} props.children - The child components that will have access to the font context.
- * @param {NextFont} props.currentFont - The current font to be used. If not provided, the default font will be used.
- *
- * @returns {React.JSX.Element} A provider component that supplies the font context to its children.
- *
+ * @returns A provider component that supplies the font context to its children.
  * @example
  * ```tsx
  * <FontContextProvider currentFont={someFont}>
@@ -41,28 +43,37 @@ interface FontContextProviderProps {
  * </FontContextProvider>
  * ```
  */
-export const FontContextProvider: React.FC<FontContextProviderProps> = ({
-  children,
-  currentFont,
-}: FontContextProviderProps): React.JSX.Element => {
-  const [selectedFont, setSelectedFont] = useState<NextFont>(currentFont ?? defaultFont);
+export function FontContextProvider({children, currentFont}: FontContextProviderProps): React.JSX.Element {
+  const [selectedFont, setSelectedFont] = useState<NextFont>(() => {
+    if (globalThis.window !== undefined) {
+      const storedFont = localStorage?.getItem("selectedFont") ?? null;
+      return storedFont ? JSON.parse(storedFont) : (currentFont ?? defaultFont);
+    }
+    return currentFont ?? defaultFont;
+  });
 
   useEffect(() => {
-    setSelectedFont(currentFont ?? defaultFont);
-  }, [currentFont]);
+    if (currentFont && currentFont !== selectedFont) {
+      setSelectedFont(currentFont); // set to the current font
+    } else if (!currentFont && selectedFont !== defaultFont) {
+      setSelectedFont(defaultFont); // set to the default font
+    }
+  }, [currentFont, selectedFont]);
 
-  const value = useMemo(() => ({font: selectedFont, setFont: setSelectedFont}), [selectedFont, setSelectedFont]);
+  useEffect(() => {
+    localStorage.setItem("selectedFont", JSON.stringify(selectedFont));
+  }, [selectedFont]);
+
+  const value = useMemo(() => ({font: selectedFont, setFont: setSelectedFont}), [selectedFont]);
   return <FontContext.Provider value={value}>{children}</FontContext.Provider>;
-};
+}
 
 /**
  * Custom hook to access the FontContext.
- *
  * This hook provides the current value of the FontContext. It must be used
  * within a FontContextProvider; otherwise, it will throw an error.
- *
- * @returns {FontContextType} The current context value of FontContext.
- * @throws {Error} If the hook is used outside of a FontContextProvider.
+ * @returns The current context value of FontContext.
+ * @throws If the hook is used outside of a FontContextProvider.
  */
 export const useFontContext = (): FontContextType => {
   const context = useContext(FontContext);

@@ -67,9 +67,7 @@ function ServerSideUpload(props: Readonly<Props>) {
 /**
  * This function renders the invoice submit form.
  * @returns The JSX for the invoice submit form.
- *
  */
-// eslint-disable-next-line perfectionist/sort-modules
 export default function InvoiceSubmitForm(props: Readonly<Props>) {
   const {images, uploadStatus, resetState, handleImageClientSideUpload, handleImageServerSideUpload} = props;
   const imagesLength = images?.length;

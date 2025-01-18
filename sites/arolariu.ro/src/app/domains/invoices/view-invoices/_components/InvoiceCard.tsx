@@ -1,10 +1,15 @@
 /** @format */
+"use client";
 
 import type Invoice from "@/types/invoices/Invoice";
 import Image from "next/image";
 import Link from "next/link";
 
-export const InvoiceCard = ({invoice}: Readonly<{invoice: Invoice}>) => {
+/**
+ * Function that generates a card for an invoice.
+ * @returns The invoice card component, CSR'ed.
+ */
+export default function InvoiceCard({invoice}: Readonly<{invoice: Invoice}>) {
   const isPdfDocument = invoice.photoLocation.endsWith(".pdf");
   const isAnalyzed = invoice.numberOfUpdates > 0;
 
@@ -45,4 +50,4 @@ export const InvoiceCard = ({invoice}: Readonly<{invoice: Invoice}>) => {
       </div>
     </article>
   );
-};
+}

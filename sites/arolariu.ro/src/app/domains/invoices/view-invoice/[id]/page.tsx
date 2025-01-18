@@ -11,8 +11,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * The view invoice page.
- * @returns Render the view invoice page.
+ * The view invoice page, which allows the user to view a specific invoice.
+ * This page uses a dynamic route to display a specific invoice.
+ * @returns Render the view invoice page, SSR'ed.
  */
 export default async function ViewInvoicePage(props: Readonly<{params: Params}>) {
   const params = await props.params;
