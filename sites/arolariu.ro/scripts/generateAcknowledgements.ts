@@ -10,7 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {EOL} from "os";
 
-export default async function generateAcknowledgements(): Promise<void> {
+function generateAcknowledgements() {
   console.log("[arolariu::acknowledgments] >>> Generating the `licenses.json` file...");
   const specifiedPackages = extractDependenciesFromRootManifest();
 
@@ -222,4 +222,11 @@ function extractDependenciesFromRootManifest(): Map<NodePackageDependencyType, s
   return specifiedPackages;
 }
 
-generateAcknowledgements();
+/**
+ * This function will be the entry point of the script.
+ */
+export default async function main() {
+  generateAcknowledgements();
+}
+
+main();
