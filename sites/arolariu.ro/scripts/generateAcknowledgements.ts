@@ -7,8 +7,8 @@ import type {
 } from "@/types/common/types";
 import {globSync} from "glob";
 import fs from "node:fs";
+import path from "node:path";
 import {EOL} from "os";
-import path from "path";
 
 export default async function generateAcknowledgements(): Promise<void> {
   console.log("[arolariu::acknowledgments] >>> Generating the `licenses.json` file...");
