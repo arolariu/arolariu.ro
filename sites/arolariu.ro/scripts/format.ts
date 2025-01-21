@@ -44,7 +44,7 @@ function formatCodeWithPrettier(verbose: boolean = false) {
 /**
  * This is the function that will be executed when this script is ran.
  */
-export default async function main(verbose: boolean = false) {
+export async function main(verbose: boolean = false) {
   console.info("[arolariu::format] Formatting the code...");
   formatCodeWithPrettier(verbose);
 }

@@ -225,7 +225,7 @@ function extractDependenciesFromRootManifest(): Map<NodePackageDependencyType, s
 /**
  * This function will be the entry point of the script.
  */
-export default async function main() {
+export async function main() {
   generateAcknowledgements();
 }
 

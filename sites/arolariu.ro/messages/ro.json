@@ -150,86 +150,90 @@
   },
   "Forbidden": {
     "Screen": {
-      "title": null,
-      "description": null,
-      "callToAction": null
+      "title": "",
+      "description": "",
+      "callToAction": ""
     }
   },
   "Authentication": {
     "Button": {
-      "logout": null,
-      "login": null
+      "logout": "",
+      "login": ""
     },
     "Island": {
-      "title": null,
-      "description": null,
-      "callToAction": null
+      "title": "",
+      "description": "",
+      "callToAction": ""
     }
   },
   "Domains": {
-    "title": null,
-    "subtitle": null,
+    "title": "",
+    "subtitle": "",
     "services": {
-      "callToAction": null,
+      "callToAction": "",
       "invoices": {
         "card": {
-          "title": null,
-          "description": null,
-          "linkTo": null,
-          "imageUrl": null
+          "title": "",
+          "description": "",
+          "linkTo": "",
+          "imageUrl": ""
         },
         "service": {
           "main-page": {
-            "title": null,
-            "description": null,
-            "callToAction": null,
-            "showInvoices": null,
+            "title": "",
+            "description": "",
+            "callToAction": "",
+            "showInvoices": "",
             "steps": {
               "step-1": {
-                "title": null,
-                "description": null
+                "title": "",
+                "description": ""
               },
               "step-2": {
-                "title": null,
-                "description": null
+                "title": "",
+                "description": ""
               },
               "step-3": {
-                "title": null,
-                "description": null
+                "title": "",
+                "description": ""
               },
               "step-4": {
-                "title": null,
-                "description": null
+                "title": "",
+                "description": ""
               },
               "step-5": {
-                "title": null,
-                "description": null
+                "title": "",
+                "description": ""
               }
             }
           },
           "create-page": {
-            "disclaimer": null,
-            "title__before": null,
-            "title__after": null,
-            "subtitle__before": null,
-            "subtitle__after": null
+            "disclaimer": "",
+            "title__before": "",
+            "title__after": "",
+            "subtitle__before": "",
+            "subtitle__after": ""
           }
         }
       }
     }
   },
   "Footer": {
-    "subtitle": null,
+    "subtitle": "",
     "navigation": {
-      "subdomains": null,
-      "about": null,
-      "what": null,
-      "acknowledgements": null,
-      "termsOfService": null,
-      "privacyPolicy": null
+      "subdomains": "",
+      "about": "",
+      "what": "",
+      "acknowledgements": "",
+      "termsOfService": "",
+      "privacyPolicy": ""
     },
-    "copyright": null,
-    "sourceCode": null,
-    "sourceCodeAnchor": null
+    "copyright": "",
+    "sourceCode": "",
+    "sourceCodeAnchor": ""
+  },
+  "Acknowledgements": {
+    "title": "",
+    "lastUpdate": ""
   }
 }

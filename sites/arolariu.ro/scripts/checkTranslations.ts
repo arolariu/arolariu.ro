@@ -170,6 +170,11 @@ function compareMessageKeys(enTranslations: MessageFormat, roTranslations: Messa
   });
 
   console.info("[arolariu.ro::checkTranslations] Finished comparing translation keys.");
+
+  if (missingKeys.length > 0) {
+    console.error("[arolariu.ro::checkTranslations] Fix missing translations!");
+    process.exit(1);
+  }
 }
 
 /**
@@ -180,6 +185,7 @@ function compareMessageKeys(enTranslations: MessageFormat, roTranslations: Messa
  */
 function compareMessageValues(enTranslations: MessageFormat, roTranslations: MessageFormat): void {
   console.info("[arolariu.ro::checkTranslations] Comparing translation values...");
+  let allGood = true;
   const enKeys = extractMessageKeys(enTranslations);
   const roKeys = extractMessageKeys(roTranslations);
 
@@ -191,6 +197,7 @@ function compareMessageValues(enTranslations: MessageFormat, roTranslations: Mes
       console.error(
         `[arolariu.ro::checkTranslations] ${key} - ${JSON.stringify(enValue)} - ${JSON.stringify(roValue)}`,
       );
+      allGood = false;
     }
   });
 
@@ -202,17 +209,23 @@ function compareMessageValues(enTranslations: MessageFormat, roTranslations: Mes
       console.error(
         `[arolariu.ro::checkTranslations] ${key} - ${JSON.stringify(enValue)} - ${JSON.stringify(roValue)}`,
       );
+      allGood = false;
     }
   });
 
   console.info("[arolariu.ro::checkTranslations] Finished comparing translation values.");
+
+  if (!allGood) {
+    console.error("[arolariu.ro::checkTranslations] Fix missing translations!");
+    process.exit(1);
+  }
 }
 
 /**
  * This is the function that will be executed when this script is ran.
  * The function will load the translation files, extract the translation keys, and check for missing translations.
  */
-export default async function main() {
+export async function main() {
   console.info("[arolariu.ro::checkTranslations] Checking translations...");
   const currentDirectory = process.cwd();
   const TRANSLATIONS_PATH = currentDirectory.concat("/messages").replace(/\\/g, "/");

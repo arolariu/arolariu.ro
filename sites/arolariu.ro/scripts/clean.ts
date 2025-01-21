@@ -38,7 +38,7 @@ function searchDirectory(directory: string, itemName: string, verbose: boolean =
     }
   }
 
-  console.warn(`[arolariu::clean] >>> The ${itemName} has not been found in the directory: ${directory}`);
+  verbose && console.warn(`[arolariu::clean] >>> The ${itemName} has not been found in the directory: ${directory}`);
   return null;
 }
 
@@ -130,7 +130,7 @@ function cleanFile(filePath: string) {
 /**
  * This function will be the entry point of the script.
  */
-export default async function main(verbose: boolean = false) {
+export async function main(verbose: boolean = false) {
   const nextFolder = findFolderPath(".next", verbose);
   const storybookFolder = findFolderPath("storybook-static", verbose);
   const folders = [nextFolder, storybookFolder].filter((folder): folder is string => folder !== null);
