@@ -167,73 +167,72 @@
     }
   },
   "Domains": {
-    "title": "",
-    "subtitle": "",
+    "title": "Servicii disponibile",
+    "subtitle": "Platforma <code>arolariu.ro</code> oferă o gamă largă de servicii sub umbrela sa. <br></br> Majoritatea serviciilor necesită să aveți un cont creat pe această platformă, astfel încât datele dumneavoastră să poată fi sincronizate în siguranță între toate serviciile domeniului. <br></br> <br></br> Aici puteți vedea o prezentare a tuturor serviciilor de domeniu disponibile pentru explorare.",
     "services": {
-      "callToAction": "",
+      "callToAction": "Vizitați acest serviciu de domeniu",
       "invoices": {
         "card": {
-          "title": "",
-          "description": "",
-          "linkTo": "",
-          "imageUrl": ""
+          "title": "Sistem de management al bonurilor fiscale",
+          "description": "Acest serviciu de domeniu ajută la transformarea digitală a chitanțelor fizice. \nPermite utilizatorilor să încarce chitanțe și să obțină informații bine elaborate despre obiceiurile lor de cheltuieli."
         },
         "service": {
           "main-page": {
-            "title": "",
-            "description": "",
-            "callToAction": "",
-            "showInvoices": "",
+            "title": "Transformă-ți chitanțele în cunoștințe digitale puternice.",
+            "description": "Chitanțele sunt grozave pentru a vă ține propria contabilitate. \nTotuși, cum ar fi dacă ai putea încărca aceste chitanțe undeva și ai obține informații puternice despre obiceiurile tale? \nCum ar fi să poți obține automat o listă cu toate produsele pe care le-ai cumpărat în ultimul an? \n<br></br> <br></br> Dezlănțuiți puterea platformei noastre! \n<br></br> Aruncă tabelele Excel și urcă acum în trenul digital!",
+            "callToAction": "Încărcați chitanța",
+            "showInvoices": "Chitanțele mele",
             "steps": {
               "step-1": {
-                "title": "",
-                "description": ""
+                "title": "PASUL 1 - Incepe cu o chitanță",
+                "description": "Creați un cont pe platforma noastră, astfel încât să puteți stoca și gestiona propriile chitanțe în siguranță. \nRespectăm cele mai bune standarde din industrie în materie de securitate. \nInformațiile dvs. sunt în siguranță."
               },
               "step-2": {
-                "title": "",
-                "description": ""
+                "title": "PASUL 2 - Începe-ți călătoria",
+                "description": "Încărcați chitanța de hârtie. \nSistemul va efectua apoi analiza completă. \nÎncercăm pe cât posibil să avem un proces complet automatizat, dar uneori este posibil să avem nevoie de ajutorul tău."
               },
               "step-3": {
-                "title": "",
-                "description": ""
+                "title": "PASUL 3 - Explorați chitanța digitală",
+                "description": "Aprofundați în analiza oferită de noi. \nPuteți descărca raportul complet de analiză ca fișier PDF pentru propriile înregistrări."
               },
               "step-4": {
-                "title": "",
-                "description": ""
+                "title": "PASUL 4 - Adunați cunoștințe puternice",
+                "description": "Îmbunătățiți-vă analiza cu informațiile noastre bazate pe inteligență artificială. \nAdunați cunoștințe despre obiceiurile dvs. de cumpărare și descoperiți rețete noi create special din lista de cumpărături de zi cu zi."
               },
               "step-5": {
-                "title": "",
-                "description": ""
+                "title": "PASUL 5 - Oferiți-ne feedback",
+                "description": "Ne propunem să creăm una dintre cele mai bune platforme open-source de scanare a chitanțelor. \nNe-ar plăcea să auzim feedback-ul dumneavoastră despre cum ne putem îmbunătăți platforma."
               }
             }
           },
           "create-page": {
-            "disclaimer": "",
-            "title__before": "",
-            "title__after": "",
-            "subtitle__before": "",
-            "subtitle__after": ""
+            "disclaimer": "Pentru a vă salva bonul fiscal, vă rugăm să creați un cont sau să vă conectați.",
+            "title__before": "ÎNCĂRCĂ O POZĂ CU CHITANȚA DE HÂRTIE!",
+            "title__after": "SUNT ACESTE FOTOGRAFII CORECTE...?!",
+            "subtitle__before": "Fotografiați sau scanați cu atenție chitanța de hârtie. \nAtașați imaginea digitală de pe dispozitivul dvs., aici.",
+            "subtitle__after": "Examinați ce s-a încărcat. \nDacă este corect, treceți la pasul următor."
           }
         }
       }
     }
   },
   "Footer": {
-    "subtitle": "",
+    "subtitle": "Platforma este construită folosind cele mai recente tehnologii stabile, de ultimă generație și cu experiență de nivel enterprise. \n<br></br> <br></br> Sperăm că aveți o experiență grozavă când explorați această platformă.",
     "navigation": {
-      "subdomains": "",
-      "about": "",
-      "what": "",
-      "acknowledgements": "",
-      "termsOfService": "",
-      "privacyPolicy": ""
+      "subdomains": "Subdomenii",
+      "about": "Despre",
+      "what": "Ce este asta?",
+      "acknowledgements": "Mulțumiri",
+      "termsOfService": "Termeni și condiții",
+      "privacyPolicy": "Politica de confidențialitate"
     },
-    "copyright": "",
-    "sourceCode": "",
-    "sourceCodeAnchor": ""
+    "copyright": "Drepturi de autor",
+    "sourceCode": "Codul sursă este disponibil ",
+    "sourceCodeAnchor": "aici (GitHub)",
+    "builtOn": "Construit pe "
   },
   "Acknowledgements": {
-    "title": "",
-    "lastUpdate": ""
+    "title": "Mulțumiri",
+    "lastUpdate": "Ultima actualizare pe:"
   }
 }

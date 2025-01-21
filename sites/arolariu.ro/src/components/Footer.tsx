@@ -1,7 +1,7 @@
 /** @format */
 
 import logo from "@/../public/logo.svg";
-import {COMMIT_SHA, TIMESTAMP} from "@/lib/utils.generic";
+import {COMMIT_SHA, SITE_NAME, TIMESTAMP} from "@/lib/utils.generic";
 import {useTranslations} from "next-intl";
 import {getTranslations} from "next-intl/server";
 import Image from "next/image";
@@ -19,6 +19,7 @@ const FooterHero = () => {
       </React.Fragment>
     ),
   });
+  const siteName = SITE_NAME.toUpperCase();
 
   return (
     <div className='md:col-span-1 lg:col-span-2'>
@@ -34,7 +35,7 @@ const FooterHero = () => {
           width={40}
           height={40}
         />
-        <span className='ml-2 text-xl font-bold uppercase tracking-wide'>AROLARIU.RO</span>
+        <span className='ml-2 text-xl font-bold uppercase tracking-wide'>{siteName}</span>
       </Link>
       <div className='mt-4 text-sm 2xsm:px-4 2xsm:text-center md:px-0 md:text-left'>
         <p className='prose text-pretty text-white 2xsm:text-center md:text-start'>{description}</p>
@@ -175,14 +176,16 @@ export default async function Footer() {
           </div>
         </div>
         <p className='text-sm text-slate-300 2xsm:text-center md:text-end'>
-          Built on{" "}
+          {t("builtOn")}
           <code
             className='tooltip cursor-help'
             data-tip={new Date(TIMESTAMP)}>
             {TIMESTAMP.split("T")[0]}
           </code>
           <br />
-          Commit SHA: <code>{COMMIT_SHA}</code>
+          <span>
+            Commit SHA: <code>{COMMIT_SHA}</code>
+          </span>
         </p>
       </div>
     </footer>

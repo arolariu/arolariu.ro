@@ -1,7 +1,7 @@
 /** @format */
 
 import type {Metadata} from "next";
-import {useTranslations} from "next-intl";
+import {getTranslations} from "next-intl/server";
 import RenderPrivacyPolicyScreen from "./island";
 
 export const metadata: Metadata = {
@@ -13,8 +13,8 @@ export const metadata: Metadata = {
  * The privacy policy page, which outlines the privacy policy for the `arolariu.ro` platform.
  * This component is SSR'ed.
  */
-export default function PrivacyPolicyPage() {
-  const t = useTranslations("privacyPolicy");
+export default async function PrivacyPolicyPage() {
+  const t = await getTranslations("privacyPolicy");
 
   return (
     <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-8 px-12 py-24'>

@@ -174,9 +174,7 @@
       "invoices": {
         "card": {
           "title": "Invoice Management System",
-          "description": "This domain space service assists with the digital transformation of physical receipts. It allows users to upload receipts, and get carefully-crafted insights into their spending habits.",
-          "linkTo": "/domains/invoices",
-          "imageUrl": "/images/domains/invoice-management-system.png"
+          "description": "This domain space service assists with the digital transformation of physical receipts. It allows users to upload receipts, and get carefully-crafted insights into their spending habits."
         },
         "service": {
           "main-page": {
@@ -230,7 +228,8 @@
     },
     "copyright": "Copyright",
     "sourceCode": "Source code is available ",
-    "sourceCodeAnchor": "here (GitHub repo)"
+    "sourceCodeAnchor": "here (GitHub repo)",
+    "builtOn": "Built on "
   },
   "Acknowledgements": {
     "title": "Acknowledgements",

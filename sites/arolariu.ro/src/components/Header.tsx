@@ -34,7 +34,8 @@ export default function Header() {
             className='ml-2 flex items-center font-medium hover:text-yellow-300'>
             <Image
               src={logo}
-              alt='The `arolariu.ro` logo.'
+              alt=''
+              aria-hidden
               className='rounded-full ring-2 ring-indigo-500 2xsm:hidden lg:block'
               width={40}
               height={40}

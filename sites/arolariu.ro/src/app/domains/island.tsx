@@ -40,8 +40,8 @@ export default function RenderDomainsScreen() {
         <DomainServiceCard
           title={t("services.invoices.card.title")}
           description={t("services.invoices.card.description")}
-          linkTo={t("services.invoices.card.linkTo")}
-          imageUrl={t("services.invoices.card.imageUrl")}
+          linkTo='/domains/invoices'
+          imageUrl='/images/domains/invoice-management-system.png'
         />
       </section>
     </main>
