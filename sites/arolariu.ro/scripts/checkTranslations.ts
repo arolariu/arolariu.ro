@@ -52,9 +52,11 @@ type MessageFormat = {
  * @param filePath The path to the translation file.
  * @returns The translation file as a MessageFormat object.
  */
-function loadTranslationFile(filePath: string): MessageFormat {
+function loadTranslationFile(filePath: string, verbose: boolean = false): MessageFormat {
   try {
     const translationFile = fs.readFileSync(filePath, "utf-8");
+    verbose && console.info(`[arolariu.ro::checkTranslations] Loaded translation file: ${filePath}`);
+    verbose && console.info(`[arolariu.ro::checkTranslations] Translation file content: ${translationFile}`);
     return JSON.parse(translationFile);
   } catch (error) {
     console.error(`[arolariu.ro::checkTranslations] Error loading translation file: ${filePath}`);
@@ -225,7 +227,7 @@ function compareMessageValues(enTranslations: MessageFormat, roTranslations: Mes
  * This is the function that will be executed when this script is ran.
  * The function will load the translation files, extract the translation keys, and check for missing translations.
  */
-export async function main() {
+export async function main(verbose: boolean = false) {
   console.info("[arolariu.ro::checkTranslations] Checking translations...");
   const currentDirectory = process.cwd();
   const TRANSLATIONS_PATH = currentDirectory.concat("/messages").replace(/\\/g, "/");
@@ -234,8 +236,8 @@ export async function main() {
   const EN_TRANSLATIONS_FILE = path.resolve(TRANSLATIONS_PATH, "en.json");
   const RO_TRANSLATIONS_FILE = path.resolve(TRANSLATIONS_PATH, "ro.json");
 
-  const enTranslations = loadTranslationFile(EN_TRANSLATIONS_FILE);
-  const roTranslations = loadTranslationFile(RO_TRANSLATIONS_FILE);
+  const enTranslations = loadTranslationFile(EN_TRANSLATIONS_FILE, verbose);
+  const roTranslations = loadTranslationFile(RO_TRANSLATIONS_FILE, verbose);
 
   // 1st test: compare all message keys:
   compareMessageKeys(enTranslations, roTranslations);

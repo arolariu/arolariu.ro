@@ -10,11 +10,11 @@ import fs from "node:fs";
 import path from "node:path";
 import {EOL} from "os";
 
-function generateAcknowledgements() {
+function generateAcknowledgements(verbose: boolean = false) {
   console.log("[arolariu::acknowledgments] >>> Generating the `licenses.json` file...");
-  const specifiedPackages = extractDependenciesFromRootManifest();
+  const specifiedPackages = extractDependenciesFromRootManifest(verbose);
 
-  const allInstalledPackages = extractDependenciesManifestPaths();
+  const allInstalledPackages = extractDependenciesManifestPaths(verbose);
   const filteredPackages = filterDependenciesManifestPathsWithDependenciesList(allInstalledPackages, specifiedPackages);
 
   const packageManifests = buildPackageManifests(filteredPackages, specifiedPackages);
@@ -178,7 +178,7 @@ function filterDependenciesManifestPathsWithDependenciesList(
  * It returns an array of all possible paths to any package.json files.
  * @returns An array of paths to the package.json files.
  */
-function extractDependenciesManifestPaths(): string[] {
+function extractDependenciesManifestPaths(verbose: boolean = false): string[] {
   let pathToNodeModules = process.cwd();
   pathToNodeModules = path.resolve(pathToNodeModules, "node_modules");
   pathToNodeModules = pathToNodeModules.replace(/\\/g, "/");
@@ -187,6 +187,7 @@ function extractDependenciesManifestPaths(): string[] {
   let packageRawPaths = globSync(pathToNodeModules, {ignore: "**/node_modules/**/node_modules/**"});
   let packageDirectPaths: string[] = []; // this will contain direct paths to the package.json files
   for (const path of packageRawPaths) packageDirectPaths.push(...globSync(`${path}/**/package.json`));
+  verbose && console.info("[arolariu::acknowledgments] >>> Found ", packageDirectPaths.length, " package.json files.");
 
   return packageDirectPaths;
 }
@@ -196,13 +197,14 @@ function extractDependenciesManifestPaths(): string[] {
  * The dependencies are stored in a Map<depType,string> and then returned.
  * @returns A Map<depType, string[]> containing the dependencies.
  */
-function extractDependenciesFromRootManifest(): Map<NodePackageDependencyType, string[]> {
+function extractDependenciesFromRootManifest(verbose: boolean = false): Map<NodePackageDependencyType, string[]> {
   const currentDirectory = process.cwd();
   console.info("[arolariu::acknowledgments] >>> Current directory:", currentDirectory);
 
   let packageManifestPath = currentDirectory.concat("/package.json").replace(/\\/g, "/");
   console.log("[arolariu::acknowledgments] >>> Reading current package.json file from ", packageManifestPath);
   const packageManifest = JSON.parse(fs.readFileSync(packageManifestPath, "utf-8"));
+  verbose && console.info("[arolariu::acknowledgments] >>> Package.json content:", packageManifest);
 
   const productionPackages = Object.keys(packageManifest.dependencies ?? {});
   const developmentPackages = Object.keys(packageManifest.devDependencies ?? {});
@@ -225,8 +227,8 @@ function extractDependenciesFromRootManifest(): Map<NodePackageDependencyType, s
 /**
  * This function will be the entry point of the script.
  */
-export async function main() {
-  generateAcknowledgements();
+export async function main(verbose: boolean = false) {
+  generateAcknowledgements(verbose);
 }
 
 main();

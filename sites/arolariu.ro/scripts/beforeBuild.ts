@@ -26,6 +26,12 @@ export default async function main() {
     console.info("[arolariu.ro::beforeBuild] Finished formatting code.");
   });
 
+  // 4. Generate new licenses & acknowledegmenets using the generateAcknowledgements script
+  console.info("[arolariu.ro::beforeBuild] Generating licenses...");
+  await import("./generateAcknowledgements").then(() => {
+    console.info("[arolariu.ro::beforeBuild] Finished generating licenses.");
+  });
+
   console.info("[arolariu.ro::beforeBuild] Finished running before build scripts.");
 }
 

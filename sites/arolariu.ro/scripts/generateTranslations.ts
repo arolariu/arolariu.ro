@@ -42,13 +42,18 @@ type MessageFormat = {
  * @param messages
  * @returns
  */
-function extractMessageKeys(messages: MessageFormat): string[] {
+function extractMessageKeys(messages: MessageFormat, verbose: boolean = false): string[] {
   const keys: string[] = [];
 
   for (const key in messages) {
+    verbose && console.info(`[arolariu.ro::generateTranslations] Extracting key: ${key} from message...`);
     if (typeof messages[key] === "string") {
       keys.push(key);
     } else {
+      verbose &&
+        console.info(
+          `[arolariu.ro::generateTranslations] Key: ${key} is a MessageFormat object. Extracting subkeys...`,
+        );
       const subKeys = extractMessageKeys(messages[key] as MessageFormat);
       subKeys.forEach((subKey) => keys.push(`${key}.${subKey}`));
     }
@@ -65,10 +70,11 @@ function extractMessageKeys(messages: MessageFormat): string[] {
  * @param translatedKeys The array of keys from the translated file.
  * @returns An array of keys that are missing from the translated file.
  */
-function findMissingKeys(englishKeys: string[], translatedKeys: string[]): string[] {
+function findMissingKeys(englishKeys: string[], translatedKeys: string[], verbose: boolean = false): string[] {
   const missingKeys: string[] = [];
 
   englishKeys.forEach((key) => {
+    verbose && console.info(`[arolariu.ro::generateTranslations] Checking key: ${key}...`);
     if (!translatedKeys.includes(key)) {
       missingKeys.push(key);
     }
@@ -84,9 +90,11 @@ function findMissingKeys(englishKeys: string[], translatedKeys: string[]): strin
  * @param filePath The path to the translation file.
  * @returns The translation file as a MessageFormat object.
  */
-function loadTranslationFile(filePath: string): MessageFormat {
+function loadTranslationFile(filePath: string, verbose: boolean = false): MessageFormat {
   try {
     const translationFile = fs.readFileSync(filePath, "utf-8");
+    verbose && console.info(`[arolariu.ro::generateTranslations] Loaded translation file: ${filePath}`);
+    verbose && console.info(`[arolariu.ro::generateTranslations] Translation file content: ${translationFile}`);
     return JSON.parse(translationFile);
   } catch (error) {
     console.error(`[arolariu.ro::generateTranslations] Error loading translation file: ${filePath}`);
@@ -123,7 +131,7 @@ function loadTranslationFile(filePath: string): MessageFormat {
  * @param filePath The path to the file where the missing keys will be written.
  * @param translationKeys The array of missing translation keys.
  */
-function writeTranslationKeysFile(filePath: string, translationKeys: string[]) {
+function writeTranslationKeysFile(filePath: string, translationKeys: string[], verbose: boolean = false) {
   try {
     let existingMessages: MessageFormat = {};
 
@@ -149,6 +157,7 @@ function writeTranslationKeysFile(filePath: string, translationKeys: string[]) {
           if (!currentObject[keyPart]) {
             currentObject[keyPart] = {};
           }
+          verbose && console.info(`[arolariu.ro::generateTranslations] Adding key: ${keyPart} to object...`);
           currentObject = currentObject[keyPart] as MessageFormat;
         }
       });
@@ -177,18 +186,18 @@ export async function main(verbose: boolean = false) {
   const RO_TRANSLATIONS_FILE = path.resolve(TRANSLATIONS_PATH, "ro.json");
 
   console.info("[arolariu.ro::generateTranslations] Loading translation files...");
-  const enTranslations = loadTranslationFile(EN_TRANSLATIONS_FILE);
-  const roTranslations = loadTranslationFile(RO_TRANSLATIONS_FILE);
+  const enTranslations = loadTranslationFile(EN_TRANSLATIONS_FILE, verbose);
+  const roTranslations = loadTranslationFile(RO_TRANSLATIONS_FILE, verbose);
 
   console.info("[arolariu.ro::generateTranslations] Extracting translation keys...");
-  const enKeys = extractMessageKeys(enTranslations);
-  const roKeys = extractMessageKeys(roTranslations);
+  const enKeys = extractMessageKeys(enTranslations, verbose);
+  const roKeys = extractMessageKeys(roTranslations, verbose);
 
   console.info("[arolariu.ro::generateTranslations] Finding missing translations keys...");
-  const missingKeys = findMissingKeys(enKeys, roKeys);
+  const missingKeys = findMissingKeys(enKeys, roKeys, verbose);
 
   console.info("[arolariu.ro::generateTranslations] Writing missing translations to file...");
-  writeTranslationKeysFile(RO_TRANSLATIONS_FILE, missingKeys);
+  writeTranslationKeysFile(RO_TRANSLATIONS_FILE, missingKeys, verbose);
 }
 
 main();
