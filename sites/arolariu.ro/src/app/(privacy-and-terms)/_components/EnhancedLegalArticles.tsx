@@ -63,52 +63,74 @@ const articles = {
 const EnrichedTitle = ({pageType, titleKey}: Readonly<{pageType: TranslatedPage; titleKey: string}>) => {
   const t = useTranslations<TranslatedPage>(pageType);
 
-  return t.rich<any>(titleKey as any, {
-    br: (chunks) => (
-      <>
-        <br />
-        {chunks}
-      </>
-    ),
-  });
+  return (
+    <span className='text-2xl font-black tracking-widest underline'>
+      {t.rich<any>(titleKey as any, {
+        br: (chunks) => (
+          <>
+            <br />
+            {chunks}
+          </>
+        ),
+      })}
+    </span>
+  );
 };
 
 const EnrichedContent = ({pageType, contentKey}: Readonly<{pageType: TranslatedPage; contentKey: string}>) => {
   const t = useTranslations<TranslatedPage>(pageType);
 
-  return t.rich(contentKey as any, {
-    br: (chunks) => (
-      <>
-        <br />
-        {chunks}
-      </>
-    ),
-    code: (chunks) => <code className='font-extrabold text-blue-400'>{chunks}</code>,
-    ul: (chunks) => <ul className='list-inside list-disc pt-2'>{chunks}</ul>,
-    li: (chunks) => <li>{chunks}</li>,
-    span: (chunks) => <span>{chunks}</span>,
-  });
+  return (
+    <section className='text-pretty italic'>
+      {t.rich(contentKey as any, {
+        br: (chunks) => (
+          <>
+            <br />
+            {chunks}
+          </>
+        ),
+        code: (chunks) => <code className='font-extrabold text-blue-400'>{chunks}</code>,
+        ul: (chunks) => <ul className='list-inside list-disc pt-2'>{chunks}</ul>,
+        li: (chunks) => <li>{chunks}</li>,
+        span: (chunks) => <span>{chunks}</span>,
+      })}
+    </section>
+  );
 };
 
+const EnrichedLegalArticle = ({
+  pageType,
+  titleKey,
+  contentKey,
+}: Readonly<{pageType: TranslatedPage; titleKey: string; contentKey: string}>) => {
+  return (
+    <article className='w-full py-4'>
+      <EnrichedTitle
+        pageType={pageType}
+        titleKey={titleKey}
+      />
+      <EnrichedContent
+        pageType={pageType}
+        contentKey={contentKey}
+      />
+    </article>
+  );
+};
+
+/**
+ * The EnhancedLegalArticles component renders a list of legal articles for a given page type.
+ * @param pageType The type of page for which to render the legal articles.
+ * @returns A list of legal articles for the given page type.
+ */
 export default function EnhancedLegalArticles({pageType}: Readonly<{pageType: TranslatedPage}>) {
   const sections = articles[pageType];
 
   return sections.map((section) => (
-    <article
-      className='w-full py-4'
-      key={section.titleKey}>
-      <span className='text-2xl font-black tracking-widest underline'>
-        <EnrichedTitle
-          pageType={pageType}
-          titleKey={section.titleKey}
-        />
-      </span>
-      <section className='text-pretty italic'>
-        <EnrichedContent
-          pageType={pageType}
-          contentKey={section.contentKey}
-        />
-      </section>
-    </article>
+    <EnrichedLegalArticle
+      key={section.titleKey}
+      pageType={pageType}
+      titleKey={section.titleKey}
+      contentKey={section.contentKey}
+    />
   ));
 }

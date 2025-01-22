@@ -1,12 +1,16 @@
 /** @format */
 
+"use client";
+
 import {useEffect, useState} from "react";
 
+type WindowSize = {
+  width: number | null;
+  height: number | null;
+};
+
 type HookReturnType = Readonly<{
-  windowSize: {
-    width: number | null;
-    height: number | null;
-  };
+  windowSize: WindowSize;
   isMobile: boolean;
   isDesktop: boolean;
 }>;
@@ -16,13 +20,7 @@ type HookReturnType = Readonly<{
  * @returns An object containing the window size and whether the window is mobile or desktop.
  */
 export default function useWindowSize(): HookReturnType {
-  const [windowSize, setWindowSize] = useState<{
-    width: number | null;
-    height: number | null;
-  }>({
-    width: null,
-    height: null,
-  });
+  const [windowSize, setWindowSize] = useState<WindowSize>({width: null, height: null});
 
   useEffect(() => {
     /**

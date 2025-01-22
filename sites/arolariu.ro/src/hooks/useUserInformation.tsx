@@ -1,5 +1,7 @@
 /** @format */
 
+"use client";
+
 import {SITE_URL} from "@/lib/utils.generic";
 import type {UserInformation} from "@/types/UserInformation";
 import {useEffect, useRef, useState, type DependencyList} from "react";

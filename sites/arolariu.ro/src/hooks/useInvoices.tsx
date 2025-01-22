@@ -1,5 +1,7 @@
 /** @format */
 
+"use client";
+
 import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
 import type Invoice from "@/types/invoices/Invoice";
 import {useEffect, useState} from "react";

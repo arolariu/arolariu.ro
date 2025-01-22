@@ -1,6 +1,7 @@
 /** @format */
 "use client";
 
+import {isBrowserStorageAvailable} from "@/lib/utils.client";
 import type {NextFont} from "next/dist/compiled/@next/font";
 import {Caudex} from "next/font/google";
 import React, {
@@ -45,7 +46,7 @@ interface FontContextProviderProps {
  */
 export function FontContextProvider({children, currentFont}: FontContextProviderProps): React.JSX.Element {
   const [selectedFont, setSelectedFont] = useState<NextFont>(() => {
-    if (globalThis.window !== undefined) {
+    if (isBrowserStorageAvailable("localStorage")) {
       const storedFont = localStorage?.getItem("selectedFont") ?? null;
       return storedFont ? JSON.parse(storedFont) : (currentFont ?? defaultFont);
     }
