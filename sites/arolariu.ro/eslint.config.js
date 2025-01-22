@@ -97,6 +97,7 @@ const eslintConfig = tseslint.config(
       "react/jsx-closing-bracket-location": "off", // this rule is not needed, we use Prettier for formatting.
       "react/function-component-definition": "off", // this rule is too strict; we use custom components.
       "react/jsx-max-depth": ["error", {max: 12}], // enforce a maximum depth of 12 components.
+      "react/no-unstable-nested-components": "off", // this rule is too strict; we use custom components.
       "react/jsx-filename-extension": ["error", {extensions: [".tsx"]}], // enforce .tsx extension for JSX files.
 
       "unicorn/no-null": "off", // this rule is too strict; null is allowed.

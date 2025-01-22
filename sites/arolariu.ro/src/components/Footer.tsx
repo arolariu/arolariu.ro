@@ -13,10 +13,10 @@ const FooterHero = () => {
   const t = useTranslations("Footer");
   const description = t.rich("subtitle", {
     br: (chunks: React.ReactNode) => (
-      <React.Fragment>
+      <>
         <br />
         {chunks}
-      </React.Fragment>
+      </>
     ),
   });
   const siteName = SITE_NAME.toUpperCase();

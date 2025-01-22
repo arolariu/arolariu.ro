@@ -29,6 +29,7 @@ export default function useUserInformation(
       abortControllerRef.current.abort();
     }
 
+    // eslint-disable-next-line functional/immutable-data
     abortControllerRef.current = new AbortController();
     const {signal} = abortControllerRef.current;
 

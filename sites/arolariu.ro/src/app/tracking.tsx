@@ -3,6 +3,10 @@
 import {SITE_ENV} from "@/lib/utils.generic";
 import Script from "next/script";
 
+/**
+ * This function will insert the Microsoft Clarity tracking script into the website.
+ * @returns The JSX for the Microsoft Clarity tracking script.
+ */
 function MicrosoftClarity() {
   const trackingId = SITE_ENV === "production" ? "mzhg9oq31x" : "mzhjusuzv1";
   return (
@@ -21,6 +25,10 @@ function MicrosoftClarity() {
   );
 }
 
+/**
+ * This function will insert the Google Analytics tracking script into the website.
+ * @returns The JSX for the Google Analytics tracking script.
+ */
 function GoogleAnalytics() {
   const trackingId = SITE_ENV === "production" ? "G-WRFY2M3L07" : "G-92D06EVK0L";
   return (
@@ -37,6 +45,10 @@ function GoogleAnalytics() {
   );
 }
 
+/**
+ * This function will insert the Hotjar Analytics tracking script into the website.
+ * @returns The JSX for the Hotjar Analytics tracking script.
+ */
 function HotjarAnalytics() {
   const trackingId = SITE_ENV === "production" ? "5041812" : "5041816";
   return (

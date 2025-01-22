@@ -123,7 +123,8 @@ const EnrichedLegalArticle = ({
  * @returns A list of legal articles for the given page type.
  */
 export default function EnhancedLegalArticles({pageType}: Readonly<{pageType: TranslatedPage}>) {
-  const sections = articles[pageType];
+  // eslint-disable-next-line security/detect-object-injection -- pageType is a controlled value
+  const sections = articles.hasOwnProperty(pageType) ? articles[pageType] : [];
 
   return sections.map((section) => (
     <EnrichedLegalArticle
