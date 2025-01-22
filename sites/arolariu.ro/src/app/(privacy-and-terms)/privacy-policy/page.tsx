@@ -18,15 +18,16 @@ export default async function PrivacyPolicyPage() {
 
   return (
     <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-8 px-12 py-24'>
-      <div className='flex flex-col flex-nowrap gap-8 2xsm:w-full md:w-2/3'>
-        <section>
-          <h1 className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-center text-3xl font-black text-transparent'>
-            {t("title")}
-          </h1>
-          <p className='text-center'>{t("last_updated")}</p>
-        </section>
-        <RenderPrivacyPolicyScreen />
-      </div>
+      <section className='flex flex-col flex-nowrap items-center justify-center justify-items-center'>
+        <h1 className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-3xl font-black text-transparent'>
+          {t("title")}
+        </h1>
+        <span>{t("last_updated")}</span>
+      </section>
+      <RenderPrivacyPolicyScreen />
+      <section className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text pt-8 text-3xl font-black italic text-transparent'>
+        {t("contactInformation.content")}
+      </section>
     </main>
   );
 }

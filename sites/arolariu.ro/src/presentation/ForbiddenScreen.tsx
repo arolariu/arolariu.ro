@@ -16,7 +16,8 @@ export default function ForbiddenScreen() {
     <section className='container mx-auto flex flex-col items-center justify-center px-5 py-12'>
       <Image
         src='/images/auth/forbidden.svg'
-        alt='Forbidden SVG'
+        alt=''
+        aria-hidden
         className='mb-4 h-full w-full rounded object-cover object-center md:w-3/6 lg:w-2/6'
         width={500}
         height={500}
