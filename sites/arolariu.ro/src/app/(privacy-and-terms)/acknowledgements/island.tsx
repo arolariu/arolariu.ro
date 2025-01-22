@@ -3,7 +3,7 @@
 "use client";
 
 import type {NodePackageInformation, NodePackagesJSON} from "@/types/common/types";
-import {useMemo, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 import {Button} from "react-aria-components";
 import PackageCard from "./_components/PackageCard";
 
@@ -25,22 +25,26 @@ export default function RenderAcknowledgementsPage({packages}: Readonly<Props>) 
     } else {
       return packages.development ?? [];
     }
-  }, [filter, packages.development, packages.peer, packages.production]);
+  }, [filter, packages]);
+
+  const handleShowProductionPackages = useCallback(() => setFilter("production"), []);
+  const handleShowDevelopmentPackages = useCallback(() => setFilter("development"), []);
+  const handleResetPackagesFilter = useCallback(() => setFilter("all"), []);
 
   return (
     <section>
       <div className='flex items-center justify-between justify-items-center gap-4 2xsm:flex-col md:flex-row'>
         <Button
           className='rounded-xl border bg-gray-200 p-2 dark:bg-gray-800'
-          onPress={() => setFilter("production")}>
+          onPress={handleShowProductionPackages}>
           Show Production Packages
         </Button>
         <Button
           className='rounded-xl border bg-gray-200 p-2 dark:bg-gray-800'
-          onPress={() => setFilter("development")}>
+          onPress={handleShowDevelopmentPackages}>
           Show Development Packages
         </Button>
-        <Button onPress={() => setFilter("all")}>Show all packages {filter !== "all" && "(RESET)"}</Button>
+        <Button onPress={handleResetPackagesFilter}>Show all packages {filter !== "all" && "(RESET)"}</Button>
       </div>
       <div className='flex flex-col flex-nowrap gap-10 pt-4'>
         {filteredPackages.map((pkg) => (

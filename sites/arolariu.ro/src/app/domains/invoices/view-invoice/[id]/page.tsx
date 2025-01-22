@@ -3,7 +3,7 @@
 import type {Metadata} from "next";
 import RenderViewInvoiceScreen from "./island";
 
-type Params = Promise<{id: string}>;
+type Props = {params: Promise<{id: string}>};
 
 export const metadata: Metadata = {
   title: "View Invoice",
@@ -15,11 +15,12 @@ export const metadata: Metadata = {
  * This page uses a dynamic route to display a specific invoice.
  * @returns Render the view invoice page, SSR'ed.
  */
-export default async function ViewInvoicePage(props: Readonly<{params: Params}>) {
-  const params = await props.params;
+export default async function ViewInvoicePage({params}: Readonly<Props>) {
+  const invoiceIdentifier = (await params).id;
+
   return (
     <main className='overflow-hidden px-5 py-24'>
-      <RenderViewInvoiceScreen invoiceIdentifier={params.id} />
+      <RenderViewInvoiceScreen invoiceIdentifier={invoiceIdentifier} />
     </main>
   );
 }

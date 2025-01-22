@@ -42,28 +42,29 @@ export default function RenderCreateInvoiceScreen() {
     }
   }, []);
 
-  const handleImageServerSideUpload = async (
-    event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>,
-  ) => {
-    try {
-      event.preventDefault();
-      setUploadStatus("PENDING__SERVERSIDE");
-      const imagesCopy = [...images];
-      for (const image of imagesCopy) {
-        const blobInformation = await extractBase64FromBlob(image); // client-action
-        const {status} = await uploadInvoice({blobInformation, userInformation}); // server-action
-        if (status === "SUCCESS") {
-          setImages((images) => {
-            return images.filter((imageInState) => imageInState !== image);
-          });
+  const handleImageServerSideUpload = useCallback(
+    async (event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {
+      try {
+        event.preventDefault();
+        setUploadStatus("PENDING__SERVERSIDE");
+        const imagesCopy = [...images];
+        for (const image of imagesCopy) {
+          const blobInformation = await extractBase64FromBlob(image); // client-action
+          const {status} = await uploadInvoice({blobInformation, userInformation}); // server-action
+          if (status === "SUCCESS") {
+            setImages((images) => {
+              return images.filter((imageInState) => imageInState !== image);
+            });
+          }
         }
+        setUploadStatus("SUCCESS__SERVERSIDE");
+      } catch (error: unknown) {
+        console.error(">>> Error in handleImageServerSideUpload:", error as Error);
+        setUploadStatus("FAILURE__SERVERSIDE");
       }
-      setUploadStatus("SUCCESS__SERVERSIDE");
-    } catch (error: unknown) {
-      console.error(">>> Error in handleImageServerSideUpload:", error as Error);
-      setUploadStatus("FAILURE__SERVERSIDE");
-    }
-  };
+    },
+    [images, userInformation],
+  );
 
   return (
     <section className='h-full w-full'>

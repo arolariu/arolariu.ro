@@ -5,7 +5,7 @@
 import type Invoice from "@/types/invoices/Invoice";
 import Image from "next/image";
 import Link from "next/link";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {Button, Dialog, DialogTrigger, Heading, Modal} from "react-aria-components";
 
 export const InvoiceImagePreview = ({invoice}: Readonly<{invoice: Invoice}>) => {
@@ -18,32 +18,10 @@ export const InvoiceImagePreview = ({invoice}: Readonly<{invoice: Invoice}>) => 
 
   const previewText = isPdfExtension ? "Preview uploaded receipt PDF" : "Preview uploaded receipt photo";
 
-  const handleMouseMove = (event: Readonly<React.MouseEvent<HTMLImageElement>>) => {
-    if (isFrozen) return;
+  const handleMouseMove = useCallback(
+    (event: Readonly<React.MouseEvent<HTMLImageElement>>) => {
+      if (isFrozen) return;
 
-    const containerRect = event.currentTarget.getBoundingClientRect();
-    const cursorX = event.clientX - containerRect.left;
-    const cursorY = event.clientY - containerRect.top;
-
-    // Calculate normalized cursor position within the image
-    const normalizedX = cursorX / containerRect.width;
-    const normalizedY = cursorY / containerRect.height;
-
-    // Apply bounds to avoid extreme zoom near edges
-    const boundNormalizedX = Math.min(Math.max(normalizedX, 0.05), 0.95);
-    const boundNormalizedY = Math.min(Math.max(normalizedY, 0.05), 0.95);
-
-    // Calculate new transform origin based on bounds
-    const newTransformOrigin = `${(boundNormalizedX * 100).toString()}% ${(boundNormalizedY * 100).toString()}%`;
-
-    setZoomStyle({
-      transform: "scale(2)",
-      transformOrigin: newTransformOrigin,
-    });
-  };
-
-  const handleMouseLeave = (event: Readonly<React.MouseEvent<HTMLImageElement>>) => {
-    if (!isFrozen) {
       const containerRect = event.currentTarget.getBoundingClientRect();
       const cursorX = event.clientX - containerRect.left;
       const cursorY = event.clientY - containerRect.top;
@@ -60,11 +38,39 @@ export const InvoiceImagePreview = ({invoice}: Readonly<{invoice: Invoice}>) => 
       const newTransformOrigin = `${(boundNormalizedX * 100).toString()}% ${(boundNormalizedY * 100).toString()}%`;
 
       setZoomStyle({
-        transform: "scale(1)",
+        transform: "scale(2)",
         transformOrigin: newTransformOrigin,
       });
-    }
-  };
+    },
+    [isFrozen],
+  );
+
+  const handleMouseLeave = useCallback(
+    (event: Readonly<React.MouseEvent<HTMLImageElement>>) => {
+      if (!isFrozen) {
+        const containerRect = event.currentTarget.getBoundingClientRect();
+        const cursorX = event.clientX - containerRect.left;
+        const cursorY = event.clientY - containerRect.top;
+
+        // Calculate normalized cursor position within the image
+        const normalizedX = cursorX / containerRect.width;
+        const normalizedY = cursorY / containerRect.height;
+
+        // Apply bounds to avoid extreme zoom near edges
+        const boundNormalizedX = Math.min(Math.max(normalizedX, 0.05), 0.95);
+        const boundNormalizedY = Math.min(Math.max(normalizedY, 0.05), 0.95);
+
+        // Calculate new transform origin based on bounds
+        const newTransformOrigin = `${(boundNormalizedX * 100).toString()}% ${(boundNormalizedY * 100).toString()}%`;
+
+        setZoomStyle({
+          transform: "scale(1)",
+          transformOrigin: newTransformOrigin,
+        });
+      }
+    },
+    [isFrozen],
+  );
 
   return (
     <DialogTrigger>

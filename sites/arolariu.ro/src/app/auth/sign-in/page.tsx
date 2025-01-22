@@ -11,16 +11,27 @@ export const metadata: Metadata = {
   description: "Sign in to arolariu.ro",
 };
 
-type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+type Props = {searchParams: Promise<{[key: string]: string | string[] | undefined}>};
 
 /**
  * The sign in page, SSR'ed, where users can sign in to the platform.
  * @returns The sign in page, SSR'ed.
  */
-export default async function SignInPage(props: Readonly<{searchParams: SearchParams}>) {
+export default async function SignInPage({searchParams}: Readonly<Props>) {
   const {isAuthenticated} = await fetchUser();
-  const searchParams = await props.searchParams;
-  const callbackUrl = searchParams["callbackUrl"] as string;
+  const {callbackUrl} = await searchParams;
+
+  const handleFormAction = async () => {
+    "use server";
+    try {
+      await signIn("keycloak", {redirectTo: callbackUrl as string});
+    } catch (error) {
+      if (error instanceof AuthError) {
+        return redirect(`/?error=${error.type}`);
+      }
+      throw error;
+    }
+  };
 
   if (isAuthenticated) return redirect("/accounts");
   return (
@@ -29,18 +40,7 @@ export default async function SignInPage(props: Readonly<{searchParams: SearchPa
         Sign in by reusing your account from one of the following providers:
       </h1>
       <article className='mx-auto flex flex-col gap-4'>
-        <form
-          action={async () => {
-            "use server";
-            try {
-              await signIn("keycloak", {redirectTo: callbackUrl});
-            } catch (error) {
-              if (error instanceof AuthError) {
-                return redirect(`/?error=${error.type}`);
-              }
-              throw error;
-            }
-          }}>
+        <form action={handleFormAction}>
           <button type='submit'>
             <span>
               Sign in with <code>auth.arolariu.ro</code>.
