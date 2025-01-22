@@ -8,7 +8,7 @@ import type Invoice from "@/types/invoices/Invoice";
 import {useEffect, useState} from "react";
 import InvoicesNotFound from "../_components/InvoicesNotFound";
 import {InvoiceFilters} from "./_components/InvoiceFilters";
-import {InvoiceList} from "./_components/InvoiceList";
+import InvoiceList from "./_components/InvoiceList";
 import InvoicesHeader from "./_components/InvoicesHeader";
 
 /**
