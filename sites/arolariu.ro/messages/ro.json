@@ -292,6 +292,10 @@
             "title__after": "SUNT ACESTE FOTOGRAFII CORECTE...?!",
             "subtitle__before": "Fotografiați sau scanați cu atenție chitanța de hârtie. \nAtașați imaginea digitală de pe dispozitivul dvs., aici.",
             "subtitle__after": "Examinați ce s-a încărcat. \nDacă este corect, treceți la pasul următor."
+          },
+          "view-invoices": {
+            "title": "Bine ați venit, {name}!",
+            "subtitle": "Acesta este inventarul dvs. de bonuri digitale. <br></br> Aici puteți găsi bonurile pe care le-ați încărcat până acum. <br></br> Făcând clic pe o chitanță, veți fi redirecționat către pagina chitanței specifice."
           }
         }
       }
