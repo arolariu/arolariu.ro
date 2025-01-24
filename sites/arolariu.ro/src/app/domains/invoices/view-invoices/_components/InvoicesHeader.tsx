@@ -1,24 +1,29 @@
 /** @format */
 
 import type Invoice from "@/types/invoices/Invoice";
+import {useMemo, useState} from "react";
 
 /**
  * The header of the view-invoices page.
  * @returns The header of the view-invoices page.
  */
 export default function InvoicesHeader({shownInvoices}: Readonly<{shownInvoices: Invoice[]}>) {
-  const totalCostOfShownInvoices = () => {
-    const amounts = shownInvoices.flatMap((invoice) => invoice.paymentInformation?.totalAmount) as number[];
-    return amounts.reduce((acc, amount) => acc + amount, 0);
-  };
+  const [currentCurrency, setCurrentCurrency] = useState<"USD" | "EUR" | "GBP">("USD");
 
-  const totalSavingsOfShownInvoices = () => {
+  const totalCost = useMemo(() => {
+    const amounts = shownInvoices
+      .flatMap((invoice) => invoice.paymentInformation?.totalAmount)
+      .filter((amount): amount is number => amount !== undefined);
+    return amounts.reduce((acc, amount) => acc + amount, 0);
+  }, [shownInvoices]);
+
+  const totalSavings = useMemo(() => {
     const products = shownInvoices.flatMap((invoice) => invoice.items);
     const productsWithDiscount = products.filter((product) => product.price < 0);
     return productsWithDiscount.reduce((acc, product) => acc + product.price, 0);
-  };
+  }, [shownInvoices]);
 
-  const numberOfProductsBought = () => shownInvoices.flatMap((invoice) => invoice.items).length;
+  const totalProducts = shownInvoices.flatMap((invoice) => invoice.items).length;
 
   return (
     <article className='container mx-auto px-5 pb-6'>
@@ -28,17 +33,25 @@ export default function InvoicesHeader({shownInvoices}: Readonly<{shownInvoices:
           <p className='leading-relaxed'>Shown Invoices</p>
         </div>
         <div className='w-1/2 p-4 sm:w-1/4'>
-          <h2 className='title-font text-3xl font-medium text-red-400 sm:text-4xl'>{totalCostOfShownInvoices()}</h2>
-          <p className='leading-relaxed'>Total Cost</p>
+          <h2 className='title-font text-3xl font-medium text-red-400 sm:text-4xl'>{totalCost}</h2>
+          <p className='leading-relaxed'>Total Cost ({currentCurrency})</p>
+          <div className='flex flex-row items-center justify-center justify-items-center gap-2'>
+            <button onClick={() => setCurrentCurrency("USD")}>$</button>
+            <button onClick={() => setCurrentCurrency("EUR")}>€</button>
+            <button onClick={() => setCurrentCurrency("GBP")}>£</button>
+          </div>
         </div>
         <div className='w-1/2 p-4 sm:w-1/4'>
-          <h2 className='title-font text-3xl font-medium text-green-400 sm:text-4xl'>
-            {totalSavingsOfShownInvoices()}
-          </h2>
-          <p className='leading-relaxed'>Total Savings</p>
+          <h2 className='title-font text-3xl font-medium text-green-400 sm:text-4xl'>{totalSavings}</h2>
+          <p className='leading-relaxed'>Total Savings ({currentCurrency})</p>
+          <div className='flex flex-row items-center justify-center justify-items-center gap-2'>
+            <button onClick={() => setCurrentCurrency("USD")}>$</button>
+            <button onClick={() => setCurrentCurrency("EUR")}>€</button>
+            <button onClick={() => setCurrentCurrency("GBP")}>£</button>
+          </div>
         </div>
         <div className='w-1/2 p-4 sm:w-1/4'>
-          <h2 className='title-font text-3xl font-medium sm:text-4xl'>{numberOfProductsBought()}</h2>
+          <h2 className='title-font text-3xl font-medium sm:text-4xl'>{totalProducts}</h2>
           <p className='leading-relaxed'>Products bought</p>
         </div>
       </div>

@@ -29,6 +29,7 @@ export default async function SignInPage({searchParams}: Readonly<Props>) {
       if (error instanceof AuthError) {
         return redirect(`/?error=${error.type}`);
       }
+      // eslint-disable-next-line functional/no-promise-reject -- We need to throw an error here.
       throw error;
     }
   };

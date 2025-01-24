@@ -4,7 +4,7 @@
 
 import {SITE_URL} from "@/lib/utils.generic";
 import type {UserInformation} from "@/types/UserInformation";
-import {useEffect, useRef, useState, type DependencyList} from "react";
+import {useCallback, useEffect, useRef, useState, type DependencyList} from "react";
 
 type HookReturnType = Readonly<{
   userInformation: UserInformation | null;
@@ -24,34 +24,34 @@ export default function useUserInformation(
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
 
+  const fetchUserInformation = useCallback(async (signal: AbortSignal) => {
+    try {
+      setIsLoading(true);
+      const userInformationResponse = await fetch(`${SITE_URL}/api/user`, {signal});
+      const userInformationAsJson = await userInformationResponse.json();
+      setUserInformation(userInformationAsJson as UserInformation);
+    } catch (error: unknown) {
+      console.error(">>> Error fetching user information in useUserInformation hook:", error as Error);
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
-      abortControllerRef.current.abort();
+      abortControllerRef.current.abort("New request initiated.");
     }
 
     // eslint-disable-next-line functional/immutable-data
     abortControllerRef.current = new AbortController();
     const {signal} = abortControllerRef.current;
 
-    const fetchUserInformation = async () => {
-      try {
-        setIsLoading(true);
-        const userInformationResponse = await fetch(`${SITE_URL}/api/user`, {signal});
-        const userInformationAsJson = await userInformationResponse.json();
-        setUserInformation(userInformationAsJson as UserInformation);
-      } catch (error: unknown) {
-        console.error(">>> Error fetching user information in useUserInformation hook:", error as Error);
-        setIsError(true);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUserInformation();
+    fetchUserInformation(signal);
 
     return () => {
       if (isLoading) {
-        abortControllerRef.current?.abort();
+        abortControllerRef.current?.abort("Request aborted by cleanup function.");
       }
     };
   }, dependencyArray);

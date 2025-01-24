@@ -2,14 +2,13 @@
 
 "use client";
 
-import useInvoice from "@/hooks/useInvoice";
 import useUserInformation from "@/hooks/useUserInformation";
 import updateInvoice from "@/lib/actions/invoices/updateInvoice";
 import Link from "next/link";
 import {useState} from "react";
+import {FakeInvoice} from "../../../../../data/mocks/invoices";
 import InvoiceNotAnalyzed from "../../_components/InvoiceNotAnalyzed";
 import InvoiceNotFound from "../../_components/InvoiceNotFound";
-import LoadingInvoice from "../../_components/LoadingInvoice";
 import {InvoiceImagePreview} from "./_components/InvoiceImagePreview";
 import {InvoiceInformation} from "./_components/InvoiceInformation";
 import {InvoiceProducts} from "./_components/InvoiceProducts";
@@ -21,10 +20,11 @@ import {InvoiceSummary} from "./_components/InvoiceSummary";
  */
 export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
   const {userInformation} = useUserInformation();
-  const {invoice, isLoading} = useInvoice({invoiceIdentifier});
+  // const { invoice, isLoading } = useInvoice({ invoiceIdentifier });
+  const invoice = FakeInvoice;
   const [currentStep, setCurrentStep] = useState<number>(1);
 
-  if (isLoading) return <LoadingInvoice invoiceIdentifier={invoiceIdentifier} />;
+  //if (isLoading) return <LoadingInvoice invoiceIdentifier={invoiceIdentifier} />;
   if (invoice === null) return <InvoiceNotFound invoiceIdentifier={invoiceIdentifier} />;
   if (invoice.numberOfUpdates === 0) return <InvoiceNotAnalyzed invoiceIdentifier={invoiceIdentifier} />;
 

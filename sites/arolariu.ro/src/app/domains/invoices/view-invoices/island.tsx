@@ -3,13 +3,19 @@
 "use client";
 
 import {useZustandStore} from "@/hooks/stateStore";
-import useInvoices from "@/hooks/useInvoices";
 import type Invoice from "@/types/invoices/Invoice";
 import {useEffect, useState} from "react";
+import {FakeInvoiceShortList} from "../../../../data/mocks/invoices";
 import InvoicesNotFound from "../_components/InvoicesNotFound";
 import {InvoiceFilters} from "./_components/InvoiceFilters";
 import InvoiceList from "./_components/InvoiceList";
 import InvoicesHeader from "./_components/InvoicesHeader";
+
+type InvoiceFilters = {
+  isImportant: boolean;
+  dayOnly: boolean;
+  nightOnly: boolean;
+};
 
 /**
  * This function renders the view invoices page.
@@ -17,10 +23,11 @@ import InvoicesHeader from "./_components/InvoicesHeader";
  */
 export default function RenderViewInvoicesScreen() {
   const {invoices: previousInvoices, setInvoices: setPreviousInvoices} = useZustandStore();
-  const {invoices: currentInvoices, isLoading} = useInvoices();
+  // const {invoices: currentInvoices, isLoading} = useInvoices();
+  const currentInvoices = FakeInvoiceShortList;
   const [shownInvoices, setShownInvoices] = useState<Invoice[]>(previousInvoices);
   const [displayStyle, setDisplayStyle] = useState<"grid" | "list">("list");
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<InvoiceFilters>({
     isImportant: false,
     dayOnly: false,
     nightOnly: false,
@@ -51,7 +58,7 @@ export default function RenderViewInvoicesScreen() {
       );
     }
     setShownInvoices(filteredInvoices);
-  }, [filters, previousInvoices, currentInvoices, isLoading]);
+  }, [filters, previousInvoices, currentInvoices /* isLoading */]);
 
   if (currentInvoices?.length === 0 || previousInvoices.length === 0) return <InvoicesNotFound />;
   return (

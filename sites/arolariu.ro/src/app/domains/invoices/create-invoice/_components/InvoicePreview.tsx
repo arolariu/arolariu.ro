@@ -19,7 +19,7 @@ const ImageActions = ({image, setImages}: Readonly<{image: Blob; setImages: Disp
   /**
    * This function rotates an image 90 degrees clockwise, from the state.
    */
-  const handleRotateImage = () => {
+  const handleRotateImage = useCallback(() => {
     const URL = window.URL || window.webkitURL;
     const imageURL = URL.createObjectURL(image);
     const imageElement = document.createElement("img");
@@ -41,7 +41,7 @@ const ImageActions = ({image, setImages}: Readonly<{image: Blob; setImages: Disp
           });
       }
     };
-  };
+  }, [image]);
 
   return (
     <div className='flex flex-row items-center justify-center justify-items-center gap-4'>

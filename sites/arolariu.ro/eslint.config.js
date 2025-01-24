@@ -1,11 +1,14 @@
 /** @format */
 
+import eslintPluginNext from "@next/eslint-plugin-next";
 import typescriptParser from "@typescript-eslint/parser";
 import eslintPluginFunctional from "eslint-plugin-functional";
 import eslintPluginJest from "eslint-plugin-jest";
 import eslintPluginJsDoc from "eslint-plugin-jsdoc";
 import eslintPluginJsxA11y from "eslint-plugin-jsx-a11y";
+import eslintPluginNode from "eslint-plugin-n";
 import eslintPluginPerfectionist from "eslint-plugin-perfectionist";
+import eslintPluginPromise from "eslint-plugin-promise";
 import eslintPluginReact from "eslint-plugin-react";
 import eslintPluginReactHooks from "eslint-plugin-react-hooks";
 import eslintPluginSecurity from "eslint-plugin-security";
@@ -46,10 +49,14 @@ const eslintConfig = tseslint.config(
       jest: eslintPluginJest,
       jsdoc: eslintPluginJsDoc,
       "jsx-a11y": eslintPluginJsxA11y,
+      // @ts-ignore - the plugin is not typed correctly.
+      promise: eslintPluginPromise,
       sonarjs: eslintPluginSonarJs,
       security: eslintPluginSecurity,
       unicorn: eslintPluginUnicorn,
       "@typescript-eslint": tseslint.plugin,
+      n: eslintPluginNode,
+      "@next/next": eslintPluginNext,
     },
     rules: {
       ...eslintPluginFunctional.configs.recommended.rules,
@@ -73,6 +80,9 @@ const eslintConfig = tseslint.config(
       ...eslintPluginJest.configs["flat/style"].rules,
       ...eslintPluginJest.configs["flat/recommended"].rules,
       ...eslintPluginJest.configs["flat/all"].rules,
+      ...eslintPluginNode.configs["flat/recommended"].rules,
+      ...eslintPluginNext.configs.recommended.rules,
+      ...eslintPluginPromise.configs["flat/recommended"].rules,
 
       "functional/no-return-void": "off", // this rule is too strict; some functions return void.
       "functional/no-mixed-types": "off", // this rule is too strict; mixed types are allowed.
@@ -106,6 +116,9 @@ const eslintConfig = tseslint.config(
       "unicorn/switch-case-braces": "off", // this rule is too strict; some case statements just return.
       "unicorn/prevent-abbreviations": "off", // this rule is too strict.
       "unicorn/no-array-callback-reference": "off", // this rule is too strict.
+
+      "n/no-missing-import": "off", // default imports seem to not be supported.
+      "n/no-unsupported-features/node-builtins": "off", // this rule is too strict; we make sure we have latest Node.js version.
 
       "perfectionist/sort-objects": "off", // this rule is biased; we use Prettier for sorting.
       "perfectionist/sort-modules": "off", // this rule is biased; we use Prettier for sorting.

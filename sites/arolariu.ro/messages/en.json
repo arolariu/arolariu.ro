@@ -292,6 +292,10 @@
             "title__after": "ARE THESE THE CORRECT PHOTOS...?!",
             "subtitle__before": "Carefully photograph or scan your paper receipt. Attach the digital image from your device, here.",
             "subtitle__after": "Review the uploaded receipt photo. If it is correct, proceed to the next step."
+          },
+          "view-invoices": {
+            "title": "Welcome, {name}!",
+            "subtitle": "This is your digital receipts inventory. <br></br> Here you can find the receipts that you've uploaded so far. <br></br> By clicking on a receipt, you will be redirected to that specific receipt's page."
           }
         }
       }
