@@ -10,12 +10,12 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 /// </summary>
 [ExcludeFromCodeCoverage]
 [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Not applicable.")]
-public class IEnumerableOfXTypeValueConverter<T> : ValueConverter<IEnumerable<T>, string>
+public class ValueConverterForIEnumerableOf<T> : ValueConverter<IEnumerable<T>, string>
 {
 	/// <summary>
-	/// The constructor for <see cref="IEnumerableOfXTypeValueConverter{T}"/>
+	/// The constructor for <see cref="ValueConverterForIEnumerableOf{T}"/>
 	/// </summary>
-	public IEnumerableOfXTypeValueConverter() : base(
+	public ValueConverterForIEnumerableOf() : base(
 	fromEnumerableOfT => ConvertToString(fromEnumerableOfT),
 	toEnumerableOfT => ConvertFromString(toEnumerableOfT))
 	{

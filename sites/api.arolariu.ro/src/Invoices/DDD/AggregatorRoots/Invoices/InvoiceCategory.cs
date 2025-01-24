@@ -15,22 +15,22 @@ public enum InvoiceCategory
 	/// <summary>
 	/// Grocery = the invoice is a grocery invoice.
 	/// </summary>
-	GROCERY = 10,
+	GROCERY = 100,
 
 	/// <summary>
 	/// Fast food = the invoice is a fast food invoice.
 	/// </summary>
-	FAST_FOOD = 20,
+	FAST_FOOD = 200,
 
 	/// <summary>
 	/// Home cleaning = the invoice is made of home cleaning products.
 	/// </summary>
-	HOME_CLEANING = 30,
+	HOME_CLEANING = 300,
 
 	/// <summary>
 	/// Car auto = the invoice is made of car parts / automotive products.
 	/// </summary>
-	CAR_AUTO = 40,
+	CAR_AUTO = 400,
 
 	/// <summary>
 	/// Other = the invoice is an other invoice.

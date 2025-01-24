@@ -10,13 +10,13 @@ using System.Text.Json.Serialization;
 /// The merchant information is extracted from the invoice image using the OCR service.
 /// This record is used to store the merchant information in the database.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage]	
 public sealed class Merchant : NamedEntity<Guid>
 {
 	/// <inheritdoc/>
 	[JsonPropertyName("id")]
 	[JsonPropertyOrder(0)]
-	public override Guid id { get; init; }
+	public override Guid id { get; init; } = Guid.NewGuid();
 
 	/// <summary>
 	/// The merchant category.
@@ -40,19 +40,5 @@ public sealed class Merchant : NamedEntity<Guid>
 	/// The merchant parent company.
 	/// </summary>
 	[JsonPropertyOrder(6)]
-	public Guid ParentCompanyId { get; set; }
-
-	/// <summary>
-	/// Parameterless constructor.
-	/// </summary>
-	public Merchant()
-	{
-		id = Guid.NewGuid();
-		Name = string.Empty;
-		Description = string.Empty;
-		Category = MerchantCategory.OTHER;
-		Address = string.Empty;
-		PhoneNumber = string.Empty;
-		ParentCompanyId = Guid.Empty;
-	}
+	public Guid ParentCompanyId { get; set; } = Guid.Empty;
 }

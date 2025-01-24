@@ -52,11 +52,11 @@ public sealed partial class AzureFormRecognizerBroker
 		if (photoFields.TryGetValue("TransactionDate", out var transactionDateField)
 				&& transactionDateField.FieldType is DocumentFieldType.Date)
 		{
-			paymentInformation.DateOfPurchase = transactionDateField.Value.AsDate();
+			paymentInformation.TransactionDate = transactionDateField.Value.AsDate();
 			if (photoFields.TryGetValue("TransactionTime", out var transactionTimeField)
 					&& transactionTimeField.FieldType is DocumentFieldType.Time)
 			{
-				paymentInformation.DateOfPurchase.Add(transactionTimeField.Value.AsTime());
+				paymentInformation.TransactionDate.Add(transactionTimeField.Value.AsTime());
 			}
 		}
 
@@ -64,14 +64,14 @@ public sealed partial class AzureFormRecognizerBroker
 		if (photoFields.TryGetValue("Total", out var totalField)
 				&& totalField.FieldType is DocumentFieldType.Double)
 		{
-			paymentInformation.TotalAmount = (decimal)totalField.Value.AsDouble();
+			paymentInformation.TotalCostAmount = (decimal)totalField.Value.AsDouble();
 		}
 
 		// Step 3. Extract the total tax amount from the analyzed document.
 		if (photoFields.TryGetValue("TotalTax", out var taxField)
 				&& taxField.FieldType is DocumentFieldType.Double)
 		{
-			paymentInformation.TotalTax = (decimal)taxField.Value.AsDouble();
+			paymentInformation.TotalTaxAmount = (decimal)taxField.Value.AsDouble();
 		}
 
 		return paymentInformation;

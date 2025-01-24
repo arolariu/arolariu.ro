@@ -56,6 +56,7 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 			entity.Property(i => i.PhotoLocation).HasConversion<string>();
 			entity.Property(i => i.CreatedAt).HasConversion<DateTimeOffset>();
 			entity.Property(i => i.LastUpdatedAt).HasConversion<DateTimeOffset>();
+			entity.Property(i => i.SharedWith).HasConversion(new ValueConverterForIEnumerableOf<Guid>());
 			#endregion
 
 			entity.HasIndex(invoice => invoice.id);
@@ -99,7 +100,7 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
 			items.Property(item => item.DetectedAllergens)
 				.ToJsonProperty("DetectedAllergens")
-				.HasConversion(new IEnumerableOfXTypeValueConverter<Allergen>());
+				.HasConversion(new ValueConverterForIEnumerableOf<Allergen>());
 		});
 
 		modelBuilder.Entity<Invoice>().OwnsMany<Recipe>(navigationExpression: invoice => invoice.PossibleRecipes,
@@ -109,6 +110,10 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
 			recipes.Property(recipe => recipe.Name)
 				.ToJsonProperty("Name")
+				.HasConversion<string>();
+
+			recipes.Property(recipe => recipe.Description)
+				.ToJsonProperty("Description")
 				.HasConversion<string>();
 
 			recipes.Property(recipe => recipe.Duration)
@@ -121,11 +126,11 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
 			recipes.Property(recipe => recipe.Ingredients)
 				.ToJsonProperty("Ingredients")
-				.HasConversion(new IEnumerableOfXTypeValueConverter<string>());
+				.HasConversion(new ValueConverterForIEnumerableOf<Product>());
 
-			recipes.Property(recipe => recipe.Observations)
-				.ToJsonProperty("Observations")
-				.HasConversion(new IEnumerableOfXTypeValueConverter<string>());
+			recipes.Property(recipe => recipe.ReferenceForMoreDetails)
+				.ToJsonProperty("ReferenceForMoreDetails")
+				.HasConversion<string>();
 		});
 
 		modelBuilder.Entity<Invoice>().OwnsOne<PaymentInformation>(navigationExpression: invoice => invoice.PaymentInformation,
@@ -133,28 +138,23 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 		{
 			paymentInformation.ToJsonProperty("PaymentInformation");
 
-			paymentInformation.Property(pi => pi.DateOfPurchase)
-				.ToJsonProperty("DateOfPurchase")
+			paymentInformation.Property(pi => pi.TransactionDate)
+				.ToJsonProperty("TransactionDate")
 				.HasConversion<DateTimeOffset>();
 
 			paymentInformation.Property(pi => pi.PaymentType)
 				.ToJsonProperty("PaymentType")
 				.HasConversion<string>();
 
-			paymentInformation.Property(pi => pi.CurrencyName)
-				.ToJsonProperty("CurrencyName")
-				.HasConversion<string>();
-
-			paymentInformation.Property(pi => pi.CurrencySymbol)
-				.ToJsonProperty("CurrencySymbol")
-				.HasConversion<string>();
-
-			paymentInformation.Property(pi => pi.TotalAmount)
-				.ToJsonProperty("TotalAmount")
+			paymentInformation.Property(pi => pi.Currency)
+				.ToJsonProperty("Currency");
+			
+			paymentInformation.Property(pi => pi.TotalCostAmount)
+				.ToJsonProperty("TotalCostAmount")
 				.HasConversion<decimal>();
 
-			paymentInformation.Property(pi => pi.TotalTax)
-				.ToJsonProperty("TotalTax")
+			paymentInformation.Property(pi => pi.TotalTaxAmount)
+				.ToJsonProperty("TotalTaxAmount")
 				.HasConversion<decimal>();
 		});
 

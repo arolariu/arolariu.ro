@@ -504,6 +504,327 @@ public static partial class InvoiceEndpoints
 				title: "The service encountered an unexpected internal service error.");
 		}
 	}
+
+	private static async partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
+		[FromServices] IInvoiceProcessingService invoiceProcessingService,
+		[FromServices] IHttpContextAccessor httpContext,
+		[FromRoute] Guid id,
+		ClaimsPrincipal principal)
+	{
+		try
+		{
+			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveMerchantFromInvoiceAsync), ActivityKind.Server);
+			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
+			var potentialMerchant = invoice.Merchant;
+
+			if (potentialMerchant is null) return Results.NotFound();
+			else return Results.Ok(potentialMerchant);
+		}
+		catch (InvoiceProcessingServiceValidationException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service validation error.");
+		}
+		catch (InvoiceProcessingServiceDependencyException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency error.");
+		}
+		catch (InvoiceProcessingServiceDependencyValidationException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency validation error.");
+		}
+		catch (InvoiceProcessingServiceException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service error.");
+		}
+		catch (Exception exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered an unexpected internal service error.");
+		}
+	}
+
+	private static async partial Task<IResult> AddMerchantToInvoiceAsync(
+		[FromServices] IInvoiceProcessingService invoiceProcessingService,
+		[FromServices] IHttpContextAccessor httpContext,
+		[FromRoute] Guid id,
+		[FromBody] Merchant merchant,
+		ClaimsPrincipal principal)
+	{
+		try
+		{
+			using var activity = InvoicePackageTracing.StartActivity(nameof(AddMerchantToInvoiceAsync), ActivityKind.Server);
+			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
+			var possibleMerchant = invoice.Merchant;
+
+			if (possibleMerchant is not null) return Results.Conflict();
+			else
+			{
+				invoice.Merchant = merchant;
+				var updatedInvoice = await invoiceProcessingService.UpdateInvoice(invoice, invoice).ConfigureAwait(false);
+				return Results.Accepted(value: updatedInvoice);
+			}
+		}
+		catch (InvoiceProcessingServiceValidationException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service validation error.");
+		}
+		catch (InvoiceProcessingServiceDependencyException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency error.");
+		}
+		catch (InvoiceProcessingServiceDependencyValidationException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency validation error.");
+		}
+		catch (InvoiceProcessingServiceException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service error.");
+		}
+		catch (Exception exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered an unexpected internal service error.");
+		}
+	}
+
+	private static async partial Task<IResult> RemoveMerchantFromInvoiceAsync(
+		[FromServices] IInvoiceProcessingService invoiceProcessingService,
+		[FromServices] IHttpContextAccessor httpContext,
+		[FromRoute] Guid id,
+		ClaimsPrincipal principal)
+	{
+		try
+		{
+			using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveMerchantFromInvoiceAsync), ActivityKind.Server);
+			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
+			var possibleMerchant = invoice.Merchant;
+
+			if (possibleMerchant is null) return Results.NotFound();
+			else
+			{
+				invoice.Merchant = new Merchant();
+				var updatedInvoice = await invoiceProcessingService.UpdateInvoice(invoice, invoice).ConfigureAwait(false);
+				return Results.Accepted(value: updatedInvoice);
+			}
+		}
+		catch (InvoiceProcessingServiceValidationException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service validation error.");
+		}
+		catch (InvoiceProcessingServiceDependencyException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency error.");
+		}
+		catch (InvoiceProcessingServiceDependencyValidationException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency validation error.");
+		}
+		catch (InvoiceProcessingServiceException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service error.");
+		}
+		catch (Exception exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered an unexpected internal service error.");
+		}
+	}
+
+	private static async partial Task<IResult> UpdateMerchantInInvoiceAsync(
+		[FromServices] IInvoiceProcessingService invoiceProcessingService,
+		[FromServices] IHttpContextAccessor httpContext,
+		[FromRoute] Guid id,
+		[FromBody] Merchant merchant,
+		ClaimsPrincipal principal)
+	{
+		try
+		{
+			using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantInInvoiceAsync), ActivityKind.Server);
+			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
+
+
+			invoice.Merchant = merchant;
+			var updatedInvoice = await invoiceProcessingService.UpdateInvoice(invoice, invoice).ConfigureAwait(false);
+			return Results.Accepted(value: updatedInvoice);
+		}
+		catch (InvoiceProcessingServiceValidationException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service validation error.");
+		}
+		catch (InvoiceProcessingServiceDependencyException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency error.");
+		}
+		catch (InvoiceProcessingServiceDependencyValidationException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency validation error.");
+		}
+		catch (InvoiceProcessingServiceException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service error.");
+		}
+		catch (Exception exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered an unexpected internal service error.");
+		}
+	}
+
+	private static async partial Task<IResult> RetrieveSpecificInvoiceStatusAsync(
+		[FromServices] IInvoiceProcessingService invoiceProcessingService,
+		[FromServices] IHttpContextAccessor httpContext,
+		[FromRoute] Guid id,
+		ClaimsPrincipal principal)
+	{
+		try
+		{
+			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificInvoiceStatusAsync), ActivityKind.Server);
+			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+
+		}
+		catch (InvoiceProcessingServiceValidationException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service validation error.");
+		}
+		catch (InvoiceProcessingServiceDependencyException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency error.");
+		}
+		catch (InvoiceProcessingServiceDependencyValidationException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency validation error.");
+		}
+		catch (InvoiceProcessingServiceException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service error.");
+		}
+		catch (Exception exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered an unexpected internal service error.");
+		}
+	}
+
+	private static async partial Task<IResult> RetrieveAllInvoicesStatusAsync(
+		[FromServices] IInvoiceProcessingService invoiceProcessingService,
+		[FromServices] IHttpContextAccessor httpContext,
+		ClaimsPrincipal principal)
+	{
+		try
+		{
+			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveAllInvoicesStatusAsync), ActivityKind.Server);
+			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+		}
+		catch (InvoiceProcessingServiceValidationException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service validation error.");
+		}
+		catch (InvoiceProcessingServiceDependencyException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency error.");
+		}
+		catch (InvoiceProcessingServiceDependencyValidationException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency validation error.");
+		}
+		catch (InvoiceProcessingServiceException exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service error.");
+		}
+		catch (Exception exception)
+		{
+			return Results.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered an unexpected internal service error.");
+		}
+	}
 	#endregion
 
 	#region CRUD operations for the Merchant Standard Endpoints

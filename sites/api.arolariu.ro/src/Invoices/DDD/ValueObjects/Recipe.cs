@@ -3,32 +3,77 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+
 /// <summary>
 /// Recipe model.
 /// </summary>
-/// <param name="Name"></param>
-/// <param name="Duration"></param>
-/// <param name="Complexity"></param>
-/// <param name="Ingredients"></param>
-/// <param name="Observations"></param>
 [ExcludeFromCodeCoverage]
-public record Recipe(
-	string Name,
-	TimeOnly Duration,
-	RecipeComplexity Complexity,
-	IEnumerable<string> Ingredients,
-	IEnumerable<string> Observations)
+public sealed record Recipe
 {
+	/// <summary>
+	/// The recipe name.
+	/// </summary>
+	public string Name { get; set; } = string.Empty;
+
+	/// <summary>
+	/// The recipe description.
+	/// </summary>
+	public string Description { get; set; } = string.Empty;
+
+	/// <summary>
+	/// The recipe estimated duration.
+	/// </summary>
+	public TimeOnly Duration { get; set; } = new TimeOnly(0, 0, 0);
+
+	/// <summary>
+	/// The recipe complexity.
+	/// </summary>
+	public RecipeComplexity Complexity { get; set; } = RecipeComplexity.UNKNOWN;
+
+	/// <summary>
+	/// The recipe ingredients.
+	/// </summary>
+	public ICollection<Product> Ingredients { get; init; } = new List<Product>();
+
+	/// <summary>
+	/// The recipe learn more address.
+	/// </summary>
+	public Uri ReferenceForMoreDetails { get; set; } = new Uri("https://arolariu.ro");
+
+	/// <summary>
+	/// Parameterized constructor.
+	/// </summary>
+	/// <param name="name"></param>
+	/// <param name="description"></param>
+	/// <param name="duration"></param>
+	/// <param name="complexity"></param>
+	/// <param name="ingredients"></param>
+	/// <param name="referenceForMoreDetails"></param>
+	public Recipe(
+		string name, string description, TimeOnly duration,
+		RecipeComplexity complexity, ICollection<Product> ingredients,
+		Uri referenceForMoreDetails) : this()
+	{
+		Name = name;
+		Description = description;
+		Duration = duration;
+		Complexity = complexity;
+		Ingredients = ingredients;
+		ReferenceForMoreDetails = referenceForMoreDetails;
+	}
+
 	/// <summary>
 	/// Parameterless constructor.
 	/// </summary>
-	public Recipe() : this(
-		"Unknown Recipe",
-		new TimeOnly(0, 0, 0),
-		RecipeComplexity.UNKNOWN,
-		new List<string>(),
-		new List<string>())
+	public Recipe()
 	{
+		Name = string.Empty;
+		Description = string.Empty;
+		Duration = new TimeOnly(0, 0, 0);
+		Complexity = RecipeComplexity.UNKNOWN;
+		Ingredients = new List<Product>();
+		ReferenceForMoreDetails = new Uri("https://arolariu.ro");
 	}
 }
 

@@ -17,22 +17,22 @@ public enum MerchantCategory
 	/// <summary>
 	/// Local shop = the merchant is a local shop.
 	/// </summary>
-	LOCAL_SHOP = 10,
+	LOCAL_SHOP = 100,
 
 	/// <summary>
 	/// Supermarket = the merchant is a supermarket.
 	/// </summary>
-	SUPERMARKET = 20,
+	SUPERMARKET = 200,
 
 	/// <summary>
 	/// Hypermarket = the merchant is a hypermarket.
 	/// </summary>
-	HYPERMARKET = 30,
+	HYPERMARKET = 300,
 
 	/// <summary>
 	/// Online shop = the merchant is an online shop.
 	/// </summary>
-	ONLINE_SHOP = 40,
+	ONLINE_SHOP = 400,
 
 	/// <summary>
 	/// Other = the merchant is not defined.
