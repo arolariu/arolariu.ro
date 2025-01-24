@@ -38,11 +38,11 @@ export default function InvoiceCard({invoice}: Readonly<{invoice: Invoice}>) {
         {Boolean(isAnalyzed) && (
           <>
             <h3 className='mb-1 text-xs tracking-widest dark:text-gray-500'>
-              DATE: {new Date(invoice.paymentInformation?.dateOfPurchase ?? Date.now()).toUTCString()}
+              DATE: {new Date(invoice.paymentInformation?.transactionDate ?? Date.now()).toUTCString()}
             </h3>
             <h2 className='title-font text-base font-medium text-gray-500'>MERCHANT: {invoice.merchant?.name}</h2>
             <p className='mt-1'>
-              Total: {invoice.paymentInformation?.totalAmount}
+              Total: {invoice.paymentInformation?.totalCostAmount}
               {invoice.paymentInformation?.currencySymbol} ({invoice.items.length} items)
             </p>
           </>

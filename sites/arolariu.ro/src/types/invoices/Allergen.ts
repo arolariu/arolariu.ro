@@ -4,4 +4,4 @@
  * @format
  */
 
-export type Allergen = {name: string; description: string};
+export type Allergen = {name: string; description: string; learnMoreAddress: string};

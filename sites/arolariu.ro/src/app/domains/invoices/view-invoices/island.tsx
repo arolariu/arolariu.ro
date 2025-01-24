@@ -38,7 +38,7 @@ export default function RenderViewInvoicesScreen() {
     let filteredInvoices = previousInvoices;
 
     const timeOfPurchase = (invoice: Invoice): number => {
-      const date = new Date(invoice.paymentInformation?.dateOfPurchase ?? 0);
+      const date = new Date(invoice.paymentInformation?.transactionDate ?? 0);
       return date.getHours();
     };
 

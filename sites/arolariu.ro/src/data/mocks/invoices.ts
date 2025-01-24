@@ -1,9 +1,10 @@
 /** @format */
 
+import {Currency} from "@/types/DDD/SharedKernel/Currency";
 import type {Allergen} from "@/types/invoices/Allergen";
 import Invoice, {type InvoiceCategory} from "@/types/invoices/Invoice";
 import Merchant, {type MerchantCategory} from "@/types/invoices/Merchant";
-import {PaymentType} from "@/types/invoices/Payment";
+import {PaymentInformation, PaymentType} from "@/types/invoices/Payment";
 import Product, {type ProductCategory} from "@/types/invoices/Product";
 import type {Recipe} from "@/types/invoices/Recipe";
 import {faker as fake} from "@faker-js/faker";
@@ -28,24 +29,29 @@ const generateFakeInvoice = (): Invoice => {
     numberOfUpdates: fake.number.int({min: 0, max: 100}),
     photoLocation: "https://cdn.arolariu.ro/fakes/" + fake.lorem.slug(3),
     userIdentifier: fake.string.uuid(),
+    sharedWith: Array.from({length: fake.number.int({min: 0, max: 5})}, () => fake.string.uuid()),
     items: products,
     paymentInformation: {
-      dateOfPurchase: fake.date.past(),
+      transactionDate: fake.date.past(),
       paymentType: fake.number.int({min: 0, max: 4}) as PaymentType,
-      currencyName: fake.finance.currencyCode(),
-      currencySymbol: fake.finance.currencySymbol(),
-      totalAmount: totalAmount,
-      totalTax: fake.number.float({min: totalAmount * 0.05, max: totalAmount / 2, multipleOf: 3}),
-    },
+      currency: {
+        code: fake.finance.currencyCode(),
+        name: fake.finance.currencyName(),
+        symbol: fake.finance.currencySymbol(),
+      } satisfies Currency,
+      totalCostAmount: totalAmount,
+      totalTaxAmount: fake.number.float({min: totalAmount * 0.05, max: totalAmount / 2, multipleOf: 3}),
+    } satisfies PaymentInformation,
     possibleRecipes: Array.from(
       {length: fake.number.int({min: 0, max: 3})},
       () =>
         ({
           name: fake.lorem.sentence(3),
           complexity: fake.number.int({min: 1, max: 5}),
-          observations: [fake.lorem.sentence(3), fake.lorem.sentence(2)],
-          recipeIngredients: [fake.commerce.productName(), fake.commerce.productName()],
+          ingredients: Array.from({length: fake.number.int({min: 3, max: 10})}, generateFakeInvoiceProduct),
           duration: `${fake.number.int({min: 5, max: 120})} minutes`,
+          description: fake.lorem.sentence(10),
+          referenceForMoreDetails: fake.internet.url(),
         }) satisfies Recipe,
     ),
     additionalMetadata: {

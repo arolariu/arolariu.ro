@@ -58,7 +58,7 @@ export const InvoiceSummary = ({invoice}: Readonly<{invoice: Invoice}>) => {
       <div className='mb-6 flex border-b border-gray-200 py-2'>
         <span>Invoice Identified Date</span>
         <span className='ml-auto dark:text-gray-300'>
-          {new Date(paymentInformation?.dateOfPurchase ?? Date.now()).toUTCString()}
+          {new Date(paymentInformation?.transactionDate ?? Date.now()).toUTCString()}
         </span>
       </div>
     </section>

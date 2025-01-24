@@ -23,9 +23,9 @@ export default function SharedInvoice({username, invoice}: Readonly<{username: s
   if (process.env.NODE_ENV === "development") invoice = FakeInvoice;
 
   const merchantName = invoice?.merchant?.name ?? "N/A";
-  const totalAmount = invoice?.paymentInformation?.totalAmount ?? 0;
+  const totalAmount = invoice?.paymentInformation?.totalCostAmount ?? 0;
   const currencySymbol = invoice?.paymentInformation?.currencySymbol ?? "N/A";
-  const dateOfPurchase = invoice?.paymentInformation?.dateOfPurchase?.toLocaleDateString("en-gb") ?? "N/A";
+  const dateOfPurchase = invoice?.paymentInformation?.transactionDate?.toLocaleDateString("en-gb") ?? "N/A";
 
   return (
     <Html>

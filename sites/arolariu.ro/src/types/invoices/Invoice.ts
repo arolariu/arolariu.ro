@@ -21,10 +21,10 @@ export enum InvoiceAnalysisOptions {
  */
 export enum InvoiceCategory {
   NOT_DEFINED = 0,
-  GROCERY = 10,
-  FAST_FOOD = 20,
-  HOME_CLEANING = 30,
-  CAR_AUTO = 40,
+  GROCERY = 100,
+  FAST_FOOD = 200,
+  HOME_CLEANING = 300,
+  CAR_AUTO = 400,
   OTHER = 9999,
 }
 
@@ -33,6 +33,7 @@ export enum InvoiceCategory {
  */
 export default interface Invoice extends NamedEntity<string> {
   userIdentifier: string;
+  sharedWith: string[];
   category: InvoiceCategory;
   photoLocation: string;
   paymentInformation: PaymentInformation | null;

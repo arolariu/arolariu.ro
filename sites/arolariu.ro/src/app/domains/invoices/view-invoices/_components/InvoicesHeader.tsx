@@ -12,7 +12,7 @@ export default function InvoicesHeader({shownInvoices}: Readonly<{shownInvoices:
 
   const totalCost = useMemo(() => {
     const amounts = shownInvoices
-      .flatMap((invoice) => invoice.paymentInformation?.totalAmount)
+      .flatMap((invoice) => invoice.paymentInformation?.totalCostAmount)
       .filter((amount): amount is number => amount !== undefined);
     return amounts.reduce((acc, amount) => acc + amount, 0);
   }, [shownInvoices]);

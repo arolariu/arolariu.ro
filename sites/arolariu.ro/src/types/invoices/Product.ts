@@ -11,21 +11,21 @@ export type ProductMetadata = {isEdited: boolean; isComplete: boolean; isSoftDel
  * Represents the category of a product from the invoice domain system.
  */
 export enum ProductCategory {
-  NOT_DEFINED,
-  BAKED_GOODS,
-  GROCERIES,
-  DAIRY,
-  MEAT,
-  FISH,
-  FRUITS,
-  VEGETABLES,
-  BEVERAGES,
-  ALCOHOLIC_BEVERAGES,
-  TOBACCO,
-  CLEANING_SUPPLIES,
-  PERSONAL_CARE,
-  MEDICINE,
-  OTHER,
+  NOT_DEFINED = 0,
+  BAKED_GOODS = 100,
+  GROCERIES = 200,
+  DAIRY = 300,
+  MEAT = 400,
+  FISH = 500,
+  FRUITS = 600,
+  VEGETABLES = 700,
+  BEVERAGES = 800,
+  ALCOHOLIC_BEVERAGES = 900,
+  TOBACCO = 1000,
+  CLEANING_SUPPLIES = 1100,
+  PERSONAL_CARE = 1200,
+  MEDICINE = 1300,
+  OTHER = 9999,
 }
 
 /**
