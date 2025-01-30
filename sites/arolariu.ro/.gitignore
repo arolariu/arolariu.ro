@@ -24,6 +24,7 @@ node_modules/
 # misc
 .DS_Store
 *.pem
+licenses.json
 
 # local env files
 .env*.local
