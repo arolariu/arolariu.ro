@@ -84,7 +84,7 @@ jobs:
         run: yarn test:jest
 
       - name: 🧪 Preparing UI tests...
-        run: yarn storybook:build --quiet
+        run: yarn playwright install && yarn storybook:build --quiet
 
       - name: 🧪 Running Smoke & Integration tests...
         run: |
