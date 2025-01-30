@@ -1,6 +1,6 @@
 /** @format */
 
-import type {NodePackageInformation} from "@/types/common/types";
+import type {NodePackageInformation} from "@/types";
 import Link from "next/link";
 import {FaExternalLinkAlt} from "react-icons/fa";
 

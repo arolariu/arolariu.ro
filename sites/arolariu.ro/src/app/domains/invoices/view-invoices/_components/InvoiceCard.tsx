@@ -1,7 +1,7 @@
 /** @format */
 "use client";
 
-import type Invoice from "@/types/invoices/Invoice";
+import type {Invoice} from "@/types/invoices";
 import Image from "next/image";
 import Link from "next/link";
 

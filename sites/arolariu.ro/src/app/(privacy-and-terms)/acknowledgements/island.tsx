@@ -2,7 +2,7 @@
 
 "use client";
 
-import type {NodePackageInformation, NodePackagesJSON} from "@/types/common/types";
+import type {NodePackageInformation, NodePackagesJSON} from "@/types";
 import {useCallback, useMemo, useState} from "react";
 import {Button} from "react-aria-components";
 import PackageCard from "./_components/PackageCard";

@@ -3,13 +3,12 @@
 "use client";
 
 import logo from "@/../public/logo.svg";
-import useWindowSize from "@/hooks/useWindowSize";
+import {useWindowSize} from "@/hooks";
 import {MenuWrapper} from "@/presentation/MenuWrapper";
 import Image from "next/image";
 import Link from "next/link";
 import {Button} from "react-aria-components";
-import AuthButton from "./Buttons/AuthButton";
-import ThemeSwitcherButton from "./Buttons/ThemeButton";
+import {AuthButton, ThemeButton} from "./Buttons";
 import {Navigation} from "./Navigation";
 
 /**
@@ -50,7 +49,7 @@ export default function Header() {
 
         <div className='navbar-end flex flex-row flex-wrap gap-2'>
           <AuthButton />
-          <ThemeSwitcherButton />
+          <ThemeButton />
         </div>
       </nav>
     </header>

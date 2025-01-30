@@ -19,7 +19,7 @@ type HookReturnType = Readonly<{
  * Client hook to get the window size and whether the window is mobile or desktop.
  * @returns An object containing the window size and whether the window is mobile or desktop.
  */
-export default function useWindowSize(): HookReturnType {
+export function useWindowSize(): HookReturnType {
   const [windowSize, setWindowSize] = useState<WindowSize>({width: null, height: null});
 
   useEffect(() => {

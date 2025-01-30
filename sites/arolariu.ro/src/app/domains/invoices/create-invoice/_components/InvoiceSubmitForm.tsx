@@ -1,6 +1,6 @@
 /** @format */
 
-import {UploadStatus} from "@/types/UploadStatus";
+import type {UploadStatus} from "@/types";
 
 type Props = {
   images?: Blob[] | null;

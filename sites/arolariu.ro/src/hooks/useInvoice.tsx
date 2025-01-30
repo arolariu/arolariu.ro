@@ -3,9 +3,9 @@
 "use client";
 
 import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
-import type Invoice from "@/types/invoices/Invoice";
+import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
-import useUserInformation from "./useUserInformation";
+import {useUserInformation} from "./index";
 
 type HookReturnType = Readonly<{
   invoice: Invoice | null;
@@ -17,7 +17,7 @@ type HookReturnType = Readonly<{
  * This hook fetches the invoice information.
  * @returns The invoice information and loading state.
  */
-export default function useInvoice({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>): HookReturnType {
+export function useInvoice({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>): HookReturnType {
   const {userInformation} = useUserInformation(); // fetch fresh userInformation
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);

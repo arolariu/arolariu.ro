@@ -1,6 +1,6 @@
 /** @format */
 
-import type {NodePackagesJSON} from "@/types/common/types";
+import type {NodePackagesJSON} from "@/types";
 
 type Props = {packages: NodePackagesJSON};
 

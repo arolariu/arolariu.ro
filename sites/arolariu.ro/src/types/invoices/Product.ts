@@ -1,6 +1,6 @@
 /** @format */
 
-import {Allergen} from "./Allergen";
+import {Allergen} from "./index.ts";
 
 /**
  * Represents the metadata of a product from the invoice domain system.
@@ -31,7 +31,7 @@ export enum ProductCategory {
 /**
  * Represents a product from the invoice domain system.
  */
-export default interface Product {
+export interface Product {
   rawName: string;
   genericName: string;
   category: ProductCategory;

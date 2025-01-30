@@ -3,7 +3,7 @@
 "use client";
 
 import {SITE_URL} from "@/lib/utils.generic";
-import type {UserInformation} from "@/types/UserInformation";
+import {UserInformation} from "@/types";
 import {useCallback, useEffect, useRef, useState, type DependencyList} from "react";
 
 type HookReturnType = Readonly<{
@@ -16,7 +16,7 @@ type HookReturnType = Readonly<{
  * This hook fetches the user information.
  * @returns The user information and loading state.
  */
-export default function useUserInformation(
+export function useUserInformation(
   {dependencyArray}: Readonly<{dependencyArray: DependencyList}> = {dependencyArray: []} as const,
 ): HookReturnType {
   const [userInformation, setUserInformation] = useState<UserInformation | null>(null);

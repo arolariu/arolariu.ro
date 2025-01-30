@@ -3,7 +3,7 @@
 "use client";
 
 import {useZustandStore} from "@/hooks/stateStore";
-import type Invoice from "@/types/invoices/Invoice";
+import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {FakeInvoiceShortList} from "../../../../data/mocks/invoices";
 import InvoicesNotFound from "../_components/InvoicesNotFound";

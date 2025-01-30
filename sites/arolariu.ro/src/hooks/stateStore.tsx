@@ -1,9 +1,6 @@
-/**
- * eslint-disable
- * @format
- */
+/** @format */
 
-import type Invoice from "@/types/invoices/Invoice";
+import type {Invoice} from "@/types/invoices";
 import {create} from "zustand";
 import {createJSONStorage, devtools, persist} from "zustand/middleware";
 

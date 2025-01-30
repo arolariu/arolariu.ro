@@ -2,10 +2,10 @@
 
 "use client";
 
-import useUserInformation from "@/hooks/useUserInformation";
+import {useUserInformation} from "@/hooks";
 import uploadInvoice from "@/lib/actions/invoices/uploadInvoice";
 import {extractBase64FromBlob} from "@/lib/utils.client";
-import {UploadStatus} from "@/types/UploadStatus";
+import type {UploadStatus} from "@/types";
 import {useCallback, useState} from "react";
 import InvoicePreview from "./_components/InvoicePreview";
 import InvoiceSubmitForm from "./_components/InvoiceSubmitForm";

@@ -2,7 +2,7 @@
 
 "use client";
 
-import type Invoice from "@/types/invoices/Invoice";
+import type {Invoice} from "@/types/invoices";
 import ProductCard from "./ProductCard";
 
 /**

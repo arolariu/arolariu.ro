@@ -2,7 +2,7 @@
 
 "use client";
 
-import useUserInformation from "@/hooks/useUserInformation";
+import {useUserInformation} from "@/hooks";
 import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
 import {useCallback} from "react";
 

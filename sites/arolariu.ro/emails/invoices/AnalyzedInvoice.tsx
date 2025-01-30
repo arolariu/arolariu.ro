@@ -1,7 +1,7 @@
 /** @format */
 
 import {FakeInvoice} from "@/data/mocks/invoices";
-import type Invoice from "@/types/invoices/Invoice";
+import type {Invoice} from "@/types/invoices";
 import {
   Body,
   Container,

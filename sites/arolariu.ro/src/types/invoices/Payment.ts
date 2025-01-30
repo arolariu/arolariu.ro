@@ -4,7 +4,7 @@
  * @format
  */
 
-import {Currency} from "../DDD/SharedKernel/Currency";
+import {Currency} from "../DDD";
 
 export enum PaymentType {
   Unknown = 0,

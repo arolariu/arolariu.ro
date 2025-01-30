@@ -2,8 +2,8 @@
 
 "use server";
 
-import type {UserInformation} from "@/types/UserInformation";
-import Invoice, {InvoicePayload} from "@/types/invoices/Invoice";
+import type {UserInformation} from "@/types";
+import type {Invoice, InvoicePayload} from "@/types/invoices";
 import {API_URL} from "../../utils.server";
 import uploadBlobToAzureStorage from "../storage/uploadBlob";
 

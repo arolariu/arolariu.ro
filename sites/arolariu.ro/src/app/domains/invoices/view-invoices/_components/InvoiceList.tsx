@@ -1,6 +1,6 @@
 /** @format */
 
-import type Invoice from "@/types/invoices/Invoice";
+import type {Invoice} from "@/types/invoices";
 import InvoiceCard from "./InvoiceCard";
 
 type Props = Readonly<{

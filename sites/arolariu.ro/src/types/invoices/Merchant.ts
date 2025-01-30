@@ -1,6 +1,6 @@
 /** @format */
 
-import NamedEntity from "../DDD/Entities/NamedEntity";
+import {NamedEntity} from "../DDD";
 
 /**
  * Represents the category of a merchant from the invoice domain system.
@@ -17,7 +17,7 @@ export enum MerchantCategory {
 /**
  * Represents a merchant from the invoice domain system.
  */
-export default interface Merchant extends NamedEntity<string> {
+export interface Merchant extends NamedEntity<string> {
   category: MerchantCategory;
   address: string;
   phoneNumber: string;

@@ -1,12 +1,18 @@
 /** @format */
 
-import {Currency} from "@/types/DDD/SharedKernel/Currency";
-import type {Allergen} from "@/types/invoices/Allergen";
-import Invoice, {type InvoiceCategory} from "@/types/invoices/Invoice";
-import Merchant, {type MerchantCategory} from "@/types/invoices/Merchant";
-import {PaymentInformation, PaymentType} from "@/types/invoices/Payment";
-import Product, {type ProductCategory} from "@/types/invoices/Product";
-import type {Recipe} from "@/types/invoices/Recipe";
+import type {Currency} from "@/types/DDD";
+import type {
+  Allergen,
+  Invoice,
+  InvoiceCategory,
+  Merchant,
+  MerchantCategory,
+  PaymentInformation,
+  PaymentType,
+  Product,
+  ProductCategory,
+  Recipe,
+} from "@/types/invoices";
 import {faker as fake} from "@faker-js/faker";
 
 const generateFakeInvoice = (): Invoice => {

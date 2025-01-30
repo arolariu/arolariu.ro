@@ -3,7 +3,7 @@
 import {fetchUser} from "@/lib/actions/user/fetchUser";
 import {generateGuid} from "@/lib/utils.generic";
 import {API_JWT, createJwtToken} from "@/lib/utils.server";
-import {UserInformation} from "@/types/UserInformation";
+import type {UserInformation} from "@/types";
 import {NextResponse} from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
  * @returns The auth response that contains the user object.
  */
 export async function GET() {
+  // /api/user
   const {user} = await fetchUser();
   const userHasValidEmail = user?.email !== null && user?.email !== undefined;
 

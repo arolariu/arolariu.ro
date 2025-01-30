@@ -2,8 +2,8 @@
 
 "use server";
 
-import {UserInformation} from "@/types/UserInformation";
-import Invoice from "@/types/invoices/Invoice";
+import type {UserInformation} from "@/types";
+import type {Invoice} from "@/types/invoices";
 import {API_URL} from "../../utils.server";
 
 /**

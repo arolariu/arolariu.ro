@@ -1,10 +1,7 @@
 /** @format */
 
-import type NamedEntity from "../DDD/Entities/NamedEntity";
-import type Merchant from "./Merchant";
-import type {PaymentInformation} from "./Payment";
-import type Product from "./Product";
-import type {Recipe} from "./Recipe";
+import type {NamedEntity} from "../DDD";
+import type {Merchant, PaymentInformation, Product, Recipe} from "./index.ts";
 
 /**
  * Represents the options for the invoice analysis.
@@ -16,6 +13,7 @@ export enum InvoiceAnalysisOptions {
   InvoiceItemsOnly,
   InvoiceMerchantOnly,
 }
+
 /**
  * Represents the category of an invoice from the invoice domain system.
  */
@@ -31,7 +29,7 @@ export enum InvoiceCategory {
 /**
  * Represents an invoice (the main entity) from the invoice domain system.
  */
-export default interface Invoice extends NamedEntity<string> {
+export interface Invoice extends NamedEntity<string> {
   userIdentifier: string;
   sharedWith: string[];
   category: InvoiceCategory;

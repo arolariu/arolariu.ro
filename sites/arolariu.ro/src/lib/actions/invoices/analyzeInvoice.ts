@@ -3,8 +3,8 @@
 "use server";
 
 import {API_URL} from "@/lib/utils.server";
-import type Invoice from "@/types/invoices/Invoice";
-import {UserInformation} from "@/types/UserInformation";
+import type {UserInformation} from "@/types";
+import type {Invoice} from "@/types/invoices";
 
 /**
  * Analyzes an invoice for a given user.

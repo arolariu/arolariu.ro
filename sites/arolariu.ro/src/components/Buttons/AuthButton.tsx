@@ -65,4 +65,4 @@ function AuthButton() {
 }
 
 // export with HOC 'withSessionProvider'
-export default withSessionProvider(AuthButton);
+export const AuthButtonComponent = withSessionProvider(AuthButton);

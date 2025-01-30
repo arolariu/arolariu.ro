@@ -2,7 +2,7 @@
 
 "use client";
 
-import type Invoice from "@/types/invoices/Invoice";
+import type {Invoice} from "@/types/invoices";
 
 export const InvoiceSummary = ({invoice}: Readonly<{invoice: Invoice}>) => {
   const {merchant, items, lastUpdatedAt, createdAt, possibleRecipes: recipesList, paymentInformation} = invoice;

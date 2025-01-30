@@ -10,7 +10,7 @@ import {useCallback, useEffect, useState} from "react";
  * This component allows the user to switch between light and dark themes.
  * @returns The theme switcher button that holds the theme switcher logic.
  */
-export default function ThemeSwitcherButton() {
+export function ThemeButton() {
   const [mounted, setMounted] = useState<boolean>(false);
   const {theme, setTheme} = useTheme();
 

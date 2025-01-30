@@ -1,10 +1,6 @@
 /** @format */
 
-import type {
-  NodePackageDependencyDependsOn,
-  NodePackageDependencyType,
-  NodePackageInformation,
-} from "@/types/common/types";
+import type {NodePackageDependencyDependsOn, NodePackageDependencyType, NodePackageInformation} from "@/types";
 import {globSync} from "glob";
 import fs from "node:fs";
 import path from "node:path";

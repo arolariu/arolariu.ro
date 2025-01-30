@@ -2,7 +2,7 @@
 
 "use client";
 
-import useUserInformation from "@/hooks/useUserInformation";
+import {useUserInformation} from "@/hooks";
 import updateInvoice from "@/lib/actions/invoices/updateInvoice";
 import Link from "next/link";
 import {useState} from "react";

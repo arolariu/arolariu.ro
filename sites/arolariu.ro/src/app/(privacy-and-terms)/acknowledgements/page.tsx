@@ -2,7 +2,7 @@
 
 import licenses from "@/../licenses.json";
 import {TIMESTAMP} from "@/lib/utils.generic";
-import type {NodePackagesJSON} from "@/types/common/types";
+import type {NodePackagesJSON} from "@/types";
 import type {Metadata} from "next";
 import {getTranslations} from "next-intl/server";
 import PackagesTable from "./_components/PackagesTable";

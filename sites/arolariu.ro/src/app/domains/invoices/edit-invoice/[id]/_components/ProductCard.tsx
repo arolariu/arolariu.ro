@@ -2,7 +2,7 @@
 
 "use client";
 
-import Product, {ProductCategory} from "@/types/invoices/Product";
+import {type Product, ProductCategory} from "@/types/invoices";
 import {
   Button,
   Cell,

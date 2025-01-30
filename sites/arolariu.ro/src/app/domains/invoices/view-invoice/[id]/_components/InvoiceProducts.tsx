@@ -2,7 +2,7 @@
 
 "use client";
 
-import type Invoice from "@/types/invoices/Invoice";
+import type {Invoice} from "@/types/invoices";
 import {Cell, Column, Row, Table, TableBody, TableHeader} from "react-aria-components";
 
 export const InvoiceProducts = ({invoice}: Readonly<{invoice: Invoice}>) => {
