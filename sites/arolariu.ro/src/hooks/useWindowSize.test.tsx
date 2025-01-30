@@ -1,7 +1,7 @@
 /** @format */
 
 import {act, renderHook} from "@testing-library/react";
-import {useWindowSize} from "./index";
+import {useWindowSize} from "./useWindowSize";
 
 describe("useWindowSize", () => {
   beforeEach(() => {

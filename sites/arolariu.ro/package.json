@@ -48,9 +48,10 @@
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
     "storybook:test": "test-storybook --no-cache --browsers firefox chromium webkit",
-    "test": "npm run test:jest && npm run test:playwright",
+    "test": "npm run test:jest && npm run test:playwright && npm run test:storybook",
     "test:jest": "jest",
-    "test:playwright": "playwright test --config=playwright.config.ts"
+    "test:playwright": "playwright test --config=playwright.config.ts",
+    "test:storybook": "npm run storybook:test"
   },
   "dependencies": {
     "@azure/app-configuration": "1.8.0",
