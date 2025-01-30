@@ -80,6 +80,9 @@ jobs:
           corepack enable && \
           yarn && yarn dlx playwright install --with-deps
 
+      - name: 🧪 Running unit tests...
+        run: yarn test:jest
+
       - name: 🧪 Preparing UI tests...
         run: yarn storybook:build --quiet
 
@@ -87,7 +90,7 @@ jobs:
         run: |
           yarn dlx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
             "yarn dlx http-server storybook-static --port 6006 --silent" \
-            "yarn dlx wait-on tcp:6006 && npm run storybook:test"
+            "yarn dlx wait-on tcp:6006 && yarn storybook:test"
 
   build:
     name: ⚒️ Build phase (2/2)
