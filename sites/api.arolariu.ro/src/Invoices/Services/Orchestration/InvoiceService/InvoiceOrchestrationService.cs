@@ -74,12 +74,34 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
+	public async Task DeleteInvoiceObject(Guid identifier) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
+		var invoice = await ReadInvoiceObject(identifier).ConfigureAwait(false);
+		await invoiceStorageFoundationService.DeleteInvoiceObject(invoice.id).ConfigureAwait(false);
+	}).ConfigureAwait(false);
+
+
+	/// <inheritdoc/>
 	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
 		var invoices = await invoiceStorageFoundationService
 			.ReadAllInvoiceObjects(userIdentifier)
+			.ConfigureAwait(false);
+
+		return invoices;
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects() =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
+		var invoices = await invoiceStorageFoundationService
+			.ReadAllInvoiceObjects()
 			.ConfigureAwait(false);
 
 		return invoices;
@@ -98,6 +120,27 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
+	public async Task<Invoice> ReadInvoiceObject(Guid identifier) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
+		var invoice = await invoiceStorageFoundationService
+			.ReadInvoiceObject(identifier)
+			.ConfigureAwait(false);
+
+		return invoice;
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public async Task<InvoiceStatusDto> RetrieveInvoiceStatus(Invoice invoice) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveInvoiceStatus));
+
+		throw new NotImplementedException();
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
 	public async Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice) =>
 	await TryCatchAsync(async () =>
 	{
@@ -106,5 +149,16 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 																.ConfigureAwait(false);
 
 		return invoice;
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public async Task<Invoice> UpdateInvoiceObject(Guid invoiceIdentifier, Invoice updatedInvoice) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
+		var invoice = await ReadInvoiceObject(invoiceIdentifier).ConfigureAwait(false);
+		var updatedInvoiceObject = await invoiceStorageFoundationService.UpdateInvoiceObject(invoice, updatedInvoice)
+																			.ConfigureAwait(false);
+		return updatedInvoiceObject;
 	}).ConfigureAwait(false);
 }

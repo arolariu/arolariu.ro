@@ -44,6 +44,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 		logger = loggerFactory.CreateLogger<IInvoiceProcessingService>();
 	}
 
+	#region Analyze Invoice API
 	/// <inheritdoc/>
 	public async Task AnalyzeInvoice(Invoice invoice, AnalysisOptions options) =>
 	await TryCatchAsync(async () =>
@@ -54,6 +55,33 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
+	public async Task AnalyzeInvoice(Guid identifier, AnalysisOptions options) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoice));
+		var invoice = await invoiceOrchestrationService.ReadInvoiceObject(identifier, Guid.Empty)
+															.ConfigureAwait(false);
+
+		await invoiceOrchestrationService.AnalyzeInvoiceWithOptions(invoice, options)
+											.ConfigureAwait(false);
+
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public async Task AnalyzeInvoice(Guid identifier, Guid userIdentifier, AnalysisOptions options) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoice));
+		var invoice = await invoiceOrchestrationService.ReadInvoiceObject(identifier, userIdentifier)
+															.ConfigureAwait(false);
+
+		await invoiceOrchestrationService.AnalyzeInvoiceWithOptions(invoice, options)
+															.ConfigureAwait(false);
+	}).ConfigureAwait(false);
+	#endregion
+
+	#region Create Invoice API
+	/// <inheritdoc/>
 	public async Task<Invoice> CreateInvoice(Invoice invoice) =>
 	await TryCatchAsync(async () =>
 	{
@@ -63,7 +91,9 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
 		return invoice;
 	}).ConfigureAwait(false);
+	#endregion
 
+	#region Create Merchant API
 	/// <inheritdoc/>
 	public async Task<Merchant> CreateMerchant(Merchant merchant) =>
 	await TryCatchAsync(async () =>
@@ -74,6 +104,16 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
 		return merchant;
 	}).ConfigureAwait(false);
+	#endregion
+
+	#region Delete Invoice API
+	/// <inheritdoc/>
+	public async Task DeleteInvoice(Guid identifier) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoice));
+		await invoiceOrchestrationService.DeleteInvoiceObject(identifier).ConfigureAwait(false);
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
 	public async Task DeleteInvoice(Guid identifier, Guid userIdentifier) =>
@@ -83,7 +123,9 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 		await invoiceOrchestrationService.DeleteInvoiceObject(identifier, userIdentifier)
 											.ConfigureAwait(false);
 	}).ConfigureAwait(false);
+	#endregion
 
+	#region Delete Merchant API
 	/// <inheritdoc/>
 	public async Task DeleteMerchant(Guid identifier, Guid parentCompanyId) =>
 	await TryCatchAsync(async () =>
@@ -92,18 +134,33 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 		await merchantOrchestrationService.DeleteMerchantObject(identifier, parentCompanyId)
 											.ConfigureAwait(false);
 	}).ConfigureAwait(false);
+	#endregion
+
+	#region Read Invoices API
+	/// <inheritdoc/>
+	public async Task<IEnumerable<Invoice>> ReadInvoices() =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoices));
+		var invoices = 
+			await invoiceOrchestrationService.ReadAllInvoiceObjects().ConfigureAwait(false);
+
+		return invoices;
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
 	public async Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoices));
-		var invoices = await invoiceOrchestrationService.ReadAllInvoiceObjects(userIdentifier)
-																			.ConfigureAwait(false);
+		var invoices = 
+			await invoiceOrchestrationService.ReadAllInvoiceObjects(userIdentifier).ConfigureAwait(false);
 
 		return invoices;
 	}).ConfigureAwait(false);
+	#endregion
 
+	#region Read Merchants API
 	/// <inheritdoc/>
 	public async Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId) =>
 	await TryCatchAsync(async () =>
@@ -116,6 +173,30 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
+	public async Task<IEnumerable<Merchant>> ReadMerchants() =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchants));
+		var merchants = await merchantOrchestrationService.ReadAllMerchantObjects()
+																	.ConfigureAwait(false);
+
+		return merchants;
+	}).ConfigureAwait(false);
+	#endregion
+
+	#region Read Invoice API
+	/// <inheritdoc/>
+	public async Task<Invoice> ReadInvoice(Guid identifier) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoice));
+		var invoice =
+			await invoiceOrchestrationService.ReadInvoiceObject(identifier).ConfigureAwait(false);
+
+		return invoice;
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
 	public async Task<Invoice> ReadInvoice(Guid identifier, Guid userIdentifier) =>
 	await TryCatchAsync(async () =>
 	{
@@ -125,7 +206,9 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
 		return invoice;
 	}).ConfigureAwait(false);
+	#endregion
 
+	#region Read Merchant API
 	/// <inheritdoc/>
 	public async Task<Merchant> ReadMerchant(Guid identifier, Guid parentCompanyId) =>
 	await TryCatchAsync(async () =>
@@ -138,6 +221,19 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
+	public async Task<Merchant> ReadMerchant(Guid identifier) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchant));
+		var merchant = await merchantOrchestrationService.ReadMerchantObject(identifier)
+																	.ConfigureAwait(false);
+
+		return merchant;
+	}).ConfigureAwait(false);
+	#endregion
+
+	#region Update Invoice API
+	/// <inheritdoc/>
 	public async Task<Invoice> UpdateInvoice(Invoice currentInvoice, Invoice updatedInvoice) =>
 	await TryCatchAsync(async () =>
 	{
@@ -149,6 +245,22 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
+	public async Task<Invoice> UpdateInvoice(Guid invoiceIdentifier, Invoice updatedInvoice) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoice));
+		var currentInvoice = await invoiceOrchestrationService.ReadInvoiceObject(invoiceIdentifier)
+																.ConfigureAwait(false);
+
+		var newInvoice = await invoiceOrchestrationService.UpdateInvoiceObject(currentInvoice, updatedInvoice)
+																.ConfigureAwait(false);
+
+		return newInvoice;
+	}).ConfigureAwait(false);
+	#endregion
+
+	#region Update Merchant API
+	/// <inheritdoc/>
 	public async Task<Merchant> UpdateMerchant(Merchant currentMerchant, Merchant updatedMerchant) =>
 	await TryCatchAsync(async () =>
 	{
@@ -159,6 +271,30 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 		return merchant;
 	}).ConfigureAwait(false);
 
+	/// <inheritdoc/>
+	public async Task<Merchant> UpdateMerchant(Guid identifier, Merchant updatedMerchant) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchant));
+		var merchant = await merchantOrchestrationService.UpdateMerchantObject(identifier, updatedMerchant)
+																	.ConfigureAwait(false);
+
+		return merchant;
+	}).ConfigureAwait(false);
+	#endregion
+
+	#region Delete Merchant API
+	/// <inheritdoc/>
+	public async Task DeleteMerchant(Guid identifier) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchant));
+		await merchantOrchestrationService.DeleteMerchantObject(identifier)
+											.ConfigureAwait(false);
+	}).ConfigureAwait(false);
+	#endregion
+
+	#region Add Product API
 	/// <inheritdoc/>
 	public async Task<Invoice> AddProduct(Invoice invoice, Product product) =>
 	await TryCatchAsync(async () =>
@@ -173,6 +309,24 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 		return invoice;
 	}).ConfigureAwait(false);
 
+
+	/// <inheritdoc/>
+	public async Task<Invoice> AddProduct(Guid invoiceIdentifier, Product product) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(AddProduct));
+		var invoice = await invoiceOrchestrationService.ReadInvoiceObject(invoiceIdentifier)
+															.ConfigureAwait(false);
+
+		invoice.Items.Add(product);
+		await invoiceOrchestrationService.UpdateInvoiceObject(invoiceIdentifier, invoice)
+											.ConfigureAwait(false);
+
+		return invoice;
+	}).ConfigureAwait(false);
+	#endregion
+
+	#region Get Products API
 	/// <inheritdoc/>
 	public async Task<IEnumerable<Product>> GetProducts(Invoice invoice) =>
 	await TryCatchAsync(async () =>
@@ -180,6 +334,49 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 		using var activity = InvoicePackageTracing.StartActivity(nameof(GetProducts));
 		var products = invoice.Items;
 		return await Task.FromResult(products).ConfigureAwait(false);
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public async Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(GetProducts));
+		var invoice = await invoiceOrchestrationService.ReadInvoiceObject(invoiceIdentifier)
+															.ConfigureAwait(false);
+		
+		var products = invoice.Items;
+		return products;
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public async Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid userIdentifier) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(GetProducts));
+		var invoice = await invoiceOrchestrationService.ReadInvoiceObject(invoiceIdentifier, userIdentifier)
+															.ConfigureAwait(false);
+		
+		var products = invoice.Items;
+		return products;
+	}).ConfigureAwait(false);
+	#endregion
+
+	#region Get Product API
+	/// <inheritdoc/>
+	public async Task<Product> GetProduct(Guid invoiceIdentifier, string productName) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(GetProduct));
+		var invoice = await invoiceOrchestrationService.ReadInvoiceObject(invoiceIdentifier)
+															.ConfigureAwait(false);
+
+		var products = invoice.Items;
+		var product = products.FirstOrDefault(
+							p => p.RawName.Contains(productName, StringComparison.InvariantCultureIgnoreCase) ||
+												p.GenericName.Contains(productName, StringComparison.InvariantCultureIgnoreCase),
+							new Product());
+
+		return product;
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
@@ -194,7 +391,68 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
 		return await Task.FromResult(product).ConfigureAwait(false);
 	}).ConfigureAwait(false);
+	#endregion
 
+	#region Delete Product API
+	/// <inheritdoc/>
+	public async Task<Invoice> DeleteProduct(Guid invoiceIdentifier, string productName) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteProduct));
+		var invoice = await invoiceOrchestrationService.ReadInvoiceObject(invoiceIdentifier)
+															.ConfigureAwait(false);
+
+		var product = invoice.Items.FirstOrDefault(
+							p => p.RawName.Contains(productName, StringComparison.InvariantCultureIgnoreCase) ||
+												p.GenericName.Contains(productName, StringComparison.InvariantCultureIgnoreCase),
+							new Product());
+
+		var newInvoice = invoice;
+		newInvoice.Items.Remove(product);
+
+		var currentInvoice = await invoiceOrchestrationService.UpdateInvoiceObject(invoice, newInvoice)
+																		.ConfigureAwait(false);
+
+		return currentInvoice;
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public async Task<Invoice> DeleteProduct(Guid invoiceIdentifier, Product product) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteProduct));
+		var invoice = await invoiceOrchestrationService.ReadInvoiceObject(invoiceIdentifier)
+															.ConfigureAwait(false);
+
+		var foundProduct = invoice.Items.FirstOrDefault(
+							p => p.RawName.Contains(product.RawName, StringComparison.InvariantCultureIgnoreCase) ||
+												p.GenericName.Contains(product.GenericName, StringComparison.InvariantCultureIgnoreCase),
+							new Product());
+		var newInvoice = invoice;
+		newInvoice.Items.Remove(product);
+
+		var currentInvoice = await invoiceOrchestrationService.UpdateInvoiceObject(invoice, newInvoice)
+																		.ConfigureAwait(false);
+
+		return currentInvoice;
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public async Task<Invoice> DeleteProduct(Invoice invoice, string productName) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteProduct));
+		var product = invoice.Items.FirstOrDefault(
+							p => p.RawName.Contains(productName, StringComparison.InvariantCultureIgnoreCase) ||
+												p.GenericName.Contains(productName, StringComparison.InvariantCultureIgnoreCase),
+							new Product());
+		var newInvoice = invoice;
+		newInvoice.Items.Remove(product);
+
+		var currentInvoice = await invoiceOrchestrationService.UpdateInvoiceObject(invoice, newInvoice)
+																		.ConfigureAwait(false);
+		return currentInvoice;
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
 	public async Task<Invoice> DeleteProduct(Invoice invoice, Product product) =>
@@ -209,109 +467,75 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
 		return currentInvoice;
 	}).ConfigureAwait(false);
+	#endregion
 
-	public Task AnalyzeInvoice(Guid identifier, AnalysisOptions options)
+	#region Get Invoice Status API
+	/// <inheritdoc/>
+	public async Task<InvoiceStatusDto> GetInvoiceStatus(Guid identifier) =>
+	await TryCatchAsync(async () =>
 	{
-		throw new NotImplementedException();
-	}
+		using var activity = InvoicePackageTracing.StartActivity(nameof(GetInvoiceStatus));
+		var invoice = await invoiceOrchestrationService.ReadInvoiceObject(identifier)
+															.ConfigureAwait(false);
 
-	public Task AnalyzeInvoice(Guid identifier, Guid userIdentifier, AnalysisOptions options)
-	{
-		throw new NotImplementedException();
-	}
+		var invoiceStatus = await invoiceOrchestrationService.RetrieveInvoiceStatus(invoice)
+															.ConfigureAwait(false);
 
-	public Task<InvoiceStatusDto> GetInvoiceStatus(Guid identifier)
-	{
-		throw new NotImplementedException();
-	}
+		return invoiceStatus;
+	}).ConfigureAwait(false);
 
-	public Task<InvoiceStatusDto> GetInvoiceStatus(Guid identifier, Guid userIdentifier)
+	/// <inheritdoc/>
+	public async Task<InvoiceStatusDto> GetInvoiceStatus(Guid identifier, Guid userIdentifier) =>
+	await TryCatchAsync(async () =>
 	{
-		throw new NotImplementedException();
-	}
+		using var activity = InvoicePackageTracing.StartActivity(nameof(GetInvoiceStatus));
 
-	public Task<IEnumerable<InvoiceStatusDto>> GetInvoiceStatuses()
-	{
-		throw new NotImplementedException();
-	}
+		var invoice = await invoiceOrchestrationService.ReadInvoiceObject(identifier, userIdentifier)
+															.ConfigureAwait(false);
 
-	public Task<IEnumerable<InvoiceStatusDto>> GetInvoiceStatuses(Guid userIdentifier)
-	{
-		throw new NotImplementedException();
-	}
+		var invoiceStatus = await invoiceOrchestrationService.RetrieveInvoiceStatus(invoice)
+									.ConfigureAwait(false);
 
-	public Task<Invoice> ReadInvoice(Guid identifier)
-	{
-		throw new NotImplementedException();
-	}
+		return invoiceStatus;
+	}).ConfigureAwait(false);
+	#endregion
 
-	public Task<IEnumerable<Invoice>> ReadInvoices()
+	#region Get Invoice Statuses API
+	/// <inheritdoc/>
+	public async Task<IEnumerable<InvoiceStatusDto>> GetInvoiceStatuses() =>
+	await TryCatchAsync(async () =>
 	{
-		throw new NotImplementedException();
-	}
+		using var activity = InvoicePackageTracing.StartActivity(nameof(GetInvoiceStatuses));
+		var invoices = await invoiceOrchestrationService.ReadAllInvoiceObjects()
+															.ConfigureAwait(false);
 
-	public Task<Invoice> UpdateInvoice(Guid invoiceIdentifier, Invoice updatedInvoice)
-	{
-		throw new NotImplementedException();
-	}
+		var invoiceStatuses = await Task.WhenAll(invoices.Select(async invoice =>
+		{
+			var invoiceStatus = await invoiceOrchestrationService.RetrieveInvoiceStatus(invoice)
+																.ConfigureAwait(false);
+			return invoiceStatus;
+		})).ConfigureAwait(false);
 
-	public Task DeleteInvoice(Guid identifier)
-	{
-		throw new NotImplementedException();
-	}
+		return invoiceStatuses;
+	}).ConfigureAwait(false);
 
-	public Task<Invoice> AddProduct(Guid invoiceIdentifier, Product product)
+	/// <inheritdoc/>
+	public async Task<IEnumerable<InvoiceStatusDto>> GetInvoiceStatuses(Guid userIdentifier) =>
+	await TryCatchAsync(async () =>
 	{
-		throw new NotImplementedException();
-	}
+		using var activity = InvoicePackageTracing.StartActivity(nameof(GetInvoiceStatuses));
 
-	public Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier)
-	{
-		throw new NotImplementedException();
-	}
+		var invoices = await invoiceOrchestrationService.ReadAllInvoiceObjects(userIdentifier)
+															.ConfigureAwait(false);
 
-	public Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid userIdentifier)
-	{
-		throw new NotImplementedException();
-	}
+		var invoiceStatuses = await Task.WhenAll(invoices.Select(async invoice =>
+		{
+			var invoiceStatus = await invoiceOrchestrationService.RetrieveInvoiceStatus(invoice)
+																.ConfigureAwait(false);
+			return invoiceStatus;
+		})).ConfigureAwait(false);
 
-	public Task<Product> GetProduct(Guid invoiceIdentifier, string productName)
-	{
-		throw new NotImplementedException();
-	}
-
-	public Task<Invoice> DeleteProduct(Guid invoiceIdentifier, string productName)
-	{
-		throw new NotImplementedException();
-	}
-
-	public Task<Invoice> DeleteProduct(Guid invoiceIdentifier, Product product)
-	{
-		throw new NotImplementedException();
-	}
-
-	public Task<Invoice> DeleteProduct(Invoice invoice, string productName)
-	{
-		throw new NotImplementedException();
-	}
-
-	public Task<Merchant> ReadMerchant(Guid identifier)
-	{
-		throw new NotImplementedException();
-	}
-
-	public Task<IEnumerable<Merchant>> ReadMerchants()
-	{
-		throw new NotImplementedException();
-	}
-
-	public Task<Merchant> UpdateMerchant(Guid identifier, Merchant updatedMerchant)
-	{
-		throw new NotImplementedException();
-	}
-
-	public Task DeleteMerchant(Guid identifier)
-	{
-		throw new NotImplementedException();
-	}
+		return invoiceStatuses;
+	}).ConfigureAwait(false);
+	#endregion
 }

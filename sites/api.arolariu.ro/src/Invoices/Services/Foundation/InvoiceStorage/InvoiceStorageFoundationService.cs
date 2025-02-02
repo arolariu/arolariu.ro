@@ -1,13 +1,13 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 using Microsoft.Extensions.Logging;
-
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
@@ -58,6 +58,18 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
+	public Task<Invoice> ReadInvoiceObject(Guid identifier)
+	{
+		throw new NotImplementedException();
+	}
+
+	/// <inheritdoc/>
+	public Task<IEnumerable<Invoice>> ReadAllInvoiceObjects()
+	{
+		throw new NotImplementedException();
+	}
+
+	/// <inheritdoc/>
 	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier) =>
 	await TryCatchAsync(async () =>
 	{
@@ -68,6 +80,12 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 
 		return invoices;
 	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public Task<Invoice> UpdateInvoiceObject(Guid invoiceIdentifier, Invoice updatedInvoice)
+	{
+		throw new NotImplementedException();
+	}
 
 	/// <inheritdoc/>
 	public async Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice) =>
@@ -88,4 +106,10 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 		ValidateIdentifierIsSet(identifier);
 		await invoiceNoSqlBroker.DeleteInvoiceAsync(identifier, userIdentifier).ConfigureAwait(false);
 	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public Task DeleteInvoiceObject(Guid identifier)
+	{
+		throw new NotImplementedException();
+	}
 }

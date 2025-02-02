@@ -1759,6 +1759,5 @@ public static partial class InvoiceEndpoints
 				title: "The service encountered an unexpected internal service error.");
 		}
 	}
-
 	#endregion
 }

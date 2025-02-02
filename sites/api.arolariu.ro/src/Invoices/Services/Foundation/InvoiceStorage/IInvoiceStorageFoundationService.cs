@@ -21,9 +21,22 @@ public interface IInvoiceStorageFoundationService
 	/// Reads an invoice object.
 	/// </summary>
 	/// <param name="identifier"></param>
+	/// <returns></returns>
+	public Task<Invoice> ReadInvoiceObject(Guid identifier);
+
+	/// <summary>
+	/// Reads an invoice object.
+	/// </summary>
+	/// <param name="identifier"></param>
 	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
 	public Task<Invoice> ReadInvoiceObject(Guid identifier, Guid userIdentifier);
+
+	/// <summary>
+	/// Reads all invoice objects.
+	/// </summary>
+	/// <returns></returns>
+	public Task<IEnumerable<Invoice>> ReadAllInvoiceObjects();
 
 	/// <summary>
 	/// Reads all invoice objects.
@@ -35,10 +48,25 @@ public interface IInvoiceStorageFoundationService
 	/// <summary>
 	/// Updates an invoice object.
 	/// </summary>
+	/// <param name="invoiceIdentifier"></param>
+	/// <param name="updatedInvoice"></param>
+	/// <returns></returns>
+	public Task<Invoice> UpdateInvoiceObject(Guid invoiceIdentifier, Invoice updatedInvoice);
+
+	/// <summary>
+	/// Updates an invoice object.
+	/// </summary>
 	/// <param name="currentInvoice"></param>
 	/// <param name="updatedInvoice"></param>
 	/// <returns></returns>
 	public Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice);
+
+	/// <summary>
+	/// Deletes an invoice object.
+	/// </summary>
+	/// <param name="identifier"></param>
+	/// <returns></returns>
+	public Task DeleteInvoiceObject(Guid identifier);
 
 	/// <summary>
 	/// Deletes an invoice object.

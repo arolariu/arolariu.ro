@@ -62,6 +62,12 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
+	public Task DeleteMerchantObject(Guid identifier)
+	{
+		throw new NotImplementedException();
+	}
+
+	/// <inheritdoc/>
 	public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId) =>
 	await TryCatchAsync(async () =>
 	{
@@ -70,6 +76,12 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 
 		return merchants;
 	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public Task<IEnumerable<Merchant>> ReadAllMerchantObjects()
+	{
+		throw new NotImplementedException();
+	}
 
 	/// <inheritdoc/>
 	public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid parentCompanyId) =>
@@ -86,6 +98,12 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
+	public Task<Merchant> ReadMerchantObject(Guid identifier)
+	{
+		throw new NotImplementedException();
+	}
+
+	/// <inheritdoc/>
 	public async Task<Merchant> UpdateMerchantObject(Merchant currentMerchant, Merchant updatedMerchant) =>
 	await TryCatchAsync(async () =>
 	{
@@ -97,4 +115,10 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 
 		return merchant;
 	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public Task<Merchant> UpdateMerchantObject(Guid merchantIdentifier, Merchant updatedMerchant)
+	{
+		throw new NotImplementedException();
+	}
 }

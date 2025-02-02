@@ -19,14 +19,27 @@ public interface IInvoiceOrchestrationService
 	/// <returns></returns>
 	public Task AnalyzeInvoiceWithOptions(Invoice invoice, AnalysisOptions options);
 
-	#region Implements the Invoice Storage Foundation Service
+	/// <summary>
+	/// Retrieve the status of an invoice.
+	/// </summary>
+	/// <param name="invoice"></param>
+	/// <returns></returns>
+	public Task<InvoiceStatusDto> RetrieveInvoiceStatus(Invoice invoice);
 
+	#region Implements the Invoice Storage Foundation Service
 	/// <summary>
 	/// Creates an invoice object.
 	/// </summary>
 	/// <param name="invoice"></param>
 	/// <returns></returns>
 	public Task<Invoice> CreateInvoiceObject(Invoice invoice);
+
+	/// <summary>
+	/// Reads an invoice object.
+	/// </summary>
+	/// <param name="identifier"></param>
+	/// <returns></returns>
+	public Task<Invoice> ReadInvoiceObject(Guid identifier);
 
 	/// <summary>
 	/// Reads an invoice object.
@@ -39,9 +52,23 @@ public interface IInvoiceOrchestrationService
 	/// <summary>
 	/// Reads all invoice objects.
 	/// </summary>
+	/// <returns></returns>
+	public Task<IEnumerable<Invoice>> ReadAllInvoiceObjects();
+
+	/// <summary>
+	/// Reads all invoice objects.
+	/// </summary>
 	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
 	public Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier);
+
+	/// <summary>
+	/// Updates an invoice object.
+	/// </summary>
+	/// <param name="invoiceIdentifier"></param>
+	/// <param name="updatedInvoice"></param>
+	/// <returns></returns>
+	public Task<Invoice> UpdateInvoiceObject(Guid invoiceIdentifier, Invoice updatedInvoice);
 
 	/// <summary>
 	/// Updates an invoice object.
@@ -50,6 +77,13 @@ public interface IInvoiceOrchestrationService
 	/// <param name="updatedInvoice"></param>
 	/// <returns></returns>
 	public Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice);
+
+	/// <summary>
+	/// Deletes an invoice object.
+	/// </summary>
+	/// <param name="identifier"></param>
+	/// <returns></returns>
+	public Task DeleteInvoiceObject(Guid identifier);
 
 	/// <summary>
 	/// Deletes an invoice object.
