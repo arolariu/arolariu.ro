@@ -90,12 +90,12 @@ public sealed partial class AzureOpenAiBroker
 			var invoiceCategoryCompletion = await client.CompleteChatAsync(
 				new List<ChatMessage>()
 				{
-					new SystemChatMessage("Given a list of product categories, merchant category and a list of receipt categories, guess the category of the receipt."),
+					new SystemChatMessage("Given a list of product categories, and a list of receipt categories, guess the category of the receipt."),
 					new SystemChatMessage("Only output the category that you've came up with. For example:"),
-					new UserChatMessage($"Products: {string.Join(',', fakeGroceryList)}, Merchant: SUPERMARKET, Invoice: {string.Join(',', availableInvoiceCategories)}"),
+					new UserChatMessage($"Products: {string.Join(',', fakeGroceryList)}, Invoice: {string.Join(',', availableInvoiceCategories)}"),
 					new AssistantChatMessage("GROCERY"),
 					new SystemChatMessage("Your turn:"),
-					new UserChatMessage($"Products: {string.Join(',', productCategories)}, Merchant: {invoice.MerchantReference.Category}, Invoice: {string.Join(',', availableInvoiceCategories)}")
+					new UserChatMessage($"Products: {string.Join(',', productCategories)}, Invoice: {string.Join(',', availableInvoiceCategories)}")
 				}).ConfigureAwait(false);
 
 			if (invoiceCategoryCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)

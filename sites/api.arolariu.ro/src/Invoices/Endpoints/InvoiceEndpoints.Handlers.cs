@@ -1,7 +1,6 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Endpoints;
 using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -83,13 +82,44 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			var invoice = await invoiceProcessingService
-				.ReadInvoice(id, userIdentifier)
-				.ConfigureAwait(false);
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoice = await invoiceProcessingService
+					.ReadInvoice(id, potentialUserIdentifier)
+					.ConfigureAwait(false);
 
-			return Results.Ok(invoice);
+				if (invoice is null)
+				{
+					var possibleInvoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+
+					if (possibleInvoice is null) return Results.NotFound();
+					var isInvoiceSharedWithUser = possibleInvoice.SharedWith.Contains(potentialUserIdentifier);
+
+					if (isInvoiceSharedWithUser) return Results.Ok(possibleInvoice);
+					else return Results.Forbid();
+				}
+
+				else return Results.Ok(invoice);
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var invoice = await invoiceProcessingService
+					.ReadInvoice(id)
+					.ConfigureAwait(false);
+
+					if (invoice is null) return Results.NotFound();
+					return Results.Ok(invoice);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -136,13 +166,29 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveAllInvoicesAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			var invoices = await invoiceProcessingService
-				.ReadInvoices(userIdentifier)
-				.ConfigureAwait(false);
 
-			return Results.Ok(invoices);
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoices = await invoiceProcessingService
+									.ReadInvoices(potentialUserIdentifier)
+									.ConfigureAwait(false);
+				return Results.Ok(invoices);
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var invoices = await invoiceProcessingService
+										.ReadInvoices()
+										.ConfigureAwait(false);
+					return Results.Ok(invoices);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -191,17 +237,40 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateSpecificInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			var invoice = await invoiceProcessingService
-				.ReadInvoice(id, userIdentifier)
-				.ConfigureAwait(false);
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoice = await invoiceProcessingService
+					.ReadInvoice(id, potentialUserIdentifier)
+					.ConfigureAwait(false);
 
-			var updatedInvoice = await invoiceProcessingService
-				.UpdateInvoice(invoice, invoicePayload)
-				.ConfigureAwait(false);
+				if (invoice is null) return Results.NotFound();
 
-			return Results.Accepted(value: updatedInvoice);
+
+				var updatedInvoice = await invoiceProcessingService
+						.UpdateInvoice(invoice.id, invoicePayload)
+						.ConfigureAwait(false);
+				return Results.Accepted(value: updatedInvoice);
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var invoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+
+					var updatedInvoice = await invoiceProcessingService
+						.UpdateInvoice(invoice.id, invoicePayload)
+						.ConfigureAwait(false);
+
+					return Results.Accepted(value: updatedInvoice);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -249,13 +318,46 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			await invoiceProcessingService
-				.DeleteInvoice(id, userIdentifier)
-				.ConfigureAwait(false);
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoice = await invoiceProcessingService
+					.ReadInvoice(id, potentialUserIdentifier)
+					.ConfigureAwait(false);
 
-			return Results.NoContent();
+				if (invoice is null)
+				{
+					var potentialInvoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+
+					if (potentialInvoice is null) return Results.NotFound();
+					else return Results.Forbid();
+				}
+				else
+				{
+					await invoiceProcessingService
+						.DeleteInvoice(id, potentialUserIdentifier)
+						.ConfigureAwait(false);
+
+					return Results.NoContent();
+				}
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					await invoiceProcessingService
+					.DeleteInvoice(id)
+					.ConfigureAwait(false);
+
+					return Results.NoContent();
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -304,10 +406,40 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(AddProductToInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
-			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
-			var updatedInvoice = await invoiceProcessingService.AddProduct(invoice, product).ConfigureAwait(false);
-			return Results.Accepted(value: updatedInvoice);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
+
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoice = await invoiceProcessingService
+					.ReadInvoice(id, potentialUserIdentifier)
+					.ConfigureAwait(false);
+
+				if (invoice is null) return Results.NotFound();
+
+				var updatedInvoice = await invoiceProcessingService
+					.AddProduct(invoice, product)
+					.ConfigureAwait(false);
+
+				return Results.Accepted(value: updatedInvoice);
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var invoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+
+					var updatedInvoice = await invoiceProcessingService
+						.AddProduct(invoice, product)
+						.ConfigureAwait(false);
+
+					return Results.Accepted(value: updatedInvoice);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -355,10 +487,58 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveProductsFromInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
-			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
-			var products = await invoiceProcessingService.GetProducts(invoice).ConfigureAwait(false);
-			return Results.Ok(products);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
+
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoice = await invoiceProcessingService
+					.ReadInvoice(id, potentialUserIdentifier)
+					.ConfigureAwait(false);
+
+				if (invoice is null)
+				{
+					var potentialInvoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+
+					if (potentialInvoice is null) return Results.NotFound();
+					var isSharedWithUser = potentialInvoice.SharedWith.Contains(potentialUserIdentifier);
+					if (!isSharedWithUser) return Results.Forbid();
+
+					var products = await invoiceProcessingService
+						.GetProducts(potentialInvoice)
+						.ConfigureAwait(false);
+
+					return Results.Ok(products);
+				}
+
+				else
+				{
+					var products = await invoiceProcessingService
+						.GetProducts(invoice)
+						.ConfigureAwait(false);
+
+					return Results.Ok(products);
+				}
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var invoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+
+					var products = await invoiceProcessingService
+						.GetProducts(invoice)
+						.ConfigureAwait(false);
+
+					return Results.Ok(products);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -407,11 +587,50 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveProductFromInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
-			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
-			var product = await invoiceProcessingService.GetProduct(invoice, productName).ConfigureAwait(false);
-			var updatedInvoice = await invoiceProcessingService.DeleteProduct(invoice, product).ConfigureAwait(false);
-			return Results.Accepted(value: updatedInvoice);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
+
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoice = await invoiceProcessingService
+					.ReadInvoice(id, potentialUserIdentifier)
+					.ConfigureAwait(false);
+
+				if (invoice is null) return Results.NotFound();
+				var product = await invoiceProcessingService
+					.GetProduct(invoice, productName)
+					.ConfigureAwait(false);
+
+				if (product is null) return Results.NotFound();
+				var updatedInvoice = await invoiceProcessingService
+										.DeleteProduct(invoice, product)
+										.ConfigureAwait(false);
+
+				return Results.Accepted(value: updatedInvoice);
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var invoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+
+					if (invoice is null) return Results.NotFound();
+					var product = await invoiceProcessingService
+						.GetProduct(invoice, productName)
+						.ConfigureAwait(false);
+
+					if (product is null) return Results.NotFound();
+					var updatedInvoice = await invoiceProcessingService
+											.DeleteProduct(invoice, product)
+											.ConfigureAwait(false);
+
+					return Results.Accepted(value: updatedInvoice);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -461,12 +680,58 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProductInInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
-			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
-			var product = await invoiceProcessingService.GetProduct(invoice, productName).ConfigureAwait(false);
-			var updatedInvoice = await invoiceProcessingService.DeleteProduct(invoice, product).ConfigureAwait(false);
-			var updatedProduct = await invoiceProcessingService.AddProduct(updatedInvoice, productInformation).ConfigureAwait(false);
-			return Results.Accepted(value: updatedProduct);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
+
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoice = await invoiceProcessingService
+					.ReadInvoice(id, potentialUserIdentifier)
+					.ConfigureAwait(false);
+
+				if (invoice is null) return Results.NotFound();
+				var product = await invoiceProcessingService
+						.GetProduct(invoice, productName)
+						.ConfigureAwait(false);
+
+				if (product is null) return Results.NotFound();
+
+				var updatedInvoiceWithDeletedProduct = await invoiceProcessingService
+					.DeleteProduct(invoice, product)
+					.ConfigureAwait(false);
+
+				var updatedInvoiceWithAddedProduct = await invoiceProcessingService
+					.AddProduct(updatedInvoiceWithDeletedProduct, productInformation)
+					.ConfigureAwait(false);
+
+				return Results.Accepted(value: updatedInvoiceWithAddedProduct);
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var invoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+
+					if (invoice is null) return Results.NotFound();
+					var product = await invoiceProcessingService
+						.GetProduct(invoice, productName)
+						.ConfigureAwait(false);
+
+					var updatedInvoiceWithDeletedProduct = await invoiceProcessingService
+						.DeleteProduct(invoice, product)
+						.ConfigureAwait(false);
+
+					var updatedInvoiceWithAddedProduct = await invoiceProcessingService
+						.AddProduct(updatedInvoiceWithDeletedProduct, productInformation)
+						.ConfigureAwait(false);
+
+					return Results.Accepted(value: updatedInvoiceWithAddedProduct);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -514,12 +779,69 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveMerchantFromInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
-			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
-			var potentialMerchant = invoice.MerchantReference;
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			if (potentialMerchant is null) return Results.NotFound();
-			else return Results.Ok(potentialMerchant);
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoice = await invoiceProcessingService
+					.ReadInvoice(id, potentialUserIdentifier)
+					.ConfigureAwait(false);
+
+				if (invoice is null)
+				{
+					var potentialInvoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+					if (potentialInvoice is null) return Results.NotFound();
+					var isSharedWithUser = potentialInvoice.SharedWith.Contains(potentialUserIdentifier);
+
+					if (!isSharedWithUser) return Results.Forbid();
+
+					var potentialMerchantReference = potentialInvoice.MerchantReference;
+					if (potentialMerchantReference == Guid.Empty) return Results.NotFound();
+
+					var potentialMerchant = await invoiceProcessingService
+						.ReadMerchant(potentialMerchantReference)
+						.ConfigureAwait(false);
+					if (potentialMerchant is null) return Results.NotFound();
+					return Results.Ok(potentialMerchant);
+				}
+				else
+				{
+					var potentialMerchantReference = invoice.MerchantReference;
+					if (potentialMerchantReference == Guid.Empty) return Results.NotFound();
+
+					var potentialMerchant = await invoiceProcessingService
+						.ReadMerchant(potentialMerchantReference)
+						.ConfigureAwait(false);
+
+					if (potentialMerchant is null) return Results.NotFound();
+					return Results.Ok(potentialMerchant);
+				}
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var invoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+
+					if (invoice is null) return Results.NotFound();
+					var potentialMerchantReference = invoice.MerchantReference;
+					if (potentialMerchantReference == Guid.Empty) return Results.NotFound();
+
+					var potentialMerchant = await invoiceProcessingService
+						.ReadMerchant(potentialMerchantReference)
+						.ConfigureAwait(false);
+
+					if (potentialMerchant is null) return Results.NotFound();
+					return Results.Ok(potentialMerchant);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -568,16 +890,48 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(AddMerchantToInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
-			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
-			var possibleMerchant = invoice.MerchantReference;
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			if (possibleMerchant is not null) return Results.Conflict();
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoice = await invoiceProcessingService
+					.ReadInvoice(id, potentialUserIdentifier)
+					.ConfigureAwait(false);
+
+				if (invoice is null) return Results.NotFound();
+
+				var potentialMerchantReference = invoice.MerchantReference;
+				if (potentialMerchantReference != Guid.Empty) return Results.Conflict();
+
+				invoice.MerchantReference = merchant.id;
+				var updatedInvoice = await invoiceProcessingService
+					.UpdateInvoice(invoice.id, invoice)
+					.ConfigureAwait(false);
+
+				return Results.Accepted(value: updatedInvoice);
+			}
+
 			else
 			{
-				invoice.MerchantReference = merchant;
-				var updatedInvoice = await invoiceProcessingService.UpdateInvoice(invoice, invoice).ConfigureAwait(false);
-				return Results.Accepted(value: updatedInvoice);
+				if (IsPrincipalSuperUser(principal))
+				{
+					var invoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+
+					if (invoice is null) return Results.NotFound();
+					var potentialMerchantReference = invoice.MerchantReference;
+					if (potentialMerchantReference != Guid.Empty) return Results.Conflict();
+
+					invoice.MerchantReference = merchant.id;
+					var updatedInvoice = await invoiceProcessingService
+						.UpdateInvoice(invoice.id, invoice)
+						.ConfigureAwait(false);
+
+					return Results.Accepted(value: updatedInvoice);
+				}
+
+				return Results.Unauthorized();
 			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
@@ -626,16 +980,48 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveMerchantFromInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
-			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
-			var possibleMerchant = invoice.MerchantReference;
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			if (possibleMerchant is null) return Results.NotFound();
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoice = await invoiceProcessingService
+					.ReadInvoice(id, potentialUserIdentifier)
+					.ConfigureAwait(false);
+
+				if (invoice is null) return Results.NotFound();
+
+				var potentialMerchantReference = invoice.MerchantReference;
+				if (potentialMerchantReference == Guid.Empty) return Results.NotFound();
+
+				invoice.MerchantReference = Guid.Empty;
+				var updatedInvoice = await invoiceProcessingService
+					.UpdateInvoice(invoice.id, invoice)
+					.ConfigureAwait(false);
+
+				return Results.Accepted(value: updatedInvoice);
+			}
+
 			else
 			{
-				invoice.MerchantReference = new Merchant();
-				var updatedInvoice = await invoiceProcessingService.UpdateInvoice(invoice, invoice).ConfigureAwait(false);
-				return Results.Accepted(value: updatedInvoice);
+				if(IsPrincipalSuperUser(principal))
+				{
+					var invoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+
+					if (invoice is null) return Results.NotFound();
+					var potentialMerchantReference = invoice.MerchantReference;
+					if (potentialMerchantReference == Guid.Empty) return Results.NotFound();
+
+					invoice.MerchantReference = Guid.Empty;
+					var updatedInvoice = await invoiceProcessingService
+						.UpdateInvoice(invoice.id, invoice)
+						.ConfigureAwait(false);
+
+					return Results.Accepted(value: updatedInvoice);
+				}
+
+				return Results.Unauthorized();
 			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
@@ -685,13 +1071,47 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantInInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
-			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
 
-			invoice.MerchantReference = merchant;
-			var updatedInvoice = await invoiceProcessingService.UpdateInvoice(invoice, invoice).ConfigureAwait(false);
-			return Results.Accepted(value: updatedInvoice);
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoice = await invoiceProcessingService
+					.ReadInvoice(id, potentialUserIdentifier)
+					.ConfigureAwait(false);
+
+				if (invoice is null) return Results.NotFound();
+				if (invoice.MerchantReference != Guid.Empty) return Results.Conflict();
+
+				invoice.MerchantReference = merchant.id;
+				var updatedInvoice = await invoiceProcessingService
+					.UpdateInvoice(invoice.id, invoice)
+					.ConfigureAwait(false);
+
+				return Results.Accepted(value: updatedInvoice);
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var invoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+
+					if (invoice is null) return Results.NotFound();
+					if (invoice.MerchantReference != Guid.Empty) return Results.Conflict();
+
+					invoice.MerchantReference = merchant.id;
+					var updatedInvoice = await invoiceProcessingService
+						.UpdateInvoice(invoice.id, invoice)
+						.ConfigureAwait(false);
+
+					return Results.Accepted(value: updatedInvoice);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -739,8 +1159,30 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificInvoiceStatusAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoiceStatus = await invoiceProcessingService
+					.GetInvoiceStatus(id, potentialUserIdentifier)
+					.ConfigureAwait(false);
+
+				return Results.Ok(invoiceStatus);
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var invoiceStatus = await invoiceProcessingService
+					.GetInvoiceStatus(id)
+					.ConfigureAwait(false);
+
+					return Results.Ok(invoiceStatus);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -787,7 +1229,30 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveAllInvoicesStatusAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
+
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoiceStatuses = await invoiceProcessingService
+					.GetInvoiceStatuses(potentialUserIdentifier)
+					.ConfigureAwait(false);
+
+				return Results.Ok(invoiceStatuses);
+			}
+
+			else
+			{
+				if(IsPrincipalSuperUser(principal))
+				{
+					var invoiceStatuses = await invoiceProcessingService
+					.GetInvoiceStatuses()
+					.ConfigureAwait(false);
+
+					return Results.Ok(invoiceStatuses);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -838,12 +1303,30 @@ public static partial class InvoiceEndpoints
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(CreateNewMerchantAsync), ActivityKind.Server);
 			var merchant = merchantDto.ToMerchant();
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			await invoiceProcessingService
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				await invoiceProcessingService
 					.CreateMerchant(merchant)
 					.ConfigureAwait(false);
 
-			return Results.Created($"/rest/merchants/{merchant.id}", merchant);
+				return Results.Created($"/rest/merchants/{merchant.id}", merchant);
+			}
+
+			else
+			{
+				if(IsPrincipalSuperUser(principal))
+				{
+					await invoiceProcessingService
+						.CreateMerchant(merchant)
+						.ConfigureAwait(false);
+
+					return Results.Created($"/rest/merchants/{merchant.id}", merchant);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -891,9 +1374,31 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveAllMerchantsAsync), ActivityKind.Server);
-			var merchants = await invoiceProcessingService.ReadMerchants(parentCompanyId).ConfigureAwait(false);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			return Results.Ok(merchants);
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var merchants = await invoiceProcessingService
+						.ReadMerchants(parentCompanyId)
+						.ConfigureAwait(false);
+
+				return Results.Ok(merchants);
+
+			}
+
+			else
+			{
+				if(IsPrincipalSuperUser(principal))
+				{
+					var merchants = await invoiceProcessingService
+							.ReadMerchants(parentCompanyId)
+							.ConfigureAwait(false);
+
+					return Results.Ok(merchants);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -942,10 +1447,32 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificMerchantAsync), ActivityKind.Server);
-			var merchant = await invoiceProcessingService.ReadMerchant(id, parentCompanyId).ConfigureAwait(false);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			if (merchant is null) return Results.NotFound();
-			return Results.Ok(merchant);
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var merchant = await invoiceProcessingService
+					.ReadMerchant(id, parentCompanyId)
+					.ConfigureAwait(false);
+
+				if (merchant is null) return Results.NotFound();
+				return Results.Ok(merchant);
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var merchant = await invoiceProcessingService
+						.ReadMerchant(id, parentCompanyId)
+						.ConfigureAwait(false);
+
+					if (merchant is null) return Results.NotFound();
+					return Results.Ok(merchant);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -994,13 +1521,40 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateSpecificMerchantAsync), ActivityKind.Server);
-			var merchant = await invoiceProcessingService.ReadMerchant(id, merchantPayload.ParentCompanyId).ConfigureAwait(false);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			var updatedMerchant = await invoiceProcessingService
-				.UpdateMerchant(merchant, merchantPayload)
-				.ConfigureAwait(false);
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var merchant = await invoiceProcessingService
+					.ReadMerchant(id, merchantPayload.ParentCompanyId)
+					.ConfigureAwait(false);
 
-			return Results.Accepted(value: updatedMerchant);
+				if (merchant is null) return Results.NotFound();
+				var updatedMerchant = await invoiceProcessingService
+					.UpdateMerchant(merchant.id, merchantPayload)
+					.ConfigureAwait(false);
+
+				return Results.Accepted(value: updatedMerchant);
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var merchant = await invoiceProcessingService
+						.ReadMerchant(id, merchantPayload.ParentCompanyId)
+						.ConfigureAwait(false);
+
+					if (merchant is null) return Results.NotFound();
+					var updatedMerchant = await invoiceProcessingService
+						.UpdateMerchant(merchant.id, merchantPayload)
+						.ConfigureAwait(false);
+
+					return Results.Accepted(value: updatedMerchant);
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1049,11 +1603,40 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantAsync), ActivityKind.Server);
-			var merchant = await invoiceProcessingService.ReadMerchant(id, parentCompanyId).ConfigureAwait(false);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			if (merchant is null) return Results.NotFound();
-			await invoiceProcessingService.DeleteMerchant(id, parentCompanyId).ConfigureAwait(false);
-			return Results.NoContent();
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var merchant = await invoiceProcessingService
+					.ReadMerchant(id, parentCompanyId)
+					.ConfigureAwait(false);
+
+				if (merchant is null) return Results.NotFound();
+				await invoiceProcessingService
+					.DeleteMerchant(id, parentCompanyId)
+					.ConfigureAwait(false);
+
+				return Results.NoContent();
+			}
+
+			else
+			{
+				if(IsPrincipalSuperUser(principal))
+				{
+					var merchant = await invoiceProcessingService
+						.ReadMerchant(id, parentCompanyId)
+						.ConfigureAwait(false);
+
+					if (merchant is null) return Results.NotFound();
+					await invoiceProcessingService
+						.DeleteMerchant(id, parentCompanyId)
+						.ConfigureAwait(false);
+
+					return Results.NoContent();
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1105,12 +1688,40 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceAsync), ActivityKind.Server);
-			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
-			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			// We will analyze the invoice without blocking the request (fire and forget).
-			await invoiceProcessingService.AnalyzeInvoice(invoice, options).ConfigureAwait(false);
-			return Results.Accepted(value: $"Invoice with id: {id} sent for analysis.");
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var invoice = await invoiceProcessingService
+					.ReadInvoice(id, potentialUserIdentifier)
+					.ConfigureAwait(false);
+
+				// We will analyze the invoice without blocking the request (fire and forget).
+				await invoiceProcessingService
+					.AnalyzeInvoice(invoice, options)
+					.ConfigureAwait(false);
+
+				return Results.Accepted(value: $"Invoice with id: {id} sent for analysis.");
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var invoice = await invoiceProcessingService
+						.ReadInvoice(id)
+						.ConfigureAwait(false);
+
+					// We will analyze the invoice without blocking the request (fire and forget).
+					await invoiceProcessingService
+						.AnalyzeInvoice(invoice, options)
+						.ConfigureAwait(false);
+
+					return Results.Accepted(value: $"Invoice with id: {id} sent for analysis.");
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{

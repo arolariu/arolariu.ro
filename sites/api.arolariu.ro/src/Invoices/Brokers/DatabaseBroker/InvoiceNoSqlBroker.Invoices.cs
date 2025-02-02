@@ -22,13 +22,7 @@ public partial class InvoiceNoSqlBroker
 
 		ArgumentNullException.ThrowIfNull(invoice);
 
-		if (invoice.MerchantReference is not null)
-		{
-			var partitionKeyForMerchant = new PartitionKey(invoice.MerchantReference.ParentCompanyId.ToString());
-			var merchantContainer = database.GetContainer("merchants");
-			await merchantContainer.UpsertItemAsync(invoice.MerchantReference, partitionKeyForMerchant).ConfigureAwait(false);
-		}
-
+		// TODO: understand if we save merchant info here, or we make another call to createMerchant.
 		return response.Resource;
 	}
 
@@ -77,11 +71,8 @@ public partial class InvoiceNoSqlBroker
 		var merchantContainer = database.GetContainer("merchants");
 
 		var partitionKeyForInvoice = new PartitionKey(currentInvoice?.UserIdentifier.ToString());
-		var partitionKeyForMerchant = new PartitionKey(currentInvoice?.MerchantReference?.ParentCompanyId.ToString());
-
 		var responseFromInvoices = await invoicesContainer.ReplaceItemAsync(updatedInvoice, updatedInvoice?.id.ToString(), partitionKeyForInvoice).ConfigureAwait(false);
-		var responseFromMerchant = await merchantContainer.UpsertItemAsync(updatedInvoice?.MerchantReference, partitionKeyForMerchant).ConfigureAwait(false);
-
+		// TODO: understand if we save merchant info here, or we make another call to updateMerchant.
 		return responseFromInvoices.Resource;
 	}
 

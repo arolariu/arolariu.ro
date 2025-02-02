@@ -209,4 +209,109 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
 		return currentInvoice;
 	}).ConfigureAwait(false);
+
+	public Task AnalyzeInvoice(Guid identifier, AnalysisOptions options)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task AnalyzeInvoice(Guid identifier, Guid userIdentifier, AnalysisOptions options)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<InvoiceStatusDto> GetInvoiceStatus(Guid identifier)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<InvoiceStatusDto> GetInvoiceStatus(Guid identifier, Guid userIdentifier)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<IEnumerable<InvoiceStatusDto>> GetInvoiceStatuses()
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<IEnumerable<InvoiceStatusDto>> GetInvoiceStatuses(Guid userIdentifier)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<Invoice> ReadInvoice(Guid identifier)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<IEnumerable<Invoice>> ReadInvoices()
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<Invoice> UpdateInvoice(Guid invoiceIdentifier, Invoice updatedInvoice)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task DeleteInvoice(Guid identifier)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<Invoice> AddProduct(Guid invoiceIdentifier, Product product)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid userIdentifier)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<Product> GetProduct(Guid invoiceIdentifier, string productName)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<Invoice> DeleteProduct(Guid invoiceIdentifier, string productName)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<Invoice> DeleteProduct(Guid invoiceIdentifier, Product product)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<Invoice> DeleteProduct(Invoice invoice, string productName)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<Merchant> ReadMerchant(Guid identifier)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<IEnumerable<Merchant>> ReadMerchants()
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task<Merchant> UpdateMerchant(Guid identifier, Merchant updatedMerchant)
+	{
+		throw new NotImplementedException();
+	}
+
+	public Task DeleteMerchant(Guid identifier)
+	{
+		throw new NotImplementedException();
+	}
 }

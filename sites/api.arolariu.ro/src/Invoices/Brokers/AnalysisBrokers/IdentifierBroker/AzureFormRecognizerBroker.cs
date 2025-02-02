@@ -1,4 +1,8 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
+
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DTOs;
@@ -7,10 +11,6 @@ using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
 
 using Microsoft.Extensions.Options;
-
-using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
 
 /// <summary>
 /// The <see cref="AzureFormRecognizerBroker"/> class.
@@ -60,8 +60,15 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
 		var products = IdentifyProducts(ocrData);
 		var payment = IdentifyPaymentInformation(ocrData);
 
-		invoice.MerchantReference = merchant;
-		invoice.Items = products;
+		invoice.MerchantReference = merchant.id;
+
+		#region Populate the items array:
+		foreach (var product in products)
+		{
+			invoice.Items.Add(product);
+		}
+		#endregion
+
 		invoice.PaymentInformation = payment;
 
 		return invoice;
