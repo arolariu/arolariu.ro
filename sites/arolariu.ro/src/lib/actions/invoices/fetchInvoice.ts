@@ -11,7 +11,7 @@ import {API_URL} from "../../utils.server";
  * @param id The id of the invoice to fetch.
  * @returns A promise of the invoice, or undefined if the request failed.
  */
-export default async function fetchInvoice(id: string, userInformation: UserInformation): Promise<Invoice | null> {
+export default async function fetchInvoice(id: string, userInformation: UserInformation): Promise<Invoice> {
   try {
     const response = await fetch(`${API_URL}/rest/v1/invoices/${id}`, {
       headers: {
@@ -21,9 +21,9 @@ export default async function fetchInvoice(id: string, userInformation: UserInfo
     });
 
     if (response.ok) return response.json() as Promise<Invoice>;
-    else return null;
+    else throw new Error(`Failed to fetch invoice. Status: ${response.status}`);
   } catch (error) {
     console.error("Error fetching the invoice from the server:", error);
-    return null;
+    throw error;
   }
 }

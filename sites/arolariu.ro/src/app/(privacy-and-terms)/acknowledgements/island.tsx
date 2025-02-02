@@ -2,34 +2,20 @@
 
 "use client";
 
-import type {NodePackageInformation, NodePackagesJSON} from "@/types";
-import {useCallback, useMemo, useState} from "react";
+import type {NodePackagesJSON} from "@/types";
 import {Button} from "react-aria-components";
 import PackageCard from "./_components/PackageCard";
+import useAcknowledgementsFilters from "./_hooks/useAcknowledgementsFilters";
 
 type Props = {packages: NodePackagesJSON};
-type FilterType = "all" | "production" | "development";
 
 /**
  * The client-side rendered acknowledgements page.
  * @returns The acknowledgements page, CSR'ed.
  */
 export default function RenderAcknowledgementsPage({packages}: Readonly<Props>) {
-  const [filter, setFilter] = useState<FilterType>("all");
-
-  const filteredPackages: NodePackageInformation[] = useMemo(() => {
-    if (filter === "all") {
-      return [...(packages.production ?? []), ...(packages.development ?? []), ...(packages.peer ?? [])];
-    } else if (filter === "production") {
-      return packages.production ?? [];
-    } else {
-      return packages.development ?? [];
-    }
-  }, [filter, packages]);
-
-  const handleShowProductionPackages = useCallback(() => setFilter("production"), []);
-  const handleShowDevelopmentPackages = useCallback(() => setFilter("development"), []);
-  const handleResetPackagesFilter = useCallback(() => setFilter("all"), []);
+  const {filteredPackages, handleShowProductionPackages, handleShowDevelopmentPackages, handleResetPackagesFilter} =
+    useAcknowledgementsFilters({packages});
 
   return (
     <section>
@@ -44,7 +30,7 @@ export default function RenderAcknowledgementsPage({packages}: Readonly<Props>) 
           onPress={handleShowDevelopmentPackages}>
           Show Development Packages
         </Button>
-        <Button onPress={handleResetPackagesFilter}>Show all packages {filter !== "all" && "(RESET)"}</Button>
+        <Button onPress={handleResetPackagesFilter}>Show all packages </Button>
       </div>
       <div className='flex flex-col flex-nowrap gap-10 pt-4'>
         {filteredPackages.map((pkg) => (

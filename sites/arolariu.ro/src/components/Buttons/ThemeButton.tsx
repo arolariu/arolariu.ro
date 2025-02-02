@@ -25,7 +25,7 @@ export function ThemeButton() {
   if (!mounted) return;
   return (
     <div
-      title='Theme switcher element'
+      title='Theme Switcher'
       className='mx-2 px-2 text-yellow-500'>
       <label
         className='swap swap-rotate'

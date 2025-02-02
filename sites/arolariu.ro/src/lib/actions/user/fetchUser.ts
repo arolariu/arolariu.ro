@@ -2,15 +2,14 @@
 
 "use server";
 
-import {auth} from "@/auth";
-import type {User} from "next-auth";
+import {currentUser, type User} from "@clerk/nextjs/server";
 
 /**
  * Fetches the current user.
  * @returns A promise of the current user.
  */
 export async function fetchUser(): Promise<{isAuthenticated: boolean; user: User | null}> {
-  const session = await auth();
-  const isAuthenticated = !!session?.user;
-  return {isAuthenticated, user: session?.user ?? null} as const;
+  const user = await currentUser();
+  const isAuthenticated = user !== null;
+  return {isAuthenticated, user} as const;
 }

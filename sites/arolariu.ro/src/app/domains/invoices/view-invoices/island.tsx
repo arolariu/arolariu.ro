@@ -2,68 +2,38 @@
 
 "use client";
 
-import {useZustandStore} from "@/hooks/stateStore";
-import type {Invoice} from "@/types/invoices";
-import {useEffect, useState} from "react";
-import {FakeInvoiceShortList} from "../../../../data/mocks/invoices";
+import {useInvoices} from "@/hooks";
+import {useState} from "react";
 import InvoicesNotFound from "../_components/InvoicesNotFound";
 import {InvoiceFilters} from "./_components/InvoiceFilters";
 import InvoiceList from "./_components/InvoiceList";
 import InvoicesHeader from "./_components/InvoicesHeader";
-
-type InvoiceFilters = {
-  isImportant: boolean;
-  dayOnly: boolean;
-  nightOnly: boolean;
-};
+import {useViewInvoicesWithFilters} from "./_hooks/useViewInvoicesWithFilters";
 
 /**
  * This function renders the view invoices page.
  * @returns This function renders the view invoices page.
  */
 export default function RenderViewInvoicesScreen() {
-  const {invoices: previousInvoices, setInvoices: setPreviousInvoices} = useZustandStore();
-  // const {invoices: currentInvoices, isLoading} = useInvoices();
-  const currentInvoices = FakeInvoiceShortList;
-  const [shownInvoices, setShownInvoices] = useState<Invoice[]>(previousInvoices);
+  const {invoices, isError, isLoading} = useInvoices();
+  const {filteredInvoices, filters, setFilters} = useViewInvoicesWithFilters(invoices);
   const [displayStyle, setDisplayStyle] = useState<"grid" | "list">("list");
-  const [filters, setFilters] = useState<InvoiceFilters>({
-    isImportant: false,
-    dayOnly: false,
-    nightOnly: false,
-  });
 
-  useEffect(() => {
-    if (currentInvoices && currentInvoices !== previousInvoices) setPreviousInvoices(currentInvoices);
-    let filteredInvoices = previousInvoices;
+  if (isLoading) return <div>Loading...</div>; // TODO: Add a spinner here.
 
-    const timeOfPurchase = (invoice: Invoice): number => {
-      const date = new Date(invoice.paymentInformation?.transactionDate ?? 0);
-      return date.getHours();
-    };
+  // TODO: Add a retry button for error.
+  if (isError)
+    return (
+      <section>
+        <p>There was an error loading the invoices.</p>
+        <p>Please try again later.</p>
+      </section>
+    );
 
-    if (filters.isImportant) {
-      filteredInvoices = filteredInvoices.filter((invoice) => invoice.isImportant);
-    }
-
-    if (filters.dayOnly) {
-      filteredInvoices = filteredInvoices.filter(
-        (invoice) => timeOfPurchase(invoice) >= 6 && timeOfPurchase(invoice) < 18,
-      );
-    }
-
-    if (filters.nightOnly) {
-      filteredInvoices = filteredInvoices.filter(
-        (invoice) => timeOfPurchase(invoice) < 6 || timeOfPurchase(invoice) >= 18,
-      );
-    }
-    setShownInvoices(filteredInvoices);
-  }, [filters, previousInvoices, currentInvoices /* isLoading */]);
-
-  if (currentInvoices?.length === 0 || previousInvoices.length === 0) return <InvoicesNotFound />;
+  if (invoices.length === 0) return <InvoicesNotFound />;
   return (
     <section>
-      <InvoicesHeader shownInvoices={shownInvoices} />
+      <InvoicesHeader shownInvoices={filteredInvoices} />
       <InvoiceFilters
         filters={filters}
         displayStyle={displayStyle}
@@ -72,7 +42,7 @@ export default function RenderViewInvoicesScreen() {
       />
       <hr className='pb-16' />
       <InvoiceList
-        invoices={shownInvoices}
+        invoices={filteredInvoices}
         displayStyle={displayStyle}
       />
     </section>

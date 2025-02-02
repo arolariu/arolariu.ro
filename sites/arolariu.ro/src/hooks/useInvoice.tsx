@@ -3,8 +3,9 @@
 "use client";
 
 import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
+import type {UserInformation} from "@/types";
 import type {Invoice} from "@/types/invoices";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {useUserInformation} from "./index";
 
 type HookReturnType = Readonly<{
@@ -18,31 +19,32 @@ type HookReturnType = Readonly<{
  * @returns The invoice information and loading state.
  */
 export function useInvoice({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>): HookReturnType {
-  const {userInformation} = useUserInformation(); // fetch fresh userInformation
-  const [invoice, setInvoice] = useState<Invoice | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const {userInformation} = useUserInformation();
   const [isError, setIsError] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [invoice, setInvoice] = useState<Invoice | null>(null);
 
-  useEffect(() => {
-    const fetchInvoiceInformation = async () => {
+  const fetchInvoiceForUser = useCallback(
+    async (userInformation: UserInformation) => {
       setIsLoading(true);
-      if (userInformation === null) {
-        return console.info(">>> User information is not available, skipping invoice fetch.");
-      }
 
       try {
-        // this will invoke the fetchInvoice action from the server.
-        const invoiceInformation = await fetchInvoice(invoiceIdentifier, userInformation);
-        setInvoice(invoiceInformation);
+        const invoice = await fetchInvoice(invoiceIdentifier, userInformation);
+        setInvoice(invoice);
       } catch (error: unknown) {
         console.error(">>> Error fetching invoices in useInvoice hook:", error as Error);
         setIsError(true);
       } finally {
         setIsLoading(false);
       }
-    };
+    },
+    [invoiceIdentifier, userInformation],
+  );
 
-    fetchInvoiceInformation();
+  useEffect(() => {
+    if (userInformation) {
+      fetchInvoiceForUser(userInformation);
+    }
   }, [userInformation, invoiceIdentifier]);
 
   return {invoice, isLoading, isError} as const;

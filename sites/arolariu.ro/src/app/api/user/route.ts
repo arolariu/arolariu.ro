@@ -13,12 +13,12 @@ export const dynamic = "force-dynamic";
  * @returns The auth response that contains the user object.
  */
 export async function GET() {
-  // /api/user
   const {user} = await fetchUser();
-  const userHasValidEmail = user?.email !== null && user?.email !== undefined;
+  const userPrimaryAddress = user?.primaryEmailAddress?.emailAddress;
+  const userHasValidEmail = userPrimaryAddress !== null && userPrimaryAddress !== undefined;
 
   const emailHash = userHasValidEmail
-    ? await crypto.subtle.digest("SHA-256", new TextEncoder().encode(user?.email!))
+    ? await crypto.subtle.digest("SHA-256", new TextEncoder().encode(userPrimaryAddress))
     : null;
 
   const userIdentifier = emailHash ? generateGuid(emailHash) : "00000000-0000-0000-0000-000000000000";

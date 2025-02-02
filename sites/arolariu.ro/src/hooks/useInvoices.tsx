@@ -3,12 +3,14 @@
 "use client";
 
 import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
+import type {UserInformation} from "@/types";
 import type {Invoice} from "@/types/invoices";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {useUserInformation} from "./index";
+import {useZustandStore} from "./stateStore";
 
 type HookReturnType = Readonly<{
-  invoices: Invoice[] | null;
+  invoices: Invoice[];
   isLoading: boolean;
   isError: boolean;
 }>;
@@ -18,32 +20,34 @@ type HookReturnType = Readonly<{
  * @returns The invoices and loading state.
  */
 export function useInvoices(): HookReturnType {
-  const {userInformation} = useUserInformation(); // fetch fresh userInformation
-  const [invoices, setInvoices] = useState<Invoice[] | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const {userInformation} = useUserInformation();
   const [isError, setIsError] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const possiblyStaleInvoices = useZustandStore((state) => state.invoices);
+  const setPossiblyStaleInvoices = useZustandStore((state) => state.setInvoices);
 
-  useEffect(() => {
-    const fetchInvoicesForUser = async () => {
+  const fetchInvoicesForUser = useCallback(
+    async (userInformation: UserInformation) => {
       setIsLoading(true);
-      if (userInformation === null) {
-        return console.info(">>> User information is not available, skipping invoices fetch.");
-      }
 
       try {
-        // this will invoke the fetchInvoices action from the server.
         const invoices = await fetchInvoices(userInformation);
-        setInvoices(invoices);
+        setPossiblyStaleInvoices(invoices);
       } catch (error: unknown) {
         console.error(">>> Error fetching invoices in useInvoices hook:", error as Error);
         setIsError(true);
       } finally {
         setIsLoading(false);
       }
-    };
+    },
+    [userInformation],
+  );
 
-    fetchInvoicesForUser();
+  useEffect(() => {
+    if (userInformation) {
+      fetchInvoicesForUser(userInformation);
+    }
   }, [userInformation]);
 
-  return {invoices, isLoading, isError} as const;
+  return {invoices: possiblyStaleInvoices, isLoading, isError} as const;
 }

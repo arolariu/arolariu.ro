@@ -1,6 +1,7 @@
 /** @format */
 
 import type {Invoice} from "@/types/invoices";
+import InvoicesNotFound from "../../_components/InvoicesNotFound";
 import InvoiceCard from "./InvoiceCard";
 
 type Props = Readonly<{
@@ -16,6 +17,7 @@ type Props = Readonly<{
  * @returns The invoice list component, with the invoices rendered.
  */
 export default function InvoiceList({invoices, displayStyle}: Props) {
+  if (invoices.length === 0) return <InvoicesNotFound />;
   switch (displayStyle) {
     case "grid":
       return <></>; // TODO.

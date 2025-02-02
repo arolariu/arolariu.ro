@@ -12,14 +12,32 @@ type Actions = {
   setInvoices: (invoices: Invoice[]) => void;
 };
 
-export const useZustandStore = create<States & Actions>()(
+const devStore = create<States & Actions>()(
   devtools(
     persist(
       (set) => ({
         invoices: [],
-        setInvoices: (invoices: Invoice[]) => set({invoices}),
+        setInvoices: (invoices: Invoice[]) => set((state) => ({...state, invoices})),
       }),
-      {name: "zustand-store", storage: createJSONStorage(() => sessionStorage)},
+      {
+        name: "zustand-store-dev",
+        storage: createJSONStorage(() => sessionStorage),
+      },
     ),
   ),
 );
+
+const prodStore = create<States & Actions>()(
+  persist(
+    (set) => ({
+      invoices: [],
+      setInvoices: (invoices: Invoice[]) => set((state) => ({...state, invoices})),
+    }),
+    {
+      name: "zustand-store-prd",
+      storage: createJSONStorage(() => localStorage),
+    },
+  ),
+);
+
+export const useZustandStore = process.env.NODE_ENV === "production" ? prodStore : devStore;
