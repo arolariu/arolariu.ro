@@ -55,12 +55,12 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
 			product.DetectedAllergens = await GenerateProductAllergens(product).ConfigureAwait(false);
 		}
 
-		var merchant = invoice.Merchant;
+		var merchant = invoice.MerchantReference;
 		if (merchant is not null)
 		{
 			merchant.Category = await GenerateMerchantCategory(merchant).ConfigureAwait(false);
 			merchant.Description = await GenerateMerchantDescription(merchant).ConfigureAwait(false);
-			invoice.Merchant = merchant;
+			invoice.MerchantReference = merchant;
 		}
 
 		invoice.Items = products;

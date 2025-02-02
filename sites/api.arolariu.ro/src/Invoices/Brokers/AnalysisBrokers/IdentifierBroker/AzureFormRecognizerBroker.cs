@@ -60,7 +60,7 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
 		var products = IdentifyProducts(ocrData);
 		var payment = IdentifyPaymentInformation(ocrData);
 
-		invoice.Merchant = merchant;
+		invoice.MerchantReference = merchant;
 		invoice.Items = products;
 		invoice.PaymentInformation = payment;
 

@@ -516,7 +516,7 @@ public static partial class InvoiceEndpoints
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveMerchantFromInvoiceAsync), ActivityKind.Server);
 			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
 			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
-			var potentialMerchant = invoice.Merchant;
+			var potentialMerchant = invoice.MerchantReference;
 
 			if (potentialMerchant is null) return Results.NotFound();
 			else return Results.Ok(potentialMerchant);
@@ -570,12 +570,12 @@ public static partial class InvoiceEndpoints
 			using var activity = InvoicePackageTracing.StartActivity(nameof(AddMerchantToInvoiceAsync), ActivityKind.Server);
 			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
 			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
-			var possibleMerchant = invoice.Merchant;
+			var possibleMerchant = invoice.MerchantReference;
 
 			if (possibleMerchant is not null) return Results.Conflict();
 			else
 			{
-				invoice.Merchant = merchant;
+				invoice.MerchantReference = merchant;
 				var updatedInvoice = await invoiceProcessingService.UpdateInvoice(invoice, invoice).ConfigureAwait(false);
 				return Results.Accepted(value: updatedInvoice);
 			}
@@ -628,12 +628,12 @@ public static partial class InvoiceEndpoints
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveMerchantFromInvoiceAsync), ActivityKind.Server);
 			var userIdentifier = Guid.Parse(principal.Claims.First(claim => claim.Type == "userIdentifier").Value);
 			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
-			var possibleMerchant = invoice.Merchant;
+			var possibleMerchant = invoice.MerchantReference;
 
 			if (possibleMerchant is null) return Results.NotFound();
 			else
 			{
-				invoice.Merchant = new Merchant();
+				invoice.MerchantReference = new Merchant();
 				var updatedInvoice = await invoiceProcessingService.UpdateInvoice(invoice, invoice).ConfigureAwait(false);
 				return Results.Accepted(value: updatedInvoice);
 			}
@@ -689,7 +689,7 @@ public static partial class InvoiceEndpoints
 			var invoice = await invoiceProcessingService.ReadInvoice(id, userIdentifier).ConfigureAwait(false);
 
 
-			invoice.Merchant = merchant;
+			invoice.MerchantReference = merchant;
 			var updatedInvoice = await invoiceProcessingService.UpdateInvoice(invoice, invoice).ConfigureAwait(false);
 			return Results.Accepted(value: updatedInvoice);
 		}

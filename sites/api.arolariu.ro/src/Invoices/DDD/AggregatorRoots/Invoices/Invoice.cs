@@ -51,10 +51,10 @@ public sealed class Invoice : NamedEntity<Guid>
 	public PaymentInformation PaymentInformation { get; set; } = new PaymentInformation();
 
 	/// <summary>
-	/// The invoice 1:1? merchant relationship.
+	/// The invoice's possible merchant relationship.
 	/// </summary>
 	[JsonPropertyOrder(8)]
-	public Merchant Merchant { get; set; } = new Merchant();
+	public Guid MerchantReference { get; set; } = Guid.Empty;
 
 	/// <summary>
 	/// The invoice 1:*? - item relationship.

@@ -95,7 +95,7 @@ public sealed partial class AzureOpenAiBroker
 					new UserChatMessage($"Products: {string.Join(',', fakeGroceryList)}, Merchant: SUPERMARKET, Invoice: {string.Join(',', availableInvoiceCategories)}"),
 					new AssistantChatMessage("GROCERY"),
 					new SystemChatMessage("Your turn:"),
-					new UserChatMessage($"Products: {string.Join(',', productCategories)}, Merchant: {invoice.Merchant.Category}, Invoice: {string.Join(',', availableInvoiceCategories)}")
+					new UserChatMessage($"Products: {string.Join(',', productCategories)}, Merchant: {invoice.MerchantReference.Category}, Invoice: {string.Join(',', availableInvoiceCategories)}")
 				}).ConfigureAwait(false);
 
 			if (invoiceCategoryCompletion.Value.FinishReason == ChatFinishReason.ContentFilter)

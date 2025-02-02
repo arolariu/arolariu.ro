@@ -22,11 +22,11 @@ public partial class InvoiceNoSqlBroker
 
 		ArgumentNullException.ThrowIfNull(invoice);
 
-		if (invoice.Merchant is not null)
+		if (invoice.MerchantReference is not null)
 		{
-			var partitionKeyForMerchant = new PartitionKey(invoice.Merchant.ParentCompanyId.ToString());
+			var partitionKeyForMerchant = new PartitionKey(invoice.MerchantReference.ParentCompanyId.ToString());
 			var merchantContainer = database.GetContainer("merchants");
-			await merchantContainer.UpsertItemAsync(invoice.Merchant, partitionKeyForMerchant).ConfigureAwait(false);
+			await merchantContainer.UpsertItemAsync(invoice.MerchantReference, partitionKeyForMerchant).ConfigureAwait(false);
 		}
 
 		return response.Resource;
@@ -77,10 +77,10 @@ public partial class InvoiceNoSqlBroker
 		var merchantContainer = database.GetContainer("merchants");
 
 		var partitionKeyForInvoice = new PartitionKey(currentInvoice?.UserIdentifier.ToString());
-		var partitionKeyForMerchant = new PartitionKey(currentInvoice?.Merchant?.ParentCompanyId.ToString());
+		var partitionKeyForMerchant = new PartitionKey(currentInvoice?.MerchantReference?.ParentCompanyId.ToString());
 
 		var responseFromInvoices = await invoicesContainer.ReplaceItemAsync(updatedInvoice, updatedInvoice?.id.ToString(), partitionKeyForInvoice).ConfigureAwait(false);
-		var responseFromMerchant = await merchantContainer.UpsertItemAsync(updatedInvoice?.Merchant, partitionKeyForMerchant).ConfigureAwait(false);
+		var responseFromMerchant = await merchantContainer.UpsertItemAsync(updatedInvoice?.MerchantReference, partitionKeyForMerchant).ConfigureAwait(false);
 
 		return responseFromInvoices.Resource;
 	}
