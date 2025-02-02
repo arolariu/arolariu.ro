@@ -24,7 +24,7 @@ const generateFakeInvoice = (): Invoice => {
     id: fake.string.uuid(),
     category: invoiceCategory,
     createdAt: fake.date.past(),
-    merchant: generateFakeMerchant(),
+    merchantReference: fake.string.uuid(),
     createdBy: fake.string.uuid(),
     description: fake.lorem.sentence(7),
     isImportant: fake.datatype.boolean(),
