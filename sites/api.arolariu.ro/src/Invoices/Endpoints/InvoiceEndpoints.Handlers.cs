@@ -1730,7 +1730,7 @@ public static partial class InvoiceEndpoints
 	}
 	#endregion
 
-		#region Analysis operations
+	#region Analysis operations
 	private static async partial Task<IResult> AnalyzeInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
