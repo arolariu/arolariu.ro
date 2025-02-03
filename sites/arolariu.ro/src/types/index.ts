@@ -50,3 +50,12 @@ export type UserInformation = {
   userIdentifier: string;
   userJwt: string;
 };
+
+/**
+ * The type of the object that represents information about a navigation item.
+ */
+export type NavigationItem = {
+  label: string;
+  href: string;
+  children?: NavigationItem[];
+};
