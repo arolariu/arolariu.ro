@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
+using System;
 using System.Collections.Generic;
 
 public static partial class InvoiceEndpoints
@@ -269,6 +270,62 @@ public static partial class InvoiceEndpoints
 			.ProducesProblem(StatusCodes.Status429TooManyRequests)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.WithName(nameof(DeleteMerchantAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapGet("/merchants/{id}/invoices", RetrieveInvoicesFromMerchantAsync)
+			.Produces<IEnumerable<Invoice>>(StatusCodes.Status200OK)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(RetrieveInvoicesFromMerchantAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapPut("/merchants/{id}/invoices", AddInvoiceToMerchantAsync)
+			.Accepts<IEnumerable<Guid>>("application/json")
+			.Produces<Merchant>(StatusCodes.Status202Accepted)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status409Conflict)
+			.ProducesProblem(StatusCodes.Status413PayloadTooLarge)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(AddInvoiceToMerchantAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapDelete("/merchants/{id}/invoices", RemoveInvoiceFromMerchantAsync)
+			.Accepts<IEnumerable<Guid>>("application/json")
+			.Produces<Merchant>(StatusCodes.Status204NoContent)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(RemoveInvoiceFromMerchantAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapGet("/merchants/{id}/products", RetrieveProductsFromMerchantAsync)
+			.Produces<IEnumerable<Product>>(StatusCodes.Status200OK)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(RetrieveProductsFromMerchantAsync))
 			.RequireAuthorization()
 			.WithOpenApi();
 	}
