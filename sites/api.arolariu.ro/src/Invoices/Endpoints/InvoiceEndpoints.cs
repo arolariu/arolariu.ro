@@ -48,7 +48,6 @@ public static partial class InvoiceEndpoints
 				defaultValue: new Claim(type: "userIdentifier", value: Guid.Empty.ToString()));
 
 		var potentialUserIdentifier = Guid.Parse(userIdentifierClaim.Value);
-
 		return potentialUserIdentifier;
 	}
 

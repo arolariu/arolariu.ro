@@ -1544,7 +1544,26 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveInvoicesFromMerchantAsync), ActivityKind.Server);
-			// TODO: implement this.
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
+
+			// TODO complete this:
+
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+				var merchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
+				if (merchant is null) return Results.NotFound();
+			}
+
+			else
+			{
+				if (IsPrincipalSuperUser(principal))
+				{
+					var merchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
+					if (merchant is null) return Results.NotFound();
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1586,14 +1605,30 @@ public static partial class InvoiceEndpoints
 	private static async partial Task<IResult> AddInvoiceToMerchantAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid merchantId,
+		[FromRoute] Guid id,
 		[FromBody] IEnumerable<Guid> invoiceIdentifiers,
 		ClaimsPrincipal principal)
 	{
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(AddInvoiceToMerchantAsync), ActivityKind.Server);
+			var potentialUserIdentifer = RetrieveUserIdentifierFromPrincipal(principal);
 			// TODO: complete implementation;
+
+			if (potentialUserIdentifer != Guid.Empty)
+			{
+
+			}
+
+			else
+			{
+				if(IsPrincipalSuperUser(principal))
+				{
+
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1635,14 +1670,30 @@ public static partial class InvoiceEndpoints
 	private static async partial Task<IResult> RemoveInvoiceFromMerchantAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid merchantId,
+		[FromRoute] Guid id,
 		[FromBody] IEnumerable<Guid> invoiceIdentifiers,
 		ClaimsPrincipal principal)
 	{
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveInvoiceFromMerchantAsync), ActivityKind.Server);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 			// TODO: complete this;
+
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+
+			}
+
+			else
+			{
+				if(IsPrincipalSuperUser(principal))
+				{
+
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1684,13 +1735,29 @@ public static partial class InvoiceEndpoints
 	private static async partial Task<IResult> RetrieveProductsFromMerchantAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid merchantId,
+		[FromRoute] Guid id,
 		ClaimsPrincipal principal)
 	{
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveProductsFromMerchantAsync), ActivityKind.Server);
+			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 			// TODO: complete this;
+
+			if (potentialUserIdentifier != Guid.Empty)
+			{
+
+			}
+
+			else
+			{
+				if(IsPrincipalSuperUser(principal))
+				{
+
+				}
+
+				return Results.Unauthorized();
+			}
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
