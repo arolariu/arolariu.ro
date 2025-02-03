@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default async function ViewInvoicesPage() {
   const t = await getTranslations("Domains.services.invoices.service.view-invoices");
   const {user} = await fetchUser();
-  const username = user?.name ?? "dear guest";
+  const username = user?.fullName ?? "dear guest";
 
   return (
     <main className='container mx-auto px-5 py-24'>

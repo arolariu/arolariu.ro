@@ -15,11 +15,9 @@ import {useViewInvoicesWithFilters} from "./_hooks/useViewInvoicesWithFilters";
  * @returns This function renders the view invoices page.
  */
 export default function RenderViewInvoicesScreen() {
-  const {invoices, isError, isLoading} = useInvoices();
+  const {invoices, isError} = useInvoices();
   const {filteredInvoices, filters, setFilters} = useViewInvoicesWithFilters(invoices);
   const [displayStyle, setDisplayStyle] = useState<"grid" | "list">("list");
-
-  if (isLoading) return <div>Loading...</div>; // TODO: Add a spinner here.
 
   // TODO: Add a retry button for error.
   if (isError)
@@ -48,3 +46,4 @@ export default function RenderViewInvoicesScreen() {
     </section>
   );
 }
+

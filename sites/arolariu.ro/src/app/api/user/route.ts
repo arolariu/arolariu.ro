@@ -29,7 +29,7 @@ export async function GET() {
     aud: "https://api.arolariu.ro",
     iat: Math.floor(Date.now() / 1000),
     nbf: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 5 * 60,
+    exp: Math.floor(Date.now() / 1000) + 30 * 60, // add 30 minutes to the token.
     sub: user?.id ?? "guest",
     userIdentifier: userIdentifier,
   };

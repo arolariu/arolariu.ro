@@ -20,13 +20,13 @@ export function ThemeButton() {
 
   const handleSetTheme = useCallback(() => {
     setTheme(theme === "dark" ? "light" : "dark");
-  }, [theme, setTheme]);
+  }, [theme]);
 
   if (!mounted) return;
   return (
     <div
       title='Theme Switcher'
-      className='mx-2 px-2 text-yellow-500'>
+      className='flex flex-row items-center justify-center justify-items-center px-2 text-yellow-500'>
       <label
         className='swap swap-rotate'
         aria-label=''>
@@ -56,3 +56,4 @@ export function ThemeButton() {
     </div>
   );
 }
+
