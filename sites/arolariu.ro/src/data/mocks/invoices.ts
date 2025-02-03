@@ -128,12 +128,18 @@ const generateFakeInvoiceProduct = (): Product => {
   } satisfies Product;
 };
 
+const shortIterable = Array.from({length: fake.number.int({min: 3, max: 10})});
+const longIterable = Array.from({length: fake.number.int({min: 10, max: 100})});
+
+export const FakeProduct: Product = generateFakeInvoiceProduct();
+export const FakeMerchant: Merchant = generateFakeMerchant();
 export const FakeInvoice: Invoice = generateFakeInvoice();
-export const FakeInvoiceShortList: Invoice[] = Array.from(
-  {length: fake.number.int({min: 3, max: 10})},
-  generateFakeInvoice,
-);
-export const FakeInvoiceBigList: Invoice[] = Array.from(
-  {length: fake.number.int({min: 10, max: 100})},
-  generateFakeInvoice,
-);
+
+export const FakeInvoiceShortList: Invoice[] = Array.from(shortIterable, generateFakeInvoice);
+export const FakeInvoiceBigList: Invoice[] = Array.from(longIterable, generateFakeInvoice);
+
+export const FakeMerchantShortList: Merchant[] = Array.from(shortIterable, generateFakeMerchant);
+export const FakeMerchantBigList: Merchant[] = Array.from(longIterable, generateFakeMerchant);
+
+export const FakeProductShortList: Product[] = Array.from(shortIterable, generateFakeInvoiceProduct);
+export const FakeProductBigList: Product[] = Array.from(longIterable, generateFakeInvoiceProduct);

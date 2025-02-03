@@ -1,5 +1,7 @@
 /** @format */
 
+import {User} from "@clerk/nextjs/server";
+
 /**
  * The type of a node package.
  */
@@ -43,7 +45,6 @@ export type UploadStatus =
   | "FAILURE__CLIENTSIDE" // The upload failed on the client-side.
   | "FAILURE__SERVERSIDE"; // The upload failed on the server-side.
 
-import type {User} from "next-auth";
 export type UserInformation = {
   user: User | null;
   userIdentifier: string;
