@@ -132,15 +132,6 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public async Task<InvoiceStatusDto> RetrieveInvoiceStatus(Invoice invoice) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveInvoiceStatus));
-
-		throw new NotImplementedException();
-	}).ConfigureAwait(false);
-
-	/// <inheritdoc/>
 	public async Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice) =>
 	await TryCatchAsync(async () =>
 	{

@@ -39,34 +39,6 @@ public interface IInvoiceProcessingService
 	public Task AnalyzeInvoice(Invoice invoice, AnalysisOptions options);
 
 	/// <summary>
-	/// Get the status of an invoice.
-	/// </summary>
-	/// <param name="identifier"></param>
-	/// <returns></returns>
-	public Task<InvoiceStatusDto> GetInvoiceStatus(Guid identifier);
-
-	/// <summary>
-	/// Get the status of an invoice.
-	/// </summary>
-	/// <param name="identifier"></param>
-	/// <param name="userIdentifier"></param>
-	/// <returns></returns>
-	public Task<InvoiceStatusDto> GetInvoiceStatus(Guid identifier, Guid userIdentifier);
-
-	/// <summary>
-	/// Get the status of all invoices.
-	/// </summary>
-	/// <returns></returns>
-	public Task<IEnumerable<InvoiceStatusDto>> GetInvoiceStatuses();
-
-	/// <summary>
-	/// Get the status of all invoices.
-	/// </summary>
-	/// <param name="userIdentifier"></param>
-	/// <returns></returns>
-	public Task<IEnumerable<InvoiceStatusDto>> GetInvoiceStatuses(Guid userIdentifier);
-
-	/// <summary>
 	/// Creates an invoice object.
 	/// </summary>
 	/// <param name="invoice"></param>

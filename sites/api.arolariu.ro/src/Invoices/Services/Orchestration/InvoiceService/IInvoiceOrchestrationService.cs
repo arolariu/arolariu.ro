@@ -19,13 +19,6 @@ public interface IInvoiceOrchestrationService
 	/// <returns></returns>
 	public Task AnalyzeInvoiceWithOptions(Invoice invoice, AnalysisOptions options);
 
-	/// <summary>
-	/// Retrieve the status of an invoice.
-	/// </summary>
-	/// <param name="invoice"></param>
-	/// <returns></returns>
-	public Task<InvoiceStatusDto> RetrieveInvoiceStatus(Invoice invoice);
-
 	#region Implements the Invoice Storage Foundation Service
 	/// <summary>
 	/// Creates an invoice object.

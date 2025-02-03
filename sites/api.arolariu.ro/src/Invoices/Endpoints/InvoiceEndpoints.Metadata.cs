@@ -416,63 +416,6 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		Merchant merchant,
 		ClaimsPrincipal principal);
-
-	/// <summary>
-	/// Retrieves the status of a specific invoice.
-	/// </summary>
-	/// <param name="invoiceProcessingService"></param>
-	/// <param name="httpContext"></param>
-	/// <param name="id"></param>
-	/// <param name="principal"></param>
-	/// <returns></returns>
-	[SwaggerOperation(
-		Summary = "Retrieves the status of a specific invoice in the system.",
-		Description = "Retrieves the status of a specific invoice in the Invoice Management System. " +
-		"If the invoice identifier passed to the route is valid, the server will retrieve the status of the invoice, given that the user is allowed to see the status.",
-		OperationId = nameof(RetrieveSpecificInvoiceStatusAsync),
-		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status200OK, "The status of the invoice was retrieved successfully.", typeof(InvoiceStatusDto))]
-	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access the status of this invoice.", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status404NotFound, "The status could not be retrieved due to the invoice not being found.", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The status could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
-	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
-	[Authorize]
-	private static partial Task<IResult> RetrieveSpecificInvoiceStatusAsync(
-		IInvoiceProcessingService invoiceProcessingService,
-		IHttpContextAccessor httpContext,
-		Guid id,
-		ClaimsPrincipal principal);
-
-	/// <summary>
-	/// Retrieves the status of all invoices.
-	/// </summary>
-	/// <param name="invoiceProcessingService"></param>
-	/// <param name="httpContext"></param>
-	/// <param name="principal"></param>
-	/// <returns></returns>
-	[SwaggerOperation(
-		Summary = "Retrieves the status of all invoices in the system.",
-		Description = "Retrieves the status of all invoices in the Invoice Management System. " +
-		"If the user is allowed to see all statuses, the server will retrieve all statuses. " +
-		"This is a high-privillege request.",
-		OperationId = nameof(RetrieveAllInvoicesStatusAsync),
-		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status200OK, "The statuses were retrieved successfully from the system.", typeof(InvoiceStatusDto[]))]
-	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this route.", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The statuses could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
-	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
-	[Authorize]
-	private static partial Task<IResult> RetrieveAllInvoicesStatusAsync(
-		IInvoiceProcessingService invoiceProcessingService,
-		IHttpContextAccessor httpContext,
-		ClaimsPrincipal principal);
-
-
 	#endregion
 	#region CRUD operations for the Merchant Standard Endpoints
 	/// <summary>
