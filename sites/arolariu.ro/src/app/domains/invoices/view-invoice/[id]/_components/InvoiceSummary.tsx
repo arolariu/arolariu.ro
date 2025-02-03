@@ -61,4 +61,3 @@ export const InvoiceSummary = ({invoice}: Readonly<{invoice: Invoice}>) => {
     </section>
   );
 };
-

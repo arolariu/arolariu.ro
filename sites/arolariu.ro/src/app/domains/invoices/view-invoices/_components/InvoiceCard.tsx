@@ -167,4 +167,3 @@ export default function InvoiceCard({invoice}: Readonly<{invoice: Invoice}>) {
     </article>
   );
 }
-

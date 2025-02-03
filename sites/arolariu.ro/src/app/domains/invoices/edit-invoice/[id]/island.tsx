@@ -20,7 +20,7 @@ export default function RenderEditInvoiceScreen({invoiceIdentifier}: Readonly<{i
   if (invoice === null) return <InvoiceNotFound invoiceIdentifier={invoiceIdentifier} />;
   if (invoice.numberOfUpdates === 0) return <InvoiceNotAnalyzed invoiceIdentifier={invoiceIdentifier} />;
 
-  const {description, paymentInformation, isImportant, merchant} = invoice;
+  const {description, paymentInformation, isImportant} = invoice;
   return (
     <section className='mx-auto rounded-2xl border-2'>
       <div className='flex flex-row flex-nowrap'>
@@ -54,15 +54,15 @@ export default function RenderEditInvoiceScreen({invoiceIdentifier}: Readonly<{i
                 </tr>
                 <tr>
                   <td>Merchant Name</td>
-                  <td>{merchant?.name}</td>
+                  <td>// TODO: complete</td>
                 </tr>
                 <tr className='table-row'>
                   <td>Merchant Address</td>
-                  <td>{merchant?.address}</td>
+                  <td>// TODO: complete</td>
                 </tr>
                 <tr>
                   <td>Merchant Phone Number</td>
-                  <td>{merchant?.phoneNumber}</td>
+                  <td>// TODO: complete</td>
                 </tr>
               </tbody>
             </table>
