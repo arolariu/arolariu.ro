@@ -1,11 +1,13 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+
 using Azure.AI.FormRecognizer.DocumentAnalysis;
 
 public sealed partial class AzureFormRecognizerBroker
@@ -25,11 +27,18 @@ public sealed partial class AzureFormRecognizerBroker
 		}
 
 		// Step 2. Extract the merchant address from the analyzed document.
-		if (photoFields.TryGetValue("MerchantAddress", out var merchantAddressField)
-			&& merchantAddressField.FieldType is DocumentFieldType.String)
+		if (photoFields.TryGetValue("MerchantAddress", out var merchantAddressField))
 		{
-			merchant.Address = merchantAddressField.Value.AsString();
+			if (merchantAddressField.FieldType is DocumentFieldType.String)
+			{
+				merchant.Address = merchantAddressField.Value.AsString();
+			}
+			else if (merchantAddressField.FieldType is DocumentFieldType.Address)
+			{
+				merchant.Address = merchantAddressField.Content;
+			}
 		}
+
 
 		// Step 3. Extract the merchant phone number from the analyzed document.
 		if (photoFields.TryGetValue("MerchantPhoneNumber", out var merchantPhoneNumberField)
@@ -53,10 +62,31 @@ public sealed partial class AzureFormRecognizerBroker
 				&& transactionDateField.FieldType is DocumentFieldType.Date)
 		{
 			paymentInformation.TransactionDate = transactionDateField.Value.AsDate();
-			if (photoFields.TryGetValue("TransactionTime", out var transactionTimeField)
-					&& transactionTimeField.FieldType is DocumentFieldType.Time)
+			if (photoFields.TryGetValue("TransactionTime", out var transactionTimeField))
 			{
-				paymentInformation.TransactionDate.Add(transactionTimeField.Value.AsTime());
+				if (transactionTimeField.FieldType is DocumentFieldType.Time)
+				{
+					paymentInformation.TransactionDate.Add(transactionTimeField.Value.AsTime());
+				}
+				else if (transactionTimeField.FieldType is DocumentFieldType.Unknown)
+				{
+					var fieldValue = transactionTimeField.Content;
+					var fieldValueAsNumbersOnly = fieldValue.Where(char.IsDigit).ToArray();
+
+					if (fieldValueAsNumbersOnly.Length == 4)
+					{
+						var hour = int.Parse(fieldValueAsNumbersOnly[0].ToString() + fieldValueAsNumbersOnly[1].ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture);
+						var minute = int.Parse(fieldValueAsNumbersOnly[2].ToString() + fieldValueAsNumbersOnly[3].ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture);
+						paymentInformation.TransactionDate.Add(new TimeSpan(hour, minute, 0));
+					}
+					else if (fieldValueAsNumbersOnly.Length == 6)
+					{
+						var hour = int.Parse(fieldValueAsNumbersOnly[0].ToString() + fieldValueAsNumbersOnly[1].ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture);
+						var minute = int.Parse(fieldValueAsNumbersOnly[2].ToString() + fieldValueAsNumbersOnly[3].ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture);
+						var second = int.Parse(fieldValueAsNumbersOnly[4].ToString() + fieldValueAsNumbersOnly[5].ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture);
+						paymentInformation.TransactionDate.Add(new TimeSpan(hour, minute, second));
+					}
+				}
 			}
 		}
 

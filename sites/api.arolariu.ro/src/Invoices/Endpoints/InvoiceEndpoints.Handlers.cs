@@ -1546,12 +1546,20 @@ public static partial class InvoiceEndpoints
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveInvoicesFromMerchantAsync), ActivityKind.Server);
 			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
 
-			// TODO complete this:
-
 			if (potentialUserIdentifier != Guid.Empty)
 			{
 				var merchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
 				if (merchant is null) return Results.NotFound();
+				var listOfInvoiceIdentifiers = merchant.ReferencedInvoices;
+				var listOfConcreteInvoices = new List<Invoice>();
+
+				foreach(var identifier in listOfInvoiceIdentifiers)
+				{
+					var possibleInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
+					listOfConcreteInvoices.Add(possibleInvoice);
+				}
+
+				return Results.Ok(listOfConcreteInvoices);
 			}
 
 			else
@@ -1560,6 +1568,16 @@ public static partial class InvoiceEndpoints
 				{
 					var merchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
 					if (merchant is null) return Results.NotFound();
+					var listOfInvoiceIdentifiers = merchant.ReferencedInvoices;
+					var listOfConcreteInvoices = new List<Invoice>();
+
+					foreach (var identifier in listOfInvoiceIdentifiers)
+					{
+						var possibleInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
+						listOfConcreteInvoices.Add(possibleInvoice);
+					}
+
+					return Results.Ok(listOfConcreteInvoices);
 				}
 
 				return Results.Unauthorized();
@@ -1613,18 +1631,49 @@ public static partial class InvoiceEndpoints
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(AddInvoiceToMerchantAsync), ActivityKind.Server);
 			var potentialUserIdentifer = RetrieveUserIdentifierFromPrincipal(principal);
-			// TODO: complete implementation;
 
 			if (potentialUserIdentifer != Guid.Empty)
 			{
+				var merchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
+				if(merchant is null) return Results.NotFound();
 
+				var listOfValidInvoices = new List<Invoice>();
+				foreach(var identifier in invoiceIdentifiers)
+				{
+					var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
+					if (potentialInvoice is not null) listOfValidInvoices.Add(potentialInvoice);
+				}
+
+				foreach (var invoice in listOfValidInvoices)
+				{
+					merchant.ReferencedInvoices.Add(invoice.id);
+				}
+
+				var updatedMerchant = await invoiceProcessingService.UpdateMerchant(merchant.id, merchant).ConfigureAwait(false);
+				return Results.Accepted(value: updatedMerchant);
 			}
 
 			else
 			{
 				if(IsPrincipalSuperUser(principal))
 				{
+					var merchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
+					if (merchant is null) return Results.NotFound();
 
+					var listOfValidInvoices = new List<Invoice>();
+					foreach (var identifier in invoiceIdentifiers)
+					{
+						var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
+						if (potentialInvoice is not null) listOfValidInvoices.Add(potentialInvoice);
+					}
+
+					foreach (var invoice in listOfValidInvoices)
+					{
+						merchant.ReferencedInvoices.Add(invoice.id);
+					}
+
+					var updatedMerchant = await invoiceProcessingService.UpdateMerchant(merchant.id, merchant).ConfigureAwait(false);
+					return Results.Accepted(value: updatedMerchant);
 				}
 
 				return Results.Unauthorized();
@@ -1678,18 +1727,49 @@ public static partial class InvoiceEndpoints
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveInvoiceFromMerchantAsync), ActivityKind.Server);
 			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
-			// TODO: complete this;
 
 			if (potentialUserIdentifier != Guid.Empty)
 			{
+				var merchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
+				if (merchant is null) return Results.NotFound();
+				var listOfInvoicesToBeRemoved = new List<Invoice>();
 
+				foreach(var identifier in invoiceIdentifiers)
+				{
+					var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
+					if (potentialInvoice is not null) listOfInvoicesToBeRemoved.Add(potentialInvoice);
+				}
+
+				foreach (var invoice in listOfInvoicesToBeRemoved)
+				{
+					merchant.ReferencedInvoices.Remove(invoice.id);
+				}
+
+				var updatedMerchant = await invoiceProcessingService.UpdateMerchant(merchant.id, merchant).ConfigureAwait(false);
+				return Results.Accepted(value: updatedMerchant);
 			}
 
 			else
 			{
 				if(IsPrincipalSuperUser(principal))
 				{
+					var merchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
+					if (merchant is null) return Results.NotFound();
+					var listOfInvoicesToBeRemoved = new List<Invoice>();
 
+					foreach (var identifier in invoiceIdentifiers)
+					{
+						var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
+						if (potentialInvoice is not null) listOfInvoicesToBeRemoved.Add(potentialInvoice);
+					}
+
+					foreach (var invoice in listOfInvoicesToBeRemoved)
+					{
+						merchant.ReferencedInvoices.Remove(invoice.id);
+					}
+
+					var updatedMerchant = await invoiceProcessingService.UpdateMerchant(merchant.id, merchant).ConfigureAwait(false);
+					return Results.Accepted(value: updatedMerchant);
 				}
 
 				return Results.Unauthorized();
@@ -1742,18 +1822,51 @@ public static partial class InvoiceEndpoints
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveProductsFromMerchantAsync), ActivityKind.Server);
 			var potentialUserIdentifier = RetrieveUserIdentifierFromPrincipal(principal);
-			// TODO: complete this;
 
 			if (potentialUserIdentifier != Guid.Empty)
 			{
+				var merchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
+				if (merchant is null) return Results.NotFound();
+				var listOfInvoices = merchant.ReferencedInvoices;
+				var listOfProducts = new List<Product>();
 
+				foreach (var identifier in listOfInvoices)
+				{
+					var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
+					if (potentialInvoice is not null)
+					{
+						foreach (var product in potentialInvoice.Items)
+						{
+							listOfProducts.Add(product);
+						}
+					}
+				}
+
+				return Results.Ok(listOfProducts);
 			}
 
 			else
 			{
-				if(IsPrincipalSuperUser(principal))
+				if (IsPrincipalSuperUser(principal))
 				{
+					var merchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
+					if (merchant is null) return Results.NotFound();
+					var listOfInvoices = merchant.ReferencedInvoices;
+					var listOfProducts = new List<Product>();
 
+					foreach (var identifier in listOfInvoices)
+					{
+						var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
+						if (potentialInvoice is not null)
+						{
+							foreach (var product in potentialInvoice.Items)
+							{
+								listOfProducts.Add(product);
+							}
+						}
+					}
+
+					return Results.Ok(listOfProducts);
 				}
 
 				return Results.Unauthorized();

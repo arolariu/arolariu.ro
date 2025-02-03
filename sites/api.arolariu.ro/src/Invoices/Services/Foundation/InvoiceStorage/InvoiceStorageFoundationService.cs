@@ -58,16 +58,29 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public Task<Invoice> ReadInvoiceObject(Guid identifier)
+	public async Task<Invoice> ReadInvoiceObject(Guid identifier) =>
+	await TryCatchAsync(async () =>
 	{
-		throw new NotImplementedException();
-	}
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
+		ValidateIdentifierIsSet(identifier);
+		var invoice = await invoiceNoSqlBroker
+			.ReadInvoiceAsync(identifier)
+			.ConfigureAwait(false);
+
+		return invoice;
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
-	public Task<IEnumerable<Invoice>> ReadAllInvoiceObjects()
+	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects() =>
+	await TryCatchAsync(async () =>
 	{
-		throw new NotImplementedException();
-	}
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
+		var invoices = await invoiceNoSqlBroker
+			.ReadInvoicesAsync()
+			.ConfigureAwait(false);
+
+		return invoices;
+	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
 	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier) =>

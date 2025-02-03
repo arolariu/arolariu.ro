@@ -1,11 +1,13 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Azure;
@@ -48,13 +50,11 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
 		invoice.Description = await GenerateInvoiceDescription(invoice).ConfigureAwait(false);
 
 		#region Generate possible products
-		var products = invoice.Items;
-		foreach (var product in products)
+		foreach (var product in invoice.Items)
 		{
 			// TODO: further processing of the product.
 			product.Category = await GenerateProductCategory(product).ConfigureAwait(false);
 			product.DetectedAllergens = await GenerateProductAllergens(product).ConfigureAwait(false);
-			invoice.Items.Add(product);
 		}
 		#endregion
 		

@@ -28,9 +28,26 @@ public interface IInvoiceNoSqlBroker
 	/// The invoice is identified by the invoice identifier.
 	/// </summary>
 	/// <param name="invoiceIdentifier"></param>
+	/// <returns></returns>
+	public ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier);
+
+	/// <summary>
+	/// Reads an invoice.
+	/// This method is used to read an invoice from the database.
+	/// The invoice is identified by the invoice identifier.
+	/// </summary>
+	/// <param name="invoiceIdentifier"></param>
 	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
 	public ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
+
+	/// <summary>
+	/// Reads all the invoices.
+	/// This method is used to read all the invoices from the database.
+	/// The invoices are returned as an enumerable.
+	/// </summary>
+	/// <returns></returns>
+	public ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync();
 
 	/// <summary>
 	/// Reads all the invoices.
@@ -46,10 +63,30 @@ public interface IInvoiceNoSqlBroker
 	/// This method is used to update an invoice in the database.
 	/// The invoice is identified by the invoice identifier.
 	/// </summary>
+	/// <param name="invoiceIdentifier"></param>
+	/// <param name="updatedInvoice"></param>
+	/// <returns></returns>
+
+	public ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice);
+
+	/// <summary>
+	/// Updates an invoice.
+	/// This method is used to update an invoice in the database.
+	/// The invoice is identified by the invoice identifier.
+	/// </summary>
 	/// <param name="currentInvoice"></param>
 	/// <param name="updatedInvoice"></param>
 	/// <returns></returns>
 	public ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice);
+
+	/// <summary>
+	/// Deletes an invoice.
+	/// This method is used to delete an invoice from the database.
+	/// The invoice is identified by the invoice identifier.
+	/// </summary>
+	/// <param name="invoiceIdentifier"></param>
+	/// <returns></returns>
+	public ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier);
 
 	/// <summary>
 	/// Deletes an invoice.
@@ -80,9 +117,23 @@ public interface IInvoiceNoSqlBroker
 	/// <summary>
 	/// Reads all the merchants.
 	/// </summary>
+	/// <returns></returns>
+	public ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync();
+
+	/// <summary>
+	/// Reads all the merchants.
+	/// </summary>
 	/// <param name="parentCompanyId"></param>
 	/// <returns></returns>
 	public ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId);
+
+	/// <summary>
+	/// Updates a merchant.
+	/// </summary>
+	/// <param name="merchantIdentifier"></param>
+	/// <param name="updatedMerchant"></param>
+	/// <returns></returns>
+	public ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant);
 
 	/// <summary>
 	/// Updates a merchant.

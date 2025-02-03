@@ -2,6 +2,8 @@
 using arolariu.Backend.Common.DDD.Contracts;
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
@@ -41,4 +43,10 @@ public sealed class Merchant : NamedEntity<Guid>
 	/// </summary>
 	[JsonPropertyOrder(6)]
 	public Guid ParentCompanyId { get; set; } = Guid.Empty;
+
+	/// <summary>
+	/// The list of invoices that reference this merchant.
+	/// </summary>
+	[JsonPropertyOrder(7)]
+	public ICollection<Guid> ReferencedInvoices { get; init; } = new List<Guid>();
 }
