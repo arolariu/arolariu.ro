@@ -20,7 +20,7 @@ import {InvoiceSummary} from "./_components/InvoiceSummary";
  */
 export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
   const {userInformation} = useUserInformation();
-  const {invoice, isLoading} = useInvoice({invoiceIdentifier});
+  const {invoice, isLoading} = useInvoice(invoiceIdentifier);
   const [currentStep, setCurrentStep] = useState<number>(1);
 
   if (isLoading) return <LoadingInvoice invoiceIdentifier={invoiceIdentifier} />;

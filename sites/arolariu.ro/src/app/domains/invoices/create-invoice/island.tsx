@@ -17,7 +17,7 @@ import InvoiceSubtitle from "./_components/InvoiceSubtitle";
  */
 export default function RenderCreateInvoiceScreen() {
   const [images, setImages] = useState<Blob[]>([]);
-  const {userInformation} = useUserInformation({dependencyArray: [images]});
+  const {userInformation} = useUserInformation();
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>("UNKNOWN");
 
   const resetState = useCallback(() => {

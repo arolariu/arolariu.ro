@@ -14,7 +14,7 @@ import ProductTable from "./_components/ProductTable";
  * @returns The view for the edit invoice page.
  */
 export default function RenderEditInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
-  const {invoice, isLoading} = useInvoice({invoiceIdentifier});
+  const {invoice, isLoading} = useInvoice(invoiceIdentifier);
 
   if (isLoading) return <LoadingInvoice invoiceIdentifier={invoiceIdentifier} />;
   if (invoice === null) return <InvoiceNotFound invoiceIdentifier={invoiceIdentifier} />;
