@@ -14,15 +14,17 @@ const ImageActions = ({image, setImages}: Readonly<{image: Blob; setImages: Disp
    */
   const handleDeleteImage = useCallback(() => {
     setImages((images) => images.filter((imageInState) => imageInState !== image));
-  }, [image, setImages]);
+  }, [image]);
 
   /**
    * This function rotates an image 90 degrees clockwise, from the state.
    */
   const handleRotateImage = useCallback(() => {
-    const URL = window.URL || window.webkitURL;
+    const URL = globalThis.URL;
     const imageURL = URL.createObjectURL(image);
     const imageElement = document.createElement("img");
+
+    // eslint-disable-next-line functional/immutable-data -- We need to mutate the imageElement.
     imageElement.src = imageURL;
     imageElement.onload = () => {
       const canvas = document.createElement("canvas");
@@ -41,6 +43,8 @@ const ImageActions = ({image, setImages}: Readonly<{image: Blob; setImages: Disp
           });
       }
     };
+
+    // eslint-disable-next-line react/no-exhaustive-deps -- setImages is a stable function.
   }, [image]);
 
   return (

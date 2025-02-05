@@ -45,6 +45,8 @@ export function useInvoices(): HookOutputType {
     if (userInformation) {
       fetchInvoicesForUser(userInformation);
     }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setPossiblyStaleInvoices is a stable function.
   }, [userInformation]);
 
   return {invoices: possiblyStaleInvoices, isLoading, isError} as const;
