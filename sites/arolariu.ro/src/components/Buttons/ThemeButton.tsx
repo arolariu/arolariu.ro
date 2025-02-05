@@ -20,6 +20,7 @@ export function ThemeButton() {
 
   const handleSetTheme = useCallback(() => {
     setTheme(theme === "dark" ? "light" : "dark");
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setTheme is a stable function.
   }, [theme]);
 
   if (!mounted) return;

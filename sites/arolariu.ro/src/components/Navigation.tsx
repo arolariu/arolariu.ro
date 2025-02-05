@@ -45,23 +45,26 @@ const NavigationItems: NavigationItem[] = [
 export const NavigationForMobile = ({className}: Readonly<{className?: string}>) => {
   const items = NavigationItems;
 
-  const renderNavigationItem = useCallback((item: NavigationItem) => {
-    const dropdownOpen = items.findIndex((i) => i.href === item.href) !== -1;
-    return (
-      <li key={item.href}>
-        {item.children !== undefined ? (
-          <details open={dropdownOpen}>
-            <summary>
-              <Link href={item.href}>{item.label}</Link>
-            </summary>
-            <ul>{item.children.map((child) => renderNavigationItem(child))}</ul>
-          </details>
-        ) : (
-          <Link href={item.href}>{item.label}</Link>
-        )}
-      </li>
-    );
-  }, []);
+  const renderNavigationItem = useCallback(
+    (item: NavigationItem) => {
+      const dropdownOpen = items.some((i) => i.href === item.href);
+      return (
+        <li key={item.href}>
+          {item.children ? (
+            <details open={dropdownOpen}>
+              <summary>
+                <Link href={item.href}>{item.label}</Link>
+              </summary>
+              <ul>{item.children.map(renderNavigationItem)}</ul>
+            </details>
+          ) : (
+            <Link href={item.href}>{item.label}</Link>
+          )}
+        </li>
+      );
+    },
+    [items],
+  );
 
   return (
     <div className='dropdown'>
@@ -81,29 +84,32 @@ export const NavigationForMobile = ({className}: Readonly<{className?: string}>)
 export const NavigationForDesktop = ({className}: Readonly<{className?: string}>) => {
   const items = NavigationItems;
 
-  const renderNavigationItem = useCallback((item: NavigationItem) => {
-    const firstRow = items.findIndex((i) => i.href === item.href) !== -1;
-    return (
-      <li
-        key={item.href}
-        className='z-50'>
-        {item.children !== undefined ? (
-          <details>
-            <summary className={firstRow ? "" : "text-black"}>
-              <Link href={item.href}>{item.label}</Link>
-            </summary>
-            <ul>{item.children.map((child) => renderNavigationItem(child))}</ul>
-          </details>
-        ) : (
-          <Link
-            href={item.href}
-            className='text-black'>
-            {item.label}
-          </Link>
-        )}
-      </li>
-    );
-  }, []);
+  const renderNavigationItem = useCallback(
+    (item: NavigationItem) => {
+      const firstRow = items.some((i) => i.href === item.href);
+      return (
+        <li
+          key={item.href}
+          className='z-50'>
+          {item.children ? (
+            <details>
+              <summary className={firstRow ? "" : "text-black"}>
+                <Link href={item.href}>{item.label}</Link>
+              </summary>
+              <ul>{item.children.map(renderNavigationItem)}</ul>
+            </details>
+          ) : (
+            <Link
+              href={item.href}
+              className='text-black'>
+              {item.label}
+            </Link>
+          )}
+        </li>
+      );
+    },
+    [items],
+  );
 
   return <ul className={`${className as string} text-md gap-4`}>{items.map(renderNavigationItem)}</ul>;
 };

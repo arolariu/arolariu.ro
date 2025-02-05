@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * The sign up page.
- * @returns The sign up page.
+ * The sign up page, which allows the user to sign up to the application.
+ * @returns The sign up page, with the sign up component from Clerk.
  */
 export default function SignUpPage() {
   return (

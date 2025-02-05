@@ -4,7 +4,7 @@
 
 /** @format */
 
-import {useCallback, useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 
 type WindowSize = {
   width: number | null;
@@ -24,16 +24,22 @@ type HookReturnType = Readonly<{
 export function useWindowSize(): HookReturnType {
   const [windowSize, setWindowSize] = useState<WindowSize>({width: null, height: null});
 
-  const __handleResize = useCallback(() => {
-    setWindowSize({
-      width: window.innerWidth,
-      height: window.innerHeight,
-    });
-  }, []);
-
   useEffect(() => {
+    /**
+     * This function updates the window size.
+     * It is created inside of useEffect and has a short lifespan.
+     * After it is attached to the window object, it will be garbage collected
+     *  when the component unmounts or the window is resized.
+     */
+    function __handleResize() {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    }
+
     window.addEventListener("resize", __handleResize);
-    __handleResize();
+    __handleResize(); // Call the function once to get the initial window size
     return () => window.removeEventListener("resize", __handleResize);
   }, []); // Empty array ensures that effect is only run on mount
 

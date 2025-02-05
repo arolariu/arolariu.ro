@@ -38,6 +38,7 @@ export function useUserInformation(): HookReturnType {
 
   useEffect(() => {
     abortControllerRef.current?.abort("New request initiated.");
+    // eslint-disable-next-line functional/immutable-data -- We need to mutate the ref.
     abortControllerRef.current = new AbortController();
     const {signal} = abortControllerRef.current!;
 

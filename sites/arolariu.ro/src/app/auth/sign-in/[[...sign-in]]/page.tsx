@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * The sign in page.
- * @returns The sign in page.
+ * The sign in page, which allows the user to sign in to the application.
+ * @returns The sign in page, with the sign in component from Clerk.
  */
 export default function SignInPage() {
   return (
