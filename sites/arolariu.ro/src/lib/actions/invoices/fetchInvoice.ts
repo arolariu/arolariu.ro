@@ -2,20 +2,22 @@
 
 "use server";
 
-import type {UserInformation} from "@/types";
 import type {Invoice} from "@/types/invoices";
 import {API_URL} from "../../utils.server";
 
 /**
  * Server action that fetches a single invoice for a user.
  * @param id The id of the invoice to fetch.
+ * @param authToken The JWT token of the user.
  * @returns A promise of the invoice, or undefined if the request failed.
  */
-export default async function fetchInvoice(id: string, userInformation: UserInformation): Promise<Invoice> {
+export default async function fetchInvoice(id: string, authToken: string): Promise<Invoice> {
+  console.info(">>> Executing server action::fetchInvoice, with:", {id, authToken});
+
   try {
     const response = await fetch(`${API_URL}/rest/v1/invoices/${id}`, {
       headers: {
-        Authorization: `Bearer ${userInformation.userJwt}`,
+        Authorization: `Bearer ${authToken}`,
         "Content-Type": "application/json",
       },
     });

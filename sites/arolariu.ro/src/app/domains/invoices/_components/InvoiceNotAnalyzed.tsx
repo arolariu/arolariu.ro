@@ -16,7 +16,8 @@ export default function InvoiceNotAnalyzed({invoiceIdentifier}: Readonly<{invoic
   const handleAnalysis = useCallback(
     async (event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {
       event.preventDefault();
-      await analyzeInvoice(invoiceIdentifier, userInformation!);
+      const authToken = userInformation?.userJwt;
+      await analyzeInvoice(invoiceIdentifier, authToken!);
       // TODO: toast that redirects user to view-invoice page.
     },
     [invoiceIdentifier, userInformation],

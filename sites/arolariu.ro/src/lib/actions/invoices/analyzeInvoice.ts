@@ -3,38 +3,32 @@
 "use server";
 
 import {API_URL} from "@/lib/utils.server";
-import type {UserInformation} from "@/types";
 import type {Invoice} from "@/types/invoices";
 
 /**
  * Analyzes an invoice for a given user.
  *
- * @param invoiceIdentifier - The identifier of the invoice to be analyzed.
- * @param userInformation - The information of the user requesting the analysis.
+ * @param id - The identifier of the invoice to be analyzed.
+ * @param authToken - The JWT token of the user.
  * @returns A promise that resolves to the analyzed Invoice object or null if the analysis fails.
- *
- * @throws Will log an error message if the analysis process encounters an error.
  */
-export default async function analyzeInvoice(
-  invoiceIdentifier: string,
-  userInformation: UserInformation,
-): Promise<Invoice | null> {
-  try {
-    console.info(">>> Analyzing invoice for user:", userInformation);
+export default async function analyzeInvoice(id: string, authToken: string): Promise<Invoice | null> {
+  console.info(">>> Executing server action::analyzeInvoice, with:", {id, authToken});
 
-    const response = await fetch(`${API_URL}/rest/v1/invoices/${invoiceIdentifier}/analyze`, {
+  try {
+    const response = await fetch(`${API_URL}/rest/v1/invoices/${id}/analyze`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${userInformation.userJwt}`,
+        Authorization: `Bearer ${authToken}`,
         "Content-Type": "application/json",
       },
       body: "1",
     });
 
-    if (response.ok) return (await response.json()) as Invoice;
+    if (response.ok) return response.json() as Promise<Invoice>;
     else return null;
   } catch (error) {
     console.error("Error analyzing the invoice:", error);
-    return null;
+    throw error;
   }
 }

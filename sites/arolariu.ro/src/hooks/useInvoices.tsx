@@ -5,7 +5,7 @@
 import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
 import type {UserInformation} from "@/types";
 import type {Invoice} from "@/types/invoices";
-import {useCallback, useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 import {useUserInformation} from "./index";
 import {useZustandStore} from "./stateStore";
 
@@ -26,12 +26,13 @@ export function useInvoices(): HookOutputType {
   const possiblyStaleInvoices = useZustandStore((state) => state.invoices);
   const setPossiblyStaleInvoices = useZustandStore((state) => state.setInvoices);
 
-  const fetchInvoicesForUser = useCallback(
-    async (userInformation: UserInformation) => {
+  useEffect(() => {
+    const fetchInvoicesForUser = async (userInformation: UserInformation) => {
       setIsLoading(true);
 
       try {
-        const invoices = await fetchInvoices(userInformation);
+        const authToken = userInformation.userJwt;
+        const invoices = await fetchInvoices(authToken);
         setPossiblyStaleInvoices(invoices);
       } catch (error: unknown) {
         console.error(">>> Error fetching invoices in useInvoices hook:", error as Error);
@@ -39,11 +40,8 @@ export function useInvoices(): HookOutputType {
       } finally {
         setIsLoading(false);
       }
-    },
-    [userInformation],
-  );
+    };
 
-  useEffect(() => {
     if (userInformation) {
       fetchInvoicesForUser(userInformation);
     }

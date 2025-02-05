@@ -5,7 +5,7 @@
 import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
 import type {UserInformation} from "@/types";
 import type {Invoice} from "@/types/invoices";
-import {useCallback, useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 import {useUserInformation} from "./index";
 
 type HookOutputType = Readonly<{
@@ -24,12 +24,13 @@ export function useInvoice(invoiceIdentifier: string): HookOutputType {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
 
-  const fetchInvoiceForUser = useCallback(
-    async (userInformation: UserInformation) => {
+  useEffect(() => {
+    const fetchInvoiceForUser = async (userInformation: UserInformation) => {
       setIsLoading(true);
 
       try {
-        const invoice = await fetchInvoice(invoiceIdentifier, userInformation);
+        const authToken = userInformation.userJwt;
+        const invoice = await fetchInvoice(invoiceIdentifier, authToken);
         setInvoice(invoice);
       } catch (error: unknown) {
         console.error(">>> Error fetching invoices in useInvoice hook:", error as Error);
@@ -37,11 +38,8 @@ export function useInvoice(invoiceIdentifier: string): HookOutputType {
       } finally {
         setIsLoading(false);
       }
-    },
-    [invoiceIdentifier, userInformation],
-  );
+    };
 
-  useEffect(() => {
     if (userInformation) {
       fetchInvoiceForUser(userInformation);
     }
