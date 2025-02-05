@@ -2,7 +2,9 @@
 
 "use client";
 
-import {useEffect, useState} from "react";
+/** @format */
+
+import {useCallback, useEffect, useState} from "react";
 
 type WindowSize = {
   width: number | null;
@@ -22,26 +24,22 @@ type HookReturnType = Readonly<{
 export function useWindowSize(): HookReturnType {
   const [windowSize, setWindowSize] = useState<WindowSize>({width: null, height: null});
 
+  const __handleResize = useCallback(() => {
+    setWindowSize({
+      width: window.innerWidth,
+      height: window.innerHeight,
+    });
+  }, []);
+
   useEffect(() => {
-    /**
-     * Event handler to update the window size.
-     */
-    function handleResize() {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    }
-
-    window.addEventListener("resize", handleResize);
-    handleResize();
-
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener("resize", __handleResize);
+    __handleResize();
+    return () => window.removeEventListener("resize", __handleResize);
   }, []); // Empty array ensures that effect is only run on mount
 
   return {
     windowSize,
     isMobile: typeof windowSize.width === "number" && windowSize.width < 768,
     isDesktop: typeof windowSize.width === "number" && windowSize.width >= 768,
-  };
+  } as const;
 }

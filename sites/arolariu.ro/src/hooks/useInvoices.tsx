@@ -9,7 +9,7 @@ import {useCallback, useEffect, useState} from "react";
 import {useUserInformation} from "./index";
 import {useZustandStore} from "./stateStore";
 
-type HookReturnType = Readonly<{
+type HookOutputType = Readonly<{
   invoices: Invoice[];
   isLoading: boolean;
   isError: boolean;
@@ -19,7 +19,7 @@ type HookReturnType = Readonly<{
  * This hook fetches the invoices for the user.
  * @returns The invoices and loading state.
  */
-export function useInvoices(): HookReturnType {
+export function useInvoices(): HookOutputType {
   const {userInformation} = useUserInformation();
   const [isError, setIsError] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);

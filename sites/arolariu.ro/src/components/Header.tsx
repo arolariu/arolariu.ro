@@ -18,9 +18,9 @@ export default function Header() {
 
   return (
     <header>
-      <nav className='navbar bg-white dark:bg-black 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto'>
+      <nav className='navbar bg-white text-black dark:bg-black dark:text-white 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto'>
         <div className='navbar-start flex flex-row flex-nowrap'>
-          {Boolean(isMobile) && <NavigationForMobile className='menu menu-vertical' />}
+          {Boolean(isMobile) === true && <NavigationForMobile className='menu menu-vertical' />}
 
           <Link
             href='/'
@@ -37,8 +37,8 @@ export default function Header() {
           </Link>
         </div>
 
-        <div className='navbar-center flex'>
-          {Boolean(isDesktop) && <NavigationForDesktop className='menu menu-horizontal' />}
+        <div className='navbar-center flex flex-row flex-nowrap'>
+          {Boolean(isDesktop) === true && <NavigationForDesktop className='menu menu-horizontal' />}
         </div>
 
         <div className='navbar-end flex flex-row flex-wrap gap-2'>

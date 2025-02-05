@@ -4,7 +4,7 @@
 
 import {SITE_URL} from "@/lib/utils.generic";
 import {UserInformation} from "@/types";
-import {useCallback, useEffect, useRef, useState, type DependencyList} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 
 type HookReturnType = Readonly<{
   userInformation: UserInformation | null;
@@ -16,9 +16,7 @@ type HookReturnType = Readonly<{
  * This hook fetches the user information.
  * @returns The user information and loading state.
  */
-export function useUserInformation(
-  {dependencyArray}: Readonly<{dependencyArray: DependencyList}> = {dependencyArray: []} as const,
-): HookReturnType {
+export function useUserInformation(): HookReturnType {
   const [userInformation, setUserInformation] = useState<UserInformation | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -39,22 +37,16 @@ export function useUserInformation(
   }, []);
 
   useEffect(() => {
-    if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
-      abortControllerRef.current.abort("New request initiated.");
-    }
-
-    // eslint-disable-next-line functional/immutable-data
+    abortControllerRef.current?.abort("New request initiated.");
     abortControllerRef.current = new AbortController();
-    const {signal} = abortControllerRef.current;
+    const {signal} = abortControllerRef.current!;
 
     fetchUserInformation(signal);
 
     return () => {
-      if (isLoading) {
-        abortControllerRef.current?.abort("Request aborted by cleanup function.");
-      }
+      abortControllerRef.current?.abort("Request aborted by cleanup function.");
     };
-  }, dependencyArray);
+  }, []);
 
   return {userInformation, isLoading, isError};
 }

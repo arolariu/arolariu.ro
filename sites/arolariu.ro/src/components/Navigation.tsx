@@ -1,4 +1,5 @@
 /** @format */
+"use client";
 
 import {NavigationItem} from "@/types";
 import Link from "next/link";
@@ -26,29 +27,34 @@ const NavigationItems: NavigationItem[] = [
       {
         label: "Invoices",
         href: "/domains/invoices",
+        children: [
+          {
+            label: "Create",
+            href: "/domains/invoices/create-invoice",
+          },
+          {
+            label: "View",
+            href: "/domains/invoices/view-invoices",
+          },
+        ],
       },
     ],
   },
-];
+] as const;
 
 export const NavigationForMobile = ({className}: Readonly<{className?: string}>) => {
   const items = NavigationItems;
 
   const renderNavigationItem = useCallback((item: NavigationItem) => {
+    const dropdownOpen = items.findIndex((i) => i.href === item.href) !== -1;
     return (
       <li key={item.href}>
         {item.children !== undefined ? (
-          <details open>
+          <details open={dropdownOpen}>
             <summary>
               <Link href={item.href}>{item.label}</Link>
             </summary>
-            <ul>
-              {item.children.map((child) => (
-                <li key={child.href}>
-                  <Link href={child.href}>{child.label}</Link>
-                </li>
-              ))}
-            </ul>
+            <ul>{item.children.map((child) => renderNavigationItem(child))}</ul>
           </details>
         ) : (
           <Link href={item.href}>{item.label}</Link>
@@ -75,34 +81,29 @@ export const NavigationForMobile = ({className}: Readonly<{className?: string}>)
 export const NavigationForDesktop = ({className}: Readonly<{className?: string}>) => {
   const items = NavigationItems;
 
-  return (
-    <ul className={`${className as string} flex items-center justify-center justify-items-center gap-4`}>
-      {items.map((item) => (
-        <li key={item.href}>
-          {item.children ? (
-            <details>
-              <summary>
-                <Link href={item.href}>{item.label}</Link>
-              </summary>
-              <ul className='mx-2 rounded-xl bg-white dark:bg-black 2xsm:border-0 md:border'>
-                {item.children.map((child) => (
-                  <li
-                    key={child.href}
-                    className='hover:text-yellow-300'>
-                    <Link href={child.href}>&gt; {child.label}</Link>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          ) : (
-            <Link
-              href={item.href}
-              className='hover:text-yellow-300'>
-              {item.label}
-            </Link>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
+  const renderNavigationItem = useCallback((item: NavigationItem) => {
+    const firstRow = items.findIndex((i) => i.href === item.href) !== -1;
+    return (
+      <li
+        key={item.href}
+        className='z-50'>
+        {item.children !== undefined ? (
+          <details>
+            <summary className={firstRow ? "" : "text-black"}>
+              <Link href={item.href}>{item.label}</Link>
+            </summary>
+            <ul>{item.children.map((child) => renderNavigationItem(child))}</ul>
+          </details>
+        ) : (
+          <Link
+            href={item.href}
+            className='text-black'>
+            {item.label}
+          </Link>
+        )}
+      </li>
+    );
+  }, []);
+
+  return <ul className={`${className as string} text-md gap-4`}>{items.map(renderNavigationItem)}</ul>;
 };
