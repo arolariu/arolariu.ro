@@ -5,17 +5,26 @@ import {useCallback, useMemo, useState} from "react";
 
 type FilterType = "all" | "production" | "development";
 
-type HookReturnType = {
+type HookInputType = Readonly<NodePackagesJSON>;
+type HookReturnType = Readonly<{
   filteredPackages: NodePackageInformation[];
   handleShowProductionPackages: () => void;
   handleShowDevelopmentPackages: () => void;
   handleResetPackagesFilter: () => void;
-};
+}>;
 
 /**
- * Hook that handles the filters for the acknowledgements page.
+ * Custom hook to manage filtering of acknowledgement packages based on their type.
+ *
+ * @param packages - An object containing arrays of packages categorized by type (production, development, peer).
+ *
+ * @returns An object containing:
+ * - `filteredPackages`: Array of packages filtered according to the current filter state.
+ * - `handleShowProductionPackages`: Function to set the filter to show only production packages.
+ * - `handleShowDevelopmentPackages`: Function to set the filter to show only development packages.
+ * - `handleResetPackagesFilter`: Function to reset the filter and show all packages.
  */
-export default function useAcknowledgementsFilters({packages}: Readonly<{packages: NodePackagesJSON}>): HookReturnType {
+export default function useAcknowledgementsFilters(packages: HookInputType): HookReturnType {
   const [filter, setFilter] = useState<FilterType>("all");
 
   const filteredPackages: NodePackageInformation[] = useMemo(() => {
@@ -39,3 +48,4 @@ export default function useAcknowledgementsFilters({packages}: Readonly<{package
     handleResetPackagesFilter,
   } as const;
 }
+

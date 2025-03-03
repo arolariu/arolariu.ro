@@ -2,7 +2,7 @@
 
 "use client";
 
-import {Button} from "react-aria-components";
+import {Button} from "@arolariu/components/button";
 import {GoColumns, GoHeart, GoMoon, GoServer, GoSun} from "react-icons/go";
 
 interface Props {
@@ -52,14 +52,14 @@ export const InvoiceFilters = ({filters, displayStyle, setDisplayStyle, setFilte
         <div className='flex-row items-center justify-center justify-items-center gap-6 pt-2 2xsm:flex md:hidden'>
           <Button
             className={`${displayStyle === "list" ? "" : "bg-blue"} w-1/2`}
-            onPress={() => setDisplayStyle("list")}
-            isDisabled={displayStyle === "list"}>
+            onClick={() => setDisplayStyle("list")}
+            disabled={displayStyle === "list"}>
             List
           </Button>
           <Button
             className={`${displayStyle === "grid" ? "" : "bg-blue"} w-1/2`}
-            onPress={() => setDisplayStyle("grid")}
-            isDisabled={displayStyle === "grid"}>
+            onClick={() => setDisplayStyle("grid")}
+            disabled={displayStyle === "grid"}>
             Grid
           </Button>
         </div>

@@ -6,8 +6,6 @@ import {useInvoice} from "@/hooks";
 import InvoiceNotAnalyzed from "../../_components/InvoiceNotAnalyzed";
 import InvoiceNotFound from "../../_components/InvoiceNotFound";
 import LoadingInvoice from "../../_components/LoadingInvoice";
-import InvoicePhotoPreview from "./_components/InvoicePhotoPreview";
-import ProductTable from "./_components/ProductTable";
 
 /**
  * This function renders the edit invoice page.
@@ -68,12 +66,9 @@ export default function RenderEditInvoiceScreen({invoiceIdentifier}: Readonly<{i
             </table>
           </div>
         </div>
-        <div className='m-auto p-4 2xsm:hidden lg:block'>
-          <InvoicePhotoPreview invoice={invoice} />
-        </div>
+        <div className='m-auto p-4 2xsm:hidden lg:block'></div>
       </div>
       <hr />
-      <ProductTable invoice={invoice} />
     </section>
   );
 }

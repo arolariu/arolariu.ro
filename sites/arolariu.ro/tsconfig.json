@@ -61,7 +61,7 @@
       "@types/jest",
       "@types/node",
       "@types/react",
-      "@types/react-dom",
+      "@types/react-dom"
     ],
     "stripInternal": true
   },
@@ -69,12 +69,11 @@
     "**/*.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    "**/*.mjs",
     ".next/types/**/*.ts",
-    "postcss.config.cjs"
+    "next.config.ts"
   ],
   "exclude": [
-    "node_modules",
-    "**/*.md",
-    "**/*.mdx"
+    "node_modules"
   ]
 }

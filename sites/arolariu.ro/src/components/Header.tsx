@@ -41,7 +41,7 @@ export default function Header() {
           {Boolean(isDesktop) === true && <NavigationForDesktop className='menu menu-horizontal' />}
         </div>
 
-        <div className='navbar-end flex flex-row flex-wrap gap-2'>
+        <div className='navbar-end flex flex-row flex-wrap gap-4'>
           <AuthButton />
           <ThemeButton />
         </div>

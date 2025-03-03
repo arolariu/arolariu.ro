@@ -99,14 +99,10 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   experimental: {
+    optimizePackageImports: ["@arolariu/components"],
     serverActions: {
       bodySizeLimit: "10mb",
     },
-  },
-
-  eslint: {
-    // We run ESLint V9 which is not yet supported by the NextJS v14 framework.
-    ignoreDuringBuilds: true,
   },
 
   typescript: {
@@ -115,7 +111,6 @@ const nextConfig: NextConfig = {
   },
 
   pageExtensions: ["ts", "tsx"],
-
   assetPrefix: process.env["USE_CDN"] === "true" ? "https://cdn.arolariu.ro" : undefined,
   compress: false, // We use AFD built-in compression for static assets.
   trailingSlash: true,

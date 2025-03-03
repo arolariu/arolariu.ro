@@ -318,6 +318,10 @@
   },
   "Acknowledgements": {
     "title": "Acknowledgements",
-    "lastUpdate": "Last updated on: "
+    "lastUpdate": "Last updated on: {date}",
+    "packages": {
+      "title": "Third-party packages",
+      "subtitle": "This website could not have been possible without the following third-party packages. I would like to thank the authors of these packages for their hard work and dedication to the open-source community."
+    }
   }
 }

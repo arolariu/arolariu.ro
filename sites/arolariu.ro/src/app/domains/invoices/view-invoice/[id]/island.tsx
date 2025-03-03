@@ -9,10 +9,6 @@ import {useState} from "react";
 import InvoiceNotAnalyzed from "../../_components/InvoiceNotAnalyzed";
 import InvoiceNotFound from "../../_components/InvoiceNotFound";
 import LoadingInvoice from "../../_components/LoadingInvoice";
-import {InvoiceImagePreview} from "./_components/InvoiceImagePreview";
-import {InvoiceInformation} from "./_components/InvoiceInformation";
-import {InvoiceProducts} from "./_components/InvoiceProducts";
-import {InvoiceSummary} from "./_components/InvoiceSummary";
 
 /**
  * This function renders the view invoice page.
@@ -60,9 +56,6 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
               Additional Information
             </button>
           </div>
-          {currentStep === 1 && <InvoiceSummary invoice={invoice} />}
-          {currentStep === 2 && <InvoiceProducts invoice={invoice} />}
-          {currentStep === 3 && <InvoiceInformation invoice={invoice} />}
           <div className='flex'>
             <span className='title-font text-2xl font-medium dark:text-gray-300'>
               Total Cost: {paymentInformation?.totalCostAmount}
@@ -94,7 +87,6 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
           </div>
         </div>
       </div>
-      <InvoiceImagePreview invoice={invoice} />
     </section>
   );
 }

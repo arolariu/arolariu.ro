@@ -3,7 +3,7 @@
 "use client";
 
 import type {NodePackagesJSON} from "@/types";
-import {Button} from "react-aria-components";
+import {Button} from "@arolariu/components/button";
 import PackageCard from "./_components/PackageCard";
 import useAcknowledgementsFilters from "./_hooks/useAcknowledgementsFilters";
 
@@ -15,22 +15,22 @@ type Props = {packages: NodePackagesJSON};
  */
 export default function RenderAcknowledgementsPage({packages}: Readonly<Props>) {
   const {filteredPackages, handleShowProductionPackages, handleShowDevelopmentPackages, handleResetPackagesFilter} =
-    useAcknowledgementsFilters({packages});
+    useAcknowledgementsFilters(packages);
 
   return (
     <section>
       <div className='flex items-center justify-between justify-items-center gap-4 2xsm:flex-col md:flex-row'>
         <Button
           className='rounded-xl border bg-gray-200 p-2 dark:bg-gray-800'
-          onPress={handleShowProductionPackages}>
+          onClick={handleShowProductionPackages}>
           Show Production Packages
         </Button>
         <Button
           className='rounded-xl border bg-gray-200 p-2 dark:bg-gray-800'
-          onPress={handleShowDevelopmentPackages}>
+          onClick={handleShowDevelopmentPackages}>
           Show Development Packages
         </Button>
-        <Button onPress={handleResetPackagesFilter}>Show all packages </Button>
+        <Button onClick={handleResetPackagesFilter}>Show all packages </Button>
       </div>
       <div className='flex flex-col flex-nowrap gap-10 pt-4'>
         {filteredPackages.map((pkg) => (
@@ -43,3 +43,4 @@ export default function RenderAcknowledgementsPage({packages}: Readonly<Props>) 
     </section>
   );
 }
+
