@@ -29,7 +29,7 @@ const packageJson = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, "utf-8"));
 
 type ExportEntry = Readonly<
   | {
-      types: string;
+      types?: string;
       import: string;
       require: string;
       default: string;
@@ -43,7 +43,7 @@ const exports: Record<string, ExportEntry> = {
     types: "./dist/types/index.d.ts",
     import: "./dist/esm/index.js",
     require: "./dist/cjs/index.cjs",
-    default: "./dist/esm/index.js",
+    default: "./dist/index.js",
   },
   "./*": {
     types: "./dist/types/*.d.ts",
@@ -51,7 +51,14 @@ const exports: Record<string, ExportEntry> = {
     require: "./dist/cjs/*.cjs",
     default: "./dist/esm/*.js",
   },
+  "./tailwind": {
+    import: "./dist/esm/tailwind.js",
+    require: "./dist/cjs/tailwind.cjs",
+    default: "./dist/esm/tailwind.js",
+  },
   "./package.json": "./package.json",
+  "./styles": "./dist/index.css",
+  "./styles.css": "./dist/index.css",
 };
 
 // Helper to process items in a directory

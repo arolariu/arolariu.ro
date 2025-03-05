@@ -11,6 +11,7 @@ export default mergeConfig(
         entry: path.resolve(__dirname, "./src/index.ts"),
         formats: ["es"],
       },
+      emptyOutDir: false,
     },
   })
 );

@@ -1,13 +1,13 @@
 import { defineConfig, type Plugin } from "vite";
-import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
 import dts from "vite-plugin-dts";
 import path from "node:path";
+import autoprefixer from "autoprefixer";
+import tailwindcss from "tailwindcss";
+import cssnano from "cssnano";
 import muteWarningsPlugin from "./plugins/mute-rollup-warnings";
-import { peerDependencies } from "./package.json";
 import preserveDirectives from "rollup-preserve-directives";
 import { visualizer } from "rollup-plugin-visualizer";
-import autoprefixer from "autoprefixer";
 
 const warningsToIgnore = [
   ["SOURCEMAP_ERROR", "Can't resolve original location of error"],
@@ -15,19 +15,33 @@ const warningsToIgnore = [
 ];
 
 export const baseConfig = defineConfig({
-  css: {
-    postcss: {
-      plugins: [autoprefixer],
-    },
-  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  css: {
+    postcss: {
+      from: path.resolve(__dirname, "./src/index.css"),
+      plugins: [
+        tailwindcss({
+          config: path.resolve(__dirname, "./tailwind.config.mjs"),
+        }),
+        autoprefixer(),
+        cssnano({
+          preset: [
+            "default",
+            {
+              discardComments: { removeAll: true },
+              normalizeWhitespace: true,
+            },
+          ],
+        }),
+      ],
+    },
+  },
   plugins: [
     react({ tsDecorators: true }),
-    tailwindcss(),
     dts({
       entryRoot: "src",
       rollupTypes: true,
@@ -39,7 +53,7 @@ export const baseConfig = defineConfig({
       copyDtsFiles: true,
       staticImport: true,
     }),
-    //muteWarningsPlugin(warningsToIgnore),
+    muteWarningsPlugin(warningsToIgnore),
     preserveDirectives() as Plugin,
     visualizer(),
   ],
@@ -47,6 +61,7 @@ export const baseConfig = defineConfig({
     outDir: "./dist",
     target: "es2020",
     copyPublicDir: false,
+    cssCodeSplit: false,
     sourcemap: true,
     minify: true,
     cssMinify: true,
@@ -73,6 +88,9 @@ export const baseConfig = defineConfig({
           react: "React",
           "react-dom": "ReactDOM",
           "react/jsx-runtime": "react/jsx-runtime",
+        },
+        assetFileNames: (assetInfo) => {
+          return assetInfo.name === "index.css" ? "index.css" : assetInfo.name!;
         },
       },
     },
