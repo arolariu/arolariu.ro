@@ -6,7 +6,6 @@ import type {NodePackagesJSON} from "@/types";
 import type {Metadata} from "next";
 import {getTranslations} from "next-intl/server";
 import PackagesTable from "./_components/PackagesTable";
-import RenderAcknowledgementsPage from "./island";
 
 export const metadata: Metadata = {
   title: "Acknowledgements",
@@ -40,8 +39,6 @@ export default async function AcknowledgementsPage() {
         <span className='w-1/2 text-pretty pb-4 text-center text-xl'>{t("packages.subtitle")}</span>
         <PackagesTable packages={packages} />
       </section>
-      <RenderAcknowledgementsPage packages={packages} />
     </main>
   );
 }
-

@@ -95,6 +95,7 @@ const eslintConfig = tseslint.config(
       "functional/type-declaration-immutability": "off", // we enforce readonly types, not immutability.
 
       "react/jsx-indent": "off", // this rule is not needed, we use Prettier for formatting.
+      "react/jsx-no-bind": "warn", // warn on performance issues but allow them.
       "react/jsx-newline": "off", // this rule is not needed, we use Prettier for formatting.
       "react/no-multi-comp": "off", // this rule is too strict; there are files where siblings are defined.
       "react/jsx-sort-props": "off", // this rule is not needed, we use Prettier for formatting.

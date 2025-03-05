@@ -15,6 +15,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Table,
   TableBody,
   TableCell,
@@ -26,15 +32,26 @@ import {
   TabsList,
   TabsTrigger,
 } from "@arolariu/components";
+
+// eslint-disable-next-line n/no-extraneous-import -- importing framer-motion is standard.
 import {motion} from "framer-motion";
+
 import Link from "next/link";
-import {useCallback} from "react";
 import {FaExternalLinkAlt} from "react-icons/fa";
 import {TbPackage} from "react-icons/tb";
+import {usePackageFilters} from "../_hooks/usePackageFilters";
 
 type Props = {packages: NodePackagesJSON};
 
-function PackageBadge({type}: {type: "production" | "development" | "peer"}) {
+type SortField = "name" | "dependencies" | "type";
+type SortDirection = "asc" | "desc";
+type PackageType = "all" | "production" | "development";
+
+/**
+ * Component that displays a badge indicating the type of package (production or development).
+ * @returns A badge indicating the type of package.
+ */
+function PackageBadge({type}: Readonly<{type: PackageType}>) {
   return type === "production" ? (
     <span className='rounded-full bg-green-100 px-3 py-1.5 text-xs font-medium text-green-800 transition-colors duration-200 hover:bg-green-200 dark:bg-green-900 dark:text-green-100 dark:hover:bg-green-800'>
       Production
@@ -46,7 +63,11 @@ function PackageBadge({type}: {type: "production" | "development" | "peer"}) {
   );
 }
 
-function DependenciesDialog({pkg}: {pkg: NodePackageInformation}) {
+/**
+ * Component that displays a dialog with the dependencies of a package.
+ * @returns A dialog with the dependencies of a package.
+ */
+function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -56,10 +77,13 @@ function DependenciesDialog({pkg}: {pkg: NodePackageInformation}) {
           View Dependencies
         </Button>
       </DialogTrigger>
-      <DialogContent className='sm:max-w-[425px]'>
+      <DialogContent className='sm:max-w-[425px] md:max-w-[600px]'>
         <DialogHeader>
           <DialogTitle>{pkg.name} Dependencies</DialogTitle>
-          <DialogDescription>This package has {pkg.dependents?.length ?? "0"} dependencies.</DialogDescription>
+          <DialogDescription>
+            {pkg.description} <br /> <br />
+            This package has {pkg.dependents?.length ?? "0"} dependencies.
+          </DialogDescription>
         </DialogHeader>
         <div className='max-h-[300px] overflow-y-auto'>
           <Table>
@@ -71,7 +95,7 @@ function DependenciesDialog({pkg}: {pkg: NodePackageInformation}) {
             </TableHeader>
             <TableBody>
               {pkg.dependents?.map((dep) => (
-                <TableRow key={dep.name}>
+                <TableRow key={dep.name + dep.version}>
                   <TableCell>{dep.name}</TableCell>
                   <TableCell>{dep.version}</TableCell>
                 </TableRow>
@@ -87,32 +111,81 @@ function DependenciesDialog({pkg}: {pkg: NodePackageInformation}) {
 /**
  * The component shows counts and percentages for production, development, and peer dependencies,
  * as well as the total number of type definition packages.
- *
  * @returns A table displaying package statistics by dependency type
  */
 export default function PackagesTable({packages}: Readonly<Props>) {
-  const productionPackages = packages.production ?? [];
-  const developmentPackages = packages.development ?? [];
-  const peerPackages = packages.peer ?? [];
-
-  const extractPackageType = useCallback(
-    (pkg: {name: string}) => {
-      if (productionPackages.some((p) => p.name === pkg.name)) {
-        return "production";
-      }
-      if (developmentPackages.some((p) => p.name === pkg.name)) {
-        return "development";
-      }
-      return "peer";
-    },
-    [productionPackages, developmentPackages],
-  );
-
-  const totalPackages = productionPackages.length + developmentPackages.length + peerPackages.length;
-  const flatPackages = Object.values(packages).flat();
+  const {
+    extractPackageType,
+    filteredAndSortedPackages,
+    searchQuery,
+    setSearchQuery,
+    packageType,
+    setPackageType,
+    sortField,
+    setSortField,
+    setSortDirection,
+    sortDirection,
+  } = usePackageFilters(packages);
 
   return (
     <div className='container mx-auto max-w-7xl py-10 text-black'>
+      <div className='mx-auto mb-6 space-y-4'>
+        <div className='relative mx-auto max-w-md'>
+          <Input
+            type='text'
+            placeholder='Search...'
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className='pl-10'
+          />
+        </div>
+        <div className='mx-auto flex max-w-3xl flex-col gap-2 sm:flex-row'>
+          <div className='flex-1'>
+            <Select
+              value={packageType}
+              onValueChange={(value) => setPackageType(value as PackageType)}>
+              <SelectTrigger>
+                <SelectValue placeholder='Filter by type' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='all'>All Packages</SelectItem>
+                <SelectItem value='production'>Production Only</SelectItem>
+                <SelectItem value='development'>Development Only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className='flex-1'>
+            <Select
+              value={sortField}
+              onValueChange={(value) => setSortField(value as SortField)}>
+              <SelectTrigger>
+                <SelectValue placeholder='Sort by' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='name'>Name</SelectItem>
+                <SelectItem value='dependencies'>Dependencies Count</SelectItem>
+                <SelectItem value='type'>Package Type</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className='flex-1'>
+            <Select
+              value={sortDirection}
+              onValueChange={(value) => setSortDirection(value as SortDirection)}>
+              <SelectTrigger>
+                <SelectValue placeholder='Sort direction' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='asc'>Ascending</SelectItem>
+                <SelectItem value='desc'>Descending</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
       <Tabs
         defaultValue='grid'
         className='w-full'>
@@ -125,93 +198,114 @@ export default function PackagesTable({packages}: Readonly<Props>) {
           <TabsContent
             value='grid'
             className='w-full'>
-            <div className='grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
-              {flatPackages.map((pkg, index) => (
-                <motion.div
-                  key={pkg.name + pkg.version}
-                  initial={{opacity: 0, y: 20}}
-                  animate={{opacity: 1, y: 0}}
-                  transition={{duration: 0.3, delay: index * 0.1}}>
-                  <Card className='h-full'>
-                    <CardHeader>
-                      <div className='flex items-center justify-between'>
-                        <CardTitle className='text-xl'>{pkg.name}</CardTitle>
-                        <span className='bg-muted rounded-full px-2 py-1 text-xs'>{pkg.version}</span>
-                      </div>
-                      <div className='mt-2 flex items-center'>
-                        <PackageBadge type={extractPackageType(pkg)} />
-                      </div>
-                      <CardDescription>{pkg.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className='flex flex-col space-y-2'>
-                        <div className='flex items-center text-sm'>
-                          <span className='mr-2 font-medium'>License:</span> {pkg.license}
+            {filteredAndSortedPackages.length > 0 ? (
+              <div className='grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
+                {filteredAndSortedPackages.map((pkg, index) => (
+                  <motion.div
+                    key={pkg.name + pkg.version}
+                    initial={{opacity: 0, y: 20}}
+                    animate={{opacity: 1, y: 0}}
+                    transition={{duration: 0.3, delay: index * 0.1}}>
+                    <Card className='h-full'>
+                      <CardHeader>
+                        <div className='flex items-center justify-between'>
+                          <CardTitle className='text-xl'>{pkg.name}</CardTitle>
+                          <span className='bg-muted rounded-full px-2 py-1 text-xs'>{pkg.version}</span>
                         </div>
-                        <div className='flex items-center text-sm'>
-                          <span className='mr-2 font-medium'>Dependencies: {pkg.dependents?.length ?? "N/A"}</span>
+                        <div className='mt-2 flex items-center'>
+                          <PackageBadge type={extractPackageType(pkg)} />
                         </div>
-                        <div className='mt-4 flex items-center justify-between'>
+                        <CardDescription>{pkg.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className='flex flex-col space-y-2'>
+                          <div className='flex items-center text-sm'>
+                            <span className='mr-2 font-medium'>License:</span> {pkg.license}
+                          </div>
+                          <div className='flex items-center text-sm'>
+                            <span className='mr-2 font-medium'>Dependencies: {pkg.dependents?.length ?? "N/A"}</span>
+                          </div>
+                          <div className='mt-4 flex items-center justify-between'>
+                            <Link
+                              href={pkg.homepage}
+                              target='_blank'
+                              rel='noopener noreferrer'
+                              className='text-muted-foreground flex items-center text-sm transition-colors hover:text-primary'>
+                              <FaExternalLinkAlt className='mr-1 h-4 w-4' />
+                              <span>Website</span>
+                            </Link>
+                            <DependenciesDialog pkg={pkg} />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className='py-12 text-center'>
+                <TbPackage className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
+                <p className='text-muted-foreground'>No packages found.</p>
+                <p className='text-muted-foreground'>Try adjusting the filters above.</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value='table'>
+            {filteredAndSortedPackages.length > 0 ? (
+              <motion.div
+                initial={{opacity: 0}}
+                animate={{opacity: 1}}
+                transition={{duration: 0.5}}
+                className='rounded-md border'>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Package</TableHead>
+                      <TableHead>Version</TableHead>
+                      <TableHead className='hidden md:table-cell'>Type</TableHead>
+                      <TableHead className='hidden lg:table-cell'>Description</TableHead>
+                      <TableHead className='hidden md:table-cell'>License</TableHead>
+                      <TableHead className='hidden sm:table-cell'>Depedendencies</TableHead>
+                      <TableHead>Website</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAndSortedPackages.map((pkg) => (
+                      <TableRow key={pkg.name + pkg.version}>
+                        <TableCell className='font-bold'>{pkg.name}</TableCell>
+                        <TableCell>{pkg.version}</TableCell>
+                        <TableCell className='hidden md:table-cell'>
+                          <PackageBadge type={extractPackageType(pkg)} />
+                        </TableCell>
+                        <TableCell className='hidden max-w-md text-pretty lg:table-cell'>{pkg.description}</TableCell>
+                        <TableCell className='hidden md:table-cell'>{pkg.license}</TableCell>
+                        <TableCell className='hidden sm:table-cell'>
+                          <DependenciesDialog pkg={pkg} />
+                        </TableCell>
+                        <TableCell>
                           <Link
                             href={pkg.homepage}
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='text-muted-foreground flex items-center text-sm transition-colors hover:text-primary'>
-                            <FaExternalLinkAlt className='mr-1 h-4 w-4' />
-                            <span>Website</span>
+                            className='hover:bg-muted rounded-md p-2 transition-colors'
+                            title='Website'>
+                            <FaExternalLinkAlt className='mx-auto h-4 w-4' />
+                            <span className='sr-only'>Website</span>
                           </Link>
-                          <DependenciesDialog pkg={pkg} />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </TabsContent>
-          <TabsContent value='table'>
-            <motion.div
-              initial={{opacity: 0}}
-              animate={{opacity: 1}}
-              transition={{duration: 0.5}}
-              className='rounded-md border'>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Package</TableHead>
-                    <TableHead>Version</TableHead>
-                    <TableHead className='hidden md:table-cell'>Description</TableHead>
-                    <TableHead>License</TableHead>
-                    <TableHead>Depedendencies</TableHead>
-                    <TableHead>Website</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {flatPackages.map((pkg) => (
-                    <TableRow key={pkg.name + pkg.version}>
-                      <TableCell className='font-medium'>{pkg.name}</TableCell>
-                      <TableCell>{pkg.version}</TableCell>
-                      <TableCell className='hidden max-w-md md:table-cell'>{pkg.description}</TableCell>
-                      <TableCell>{pkg.license}</TableCell>
-                      <TableCell>
-                        <DependenciesDialog pkg={pkg} />
-                      </TableCell>
-                      <TableCell>
-                        <Link
-                          href={pkg.homepage}
-                          target='_blank'
-                          rel='noopener noreferrer'
-                          className='hover:bg-muted rounded-md p-2 transition-colors'
-                          title='Website'>
-                          <FaExternalLinkAlt className='h-4 w-4' />
-                          <span className='sr-only'>Website</span>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </motion.div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </motion.div>
+            ) : (
+              <div className='py-12 text-center'>
+                <TbPackage className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
+                <p className='text-muted-foreground'>No packages found.</p>
+                <p className='text-muted-foreground'>Try adjusting the filters above.</p>
+              </div>
+            )}
           </TabsContent>
         </div>
       </Tabs>
@@ -226,11 +320,10 @@ export default function PackagesTable({packages}: Readonly<Props>) {
           <h2 className='text-xl font-semibold'>Open Source Matters</h2>
         </div>
         <p className='text-muted-foreground mx-auto max-w-2xl'>
-          This project stands on the shoulders of giants. We're grateful for the open-source community and all the
+          This project stands on the shoulders of giants. We&apos;re grateful for the open-source community and all the
           developers who have contributed to these packages.
         </p>
       </motion.div>
     </div>
   );
 }
-

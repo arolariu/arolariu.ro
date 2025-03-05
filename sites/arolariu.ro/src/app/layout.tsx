@@ -12,6 +12,7 @@ import Loading from "./loading";
 import ContextProviders from "./providers";
 import HtmlWrapper from "./wrapper";
 
+import "@arolariu/components/styles.css";
 import "./globals.css";
 export {metadata} from "@/metadata";
 
