@@ -6,7 +6,7 @@ import {useUserInformation} from "@/hooks";
 import uploadInvoice from "@/lib/actions/invoices/uploadInvoice";
 import {extractBase64FromBlob} from "@/lib/utils.client";
 import type {UploadStatus} from "@/types";
-import * as React from "react";
+import {useCallback, useState} from "react";
 import InvoicePreview from "./_components/InvoicePreview";
 import InvoiceSubmitForm from "./_components/InvoiceSubmitForm";
 import InvoiceSubtitle from "./_components/InvoiceSubtitle";
@@ -17,15 +17,15 @@ import InvoiceSubtitle from "./_components/InvoiceSubtitle";
  */
 export default function RenderCreateInvoiceScreen() {
   const {userInformation} = useUserInformation();
-  const [images, setImages] = React.useState<Blob[]>([]);
-  const [uploadStatus, setUploadStatus] = React.useState<UploadStatus>("UNKNOWN");
+  const [images, setImages] = useState<Blob[]>([]);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>("UNKNOWN");
 
-  const resetState = React.useCallback(() => {
+  const resetState = useCallback(() => {
     setImages([]);
     setUploadStatus("UNKNOWN");
   }, []);
 
-  const handleImageClientSideUpload = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageClientSideUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       event.preventDefault();
       setUploadStatus("PENDING__CLIENTSIDE");
@@ -42,7 +42,7 @@ export default function RenderCreateInvoiceScreen() {
     }
   }, []);
 
-  const handleImageServerSideUpload = React.useCallback(
+  const handleImageServerSideUpload = useCallback(
     async (event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {
       if (userInformation === null) return;
       try {

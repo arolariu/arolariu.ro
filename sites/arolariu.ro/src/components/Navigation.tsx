@@ -1,25 +1,28 @@
 /** @format */
 "use client";
 
-import {NavigationItem} from "@/types";
+import type {NavigationItem} from "@/types";
+import {
+  Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@arolariu/components";
+import {motion} from "framer-motion";
 import Link from "next/link";
-import {useCallback} from "react";
+import {useCallback, useState} from "react";
+import {TbChevronDown, TbMenu} from "react-icons/tb";
 
-const NavigationItems: NavigationItem[] = [
-  {
-    label: "About",
-    href: "/about",
-    children: [
-      {
-        label: "Platform",
-        href: "/about/the-platform",
-      },
-      {
-        label: "Author",
-        href: "/about/the-author",
-      },
-    ],
-  },
+const navigationItems: NavigationItem[] = [
   {
     label: "Domains",
     href: "/domains",
@@ -40,76 +43,355 @@ const NavigationItems: NavigationItem[] = [
       },
     ],
   },
+  {
+    label: "About",
+    href: "/about",
+    children: [
+      {
+        label: "The Platform",
+        href: "/about/the-platform",
+      },
+      {
+        label: "The Author",
+        href: "/about/the-author",
+      },
+    ],
+  },
 ] as const;
 
-export const NavigationForMobile = ({className}: Readonly<{className?: string}>) => {
-  const items = NavigationItems;
-
-  const renderNavigationItem = useCallback(
-    (item: NavigationItem) => {
-      const dropdownOpen = items.some((i) => i.href === item.href);
-      return (
-        <li key={item.href}>
-          {item.children ? (
-            <details open={dropdownOpen}>
-              <summary>
-                <Link href={item.href}>{item.label}</Link>
-              </summary>
-              <ul>{item.children.map(renderNavigationItem)}</ul>
-            </details>
-          ) : (
-            <Link href={item.href}>{item.label}</Link>
-          )}
-        </li>
-      );
-    },
-    [items],
-  );
+// Stateless desktop navigation components
+const DesktopNavigationItem = ({
+  item,
+  isOpen,
+  onOpenChange,
+}: {
+  item: NavigationItem;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
+}) => {
+  if (!item.children) {
+    return (
+      <Button
+        variant='ghost'
+        asChild
+        className='h-9 px-3 py-2 text-sm font-medium hover:bg-accent/50'>
+        <Link href={item.href}>{item.label}</Link>
+      </Button>
+    );
+  }
 
   return (
-    <div className='dropdown'>
-      <button
-        type='button'
-        tabIndex={0}
-        className='btn btn-circle btn-ghost h-6 max-h-6 min-h-6'>
-        ≣
-      </button>
-      <ul className={`${className as string} dropdown-content bg-white text-xs dark:bg-black`}>
-        {items.map(renderNavigationItem)}
-      </ul>
+    <DropdownMenu
+      open={isOpen}
+      onOpenChange={onOpenChange}>
+      <div className='flex items-center gap-0.5'>
+        <Link
+          href={item.href}
+          className='rounded-l-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent/50 focus:bg-accent/50 focus:outline-none'>
+          {item.label}
+        </Link>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant='ghost'
+            size='sm'
+            className='h-9 w-8 rounded-r-md p-0 hover:bg-accent/50 focus:bg-accent/50 focus:outline-none'>
+            <motion.div
+              animate={{rotate: isOpen ? 180 : 0}}
+              transition={{duration: 0.2}}>
+              <TbChevronDown className='h-4 w-4' />
+            </motion.div>
+            <span className='sr-only'>Show {item.label} menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+      </div>
+      <DropdownMenuContent
+        className='w-56'
+        align='center'
+        asChild>
+        <motion.div
+          initial={{opacity: 0, y: -10}}
+          animate={{opacity: 1, y: 0}}
+          exit={{opacity: 0, y: -10}}
+          transition={{duration: 0.2}}>
+          {item.children.map((child) => (
+            <DesktopNavigationChildItem
+              key={`desktop-child-${child.label}`}
+              child={child}
+            />
+          ))}
+        </motion.div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+const DesktopNavigationChildItem = ({child}: {child: NavigationItem}) => {
+  const [isSubOpen, setIsSubOpen] = useState(false); // State needs to be at this level
+
+  if (!child.children) {
+    return (
+      <DropdownMenuItem
+        asChild
+        className='cursor-pointer focus:bg-accent/50'>
+        <Link href={child.href}>{child.label}</Link>
+      </DropdownMenuItem>
+    );
+  }
+
+  return (
+    <DropdownMenuItem
+      asChild
+      className='p-0'>
+      <div className='relative flex w-full justify-between'>
+        <Link
+          href={child.href}
+          className='flex-1 rounded-l-md px-2 py-1.5 text-sm hover:bg-accent/50'>
+          {child.label}
+        </Link>
+        <DropdownMenu
+          open={isSubOpen}
+          onOpenChange={setIsSubOpen}>
+          <DropdownMenuTrigger className='rounded-r-md p-1 hover:bg-accent/50'>
+            <motion.div
+              animate={{rotate: isSubOpen ? 180 : 0}}
+              transition={{duration: 0.2}}>
+              <TbChevronDown className='h-4 w-4' />
+            </motion.div>
+            <span className='sr-only'>Show {child.label} submenu</span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side='right'
+            align='start'
+            className='w-48'
+            asChild>
+            <motion.div
+              initial={{opacity: 0, x: -10}}
+              animate={{opacity: 1, x: 0}}
+              exit={{opacity: 0, x: -10}}
+              transition={{duration: 0.2}}>
+              {child.children.map((grandchild) => (
+                <DropdownMenuItem
+                  key={`desktop-grandchild-${grandchild.label}`}
+                  asChild
+                  className='cursor-pointer focus:bg-accent/50'>
+                  <Link
+                    href={grandchild.href}
+                    className='w-full'>
+                    {grandchild.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </motion.div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </DropdownMenuItem>
+  );
+};
+
+// Stateless mobile navigation components
+const MobileNavigationItem = ({
+  item,
+  isOpen,
+  onToggle,
+}: {
+  item: NavigationItem;
+  isOpen?: boolean;
+  onToggle?: () => void;
+}) => {
+  if (!item.children) {
+    return (
+      <Button
+        variant='ghost'
+        asChild
+        className='h-auto w-full justify-start rounded-lg border px-4 py-3 font-medium hover:bg-accent/50'>
+        <Link href={item.href}>{item.label}</Link>
+      </Button>
+    );
+  }
+
+  return (
+    <Collapsible className='bg-background/50 mb-2 w-full overflow-hidden rounded-lg border backdrop-blur-sm'>
+      <div className='flex items-center'>
+        <Link
+          href={item.href}
+          className='flex-1 px-4 py-3 font-medium hover:underline'>
+          {item.label}
+        </Link>
+        <CollapsibleTrigger asChild>
+          <Button
+            onClick={onToggle}
+            variant='ghost'
+            size='sm'
+            className='mr-2 h-8 w-8 rounded-full p-0 hover:bg-accent/50'>
+            <motion.div
+              animate={{rotate: isOpen ? 180 : 0}}
+              transition={{duration: 0.2}}>
+              <TbChevronDown className='h-4 w-4' />
+            </motion.div>
+            <span className='sr-only'>Toggle {item.label} menu</span>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className='border-t'>
+        <motion.div
+          initial={{opacity: 0, height: 0}}
+          animate={{opacity: 1, height: "auto"}}
+          exit={{opacity: 0, height: 0}}
+          transition={{duration: 0.2}}
+          className='bg-muted/30 flex flex-col space-y-1 p-2'>
+          {item.children.map((child) => (
+            <MobileNavigationChildItem
+              key={`mobile-child-${child.label}`}
+              child={child}
+            />
+          ))}
+        </motion.div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
+const MobileNavigationChildItem = ({child}: {child: NavigationItem}) => {
+  const [isSubOpen, setIsSubOpen] = useState(false); // State needs to be at this level
+
+  const handleSubToggle = useCallback(() => {
+    setIsSubOpen((prev) => !prev);
+  }, []);
+
+  if (!child.children) {
+    return (
+      <Link
+        href={child.href}
+        className='rounded-md px-3 py-2 transition-colors hover:bg-accent/50'>
+        {child.label}
+      </Link>
+    );
+  }
+
+  return (
+    <Collapsible className='w-full overflow-hidden rounded-md border'>
+      <div className='flex items-center'>
+        <Link
+          href={child.href}
+          className='flex-1 px-3 py-2 text-sm font-medium hover:underline'>
+          {child.label}
+        </Link>
+        <CollapsibleTrigger asChild>
+          <Button
+            onClick={handleSubToggle}
+            variant='ghost'
+            size='sm'
+            className='mr-1 h-7 w-7 rounded-full p-0 hover:bg-accent/50'>
+            <motion.div
+              animate={{rotate: isSubOpen ? 180 : 0}}
+              transition={{duration: 0.2}}>
+              <TbChevronDown className='h-3.5 w-3.5' />
+            </motion.div>
+            <span className='sr-only'>Toggle {child.label} submenu</span>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className='cursor-pointer border-t'>
+        <motion.div
+          initial={{opacity: 0, height: 0}}
+          animate={{opacity: 1, height: "auto"}}
+          exit={{opacity: 0, height: 0}}
+          transition={{duration: 0.2}}
+          className='bg-muted/50 flex flex-col space-y-1 p-2'>
+          {child.children.map((grandchild) => (
+            <Link
+              key={`mobile-grandchild-${grandchild.label}`}
+              href={grandchild.href}
+              className='rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent/50'>
+              {grandchild.label}
+            </Link>
+          ))}
+        </motion.div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
+/**
+ * This component renders the desktop navigation.
+ * @returns The desktop navigation component.
+ */
+export function DesktopNavigation() {
+  // Store open states for top-level items
+  const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
+
+  const handleOpenChange = (label: string, isOpen: boolean) => {
+    setOpenStates((prev) => ({...prev, [label]: isOpen}));
+  };
+
+  return (
+    <div className='flex flex-row items-center justify-center justify-items-center space-x-1 text-center'>
+      {navigationItems.map((item) => (
+        <div
+          key={`desktop-${item.label}`}
+          className='relative'>
+          <DesktopNavigationItem
+            item={item}
+            isOpen={openStates[item.label]}
+            onOpenChange={(isOpen) => handleOpenChange(item.label, isOpen)}
+          />
+        </div>
+      ))}
     </div>
   );
-};
+}
 
-export const NavigationForDesktop = ({className}: Readonly<{className?: string}>) => {
-  const items = NavigationItems;
+/**
+ * This component renders the mobile navigation.
+ * @returns The mobile navigation component.
+ */
+export function MobileNavigation() {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  // Store open states for top-level items
+  const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
 
-  const renderNavigationItem = useCallback(
-    (item: NavigationItem) => {
-      const firstRow = items.some((i) => i.href === item.href);
-      return (
-        <li
-          key={item.href}
-          className='z-50'>
-          {item.children ? (
-            <details>
-              <summary className={firstRow ? "" : "text-black"}>
-                <Link href={item.href}>{item.label}</Link>
-              </summary>
-              <ul>{item.children.map(renderNavigationItem)}</ul>
-            </details>
-          ) : (
-            <Link
-              href={item.href}
-              className='text-black'>
-              {item.label}
-            </Link>
-          )}
-        </li>
-      );
-    },
-    [items],
+  const handleToggle = (label: string) => {
+    setOpenStates((prev) => ({...prev, [label]: !prev[label]}));
+  };
+
+  return (
+    <Sheet
+      open={isOpen}
+      onOpenChange={setIsOpen}>
+      <SheetTrigger
+        asChild
+        className='lg:hidden'>
+        <Button
+          variant='outline'
+          size='icon'
+          className='transition-colors hover:bg-accent/50'>
+          <TbMenu className='h-5 w-5' />
+          <span className='sr-only'>Toggle menu</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent
+        side='left'
+        className='w-80 border-r sm:w-96'>
+        <SheetHeader>
+          <SheetTitle className='text-left'>Navigation</SheetTitle>
+        </SheetHeader>
+        <div className='px-2 py-6'>
+          <div className='space-y-2'>
+            {navigationItems.map((item) => (
+              <div
+                key={`mobile-${item.label}`}
+                className='py-1'>
+                <MobileNavigationItem
+                  item={item}
+                  isOpen={openStates[item.label]}
+                  onToggle={() => handleToggle(item.label)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
-
-  return <ul className={`${className as string} text-md gap-4`}>{items.map(renderNavigationItem)}</ul>;
-};
+}

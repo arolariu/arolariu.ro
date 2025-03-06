@@ -7,7 +7,7 @@ import {useWindowSize} from "@/hooks";
 import Image from "next/image";
 import Link from "next/link";
 import {AuthButton, ThemeButton} from "./Buttons";
-import {NavigationForDesktop, NavigationForMobile} from "./Navigation";
+import {DesktopNavigation, MobileNavigation} from "./Navigation";
 
 /**
  * The header component.
@@ -20,7 +20,7 @@ export default function Header() {
     <header>
       <nav className='navbar bg-white text-black dark:bg-black dark:text-white 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto'>
         <div className='navbar-start flex flex-row flex-nowrap'>
-          {Boolean(isMobile) === true && <NavigationForMobile className='menu menu-vertical' />}
+          {Boolean(isMobile) && <MobileNavigation />}
 
           <Link
             href='/'
@@ -37,9 +37,7 @@ export default function Header() {
           </Link>
         </div>
 
-        <div className='navbar-center flex flex-row flex-nowrap'>
-          {Boolean(isDesktop) === true && <NavigationForDesktop className='menu menu-horizontal' />}
-        </div>
+        <div className='navbar-center flex flex-row flex-nowrap'>{Boolean(isDesktop) && <DesktopNavigation />}</div>
 
         <div className='navbar-end flex flex-row flex-wrap gap-4'>
           <AuthButton />

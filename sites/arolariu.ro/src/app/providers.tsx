@@ -1,6 +1,7 @@
 /** @format */
 "use client";
 
+import {Toaster as ToastProvider} from "@arolariu/components";
 import {ThemeProvider} from "next-themes";
 import React from "react";
 import {WebVitals as VitalsProvider} from "./web-vitals";
@@ -17,6 +18,7 @@ export default function ContextProviders({children}: Readonly<{children: React.R
       enableSystem>
       <VitalsProvider />
       {children}
+      <ToastProvider />
     </ThemeProvider>
   );
 }
