@@ -16,9 +16,9 @@ export default function ContextProviders({children}: Readonly<{children: React.R
       attribute='class'
       themes={["light", "dark"]}
       enableSystem>
-      <VitalsProvider />
       {children}
       <ToastProvider />
+      <VitalsProvider />
     </ThemeProvider>
   );
 }

@@ -5,7 +5,7 @@ import {TIMESTAMP} from "@/lib/utils.generic";
 import type {NodePackagesJSON} from "@/types";
 import type {Metadata} from "next";
 import {getTranslations} from "next-intl/server";
-import PackagesTable from "./_components/PackagesTable";
+import PackagesScreen from "./_components/PackagesScreen";
 
 export const metadata: Metadata = {
   title: "Acknowledgements",
@@ -37,7 +37,7 @@ export default async function AcknowledgementsPage() {
           {t("packages.title")}
         </h1>
         <span className='w-1/2 text-pretty pb-4 text-center text-xl'>{t("packages.subtitle")}</span>
-        <PackagesTable packages={packages} />
+        <PackagesScreen packages={packages} />
       </section>
     </main>
   );

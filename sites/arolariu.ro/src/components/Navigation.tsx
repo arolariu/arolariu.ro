@@ -17,6 +17,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@arolariu/components";
+
+// eslint-disable-next-line n/no-extraneous-import -- importing framer-motion is standard.
 import {motion} from "framer-motion";
 import Link from "next/link";
 import {useCallback, useState} from "react";
@@ -64,11 +66,11 @@ const DesktopNavigationItem = ({
   item,
   isOpen,
   onOpenChange,
-}: {
+}: Readonly<{
   item: NavigationItem;
   isOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
-}) => {
+}>) => {
   if (!item.children) {
     return (
       <Button
@@ -125,7 +127,7 @@ const DesktopNavigationItem = ({
   );
 };
 
-const DesktopNavigationChildItem = ({child}: {child: NavigationItem}) => {
+const DesktopNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>) => {
   const [isSubOpen, setIsSubOpen] = useState(false); // State needs to be at this level
 
   if (!child.children) {
@@ -194,11 +196,11 @@ const MobileNavigationItem = ({
   item,
   isOpen,
   onToggle,
-}: {
+}: Readonly<{
   item: NavigationItem;
   isOpen?: boolean;
   onToggle?: () => void;
-}) => {
+}>) => {
   if (!item.children) {
     return (
       <Button
@@ -252,7 +254,7 @@ const MobileNavigationItem = ({
   );
 };
 
-const MobileNavigationChildItem = ({child}: {child: NavigationItem}) => {
+const MobileNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>) => {
   const [isSubOpen, setIsSubOpen] = useState(false); // State needs to be at this level
 
   const handleSubToggle = useCallback(() => {
@@ -321,9 +323,9 @@ export function DesktopNavigation() {
   // Store open states for top-level items
   const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
 
-  const handleOpenChange = (label: string, isOpen: boolean) => {
+  const handleOpenChange = useCallback((label: string, isOpen: boolean) => {
     setOpenStates((prev) => ({...prev, [label]: isOpen}));
-  };
+  }, []);
 
   return (
     <div className='flex flex-row items-center justify-center justify-items-center space-x-1 text-center'>
@@ -334,6 +336,7 @@ export function DesktopNavigation() {
           <DesktopNavigationItem
             item={item}
             isOpen={openStates[item.label]}
+            // eslint-disable-next-line react/jsx-no-bind -- using inline memoized function for simplicity
             onOpenChange={(isOpen) => handleOpenChange(item.label, isOpen)}
           />
         </div>
@@ -351,9 +354,12 @@ export function MobileNavigation() {
   // Store open states for top-level items
   const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
 
-  const handleToggle = (label: string) => {
-    setOpenStates((prev) => ({...prev, [label]: !prev[label]}));
-  };
+  const handleToggle = useCallback((label: string) => {
+    setOpenStates((prev) => {
+      const currentState = prev[label] || false;
+      return {...prev, [label]: !currentState};
+    });
+  }, []);
 
   return (
     <Sheet
@@ -385,6 +391,7 @@ export function MobileNavigation() {
                 <MobileNavigationItem
                   item={item}
                   isOpen={openStates[item.label]}
+                  // eslint-disable-next-line react/jsx-no-bind -- using inline memoized function for simplicity
                   onToggle={() => handleToggle(item.label)}
                 />
               </div>

@@ -11,8 +11,8 @@ type Props = {
 };
 
 /**
- * The feature component
- * @returns The feature component
+ * The feature component that displays a feature with an icon, title, and description.
+ * @returns The feature component, SSR'ed.
  */
 export default function Feature({link, title, children, description}: Readonly<Props>) {
   return (

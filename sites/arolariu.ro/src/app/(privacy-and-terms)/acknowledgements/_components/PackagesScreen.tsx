@@ -37,6 +37,7 @@ import {
 import {motion} from "framer-motion";
 
 import Link from "next/link";
+import {useCallback} from "react";
 import {FaExternalLinkAlt} from "react-icons/fa";
 import {TbPackage} from "react-icons/tb";
 import {usePackageFilters} from "../_hooks/usePackageFilters";
@@ -113,7 +114,7 @@ function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>) {
  * as well as the total number of type definition packages.
  * @returns A table displaying package statistics by dependency type
  */
-export default function PackagesTable({packages}: Readonly<Props>) {
+export default function PackagesScreen({packages}: Readonly<Props>) {
   const {
     extractPackageType,
     filteredAndSortedPackages,
@@ -127,6 +128,38 @@ export default function PackagesTable({packages}: Readonly<Props>) {
     sortDirection,
   } = usePackageFilters(packages);
 
+  const handleSearch = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchQuery(e.target.value);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setSearchQuery is a stable function.
+    [],
+  );
+
+  const handlePackageType = useCallback(
+    (e: string) => {
+      setPackageType(e as PackageType);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setPackageType is a stable function.
+    [],
+  );
+
+  const handleSortField = useCallback(
+    (e: string) => {
+      setSortField(e as SortField);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setSortField is a stable function.
+    [],
+  );
+
+  const handleSortDirection = useCallback(
+    (e: string) => {
+      setSortDirection(e as SortDirection);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setSortDirection is a stable function.
+    [],
+  );
+
   return (
     <div className='container mx-auto max-w-7xl py-10 text-black'>
       <div className='mx-auto mb-6 space-y-4'>
@@ -135,7 +168,7 @@ export default function PackagesTable({packages}: Readonly<Props>) {
             type='text'
             placeholder='Search...'
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearch}
             className='pl-10'
           />
         </div>
@@ -143,7 +176,7 @@ export default function PackagesTable({packages}: Readonly<Props>) {
           <div className='flex-1'>
             <Select
               value={packageType}
-              onValueChange={(value) => setPackageType(value as PackageType)}>
+              onValueChange={handlePackageType}>
               <SelectTrigger>
                 <SelectValue placeholder='Filter by type' />
               </SelectTrigger>
@@ -158,7 +191,7 @@ export default function PackagesTable({packages}: Readonly<Props>) {
           <div className='flex-1'>
             <Select
               value={sortField}
-              onValueChange={(value) => setSortField(value as SortField)}>
+              onValueChange={handleSortField}>
               <SelectTrigger>
                 <SelectValue placeholder='Sort by' />
               </SelectTrigger>
@@ -173,7 +206,7 @@ export default function PackagesTable({packages}: Readonly<Props>) {
           <div className='flex-1'>
             <Select
               value={sortDirection}
-              onValueChange={(value) => setSortDirection(value as SortDirection)}>
+              onValueChange={handleSortDirection}>
               <SelectTrigger>
                 <SelectValue placeholder='Sort direction' />
               </SelectTrigger>
