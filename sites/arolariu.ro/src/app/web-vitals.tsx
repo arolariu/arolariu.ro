@@ -85,6 +85,7 @@ const cleanupOldRecords = async () => {
 
     // Get the oldest records - use a non-recursive approach
     const cursorRequest = index.openCursor();
+    // eslint-disable-next-line functional/no-let -- Using let for cursor control
     let deletedCount = 0;
 
     cursorRequest.addEventListener("success", (event) => {
@@ -184,13 +185,13 @@ export function WebVitals() {
       try {
         const longTaskObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
-          Array.from(entries).forEach((entry) =>
+          for (const entry of entries) {
             saveToIndexedDB({
               name: `long-task-${entry.name}-${entry.entryType}`,
               duration: entry.duration,
               startTime: entry.startTime,
-            }),
-          );
+            });
+          }
         });
         longTaskObserver.observe({type: "longtask", buffered: true});
       } catch (error) {

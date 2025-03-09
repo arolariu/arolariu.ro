@@ -5,16 +5,30 @@
 import {NamespaceKeys, useTranslations} from "next-intl";
 
 type Props = {
-  a11ySectionKey: string;
-  a11yTextKey: string;
+  sectionKey: string;
+  textKey: string;
 };
 
-export function RichText({a11ySectionKey, a11yTextKey}: Readonly<Props>) {
-  const t = useTranslations<NamespaceKeys<IntlMessages, string>>(a11ySectionKey as any);
-  const isTextKeyInNamespace = t.has(a11yTextKey as any);
+/**
+ * A rich text component that renders internationalized text with formatting support.
+ *
+ * This component uses next-intl translation hooks to retrieve and format text content
+ * based on the provided section and text keys. It supports various HTML formatting tags
+ * including strong, em, br, code, ul, li, and span elements.
+ * @param props The props object containing the sectionKey and textKey
+ * @returns The formatted internationalized text content
+ * @throws Throws an error if the specified text key is not found in the namespace
+ * @example
+ * ```tsx
+ * <RichText a11ySectionKey="about" a11yTextKey="description" />
+ * ```
+ */
+export function RichText({sectionKey, textKey}: Readonly<Props>) {
+  const t = useTranslations<NamespaceKeys<IntlMessages, string>>(sectionKey as any);
+  const isTextKeyInNamespace = t.has(textKey as any);
 
   if (isTextKeyInNamespace) {
-    return t.rich(a11yTextKey as NamespaceKeys<IntlMessages, string>, {
+    return t.rich(textKey as NamespaceKeys<IntlMessages, string>, {
       strong: (chunks) => <strong>{chunks}</strong>,
       em: (chunks) => <em>{chunks}</em>,
       br: (chunks) => (
@@ -30,5 +44,5 @@ export function RichText({a11ySectionKey, a11yTextKey}: Readonly<Props>) {
     });
   }
 
-  throw new Error(`The key ${a11yTextKey} is not in the namespace ${a11ySectionKey}`);
+  throw new Error(`The key ${textKey} is not in the namespace ${sectionKey}`);
 }

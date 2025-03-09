@@ -356,7 +356,8 @@ export function MobileNavigation() {
 
   const handleToggle = useCallback((label: string) => {
     setOpenStates((prev) => {
-      const currentState = prev[label] || false;
+      // eslint-disable-next-line security/detect-object-injection -- we know the label exists in the state
+      const currentState = prev?.[label] ?? false;
       return {...prev, [label]: !currentState};
     });
   }, []);

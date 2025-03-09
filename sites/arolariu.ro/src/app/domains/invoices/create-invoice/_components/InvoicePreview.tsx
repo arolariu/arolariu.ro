@@ -1,5 +1,7 @@
 /** @format */
 
+/* eslint react/jsx-no-bind: 0 */
+
 import {
   Button,
   Card,
@@ -79,18 +81,14 @@ const MediaPreview = memo(function MediaPreview({
           />
         ) : (
           <div className='flex h-full w-full items-center justify-center bg-gray-50'>
-            <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent'></div>
+            <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
           </div>
         )}
         <div className='absolute bottom-2 right-2'>
           <Button
             size='icon'
             variant='destructive'
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onDelete(index);
-            }}>
+            onClick={(_event) => onDelete(index)}>
             <TbTrash
               className='h-4 w-4'
               aria-hidden='true'
@@ -111,7 +109,7 @@ const MediaPreview = memo(function MediaPreview({
               <div>Failed to load image</div>
             </div>
           ) : (
-            <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent'></div>
+            <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
           )}
         </div>
       ) : (
@@ -131,11 +129,7 @@ const MediaPreview = memo(function MediaPreview({
           <Button
             size='icon'
             variant='secondary'
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onRotate(index);
-            }}>
+            onClick={(_event) => onRotate(index)}>
             <TbRotateClockwise
               className='h-4 w-4'
               aria-hidden='true'
@@ -146,11 +140,7 @@ const MediaPreview = memo(function MediaPreview({
         <Button
           size='icon'
           variant='destructive'
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onDelete(index);
-          }}>
+          onClick={(_event) => onDelete(index)}>
           <TbTrash
             className='h-4 w-4'
             aria-hidden='true'
@@ -162,6 +152,10 @@ const MediaPreview = memo(function MediaPreview({
   );
 });
 
+/**
+ * Component to render a grid view of images with pagination.
+ * @returns The JSX for the grid view.
+ */
 function GridView({
   images,
   handleDelete,
@@ -184,7 +178,7 @@ function GridView({
       ),
       totalPages: Math.ceil(images.length / IMAGES_PER_PAGE),
     }),
-    [currentPage, images.length, images],
+    [currentPage, images],
   );
 
   // Ensure current page is valid when images change
@@ -270,6 +264,10 @@ function GridView({
   );
 }
 
+/**
+ * Component to render a carousel view of images.
+ * @returns The JSX for the carousel view.
+ */
 function CarouselView({
   images,
   handleDelete,
@@ -282,21 +280,6 @@ function CarouselView({
 >) {
   // Track current slide for keyboard navigation
   const [api, setApi] = useState<CarouselApi>();
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Setup keyboard navigation
-  useEffect(() => {
-    if (!api) return;
-
-    const onSelect = () => {
-      setCurrentIndex(api.selectedScrollSnap());
-    };
-
-    api.on("select", onSelect);
-    return () => {
-      api.off("select", onSelect);
-    };
-  }, [api]);
 
   // Add keyboard navigation
   useEffect(() => {
@@ -306,8 +289,8 @@ function CarouselView({
       if (e.key === "ArrowRight") api.scrollNext();
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    globalThis.addEventListener("keydown", handleKeyDown);
+    return () => globalThis.removeEventListener("keydown", handleKeyDown);
   }, [api]);
 
   return (
@@ -424,6 +407,7 @@ export default function InvoicePreview({images, setImages}: Readonly<Props>) {
       // Start loading the image
       img.src = imageUrl;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setImages is stable.
     [images],
   );
 

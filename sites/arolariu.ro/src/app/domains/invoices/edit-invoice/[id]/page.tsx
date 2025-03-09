@@ -18,7 +18,9 @@ export const metadata: Metadata = {
  * @returns The edit invoice page, SSR'ed.
  */
 export default async function EditInvoicePage({params}: Readonly<Props>) {
-  const invoiceIdentifier = (await params).id;
+  const pageParams = await params;
+  const invoiceIdentifier = pageParams.id;
+
   const {isAuthenticated} = await fetchUser();
 
   if (!isAuthenticated) return <ForbiddenScreen />;

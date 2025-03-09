@@ -28,8 +28,8 @@ export default async function ViewInvoicesPage() {
         </h1>
         <article className='mx-auto text-base leading-relaxed lg:w-2/3'>
           <RichText
-            a11ySectionKey='Domains.services.invoices.service.view-invoices'
-            a11yTextKey='subtitle'
+            sectionKey='Domains.services.invoices.service.view-invoices'
+            textKey='subtitle'
           />
         </article>
       </section>

@@ -6,6 +6,7 @@ import {useUserInformation} from "@/hooks";
 import uploadInvoice from "@/lib/actions/invoices/uploadInvoice";
 import {extractBase64FromBlob} from "@/lib/utils.client";
 import type {UploadStatus} from "@/types";
+import {toast} from "@arolariu/components";
 import {useCallback, useState} from "react";
 import InvoicePreview from "./_components/InvoicePreview";
 import InvoiceSubmitForm from "./_components/InvoiceSubmitForm";
@@ -33,8 +34,16 @@ export default function RenderCreateInvoiceScreen() {
       if (files && files.length > 0) {
         const images = [...files] as Blob[];
         setImages(images);
-        // TODO: toast that informs user that images have been uploaded with action to clear images.
         setUploadStatus("SUCCESS__CLIENTSIDE");
+        toast("Upload successful", {
+          description: `${images.length} images uploaded.`,
+          duration: 5000,
+          style: {
+            backgroundColor: "green",
+            color: "white",
+          },
+          icon: <span className='text-white'>✔️</span>,
+        });
       }
     } catch (error: unknown) {
       console.error(">>> Error in handleImageClientSideUpload:", error as Error);

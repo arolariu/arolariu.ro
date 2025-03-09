@@ -4,6 +4,8 @@
 
 import {useUserInformation} from "@/hooks";
 import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
+import {toast} from "@arolariu/components";
+import {useRouter} from "next/navigation";
 import {useCallback} from "react";
 
 /**
@@ -12,15 +14,26 @@ import {useCallback} from "react";
  */
 export default function InvoiceNotAnalyzed({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
   const {userInformation} = useUserInformation();
+  const router = useRouter();
 
   const handleAnalysis = useCallback(
     async (event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {
       event.preventDefault();
       const authToken = userInformation?.userJwt;
       await analyzeInvoice(invoiceIdentifier, authToken!);
-      // TODO: toast that redirects user to view-invoice page.
+      toast("Invoice analyzed", {
+        description: `The invoice with the identifier ${invoiceIdentifier} has been analyzed.`,
+        duration: 5000,
+        action: {
+          label: "View Invoice",
+          onClick: () => {
+            router.push(`/invoices/view-invoice/${invoiceIdentifier}`);
+          },
+        },
+        icon: <span className='text-white'>✔️</span>,
+      });
     },
-    [invoiceIdentifier, userInformation],
+    [invoiceIdentifier, userInformation, router],
   );
 
   return (
