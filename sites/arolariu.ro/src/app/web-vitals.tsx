@@ -9,7 +9,7 @@ import {useEffect} from "react";
 const DB_NAME = "logs";
 const STORE_NAME = "web-vitals";
 const DB_VERSION = 1;
-const MAX_RECORDS = 100;
+const MAX_RECORDS = 250;
 
 // Helper function to open IndexedDB
 const openDatabase = (): Promise<IDBDatabase> => {
