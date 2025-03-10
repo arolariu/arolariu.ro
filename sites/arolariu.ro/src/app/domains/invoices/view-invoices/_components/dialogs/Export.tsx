@@ -171,4 +171,3 @@ export function ExportDialog({open, onOpenChange, invoice}: Readonly<Props>) {
     </Dialog>
   );
 }
-

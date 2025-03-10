@@ -180,4 +180,3 @@ export function InvoiceCard({invoice, onShare, timeOfDay, currency}: Readonly<Pr
     </motion.div>
   );
 }
-

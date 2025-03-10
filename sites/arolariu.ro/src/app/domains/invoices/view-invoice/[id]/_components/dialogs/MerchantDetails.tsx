@@ -84,4 +84,3 @@ export function MerchantDetailsDialog({open, onOpenChange, merchant}: Readonly<P
     </Dialog>
   );
 }
-

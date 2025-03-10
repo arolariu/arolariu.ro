@@ -57,4 +57,3 @@ export function Dashboard({invoices}: Readonly<Props>) {
     </motion.div>
   );
 }
-

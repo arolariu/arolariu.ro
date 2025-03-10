@@ -569,4 +569,3 @@ function CategoryBadge({category}: {category: string}) {
     </Badge>
   );
 }
-

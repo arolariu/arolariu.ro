@@ -512,4 +512,3 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
     </Dialog>
   );
 }
-

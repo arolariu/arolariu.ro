@@ -396,4 +396,3 @@ export function InvoiceAnalysisDialog({open, onOpenChange, invoice}: Readonly<Pr
     </Dialog>
   );
 }
-

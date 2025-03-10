@@ -152,4 +152,3 @@ export function FeedbackDialog({open, onOpenChange}: Readonly<Props>) {
     </Dialog>
   );
 }
-

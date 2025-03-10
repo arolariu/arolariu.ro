@@ -193,4 +193,3 @@ export function EditItemsDialog({open, onOpenChange, items: initialItems, curren
     </Dialog>
   );
 }
-

@@ -77,4 +77,3 @@ export function formatDate(dateString: string) {
     day: "numeric",
   }).format(date);
 }
-

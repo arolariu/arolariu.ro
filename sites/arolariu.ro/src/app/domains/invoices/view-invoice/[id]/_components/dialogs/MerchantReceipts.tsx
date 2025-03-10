@@ -356,4 +356,3 @@ export function MerchantReceiptsDialog({open, onOpenChange, merchantName, curren
     </Dialog>
   );
 }
-

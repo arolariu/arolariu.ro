@@ -16,4 +16,3 @@ export default function RenderViewInvoicesScreen() {
   if (invoices.length === 0) return <InvoicesNotFound />;
   return <section></section>;
 }
-

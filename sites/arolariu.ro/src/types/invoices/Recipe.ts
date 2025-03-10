@@ -22,4 +22,3 @@ export type Recipe = {
   instructions: string;
   referenceForMoreDetails: string;
 };
-

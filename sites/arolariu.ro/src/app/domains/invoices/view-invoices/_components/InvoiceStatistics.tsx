@@ -1288,4 +1288,3 @@ const ComposedChart = ({children, ...props}: any) => {
     </ResponsiveContainer>
   );
 };
-

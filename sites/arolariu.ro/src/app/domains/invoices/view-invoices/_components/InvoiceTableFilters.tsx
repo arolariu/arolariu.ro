@@ -494,4 +494,3 @@ export function AdvancedFilters({invoices, onFilterChange}: Readonly<Props>) {
     </div>
   );
 }
-

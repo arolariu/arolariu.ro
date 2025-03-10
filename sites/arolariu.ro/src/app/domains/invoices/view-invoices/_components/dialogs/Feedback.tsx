@@ -106,4 +106,3 @@ export function FeedbackDialog({open, onOpenChange, chartTitle}: Readonly<Props>
     </Dialog>
   );
 }
-

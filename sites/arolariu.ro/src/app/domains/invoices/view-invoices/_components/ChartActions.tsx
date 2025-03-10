@@ -180,4 +180,3 @@ export function ChartActions({chartId, title}: Readonly<Props>) {
     </>
   );
 }
-

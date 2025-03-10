@@ -394,4 +394,3 @@ export function StatisticsFilters({invoices, onFilterChange}: Readonly<Props>) {
     </div>
   );
 }
-

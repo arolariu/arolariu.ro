@@ -513,4 +513,3 @@ export function AdvancedFilters({onFilterChange}: Readonly<Props>) {
     </div>
   );
 }
-
