@@ -170,7 +170,7 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>) {
 
   // Update the button handlers in the header section
   return (
-    <div className='container mx-auto max-w-5xl px-4 py-6'>
+    <div className='container mx-auto px-4 py-6'>
       <motion.div
         initial={{opacity: 0, y: -20}}
         animate={{opacity: 1, y: 0}}
@@ -781,8 +781,7 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>) {
       <MerchantReceiptsDialog
         open={merchantReceiptsDialogOpen}
         onOpenChange={setMerchantReceiptsDialogOpen}
-        merchantName={merchant.name}
-        currency={selectedCurrency.code}
+        merchant={merchant}
       />
 
       <RecipeDialog
@@ -859,3 +858,4 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>) {
     </div>
   );
 }
+

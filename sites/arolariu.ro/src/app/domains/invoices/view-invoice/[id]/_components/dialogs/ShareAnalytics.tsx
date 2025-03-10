@@ -49,6 +49,37 @@ export function ShareAnalyticsDialog({open, onOpenChange, merchantName, currency
     }
   };
 
+  const handleCopyImage = async () => {
+    try {
+      // Get the image URL from the component
+      const imageUrl = `/placeholder.svg?height=200&width=400&text=Analytics+Preview+for+${merchantName}`;
+
+      // Fetch the image data
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+
+      // Check if clipboard API is supported
+      if (!navigator.clipboard || !navigator.clipboard.write) {
+        throw new Error("Clipboard API not supported in this browser");
+      }
+
+      // Create a clipboard item with the image blob
+      const item = new ClipboardItem({[blob.type]: blob});
+
+      // Write the image to clipboard
+      await navigator.clipboard.write([item]);
+
+      toast("Image copied!", {
+        description: "The analytics image has been copied to your clipboard",
+      });
+    } catch (err) {
+      console.error("Failed to copy image:", err);
+      toast("Failed to copy image!", {
+        description: "Could not copy the image to clipboard. This feature might not be supported in your browser.",
+      });
+    }
+  };
+
   const handleSendEmail = (e: React.FormEvent) => {
     e.preventDefault();
     toast("Email sent!", {
@@ -109,9 +140,16 @@ export function ShareAnalyticsDialog({open, onOpenChange, merchantName, currency
             <p className='text-muted-foreground text-sm'>Download a PNG image of the current analytics view.</p>
             <Button
               onClick={handleDownloadImage}
+              variant={"outline"}
               className='w-full'>
               <Download className='mr-2 h-4 w-4' />
               Download PNG
+            </Button>
+            <Button
+              onClick={handleCopyImage}
+              className='w-full'>
+              <Copy className='mr-2 h-4 w-4' />
+              Copy to clipboard
             </Button>
           </TabsContent>
 
@@ -172,3 +210,4 @@ export function ShareAnalyticsDialog({open, onOpenChange, merchantName, currency
     </Dialog>
   );
 }
+

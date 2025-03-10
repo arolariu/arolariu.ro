@@ -2,16 +2,18 @@
 
 import type {Merchant} from "@/types/invoices";
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  Table,
   TableBody,
   TableCell,
   TableRow,
 } from "@arolariu/components";
-import {Building, Building2, MapPin, Phone, Table} from "lucide-react";
+import {Building, Building2, MapPin, Phone} from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -69,18 +71,26 @@ export function MerchantDetailsDialog({open, onOpenChange, merchant}: Readonly<P
                 </TableCell>
                 <TableCell className='py-2'>{merchant.parentCompanyId}</TableCell>
               </TableRow>
-              <TableRow>
-                <TableCell className='py-2 pl-0'>
-                  <div className='flex items-center'>
-                    <span className='font-medium'>ID</span>
-                  </div>
-                </TableCell>
-                <TableCell className='py-2'>{merchant.id}</TableCell>
-              </TableRow>
             </TableBody>
           </Table>
+        </div>
+
+        <div className='flex flex-col items-center justify-end gap-4'>
+          <Button
+            type='button'
+            variant={"default"}
+            className='w-full'>
+            Open in Maps
+          </Button>
+          <Button
+            type='button'
+            variant={"secondary"}
+            className='w-full'>
+            Call merchant
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+

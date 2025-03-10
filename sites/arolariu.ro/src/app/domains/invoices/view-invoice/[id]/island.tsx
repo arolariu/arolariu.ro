@@ -19,3 +19,4 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
     </section>
   );
 }
+

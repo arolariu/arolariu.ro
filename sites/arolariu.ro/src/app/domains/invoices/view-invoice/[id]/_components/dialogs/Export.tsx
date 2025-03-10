@@ -49,6 +49,64 @@ export function ExportDialog({open, onOpenChange, invoiceId, invoiceName}: Reado
     }
   };
 
+  const handleCopyQRCode = async () => {
+    try {
+      const qrCodeElement = document.getElementById("invoice-qr-code");
+
+      if (!qrCodeElement) {
+        throw new Error("QR code element not found");
+      }
+
+      // Create a canvas to draw the QR code
+      const canvas = document.createElement("canvas");
+      canvas.width = 128;
+      canvas.height = 128;
+
+      // Get canvas context
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        throw new Error("Could not create canvas context");
+      }
+
+      // Convert SVG to image
+      const img = new Image();
+      const svgData = new XMLSerializer().serializeToString(qrCodeElement);
+      const svgBlob = new Blob([svgData], {type: "image/svg+xml;charset=utf-8"});
+      const url = URL.createObjectURL(svgBlob);
+
+      // Wait for the image to load
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = url;
+      });
+
+      // Draw the image on the canvas
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+
+      // Convert canvas to blob
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((b) => resolve(b!), "image/png");
+      });
+
+      // Create clipboard item with image blob
+      const item = new ClipboardItem({[blob.type]: blob});
+
+      // Write image to clipboard
+      await navigator.clipboard.write([item]);
+
+      toast("QR Code copied!", {
+        description: "The QR code has been copied to your clipboard",
+      });
+    } catch (err) {
+      console.error("Failed to copy image:", err);
+      toast("Failed to copy image!", {
+        description: "Could not copy the image to clipboard. This feature might not be supported in your browser.",
+      });
+    }
+  };
+
   const handleSendEmail = (e: React.FormEvent) => {
     e.preventDefault();
     toast("Email sent!", {
@@ -136,6 +194,7 @@ export function ExportDialog({open, onOpenChange, invoiceId, invoiceName}: Reado
             <div className='flex flex-col items-center justify-center space-y-4'>
               <div className='rounded-md border bg-white p-4'>
                 <QRCode
+                  id='invoice-qr-code'
                   value={shareUrl}
                   size={128}
                   style={{width: "128px"}}
@@ -151,10 +210,10 @@ export function ExportDialog({open, onOpenChange, invoiceId, invoiceName}: Reado
               </p>
               <Button
                 variant='outline'
-                onClick={handleCopyLink}
+                onClick={handleCopyQRCode}
                 className='w-full'>
                 <Copy className='mr-2 h-4 w-4' />
-                Copy Link
+                Copy QR Code
               </Button>
             </div>
           </TabsContent>
@@ -163,3 +222,4 @@ export function ExportDialog({open, onOpenChange, invoiceId, invoiceName}: Reado
     </Dialog>
   );
 }
+

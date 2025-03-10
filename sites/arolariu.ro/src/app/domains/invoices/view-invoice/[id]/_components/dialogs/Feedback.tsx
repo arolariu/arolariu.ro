@@ -13,6 +13,10 @@ import {
   Label,
   Textarea,
   toast,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "framer-motion";
 import {Send, Star} from "lucide-react";
@@ -24,9 +28,9 @@ type Props = {
 };
 
 export function FeedbackDialog({open, onOpenChange}: Readonly<Props>) {
-  const [rating, setRating] = useState(0);
-  const [hoveredRating, setHoveredRating] = useState(0);
-  const [comment, setComment] = useState("");
+  const [hoveredRating, setHoveredRating] = useState<number>(0);
+  const [comment, setComment] = useState<string>("");
+  const [rating, setRating] = useState<number>(0);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -67,23 +71,33 @@ export function FeedbackDialog({open, onOpenChange}: Readonly<Props>) {
           <div className='space-y-2'>
             <Label>How useful are these analytics?</Label>
             <div className='flex justify-center py-2'>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <motion.button
-                  key={star}
-                  type='button'
-                  whileHover={{scale: 1.2}}
-                  whileTap={{scale: 0.9}}
-                  onClick={() => setRating(star)}
-                  onMouseEnter={() => setHoveredRating(star)}
-                  onMouseLeave={() => setHoveredRating(0)}
-                  className='p-1'>
-                  <Star
-                    className={`h-8 w-8 ${
-                      star <= (hoveredRating || rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
-                    } transition-colors`}
-                  />
-                </motion.button>
-              ))}
+              <TooltipProvider>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Tooltip key={star}>
+                    <motion.button
+                      type='button'
+                      whileHover={{scale: 1.2}}
+                      whileTap={{scale: 0.9}}
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoveredRating(star)}
+                      onMouseLeave={() => setHoveredRating(0)}
+                      className='p-1'>
+                      <TooltipTrigger asChild>
+                        <Star
+                          className={`h-8 w-8 ${
+                            star <= (hoveredRating || rating)
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-muted-foreground"
+                          } transition-colors`}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <span>TODO: {star} stars!</span>
+                      </TooltipContent>
+                    </motion.button>
+                  </Tooltip>
+                ))}
+              </TooltipProvider>
             </div>
             <p className='text-muted-foreground text-center text-sm'>
               {rating === 1 && "Not useful"}
@@ -152,3 +166,4 @@ export function FeedbackDialog({open, onOpenChange}: Readonly<Props>) {
     </Dialog>
   );
 }
+
