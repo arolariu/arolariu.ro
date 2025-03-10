@@ -35,7 +35,7 @@
     "check:acknowledgements": "npx tsx scripts/checkAcknowledgements.ts",
     "check:translations": "npx tsx scripts/checkTranslations.ts",
     "clean": "npx tsx scripts/clean.ts",
-    "dev": "next dev --turbopack --experimental-https",
+    "dev": "NODE_OPTIONS='--inspect' next dev --turbopack --experimental-https",
     "email": "email dev",
     "format": "npx tsx scripts/format.ts",
     "generate": "npm run generate:translations && npm run generate:acknowledgements",
