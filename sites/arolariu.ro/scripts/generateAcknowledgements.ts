@@ -68,12 +68,10 @@ function buildPackageManifests(
         peerDependencies?: Record<string, string>;
       } = JSON.parse(fs.readFileSync(packagePath, "utf-8"));
 
-      if (packageManifest.name === undefined)
-        packageManifest.name = path.basename(path.dirname(packagePath)).replace(/\\/g, "/");
+      if (packageManifest.name === undefined) packageManifest.name = path.basename(path.dirname(packagePath)).replace(/\\/g, "/");
       if (packageManifest.author === undefined) packageManifest.author = "unknown";
       if (typeof packageManifest.author === "object") packageManifest.author = packageManifest.author.name;
-      if (packageManifest.description === undefined)
-        packageManifest.description = "This package has not provided a valid description.";
+      if (packageManifest.description === undefined) packageManifest.description = "This package has not provided a valid description.";
 
       if (packageManifest.version === undefined) packageManifest.version = "unknown";
 
@@ -136,11 +134,7 @@ function filterDependenciesManifestPathsWithDependenciesList(
   packageDirectPaths: string[],
   specifiedPackages: Map<NodePackageDependencyType, string[]>,
 ): string[] {
-  console.info(
-    "[arolariu::acknowledgments] >>> Processing ",
-    packageDirectPaths.length,
-    " manifest files in node_modules...",
-  );
+  console.info("[arolariu::acknowledgments] >>> Processing ", packageDirectPaths.length, " manifest files in node_modules...");
 
   const filteredPackagePaths = packageDirectPaths.filter((packagePath) => {
     // Filter 1: name filter (process only specified packages)

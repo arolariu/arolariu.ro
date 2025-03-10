@@ -19,9 +19,7 @@ export default async function TermsOfServicePage() {
   return (
     <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-8 px-12 py-24'>
       <section className='flex flex-col flex-nowrap items-center justify-center justify-items-center'>
-        <h1 className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-3xl font-black text-transparent'>
-          {t("title")}
-        </h1>
+        <h1 className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-3xl font-black text-transparent'>{t("title")}</h1>
         <span>{t("last_updated")}</span>
       </section>
       <RenderTermsOfServiceScreen />

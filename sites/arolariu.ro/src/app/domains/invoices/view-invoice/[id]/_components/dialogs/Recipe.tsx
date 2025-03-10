@@ -152,9 +152,7 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
   const productSuggestions = invoiceData.items.map((item) => item.name);
 
   // Filter suggestions based on current input
-  const filteredSuggestions = productSuggestions.filter((product) =>
-    product.toLowerCase().includes(currentIngredient.toLowerCase()),
-  );
+  const filteredSuggestions = productSuggestions.filter((product) => product.toLowerCase().includes(currentIngredient.toLowerCase()));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const {name, value} = e.target;
@@ -231,9 +229,7 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
         <DialogHeader>
           <DialogTitle>{isViewMode ? recipe?.name : isAddMode ? "Add New Recipe" : "Edit Recipe"}</DialogTitle>
           <DialogDescription>
-            {isViewMode
-              ? "Recipe details and cooking instructions"
-              : "Fill in the details to create or update a recipe"}
+            {isViewMode ? "Recipe details and cooking instructions" : "Fill in the details to create or update a recipe"}
           </DialogDescription>
         </DialogHeader>
 
@@ -258,9 +254,7 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p className='max-w-xs'>
-                            Generate a recipe name based on your ingredients and difficulty level using AI
-                          </p>
+                          <p className='max-w-xs'>Generate a recipe name based on your ingredients and difficulty level using AI</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -398,9 +392,7 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
               ) : (
                 <Select
                   value={RecipeComplexity[formData.complexity]}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({...prev, difficulty: value as "EASY" | "MEDIUM" | "HARD"}))
-                  }>
+                  onValueChange={(value) => setFormData((prev) => ({...prev, difficulty: value as "EASY" | "MEDIUM" | "HARD"}))}>
                   <SelectTrigger>
                     <SelectValue placeholder='Select difficulty' />
                   </SelectTrigger>

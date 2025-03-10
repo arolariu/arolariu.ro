@@ -164,14 +164,7 @@ export function StatisticsCard({merchantName, totalSpent, currency, category}: R
   );
 }
 
-export function ExpandedStatisticsCard({
-  merchantName,
-  totalSpent,
-  currency,
-  category,
-  onShareClick,
-  onFeedbackClick,
-}: Readonly<Props>) {
+export function ExpandedStatisticsCard({merchantName, totalSpent, currency, category, onShareClick, onFeedbackClick}: Readonly<Props>) {
   // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -416,8 +409,7 @@ export function ExpandedStatisticsCard({
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>
-                          You spent {formatCurrency(totalSpent * (item.percentage / 100))} on{" "}
-                          {item.category.toLowerCase()}
+                          You spent {formatCurrency(totalSpent * (item.percentage / 100))} on {item.category.toLowerCase()}
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -475,8 +467,7 @@ export function ExpandedStatisticsCard({
                 className='bg-muted/50 rounded-md p-3'
                 whileHover={{scale: 1.01, backgroundColor: "hsl(var(--muted))"}}>
                 <p className='text-sm'>
-                  Your spending at {merchantName} has {isIncrease ? "increased" : "decreased"} by {percentChange}%
-                  compared to your average.
+                  Your spending at {merchantName} has {isIncrease ? "increased" : "decreased"} by {percentChange}% compared to your average.
                   {isIncrease
                     ? " This might be due to seasonal items or special promotions."
                     : " This could be a result of buying fewer items or taking advantage of discounts."}
@@ -493,8 +484,7 @@ export function ExpandedStatisticsCard({
 
             <div className='space-y-3'>
               {[merchantName, ...similarMerchants.map((m) => m.name)].map((name, index) => {
-                const amount =
-                  name === merchantName ? totalSpent : similarMerchants.find((m) => m.name === name)?.avgSpend || 0;
+                const amount = name === merchantName ? totalSpent : similarMerchants.find((m) => m.name === name)?.avgSpend || 0;
 
                 const maxAmount = Math.max(totalSpent, ...similarMerchants.map((m) => m.avgSpend));
                 const widthPercentage = (amount / maxAmount) * 100;

@@ -174,10 +174,7 @@ function GridView({
   const paginationInfo = useMemo(
     () => ({
       startIndex: currentPage * IMAGES_PER_PAGE,
-      currentImages: images.slice(
-        currentPage * IMAGES_PER_PAGE,
-        Math.min((currentPage + 1) * IMAGES_PER_PAGE, images.length),
-      ),
+      currentImages: images.slice(currentPage * IMAGES_PER_PAGE, Math.min((currentPage + 1) * IMAGES_PER_PAGE, images.length)),
       totalPages: Math.ceil(images.length / IMAGES_PER_PAGE),
     }),
     [currentPage, images],

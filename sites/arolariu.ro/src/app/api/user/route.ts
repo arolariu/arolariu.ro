@@ -17,9 +17,7 @@ export async function GET() {
   const userPrimaryAddress = user?.primaryEmailAddress?.emailAddress;
   const userHasValidEmail = userPrimaryAddress !== null && userPrimaryAddress !== undefined;
 
-  const emailHash = userHasValidEmail
-    ? await crypto.subtle.digest("SHA-256", new TextEncoder().encode(userPrimaryAddress))
-    : null;
+  const emailHash = userHasValidEmail ? await crypto.subtle.digest("SHA-256", new TextEncoder().encode(userPrimaryAddress)) : null;
 
   const userIdentifier = emailHash ? generateGuid(emailHash) : "00000000-0000-0000-0000-000000000000";
 

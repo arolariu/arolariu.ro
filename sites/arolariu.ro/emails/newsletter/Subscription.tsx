@@ -1,20 +1,6 @@
 /** @format */
 
-import {
-  Body,
-  Container,
-  Font,
-  Head,
-  Hr,
-  Html,
-  Img,
-  Link,
-  Preview,
-  Row,
-  Section,
-  Tailwind,
-  Text,
-} from "@react-email/components";
+import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
 export default function SubscriptionEmail({username}: Readonly<{username: string}>) {
   return (
@@ -56,8 +42,8 @@ export default function SubscriptionEmail({username}: Readonly<{username: string
                   You've been subscribed to the <code className='font-mono'>arolariu.ro</code> newsletter! 🎉🎉
                 </Text>
                 <Text>
-                  You'll receive updates on new events, articles, and other interesting updates to the platform. The
-                  cadence of these e-mails should be somewhere between 1 to 2 e-mails per calendar year quarter.
+                  You'll receive updates on new events, articles, and other interesting updates to the platform. The cadence of these
+                  e-mails should be somewhere between 1 to 2 e-mails per calendar year quarter.
                 </Text>
               </Row>
               <Row>

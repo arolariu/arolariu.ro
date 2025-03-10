@@ -22,8 +22,7 @@ export default function SignUpPage() {
         <SignUp />
       </div>
       <small className='mb-8 py-16 text-center text-lg font-semibold'>
-        We do not offer the possibility to recover an account created via an e-mail / password combination at this
-        moment.
+        We do not offer the possibility to recover an account created via an e-mail / password combination at this moment.
       </small>
     </section>
   );

@@ -33,9 +33,7 @@ export function ExportDialog({open, onOpenChange, invoice}: Readonly<Props>) {
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = invoice
-    ? `https://invoices.example.com/share/${invoice.id}`
-    : "https://invoices.example.com/share/example";
+  const shareUrl = invoice ? `https://invoices.example.com/share/${invoice.id}` : "https://invoices.example.com/share/example";
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -57,9 +55,7 @@ export function ExportDialog({open, onOpenChange, invoice}: Readonly<Props>) {
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
           <DialogTitle>Share Invoice</DialogTitle>
-          <DialogDescription>
-            {invoice ? `Share "${invoice.name}" with others` : "Share this invoice with others"}
-          </DialogDescription>
+          <DialogDescription>{invoice ? `Share "${invoice.name}" with others` : "Share this invoice with others"}</DialogDescription>
         </DialogHeader>
 
         <Tabs

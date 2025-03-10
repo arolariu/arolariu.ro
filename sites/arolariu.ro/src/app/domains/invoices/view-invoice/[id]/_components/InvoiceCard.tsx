@@ -235,9 +235,7 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>) {
                     whileHover={{scale: 1.02}}
                     transition={{type: "spring", stiffness: 400, damping: 10}}>
                     <h3 className='text-muted-foreground mb-1 text-sm font-medium'>Total Amount</h3>
-                    <p className='text-lg font-semibold'>
-                      {formatCurrency(totalAmount, invoice.paymentInformation?.currency || "USD")}
-                    </p>
+                    <p className='text-lg font-semibold'>{formatCurrency(totalAmount, invoice.paymentInformation?.currency || "USD")}</p>
                   </motion.div>
                 </div>
 
@@ -268,18 +266,10 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>) {
                     <table className='divide-border min-w-full divide-y'>
                       <thead>
                         <tr className='bg-muted/50'>
-                          <th className='text-muted-foreground px-4 py-3 text-left text-xs font-medium uppercase tracking-wider'>
-                            Item
-                          </th>
-                          <th className='text-muted-foreground px-4 py-3 text-right text-xs font-medium uppercase tracking-wider'>
-                            Qty
-                          </th>
-                          <th className='text-muted-foreground px-4 py-3 text-right text-xs font-medium uppercase tracking-wider'>
-                            Price
-                          </th>
-                          <th className='text-muted-foreground px-4 py-3 text-right text-xs font-medium uppercase tracking-wider'>
-                            Total
-                          </th>
+                          <th className='text-muted-foreground px-4 py-3 text-left text-xs font-medium uppercase tracking-wider'>Item</th>
+                          <th className='text-muted-foreground px-4 py-3 text-right text-xs font-medium uppercase tracking-wider'>Qty</th>
+                          <th className='text-muted-foreground px-4 py-3 text-right text-xs font-medium uppercase tracking-wider'>Price</th>
+                          <th className='text-muted-foreground px-4 py-3 text-right text-xs font-medium uppercase tracking-wider'>Total</th>
                         </tr>
                       </thead>
                       <tbody className='bg-popover divide-border divide-y'>
@@ -298,10 +288,7 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>) {
                               {formatCurrency(item.price, invoice.paymentInformation?.currency || "USD")}
                             </td>
                             <td className='whitespace-nowrap px-4 py-3 text-right text-sm font-medium'>
-                              {formatCurrency(
-                                item.price * item.quantity,
-                                invoice.paymentInformation?.currency || "USD",
-                              )}
+                              {formatCurrency(item.price * item.quantity, invoice.paymentInformation?.currency || "USD")}
                             </td>
                           </motion.tr>
                         ))}
@@ -429,9 +416,7 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>) {
                                         <TooltipProvider>
                                           <Tooltip>
                                             <TooltipTrigger asChild>
-                                              <li className='text-muted-foreground cursor-help'>
-                                                +{recipe.ingredients.length - 3} more
-                                              </li>
+                                              <li className='text-muted-foreground cursor-help'>+{recipe.ingredients.length - 3} more</li>
                                             </TooltipTrigger>
                                             <TooltipContent className='max-w-xs'>
                                               <p className='mb-1 font-medium'>Additional ingredients:</p>
@@ -858,4 +843,3 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>) {
     </div>
   );
 }
-

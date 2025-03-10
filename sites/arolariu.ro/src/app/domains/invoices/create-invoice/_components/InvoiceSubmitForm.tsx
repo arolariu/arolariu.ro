@@ -7,9 +7,7 @@ type Props = {
   uploadStatus?: UploadStatus;
   resetState?: () => void;
   handleImageClientSideUpload?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  handleImageServerSideUpload?: (
-    event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>,
-  ) => Promise<void>;
+  handleImageServerSideUpload?: (event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => Promise<void>;
 };
 
 /**

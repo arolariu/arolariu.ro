@@ -155,15 +155,13 @@ function compareMessageKeys(enTranslations: MessageFormat, roTranslations: Messa
 
   console.info(`[arolariu.ro::checkTranslations] Extracted ${enKeys.length} keys from en.json`);
   console.info(`[arolariu.ro::checkTranslations] Extracted ${roKeys.length} keys from ro.json`);
-  if (enKeys.length === roKeys.length)
-    console.info("[arolariu.ro::checkTranslations] Translation files have equal keys!");
+  if (enKeys.length === roKeys.length) console.info("[arolariu.ro::checkTranslations] Translation files have equal keys!");
 
   const missingKeysFromLeft = enKeys.filter((key) => !roKeys.includes(key));
   const missingKeysFromRight = roKeys.filter((key) => !enKeys.includes(key));
 
   const missingKeys = Array.from(new Set([...missingKeysFromLeft, ...missingKeysFromRight]));
-  if (missingKeys.length > 0)
-    console.info(`[arolariu.ro::checkTranslations] Found ${missingKeys.length} missing keys.`);
+  if (missingKeys.length > 0) console.info(`[arolariu.ro::checkTranslations] Found ${missingKeys.length} missing keys.`);
 
   missingKeys.forEach((key) => {
     const enValue = JSON.stringify(lookupMessageKeyValue(enTranslations, key));
@@ -196,9 +194,7 @@ function compareMessageValues(enTranslations: MessageFormat, roTranslations: Mes
     const roValue = lookupMessageKeyValue(roTranslations, key);
 
     if (enValue === roValue || enValue === "" || roValue === "" || enValue === null || roValue === null) {
-      console.error(
-        `[arolariu.ro::checkTranslations] ${key} - ${JSON.stringify(enValue)} - ${JSON.stringify(roValue)}`,
-      );
+      console.error(`[arolariu.ro::checkTranslations] ${key} - ${JSON.stringify(enValue)} - ${JSON.stringify(roValue)}`);
       allGood = false;
     }
   });
@@ -208,9 +204,7 @@ function compareMessageValues(enTranslations: MessageFormat, roTranslations: Mes
     const roValue = lookupMessageKeyValue(roTranslations, key);
 
     if (enValue === roValue || enValue === "" || roValue === "" || enValue === null || roValue === null) {
-      console.error(
-        `[arolariu.ro::checkTranslations] ${key} - ${JSON.stringify(enValue)} - ${JSON.stringify(roValue)}`,
-      );
+      console.error(`[arolariu.ro::checkTranslations] ${key} - ${JSON.stringify(enValue)} - ${JSON.stringify(roValue)}`);
       allGood = false;
     }
   });

@@ -105,10 +105,7 @@ function __sortPackages__(
  * } = usePackageFilters(nodePackages);
  */
 export function usePackageFilters(packages: HookInputType): HookReturnType {
-  const memoizedExtractPackageType = useCallback(
-    (pkg: {name: string}): PackageType => __extractPackageType__(pkg, packages),
-    [packages],
-  );
+  const memoizedExtractPackageType = useCallback((pkg: {name: string}): PackageType => __extractPackageType__(pkg, packages), [packages]);
 
   const flatPackages = useMemo(() => Object.values(packages).flat(), [packages]);
   const [searchQuery, setSearchQuery] = useState<string>("");

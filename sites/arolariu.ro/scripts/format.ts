@@ -6,11 +6,11 @@ import path from "node:path";
 
 /**
  * This function will format the code with the Prettier CLI.
- * It will use the `prettier.config.js` file as the configuration file.
+ * It will use the `prettier.config.ts` file as the configuration file.
  * If the configuration file does not exist, the script will exit with an error.
  */
 function formatCodeWithPrettier(verbose: boolean = false) {
-  const prettierConfig = path.join(process.cwd(), "prettier.config.js");
+  const prettierConfig = path.join(process.cwd(), "prettier.config.ts");
   if (!fs.existsSync(prettierConfig)) {
     console.error("[arolariu::format] >>> The Prettier configuration file does not exist.");
     process.exit(1);
@@ -19,7 +19,7 @@ function formatCodeWithPrettier(verbose: boolean = false) {
   console.log("[arolariu::format] >>> Checking the code with Prettier...");
 
   try {
-    execSync(`npx prettier --check . --config-precedence prefer-file --cache --cache-strategy metadata`, {
+    execSync(`tsx node_modules/prettier/bin/prettier.cjs --check . --config-precedence prefer-file --cache --cache-strategy metadata`, {
       stdio: "inherit",
     });
   } catch (error) {
@@ -27,7 +27,7 @@ function formatCodeWithPrettier(verbose: boolean = false) {
     console.log("[arolariu::format] >>> Formatting the code with Prettier...");
 
     try {
-      execSync(`npx prettier --write . --config-precedence prefer-file --cache --cache-strategy metadata`, {
+      execSync(`tsx node_modules/prettier/bin/prettier.cjs --write . --config-precedence prefer-file --cache --cache-strategy metadata`, {
         stdio: "inherit",
       });
       console.log("[arolariu::format] >>> The code has been formatted with Prettier.");

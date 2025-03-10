@@ -85,9 +85,7 @@ export function FeedbackDialog({open, onOpenChange}: Readonly<Props>) {
                       <TooltipTrigger asChild>
                         <Star
                           className={`h-8 w-8 ${
-                            star <= (hoveredRating || rating)
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-muted-foreground"
+                            star <= (hoveredRating || rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
                           } transition-colors`}
                         />
                       </TooltipTrigger>
@@ -123,13 +121,7 @@ export function FeedbackDialog({open, onOpenChange}: Readonly<Props>) {
           <div className='space-y-2'>
             <Label>Which features were most helpful?</Label>
             <div className='flex flex-wrap gap-2'>
-              {[
-                "Currency conversion",
-                "Spending trends",
-                "Merchant comparison",
-                "Category breakdown",
-                "Savings tips",
-              ].map((feature) => (
+              {["Currency conversion", "Spending trends", "Merchant comparison", "Category breakdown", "Savings tips"].map((feature) => (
                 <Button
                   key={feature}
                   type='button'
@@ -138,9 +130,7 @@ export function FeedbackDialog({open, onOpenChange}: Readonly<Props>) {
                   className='rounded-full hover:bg-primary/10 hover:text-primary'
                   onClick={() => {
                     setComment((prev) =>
-                      prev
-                        ? `${prev}\nI found the ${feature} feature helpful.`
-                        : `I found the ${feature} feature helpful.`,
+                      prev ? `${prev}\nI found the ${feature} feature helpful.` : `I found the ${feature} feature helpful.`,
                     );
                   }}>
                   {feature}
@@ -166,4 +156,3 @@ export function FeedbackDialog({open, onOpenChange}: Readonly<Props>) {
     </Dialog>
   );
 }
-

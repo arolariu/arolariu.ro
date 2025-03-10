@@ -205,9 +205,7 @@ export function ExportDialog({open, onOpenChange, invoiceId, invoiceName}: Reado
                   level='L'
                 />
               </div>
-              <p className='text-muted-foreground text-center text-sm'>
-                Scan this QR code to view the invoice on a mobile device.
-              </p>
+              <p className='text-muted-foreground text-center text-sm'>Scan this QR code to view the invoice on a mobile device.</p>
               <Button
                 variant='outline'
                 onClick={handleCopyQRCode}
@@ -222,4 +220,3 @@ export function ExportDialog({open, onOpenChange, invoiceId, invoiceName}: Reado
     </Dialog>
   );
 }
-

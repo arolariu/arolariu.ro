@@ -12,10 +12,7 @@ import type {Invoice} from "@/types/invoices";
  * @param userInformation The user information to use for the request.
  * @returns The updated invoice, or null if the request failed.
  */
-export default async function updateInvoice(
-  invoiceInformation: Invoice,
-  userInformation: UserInformation,
-): Promise<Invoice | null> {
+export default async function updateInvoice(invoiceInformation: Invoice, userInformation: UserInformation): Promise<Invoice | null> {
   try {
     console.info(">>> Updating invoice for user:", userInformation);
 

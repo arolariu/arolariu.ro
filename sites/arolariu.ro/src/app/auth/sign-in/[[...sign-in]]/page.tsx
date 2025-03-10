@@ -15,9 +15,7 @@ export const metadata: Metadata = {
 export default function SignInPage() {
   return (
     <section className='flex flex-col 2xsm:mt-16 2xsm:p-2 sm:p-4 md:mt-0 md:p-8'>
-      <h1 className='my-4 text-center text-2xl font-extrabold'>
-        Sign in by reusing your account from one of the following providers:
-      </h1>
+      <h1 className='my-4 text-center text-2xl font-extrabold'>Sign in by reusing your account from one of the following providers:</h1>
       <div className='mx-auto'>
         <SignIn />
       </div>

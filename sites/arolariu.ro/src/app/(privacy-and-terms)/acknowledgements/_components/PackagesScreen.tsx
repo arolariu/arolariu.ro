@@ -353,8 +353,8 @@ export default function PackagesScreen({packages}: Readonly<Props>) {
           <h2 className='text-xl font-semibold'>Open Source Matters</h2>
         </div>
         <p className='text-muted-foreground mx-auto max-w-2xl'>
-          This project stands on the shoulders of giants. We&apos;re grateful for the open-source community and all the
-          developers who have contributed to these packages.
+          This project stands on the shoulders of giants. We&apos;re grateful for the open-source community and all the developers who have
+          contributed to these packages.
         </p>
       </motion.div>
     </div>

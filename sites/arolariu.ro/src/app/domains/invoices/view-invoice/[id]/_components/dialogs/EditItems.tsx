@@ -167,9 +167,7 @@ export function EditItemsDialog({open, onOpenChange, items: initialItems, curren
           <div className='flex items-center justify-between border-t pt-4'>
             <div>
               <p className='text-sm font-medium'>Total Items: {items.length}</p>
-              <p className='text-muted-foreground text-sm'>
-                Total Quantity: {items.reduce((sum, item) => sum + item.quantity, 0)}
-              </p>
+              <p className='text-muted-foreground text-sm'>Total Quantity: {items.reduce((sum, item) => sum + item.quantity, 0)}</p>
             </div>
             <div className='text-right'>
               <p className='text-sm font-medium'>Subtotal</p>

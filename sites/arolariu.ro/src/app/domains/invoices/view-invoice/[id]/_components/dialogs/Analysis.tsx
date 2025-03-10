@@ -21,17 +21,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@arolariu/components";
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  BarChart3,
-  DollarSign,
-  LineChart,
-  PieChart,
-  ShoppingCart,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react";
+import {ArrowDownIcon, ArrowUpIcon, BarChart3, DollarSign, LineChart, PieChart, ShoppingCart, TrendingDown, TrendingUp} from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -141,9 +131,7 @@ export function InvoiceAnalysisDialog({open, onOpenChange, invoice}: Readonly<Pr
                       <ArrowDownIcon className='ml-2 h-4 w-4 text-success' />
                     )}
                   </div>
-                  <p className='text-muted-foreground text-xs'>
-                    Compared to your average {InvoiceCategory[invoice.category]} spending
-                  </p>
+                  <p className='text-muted-foreground text-xs'>Compared to your average {InvoiceCategory[invoice.category]} spending</p>
                 </CardContent>
               </Card>
             </div>
@@ -166,15 +154,11 @@ export function InvoiceAnalysisDialog({open, onOpenChange, invoice}: Readonly<Pr
                   <div className='flex justify-between text-sm'>
                     <div>
                       <p className='font-medium'>{leastExpensiveItem.rawName}</p>
-                      <p className='text-muted-foreground text-xs'>
-                        {formatCurrency(leastExpensiveItem.price, currency)}
-                      </p>
+                      <p className='text-muted-foreground text-xs'>{formatCurrency(leastExpensiveItem.price, currency)}</p>
                     </div>
                     <div className='text-right'>
                       <p className='font-medium'>{mostExpensiveItem.rawName}</p>
-                      <p className='text-muted-foreground text-xs'>
-                        {formatCurrency(mostExpensiveItem.price, currency)}
-                      </p>
+                      <p className='text-muted-foreground text-xs'>{formatCurrency(mostExpensiveItem.price, currency)}</p>
                     </div>
                   </div>
                 </div>
@@ -257,9 +241,7 @@ export function InvoiceAnalysisDialog({open, onOpenChange, invoice}: Readonly<Pr
                     </div>
                     <div>
                       <h4 className='text-sm font-medium'>Shopping Frequency</h4>
-                      <p className='text-muted-foreground text-sm'>
-                        You shop at TODO:MERCHANT_NAME about 2.5 times per month on average.
-                      </p>
+                      <p className='text-muted-foreground text-sm'>You shop at TODO:MERCHANT_NAME about 2.5 times per month on average.</p>
                     </div>
                   </div>
                   <div className='flex items-start space-x-4'>
@@ -279,9 +261,7 @@ export function InvoiceAnalysisDialog({open, onOpenChange, invoice}: Readonly<Pr
                     </div>
                     <div>
                       <h4 className='text-sm font-medium'>Saving Opportunity</h4>
-                      <p className='text-muted-foreground text-sm'>
-                        You could save up to 15% by shopping during promotional periods.
-                      </p>
+                      <p className='text-muted-foreground text-sm'>You could save up to 15% by shopping during promotional periods.</p>
                     </div>
                   </div>
                 </div>
@@ -323,13 +303,7 @@ export function InvoiceAnalysisDialog({open, onOpenChange, invoice}: Readonly<Pr
                         </div>
                       </div>
                       <Progress
-                        value={
-                          item.status === "higher"
-                            ? 50 + item.percent
-                            : item.status === "lower"
-                              ? 50 - item.percent
-                              : 50
-                        }
+                        value={item.status === "higher" ? 50 + item.percent : item.status === "lower" ? 50 - item.percent : 50}
                         className='h-2'
                       />
                       <div className='text-muted-foreground flex justify-between text-xs'>
@@ -352,8 +326,7 @@ export function InvoiceAnalysisDialog({open, onOpenChange, invoice}: Readonly<Pr
                 <div className='rounded-md border p-4'>
                   <h4 className='mb-2 font-medium'>Consider alternative brands</h4>
                   <p className='text-muted-foreground mb-2 text-sm'>
-                    You could save approximately {formatCurrency(12.5, currency)} by choosing alternative brands for
-                    some items.
+                    You could save approximately {formatCurrency(12.5, currency)} by choosing alternative brands for some items.
                   </p>
                   <div className='text-sm'>
                     <span className='font-medium'>Example: </span>
@@ -378,14 +351,10 @@ export function InvoiceAnalysisDialog({open, onOpenChange, invoice}: Readonly<Pr
 
                 <div className='rounded-md border p-4'>
                   <h4 className='mb-2 font-medium'>Seasonal shopping</h4>
-                  <p className='text-muted-foreground mb-2 text-sm'>
-                    Some items on your list are out of season and cost more as a result.
-                  </p>
+                  <p className='text-muted-foreground mb-2 text-sm'>Some items on your list are out of season and cost more as a result.</p>
                   <div className='text-sm'>
                     <span className='font-medium'>Example: </span>
-                    <span className='text-muted-foreground'>
-                      "Organic Bananas" are currently imported and more expensive than usual.
-                    </span>
+                    <span className='text-muted-foreground'>"Organic Bananas" are currently imported and more expensive than usual.</span>
                   </div>
                 </div>
               </CardContent>

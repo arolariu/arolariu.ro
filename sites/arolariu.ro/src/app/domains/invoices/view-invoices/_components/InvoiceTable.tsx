@@ -273,8 +273,7 @@ export function InvoiceTable({invoices}: Readonly<Props>) {
             <div className='text-destructive flex items-center gap-2'>
               <AlertCircle className='h-5 w-5' />
               <span>
-                Are you sure you want to delete {selectedInvoices.length}{" "}
-                {selectedInvoices.length === 1 ? "invoice" : "invoices"}?
+                Are you sure you want to delete {selectedInvoices.length} {selectedInvoices.length === 1 ? "invoice" : "invoices"}?
               </span>
             </div>
             <div className='flex gap-2'>

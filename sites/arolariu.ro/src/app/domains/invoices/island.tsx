@@ -134,9 +134,7 @@ const Steps = () => {
             {step.icon}
           </div>
           <div className='flex-grow pl-4'>
-            <h2 className='title-font mb-1 text-sm font-medium tracking-wider underline underline-offset-2'>
-              {step.title}
-            </h2>
+            <h2 className='title-font mb-1 text-sm font-medium tracking-wider underline underline-offset-2'>{step.title}</h2>
             <p className='leading-relaxed'>{step.description}</p>
           </div>
         </div>

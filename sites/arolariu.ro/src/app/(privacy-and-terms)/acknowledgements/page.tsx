@@ -25,9 +25,7 @@ export default async function AcknowledgementsPage() {
     <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-8 px-12 py-24'>
       {/* Hero section */}
       <section className='text-center'>
-        <h1 className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-3xl font-black text-transparent'>
-          {t("title")}
-        </h1>
+        <h1 className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-3xl font-black text-transparent'>{t("title")}</h1>
         <span>{t("lastUpdate", {date: lastUpdatedDate})}</span>
       </section>
 

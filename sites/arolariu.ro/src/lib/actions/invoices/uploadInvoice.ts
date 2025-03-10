@@ -27,10 +27,7 @@ type ActionOutput = {
  * 4. Send a full analysis request to the server.
  * @returns The result of the upload.
  */
-export default async function uploadInvoice({
-  blobInformation,
-  userInformation,
-}: Readonly<ActionInput>): Promise<ActionOutput> {
+export default async function uploadInvoice({blobInformation, userInformation}: Readonly<ActionInput>): Promise<ActionOutput> {
   try {
     const storageResponse = await uploadBlobToAzureStorage("invoices", blobInformation);
 

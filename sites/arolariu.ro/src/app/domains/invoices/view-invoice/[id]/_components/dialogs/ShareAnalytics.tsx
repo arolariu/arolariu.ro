@@ -210,4 +210,3 @@ export function ShareAnalyticsDialog({open, onOpenChange, merchantName, currency
     </Dialog>
   );
 }
-

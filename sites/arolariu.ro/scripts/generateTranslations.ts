@@ -50,10 +50,7 @@ function extractMessageKeys(messages: MessageFormat, verbose: boolean = false): 
     if (typeof messages[key] === "string") {
       keys.push(key);
     } else {
-      verbose &&
-        console.info(
-          `[arolariu.ro::generateTranslations] Key: ${key} is a MessageFormat object. Extracting subkeys...`,
-        );
+      verbose && console.info(`[arolariu.ro::generateTranslations] Key: ${key} is a MessageFormat object. Extracting subkeys...`);
       const subKeys = extractMessageKeys(messages[key] as MessageFormat);
       subKeys.forEach((subKey) => keys.push(`${key}.${subKey}`));
     }

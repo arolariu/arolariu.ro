@@ -22,18 +22,7 @@ import {
 } from "@arolariu/components";
 import {format} from "date-fns";
 import {AnimatePresence, motion} from "framer-motion";
-import {
-  Calendar,
-  CalendarIcon,
-  CheckIcon,
-  ChevronDown,
-  Command,
-  CreditCard,
-  DollarSign,
-  Filter,
-  Store,
-  X,
-} from "lucide-react";
+import {Calendar, CalendarIcon, CheckIcon, ChevronDown, Command, CreditCard, DollarSign, Filter, Store, X} from "lucide-react";
 import {useEffect, useState} from "react";
 
 type Props = {
@@ -108,9 +97,7 @@ export function AdvancedFilters({onFilterChange}: Readonly<Props>) {
   // Toggle merchant selection
   const toggleMerchant = (merchant: string) => {
     setFilters((prev) => {
-      const merchants = prev.merchants.includes(merchant)
-        ? prev.merchants.filter((m) => m !== merchant)
-        : [...prev.merchants, merchant];
+      const merchants = prev.merchants.includes(merchant) ? prev.merchants.filter((m) => m !== merchant) : [...prev.merchants, merchant];
 
       return {...prev, merchants};
     });
@@ -290,9 +277,7 @@ export function AdvancedFilters({onFilterChange}: Readonly<Props>) {
                                   <div
                                     className={cn(
                                       "flex h-4 w-4 items-center justify-center rounded-sm border",
-                                      filters.merchants.includes(merchant)
-                                        ? "text-primary-foreground bg-primary"
-                                        : "opacity-50",
+                                      filters.merchants.includes(merchant) ? "text-primary-foreground bg-primary" : "opacity-50",
                                     )}>
                                     {filters.merchants.includes(merchant) && <CheckIcon className='h-3 w-3' />}
                                   </div>
@@ -328,11 +313,7 @@ export function AdvancedFilters({onFilterChange}: Readonly<Props>) {
                               variant='outline'
                               className='w-full justify-start text-left font-normal'>
                               <CalendarIcon className='mr-2 h-4 w-4' />
-                              {filters.dateRange.from ? (
-                                format(filters.dateRange.from, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
+                              {filters.dateRange.from ? format(filters.dateRange.from, "PPP") : <span>Pick a date</span>}
                             </Button>
                           </DatePopoverTrigger>
                           <DatePopoverContent className='w-auto p-0'>
@@ -403,9 +384,7 @@ export function AdvancedFilters({onFilterChange}: Readonly<Props>) {
                   <div className='flex items-center gap-2'>
                     <DollarSign className='h-4 w-4' />
                     <span>Price Range</span>
-                    {(filters.priceRange[0] > minPrice || filters.priceRange[1] < maxPrice) && (
-                      <Badge variant='secondary'>Active</Badge>
-                    )}
+                    {(filters.priceRange[0] > minPrice || filters.priceRange[1] < maxPrice) && <Badge variant='secondary'>Active</Badge>}
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
@@ -451,9 +430,7 @@ export function AdvancedFilters({onFilterChange}: Readonly<Props>) {
                   <div className='flex items-center gap-2'>
                     <CreditCard className='h-4 w-4' />
                     <span>Payment Methods</span>
-                    {filters.paymentMethods.length > 0 && (
-                      <Badge variant='secondary'>{filters.paymentMethods.length}</Badge>
-                    )}
+                    {filters.paymentMethods.length > 0 && <Badge variant='secondary'>{filters.paymentMethods.length}</Badge>}
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
@@ -466,9 +443,7 @@ export function AdvancedFilters({onFilterChange}: Readonly<Props>) {
                         role='combobox'
                         aria-expanded={paymentMethodsOpen}
                         className='w-full justify-between'>
-                        {filters.paymentMethods.length > 0
-                          ? `${filters.paymentMethods.length} selected`
-                          : "Select payment methods..."}
+                        {filters.paymentMethods.length > 0 ? `${filters.paymentMethods.length} selected` : "Select payment methods..."}
                         <ChevronDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
                       </Button>
                     </PopoverTrigger>
@@ -489,9 +464,7 @@ export function AdvancedFilters({onFilterChange}: Readonly<Props>) {
                                   <div
                                     className={cn(
                                       "flex h-4 w-4 items-center justify-center rounded-sm border",
-                                      filters.paymentMethods.includes(method)
-                                        ? "text-primary-foreground bg-primary"
-                                        : "opacity-50",
+                                      filters.paymentMethods.includes(method) ? "text-primary-foreground bg-primary" : "opacity-50",
                                     )}>
                                     {filters.paymentMethods.includes(method) && <CheckIcon className='h-3 w-3' />}
                                   </div>

@@ -4,15 +4,7 @@
 import {isBrowserStorageAvailable} from "@/lib/utils.client";
 import type {NextFont} from "next/dist/compiled/@next/font";
 import {Caudex} from "next/font/google";
-import React, {
-  createContext,
-  type Dispatch,
-  type SetStateAction,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, {createContext, type Dispatch, type SetStateAction, useContext, useEffect, useMemo, useState} from "react";
 
 const defaultFont: NextFont = Caudex({
   weight: "700",

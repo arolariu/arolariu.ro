@@ -23,9 +23,7 @@ export default async function CreateInvoicePage() {
   return (
     <main className='flex flex-col flex-wrap items-center justify-center justify-items-center px-5 py-24 text-center'>
       <RenderCreateInvoiceScreen />
-      {!isAuthenticated && (
-        <small className='2xsm:text-md md:text-md mb-4 p-8 lg:text-xl 2xl:text-2xl'>({t("disclaimer")})</small>
-      )}
+      {!isAuthenticated && <small className='2xsm:text-md md:text-md mb-4 p-8 lg:text-xl 2xl:text-2xl'>({t("disclaimer")})</small>}
     </main>
   );
 }

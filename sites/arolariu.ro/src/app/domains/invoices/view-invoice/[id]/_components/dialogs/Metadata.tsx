@@ -45,15 +45,7 @@ type Props = {
   onSave: (key: string, value: string) => void;
 };
 
-export function MetadataDialog({
-  open,
-  onOpenChange,
-  mode,
-  currentKey,
-  currentValue,
-  existingKeys,
-  onSave,
-}: Readonly<Props>) {
+export function MetadataDialog({open, onOpenChange, mode, currentKey, currentValue, existingKeys, onSave}: Readonly<Props>) {
   const isAddMode = mode === "add";
   const [key, setKey] = useState(currentKey || "");
   const [value, setValue] = useState(currentValue || "");
@@ -140,9 +132,7 @@ export function MetadataDialog({
               placeholder='Enter value'
               disabled={isReadonly}
             />
-            {isReadonly && (
-              <p className='text-muted-foreground text-sm'>This field is read-only and cannot be modified.</p>
-            )}
+            {isReadonly && <p className='text-muted-foreground text-sm'>This field is read-only and cannot be modified.</p>}
           </div>
         </div>
 

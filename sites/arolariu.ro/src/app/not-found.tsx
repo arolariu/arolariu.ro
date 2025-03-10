@@ -33,8 +33,7 @@ export default async function NotFound() {
       </section>
       <section>
         <p className='text-center text-xs'>
-          If you think that this page should exist and you&apos;re facing an error, please report this to the site
-          administrator.
+          If you think that this page should exist and you&apos;re facing an error, please report this to the site administrator.
         </p>
         <div className='mt-4 flex items-center justify-between justify-items-center gap-4 2xsm:flex-col md:flex-row'>
           <Link

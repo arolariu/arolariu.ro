@@ -120,11 +120,7 @@ export function MerchantReceiptsDialog({open, onOpenChange, merchant}: Readonly<
                       variant={"ghost"}>
                       Date
                       {sortField === "date" &&
-                        (sortDirection === "asc" ? (
-                          <ChevronUp className='ml-1 h-4 w-4' />
-                        ) : (
-                          <ChevronDown className='ml-1 h-4 w-4' />
-                        ))}
+                        (sortDirection === "asc" ? <ChevronUp className='ml-1 h-4 w-4' /> : <ChevronDown className='ml-1 h-4 w-4' />)}
                     </Button>
                   </TableHead>
                   <TableHead>
@@ -134,11 +130,7 @@ export function MerchantReceiptsDialog({open, onOpenChange, merchant}: Readonly<
                       variant={"ghost"}>
                       Receipt
                       {sortField === "name" &&
-                        (sortDirection === "asc" ? (
-                          <ChevronUp className='ml-1 h-4 w-4' />
-                        ) : (
-                          <ChevronDown className='ml-1 h-4 w-4' />
-                        ))}
+                        (sortDirection === "asc" ? <ChevronUp className='ml-1 h-4 w-4' /> : <ChevronDown className='ml-1 h-4 w-4' />)}
                     </Button>
                   </TableHead>
                   <TableHead className='text-right'>Amount</TableHead>
@@ -238,4 +230,3 @@ export function MerchantReceiptsDialog({open, onOpenChange, merchant}: Readonly<
     </Dialog>
   );
 }
-

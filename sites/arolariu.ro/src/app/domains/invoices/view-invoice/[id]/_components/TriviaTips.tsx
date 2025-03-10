@@ -74,9 +74,7 @@ export function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
             <p className='text-sm font-medium'>Potential Savings</p>
             <p className='text-lg font-bold'>{formatCurrency(totalPotentialSavings)}</p>
           </div>
-          <p className='text-muted-foreground mt-1 text-xs'>
-            Apply these tips to save on your next visit to {merchant.name}
-          </p>
+          <p className='text-muted-foreground mt-1 text-xs'>Apply these tips to save on your next visit to {merchant.name}</p>
         </motion.div>
 
         <Separator />

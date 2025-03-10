@@ -21,19 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@arolariu/components";
 import {motion} from "framer-motion";
-import {
-  Calendar,
-  DollarSign,
-  Edit,
-  Eye,
-  Moon,
-  MoreHorizontal,
-  Receipt,
-  Share2,
-  ShoppingBag,
-  Sun,
-  Trash2,
-} from "lucide-react";
+import {Calendar, DollarSign, Edit, Eye, Moon, MoreHorizontal, Receipt, Share2, ShoppingBag, Sun, Trash2} from "lucide-react";
 import {useState} from "react";
 
 type Props = {

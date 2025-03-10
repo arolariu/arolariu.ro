@@ -124,9 +124,7 @@ export function StatisticsFilters({invoices, onFilterChange}: Readonly<Props>) {
   const toggleMerchant = (merchant: string) => {
     const newFilters = {
       ...filters,
-      merchants: filters.merchants.includes(merchant)
-        ? filters.merchants.filter((m) => m !== merchant)
-        : [...filters.merchants, merchant],
+      merchants: filters.merchants.includes(merchant) ? filters.merchants.filter((m) => m !== merchant) : [...filters.merchants, merchant],
     };
 
     setFilters(newFilters);
@@ -279,9 +277,7 @@ export function StatisticsFilters({invoices, onFilterChange}: Readonly<Props>) {
                           <div
                             className={cn(
                               "flex h-4 w-4 items-center justify-center rounded-sm border",
-                              filters.merchants.includes(merchant)
-                                ? "text-primary-foreground bg-primary"
-                                : "opacity-50",
+                              filters.merchants.includes(merchant) ? "text-primary-foreground bg-primary" : "opacity-50",
                             )}>
                             {filters.merchants.includes(merchant) && <CheckIcon className='h-3 w-3' />}
                           </div>
@@ -326,13 +322,9 @@ export function StatisticsFilters({invoices, onFilterChange}: Readonly<Props>) {
                           <div
                             className={cn(
                               "flex h-4 w-4 items-center justify-center rounded-sm border",
-                              filters.categories.includes(InvoiceCategory[category])
-                                ? "text-primary-foreground bg-primary"
-                                : "opacity-50",
+                              filters.categories.includes(InvoiceCategory[category]) ? "text-primary-foreground bg-primary" : "opacity-50",
                             )}>
-                            {filters.categories.includes(InvoiceCategory[category]) && (
-                              <CheckIcon className='h-3 w-3' />
-                            )}
+                            {filters.categories.includes(InvoiceCategory[category]) && <CheckIcon className='h-3 w-3' />}
                           </div>
                           <span className='capitalize'>{category}</span>
                         </div>
@@ -346,9 +338,7 @@ export function StatisticsFilters({invoices, onFilterChange}: Readonly<Props>) {
         </div>
 
         {/* Reset Filters */}
-        {(filters.merchants.length > 0 ||
-          filters.categories.length > 0 ||
-          filters.dateRange.preset !== "last30days") && (
+        {(filters.merchants.length > 0 || filters.categories.length > 0 || filters.dateRange.preset !== "last30days") && (
           <Button
             variant='ghost'
             size='sm'

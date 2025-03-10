@@ -20,9 +20,7 @@ export default function Home() {
         <article className='relative mx-auto max-w-full px-4 sm:px-6 lg:px-8 2xl:max-w-[120rem]'>
           <div>
             <h1 className='mt-6 text-4xl font-normal text-white 2xsm:text-center sm:mt-10 sm:text-5xl md:text-left lg:text-6xl xl:text-8xl'>
-              <span className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent'>
-                {t("title")}
-              </span>
+              <span className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent'>{t("title")}</span>
             </h1>
             <p className='mt-4 max-w-lg text-xl text-gray-500 2xsm:text-center md:text-left lg:max-w-2xl'>
               {t.rich("subtitle", {

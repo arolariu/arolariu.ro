@@ -172,9 +172,7 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
             {overviewLoaded && pieData.length > 0 ? (
               <>
                 <div className='text-2xl font-bold capitalize'>{pieData[0].name}</div>
-                <p className='text-muted-foreground mt-1 text-xs'>
-                  {Math.round((pieData[0].value / totalSpent) * 100)}% of total spending
-                </p>
+                <p className='text-muted-foreground mt-1 text-xs'>{Math.round((pieData[0].value / totalSpent) * 100)}% of total spending</p>
               </>
             ) : (
               <>
@@ -326,9 +324,7 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
                       </ResponsiveContainer>
                     ) : (
                       <div className='flex h-full flex-col items-center justify-center'>
-                        <p className='text-muted-foreground'>
-                          No payment method data available for the selected filters
-                        </p>
+                        <p className='text-muted-foreground'>No payment method data available for the selected filters</p>
                         <Button
                           variant='outline'
                           size='sm'
@@ -645,12 +641,7 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
                       <div className='bg-muted flex flex-col items-center justify-center rounded-lg p-4'>
                         <div className='mb-2 text-2xl font-bold text-blue-500'>
                           {formatCurrencyWithSymbol(
-                            totalSpent /
-                              (differenceInDays(
-                                filters.dateRange.to || new Date(),
-                                filters.dateRange.from || new Date(),
-                              ) +
-                                1),
+                            totalSpent / (differenceInDays(filters.dateRange.to || new Date(), filters.dateRange.from || new Date()) + 1),
                             currency,
                           )}
                         </div>
@@ -659,8 +650,7 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
 
                       <div className='bg-muted flex flex-col items-center justify-center rounded-lg p-4'>
                         <div className='mb-2 flex items-center text-2xl font-bold text-green-500'>
-                          {barData.length > 1 &&
-                          barData[barData.length - 1].total > barData[barData.length - 2].total ? (
+                          {barData.length > 1 && barData[barData.length - 1].total > barData[barData.length - 2].total ? (
                             <TrendingUp className='mr-1 h-5 w-5' />
                           ) : (
                             <TrendingDown className='mr-1 h-5 w-5' />
@@ -694,9 +684,8 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
                           <li className='flex items-start'>
                             <ArrowRight className='mr-2 mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500' />
                             <span>
-                              Your highest spending category is{" "}
-                              <span className='font-medium capitalize'>{pieData[0].name}</span>, accounting for{" "}
-                              {Math.round((pieData[0].value / totalSpent) * 100)}% of your total spending.
+                              Your highest spending category is <span className='font-medium capitalize'>{pieData[0].name}</span>,
+                              accounting for {Math.round((pieData[0].value / totalSpent) * 100)}% of your total spending.
                             </span>
                           </li>
                         )}
@@ -706,10 +695,7 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
                             <ArrowRight className='mr-2 mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500' />
                             <span>
                               You tend to spend the most on{" "}
-                              <span className='font-medium'>
-                                {dayOfWeekChartData.sort((a, b) => b.value - a.value)[0].name}s
-                              </span>
-                              .
+                              <span className='font-medium'>{dayOfWeekChartData.sort((a, b) => b.value - a.value)[0].name}s</span>.
                             </span>
                           </li>
                         )}
@@ -719,10 +705,7 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
                             <ArrowRight className='mr-2 mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500' />
                             <span>
                               Your peak spending time is around{" "}
-                              <span className='font-medium'>
-                                {hourlyChartData.sort((a, b) => b.amount - a.amount)[0].formattedHour}
-                              </span>
-                              .
+                              <span className='font-medium'>{hourlyChartData.sort((a, b) => b.amount - a.amount)[0].formattedHour}</span>.
                             </span>
                           </li>
                         )}
@@ -732,10 +715,8 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
                             <ArrowRight className='mr-2 mt-0.5 h-4 w-4 flex-shrink-0 text-blue-500' />
                             <span>
                               Your spending is{" "}
-                              {barData[barData.length - 1].total > barData[barData.length - 2].total
-                                ? "increasing"
-                                : "decreasing"}{" "}
-                              compared to previous months.
+                              {barData[barData.length - 1].total > barData[barData.length - 2].total ? "increasing" : "decreasing"} compared
+                              to previous months.
                             </span>
                           </li>
                         )}
@@ -788,9 +769,7 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
                             <div className='flex-1'>
                               <div className='mb-1 flex items-center justify-between'>
                                 <span className='font-medium'>{merchant.name}</span>
-                                <span className='font-medium'>
-                                  {formatCurrencyWithSymbol(merchant.total, currency)}
-                                </span>
+                                <span className='font-medium'>{formatCurrencyWithSymbol(merchant.total, currency)}</span>
                               </div>
                               <div className='bg-muted h-2 w-full rounded-full'>
                                 <motion.div
@@ -896,17 +875,14 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
                               </ResponsiveContainer>
                             </div>
                             <div className='text-muted-foreground text-sm'>
-                              Most frequent category:{" "}
-                              <span className='font-medium capitalize'>{merchant.categories[0]?.category}</span>
+                              Most frequent category: <span className='font-medium capitalize'>{merchant.categories[0]?.category}</span>
                             </div>
                           </div>
                         </div>
                       ))
                     ) : (
                       <div className='flex h-full flex-col items-center justify-center'>
-                        <p className='text-muted-foreground'>
-                          No merchant category data available for the selected filters
-                        </p>
+                        <p className='text-muted-foreground'>No merchant category data available for the selected filters</p>
                         <Button
                           variant='outline'
                           size='sm'
@@ -999,9 +975,7 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
                       </ResponsiveContainer>
                     ) : (
                       <div className='flex h-full flex-col items-center justify-center'>
-                        <p className='text-muted-foreground'>
-                          No merchant comparison data available for the selected filters
-                        </p>
+                        <p className='text-muted-foreground'>No merchant comparison data available for the selected filters</p>
                         <Button
                           variant='outline'
                           size='sm'
@@ -1063,19 +1037,14 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
                             </div>
                             <div className='text-muted-foreground flex justify-between text-xs'>
                               <span>{Math.round((category.value / totalSpent) * 100)}% of total</span>
-                              <span>
-                                {filteredInvoices.filter((invoice) => invoice.category === category.name).length}{" "}
-                                transactions
-                              </span>
+                              <span>{filteredInvoices.filter((invoice) => invoice.category === category.name).length} transactions</span>
                             </div>
                           </div>
                         </div>
                       ))
                     ) : (
                       <div className='flex h-full flex-col items-center justify-center'>
-                        <p className='text-muted-foreground'>
-                          No category breakdown data available for the selected filters
-                        </p>
+                        <p className='text-muted-foreground'>No category breakdown data available for the selected filters</p>
                         <Button
                           variant='outline'
                           size='sm'
@@ -1156,9 +1125,7 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
                       </ResponsiveContainer>
                     ) : (
                       <div className='flex h-full flex-col items-center justify-center'>
-                        <p className='text-muted-foreground'>
-                          No category comparison data available for the selected filters
-                        </p>
+                        <p className='text-muted-foreground'>No category comparison data available for the selected filters</p>
                         <Button
                           variant='outline'
                           size='sm'
@@ -1251,9 +1218,7 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
                       </ResponsiveContainer>
                     ) : (
                       <div className='flex h-full flex-col items-center justify-center'>
-                        <p className='text-muted-foreground'>
-                          No category trends data available for the selected filters
-                        </p>
+                        <p className='text-muted-foreground'>No category trends data available for the selected filters</p>
                         <Button
                           variant='outline'
                           size='sm'
