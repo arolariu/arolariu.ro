@@ -2,7 +2,7 @@
 
 "use client";
 
-import {Recipe, RecipeComplexity} from "@/types/invoices";
+import {Product, ProductCategory, RecipeComplexity, type Recipe} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -63,11 +63,31 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
     recipe ||
       ({
         name: "",
-        description: "",
-        ingredients: [],
         duration: "",
-        complexity: RecipeComplexity.Unknown,
+        description: "",
+        instructions: "",
         referenceForMoreDetails: "",
+        complexity: RecipeComplexity.Unknown,
+        preparationTime: 0,
+        cookingTime: 0,
+        ingredients: [
+          {
+            genericName: "",
+            rawName: "",
+            quantity: -1,
+            quantityUnit: "",
+            detectedAllergens: [],
+            metadata: {
+              isComplete: false,
+              isEdited: false,
+              isSoftDeleted: false,
+            },
+            productCode: "",
+            totalPrice: -1,
+            price: -1,
+            category: ProductCategory.NOT_DEFINED,
+          } satisfies Product,
+        ],
       } satisfies Recipe),
   );
 
@@ -79,7 +99,7 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
   const generateRecipeName = () => {
     // In a real app, this would call an AI service
     const baseNames = ["Delicious", "Homemade", "Gourmet", "Quick", "Healthy", "Savory", "Fresh"];
-    const mainIngredients = formData.ingredients.slice(0, 2).map((product) => product.rawName);
+    const mainIngredients = formData.ingredients.slice(0, 2).map((ing) => ing.genericName);
 
     const randomBase = baseNames[Math.floor(Math.random() * baseNames.length)];
     const ingredientText = mainIngredients.join(" & ");
@@ -95,7 +115,7 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
   // Add a function for enhancing instructions with AI after the generateRecipeName function
   const enhanceInstructions = () => {
     // In a real app, this would call an AI service
-    if (!formData.ingredients) return;
+    if (!formData.instructions) return;
 
     const enhancedInstructions = formData.instructions.trim();
     const steps = enhancedInstructions
@@ -123,7 +143,7 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
       instructions: enhancedSteps.join("\n\n"),
     }));
 
-    toast("Instructions enhanced!", {
+    toast("Instructions enhanced", {
       description: "AI has added more details to your cooking instructions",
     });
   };
@@ -170,14 +190,14 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
     };
 
     if (cleanedRecipe.name.trim() === "") {
-      toast("Recipe name required!", {
+      toast("Recipe name required", {
         description: "Please provide a name for the recipe",
       });
       return;
     }
 
     if (cleanedRecipe.ingredients.length === 0) {
-      toast("Ingredients required!", {
+      toast("Ingredients required", {
         description: "Please add at least one ingredient",
       });
       return;
@@ -200,8 +220,8 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
     }
   };
 
-  // Check if we can generate a name (need ingredients and difficulty)
-  const canGenerateName = !isViewMode && formData.ingredients?.length > 0 && formData.complexity;
+  // Check if we can generate a name (need ingredients and complexity)
+  const canGenerateName = !isViewMode && formData.ingredients.length > 0 && formData.complexity;
 
   return (
     <Dialog
@@ -279,7 +299,7 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
                   <li
                     key={idx}
                     className='text-sm'>
-                    {ingredient.genericName}
+                    {ingredient.rawName}
                   </li>
                 ))}
               </ul>
@@ -292,7 +312,7 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
                     <div className='flex gap-2'>
                       <div className='relative flex-1'>
                         <Input
-                          value={ingredient.genericName}
+                          value={ingredient.rawName}
                           onChange={(e) => handleIngredientChange(idx, e.target.value)}
                           placeholder={`Ingredient ${idx + 1} (from receipt or custom)`}
                           onFocus={() => setShowSuggestions(true)}
@@ -301,7 +321,7 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
 
                         {/* Add "Save External Ingredient" button when no matches found */}
                         {ingredient &&
-                          !filteredSuggestions.some((s) => s.toLowerCase() === ingredient.toLowerCase()) &&
+                          !filteredSuggestions.some((s) => s.toLowerCase() === ingredient.rawName.toLowerCase()) &&
                           showSuggestions && (
                             <TooltipProvider>
                               <Tooltip>
@@ -314,7 +334,7 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
                                     onClick={() => {
                                       // Just close suggestions, the ingredient is already in the input
                                       setShowSuggestions(false);
-                                      toast("External ingredient added!", {
+                                      toast("External ingredient added", {
                                         description: `"${ingredient}" was not found in the invoice but has been added to the recipe.`,
                                       });
                                     }}>
@@ -436,12 +456,12 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
               <div className='flex items-center'>
                 <Clock className='text-muted-foreground mr-2 h-4 w-4' />
                 {isViewMode ? (
-                  <span>{recipe?.prepTime || "Not specified"}</span>
+                  <span>{recipe?.preparationTime || "Not specified"}</span>
                 ) : (
                   <Input
                     id='prepTime'
                     name='prepTime'
-                    value={formData.prepTime}
+                    value={formData.preparationTime}
                     onChange={handleChange}
                     placeholder='e.g. 15 minutes'
                     disabled={isViewMode}
@@ -455,12 +475,12 @@ export function RecipeDialog({open, onOpenChange, recipe, mode, onSave, onDelete
               <div className='flex items-center'>
                 <Utensils className='text-muted-foreground mr-2 h-4 w-4' />
                 {isViewMode ? (
-                  <span>{recipe?.cookTime || "Not specified"}</span>
+                  <span>{recipe?.cookingTime || "Not specified"}</span>
                 ) : (
                   <Input
                     id='cookTime'
                     name='cookTime'
-                    value={formData.cookTime}
+                    value={formData.cookingTime}
                     onChange={handleChange}
                     placeholder='e.g. 30 minutes'
                     disabled={isViewMode}

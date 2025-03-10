@@ -20,7 +20,7 @@ export default async function ViewInvoicePage({params}: Readonly<Props>) {
   const invoiceIdentifier = resolvedParams.id;
 
   return (
-    <main className='overflow-hidden px-5 py-24'>
+    <main className='overflow-hidden py-24'>
       <RenderViewInvoiceScreen invoiceIdentifier={invoiceIdentifier} />
     </main>
   );

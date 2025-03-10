@@ -20,5 +20,7 @@ export type Recipe = {
   complexity: RecipeComplexity;
   ingredients: Product[];
   instructions: string;
+  preparationTime: number;
+  cookingTime: number;
   referenceForMoreDetails: string;
 };
