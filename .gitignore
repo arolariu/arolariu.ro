@@ -8,4 +8,7 @@
 **/.vsc
 **/.env
 **/_site/**
+
+# System Files
 .DS_Store
+Thumbs.db
