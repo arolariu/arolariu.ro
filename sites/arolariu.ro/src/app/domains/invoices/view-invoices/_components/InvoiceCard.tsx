@@ -1,169 +1,183 @@
 /** @format */
+
 "use client";
 
-import {useUserInformation} from "@/hooks";
-import updateInvoice from "@/lib/actions/invoices/updateInvoice";
-import type {Invoice} from "@/types/invoices";
-import Image from "next/image";
-import {useRouter} from "next/navigation";
-import {useCallback, useState} from "react";
+import type {Currency} from "@/types/DDD";
+import {InvoiceCategory, type Invoice} from "@/types/invoices";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@arolariu/components";
+import {motion} from "framer-motion";
+import {
+  Calendar,
+  DollarSign,
+  Edit,
+  Eye,
+  Moon,
+  MoreHorizontal,
+  Receipt,
+  Share2,
+  ShoppingBag,
+  Sun,
+  Trash2,
+} from "lucide-react";
+import {useState} from "react";
 
-const InvoiceCardPreview = ({
-  isFavorite,
-  photoLocation,
-  handleFavorite,
-}: Readonly<{
-  isFavorite: boolean;
-  photoLocation: string;
-  handleFavorite: (
-    event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>,
-  ) => Promise<void>;
-}>) => {
-  const isPdfDocument = photoLocation.endsWith(".pdf");
+type Props = {
+  invoice: Invoice;
+  onShare?: () => void;
+  timeOfDay?: "day" | "night";
+  currency?: Currency;
+};
 
-  switch (isPdfDocument) {
-    case true:
-      return (
-        <div className='flex h-full w-full items-center justify-center bg-gray-100'>
-          <p className='text-2xl text-gray-500'>PDF</p>
-        </div>
-      );
-
-    case false:
-      return (
-        <div className='relative'>
-          <button
-            onClick={handleFavorite}
-            className='btn btn-circle btn-outline btn-sm absolute right-2 top-2'>
-            {isFavorite ? "❤️" : "🤍"}
-          </button>
-          <Image
-            alt='ecommerce'
-            className='relative block h-full w-full transform cursor-pointer overflow-hidden rounded object-cover object-center transition duration-300 ease-in-out hover:opacity-15'
-            src={photoLocation}
-            width={420}
-            height={260}
-          />
-        </div>
-      );
+const getCategoryIcon = (invoice: Invoice) => {
+  switch (invoice.category) {
+    case InvoiceCategory.GROCERY:
+      return <ShoppingBag className='h-16 w-16 text-green-500 opacity-20' />;
+    case InvoiceCategory.FAST_FOOD:
+      return <Receipt className='h-16 w-16 text-orange-500 opacity-20' />;
+    case InvoiceCategory.HOME_CLEANING:
+      return <DollarSign className='h-16 w-16 text-blue-500 opacity-20' />;
+    case InvoiceCategory.CAR_AUTO:
+      return <Eye className='h-16 w-16 text-purple-500 opacity-20' />;
+    case InvoiceCategory.OTHER:
+      return <Calendar className='h-16 w-16 text-yellow-500 opacity-20' />;
+    case InvoiceCategory.NOT_DEFINED:
+    default:
+      return <Receipt className='h-16 w-16 text-gray-500 opacity-20' />;
   }
 };
 
-const InvoiceCardInfo = ({invoice}: Readonly<{invoice: Invoice}>) => {
-  const isAnalyzed = invoice.numberOfUpdates > 0;
-
-  const totalSavingsAmount = invoice.items.filter((item) => item.price < 0).reduce((acc, item) => acc + item.price, 0);
-  const totalSavings = `${totalSavingsAmount}${invoice.paymentInformation?.currency?.symbol}`;
-
-  const transactionDate = new Date(invoice.paymentInformation?.transactionDate ?? Date.now()).toUTCString();
-  const totalAmountCost = `${invoice.paymentInformation?.totalCostAmount}${invoice.paymentInformation?.currency?.symbol}`;
-  const totalNumberOfProducts = invoice.items.length;
-
-  const totalNumberOfEdits = invoice.numberOfUpdates;
-
-  if (isAnalyzed) {
-    return (
-      <section className='flex flex-col'>
-        <table className='table table-xs'>
-          <thead>
-            <tr>
-              <th>Invoice</th>
-              <th className='text-right'>#{invoice.id}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className='font-semibold'>Date</td>
-              <td className='text-right'>{transactionDate}</td>
-            </tr>
-            <tr>
-              <td className='font-semibold'>Cost</td>
-              <td className='text-right text-red-500'>{totalAmountCost}</td>
-            </tr>
-            <tr>
-              <td className='font-semibold'>Savings</td>
-              <td className='text-right text-green-500'>{totalSavings}</td>
-            </tr>
-            <tr>
-              <td className='font-semibold'># Products</td>
-              <td className='text-right'>{totalNumberOfProducts}</td>
-            </tr>
-            <tr>
-              <td className='font-semibold'># Edits</td>
-              <td className='text-right'>{totalNumberOfEdits}</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-    );
-  } else return <span className='mb-1 text-center text-xs tracking-widest'>INVOICE NOT ANALYZED !</span>;
-};
-
-/**
- * Function that generates a card for an invoice.
- * @returns The invoice card component, CSR'ed.
- */
-export default function InvoiceCard({invoice}: Readonly<{invoice: Invoice}>) {
-  const [isFavorite, setIsFavorite] = useState<boolean>(invoice.isImportant);
-  const {userInformation} = useUserInformation();
-  const router = useRouter();
-
-  const handleFavorite = async (
-    event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>,
-  ) => {
-    event.preventDefault();
-    setIsFavorite((prev) => {
-      updateInvoice({...invoice, isImportant: !prev}, userInformation!);
-
-      return !prev;
-    });
-  };
-
-  const handleDelete = useCallback(
-    async (event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      console.log("Delete clicked!");
-    },
-    [invoice.id],
-  );
-
-  const handleNavigation = useCallback(
-    async (event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {
-      event.preventDefault();
-      router.push(`/domains/invoices/view-invoice/${invoice.id}`);
-    },
-    [invoice.id],
-  );
+export function InvoiceCard({invoice, onShare, timeOfDay, currency}: Readonly<Props>) {
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <article className='w-full rounded-xl border-2 p-2 md:w-1/3 lg:w-1/4'>
-      <section>
-        <InvoiceCardPreview
-          isFavorite={isFavorite}
-          photoLocation={invoice.photoLocation}
-          handleFavorite={handleFavorite}
-        />
-      </section>
-      <section className='mt-4'>
-        <InvoiceCardInfo invoice={invoice} />
-      </section>
-      <section className='flex flex-row items-center justify-evenly justify-items-center gap-4'>
-        <button
-          onClick={handleDelete}
-          className='btn btn-outline h-6 max-h-6 min-h-6'>
-          DELETE
-        </button>
-        <button
-          onClick={handleDelete}
-          className='btn btn-secondary h-6 max-h-6 min-h-6'>
-          Quick View
-        </button>
-        <button
-          onClick={handleNavigation}
-          className='btn btn-success h-6 max-h-6 min-h-6'>
-          View
-        </button>
-      </section>
-    </article>
+    <motion.div
+      whileHover={{y: -5}}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}>
+      <Card className='overflow-hidden'>
+        <div className='relative'>
+          {invoice.photoLocation ? (
+            <div className='h-40 overflow-hidden'>
+              <img
+                src={invoice.photoLocation || "/placeholder.svg"}
+                alt={invoice.name}
+                className='h-full w-full object-cover transition-transform duration-500'
+                style={{
+                  transform: isHovered ? "scale(1.05)" : "scale(1)",
+                }}
+              />
+            </div>
+          ) : (
+            <div className='bg-muted flex h-40 items-center justify-center'>{getCategoryIcon(invoice)}</div>
+          )}
+          <div className='absolute right-2 top-2 z-0 flex gap-2'>
+            <Badge
+              className='capitalize'
+              variant='secondary'>
+              {invoice.category}
+            </Badge>
+            {timeOfDay === "day" ? (
+              <Badge
+                variant='outline'
+                className='bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'>
+                <Sun className='mr-1 h-3 w-3' />
+                Day
+              </Badge>
+            ) : (
+              <Badge
+                variant='outline'
+                className='bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'>
+                <Moon className='mr-1 h-3 w-3' />
+                Night
+              </Badge>
+            )}
+            <Badge
+              variant='outline'
+              className='bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'>
+              Paid
+            </Badge>
+          </div>
+        </div>
+        <CardHeader className='pb-2'>
+          <div className='flex items-start justify-between'>
+            <CardTitle className='text-lg'>{invoice.name}</CardTitle>
+            <div className='absolute right-2 top-2 z-10 flex gap-1'>
+              <Button
+                variant='ghost'
+                size='icon'
+                className='bg-background/80 h-8 w-8 backdrop-blur-sm'
+                onClick={() => {
+                  // View action
+                }}>
+                <Eye className='h-4 w-4' />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className='bg-background/80 h-8 w-8 backdrop-blur-sm'>
+                    <MoreHorizontal className='h-4 w-4' />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end'>
+                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <Eye className='mr-2 h-4 w-4' />
+                    View
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Edit className='mr-2 h-4 w-4' />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onShare}>
+                    <Share2 className='mr-2 h-4 w-4' />
+                    Share
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className='text-destructive'>
+                    <Trash2 className='mr-2 h-4 w-4' />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+          <CardDescription>{invoice.description}</CardDescription>
+        </CardHeader>
+        <CardContent className='pb-2'>
+          <div className='flex items-center justify-between'>
+            <div className='text-muted-foreground flex items-center gap-1 text-sm'>
+              <Calendar className='h-3.5 w-3.5' />
+              <span>{new Date(invoice.paymentInformation?.transactionDate ?? 0).toISOString()}</span>
+            </div>
+            <div className='text-lg font-medium'>
+              {/* TODO: format currency */}
+              {currency?.symbol} {invoice.paymentInformation?.totalCostAmount.toFixed(2)}
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className='flex justify-between pt-2'>
+          <div className='text-muted-foreground text-sm'>{invoice.items?.length || 0} items</div>
+        </CardFooter>
+      </Card>
+    </motion.div>
   );
 }
+

@@ -2,45 +2,26 @@
 
 "use client";
 
+import {Invoice} from "@/types/invoices";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-  Badge,
-  Button,
-  cn,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
+  Popover as DatePopover,
+  PopoverContent as DatePopoverContent,
+  PopoverTrigger as DatePopoverTrigger,
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Slider,
 } from "@arolariu/components";
 import {format} from "date-fns";
 import {AnimatePresence, motion} from "framer-motion";
-import {
-  Calendar,
-  CalendarIcon,
-  CheckIcon,
-  ChevronDown,
-  Command,
-  CreditCard,
-  DollarSign,
-  Filter,
-  Store,
-  X,
-} from "lucide-react";
+import {CalendarIcon, CheckIcon, ChevronDown, CreditCard, DollarSign, Filter, Store, X} from "lucide-react";
 import {useEffect, useState} from "react";
 
 type Props = {
+  invoices: Invoice[];
   onFilterChange: (filters: FilterState) => void;
 };
 
-export type FilterState = {
+export interface FilterState {
   merchants: string[];
   dateRange: {
     from: Date | undefined;
@@ -48,9 +29,9 @@ export type FilterState = {
   };
   priceRange: [number, number];
   paymentMethods: string[];
-};
+}
 
-export function AdvancedFilters({onFilterChange}: Readonly<Props>) {
+export function AdvancedFilters({invoices, onFilterChange}: Readonly<Props>) {
   // Extract unique merchants and payment methods from mock data
   const uniqueMerchants = Array.from(new Set(mockInvoices.map((invoice) => invoice.merchantName || "Unknown"))).sort();
 
