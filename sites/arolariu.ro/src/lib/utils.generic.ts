@@ -1,5 +1,7 @@
 /** @format */
 
+import {Currency} from "@/types/DDD";
+
 export const SITE_ENV = process.env["SITE_ENV"] ?? "";
 export const SITE_URL = process.env["SITE_URL"] ?? "";
 export const SITE_NAME = process.env["SITE_NAME"] ?? "";
@@ -26,3 +28,53 @@ export function generateGuid(arraybuffer: ArrayBuffer): string {
 
   return uuid_str;
 }
+
+/**
+ * Formats a number as a currency string based on the specified currency code
+ * @param amount The numeric value to be formatted as currency
+ * @param currency The ISO 4217 currency code (e.g., 'USD', 'EUR', 'GBP')
+ * @returns A formatted currency string with the appropriate symbol and formatting
+ * @example
+ * // Returns "$123.45"
+ * formatCurrency(123.45, "USD")
+ *
+ * // Returns "€100.00"
+ * formatCurrency(100, "EUR")
+ *
+ * // Returns "£50.00"
+ * formatCurrency(50, "GBP")
+ */
+export function formatCurrency(amount: number, currency?: string | Currency) {
+  if (currency) {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: typeof currency === "string" ? currency : currency.code,
+    }).format(amount);
+  } else {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
+  }
+}
+
+/**
+ * Formats a date string into a human-readable format
+ * @param dateString The date string to format (any valid date format accepted by Date constructor)
+ * @returns A formatted date string in the format "MMM D, YYYY" (e.g., "Mar 15, 2023")
+ * @example
+ * // Returns "Mar 15, 2023"
+ * formatDate("2023-03-15")
+ *
+ * // Returns "Jan 1, 2023"
+ * formatDate("2023-01-01T00:00:00Z")
+ */
+export function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
