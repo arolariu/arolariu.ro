@@ -4,7 +4,7 @@
  * @format
  */
 
-import {Currency} from "../DDD";
+import type {Currency} from "../DDD";
 
 export enum PaymentType {
   Unknown = 0,

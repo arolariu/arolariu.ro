@@ -1,6 +1,6 @@
 /** @format */
 
-import {NamedEntity} from "../DDD";
+import type {NamedEntity} from "../DDD";
 
 /**
  * Represents the category of a merchant from the invoice domain system.

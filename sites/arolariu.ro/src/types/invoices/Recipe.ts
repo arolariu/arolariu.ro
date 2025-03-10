@@ -4,7 +4,7 @@
  * @format
  */
 
-import {Product} from "./index.ts";
+import type {Product} from "./index.ts";
 
 export enum RecipeComplexity {
   Unknown = 0,
@@ -19,5 +19,7 @@ export type Recipe = {
   duration: string;
   complexity: RecipeComplexity;
   ingredients: Product[];
+  instructions: string;
   referenceForMoreDetails: string;
 };
+

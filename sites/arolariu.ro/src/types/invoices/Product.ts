@@ -1,6 +1,6 @@
 /** @format */
 
-import {Allergen} from "./index.ts";
+import type {Allergen} from "./index.ts";
 
 /**
  * Represents the metadata of a product from the invoice domain system.
