@@ -1,5 +1,7 @@
 /** @format */
 
+// We disable react/jsx-no-bind because it would result in code duplication
+// and unnecessary complexity. The use of inline functions is justified in this case
 /* eslint react/jsx-no-bind: 0 */
 
 import {
