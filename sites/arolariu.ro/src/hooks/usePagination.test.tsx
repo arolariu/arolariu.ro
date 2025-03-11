@@ -132,4 +132,199 @@ describe("usePaginationItems hook", () => {
     const paginatedCustomItems2 = result.current.paginate(customItems);
     expect(paginatedCustomItems2).toEqual(["d", "e", "f"]);
   });
+
+  it("should handle empty items array", () => {
+    const {result} = renderHook(() => usePaginationItems({items: []}));
+
+    expect(result.current.currentPage).toBe(1);
+    expect(result.current.pageSize).toBe(5);
+    expect(result.current.totalPages).toBe(1);
+    expect(result.current.paginatedItems).toHaveLength(0);
+  });
+
+  it("should handle items with different structures", () => {
+    const mixedItems = [
+      {id: 1, name: "Item 1"},
+      {id: 2, description: "Item 2"},
+      {id: 3, title: "Item 3"},
+    ];
+
+    const {result} = renderHook(() => usePaginationItems({items: mixedItems}));
+
+    expect(result.current.currentPage).toBe(1);
+    expect(result.current.pageSize).toBe(5);
+    expect(result.current.totalPages).toBe(1);
+    expect(result.current.paginatedItems).toHaveLength(3);
+  });
+
+  it("should handle invalid search query", () => {
+    const {result} = renderHook(() => usePaginationItems({items: mockItems, searchQuery: "Invalid Item"}));
+
+    expect(result.current.paginatedItems).toHaveLength(0);
+  });
+
+  it("should handle search query with special characters", () => {
+    const {result} = renderHook(() => usePaginationItems({items: mockItems, searchQuery: "Item 1!"}));
+
+    expect(result.current.paginatedItems).toHaveLength(0);
+  });
+
+  it("should handle search query with empty string", () => {
+    const {result} = renderHook(() => usePaginationItems({items: mockItems, searchQuery: ""}));
+
+    expect(result.current.paginatedItems).toHaveLength(5);
+    expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
+  });
+
+  it("should handle search query with only spaces", () => {
+    const {result} = renderHook(() => usePaginationItems({items: mockItems, searchQuery: "   "}));
+
+    expect(result.current.paginatedItems).toHaveLength(5);
+    expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
+  });
+
+  it("should correctly handle search query with mixed case", () => {
+    const {result} = renderHook(() => usePaginationItems({items: mockItems, searchQuery: "item 1"}));
+
+    expect(result.current.paginatedItems).toHaveLength(2);
+    expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
+    expect(result.current.paginatedItems[1]).toEqual({id: 10, name: "Item 10"});
+  });
+
+  it("should not re-render unnecessarily when search query is the same", () => {
+    const {result, rerender} = renderHook(({search}) => usePaginationItems({items: mockItems, searchQuery: search}), {
+      initialProps: {search: "Item 1"},
+    });
+
+    const initialRenderCount = result.current.paginatedItems.length;
+
+    rerender({search: "Item 1"});
+
+    expect(result.current.paginatedItems.length).toBe(initialRenderCount);
+  });
+
+  it("should handle invalid items gracefully", () => {
+    const invalidItems = [
+      {id: 1, name: "Item 1"},
+      {id: 2, name: null}, // Invalid item
+      {id: 3, name: "Item 3"},
+    ];
+
+    const {result} = renderHook(() => usePaginationItems({items: invalidItems}));
+
+    expect(result.current.paginatedItems).toHaveLength(3);
+    expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
+    expect(result.current.paginatedItems[1]).toEqual({id: 2, name: null});
+    expect(result.current.paginatedItems[2]).toEqual({id: 3, name: "Item 3"});
+  });
+
+  it("should handle items with missing properties", () => {
+    const itemsWithMissingProps = [
+      {id: 1, name: "Item 1"},
+      {id: 2}, // Missing name property
+      {id: 3, name: "Item 3"},
+    ];
+
+    const {result} = renderHook(() => usePaginationItems({items: itemsWithMissingProps}));
+
+    expect(result.current.paginatedItems).toHaveLength(3);
+    expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
+    expect(result.current.paginatedItems[1]).toEqual({id: 2});
+    expect(result.current.paginatedItems[2]).toEqual({id: 3, name: "Item 3"});
+  });
+
+  it("should handle items with null or undefined values", () => {
+    const itemsWithNullValues = [
+      {id: 1, name: "Item 1"},
+      {id: 2, name: undefined}, // Undefined value
+      {id: 3, name: null}, // Null value
+    ];
+
+    const {result} = renderHook(() => usePaginationItems({items: itemsWithNullValues}));
+
+    expect(result.current.paginatedItems).toHaveLength(3);
+    expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
+    expect(result.current.paginatedItems[1]).toEqual({id: 2, name: undefined});
+    expect(result.current.paginatedItems[2]).toEqual({id: 3, name: null});
+  });
+
+  it("should handle items with empty strings", () => {
+    const itemsWithEmptyStrings = [
+      {id: 1, name: "Item 1"},
+      {id: 2, name: ""}, // Empty string
+      {id: 3, name: "Item 3"},
+    ];
+
+    const {result} = renderHook(() => usePaginationItems({items: itemsWithEmptyStrings}));
+
+    expect(result.current.paginatedItems).toHaveLength(3);
+    expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
+    expect(result.current.paginatedItems[1]).toEqual({id: 2, name: ""});
+    expect(result.current.paginatedItems[2]).toEqual({id: 3, name: "Item 3"});
+  });
+
+  it("should handle items with special characters", () => {
+    const itemsWithSpecialChars = [
+      {id: 1, name: "Item 1!"},
+      {id: 2, name: "Item @2"},
+      {id: 3, name: "#Item 3"},
+    ];
+
+    const {result} = renderHook(() => usePaginationItems({items: itemsWithSpecialChars}));
+
+    expect(result.current.paginatedItems).toHaveLength(3);
+    expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1!"});
+    expect(result.current.paginatedItems[1]).toEqual({id: 2, name: "Item @2"});
+    expect(result.current.paginatedItems[2]).toEqual({id: 3, name: "#Item 3"});
+  });
+
+  it("should handle items with mixed types", () => {
+    const mixedTypeItems = [
+      {id: 1, name: "Item 1"},
+      {id: 2, name: 123}, // Number instead of string
+      {id: 3, name: true}, // Boolean instead of string
+    ];
+
+    const {result} = renderHook(() => usePaginationItems({items: mixedTypeItems}));
+
+    expect(result.current.paginatedItems).toHaveLength(3);
+    expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
+    expect(result.current.paginatedItems[1]).toEqual({id: 2, name: 123});
+    expect(result.current.paginatedItems[2]).toEqual({id: 3, name: true});
+  });
+
+  it("should handle items with missing IDs", () => {
+    const itemsWithMissingIDs = [
+      {name: "Item 1"}, // Missing ID
+      {id: 2, name: "Item 2"},
+      {id: 3}, // Missing name
+    ];
+
+    const {result} = renderHook(() => usePaginationItems({items: itemsWithMissingIDs}));
+
+    expect(result.current.paginatedItems).toHaveLength(3);
+
+    expect(result.current.paginatedItems[0]).toEqual({name: "Item 1"});
+    expect(result.current.paginatedItems[1]).toEqual({id: 2, name: "Item 2"});
+    expect(result.current.paginatedItems[2]).toEqual({id: 3});
+  });
+
+  it("should handle items with different data types", () => {
+    const mixedTypeItems = [
+      {id: 1, name: "Item 1"},
+      {id: 2, name: 123}, // Number
+      {id: 3, name: true}, // Boolean
+      {id: 4, name: null}, // Null
+      {id: 5, name: undefined}, // Undefined
+    ];
+
+    const {result} = renderHook(() => usePaginationItems({items: mixedTypeItems}));
+
+    expect(result.current.paginatedItems).toHaveLength(5);
+    expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
+    expect(result.current.paginatedItems[1]).toEqual({id: 2, name: 123});
+    expect(result.current.paginatedItems[2]).toEqual({id: 3, name: true});
+    expect(result.current.paginatedItems[3]).toEqual({id: 4, name: null});
+    expect(result.current.paginatedItems[4]).toEqual({id: 5, name: undefined});
+  });
 });
