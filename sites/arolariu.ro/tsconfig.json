@@ -51,6 +51,7 @@
       "@/*": ["./src/*"]
     },
     "types": ["@types/jest", "@types/node", "@types/react", "@types/react-dom"],
+    "verbatimModuleSyntax": true,
     "stripInternal": true
   },
   "include": [
