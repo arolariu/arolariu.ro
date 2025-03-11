@@ -24,12 +24,7 @@
     "removeComments": true,
     "allowJs": true,
     "checkJs": true,
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext",
-      "webworker"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
     "target": "esnext",
     "diagnostics": true,
     "extendedDiagnostics": true,
@@ -53,16 +48,9 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
-    "types": [
-      "@types/jest",
-      "@types/node",
-      "@types/react",
-      "@types/react-dom"
-    ],
+    "types": ["@types/jest", "@types/node", "@types/react", "@types/react-dom"],
     "stripInternal": true
   },
   "include": [
@@ -73,7 +61,5 @@
     ".next/types/**/*.ts",
     "next.config.ts"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }
