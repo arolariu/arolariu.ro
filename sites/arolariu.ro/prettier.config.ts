@@ -8,6 +8,7 @@ const prettierConfig: Config = {
   bracketSpacing: false,
   endOfLine: "crlf",
   experimentalTernaries: false,
+  experimentalOperatorPosition: "start",
   htmlWhitespaceSensitivity: "strict",
   insertPragma: true,
   jsxSingleQuote: true,
