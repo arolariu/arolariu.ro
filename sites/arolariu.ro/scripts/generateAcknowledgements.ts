@@ -145,9 +145,9 @@ function filterDependenciesManifestPathsWithDependenciesList(
     if (pathParts === null || pathParts.length >= 2) return false;
 
     return (
-      specifiedPackages.get("production")?.includes(packageName) ||
-      specifiedPackages.get("development")?.includes(packageName) ||
-      specifiedPackages.get("peer")?.includes(packageName)
+      specifiedPackages.get("production")?.includes(packageName)
+      || specifiedPackages.get("development")?.includes(packageName)
+      || specifiedPackages.get("peer")?.includes(packageName)
     );
   });
 
