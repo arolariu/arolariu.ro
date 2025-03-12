@@ -32,13 +32,13 @@ type HookOutputType<T> = {
  *   currentPage,
  *   setCurrentPage,
  *   totalPages
- * } = usePaginationItems({
+ * } = usePagination({
  *   items: myDataArray,
  *   initialPageSize: 10,
  *   searchQuery: searchTerm
  * });
  */
-export function usePaginationItems<T>({items, initialPageSize = 5, initialPage = 1, searchQuery}: HookInputType<T>): HookOutputType<T> {
+export function usePagination<T>({items, initialPageSize = 5, initialPage = 1, searchQuery}: HookInputType<T>): HookOutputType<T> {
   // State for pagination controls
   const [currentPage, setCurrentPage] = useState<number>(initialPage);
   const [pageSize, setPageSize] = useState<number>(initialPageSize);
@@ -111,3 +111,4 @@ export function usePaginationItems<T>({items, initialPageSize = 5, initialPage =
     resetPagination,
   } as const;
 }
+
