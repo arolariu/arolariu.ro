@@ -161,4 +161,3 @@ export function RecipeCard({recipe}: Readonly<Props>) {
     </Card>
   );
 }
-

@@ -147,4 +147,3 @@ export const FakeMerchantBigList: Merchant[] = Array.from(longIterable, generate
 
 export const FakeProductShortList: Product[] = Array.from(shortIterable, generateFakeInvoiceProduct);
 export const FakeProductBigList: Product[] = Array.from(longIterable, generateFakeInvoiceProduct);
-

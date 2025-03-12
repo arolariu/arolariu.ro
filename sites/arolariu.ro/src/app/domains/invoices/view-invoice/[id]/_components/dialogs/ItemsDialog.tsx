@@ -98,4 +98,3 @@ export function ItemsDialog({invoice}: Readonly<Props>) {
     </Dialog>
   );
 }
-

@@ -96,4 +96,3 @@ export function RecipesTab(props: Readonly<Props>) {
     </motion.div>
   );
 }
-

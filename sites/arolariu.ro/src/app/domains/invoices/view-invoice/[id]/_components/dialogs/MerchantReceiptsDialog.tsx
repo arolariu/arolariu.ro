@@ -174,4 +174,3 @@ export function MerchantReceiptsDialog({merchant}: Readonly<Props>) {
     </Dialog>
   );
 }
-

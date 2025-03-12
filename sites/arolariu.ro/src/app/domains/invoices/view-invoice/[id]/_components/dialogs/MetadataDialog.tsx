@@ -189,4 +189,3 @@ export function MetadataDialog(props: Readonly<Props>) {
 
   return DialogComponent;
 }
-

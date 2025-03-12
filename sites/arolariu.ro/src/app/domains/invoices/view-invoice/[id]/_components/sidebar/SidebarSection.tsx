@@ -65,4 +65,3 @@ export function SidebarSection({invoice, merchant}: Readonly<Props>) {
     </motion.div>
   );
 }
-

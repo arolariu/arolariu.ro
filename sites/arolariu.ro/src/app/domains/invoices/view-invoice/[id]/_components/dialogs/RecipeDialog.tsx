@@ -402,4 +402,3 @@ export function RecipeDialog(props: Readonly<Props>) {
 
   return DialogComponent;
 }
-

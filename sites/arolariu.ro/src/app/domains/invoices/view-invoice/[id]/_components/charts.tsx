@@ -206,4 +206,3 @@ export function ChartTooltipContent({active, payload, label}: any) {
 
   return null;
 }
-

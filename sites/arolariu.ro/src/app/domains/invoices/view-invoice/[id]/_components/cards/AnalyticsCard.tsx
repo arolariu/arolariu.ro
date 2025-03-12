@@ -242,4 +242,3 @@ function ChartContainer({children, config}: {children: React.ReactNode; config: 
     </div>
   );
 }
-

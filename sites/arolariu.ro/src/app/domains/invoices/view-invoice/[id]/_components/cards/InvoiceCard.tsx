@@ -111,4 +111,3 @@ export function InvoiceCard({invoice, merchant}: Readonly<Props>) {
     </motion.div>
   );
 }
-

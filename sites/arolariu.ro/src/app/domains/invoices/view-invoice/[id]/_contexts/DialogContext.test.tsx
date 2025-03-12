@@ -100,4 +100,3 @@ describe("useDialog", () => {
     expect(merchantResult.current.isOpen).toBe(false);
   });
 });
-

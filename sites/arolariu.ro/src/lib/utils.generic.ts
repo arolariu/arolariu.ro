@@ -86,4 +86,3 @@ export function formatDate(dateString?: string | Date) {
   }
   return "";
 }
-

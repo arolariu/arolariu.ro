@@ -65,4 +65,3 @@ export function InvoiceHeader({invoice, onToggleFavorite, onPrint}: Readonly<Pro
     </motion.div>
   );
 }
-

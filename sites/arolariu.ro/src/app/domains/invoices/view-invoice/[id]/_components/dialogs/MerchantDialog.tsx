@@ -93,4 +93,3 @@ export function MerchantDialog({merchant}: Readonly<Props>) {
     </Dialog>
   );
 }
-

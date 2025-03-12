@@ -97,4 +97,3 @@ export function ItemsTable({items}: Readonly<Props>) {
     </div>
   );
 }
-

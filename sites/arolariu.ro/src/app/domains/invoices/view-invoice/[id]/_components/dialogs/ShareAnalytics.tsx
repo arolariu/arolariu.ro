@@ -188,4 +188,3 @@ export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
     </Dialog>
   );
 }
-

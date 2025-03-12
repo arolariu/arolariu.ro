@@ -78,4 +78,3 @@ export function CurrencySelector({selectedCurrency, setSelectedCurrency}: Readon
     </TooltipProvider>
   );
 }
-

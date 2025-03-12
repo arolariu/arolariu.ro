@@ -121,4 +121,3 @@ export function MetadataTab({metadata}: Readonly<Props>) {
     </motion.div>
   );
 }
-

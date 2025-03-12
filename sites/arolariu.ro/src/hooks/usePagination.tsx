@@ -111,4 +111,3 @@ export function usePagination<T>({items, initialPageSize = 5, initialPage = 1, s
     resetPagination,
   } as const;
 }
-

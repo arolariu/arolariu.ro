@@ -328,4 +328,3 @@ describe("usePaginationItems hook", () => {
     expect(result.current.paginatedItems[4]).toEqual({id: 5, name: undefined});
   });
 });
-

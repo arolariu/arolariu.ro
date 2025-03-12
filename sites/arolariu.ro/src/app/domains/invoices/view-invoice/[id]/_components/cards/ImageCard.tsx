@@ -71,4 +71,3 @@ export function ImageCard({photoLocation = "https://dummyimage.com/600x900&text=
     </Card>
   );
 }
-

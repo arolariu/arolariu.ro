@@ -142,4 +142,3 @@ export function useDialog(dialogType: Exclude<DialogType, null>) {
     close: closeDialog,
   } as const;
 }
-
