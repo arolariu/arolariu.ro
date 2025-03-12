@@ -2,6 +2,7 @@
 
 "use client";
 
+import {Invoice, Merchant} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -18,21 +19,21 @@ import {
   TabsTrigger,
   toast,
 } from "@arolariu/components";
-import {Check, Copy, Download, Image, Mail} from "lucide-react";
+import {Copy, Download, Mail} from "lucide-react";
 import {useState} from "react";
+import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  merchantName: string;
-  currency: string;
+  invoice: Invoice;
+  merchant: Merchant;
 };
 
-export function ShareAnalyticsDialog({open, onOpenChange, merchantName, currency}: Readonly<Props>) {
+export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
+  const {isOpen, open, close} = useDialog("shareAnalytics");
 
-  const shareUrl = `https://invoice-app.com/analytics/${merchantName.toLowerCase().replace(/\s+/g, "-")}`;
+  const shareUrl = `https://invoice-app.com/analytics/${merchant.name.toLowerCase().replace(/\s+/g, "-")}`;
 
   const handleCopyLink = async () => {
     try {
@@ -52,7 +53,7 @@ export function ShareAnalyticsDialog({open, onOpenChange, merchantName, currency
   const handleCopyImage = async () => {
     try {
       // Get the image URL from the component
-      const imageUrl = `/placeholder.svg?height=200&width=400&text=Analytics+Preview+for+${merchantName}`;
+      const imageUrl = `/placeholder.svg?height=200&width=400&text=Analytics+Preview+for+${merchant.name}`;
 
       // Fetch the image data
       const response = await fetch(imageUrl);
@@ -91,122 +92,100 @@ export function ShareAnalyticsDialog({open, onOpenChange, merchantName, currency
   const handleDownloadImage = () => {
     // In a real app, this would generate and download an image
     toast("Image saved!", {
-      description: `Spending analytics for ${merchantName} has been downloaded as PNG`,
+      description: `Spending analytics for ${merchant.name} has been downloaded as PNG`,
     });
   };
 
   return (
     <Dialog
-      open={open}
-      onOpenChange={onOpenChange}>
+      open={isOpen}
+      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
           <DialogTitle>Share Analytics</DialogTitle>
-          <DialogDescription>
-            Share spending analytics for {merchantName} in {currency}
-          </DialogDescription>
+          <DialogDescription>Share your spending analytics for {merchant.name} with others.</DialogDescription>
         </DialogHeader>
 
         <Tabs
           defaultValue='image'
-          className='w-full'>
+          className='mt-4'>
           <TabsList className='grid w-full grid-cols-3'>
-            <TabsTrigger value='image'>
-              <Image className='mr-2 h-4 w-4' />
-              Image
-            </TabsTrigger>
-            <TabsTrigger value='link'>
-              <Copy className='mr-2 h-4 w-4' />
-              Link
-            </TabsTrigger>
-            <TabsTrigger value='email'>
-              <Mail className='mr-2 h-4 w-4' />
-              Email
-            </TabsTrigger>
+            <TabsTrigger value='image'>Image</TabsTrigger>
+            <TabsTrigger value='link'>Link</TabsTrigger>
+            <TabsTrigger value='email'>Email</TabsTrigger>
           </TabsList>
 
           <TabsContent
             value='image'
-            className='mt-4 space-y-4'>
-            <div className='bg-muted/50 rounded-md border p-4'>
-              <div className='bg-card flex aspect-video items-center justify-center rounded-md'>
-                <img
-                  src={`/placeholder.svg?height=200&width=400&text=Analytics+Preview+for+${merchantName}`}
-                  alt='Analytics Preview'
-                  className='max-h-full max-w-full'
-                />
+            className='py-4'>
+            <div className='space-y-4'>
+              <p className='text-muted-foreground text-sm'>Download the analytics as a PNG image that you can share or save.</p>
+              <div className='flex justify-center'>
+                <div className='w-full max-w-xs rounded-md border p-4'>
+                  <div className='bg-muted flex h-32 items-center justify-center rounded-md'>Analytics Preview</div>
+                </div>
               </div>
             </div>
-            <p className='text-muted-foreground text-sm'>Download a PNG image of the current analytics view.</p>
-            <Button
-              onClick={handleDownloadImage}
-              variant={"outline"}
-              className='w-full'>
-              <Download className='mr-2 h-4 w-4' />
-              Download PNG
-            </Button>
-            <Button
-              onClick={handleCopyImage}
-              className='w-full'>
-              <Copy className='mr-2 h-4 w-4' />
-              Copy to clipboard
-            </Button>
+            <DialogFooter className='mt-4'>
+              <Button
+                onClick={handleDownloadImage}
+                className='w-full'>
+                <Download className='mr-2 h-4 w-4' />
+                Download PNG
+              </Button>
+            </DialogFooter>
           </TabsContent>
 
           <TabsContent
             value='link'
-            className='mt-4 space-y-4'>
-            <div className='flex items-center space-x-2'>
-              <Input
-                value={shareUrl}
-                readOnly
-                className='flex-1'
-              />
-              <Button
-                size='icon'
-                onClick={handleCopyLink}
-                variant='outline'>
-                {copied ? <Check className='h-4 w-4' /> : <Copy className='h-4 w-4' />}
-              </Button>
+            className='py-4'>
+            <div className='space-y-4'>
+              <p className='text-muted-foreground text-sm'>Share a link that others can use to view these analytics.</p>
+              <div className='flex space-x-2'>
+                <Input
+                  value={shareUrl}
+                  readOnly
+                  className='flex-1'
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                />
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={handleCopyLink}>
+                  <Copy className='h-4 w-4' />
+                </Button>
+              </div>
             </div>
-            <p className='text-muted-foreground text-sm'>Anyone with this link will be able to view these analytics.</p>
           </TabsContent>
 
           <TabsContent
             value='email'
-            className='mt-4'>
-            <form
-              onSubmit={handleSendEmail}
-              className='space-y-4'>
+            className='py-4'>
+            <div className='space-y-4'>
+              <p className='text-muted-foreground text-sm'>Send the analytics to an email address.</p>
               <div className='space-y-2'>
                 <Label htmlFor='email'>Email address</Label>
                 <Input
                   id='email'
                   type='email'
-                  placeholder="Enter recipient's email"
+                  placeholder='name@example.com'
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
                 />
               </div>
+            </div>
+            <DialogFooter className='mt-4'>
               <Button
-                type='submit'
+                onClick={handleSendEmail}
                 className='w-full'>
                 <Mail className='mr-2 h-4 w-4' />
-                Send Analytics Report
+                Send Email
               </Button>
-            </form>
+            </DialogFooter>
           </TabsContent>
         </Tabs>
-
-        <DialogFooter className='mt-4'>
-          <Button
-            variant='outline'
-            onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+

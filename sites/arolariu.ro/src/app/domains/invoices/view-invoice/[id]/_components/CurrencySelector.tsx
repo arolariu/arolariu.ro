@@ -19,10 +19,10 @@ import {ChevronsUpDown, CurrencyIcon, DollarSign, EuroIcon, PoundSterling, Japan
 
 type Props = {
   selectedCurrency: Currency;
-  onCurrencyChange: (currency: string) => void;
+  setSelectedCurrency: (currency: Currency) => void;
 };
 
-export function CurrencySelector({selectedCurrency, onCurrencyChange}: Readonly<Props>) {
+export function CurrencySelector({selectedCurrency, setSelectedCurrency}: Readonly<Props>) {
   const availableCurrencies = [
     {code: "EUR", name: "Euro", symbol: "€", icon: <EuroIcon className='h-4 w-4' />},
     {code: "RON", name: "Romanian Leu", symbol: "lei", icon: <CurrencyIcon className='h-4 w-4' />},
@@ -61,7 +61,7 @@ export function CurrencySelector({selectedCurrency, onCurrencyChange}: Readonly<
               {availableCurrencies.map((currency) => (
                 <DropdownMenuItem
                   key={currency.code}
-                  onClick={() => onCurrencyChange(currency.code)}
+                  onClick={() => setSelectedCurrency(currency)}
                   className={`flex items-center gap-2 ${currency.code === selectedCurrency.code ? "bg-muted" : ""}`}>
                   {currency.icon}
                   <span>{currency.name}</span>
@@ -78,3 +78,4 @@ export function CurrencySelector({selectedCurrency, onCurrencyChange}: Readonly<
     </TooltipProvider>
   );
 }
+

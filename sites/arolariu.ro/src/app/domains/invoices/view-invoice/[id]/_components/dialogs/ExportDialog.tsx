@@ -2,6 +2,7 @@
 
 "use client";
 
+import type {Invoice} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -20,19 +21,18 @@ import {
 import {Check, Copy, Mail, QrCode} from "lucide-react";
 import {useState} from "react";
 import QRCode from "react-qr-code";
+import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  invoiceId: string;
-  invoiceName: string;
+  invoice: Invoice;
 };
 
-export function ExportDialog({open, onOpenChange, invoiceId, invoiceName}: Readonly<Props>) {
-  const [copied, setCopied] = useState(false);
-  const [email, setEmail] = useState("");
+export function ExportDialog({invoice}: Readonly<Props>) {
+  const [copied, setCopied] = useState<boolean>(false);
+  const {isOpen, open, close} = useDialog("share");
+  const [email, setEmail] = useState<string>("");
 
-  const shareUrl = `https://invoice-app.com/invoice/${invoiceId}`;
+  const shareUrl = `https://invoice-app.com/invoice/${invoice.id}`;
 
   const handleCopyLink = async () => {
     try {
@@ -117,12 +117,12 @@ export function ExportDialog({open, onOpenChange, invoiceId, invoiceName}: Reado
 
   return (
     <Dialog
-      open={open}
-      onOpenChange={onOpenChange}>
+      open={isOpen}
+      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
           <DialogTitle>Share Invoice</DialogTitle>
-          <DialogDescription>Share "{invoiceName}" with others</DialogDescription>
+          <DialogDescription>Share "{invoice.name}" with others</DialogDescription>
         </DialogHeader>
 
         <Tabs
@@ -187,7 +187,6 @@ export function ExportDialog({open, onOpenChange, invoiceId, invoiceName}: Reado
               </Button>
             </form>
           </TabsContent>
-
           <TabsContent
             value='qr'
             className='mt-4'>

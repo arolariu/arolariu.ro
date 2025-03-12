@@ -14,18 +14,18 @@ import {
   TableRow,
 } from "@arolariu/components";
 import {Building, Building2, MapPin, Phone} from "lucide-react";
+import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   merchant: Merchant;
 };
 
-export function MerchantDetailsDialog({open, onOpenChange, merchant}: Readonly<Props>) {
+export function MerchantDialog({merchant}: Readonly<Props>) {
+  const {isOpen, open, close} = useDialog("merchant");
   return (
     <Dialog
-      open={open}
-      onOpenChange={onOpenChange}>
+      open={isOpen}
+      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
           <DialogTitle>Merchant Details</DialogTitle>
@@ -93,3 +93,4 @@ export function MerchantDetailsDialog({open, onOpenChange, merchant}: Readonly<P
     </Dialog>
   );
 }
+
