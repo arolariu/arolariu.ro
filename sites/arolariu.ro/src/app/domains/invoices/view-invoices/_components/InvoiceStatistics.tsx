@@ -658,9 +658,9 @@ export function InvoiceStatistics({invoices}: Readonly<Props>) {
                           {barData.length > 1
                             ? Math.abs(
                                 Math.round(
-                                  ((barData[barData.length - 1].total - barData[barData.length - 2].total) /
-                                    barData[barData.length - 2].total) *
-                                    100,
+                                  ((barData[barData.length - 1].total - barData[barData.length - 2].total)
+                                    / barData[barData.length - 2].total)
+                                    * 100,
                                 ),
                               ) + "%"
                             : "0%"}

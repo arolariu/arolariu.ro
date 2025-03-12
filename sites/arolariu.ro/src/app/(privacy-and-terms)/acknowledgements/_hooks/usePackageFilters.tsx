@@ -118,9 +118,9 @@ export function usePackageFilters(packages: HookInputType): HookReturnType {
     .filter(
       (pkg) =>
         // Filter by package name
-        pkg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        pkg.name.toLowerCase().includes(searchQuery.toLowerCase())
         // Filter by any dependent package name
-        (pkg.dependents?.some((dep) => dep.name.toLowerCase().includes(searchQuery.toLowerCase())) ?? false),
+        || (pkg.dependents?.some((dep) => dep.name.toLowerCase().includes(searchQuery.toLowerCase())) ?? false),
     )
     // Then filter by package type
     .filter((pkg) => {
