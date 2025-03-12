@@ -36,11 +36,11 @@ export function isBrowserStorageAvailable(type: "localStorage" | "sessionStorage
     return true;
   } catch (e) {
     return (
-      e instanceof DOMException &&
-      e.name === "QuotaExceededError" &&
+      e instanceof DOMException
+      && e.name === "QuotaExceededError"
       // acknowledge QuotaExceededError only if there's something already stored
-      storage !== undefined &&
-      storage.length !== 0
+      && storage !== undefined
+      && storage.length !== 0
     );
   }
 }

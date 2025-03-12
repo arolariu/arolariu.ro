@@ -69,7 +69,7 @@ export function formatCurrency(amount: number, currency?: string | Currency) {
  * // Returns "Jan 1, 2023"
  * formatDate("2023-01-01T00:00:00Z")
  */
-export function formatDate(dateString: string | Date) {
+export function formatDate(dateString?: string | Date) {
   if (typeof dateString === "string") {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -77,11 +77,13 @@ export function formatDate(dateString: string | Date) {
       day: "2-digit",
       year: "numeric",
     });
-  } else {
+  } else if (dateString instanceof Date) {
     return dateString.toLocaleDateString("en-US", {
       month: "short",
       day: "2-digit",
       year: "numeric",
     });
   }
+  return "";
 }
+
