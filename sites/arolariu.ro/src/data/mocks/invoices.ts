@@ -1,17 +1,18 @@
 /** @format */
 
 import type {Currency} from "@/types/DDD";
-import type {
-  Allergen,
-  Invoice,
-  InvoiceCategory,
-  Merchant,
-  MerchantCategory,
-  PaymentInformation,
-  PaymentType,
-  Product,
-  ProductCategory,
-  Recipe,
+import {
+  RecipeComplexity,
+  type Allergen,
+  type Invoice,
+  type InvoiceCategory,
+  type Merchant,
+  type MerchantCategory,
+  type PaymentInformation,
+  type PaymentType,
+  type Product,
+  type ProductCategory,
+  type Recipe,
 } from "@/types/invoices";
 import {faker as fake} from "@faker-js/faker";
 
@@ -53,11 +54,14 @@ const generateFakeInvoice = (): Invoice => {
       () =>
         ({
           name: fake.lorem.sentence(3),
-          complexity: fake.number.int({min: 1, max: 5}),
+          complexity: fake.number.int({min: 0, max: 3}) as RecipeComplexity,
           ingredients: Array.from({length: fake.number.int({min: 3, max: 10})}, generateFakeInvoiceProduct),
           duration: `${fake.number.int({min: 5, max: 120})} minutes`,
-          description: fake.lorem.sentence(10),
+          description: fake.lorem.sentence({min: 10, max: 80}),
           referenceForMoreDetails: fake.internet.url(),
+          cookingTime: fake.number.int({min: 5, max: 120}),
+          preparationTime: fake.number.int({min: 5, max: 120}),
+          instructions: fake.lorem.sentence({min: 10, max: 50}),
         }) satisfies Recipe,
     ),
     additionalMetadata: {
@@ -143,3 +147,4 @@ export const FakeMerchantBigList: Merchant[] = Array.from(longIterable, generate
 
 export const FakeProductShortList: Product[] = Array.from(shortIterable, generateFakeInvoiceProduct);
 export const FakeProductBigList: Product[] = Array.from(longIterable, generateFakeInvoiceProduct);
+
