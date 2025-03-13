@@ -27,6 +27,12 @@ type Props = {
   merchant: Merchant;
 };
 
+/**
+ * The InvoiceCard component displays the details of an invoice.
+ * It includes information such as the date, category, payment method, and total amount.
+ * The card also allows the user to mark the invoice as important.
+ * @returns The InvoiceCard component, CSR'ed.
+ */
 export function InvoiceCard({invoice, merchant}: Readonly<Props>) {
   const {paymentInformation, category, isImportant, description} = invoice;
 

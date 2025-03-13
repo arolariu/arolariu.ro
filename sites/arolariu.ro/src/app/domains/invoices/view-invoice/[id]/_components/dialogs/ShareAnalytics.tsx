@@ -19,9 +19,8 @@ import {
   TabsTrigger,
   toast,
 } from "@arolariu/components";
-import {Download, Mail} from "lucide-react";
 import {useState} from "react";
-import {TbCopy} from "react-icons/tb";
+import {TbCopy, TbDownload, TbMail} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
@@ -29,6 +28,11 @@ type Props = {
   merchant: Merchant;
 };
 
+/**
+ * The ShareAnalyticsDialog component allows users to share their spending analytics.
+ * It includes options to download an image, copy it to the clipboard, or send it via email.
+ * @returns The ShareAnalyticsDialog component, CSR'ed.
+ */
 export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
@@ -104,7 +108,9 @@ export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
             value='image'
             className='py-4'>
             <div className='space-y-4'>
-              <p className='text-muted-foreground text-sm'>Download or copy the analytics graph as a PNG image that you can share or save.</p>
+              <p className='text-muted-foreground text-sm'>
+                Download or copy the analytics graph as a PNG image that you can share or save.
+              </p>
               <div className='flex justify-center'>
                 <div className='w-full max-w-xs rounded-md border p-4'>
                   <div className='bg-muted flex h-32 items-center justify-center rounded-md'>Analytics Preview</div>
@@ -116,7 +122,7 @@ export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
                 <Button
                   onClick={handleDownloadImage}
                   className='w-full'>
-                  <Download className='mr-2 h-4 w-4' />
+                  <TbDownload className='mr-2 h-4 w-4' />
                   Download graph
                 </Button>
                 <Button
@@ -150,7 +156,7 @@ export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
               <Button
                 onClick={handleSendEmail}
                 className='w-full'>
-                <Mail className='mr-2 h-4 w-4' />
+                <TbMail className='mr-2 h-4 w-4' />
                 Send Email
               </Button>
             </DialogFooter>

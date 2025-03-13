@@ -26,14 +26,20 @@ import {
   TableHeader,
   TableRow,
 } from "@arolariu/components";
-import {ArrowUpDown, Download, Search} from "lucide-react";
 import {useCallback, useEffect, useState} from "react";
+import {TbArrowsUpDown, TbDownload, TbSearch} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
   merchant: Merchant;
 };
 
+/**
+ * This function renders a dialog that displays all receipts from a specific merchant.
+ * It allows the user to filter and sort the receipts based on various criteria.
+ * The dialog is opened and closed using a custom hook.
+ * @returns The JSX for the merchant receipts dialog.
+ */
 export function MerchantReceiptsDialog({merchant}: Readonly<Props>) {
   const {isOpen, open, close} = useDialog("merchantReceipts");
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,7 +90,7 @@ export function MerchantReceiptsDialog({merchant}: Readonly<Props>) {
           {/* Filters */}
           <div className='flex flex-col gap-3 sm:flex-row'>
             <div className='relative flex-1'>
-              <Search className='text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4' />
+              <TbSearch className='text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4' />
               <Input
                 placeholder='Search receipts...'
                 className='pl-8'
@@ -114,7 +120,7 @@ export function MerchantReceiptsDialog({merchant}: Readonly<Props>) {
                   value={sortBy}
                   onValueChange={handleSortChange}>
                   <SelectTrigger>
-                    <ArrowUpDown className='mr-2 h-4 w-4' />
+                    <TbArrowsUpDown className='mr-2 h-4 w-4' />
                     <SelectValue placeholder='Sort' />
                   </SelectTrigger>
                   <SelectContent>
@@ -158,7 +164,7 @@ export function MerchantReceiptsDialog({merchant}: Readonly<Props>) {
                           <Button
                             variant='ghost'
                             size='sm'>
-                            <Download className='mr-1 h-4 w-4' />
+                            <TbDownload className='mr-1 h-4 w-4' />
                             View
                           </Button>
                         </TableCell>

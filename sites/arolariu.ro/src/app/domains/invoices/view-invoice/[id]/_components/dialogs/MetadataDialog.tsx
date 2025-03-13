@@ -14,8 +14,8 @@ import {
   Input,
   Label,
 } from "@arolariu/components";
-import {Save} from "lucide-react";
 import {useMemo, useState} from "react";
+import {TbDiscFilled} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
 // Define valid metadata keys and which ones are readonly
@@ -95,7 +95,7 @@ const MetadataAddDialog = ({invoice}: Readonly<{invoice: Invoice}>) => {
           <Button
             type='button'
             onClick={handleSave}>
-            <Save className='mr-2 h-4 w-4' />
+            <TbDiscFilled className='mr-2 h-4 w-4' />
             Save
           </Button>
         </DialogFooter>
@@ -159,7 +159,7 @@ const MetadataEditDialog = ({invoice, metadata}: Readonly<{invoice: Invoice; met
           <Button
             type='button'
             onClick={handleSave}>
-            <Save className='mr-2 h-4 w-4' />
+            <TbDiscFilled className='mr-2 h-4 w-4' />
             Save
           </Button>
         </DialogFooter>

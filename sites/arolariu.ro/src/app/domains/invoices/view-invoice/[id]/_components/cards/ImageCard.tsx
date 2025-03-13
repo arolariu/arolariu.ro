@@ -17,10 +17,12 @@ import {TbArrowUp, TbUpload} from "react-icons/tb";
 
 type Props = {photoLocation: string};
 
+/**
+ * The ImageCard component displays an image of a receipt.
+ * It includes buttons for expanding the image and reuploading it.
+ * @returns The ImageCard component, CSR'ed.
+ */
 export function ImageCard({photoLocation = "https://dummyimage.com/600x900&text=placeholder"}: Readonly<Props>) {
-  // TODO: remove in prod:
-  photoLocation = "https://dummyimage.com/600x900&text=placeholder";
-
   return (
     <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>

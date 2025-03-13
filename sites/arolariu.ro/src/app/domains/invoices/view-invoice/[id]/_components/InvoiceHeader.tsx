@@ -5,7 +5,7 @@
 import {Invoice} from "@/types/invoices";
 import {Badge, Button, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "framer-motion";
-import {AlertTriangle, Printer} from "lucide-react";
+import {TbAlertTriangle, TbPrinter} from "react-icons/tb";
 import {CurrencySelector} from "./CurrencySelector";
 
 type Props = {
@@ -15,6 +15,11 @@ type Props = {
   onPrint: () => void;
 };
 
+/**
+ * The InvoiceHeader component displays the header of an invoice.
+ * It includes the invoice ID, name, a badge for important invoices, and a print button.
+ * @returns The InvoiceHeader component, CSR'ed.
+ */
 export function InvoiceHeader({invoice, onToggleFavorite, onPrint}: Readonly<Props>) {
   const {id, name, isImportant} = invoice;
   return (
@@ -36,7 +41,7 @@ export function InvoiceHeader({invoice, onToggleFavorite, onPrint}: Readonly<Pro
           <Badge
             variant='destructive'
             className='ml-2'>
-            <AlertTriangle className='mr-1 h-3 w-3' />
+            <TbAlertTriangle className='mr-1 h-3 w-3' />
             MARKED AS IMPORTANT!
           </Badge>
         )}
@@ -50,7 +55,7 @@ export function InvoiceHeader({invoice, onToggleFavorite, onPrint}: Readonly<Pro
                 variant='outline'
                 size='sm'
                 onClick={onPrint}>
-                <Printer className='mr-2 h-4 w-4' />
+                <TbPrinter className='mr-2 h-4 w-4' />
                 Print
               </Button>
             </TooltipTrigger>

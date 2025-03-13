@@ -18,8 +18,8 @@ import {
   TabsTrigger,
   toast,
 } from "@arolariu/components";
-import {Check, Copy, Mail, QrCode} from "lucide-react";
 import {useState} from "react";
+import {TbCheck, TbCopy, TbMail, TbQrcode} from "react-icons/tb";
 import QRCode from "react-qr-code";
 import {useDialog} from "../../_contexts/DialogContext";
 
@@ -27,6 +27,11 @@ type Props = {
   invoice: Invoice;
 };
 
+/**
+ * The ExportDialog component allows users to share an invoice via link, email, or QR code.
+ * It includes options to copy the link and QR code to the clipboard.
+ * @returns The ExportDialog component, CSR'ed.
+ */
 export function ExportDialog({invoice}: Readonly<Props>) {
   const [copied, setCopied] = useState<boolean>(false);
   const {isOpen, open, close} = useDialog("share");
@@ -130,15 +135,15 @@ export function ExportDialog({invoice}: Readonly<Props>) {
           className='w-full'>
           <TabsList className='grid w-full grid-cols-3'>
             <TabsTrigger value='link'>
-              <Copy className='mr-2 h-4 w-4' />
+              <TbCopy className='mr-2 h-4 w-4' />
               Link
             </TabsTrigger>
             <TabsTrigger value='email'>
-              <Mail className='mr-2 h-4 w-4' />
+              <TbMail className='mr-2 h-4 w-4' />
               Email
             </TabsTrigger>
             <TabsTrigger value='qr'>
-              <QrCode className='mr-2 h-4 w-4' />
+              <TbQrcode className='mr-2 h-4 w-4' />
               QR Code
             </TabsTrigger>
           </TabsList>
@@ -156,7 +161,7 @@ export function ExportDialog({invoice}: Readonly<Props>) {
                 size='icon'
                 onClick={handleCopyLink}
                 variant='outline'>
-                {copied ? <Check className='h-4 w-4' /> : <Copy className='h-4 w-4' />}
+                {copied ? <TbCheck className='h-4 w-4' /> : <TbCopy className='h-4 w-4' />}
               </Button>
             </div>
             <p className='text-muted-foreground text-sm'>Anyone with this link will be able to view this invoice.</p>
@@ -182,7 +187,7 @@ export function ExportDialog({invoice}: Readonly<Props>) {
               <Button
                 type='submit'
                 className='w-full'>
-                <Mail className='mr-2 h-4 w-4' />
+                <TbMail className='mr-2 h-4 w-4' />
                 Send Invitation
               </Button>
             </form>
@@ -209,7 +214,7 @@ export function ExportDialog({invoice}: Readonly<Props>) {
                 variant='outline'
                 onClick={handleCopyQRCode}
                 className='w-full'>
-                <Copy className='mr-2 h-4 w-4' />
+                <TbCopy className='mr-2 h-4 w-4' />
                 Copy QR Code
               </Button>
             </div>

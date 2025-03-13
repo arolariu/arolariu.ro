@@ -16,8 +16,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "framer-motion";
-import {Plus} from "lucide-react";
-import {TbConfetti} from "react-icons/tb";
+import {TbConfetti, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 import {RecipeCard} from "../cards/RecipeCard";
 
@@ -25,8 +24,13 @@ type Props = {
   recipes: Recipe[];
 };
 
-export function RecipesTab(props: Readonly<Props>) {
-  const {recipes} = props;
+/**
+ * The recipes tab from the view-invoice page.
+ * This tab displays a list of recipes that can be made with the items in the invoice.
+ * It also provides a button to add a new recipe and a button to generate a recipe using AI.
+ * @returns The recipes tab component, CSR'ed.
+ */
+export function RecipesTab({recipes}: Readonly<Props>) {
   const {open} = useDialog("recipe");
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePagination({items: recipes, initialPageSize: 4});
 
@@ -75,7 +79,7 @@ export function RecipesTab(props: Readonly<Props>) {
                   <Button
                     onClick={open}
                     size='sm'>
-                    <Plus className='mr-2 h-4 w-4' />
+                    <TbPlus className='mr-2 h-4 w-4' />
                     Add Recipe
                   </Button>
                 </TooltipTrigger>
@@ -102,7 +106,7 @@ export function RecipesTab(props: Readonly<Props>) {
               <Button
                 onClick={() => {}}
                 variant='outline'>
-                <Plus className='mr-2 h-4 w-4' />
+                <TbPlus className='mr-2 h-4 w-4' />
                 Create Your First Recipe
               </Button>
             </div>

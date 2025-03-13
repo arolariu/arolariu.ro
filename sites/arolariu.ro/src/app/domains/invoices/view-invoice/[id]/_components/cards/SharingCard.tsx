@@ -23,6 +23,11 @@ type Props = {
   sharedWith: string[];
 };
 
+/**
+ * The SharingCard component displays information about the sharing status of an invoice.
+ * It includes the owner's information and a list of users with whom the invoice is shared.
+ * @returns The SharingCard component, CSR'ed.
+ */
 export function SharingCard({sharedWith}: Readonly<Props>) {
   const {open} = useDialog("share");
   const {userInformation} = useUserInformation();

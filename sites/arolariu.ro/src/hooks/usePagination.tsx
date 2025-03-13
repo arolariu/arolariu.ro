@@ -24,7 +24,6 @@ type HookOutputType<T> = {
 
 /**
  * Custom React hook for pagination of items with optional search functionality.
- *
  * @template T - The type of items being paginated
  * @example
  * const {

@@ -5,14 +5,19 @@
 import {usePagination} from "@/hooks/usePagination";
 import {Invoice, Product} from "@/types/invoices";
 import {Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from "@arolariu/components";
-import {Plus, Save} from "lucide-react";
 import {useState} from "react";
+import {TbDisc, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
   invoice: Invoice;
 };
 
+/**
+ * This function renders a dialog that allows users to edit invoice items.
+ * It includes a table for displaying items, pagination, and controls for adding new items.
+ * @returns The JSX for the items dialog.
+ */
 export function ItemsDialog({invoice}: Readonly<Props>) {
   const {isOpen, open, close} = useDialog("editItems");
   const [items, setItems] = useState<Product[]>(invoice.items);
@@ -74,7 +79,7 @@ export function ItemsDialog({invoice}: Readonly<Props>) {
               type='button'
               variant='outline'
               onClick={() => {}}>
-              <Plus className='mr-2 h-4 w-4' />
+              <TbPlus className='mr-2 h-4 w-4' />
               Add Item
             </Button>
             <div className='text-muted-foreground text-sm'>
@@ -90,7 +95,7 @@ export function ItemsDialog({invoice}: Readonly<Props>) {
             Cancel
           </Button>
           <Button onClick={() => {}}>
-            <Save className='mr-2 h-4 w-4' />
+            <TbDisc className='mr-2 h-4 w-4' />
             Save Changes
           </Button>
         </DialogFooter>

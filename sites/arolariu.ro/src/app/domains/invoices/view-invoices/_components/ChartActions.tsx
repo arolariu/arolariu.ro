@@ -20,6 +20,13 @@ type Props = {
   title: string;
 };
 
+/**
+ * The ChartActions component provides actions for sharing and downloading charts.
+ * It includes options to copy the chart to clipboard, download it as a PNG, and share it via email.
+ * @param chartId - The ID of the chart element to capture.
+ * @param title - The title of the chart, used for naming the downloaded file.
+ * @returns The ChartActions component, CSR'ed.
+ */
 export function ChartActions({chartId, title}: Readonly<Props>) {
   const [copied, setCopied] = useState<boolean>(false);
   const [feedbackOpen, setFeedbackOpen] = useState<boolean>(false);

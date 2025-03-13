@@ -19,7 +19,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "framer-motion";
-import {Edit2} from "lucide-react";
+import {TbEdit} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
@@ -58,7 +58,7 @@ export function ItemsTable({items}: Readonly<Props>) {
                 size='sm'
                 onClick={open}
                 className='h-8'>
-                <Edit2 className='mr-1 h-3.5 w-3.5' />
+                <TbEdit className='mr-1 h-3.5 w-3.5' />
                 Edit Items
               </Button>
             </TooltipTrigger>
@@ -105,10 +105,10 @@ export function ItemsTable({items}: Readonly<Props>) {
                 animate={{opacity: 1, x: 0}}
                 transition={{delay: index * 0.05}}
                 className='h-12'>
-                <td className='whitespace-nowrap px-4 py-3 text-sm'></td>
-                <td className='whitespace-nowrap px-4 py-3 text-right text-sm'></td>
-                <td className='whitespace-nowrap px-4 py-3 text-right text-sm'></td>
-                <td className='whitespace-nowrap px-4 py-3 text-right text-sm'></td>
+                <td className='whitespace-nowrap px-4 py-3 text-sm' />
+                <td className='whitespace-nowrap px-4 py-3 text-right text-sm' />
+                <td className='whitespace-nowrap px-4 py-3 text-right text-sm' />
+                <td className='whitespace-nowrap px-4 py-3 text-right text-sm' />
               </motion.tr>
             ))}
           </TableBody>

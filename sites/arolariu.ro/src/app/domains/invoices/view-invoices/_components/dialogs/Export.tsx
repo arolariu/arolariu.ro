@@ -29,6 +29,11 @@ type Props = {
   invoice?: Invoice;
 };
 
+/**
+ * The ExportDialog component allows users to share an invoice via link, email, or QR code.
+ * It includes options to copy the link and QR code to the clipboard.
+ * @returns The ExportDialog component, CSR'ed.
+ */
 export function ExportDialog({open, onOpenChange, invoice}: Readonly<Props>) {
   const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);

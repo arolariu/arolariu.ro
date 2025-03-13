@@ -14,13 +14,19 @@ import {
   TableCell,
   TableRow,
 } from "@arolariu/components";
-import {Building, Building2, MapPin, Phone} from "lucide-react";
+import {TbBuilding, TbBuildingStore, TbMapPin, TbPhone} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
   merchant: Merchant;
 };
 
+/**
+ * This function renders a dialog that displays information about a specific merchant.
+ * It includes details such as the merchant's name, address, phone number, and parent company.
+ * The dialog is opened and closed using a custom hook.
+ * @returns The JSX for the merchant dialog, CSR'ed.
+ */
 export function MerchantDialog({merchant}: Readonly<Props>) {
   const {isOpen, open, close} = useDialog("merchant");
 
@@ -39,7 +45,7 @@ export function MerchantDialog({merchant}: Readonly<Props>) {
         <div className='space-y-4 py-2'>
           <div className='flex items-center space-x-3'>
             <div className='flex h-12 w-12 items-center justify-center rounded-full bg-primary/10'>
-              <Building className='h-6 w-6 text-primary' />
+              <TbBuilding className='h-6 w-6 text-primary' />
             </div>
             <div>
               <h3 className='text-lg font-medium'>{merchant.name}</h3>
@@ -56,7 +62,7 @@ export function MerchantDialog({merchant}: Readonly<Props>) {
               <TableRow>
                 <TableCell className='py-2 pl-0'>
                   <div className='flex items-center'>
-                    <MapPin className='text-muted-foreground mr-2 h-4 w-4' />
+                    <TbMapPin className='text-muted-foreground mr-2 h-4 w-4' />
                     <span className='font-medium'>Address</span>
                   </div>
                 </TableCell>
@@ -65,7 +71,7 @@ export function MerchantDialog({merchant}: Readonly<Props>) {
               <TableRow>
                 <TableCell className='py-2 pl-0'>
                   <div className='flex items-center'>
-                    <Phone className='text-muted-foreground mr-2 h-4 w-4' />
+                    <TbPhone className='text-muted-foreground mr-2 h-4 w-4' />
                     <span className='font-medium'>Phone</span>
                   </div>
                 </TableCell>
@@ -74,7 +80,7 @@ export function MerchantDialog({merchant}: Readonly<Props>) {
               <TableRow>
                 <TableCell className='py-2 pl-0'>
                   <div className='flex items-center'>
-                    <Building2 className='text-muted-foreground mr-2 h-4 w-4' />
+                    <TbBuildingStore className='text-muted-foreground mr-2 h-4 w-4' />
                     <span className='font-medium'>Parent Company</span>
                   </div>
                 </TableCell>

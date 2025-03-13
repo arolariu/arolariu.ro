@@ -31,6 +31,10 @@ interface ChartProps {
   showAnimation?: boolean;
 }
 
+/**
+ * LineChart component for rendering a line chart.
+ * @returns A responsive line chart.
+ */
 export function LineChart({
   data,
   index,
@@ -41,7 +45,7 @@ export function LineChart({
   showXAxis = true,
   showYAxis = true,
   showGridLines = true,
-}: ChartProps) {
+}: Readonly<ChartProps>) {
   return (
     <ResponsiveContainer
       width='100%'
@@ -70,6 +74,10 @@ export function LineChart({
   );
 }
 
+/**
+ * BarChart component for rendering a bar chart.
+ * @returns A responsive bar chart.
+ */
 export function BarChart({
   data,
   index,
@@ -80,7 +88,7 @@ export function BarChart({
   showXAxis = true,
   showYAxis = true,
   showGridLines = true,
-}: ChartProps) {
+}: Readonly<ChartProps>) {
   return (
     <ResponsiveContainer
       width='100%'
@@ -106,6 +114,10 @@ export function BarChart({
   );
 }
 
+/**
+ * PieChart component for rendering a pie chart.
+ * @returns A responsive pie chart.
+ */
 export function PieChart({
   data,
   index,
@@ -114,7 +126,7 @@ export function PieChart({
   valueFormatter = (value) => `${value}`,
   showLegend = true,
   showAnimation = true,
-}: ChartProps) {
+}: Readonly<ChartProps>) {
   return (
     <ResponsiveContainer
       width='100%'

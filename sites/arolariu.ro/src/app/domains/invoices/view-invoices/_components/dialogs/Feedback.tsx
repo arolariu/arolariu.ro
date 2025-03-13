@@ -22,6 +22,11 @@ type Props = {
   chartTitle: string;
 };
 
+/**
+ * The FeedbackDialog component allows users to provide feedback on a chart.
+ * It includes options for positive and negative feedback, as well as a textarea for additional comments.
+ * @returns The FeedbackDialog component, CSR'ed.
+ */
 export function FeedbackDialog({open, onOpenChange, chartTitle}: Readonly<Props>) {
   const [feedback, setFeedback] = useState<string>("");
   const [sentiment, setSentiment] = useState<"positive" | "negative" | null>(null);

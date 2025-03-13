@@ -34,6 +34,12 @@ type Props = {
   recipe: Recipe;
 };
 
+/**
+ * The RecipeCard component displays information about a recipe.
+ * It includes the recipe's name, complexity, description, ingredients, preparation time, and cooking time.
+ * The card also provides options to edit, delete, or share the recipe.
+ * @returns The RecipeCard component, CSR'ed.
+ */
 export function RecipeCard({recipe}: Readonly<Props>) {
   const {name, complexity, description, ingredients, preparationTime, cookingTime} = recipe;
 

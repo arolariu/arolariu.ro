@@ -15,14 +15,19 @@ import {
   Textarea,
   toast,
 } from "@arolariu/components";
-import {Star} from "lucide-react";
 import {useState} from "react";
+import {TbStar} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
   invoice: Invoice;
 };
 
+/**
+ * The FeedbackDialog component allows users to provide feedback on the analytics.
+ * It includes a star rating, feature selection, and a textarea for additional comments.
+ * @returns The FeedbackDialog component, CSR'ed.
+ */
 export function FeedbackDialog({invoice}: Readonly<Props>) {
   const [rating, setRating] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>("");
@@ -75,7 +80,7 @@ export function FeedbackDialog({invoice}: Readonly<Props>) {
                   onMouseEnter={() => setHoveredRating(star)}
                   onMouseLeave={() => setHoveredRating(0)}
                   onClick={() => setRating(star)}>
-                  <Star
+                  <TbStar
                     className={`h-8 w-8 ${star <= (hoveredRating || rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`}
                   />
                 </button>

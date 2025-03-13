@@ -23,6 +23,11 @@ type Props = {
   onOpenChange: (open: boolean) => void;
 };
 
+/**
+ * The ImportDialog component allows users to import invoice files (CSV, PDF, Excel).
+ * It provides a drag-and-drop interface for file selection and displays the selected files.
+ * @returns The ImportDialog component, CSR'ed.
+ */
 export function ImportDialog({open, onOpenChange}: Readonly<Props>) {
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -44,7 +49,7 @@ export function ImportDialog({open, onOpenChange}: Readonly<Props>) {
     e.preventDefault();
     setIsDragging(false);
 
-    const droppedFiles = Array.from(e.dataTransfer.files);
+    const droppedFiles = [...e.dataTransfer.files];
     handleFiles(droppedFiles);
   }, []);
 

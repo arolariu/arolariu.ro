@@ -19,8 +19,13 @@ type Props = {
   merchant: Merchant;
 };
 
+/**
+ * The MerchantCard component displays information about a merchant.
+ * It includes the merchant's name and address, and buttons to view more details or all receipts from this merchant.
+ * @returns The MerchantCard component, CSR'ed.
+ */
 export default function MerchantCard({merchant}: Readonly<Props>) {
-  const {open, close} = useDialog("merchant");
+  const {open} = useDialog("merchant");
 
   return (
     <Card className='group transition-shadow duration-300 hover:shadow-md'>

@@ -59,8 +59,14 @@ export function CurrencyProvider({children, initialValue}: Readonly<CurrencyCont
 }
 
 /**
- * useCurrencyContext is a custom hook that provides the current value of the CurrencyContext.
- * @returns The current value of the CurrencyContext.
+ * Custom hook to use the CurrencyContext.
+ * This hook provides access to the current currency and a function to update it.
+ * It throws an error if used outside of the CurrencyProvider.
+ * @throws Error if used outside of the CurrencyProvider.
+ * @returns The current value of the CurrencyContext, which includes the current currency and a function to update it.
+ * @example
+ * const {currency, setCurrency} = useCurrencyContext();
+ * setCurrency({code: "USD", name: "US Dollar", symbol: "$"});
  */
 export function useCurrencyContext() {
   const context = useContext(CurrencyContext);

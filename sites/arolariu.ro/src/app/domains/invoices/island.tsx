@@ -148,8 +148,10 @@ type Props = {
 };
 
 /**
- * The invoice domain screen.
- * @returns The invoice domain screen.
+ * The invoice domain screen, which is the main page for the invoice domain.
+ * It contains a description of the invoice domain, a call to action button,
+ * and a section to view invoices if the user is authenticated.
+ * @returns The invoice domain screen, which is the main page for the invoice domain.
  */
 export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Props>) {
   const t = useTranslations("Domains.services.invoices.service.main-page");

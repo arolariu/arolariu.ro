@@ -15,11 +15,15 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "framer-motion";
-import {ChevronsUpDown} from "lucide-react";
 import React from "react";
-import {TbCoin} from "react-icons/tb";
+import {TbChevronDown, TbCoin} from "react-icons/tb";
 import {availableCurrencies, useCurrencyContext} from "../_contexts/CurrencyContext";
 
+/**
+ * The CurrencySelector component allows users to select a currency from a dropdown menu.
+ * It displays the currently selected currency and provides a tooltip with information about changing the currency display.
+ * @returns The CurrencySelector component, CSR'ed.
+ */
 export function CurrencySelector() {
   const {currency, setCurrency} = useCurrencyContext();
 
@@ -47,7 +51,7 @@ export function CurrencySelector() {
                   {selectedCurrency?.icon ?? <TbCoin className='h-4 w-4' />}
                   <span className='ml-1'>{selectedCurrency?.code ?? currency.code}</span>
                 </motion.div>
-                <ChevronsUpDown className='h-3.5 w-3.5 opacity-50' />
+                <TbChevronDown className='h-3.5 w-3.5 opacity-50' />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent

@@ -20,6 +20,11 @@ type Props = {
   selectedMetadata: Record<string, string>;
 };
 
+/**
+ * The DialogContainer component manages the visibility and functionality of various dialogs
+ * related to invoices, merchants, recipes, and metadata.
+ * @returns The DialogContainer component, CSR'ed.
+ */
 export function DialogContainer(props: Readonly<Props>) {
   const {invoice, merchant, selectedMetadata, selectedRecipe, selectedMode} = props;
 

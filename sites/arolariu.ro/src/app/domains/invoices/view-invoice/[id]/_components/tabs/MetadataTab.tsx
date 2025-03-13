@@ -20,12 +20,18 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "framer-motion";
-import {Edit, MoreHorizontal, Plus, Trash} from "lucide-react";
+import {TbCapsuleHorizontal, TbEdit, TbPlus, TbTrash} from "react-icons/tb";
 
 type Props = {
   metadata: Record<string, string>;
 };
 
+/**
+ * The MetadataTab component displays additional information about the invoice.
+ * It shows metadata fields associated with the invoice and allows users to add new fields.
+ * @param metadata - The metadata associated with the invoice.
+ * @returns The MetadataTab component, CSR'ed.
+ */
 export function MetadataTab({metadata}: Readonly<Props>) {
   return (
     <motion.div
@@ -45,7 +51,7 @@ export function MetadataTab({metadata}: Readonly<Props>) {
                 <Button
                   onClick={() => {}}
                   size='sm'>
-                  <Plus className='mr-2 h-4 w-4' />
+                  <TbPlus className='mr-2 h-4 w-4' />
                   Add Field
                 </Button>
               </TooltipTrigger>
@@ -82,21 +88,21 @@ export function MetadataTab({metadata}: Readonly<Props>) {
                           variant='ghost'
                           size='icon'
                           className='h-8 w-8'>
-                          <MoreHorizontal className='h-4 w-4' />
+                          <TbCapsuleHorizontal className='h-4 w-4' />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align='end'>
                         <DropdownMenuItem
                           onClick={() => {}}
                           disabled={true}>
-                          <Edit className='mr-2 h-4 w-4' />
+                          <TbEdit className='mr-2 h-4 w-4' />
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => {}}
                           className='text-destructive focus:text-destructive'
                           disabled={true}>
-                          <Trash className='mr-2 h-4 w-4' />
+                          <TbTrash className='mr-2 h-4 w-4' />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -111,7 +117,7 @@ export function MetadataTab({metadata}: Readonly<Props>) {
               <Button
                 onClick={() => {}}
                 variant='outline'>
-                <Plus className='mr-2 h-4 w-4' />
+                <TbPlus className='mr-2 h-4 w-4' />
                 Add Your First Metadata Field
               </Button>
             </div>

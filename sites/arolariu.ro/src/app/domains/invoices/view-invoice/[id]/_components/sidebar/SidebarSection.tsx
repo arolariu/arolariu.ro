@@ -13,6 +13,12 @@ type Props = {
   merchant: Merchant;
 };
 
+/**
+ * The sidebar section of the invoice view page.
+ * This section contains the image card, merchant card, and sharing card.
+ * It is animated using Framer Motion.
+ * @returns The sidebar section component, CSR'ed.
+ */
 export function SidebarSection({invoice, merchant}: Readonly<Props>) {
   const {photoLocation, sharedWith} = invoice;
 
