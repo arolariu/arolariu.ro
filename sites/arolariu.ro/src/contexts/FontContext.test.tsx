@@ -233,4 +233,121 @@ describe("useFontContext", () => {
     const receivedFont = localStorageMock.getItem("selectedFont");
     expect(receivedFont).toEqual(JSON.stringify(customFont));
   });
+
+  it("when no currentFont is provided  and browserStorage is not available, we default to the defaultFont", async () => {
+    const localStorageMock = (function () {
+      let store: Record<string, string> = {};
+
+      return {
+        getItem: function (key: string) {
+          return store[key] || null;
+        },
+        setItem: function (key: string, value: string) {
+          store[key] = value.toString();
+        },
+        removeItem: function (key: string) {
+          delete store[key];
+        },
+        clear: function () {
+          store = {};
+        },
+      };
+    })();
+
+    Object.defineProperty(window, "localStorage", {
+      value: localStorageMock,
+    });
+
+    let getByTestId: (id: string) => HTMLElement;
+    await act(async () => {
+      const result = render(
+        <FontContextProvider>
+          <TestComponent />
+        </FontContextProvider>,
+      );
+      getByTestId = result.getByTestId;
+    });
+
+    await waitFor(() => expect(getByTestId("font").textContent).toEqual(JSON.stringify(defaultFont)));
+  });
+
+  it("should update selectedFont when currentFont changes", async () => {
+    let getByTestId: (id: string) => HTMLElement;
+    let rerender: (ui: React.ReactElement) => void;
+
+    await act(async () => {
+      const result = render(
+        <FontContextProvider>
+          <TestComponent />
+        </FontContextProvider>,
+      );
+      getByTestId = result.getByTestId;
+      rerender = result.rerender;
+    });
+
+    await waitFor(() => expect(getByTestId("font").textContent).toEqual(JSON.stringify(defaultFont)));
+
+    // Change the currentFont prop
+    await act(async () => {
+      rerender(
+        <FontContextProvider currentFont={customFont}>
+          <TestComponent />
+        </FontContextProvider>,
+      );
+    });
+
+    // Verify font was updated
+    await waitFor(() => expect(getByTestId("font").textContent).toEqual(JSON.stringify(customFont)));
+  });
+
+  it("should reset to defaultFont when currentFont is removed", async () => {
+    let getByTestId: (id: string) => HTMLElement;
+    let rerender: (ui: React.ReactElement) => void;
+
+    await act(async () => {
+      const result = render(
+        <FontContextProvider currentFont={customFont}>
+          <TestComponent />
+        </FontContextProvider>,
+      );
+      getByTestId = result.getByTestId;
+      rerender = result.rerender;
+    });
+
+    await waitFor(() => expect(getByTestId("font").textContent).toEqual(JSON.stringify(customFont)));
+
+    // Remove the currentFont prop
+    await act(async () => {
+      rerender(
+        <FontContextProvider>
+          <TestComponent />
+        </FontContextProvider>,
+      );
+    });
+
+    // Verify font was reset to default
+    await waitFor(() => expect(getByTestId("font").textContent).toEqual(JSON.stringify(defaultFont)));
+  });
+
+  it("should handle localStorage not being available", async () => {
+    // Mock isBrowserStorageAvailable to return false
+    jest.mock("../lib/utils.client", () => ({
+      isBrowserStorageAvailable: () => false,
+    }));
+
+    let getByTestId: (id: string) => HTMLElement;
+    await act(async () => {
+      const result = render(
+        <FontContextProvider>
+          <TestComponent />
+        </FontContextProvider>,
+      );
+      getByTestId = result.getByTestId;
+    });
+
+    await waitFor(() => expect(getByTestId("font").textContent).toEqual(JSON.stringify(defaultFont)));
+
+    // Reset mock
+    jest.resetModules();
+  });
 });
