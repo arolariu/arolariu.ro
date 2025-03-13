@@ -10,10 +10,13 @@ import {useRef, useState} from "react";
 import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
 import {AnalyticsCard} from "./_components/cards/AnalyticsCard";
 import {InvoiceCard} from "./_components/cards/InvoiceCard";
+import {DialogContainer} from "./_components/dialogs/DialogContainer";
 import {InvoiceHeader} from "./_components/InvoiceHeader";
 import {SidebarSection} from "./_components/sidebar/SidebarSection";
 import {MetadataTab} from "./_components/tabs/MetadataTab";
 import {RecipesTab} from "./_components/tabs/RecipesTab";
+import {CurrencyProvider} from "./_contexts/CurrencyContext";
+import {DialogProvider} from "./_contexts/DialogContext";
 
 /**
  * This function renders the view invoice page.
@@ -67,86 +70,90 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
   };
 
   return (
-    <section
-      className='container mx-auto py-12'
-      ref={printRef}>
-      {/* Header */}
-      <InvoiceHeader
-        invoice={invoice}
-        onCurrencyChange={() => {}}
-        onPrint={() => {}}
-        onToggleFavorite={() => {}}
-      />
-
-      <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
-        <motion.div
-          variants={containerVariants}
-          initial='hidden'
-          animate='visible'
-          className='space-y-6 md:col-span-2'>
-          <InvoiceCard
+    <DialogProvider>
+      <CurrencyProvider>
+        <section
+          className='container mx-auto py-12'
+          ref={printRef}>
+          {/* Header */}
+          <InvoiceHeader
             invoice={invoice}
-            merchant={merchant}
+            onCurrencyChange={() => {}}
+            onPrint={() => {}}
+            onToggleFavorite={() => {}}
           />
 
-          {/* Tabs for Recipes and Metadata */}
-          <motion.div variants={itemVariants}>
-            <Tabs defaultValue='recipes'>
-              <TabsList className='grid w-full grid-cols-2'>
-                <TabsTrigger value='recipes'>
-                  <TbToolsKitchen className='mr-2 h-4 w-4' />
-                  Possible Recipes
-                </TabsTrigger>
-                <TabsTrigger value='metadata'>
-                  <TbShoppingCart className='mr-2 h-4 w-4' />
-                  Additional Info
-                </TabsTrigger>
-              </TabsList>
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+            <motion.div
+              variants={containerVariants}
+              initial='hidden'
+              animate='visible'
+              className='space-y-6 md:col-span-2'>
+              <InvoiceCard
+                invoice={invoice}
+                merchant={merchant}
+              />
 
-              <AnimatePresence mode='wait'>
-                <TabsContent
-                  value='recipes'
-                  className='mt-4'>
-                  <RecipesTab recipes={invoice.possibleRecipes} />
-                </TabsContent>
+              {/* Tabs for Recipes and Metadata */}
+              <motion.div variants={itemVariants}>
+                <Tabs defaultValue='recipes'>
+                  <TabsList className='grid w-full grid-cols-2'>
+                    <TabsTrigger value='recipes'>
+                      <TbToolsKitchen className='mr-2 h-4 w-4' />
+                      Possible Recipes
+                    </TabsTrigger>
+                    <TabsTrigger value='metadata'>
+                      <TbShoppingCart className='mr-2 h-4 w-4' />
+                      Additional Info
+                    </TabsTrigger>
+                  </TabsList>
 
-                <TabsContent
-                  value='metadata'
-                  className='mt-4'>
-                  <MetadataTab metadata={invoice.additionalMetadata} />
-                </TabsContent>
-              </AnimatePresence>
-            </Tabs>
-          </motion.div>
+                  <AnimatePresence mode='wait'>
+                    <TabsContent
+                      value='recipes'
+                      className='mt-4'>
+                      <RecipesTab recipes={invoice.possibleRecipes} />
+                    </TabsContent>
 
-          {/* Expanded Statistics Card */}
-          <motion.div variants={itemVariants}>
-            <AnalyticsCard
-              invoice={invoice}
-              merchant={merchant}
-            />
-          </motion.div>
-        </motion.div>
+                    <TabsContent
+                      value='metadata'
+                      className='mt-4'>
+                      <MetadataTab metadata={invoice.additionalMetadata} />
+                    </TabsContent>
+                  </AnimatePresence>
+                </Tabs>
+              </motion.div>
 
-        {/* Right column - Sidebar */}
-        <motion.div variants={itemVariants}>
-          <SidebarSection
+              {/* Expanded Statistics Card */}
+              <motion.div variants={itemVariants}>
+                <AnalyticsCard
+                  invoice={invoice}
+                  merchant={merchant}
+                />
+              </motion.div>
+            </motion.div>
+
+            {/* Right column - Sidebar */}
+            <motion.div variants={itemVariants}>
+              <SidebarSection
+                invoice={invoice}
+                merchant={merchant}
+              />
+            </motion.div>
+          </div>
+
+          {/* Analyze Invoice Button */}
+
+          {/* All Dialogs */}
+          <DialogContainer
             invoice={invoice}
             merchant={merchant}
+            selectedMode={selectedDialogMode}
+            selectedRecipe={selectedRecipe}
+            selectedMetadata={selectedMetadata}
           />
-        </motion.div>
-      </div>
-
-      {/* Analyze Invoice Button */}
-
-      {/* All Dialogs */}
-      {/* <DialogContainer
-          invoice={invoice}
-          merchant={merchant}
-          selectedMode={selectedDialogMode}
-          selectedRecipe={selectedRecipe}
-          selectedMetadata={selectedMetadata}
-        /> */}
-    </section>
+        </section>
+      </CurrencyProvider>
+    </DialogProvider>
   );
 }

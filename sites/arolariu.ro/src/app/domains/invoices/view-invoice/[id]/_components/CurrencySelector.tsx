@@ -2,7 +2,7 @@
 
 "use client";
 
-import type {Currency} from "@/types/DDD";
+import {Currency} from "@/types/DDD";
 import {
   Button,
   DropdownMenu,
@@ -15,25 +15,20 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "framer-motion";
-import {ChevronsUpDown, CurrencyIcon, DollarSign, EuroIcon, PoundSterling, JapaneseYenIcon as Yen} from "lucide-react";
+import {ChevronsUpDown} from "lucide-react";
+import React from "react";
+import {TbCoin} from "react-icons/tb";
+import {availableCurrencies, useCurrencyContext} from "../_contexts/CurrencyContext";
 
-type Props = {
-  selectedCurrency: Currency;
-  setSelectedCurrency: (currency: Currency) => void;
-};
+export function CurrencySelector() {
+  const {currency, setCurrency} = useCurrencyContext();
 
-export function CurrencySelector({selectedCurrency, setSelectedCurrency}: Readonly<Props>) {
-  const availableCurrencies = [
-    {code: "EUR", name: "Euro", symbol: "€", icon: <EuroIcon className='h-4 w-4' />},
-    {code: "RON", name: "Romanian Leu", symbol: "lei", icon: <CurrencyIcon className='h-4 w-4' />},
-    {code: "MLD", name: "Moldovan Leu", symbol: "lei", icon: <CurrencyIcon className='h-4 w-4' />},
-    {code: "GBP", name: "British Pound", symbol: "£", icon: <PoundSterling className='h-4 w-4' />},
-    {code: "JPY", name: "Japanese Yen", symbol: "¥", icon: <Yen className='h-4 w-4' />},
-    {code: "CAD", name: "Canadian Dollar", symbol: "C$", icon: <DollarSign className='h-4 w-4' />},
-    {code: "USD", name: "US Dollar", symbol: "$", icon: <DollarSign className='h-4 w-4' />},
-  ];
+  const handleSetCurrency = (currency: {code: string; name: string; symbol: string; icon: React.JSX.Element}) => {
+    const {icon, ...rest} = currency;
+    setCurrency?.(rest as Currency);
+  };
 
-  const selectedCurrencyInfo = availableCurrencies.find((currency) => currency.code === selectedCurrency.code);
+  const selectedCurrency = availableCurrencies.find((curr) => curr.code === currency.code);
 
   return (
     <TooltipProvider>
@@ -49,8 +44,8 @@ export function CurrencySelector({selectedCurrency, setSelectedCurrency}: Readon
                   initial={{scale: 0.9}}
                   animate={{scale: 1}}
                   className='flex items-center'>
-                  {selectedCurrencyInfo?.icon}
-                  <span className='ml-1'>{selectedCurrencyInfo?.code}</span>
+                  {selectedCurrency?.icon ?? <TbCoin className='h-4 w-4' />}
+                  <span className='ml-1'>{selectedCurrency?.code ?? currency.code}</span>
                 </motion.div>
                 <ChevronsUpDown className='h-3.5 w-3.5 opacity-50' />
               </Button>
@@ -58,14 +53,14 @@ export function CurrencySelector({selectedCurrency, setSelectedCurrency}: Readon
             <DropdownMenuContent
               align='end'
               className='w-[160px]'>
-              {availableCurrencies.map((currency) => (
+              {availableCurrencies.map((curr) => (
                 <DropdownMenuItem
-                  key={currency.code}
-                  onClick={() => setSelectedCurrency(currency)}
-                  className={`flex items-center gap-2 ${currency.code === selectedCurrency.code ? "bg-muted" : ""}`}>
-                  {currency.icon}
-                  <span>{currency.name}</span>
-                  <span className='text-muted-foreground ml-auto'>{currency.symbol}</span>
+                  key={curr.code}
+                  onClick={() => handleSetCurrency(curr)}
+                  className={`flex items-center gap-2 ${curr.code === currency.code ? "bg-muted" : ""}`}>
+                  {curr.icon}
+                  <span>{curr.name}</span>
+                  <span className='text-muted-foreground ml-auto'>{curr.symbol}</span>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

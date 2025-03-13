@@ -3,7 +3,6 @@
 "use client";
 
 import type {Invoice, Merchant, Recipe} from "@/types/invoices";
-import {DialogProvider} from "../../_contexts/DialogContext";
 import {ExportDialog} from "./ExportDialog";
 import {FeedbackDialog} from "./FeedbackDialog";
 import {ItemsDialog} from "./ItemsDialog";
@@ -17,8 +16,8 @@ type Props = {
   invoice: Invoice;
   merchant: Merchant;
   selectedMode: "add" | "edit" | "view";
-  selectedRecipe: Recipe | null;
-  selectedMetadata: Record<string, string> | null;
+  selectedRecipe: Recipe;
+  selectedMetadata: Record<string, string>;
 };
 
 export function DialogContainer(props: Readonly<Props>) {
@@ -40,7 +39,7 @@ export function DialogContainer(props: Readonly<Props>) {
   };
 
   return (
-    <DialogProvider>
+    <>
       <ExportDialog invoice={invoice} />
       <FeedbackDialog invoice={invoice} />
       <MerchantDialog merchant={merchant} />
@@ -89,6 +88,6 @@ export function DialogContainer(props: Readonly<Props>) {
         invoice={invoice}
         merchant={merchant}
       />
-    </DialogProvider>
+    </>
   );
 }

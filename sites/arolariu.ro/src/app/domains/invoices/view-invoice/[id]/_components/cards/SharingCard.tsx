@@ -17,12 +17,14 @@ import {
 import {motion} from "framer-motion";
 import Image from "next/image";
 import {TbArrowRight, TbDeselect, TbLock, TbLockCog, TbShare2, TbUser} from "react-icons/tb";
+import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
   sharedWith: string[];
 };
 
 export function SharingCard({sharedWith}: Readonly<Props>) {
+  const {open} = useDialog("share");
   const {userInformation} = useUserInformation();
 
   return (
@@ -118,7 +120,7 @@ export function SharingCard({sharedWith}: Readonly<Props>) {
               <Button
                 variant='outline'
                 className='group w-full'
-                onClick={() => {}}>
+                onClick={open}>
                 <TbShare2 className='mr-2 h-4 w-4' />
                 <span>Share Invoice</span>
                 <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />

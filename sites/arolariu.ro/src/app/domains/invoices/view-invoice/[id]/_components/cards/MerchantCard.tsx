@@ -13,12 +13,15 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {TbArrowRight, TbShoppingBag, TbShoppingCart} from "react-icons/tb";
+import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
   merchant: Merchant;
 };
 
 export default function MerchantCard({merchant}: Readonly<Props>) {
+  const {open, close} = useDialog("merchant");
+
   return (
     <Card className='group transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>
@@ -41,7 +44,7 @@ export default function MerchantCard({merchant}: Readonly<Props>) {
                 <Button
                   variant='outline'
                   className='group w-full'
-                  onClick={() => {}}>
+                  onClick={open}>
                   <span>View Merchant Details</span>
                   <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                 </Button>
@@ -64,7 +67,7 @@ export default function MerchantCard({merchant}: Readonly<Props>) {
                   <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
+              <TooltipContent side='bottom'>
                 <p>View all receipts from this merchant</p>
               </TooltipContent>
             </Tooltip>

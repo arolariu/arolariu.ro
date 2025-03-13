@@ -20,6 +20,7 @@ import {
 } from "@arolariu/components";
 import {memo, useMemo} from "react";
 import {TbChartBar, TbChartCandle, TbChartPie, TbMessage, TbShare} from "react-icons/tb";
+import {useDialog} from "../../_contexts/DialogContext";
 import {BarChart, LineChart, PieChart} from "../charts";
 
 type Props = {
@@ -29,6 +30,9 @@ type Props = {
 
 // Create a memoized version of the component to prevent unnecessary re-renders
 export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Readonly<Props>) {
+  const {open: openFeedback} = useDialog("feedback");
+  const {open: openShare} = useDialog("shareAnalytics");
+
   // Generate mock data for the charts
   const monthlyData = useMemo(() => {
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -91,14 +95,14 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
           <Button
             variant='outline'
             size='sm'
-            onClick={() => {}}>
+            onClick={openShare}>
             <TbShare className='mr-2 h-4 w-4' />
             Share
           </Button>
           <Button
             variant='outline'
             size='sm'
-            onClick={() => {}}>
+            onClick={openFeedback}>
             <TbMessage className='mr-2 h-4 w-4' />
             Feedback
           </Button>

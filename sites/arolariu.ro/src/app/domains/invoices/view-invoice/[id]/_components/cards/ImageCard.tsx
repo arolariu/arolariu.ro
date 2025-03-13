@@ -62,7 +62,7 @@ export function ImageCard({photoLocation = "https://dummyimage.com/600x900&text=
                 <span>Reupload Image</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent side='bottom'>
               <p>Modify the original image</p>
             </TooltipContent>
           </Tooltip>

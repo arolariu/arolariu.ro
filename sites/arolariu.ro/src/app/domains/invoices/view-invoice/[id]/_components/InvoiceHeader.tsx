@@ -6,6 +6,7 @@ import {Invoice} from "@/types/invoices";
 import {Badge, Button, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "framer-motion";
 import {AlertTriangle, Printer} from "lucide-react";
+import {CurrencySelector} from "./CurrencySelector";
 
 type Props = {
   invoice: Invoice;
@@ -27,9 +28,9 @@ export function InvoiceHeader({invoice, onToggleFavorite, onPrint}: Readonly<Pro
           <Input
             type='text'
             value={name}
-            className='border-0 text-3xl font-bold tracking-tight focus-visible:border-0 focus-visible:ring-0'
+            className='w-full border-0 text-3xl font-bold tracking-tight focus-visible:border-0 focus-visible:ring-0'
           />
-          <p className='text-muted-foreground'>{id}</p>
+          <p className='text-gray-300 dark:text-gray-800'>{id}</p>
         </div>
         {isImportant && (
           <Badge
@@ -41,10 +42,7 @@ export function InvoiceHeader({invoice, onToggleFavorite, onPrint}: Readonly<Pro
         )}
       </div>
       <div className='flex flex-wrap items-center gap-2'>
-        {/* <CurrencySelector
-          selectedCurrency={selectedCurrency}
-          onCurrencyChange={onCurrencyChange}
-        /> */}
+        <CurrencySelector />
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

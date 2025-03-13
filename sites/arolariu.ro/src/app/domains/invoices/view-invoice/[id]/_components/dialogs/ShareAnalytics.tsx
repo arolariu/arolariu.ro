@@ -19,8 +19,9 @@ import {
   TabsTrigger,
   toast,
 } from "@arolariu/components";
-import {Copy, Download, Mail} from "lucide-react";
+import {Download, Mail} from "lucide-react";
 import {useState} from "react";
+import {TbCopy} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
@@ -34,21 +35,6 @@ export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
   const {isOpen, open, close} = useDialog("shareAnalytics");
 
   const shareUrl = `https://invoice-app.com/analytics/${merchant.name.toLowerCase().replace(/\s+/g, "-")}`;
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      toast("Link copied!", {
-        description: "The analytics link has been copied to your clipboard",
-      });
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      toast("Failed to copy link!", {
-        description: "Could not copy the link to clipboard",
-      });
-    }
-  };
 
   const handleCopyImage = async () => {
     try {
@@ -109,9 +95,8 @@ export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
         <Tabs
           defaultValue='image'
           className='mt-4'>
-          <TabsList className='grid w-full grid-cols-3'>
+          <TabsList className='grid w-full grid-cols-2'>
             <TabsTrigger value='image'>Image</TabsTrigger>
-            <TabsTrigger value='link'>Link</TabsTrigger>
             <TabsTrigger value='email'>Email</TabsTrigger>
           </TabsList>
 
@@ -119,7 +104,7 @@ export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
             value='image'
             className='py-4'>
             <div className='space-y-4'>
-              <p className='text-muted-foreground text-sm'>Download the analytics as a PNG image that you can share or save.</p>
+              <p className='text-muted-foreground text-sm'>Download or copy the analytics graph as a PNG image that you can share or save.</p>
               <div className='flex justify-center'>
                 <div className='w-full max-w-xs rounded-md border p-4'>
                   <div className='bg-muted flex h-32 items-center justify-center rounded-md'>Analytics Preview</div>
@@ -127,35 +112,22 @@ export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
               </div>
             </div>
             <DialogFooter className='mt-4'>
-              <Button
-                onClick={handleDownloadImage}
-                className='w-full'>
-                <Download className='mr-2 h-4 w-4' />
-                Download PNG
-              </Button>
-            </DialogFooter>
-          </TabsContent>
-
-          <TabsContent
-            value='link'
-            className='py-4'>
-            <div className='space-y-4'>
-              <p className='text-muted-foreground text-sm'>Share a link that others can use to view these analytics.</p>
-              <div className='flex space-x-2'>
-                <Input
-                  value={shareUrl}
-                  readOnly
-                  className='flex-1'
-                  onClick={(e) => (e.target as HTMLInputElement).select()}
-                />
+              <div className='flex w-full flex-col gap-2'>
                 <Button
-                  variant='outline'
-                  size='icon'
-                  onClick={handleCopyLink}>
-                  <Copy className='h-4 w-4' />
+                  onClick={handleDownloadImage}
+                  className='w-full'>
+                  <Download className='mr-2 h-4 w-4' />
+                  Download graph
+                </Button>
+                <Button
+                  variant={"outline"}
+                  onClick={handleCopyImage}
+                  className='w-full'>
+                  <TbCopy className='mr-2 h-4 w-4' />
+                  Copy graph to clipboard
                 </Button>
               </div>
-            </div>
+            </DialogFooter>
           </TabsContent>
 
           <TabsContent

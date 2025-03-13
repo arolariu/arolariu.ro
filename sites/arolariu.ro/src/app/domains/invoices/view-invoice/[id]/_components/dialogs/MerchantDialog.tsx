@@ -1,7 +1,8 @@
 /** @format */
 
-import type {Merchant} from "@/types/invoices";
+import {MerchantCategory, type Merchant} from "@/types/invoices";
 import {
+  Badge,
   Button,
   Dialog,
   DialogContent,
@@ -22,12 +23,16 @@ type Props = {
 
 export function MerchantDialog({merchant}: Readonly<Props>) {
   const {isOpen, open, close} = useDialog("merchant");
+
+  const merchantCategoryKey = Object.keys(MerchantCategory)[merchant.category];
+  const merchantCategoryAsString = MerchantCategory[merchantCategoryKey as keyof typeof MerchantCategory];
+
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-md'>
-        <DialogHeader>
+      <DialogContent className='sm:max-w-md md:max-w-xl'>
+        <DialogHeader className='items-start justify-start justify-items-start'>
           <DialogTitle>Merchant Details</DialogTitle>
           <DialogDescription>Information about {merchant.name}</DialogDescription>
         </DialogHeader>
@@ -38,7 +43,11 @@ export function MerchantDialog({merchant}: Readonly<Props>) {
             </div>
             <div>
               <h3 className='text-lg font-medium'>{merchant.name}</h3>
-              <p className='text-muted-foreground text-sm'>{merchant.category}</p>
+              <Badge
+                variant='outline'
+                className='text-muted-foreground'>
+                {merchantCategoryAsString}
+              </Badge>
             </div>
           </div>
 
@@ -75,18 +84,12 @@ export function MerchantDialog({merchant}: Readonly<Props>) {
           </Table>
         </div>
 
-        <div className='flex flex-col items-center justify-end gap-4'>
+        <div className='flex w-1/2 flex-col items-center justify-center justify-items-center gap-2'>
           <Button
             type='button'
             variant={"default"}
             className='w-full'>
             Open in Maps
-          </Button>
-          <Button
-            type='button'
-            variant={"secondary"}
-            className='w-full'>
-            Call merchant
           </Button>
         </div>
       </DialogContent>

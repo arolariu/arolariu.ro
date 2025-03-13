@@ -29,6 +29,7 @@ type Props = {
 
 export function InvoiceCard({invoice, merchant}: Readonly<Props>) {
   const {paymentInformation, category, isImportant, description} = invoice;
+
   const categoryKey = Object.keys(InvoiceCategory)[category];
   const categoryAsString = InvoiceCategory[categoryKey as keyof typeof InvoiceCategory];
 

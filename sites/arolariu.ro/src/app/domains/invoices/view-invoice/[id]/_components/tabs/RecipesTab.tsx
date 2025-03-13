@@ -1,6 +1,7 @@
 /** @format */
 
 "use client";
+import {usePagination} from "@/hooks/usePagination";
 import {Recipe} from "@/types/invoices";
 import {
   Button,
@@ -17,6 +18,7 @@ import {
 import {motion} from "framer-motion";
 import {Plus} from "lucide-react";
 import {TbConfetti} from "react-icons/tb";
+import {useDialog} from "../../_contexts/DialogContext";
 import {RecipeCard} from "../cards/RecipeCard";
 
 type Props = {
@@ -25,6 +27,20 @@ type Props = {
 
 export function RecipesTab(props: Readonly<Props>) {
   const {recipes} = props;
+  const {open} = useDialog("recipe");
+  const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePagination({items: recipes, initialPageSize: 4});
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   return (
     <motion.div
@@ -57,7 +73,7 @@ export function RecipesTab(props: Readonly<Props>) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => {}}
+                    onClick={open}
                     size='sm'>
                     <Plus className='mr-2 h-4 w-4' />
                     Add Recipe
@@ -71,7 +87,7 @@ export function RecipesTab(props: Readonly<Props>) {
           </TooltipProvider>
         </CardHeader>
         <CardContent>
-          {recipes.length > 0 ? (
+          {paginatedItems.length > 0 ? (
             <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
               {recipes.map((recipe) => (
                 <RecipeCard
@@ -88,6 +104,27 @@ export function RecipesTab(props: Readonly<Props>) {
                 variant='outline'>
                 <Plus className='mr-2 h-4 w-4' />
                 Create Your First Recipe
+              </Button>
+            </div>
+          )}
+          {totalPages > 1 && (
+            <div className='flex items-center justify-between pt-4'>
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}>
+                Previous
+              </Button>
+              <div className='text-sm'>
+                Page {currentPage} of {totalPages}
+              </div>
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}>
+                Next
               </Button>
             </div>
           )}
