@@ -99,4 +99,40 @@ describe("useDialog", () => {
     // Expect the merchant dialog to still be closed
     expect(merchantResult.current.isOpen).toBe(false);
   });
+
+  test("it throws when used outside of provider", () => {
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    expect(() => {
+      renderHook(() => useDialog("share"));
+    }).toThrow("useDialogs must be used within a DialogProvider");
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  test("it uses current dialog when openDialog is called", () => {
+    const {result} = renderHook(() => useDialog("share"), {wrapper});
+
+    act(() => {
+      result.current.open();
+    });
+
+    expect(result.current.currentDialog).toBe("share");
+  });
+
+  test("it uses current dialog when closeDialog is called", () => {
+    const {result} = renderHook(() => useDialog("share"), {wrapper});
+
+    act(() => {
+      result.current.open();
+    });
+
+    expect(result.current.currentDialog).toBe("share");
+
+    act(() => {
+      result.current.close();
+    });
+
+    expect(result.current.currentDialog).toBe(null);
+  });
 });

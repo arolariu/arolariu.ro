@@ -38,12 +38,7 @@ interface DialogContextValue {
  * DialogContext is a React context that provides the current dialog state and functions to manage it.
  * It is initialized with default values, which can be overridden by the provider.
  */
-const DialogContext = createContext<DialogContextValue>({
-  currentDialog: null,
-  isOpen: () => false,
-  openDialog: () => {},
-  closeDialog: () => {},
-});
+const DialogContext = createContext<DialogContextValue | undefined>(undefined);
 
 /**
  * DialogProvider component that manages dialog state for the application.
