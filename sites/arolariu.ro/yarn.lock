@@ -29,9 +29,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@arolariu/components@npm:0.0.32":
-  version: 0.0.32
-  resolution: "@arolariu/components@npm:0.0.32"
+"@arolariu/components@npm:0.0.33":
+  version: 0.0.33
+  resolution: "@arolariu/components@npm:0.0.33"
   dependencies:
     "@hookform/resolvers": "npm:^4.1.2"
     "@radix-ui/react-accordion": "npm:1.2.3"
@@ -81,7 +81,7 @@ __metadata:
     react: 19.0.0
     react-dom: 19.0.0
     tailwindcss: 3
-  checksum: 10c0/41c2ec564024bb89bdbef66c1a90a9b3df2407bf0b716f634683cc4bbc3f052a99afb4a54aa4a627b395b1c5b85e4e700a685f1dacbdd251635a8440bef0782d
+  checksum: 10c0/42cc59336f82bd365773097cc9713b3c3ac47bda4ff19ff5922ee28ff91188f3faa74cdcfd71cb6046c07266b4c8633c19a8793c19be23bbc03e3623a384e617
   languageName: node
   linkType: hard
 
@@ -7501,7 +7501,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "arolariu.ro@workspace:."
   dependencies:
-    "@arolariu/components": "npm:0.0.32"
+    "@arolariu/components": "npm:0.0.33"
     "@azure/app-configuration": "npm:1.8.0"
     "@azure/identity": "npm:4.7.0"
     "@azure/storage-blob": "npm:12.26.0"

@@ -54,7 +54,7 @@
     "test:storybook": "npm run storybook:test"
   },
   "dependencies": {
-    "@arolariu/components": "0.0.32",
+    "@arolariu/components": "0.0.33",
     "@azure/app-configuration": "1.8.0",
     "@azure/identity": "4.7.0",
     "@azure/storage-blob": "12.26.0",
