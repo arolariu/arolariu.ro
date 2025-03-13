@@ -18,7 +18,7 @@ import {faker as fake} from "@faker-js/faker";
 
 const generateFakeInvoice = (): Invoice => {
   const invoiceCategory = fake.number.int({min: 1, max: 3}) as InvoiceCategory;
-  const products = Array.from({length: fake.number.int({min: 1, max: 30})}, generateFakeInvoiceProduct);
+  const products = Array.from({length: fake.number.int({min: 3, max: 30})}, generateFakeInvoiceProduct);
   const totalAmount = products.reduce((acc, product) => acc + product.totalPrice, 0);
 
   return {
@@ -27,7 +27,7 @@ const generateFakeInvoice = (): Invoice => {
     createdAt: fake.date.past(),
     merchantReference: fake.string.uuid(),
     createdBy: fake.string.uuid(),
-    description: fake.lorem.sentence(7),
+    description: fake.lorem.sentence({min: 7, max: 30}),
     isImportant: fake.datatype.boolean(),
     isSoftDeleted: fake.datatype.boolean(),
     lastUpdatedAt: fake.date.recent(),
