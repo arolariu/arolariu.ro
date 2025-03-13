@@ -1,7 +1,7 @@
 {
   "name": "@arolariu/components",
   "displayName": "@arolariu/components",
-  "version": "0.0.32",
+  "version": "0.0.33",
   "description": "A collection of reusable components for React applications, built as ESM & CJS modules with tree shake, minify and bundler optimizations enabled, for the lowest bundle size (import cost)!",
   "homepage": "https://arolariu.ro",
   "repository": {
@@ -37,6 +37,7 @@
     "dist",
     "src",
     "LICENSE",
+    "changelog.md",
     "readme.md",
     "tsconfig.json",
     "tailwind.config.mjs"
