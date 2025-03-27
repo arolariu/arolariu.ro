@@ -17,14 +17,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {motion} from "framer-motion";
-import {AlertCircle, ArrowRight, Lightbulb, Percent, PiggyBank, Sparkles, ThumbsUp} from "lucide-react";
+import {motion} from "motion/react";
+import {TbAlertCircle, TbArrowRight, TbBulb, TbPercentage, TbPigMoney, TbSparkles, TbThumbUp} from "react-icons/tb";
 
 type Props = {
   merchant: Merchant;
   invoice: Invoice;
 };
 
+/**
+ * The TriviaTipsCard component displays savings tips for a specific merchant.
+ * It includes potential savings, difficulty level, and a button to view more tips.
+ * @returns The TriviaTipsCard component, CSR'ed.
+ */
 export function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
   // Mock savings tips
   const savingsTips = [
@@ -34,7 +39,7 @@ export function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       description: `Sign up for ${merchant.name}'s loyalty program to earn points on every purchase.`,
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.05,
       difficulty: "EASY",
-      icon: <PiggyBank className='h-5 w-5' />,
+      icon: <TbPigMoney className='h-5 w-5' />,
     },
     {
       id: 2,
@@ -42,7 +47,7 @@ export function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       description: "Purchase non-perishable items in bulk to save on per-unit costs.",
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.1,
       difficulty: "MEDIUM",
-      icon: <Percent className='h-5 w-5' />,
+      icon: <TbPercentage className='h-5 w-5' />,
     },
     {
       id: 3,
@@ -50,7 +55,7 @@ export function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
       description: `Check ${merchant.name}'s app for digital coupons before shopping.`,
       potentialSavings: invoice.paymentInformation?.totalCostAmount! * 0.08,
       difficulty: "EASY",
-      icon: <Lightbulb className='h-5 w-5' />,
+      icon: <TbBulb className='h-5 w-5' />,
     },
   ];
 
@@ -61,7 +66,7 @@ export function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
     <Card>
       <CardHeader className='pb-2'>
         <CardTitle className='flex items-center text-lg'>
-          <Sparkles className='mr-2 h-5 w-5 text-primary' />
+          <TbSparkles className='mr-2 h-5 w-5 text-primary' />
           <span>Savings Tips</span>
         </CardTitle>
       </CardHeader>
@@ -74,7 +79,7 @@ export function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
             <p className='text-sm font-medium'>Potential Savings</p>
             <p className='text-lg font-bold'>{formatCurrency(totalPotentialSavings)}</p>
           </div>
-          <p className='text-muted-foreground mt-1 text-xs'>Apply these tips to save on your next visit to {merchant.name}</p>
+          <p className='mt-1 text-xs text-muted-foreground'>Apply these tips to save on your next visit to {merchant.name}</p>
         </motion.div>
 
         <Separator />
@@ -83,7 +88,7 @@ export function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
           {savingsTips.map((tip, index) => (
             <motion.div
               key={tip.id}
-              className='hover:bg-muted/50 group rounded-md border p-3 hover:border-primary/50'
+              className='group rounded-md border p-3 hover:border-primary/50 hover:bg-muted/50'
               initial={{opacity: 0, y: 10}}
               animate={{opacity: 1, y: 0}}
               transition={{delay: index * 0.1}}
@@ -105,7 +110,7 @@ export function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                         <TooltipTrigger asChild>
                           <div className='flex items-center text-sm font-medium text-success'>
                             <span>{formatCurrency(tip.potentialSavings)}</span>
-                            <ThumbsUp className='ml-1 h-3.5 w-3.5' />
+                            <TbThumbUp className='ml-1 h-3.5 w-3.5' />
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -114,7 +119,7 @@ export function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <p className='text-muted-foreground mt-1 text-sm'>{tip.description}</p>
+                  <p className='mt-1 text-sm text-muted-foreground'>{tip.description}</p>
                 </div>
               </div>
             </motion.div>
@@ -126,12 +131,12 @@ export function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
             variant='outline'
             className='group w-full'>
             <span>View More Savings Tips</span>
-            <ArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+            <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
           </Button>
         </div>
 
-        <div className='text-muted-foreground flex items-center gap-2 text-xs'>
-          <AlertCircle className='h-3.5 w-3.5' />
+        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+          <TbAlertCircle className='h-3.5 w-3.5' />
           <span>Savings are estimates based on average prices and promotions</span>
         </div>
       </CardContent>

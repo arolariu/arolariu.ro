@@ -3,7 +3,7 @@ import {getCookie} from "@/lib/actions/cookies.action";
 import {getRequestConfig} from "next-intl/server";
 
 export default getRequestConfig(async () => {
-  const locale = (await getCookie({name: "locale"})) ?? "en";
+  const locale = (await getCookie("locale")) ?? "en";
 
   return {
     locale,

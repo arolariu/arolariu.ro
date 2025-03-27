@@ -2,7 +2,7 @@
 
 "use client";
 
-import type {Invoice} from "@/types/invoices";
+import type {Invoice, Merchant} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -19,22 +19,24 @@ import {useState} from "react";
 import {TbStar} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
-type Props = {
-  invoice: Invoice;
-};
-
 /**
  * The FeedbackDialog component allows users to provide feedback on the analytics.
  * It includes a star rating, feature selection, and a textarea for additional comments.
  * @returns The FeedbackDialog component, CSR'ed.
  */
-export function FeedbackDialog({invoice}: Readonly<Props>) {
+export function FeedbackDialog() {
   const [rating, setRating] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>("");
-  const {isOpen, open, close} = useDialog("feedback");
   const [hoveredRating, setHoveredRating] = useState<number>(0);
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
+  const {
+    currentDialog: {payload},
+    isOpen,
+    open,
+    close,
+  } = useDialog("feedback");
 
+  const {invoice, merchant} = payload as {invoice: Invoice; merchant: Merchant};
   const features = ["Spending Trends", "Price Comparisons", "Savings Tips", "Merchant Analysis", "Visual Charts", "Category Breakdown"];
 
   const handleSubmit = () => {
@@ -61,7 +63,7 @@ export function FeedbackDialog({invoice}: Readonly<Props>) {
     <Dialog
       open={isOpen}
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
-      <DialogContent className='sm:max-w-md'>
+      <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
           <DialogTitle>Provide Feedback</DialogTitle>
           <DialogDescription>Help us improve our analytics by sharing your thoughts</DialogDescription>
@@ -114,6 +116,9 @@ export function FeedbackDialog({invoice}: Readonly<Props>) {
               rows={4}
             />
           </div>
+          <small className='text-pretty text-xs text-gray-200 text-muted-foreground dark:text-gray-600'>
+            {invoice.id}::{merchant.id}
+          </small>
         </div>
 
         <DialogFooter>

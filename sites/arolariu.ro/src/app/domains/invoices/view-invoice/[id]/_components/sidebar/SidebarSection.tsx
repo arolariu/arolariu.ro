@@ -3,7 +3,7 @@
 "use client";
 
 import {Invoice, Merchant} from "@/types/invoices";
-import {motion} from "framer-motion";
+import {motion} from "motion/react";
 import {ImageCard} from "../cards/ImageCard";
 import MerchantCard from "../cards/MerchantCard";
 import {SharingCard} from "../cards/SharingCard";
@@ -20,8 +20,6 @@ type Props = {
  * @returns The sidebar section component, CSR'ed.
  */
 export function SidebarSection({invoice, merchant}: Readonly<Props>) {
-  const {photoLocation, sharedWith} = invoice;
-
   // Animation variants for the sidebar section
   const containerVariants = {
     hidden: {opacity: 0},
@@ -49,7 +47,7 @@ export function SidebarSection({invoice, merchant}: Readonly<Props>) {
       animate='visible'
       className='space-y-6'>
       <motion.div variants={itemVariants}>
-        <ImageCard photoLocation={photoLocation} />
+        <ImageCard invoice={invoice} />
       </motion.div>
 
       <motion.div variants={itemVariants}>
@@ -57,7 +55,7 @@ export function SidebarSection({invoice, merchant}: Readonly<Props>) {
       </motion.div>
 
       <motion.div variants={itemVariants}>
-        <SharingCard sharedWith={sharedWith} />
+        <SharingCard invoice={invoice} />
       </motion.div>
 
       <motion.div variants={itemVariants}>

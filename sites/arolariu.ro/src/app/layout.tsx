@@ -12,7 +12,10 @@ import Loading from "./loading";
 import ContextProviders from "./providers";
 import HtmlWrapper from "./wrapper";
 
+import {getCookie} from "@/lib/actions/cookies.action";
 import "@arolariu/components/styles.css";
+import {Commander} from "../components/Commander";
+import Eula from "./EULA";
 import "./globals.css";
 
 export {metadata} from "@/metadata";
@@ -24,16 +27,17 @@ export {metadata} from "@/metadata";
 export default async function RootLayout({children}: Readonly<{children: ReactNode}>) {
   const locale = await getLocale();
   const messages = await getMessages({locale});
-  const authLocale = locale === "ro" ? roRO : enUS;
+  const eulaCookie = await getCookie("eula-accepted");
 
   return (
-    <AuthProvider localization={authLocale}>
+    <AuthProvider localization={locale === "ro" ? roRO : enUS}>
       <FontProvider>
         <HtmlWrapper locale={locale}>
           <TranslationProvider messages={messages}>
             <ContextProviders>
               <Header />
-              <Suspense fallback={<Loading />}>{children}</Suspense>
+              <Suspense fallback={<Loading />}>{eulaCookie ? children : <Eula locale={locale} />}</Suspense>
+              <Commander />
               <Footer />
             </ContextProviders>
           </TranslationProvider>

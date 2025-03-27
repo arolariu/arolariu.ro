@@ -3,10 +3,9 @@
 "use client";
 
 import {FakeInvoice, FakeMerchant} from "@/data/mocks/invoices";
-import {type Recipe, RecipeComplexity} from "@/types/invoices";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
-import {AnimatePresence, motion} from "framer-motion";
-import {useRef, useState} from "react";
+import {AnimatePresence, motion} from "motion/react";
+import {useRef} from "react";
 import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
 import {AnalyticsCard} from "./_components/cards/AnalyticsCard";
 import {InvoiceCard} from "./_components/cards/InvoiceCard";
@@ -23,6 +22,7 @@ import {DialogProvider} from "./_contexts/DialogContext";
  * @returns The JSX for the view invoice page.
  */
 export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
+  console.log(invoiceIdentifier);
   // Reference for printing
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -31,23 +31,6 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
 
   // Merchant data
   const merchant = FakeMerchant;
-
-  const [selectedDialogMode, setSelectedDialogMode] = useState<"add" | "edit" | "view">("view");
-  const [selectedRecipe, setSelectedRecipe] = useState<Recipe>({
-    name: "",
-    ingredients: [],
-    instructions: "",
-    preparationTime: -1,
-    cookingTime: -1,
-    description: "",
-    duration: "0",
-    complexity: RecipeComplexity.Unknown,
-    referenceForMoreDetails: "",
-  } satisfies Recipe);
-  const [selectedMetadata, setSelectedMetadata] = useState<Record<string, string>>({
-    name: "",
-    value: "",
-  } satisfies Record<string, string>);
 
   // Animation variants for Framer Motion
   const containerVariants = {
@@ -80,7 +63,6 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
             invoice={invoice}
             onCurrencyChange={() => {}}
             onPrint={() => {}}
-            onToggleFavorite={() => {}}
           />
 
           <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
@@ -141,18 +123,8 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
               />
             </motion.div>
           </div>
-
-          {/* Analyze Invoice Button */}
-
-          {/* All Dialogs */}
-          <DialogContainer
-            invoice={invoice}
-            merchant={merchant}
-            selectedMode={selectedDialogMode}
-            selectedRecipe={selectedRecipe}
-            selectedMetadata={selectedMetadata}
-          />
         </section>
+        <DialogContainer />
       </CurrencyProvider>
     </DialogProvider>
   );

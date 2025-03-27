@@ -123,12 +123,12 @@ const Steps = () => {
 
   return (
     <>
-      {steps.map((step, index) => (
+      {steps.map((step) => (
         <div
           className='relative flex pb-12'
-          key={index}>
+          key={step.title}>
           <div className='absolute inset-0 flex h-full w-10 items-center justify-center'>
-            {step != steps[steps.length - 1] && <div className='pointer-events-none h-full w-1 bg-gray-200' />}
+            {step != steps.at(-1) && <div className='pointer-events-none h-full w-1 bg-gray-200' />}
           </div>
           <div className='relative z-10 inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500'>
             {step.icon}

@@ -2,7 +2,6 @@
 
 "use client";
 
-import {Invoice} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -14,7 +13,7 @@ import {
   Input,
   Label,
 } from "@arolariu/components";
-import {useMemo, useState} from "react";
+import {useCallback, useState} from "react";
 import {TbDiscFilled} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
@@ -31,26 +30,26 @@ export const VALID_METADATA_KEYS = [
   {key: "taxAmount", label: "Tax Amount", readonly: true},
 ];
 
-type Props = {
-  invoice: Invoice;
-  metadata: Record<string, string>;
-  mode: "add" | "edit";
-};
-
-const MetadataAddDialog = ({invoice}: Readonly<{invoice: Invoice}>) => {
+const AddDialog = () => {
   const {isOpen, open, close} = useDialog("metadata");
   const [addedMetadata, setAddedMetadata] = useState<{key: string; value: string}>({
     key: "",
     value: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setAddedMetadata((prev) => ({...prev, [e.target.name]: e.target.value}));
-  };
+  }, []);
 
-  const handleSave = () => {
-    // Save the added metadata
-  };
+  const handleSave = useCallback(
+    () => {
+      // Save the added metadata
+      console.log("Saving added metadata:", addedMetadata);
+      close();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- close fn is stable
+    [addedMetadata],
+  );
 
   return (
     <Dialog
@@ -67,9 +66,10 @@ const MetadataAddDialog = ({invoice}: Readonly<{invoice: Invoice}>) => {
             <Label htmlFor='key'>Metadata Key</Label>
             <Input
               id='key'
+              name='key'
               value={addedMetadata.key}
               onChange={handleChange}
-              placeholder='Enter metadata key'
+              placeholder='Enter key'
             />
           </div>
 
@@ -104,7 +104,7 @@ const MetadataAddDialog = ({invoice}: Readonly<{invoice: Invoice}>) => {
   );
 };
 
-const MetadataEditDialog = ({invoice, metadata}: Readonly<{invoice: Invoice; metadata: Record<string, string>}>) => {
+const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
   const {isOpen, open, close} = useDialog("metadata");
   const [editedMetadata, setEditedMetadata] = useState<Record<string, string>>(metadata);
 
@@ -168,24 +168,64 @@ const MetadataEditDialog = ({invoice, metadata}: Readonly<{invoice: Invoice; met
   );
 };
 
-export function MetadataDialog(props: Readonly<Props>) {
-  const {invoice, metadata, mode} = props;
+const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
+  const {isOpen, open, close} = useDialog("metadata");
 
-  const DialogComponent = useMemo(() => {
-    switch (mode) {
-      case "add":
-        return <MetadataAddDialog invoice={invoice} />;
-      case "edit":
-        return (
-          <MetadataEditDialog
-            invoice={invoice}
-            metadata={metadata}
-          />
-        );
-      default:
-        return null;
-    }
-  }, [mode]);
+  const handleDelete = () => {
+    // Delete the metadata
+    console.log("Deleting metadata:", metadata);
+    close();
+  };
 
-  return DialogComponent;
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
+      <DialogContent className='sm:max-w-md'>
+        <DialogHeader>
+          <DialogTitle>Delete Metadata</DialogTitle>
+          <DialogDescription>Are you sure you want to delete this metadata?</DialogDescription>
+        </DialogHeader>
+
+        <DialogFooter>
+          <Button
+            type='button'
+            variant='outline'
+            onClick={close}>
+            Cancel
+          </Button>
+          <Button
+            type='button'
+            onClick={handleDelete}
+            className='bg-red-500 text-white'>
+            Delete
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+/**
+ * Dialog component for managing metadata.
+ * It handles adding, editing, and deleting metadata.
+ * @returns The rendered dialog component for metadata.
+ */
+export function MetadataDialog() {
+  const {
+    currentDialog: {mode, payload},
+  } = useDialog("metadata");
+
+  const metadata = payload as Record<string, string>;
+
+  switch (mode) {
+    case "add":
+      return <AddDialog />;
+    case "delete":
+      return <DeleteDialog metadata={metadata} />;
+    case "edit":
+      return <UpdateDialog metadata={metadata} />;
+    default:
+      return null;
+  }
 }

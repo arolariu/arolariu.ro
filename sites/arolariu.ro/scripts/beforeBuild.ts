@@ -2,9 +2,7 @@
 
 /**
  * This script will run before the build process starts.
- * It will run a couple of subsequent scripts to perform the following tasks:
  */
-
 export default async function main() {
   console.info("[arolariu.ro::beforeBuild] Running before build scripts...");
 
@@ -14,19 +12,13 @@ export default async function main() {
     console.info("[arolariu.ro::beforeBuild] Finished cleaning build directory.");
   });
 
-  // 2. Check translations using the checkTranslations script
-  console.info("[arolariu.ro::beforeBuild] Checking translations...");
-  await import("./checkTranslations").then(() => {
-    console.info("[arolariu.ro::beforeBuild] Finished checking translations.");
-  });
-
-  // 3. Format code using the format script
+  // 2. Format code using the format script
   console.info("[arolariu.ro::beforeBuild] Formatting code...");
   await import("./format").then(() => {
     console.info("[arolariu.ro::beforeBuild] Finished formatting code.");
   });
 
-  // 4. Generate new licenses & acknowledegmenets using the generateAcknowledgements script
+  // 3. Generate new licenses & acknowledegmenets using the generateAcknowledgements script
   console.info("[arolariu.ro::beforeBuild] Generating licenses...");
   await import("./generateAcknowledgements").then(() => {
     console.info("[arolariu.ro::beforeBuild] Finished generating licenses.");

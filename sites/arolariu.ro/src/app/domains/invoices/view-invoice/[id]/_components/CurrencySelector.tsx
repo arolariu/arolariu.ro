@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {motion} from "framer-motion";
+import {motion} from "motion/react";
 import React from "react";
 import {TbChevronDown, TbCoin} from "react-icons/tb";
 import {availableCurrencies, useCurrencyContext} from "../_contexts/CurrencyContext";
@@ -64,7 +64,7 @@ export function CurrencySelector() {
                   className={`flex items-center gap-2 ${curr.code === currency.code ? "bg-muted" : ""}`}>
                   {curr.icon}
                   <span>{curr.name}</span>
-                  <span className='text-muted-foreground ml-auto'>{curr.symbol}</span>
+                  <span className='ml-auto text-muted-foreground'>{curr.symbol}</span>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

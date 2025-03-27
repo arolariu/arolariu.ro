@@ -2,9 +2,7 @@
 
 "use client";
 
-// eslint-disable-next-line n/no-extraneous-import -- importing framer-motion is standard.
-import {motion} from "framer-motion";
-
+import {motion} from "motion/react";
 import {useTheme} from "next-themes";
 import {useCallback, useEffect, useState} from "react";
 import {GoMoon, GoSun} from "react-icons/go";

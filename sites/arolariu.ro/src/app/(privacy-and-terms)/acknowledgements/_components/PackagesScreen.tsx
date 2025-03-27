@@ -33,8 +33,7 @@ import {
   TabsTrigger,
 } from "@arolariu/components";
 
-// eslint-disable-next-line n/no-extraneous-import -- importing framer-motion is standard.
-import {motion} from "framer-motion";
+import {motion} from "motion/react";
 
 import Link from "next/link";
 import {useCallback} from "react";
@@ -243,7 +242,7 @@ export default function PackagesScreen({packages}: Readonly<Props>) {
                       <CardHeader>
                         <div className='flex items-center justify-between'>
                           <CardTitle className='text-xl'>{pkg.name}</CardTitle>
-                          <span className='bg-muted rounded-full px-2 py-1 text-xs'>{pkg.version}</span>
+                          <span className='rounded-full bg-muted px-2 py-1 text-xs'>{pkg.version}</span>
                         </div>
                         <div className='mt-2 flex items-center'>
                           <PackageBadge type={extractPackageType(pkg)} />
@@ -263,7 +262,7 @@ export default function PackagesScreen({packages}: Readonly<Props>) {
                               href={pkg.homepage}
                               target='_blank'
                               rel='noopener noreferrer'
-                              className='text-muted-foreground flex items-center text-sm transition-colors hover:text-primary'>
+                              className='flex items-center text-sm text-muted-foreground transition-colors hover:text-primary'>
                               <FaExternalLinkAlt className='mr-1 h-4 w-4' />
                               <span>Website</span>
                             </Link>
@@ -277,7 +276,7 @@ export default function PackagesScreen({packages}: Readonly<Props>) {
               </div>
             ) : (
               <div className='py-12 text-center'>
-                <TbPackage className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
+                <TbPackage className='mx-auto mb-4 h-12 w-12 text-muted-foreground' />
                 <p className='text-muted-foreground'>No packages found.</p>
                 <p className='text-muted-foreground'>Try adjusting the filters above.</p>
               </div>
@@ -321,7 +320,7 @@ export default function PackagesScreen({packages}: Readonly<Props>) {
                             href={pkg.homepage}
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='hover:bg-muted rounded-md p-2 transition-colors'
+                            className='rounded-md p-2 transition-colors hover:bg-muted'
                             title='Website'>
                             <FaExternalLinkAlt className='mx-auto h-4 w-4' />
                             <span className='sr-only'>Website</span>
@@ -334,7 +333,7 @@ export default function PackagesScreen({packages}: Readonly<Props>) {
               </motion.div>
             ) : (
               <div className='py-12 text-center'>
-                <TbPackage className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
+                <TbPackage className='mx-auto mb-4 h-12 w-12 text-muted-foreground' />
                 <p className='text-muted-foreground'>No packages found.</p>
                 <p className='text-muted-foreground'>Try adjusting the filters above.</p>
               </div>
@@ -352,7 +351,7 @@ export default function PackagesScreen({packages}: Readonly<Props>) {
           <TbPackage className='mr-2 h-6 w-6' />
           <h2 className='text-xl font-semibold'>Open Source Matters</h2>
         </div>
-        <p className='text-muted-foreground mx-auto max-w-2xl'>
+        <p className='mx-auto max-w-2xl text-muted-foreground'>
           This project stands on the shoulders of giants. We&apos;re grateful for the open-source community and all the developers who have
           contributed to these packages.
         </p>

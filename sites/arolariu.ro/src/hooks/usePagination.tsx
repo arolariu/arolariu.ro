@@ -4,14 +4,14 @@
 
 import {useCallback, useEffect, useMemo, useState} from "react";
 
-type HookInputType<T> = {
+type PaginationWithSearchInputType<T> = {
   items: T[];
   initialPageSize?: number;
   initialPage?: number;
   searchQuery?: string;
 };
 
-type HookOutputType<T> = {
+type PaginationWithSearchOutputType<T> = {
   currentPage: number;
   setCurrentPage: (page: number) => void;
   pageSize: number;
@@ -37,7 +37,12 @@ type HookOutputType<T> = {
  *   searchQuery: searchTerm
  * });
  */
-export function usePagination<T>({items, initialPageSize = 5, initialPage = 1, searchQuery}: HookInputType<T>): HookOutputType<T> {
+export function usePaginationWithSearch<T>({
+  items,
+  initialPageSize = 5,
+  initialPage = 1,
+  searchQuery,
+}: PaginationWithSearchInputType<T>): PaginationWithSearchOutputType<T> {
   // State for pagination controls
   const [currentPage, setCurrentPage] = useState<number>(initialPage);
   const [pageSize, setPageSize] = useState<number>(initialPageSize);

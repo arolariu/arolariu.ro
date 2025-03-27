@@ -58,6 +58,7 @@ export default function RenderCreateInvoiceScreen() {
         event.preventDefault();
         setUploadStatus("PENDING__SERVERSIDE");
         const imagesCopy = [...images];
+        // eslint-disable-next-line functional/no-loop-statements
         for (const image of imagesCopy) {
           const blobInformation = await extractBase64FromBlob(image); // client-action
           const {status} = await uploadInvoice({blobInformation, userInformation}); // server-action

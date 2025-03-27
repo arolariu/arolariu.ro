@@ -3,9 +3,15 @@
 
 import {isBrowserStorageAvailable} from "@/lib/utils.client";
 import type {NextFont} from "next/dist/compiled/@next/font";
-import {Caudex} from "next/font/google";
-import React, {createContext, type Dispatch, type SetStateAction, useContext, useEffect, useMemo, useState} from "react";
+import {Atkinson_Hyperlegible, Caudex} from "next/font/google";
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from "react";
 
+const STORAGE_KEY = "selectedFont";
+
+/**
+ * Default font for the application.
+ * This font is used when no other font is selected.
+ */
 const defaultFont: NextFont = Caudex({
   weight: "700",
   style: "normal",
@@ -13,18 +19,31 @@ const defaultFont: NextFont = Caudex({
   preload: true,
 });
 
-interface FontContextType {
+/**
+ * Dyslexic font for the application.
+ * This font is used when the user selects the dyslexic font option.
+ * It is designed to improve readability for individuals with dyslexia.
+ */
+const dyslexicFont: NextFont = Atkinson_Hyperlegible({
+  weight: "400",
+  style: "normal",
+  subsets: ["latin"],
+  preload: false,
+});
+
+type FontType = "normal" | "dyslexic";
+
+/**
+ * FontContextValueType is an interface that defines the shape of the context value
+ * provided by the FontContext. It includes the current font and a function to set the font.
+ * This interface is used to ensure type safety when consuming the context in components.
+ */
+interface FontContextValueType {
   font: NextFont;
-  setFont: Dispatch<SetStateAction<NextFont>>;
+  setFont: (fontType: FontType) => void;
 }
 
-const FontContext = createContext<FontContextType | undefined>(undefined);
-
-interface FontContextProviderProps {
-  readonly children: React.ReactNode;
-  //eslint-disable-next-line react/require-default-props
-  readonly currentFont?: NextFont;
-}
+const FontContext = createContext<FontContextValueType | undefined>(undefined);
 
 /**
  * FontContextProvider component provides a context for managing font selection.
@@ -36,28 +55,63 @@ interface FontContextProviderProps {
  * </FontContextProvider>
  * ```
  */
-export function FontContextProvider({children, currentFont}: FontContextProviderProps): React.JSX.Element {
-  const [selectedFont, setSelectedFont] = useState<NextFont>(() => {
+export function FontContextProvider({children}: Readonly<{children: React.ReactNode}>): React.JSX.Element {
+  const [fontType, setFontType] = useState<FontType>((): FontType => {
     if (isBrowserStorageAvailable("localStorage")) {
-      const storedFont = localStorage?.getItem("selectedFont") ?? null;
-      return storedFont ? JSON.parse(storedFont) : (currentFont ?? defaultFont);
+      const storedPreference = localStorage.getItem(STORAGE_KEY);
+      if (storedPreference === "normal" || storedPreference === "dyslexic") {
+        return storedPreference;
+      }
     }
-    return currentFont ?? defaultFont;
+    return "normal"; // Default fallback
   });
 
-  useEffect(() => {
-    if (currentFont && currentFont !== selectedFont) {
-      setSelectedFont(currentFont); // set to the current font
-    } else if (!currentFont && selectedFont !== defaultFont) {
-      setSelectedFont(defaultFont); // set to the default font
+  /**
+   * Function to handle font change.
+   * This function takes a font type as an argument and updates the selectedFont state
+   * accordingly. It will also trigger the useEffect call, since the selectedFont state is a dependency.
+   * @param fontType The type of font to set (normal or dyslexic).
+   */
+  const handleFontChange = useCallback((fontType: "normal" | "dyslexic") => {
+    if (isBrowserStorageAvailable("localStorage")) {
+      localStorage.setItem(STORAGE_KEY, fontType);
     }
-  }, [currentFont, selectedFont]);
+    setFontType(fontType);
+  }, []);
 
+  /**
+   * Sync with localStorage changes (useful for multi-tab scenarios).
+   */
   useEffect(() => {
-    localStorage.setItem("selectedFont", JSON.stringify(selectedFont));
-  }, [selectedFont]);
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY && event.newValue) {
+        // Update the font type based on the new value from localStorage
+        const newFontType = event.newValue as FontType;
+        if (newFontType === "normal" || newFontType === "dyslexic") {
+          setFontType(newFontType);
+        }
+      }
+    };
 
-  const value = useMemo(() => ({font: selectedFont, setFont: setSelectedFont}), [selectedFont]);
+    globalThis.addEventListener("storage", handleStorageChange);
+    return () => globalThis.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  /**
+   * Memoized value for the FontContext.
+   * This value is created using useMemo to avoid unnecessary re-renders.
+   * It includes the current font and a function to set the font.
+   * The value is updated whenever the selectedFont state changes.
+   * This ensures that the context consumers always receive the latest font value.
+   */
+  const value = useMemo(
+    () => ({
+      font: fontType === "dyslexic" ? dyslexicFont : defaultFont,
+      setFont: handleFontChange,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- handleFontChange is stable and does not change.
+    [fontType],
+  );
   return <FontContext.Provider value={value}>{children}</FontContext.Provider>;
 }
 
@@ -68,9 +122,8 @@ export function FontContextProvider({children, currentFont}: FontContextProvider
  * @returns The current context value of FontContext.
  * @throws If the hook is used outside of a FontContextProvider.
  */
-export const useFontContext = (): FontContextType => {
+export const useFontContext = (): FontContextValueType => {
   const context = useContext(FontContext);
-
   if (context === undefined) {
     throw new Error("useFontContext must be used within a FontContextProvider");
   }

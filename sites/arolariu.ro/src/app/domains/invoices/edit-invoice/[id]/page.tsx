@@ -3,7 +3,6 @@
 import {fetchUser} from "@/lib/actions/user/fetchUser";
 import ForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";
-import RenderEditInvoiceScreen from "./island";
 
 type Props = {params: Promise<{id: string}>};
 
@@ -20,13 +19,14 @@ export const metadata: Metadata = {
 export default async function EditInvoicePage({params}: Readonly<Props>) {
   const pageParams = await params;
   const invoiceIdentifier = pageParams.id;
+  console.log("Invoice ID:", invoiceIdentifier);
 
   const {isAuthenticated} = await fetchUser();
-
   if (!isAuthenticated) return <ForbiddenScreen />;
+
   return (
     <main className='px-5 py-24'>
-      <RenderEditInvoiceScreen invoiceIdentifier={invoiceIdentifier} />
+      <h1> WIP !!!!</h1>
     </main>
   );
 }

@@ -1,7 +1,7 @@
 /** @format */
 
 "use client";
-import {usePagination} from "@/hooks/usePagination";
+import {usePaginationWithSearch} from "@/hooks/usePagination";
 import {Recipe} from "@/types/invoices";
 import {
   Button,
@@ -15,7 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {motion} from "framer-motion";
+import {motion} from "motion/react";
 import {TbConfetti, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 import {RecipeCard} from "../cards/RecipeCard";
@@ -31,8 +31,9 @@ type Props = {
  * @returns The recipes tab component, CSR'ed.
  */
 export function RecipesTab({recipes}: Readonly<Props>) {
-  const {open} = useDialog("recipe");
-  const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePagination({items: recipes, initialPageSize: 4});
+  const {open: openAddDialog} = useDialog("recipe", "add");
+
+  const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: recipes, initialPageSize: 4});
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
@@ -63,7 +64,7 @@ export function RecipesTab({recipes}: Readonly<Props>) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant={"ghost"}
+                    variant='ghost'
                     onClick={() => {}}
                     size='sm'>
                     <TbConfetti className='mr-2 h-4 w-4' />
@@ -77,7 +78,7 @@ export function RecipesTab({recipes}: Readonly<Props>) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={open}
+                    onClick={openAddDialog}
                     size='sm'>
                     <TbPlus className='mr-2 h-4 w-4' />
                     Add Recipe
@@ -102,7 +103,7 @@ export function RecipesTab({recipes}: Readonly<Props>) {
             </div>
           ) : (
             <div className='py-8 text-center'>
-              <p className='text-muted-foreground mb-4'>No recipes available yet</p>
+              <p className='mb-4 text-muted-foreground'>No recipes available yet</p>
               <Button
                 onClick={() => {}}
                 variant='outline'>

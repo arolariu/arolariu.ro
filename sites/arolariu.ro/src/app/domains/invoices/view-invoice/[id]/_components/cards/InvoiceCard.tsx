@@ -18,7 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {motion} from "framer-motion";
+import {motion} from "motion/react";
 import {TbCreditCard, TbHeart} from "react-icons/tb";
 import {ItemsTable} from "../tables/ItemsTable";
 
@@ -36,10 +36,10 @@ type Props = {
 export function InvoiceCard({invoice, merchant}: Readonly<Props>) {
   const {paymentInformation, category, isImportant, description} = invoice;
 
-  const categoryKey = Object.keys(InvoiceCategory)[category];
+  const categoryKey = Object.keys(InvoiceCategory).at(category);
   const categoryAsString = InvoiceCategory[categoryKey as keyof typeof InvoiceCategory];
 
-  const paymentKey = Object.keys(PaymentType)[paymentInformation?.paymentType!];
+  const paymentKey = Object.keys(PaymentType).at(paymentInformation?.paymentType!);
   const paymentAsString = PaymentType[paymentKey as keyof typeof PaymentType];
 
   return (
@@ -75,7 +75,7 @@ export function InvoiceCard({invoice, merchant}: Readonly<Props>) {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className='text-muted-foreground mb-1 text-sm font-medium'>Date</h3>
+              <h3 className='mb-1 text-sm font-medium text-muted-foreground'>Date</h3>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -90,29 +90,29 @@ export function InvoiceCard({invoice, merchant}: Readonly<Props>) {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className='text-muted-foreground mb-1 text-sm font-medium'>Category</h3>
+              <h3 className='mb-1 text-sm font-medium text-muted-foreground'>Category</h3>
               <Badge variant='outline'>{categoryAsString}</Badge>
             </motion.div>
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className='text-muted-foreground mb-1 text-sm font-medium'>Payment Method</h3>
+              <h3 className='mb-1 text-sm font-medium text-muted-foreground'>Payment Method</h3>
               <div className='flex items-center'>
-                <TbCreditCard className='text-muted-foreground mr-2 h-4 w-4' />
+                <TbCreditCard className='mr-2 h-4 w-4 text-muted-foreground' />
                 <span>{paymentAsString}</span>
               </div>
             </motion.div>
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <h3 className='text-muted-foreground mb-1 text-sm font-medium'>Total Amount</h3>
+              <h3 className='mb-1 text-sm font-medium text-muted-foreground'>Total Amount</h3>
               <p className='text-lg font-semibold'>{formatCurrency(paymentInformation?.totalCostAmount!, paymentInformation?.currency)}</p>
             </motion.div>
           </div>
 
           <Separator />
 
-          <ItemsTable items={invoice.items} />
+          <ItemsTable invoice={invoice} />
         </CardContent>
       </Card>
     </motion.div>

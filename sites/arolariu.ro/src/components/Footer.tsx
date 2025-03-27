@@ -48,7 +48,7 @@ const FooterNavigation = () => {
   const t = useTranslations("Footer.navigation");
 
   return (
-    <div className='flex gap-16 2xsm:flex-col 2xsm:text-center lg:flex-row lg:text-left'>
+    <div className='flex gap-8 2xsm:flex-col 2xsm:text-center lg:flex-row lg:text-left'>
       <div>
         <p className='cursor-default font-semibold tracking-wide text-white hover:text-yellow-500'>{t("subdomains")}</p>
         <ul className='mt-2 space-y-2'>
@@ -138,8 +138,8 @@ export default async function Footer() {
         />
       </svg>
 
-      <div className='mx-auto pt-12 text-white sm:max-w-xl md:max-w-full md:px-24 lg:max-w-screen-xl lg:px-8'>
-        <div className='mb-8 grid gap-16 sm:grid-cols-2 lg:grid-cols-3'>
+      <div className='mx-auto pt-12 text-white md:px-24 lg:max-w-screen-xl lg:px-8'>
+        <div className='mb-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3'>
           <FooterHero />
           <FooterNavigation />
         </div>
@@ -178,7 +178,7 @@ export default async function Footer() {
         <p className='text-sm text-slate-300 2xsm:text-center md:text-end'>
           {t("builtOn")}
           <code
-            className='tooltip cursor-help'
+            className='tooltip tooltip-left cursor-help'
             data-tip={new Date(TIMESTAMP)}>
             {TIMESTAMP.split("T")[0]}
           </code>

@@ -14,5 +14,5 @@ export default function RenderViewInvoicesScreen() {
   const invoices = FakeInvoiceBigList;
 
   if (invoices.length === 0) return <InvoicesNotFound />;
-  return <section></section>;
+  return <section />;
 }

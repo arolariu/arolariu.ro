@@ -7,7 +7,7 @@ import {cookies} from "next/headers";
 /**
  * This function gets a cookie from the request.
  */
-export async function getCookie({name}: Readonly<{name: string}>) {
+export async function getCookie(name: string): Promise<string | undefined> {
   const allCookies = await cookies();
   const targetedCookie = allCookies.get(name);
   const targetedCookieValue = targetedCookie?.value;
@@ -17,8 +17,7 @@ export async function getCookie({name}: Readonly<{name: string}>) {
 /**
  * This function sets a cookie in the response.
  */
-export async function setCookie({name, value}: Readonly<{name: string; value: string}>) {
+export async function setCookie(name: string, value: string): Promise<void> {
   const allCookies = await cookies();
-  const updatedCookies = allCookies.set(name, value);
-  return updatedCookies;
+  allCookies.set(name, value, {path: "/"});
 }

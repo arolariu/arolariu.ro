@@ -1,7 +1,7 @@
 /** @format */
 
 import {act, renderHook} from "@testing-library/react";
-import {usePagination} from "./usePagination";
+import {usePaginationWithSearch} from "./usePagination";
 
 describe("usePaginationItems hook", () => {
   const mockItems = [
@@ -18,7 +18,7 @@ describe("usePaginationItems hook", () => {
   ];
 
   it("should initialize with default values", () => {
-    const {result} = renderHook(() => usePagination({items: mockItems}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mockItems}));
 
     expect(result.current.currentPage).toBe(1);
     expect(result.current.pageSize).toBe(5);
@@ -28,7 +28,7 @@ describe("usePaginationItems hook", () => {
   });
 
   it("should initialize with custom initial values", () => {
-    const {result} = renderHook(() => usePagination({items: mockItems, initialPageSize: 3, initialPage: 2}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mockItems, initialPageSize: 3, initialPage: 2}));
 
     expect(result.current.currentPage).toBe(2);
     expect(result.current.pageSize).toBe(3);
@@ -38,7 +38,7 @@ describe("usePaginationItems hook", () => {
   });
 
   it("should change page correctly", () => {
-    const {result} = renderHook(() => usePagination({items: mockItems}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mockItems}));
 
     act(() => {
       result.current.setCurrentPage(2);
@@ -50,7 +50,7 @@ describe("usePaginationItems hook", () => {
   });
 
   it("should change page size correctly", () => {
-    const {result} = renderHook(() => usePagination({items: mockItems}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mockItems}));
 
     act(() => {
       result.current.setPageSize(3);
@@ -62,7 +62,7 @@ describe("usePaginationItems hook", () => {
   });
 
   it("should filter items based on search query", () => {
-    const {result} = renderHook(() => usePagination({items: mockItems, searchQuery: "Item 1"}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mockItems, searchQuery: "Item 1"}));
 
     // Should match "Item 1" and "Item 10"
     expect(result.current.paginatedItems).toHaveLength(2);
@@ -71,7 +71,7 @@ describe("usePaginationItems hook", () => {
   });
 
   it("should reset to page 1 when search query changes", () => {
-    const {result, rerender} = renderHook(({search}) => usePagination({items: mockItems, searchQuery: search}), {
+    const {result, rerender} = renderHook(({search}) => usePaginationWithSearch({items: mockItems, searchQuery: search}), {
       initialProps: {search: ""},
     });
 
@@ -88,18 +88,20 @@ describe("usePaginationItems hook", () => {
   });
 
   it("should adjust current page when it exceeds total pages", () => {
-    const {result} = renderHook(() => usePagination({items: mockItems, initialPageSize: 3, initialPage: 4}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mockItems, initialPageSize: 3, initialPage: 4}));
 
     expect(result.current.currentPage).toBe(4);
 
     // Reduce items to make total pages less than current page
-    const {result: newResult} = renderHook(() => usePagination({items: mockItems.slice(0, 3), initialPageSize: 3, initialPage: 4}));
+    const {result: newResult} = renderHook(() =>
+      usePaginationWithSearch({items: mockItems.slice(0, 3), initialPageSize: 3, initialPage: 4}),
+    );
 
     expect(newResult.current.currentPage).toBe(1);
   });
 
   it("should reset pagination correctly", () => {
-    const {result} = renderHook(() => usePagination({items: mockItems, initialPageSize: 3, initialPage: 1}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mockItems, initialPageSize: 3, initialPage: 1}));
 
     act(() => {
       result.current.setCurrentPage(3);
@@ -118,7 +120,7 @@ describe("usePaginationItems hook", () => {
   });
 
   it("should paginate custom items array", () => {
-    const {result} = renderHook(() => usePagination({items: mockItems, initialPageSize: 3}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mockItems, initialPageSize: 3}));
 
     const customItems = ["a", "b", "c", "d", "e", "f"];
     const paginatedCustomItems = result.current.paginate(customItems);
@@ -134,7 +136,7 @@ describe("usePaginationItems hook", () => {
   });
 
   it("should handle empty items array", () => {
-    const {result} = renderHook(() => usePagination({items: []}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: []}));
 
     expect(result.current.currentPage).toBe(1);
     expect(result.current.pageSize).toBe(5);
@@ -149,7 +151,7 @@ describe("usePaginationItems hook", () => {
       {id: 3, title: "Item 3"},
     ];
 
-    const {result} = renderHook(() => usePagination({items: mixedItems}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mixedItems}));
 
     expect(result.current.currentPage).toBe(1);
     expect(result.current.pageSize).toBe(5);
@@ -158,33 +160,33 @@ describe("usePaginationItems hook", () => {
   });
 
   it("should handle invalid search query", () => {
-    const {result} = renderHook(() => usePagination({items: mockItems, searchQuery: "Invalid Item"}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mockItems, searchQuery: "Invalid Item"}));
 
     expect(result.current.paginatedItems).toHaveLength(0);
   });
 
   it("should handle search query with special characters", () => {
-    const {result} = renderHook(() => usePagination({items: mockItems, searchQuery: "Item 1!"}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mockItems, searchQuery: "Item 1!"}));
 
     expect(result.current.paginatedItems).toHaveLength(0);
   });
 
   it("should handle search query with empty string", () => {
-    const {result} = renderHook(() => usePagination({items: mockItems, searchQuery: ""}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mockItems, searchQuery: ""}));
 
     expect(result.current.paginatedItems).toHaveLength(5);
     expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
   });
 
   it("should handle search query with only spaces", () => {
-    const {result} = renderHook(() => usePagination({items: mockItems, searchQuery: "   "}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mockItems, searchQuery: "   "}));
 
     expect(result.current.paginatedItems).toHaveLength(5);
     expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
   });
 
   it("should correctly handle search query with mixed case", () => {
-    const {result} = renderHook(() => usePagination({items: mockItems, searchQuery: "item 1"}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mockItems, searchQuery: "item 1"}));
 
     expect(result.current.paginatedItems).toHaveLength(2);
     expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
@@ -192,7 +194,7 @@ describe("usePaginationItems hook", () => {
   });
 
   it("should not re-render unnecessarily when search query is the same", () => {
-    const {result, rerender} = renderHook(({search}) => usePagination({items: mockItems, searchQuery: search}), {
+    const {result, rerender} = renderHook(({search}) => usePaginationWithSearch({items: mockItems, searchQuery: search}), {
       initialProps: {search: "Item 1"},
     });
 
@@ -210,7 +212,7 @@ describe("usePaginationItems hook", () => {
       {id: 3, name: "Item 3"},
     ];
 
-    const {result} = renderHook(() => usePagination({items: invalidItems}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: invalidItems}));
 
     expect(result.current.paginatedItems).toHaveLength(3);
     expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
@@ -225,7 +227,7 @@ describe("usePaginationItems hook", () => {
       {id: 3, name: "Item 3"},
     ];
 
-    const {result} = renderHook(() => usePagination({items: itemsWithMissingProps}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: itemsWithMissingProps}));
 
     expect(result.current.paginatedItems).toHaveLength(3);
     expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
@@ -240,7 +242,7 @@ describe("usePaginationItems hook", () => {
       {id: 3, name: null}, // Null value
     ];
 
-    const {result} = renderHook(() => usePagination({items: itemsWithNullValues}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: itemsWithNullValues}));
 
     expect(result.current.paginatedItems).toHaveLength(3);
     expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
@@ -255,7 +257,7 @@ describe("usePaginationItems hook", () => {
       {id: 3, name: "Item 3"},
     ];
 
-    const {result} = renderHook(() => usePagination({items: itemsWithEmptyStrings}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: itemsWithEmptyStrings}));
 
     expect(result.current.paginatedItems).toHaveLength(3);
     expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
@@ -270,7 +272,7 @@ describe("usePaginationItems hook", () => {
       {id: 3, name: "#Item 3"},
     ];
 
-    const {result} = renderHook(() => usePagination({items: itemsWithSpecialChars}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: itemsWithSpecialChars}));
 
     expect(result.current.paginatedItems).toHaveLength(3);
     expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1!"});
@@ -285,7 +287,7 @@ describe("usePaginationItems hook", () => {
       {id: 3, name: true}, // Boolean instead of string
     ];
 
-    const {result} = renderHook(() => usePagination({items: mixedTypeItems}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mixedTypeItems}));
 
     expect(result.current.paginatedItems).toHaveLength(3);
     expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
@@ -300,7 +302,7 @@ describe("usePaginationItems hook", () => {
       {id: 3}, // Missing name
     ];
 
-    const {result} = renderHook(() => usePagination({items: itemsWithMissingIDs}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: itemsWithMissingIDs}));
 
     expect(result.current.paginatedItems).toHaveLength(3);
 
@@ -318,7 +320,7 @@ describe("usePaginationItems hook", () => {
       {id: 5, name: undefined}, // Undefined
     ];
 
-    const {result} = renderHook(() => usePagination({items: mixedTypeItems}));
+    const {result} = renderHook(() => usePaginationWithSearch({items: mixedTypeItems}));
 
     expect(result.current.paginatedItems).toHaveLength(5);
     expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});

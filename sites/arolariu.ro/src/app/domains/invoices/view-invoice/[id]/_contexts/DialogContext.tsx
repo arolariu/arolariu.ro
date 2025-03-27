@@ -2,7 +2,7 @@
 
 "use client";
 
-import {createContext, useCallback, useContext, useMemo, useState, type ReactNode} from "react";
+import {createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode} from "react";
 
 /**
  * DialogType is a union type representing the different types of dialogs that can be opened.
@@ -24,13 +24,24 @@ export type DialogType =
   | "feedback"
   | null; // null is used to indicate no dialog is open
 
+export type DialogMode = "view" | "add" | "edit" | "delete" | "share" | null;
+
+// eslint-disable-next-line sonarjs/redundant-type-aliases
+export type DialogPayload = unknown;
+
+type DialogCurrent = {
+  type: DialogType;
+  mode: DialogMode;
+  payload: DialogPayload;
+};
+
 /**
  * Interface representing the value of the Dialog context.
  */
 interface DialogContextValue {
-  currentDialog: DialogType;
+  currentDialog: DialogCurrent;
   isOpen: (dialog: DialogType) => boolean;
-  openDialog: (dialog: DialogType) => void;
+  openDialog: (dialog: DialogType, mode?: DialogMode, payload?: DialogPayload) => void;
   closeDialog: () => void;
 }
 
@@ -44,8 +55,6 @@ const DialogContext = createContext<DialogContextValue | undefined>(undefined);
  * DialogProvider component that manages dialog state for the application.
  * This component creates a context that tracks which dialog is currently open
  * and provides methods to open and close dialogs.
- *
- * @component
  * @example
  * ```tsx
  * // Wrap your component tree with DialogProvider
@@ -53,13 +62,21 @@ const DialogContext = createContext<DialogContextValue | undefined>(undefined);
  *   <YourApp />
  * </DialogProvider>
  * ```
- *
- * @param props - The component props
- * @param props.children - The child components to be wrapped by the provider
  * @returns A context provider component that manages dialog state
  */
 export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
-  const [currentDialog, setCurrentDialog] = useState<DialogType>(null);
+  const [dialogState, setDialogState] = useState<DialogCurrent>({
+    type: null,
+    mode: null,
+    payload: null,
+  });
+
+  // Create a stable reference to the current dialog
+  const currentDialog = useRef<DialogCurrent>({
+    type: null,
+    mode: null,
+    payload: null,
+  });
 
   /**
    * Check to see if a specific dialog is open.
@@ -67,7 +84,7 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
    * whether that dialog is currently open.
    * It uses the currentDialog state to determine if the dialog is open.
    */
-  const isOpen = useCallback((dialog: DialogType) => currentDialog === dialog, [currentDialog]);
+  const isOpen = useCallback((dialog: DialogType) => currentDialog.current.type === dialog, []);
 
   /**
    * This function tries to open a dialog.
@@ -76,11 +93,13 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
    * This is useful for preventing multiple dialogs from being open at the same time.
    * It uses the setCurrentDialog function to update the state.
    */
-  const openDialog = useCallback((dialog: DialogType) => {
-    setCurrentDialog((current) => {
-      if (current === null) return dialog;
-      return current;
-    });
+  const openDialog = useCallback((dialog: DialogType, mode: DialogMode = "view", payload: DialogPayload = null) => {
+    if (currentDialog.current.type === null) {
+      // Update both ref and state atomically
+      // eslint-disable-next-line functional/immutable-data
+      currentDialog.current = {type: dialog, mode, payload};
+      setDialogState(currentDialog.current);
+    }
   }, []);
 
   /**
@@ -91,24 +110,38 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
    * It uses the setCurrentDialog function to update the state.
    * This function does not take any arguments.
    */
-  const closeDialog = useCallback(() => setCurrentDialog(null), []);
+  const closeDialog = useCallback(() => {
+    // eslint-disable-next-line functional/immutable-data
+    currentDialog.current = {type: null, mode: null, payload: null};
+    setDialogState(currentDialog.current);
+  }, []);
 
   // The context value
   const value = useMemo(
     () => ({
-      currentDialog,
+      currentDialog: currentDialog.current,
       isOpen,
       openDialog,
       closeDialog,
     }),
-    [currentDialog],
+
+    /**
+     * Only dialogState is used in the dependency array.
+     * This is to ensure that the context value is updated when the dialog state changes.
+     * The other functions (isOpen, openDialog, closeDialog) are stable and do not need to be re-created.
+     */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [dialogState],
   );
 
   return <DialogContext.Provider value={value}>{children}</DialogContext.Provider>;
 }
 
-// Custom hook for consuming the context
-function useDialogs() {
+/**
+ * Custom hook to use the Dialog context, providing access to the current dialog state and functions to manage it.
+ * @returns The current dialog state and functions to manage it.
+ */
+export function useDialogs() {
   const context = useContext(DialogContext);
   if (context === undefined) {
     throw new Error("useDialogs must be used within a DialogProvider");
@@ -118,22 +151,23 @@ function useDialogs() {
 }
 
 /**
- * useDialog is a custom hook that provides an interface for managing dialog state.
+ * Is a custom hook that provides an interface for managing dialog state.
  * It returns an object containing the current dialog state and functions to open and close dialogs.
- *
- * @param dialogType - The type of dialog to manage
+ * @param dialogType The type of dialog to manage (e.g., "share", "merchant", "recipe")
+ * @param dialogMode Optional mode for the dialog (e.g., "view", "add", "edit", "delete")
+ * @param dialogPayload Optional payload to pass (e.g., data to be displayed in the dialog)
  * @returns An object containing the current dialog state and functions to open and close dialogs
- *
  * @example
  * const {isOpen, open, close} = useDialog("share");
  */
-export function useDialog(dialogType: Exclude<DialogType, null>) {
+export function useDialog(dialogType: Exclude<DialogType, null>, dialogMode?: Exclude<DialogMode, null>, dialogPayload?: DialogPayload) {
   const {currentDialog, isOpen, openDialog, closeDialog} = useDialogs();
 
   return {
     currentDialog,
     isOpen: isOpen(dialogType),
-    open: () => openDialog(dialogType),
+    // We make the open function easier to call for the consumer.
+    open: () => openDialog(dialogType, dialogMode, dialogPayload),
     close: closeDialog,
   } as const;
 }

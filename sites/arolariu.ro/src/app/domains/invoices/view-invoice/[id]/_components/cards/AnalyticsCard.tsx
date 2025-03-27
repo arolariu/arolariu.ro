@@ -2,8 +2,6 @@
 
 "use client";
 
-import type React from "react";
-
 import {formatCurrency} from "@/lib/utils.generic";
 import {Invoice, Merchant} from "@/types/invoices";
 import {
@@ -21,7 +19,7 @@ import {
 import {memo, useMemo} from "react";
 import {TbChartBar, TbChartCandle, TbChartPie, TbMessage, TbShare} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
-import {BarChart, LineChart, PieChart} from "../charts";
+import {BarChart, ChartContainer, LineChart, PieChart} from "../charts";
 
 type Props = {
   invoice: Invoice;
@@ -30,8 +28,8 @@ type Props = {
 
 // Create a memoized version of the component to prevent unnecessary re-renders
 export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Readonly<Props>) {
-  const {open: openFeedback} = useDialog("feedback");
-  const {open: openShare} = useDialog("shareAnalytics");
+  const {open: openFeedback} = useDialog("feedback", "add", {invoice, merchant});
+  const {open: openShare} = useDialog("shareAnalytics", "add", {invoice, merchant});
 
   // Generate mock data for the charts
   const monthlyData = useMemo(() => {
@@ -42,7 +40,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
       const isCurrentMonth = i === currentMonth;
       const isPastMonth = i < currentMonth;
 
-      // Generate realistic spending data
+      // eslint-disable-next-line sonarjs/pseudo-random
       const baseAmount = 2 * (0.7 + Math.random() * 0.6);
       const amount = isPastMonth || isCurrentMonth ? baseAmount : 0;
 
@@ -60,6 +58,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
 
     return categories.map((cat) => {
       const isCurrentCategory = cat.toUpperCase() === currentCategory;
+      // eslint-disable-next-line sonarjs/pseudo-random
       const value = isCurrentCategory ? 2 : 3 * (0.2 + Math.random() * 0.5);
 
       return {
@@ -75,6 +74,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
     const merchantName = merchant.name.toUpperCase();
     return merchants.map((merchant) => {
       const isCurrentMerchant = merchant === merchantName;
+      // eslint-disable-next-line sonarjs/pseudo-random
       const value = isCurrentMerchant ? 2 : 3 * (0.6 + Math.random() * 0.8);
 
       return {
@@ -82,7 +82,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
         value: value,
       };
     });
-  }, []);
+  }, [merchant.name]);
 
   return (
     <Card className='group transition-shadow duration-300 hover:shadow-md'>
@@ -128,7 +128,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
           <TabsContent
             value='trends'
             className='space-y-4'>
-            <div className='text-muted-foreground mb-2 text-sm'>Your spending at {merchant.name} over the past year</div>
+            <div className='mb-2 text-sm text-muted-foreground'>Your spending at {merchant.name} over the past year</div>
             <div className='h-[300px]'>
               <ChartContainer
                 config={{
@@ -152,11 +152,11 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
             </div>
             <div className='mt-4 grid grid-cols-2 gap-4'>
               <div className='space-y-1'>
-                <div className='text-muted-foreground text-sm'>Average Spend</div>
+                <div className='text-sm text-muted-foreground'>Average Spend</div>
                 <div className='text-xl font-bold'>{formatCurrency(2 * 0.85)}</div>
               </div>
               <div className='space-y-1'>
-                <div className='text-muted-foreground text-sm'>Year to Date</div>
+                <div className='text-sm text-muted-foreground'>Year to Date</div>
                 <div className='text-xl font-bold'>{formatCurrency(3 * 5.2)}</div>
               </div>
             </div>
@@ -165,7 +165,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
           <TabsContent
             value='comparison'
             className='space-y-4'>
-            <div className='text-muted-foreground mb-2 text-sm'>How {merchant.name} compares to other merchants</div>
+            <div className='mb-2 text-sm text-muted-foreground'>How {merchant.name} compares to other merchants</div>
             <div className='h-[300px]'>
               <ChartContainer
                 config={{
@@ -187,16 +187,25 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
                 />
               </ChartContainer>
             </div>
-            <div className='text-muted-foreground mt-2 text-sm'>
-              {merchant.name} is {Math.round(Math.random() * 20 + 10)}% {Math.random() > 0.5 ? "higher" : "lower"} than average for similar
-              merchants
+            <div className='mt-2 text-sm text-muted-foreground'>
+              {merchant.name} is{" "}
+              {
+                // eslint-disable-next-line sonarjs/pseudo-random
+                Math.round(Math.random() * 20 + 10)
+              }
+              %{" "}
+              {
+                // eslint-disable-next-line sonarjs/pseudo-random
+                Math.random() > 0.5 ? "higher" : "lower"
+              }{" "}
+              than average for similar merchants
             </div>
           </TabsContent>
 
           <TabsContent
             value='breakdown'
             className='space-y-4'>
-            <div className='text-muted-foreground mb-2 text-sm'>Spending breakdown by category</div>
+            <div className='mb-2 text-sm text-muted-foreground'>Spending breakdown by category</div>
             <div className='h-[300px]'>
               <ChartContainer
                 config={{
@@ -222,8 +231,13 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
                 />
               </ChartContainer>
             </div>
-            <div className='text-muted-foreground mt-2 text-sm'>
-              {"category"} represents {Math.round(Math.random() * 20 + 15)}% of your total monthly spending
+            <div className='mt-2 text-sm text-muted-foreground'>
+              category represents{" "}
+              {Math.round(
+                // eslint-disable-next-line sonarjs/pseudo-random
+                Math.random() * 20 + 15,
+              )}
+              % of your total monthly spending
             </div>
           </TabsContent>
         </Tabs>
@@ -231,18 +245,3 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
     </Card>
   );
 });
-
-// Wrapper for the chart components to provide consistent styling
-function ChartContainer({children, config}: {children: React.ReactNode; config: any}) {
-  return (
-    <div
-      className='h-full w-full'
-      style={
-        {
-          "--color-value": config.value.color,
-        } as React.CSSProperties
-      }>
-      {children}
-    </div>
-  );
-}

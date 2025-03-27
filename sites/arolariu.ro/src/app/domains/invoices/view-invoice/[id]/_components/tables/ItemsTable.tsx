@@ -2,9 +2,9 @@
 
 "use client";
 
-import {usePagination} from "@/hooks/usePagination";
+import {usePaginationWithSearch} from "@/hooks/usePagination";
 import {formatCurrency} from "@/lib/utils.generic";
-import {Product} from "@/types/invoices";
+import {Invoice} from "@/types/invoices";
 import {
   Button,
   Table,
@@ -18,33 +18,42 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {motion} from "framer-motion";
+import {motion} from "motion/react";
+import {useCallback} from "react";
 import {TbEdit} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
-  items: Product[];
+  invoice: Invoice;
 };
 
-export function ItemsTable({items}: Readonly<Props>) {
-  const {open} = useDialog("editItems");
+/**
+ * The ItemsTable component displays a paginated table of invoice items.
+ * It allows users to edit items and view their details.
+ * @param items The list of invoice items to display.
+ * @returns The ItemsTable component, CSR'ed.
+ */
+export function ItemsTable({invoice}: Readonly<Props>) {
+  const {open} = useDialog("editItems", "edit", invoice);
 
-  const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePagination({items, initialPageSize: 5});
+  const totalAmount = invoice.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: invoice.items, initialPageSize: 5});
 
-  const handleNextPage = () => {
+  const handleNextPage = useCallback(() => {
     const nextPage = currentPage + 1;
     if (nextPage <= totalPages) {
       setCurrentPage(nextPage);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, totalPages]);
 
-  const handlePreviousPage = () => {
+  const handlePreviousPage = useCallback(() => {
     const previousPage = currentPage - 1;
     if (previousPage >= 1) {
       setCurrentPage(previousPage);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
   return (
     <div>
@@ -69,20 +78,20 @@ export function ItemsTable({items}: Readonly<Props>) {
         </TooltipProvider>
       </div>
       <div className='overflow-hidden rounded-md border'>
-        <Table className='divide-border min-w-full divide-y'>
+        <Table className='min-w-full divide-y divide-border'>
           <TableHeader>
             <TableRow className='bg-muted/50'>
-              <TableHead className='text-muted-foreground px-4 py-3 text-left text-xs font-medium uppercase tracking-wider'>Item</TableHead>
-              <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium uppercase tracking-wider'>Qty</TableHead>
-              <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium uppercase tracking-wider'>
+              <TableHead className='px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground'>Item</TableHead>
+              <TableHead className='px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground'>Qty</TableHead>
+              <TableHead className='px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground'>
                 Price
               </TableHead>
-              <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium uppercase tracking-wider'>
+              <TableHead className='px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground'>
                 Total
               </TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className='bg-popover divide-border divide-y'>
+          <TableBody className='divide-y divide-border bg-popover'>
             {paginatedItems.map((item, index) => (
               <motion.tr
                 key={item.rawName}
@@ -100,6 +109,7 @@ export function ItemsTable({items}: Readonly<Props>) {
             ))}
             {Array.from({length: 5 - paginatedItems.length}).map((_, index) => (
               <motion.tr
+                // eslint-disable-next-line react/no-array-index-key -- Using index as key for empty rows
                 key={index}
                 initial={{opacity: 0, x: 0}}
                 animate={{opacity: 1, x: 0}}
@@ -125,9 +135,9 @@ export function ItemsTable({items}: Readonly<Props>) {
         </Table>
 
         {/* Pagination controls*/}
-        <div className='bg-popover flex items-center justify-between border-t p-4'>
-          <div className='text-muted-foreground text-sm'>
-            {items.length} {items.length === 1 ? "item" : "items"} in total
+        <div className='flex items-center justify-between border-t bg-popover p-4'>
+          <div className='text-sm text-muted-foreground'>
+            {invoice.items.length} {invoice.items.length === 1 ? "item" : "items"} in total
           </div>
           <div className='flex items-center gap-2'>
             <Button

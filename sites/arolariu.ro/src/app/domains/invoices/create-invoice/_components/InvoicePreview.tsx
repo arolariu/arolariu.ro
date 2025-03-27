@@ -75,6 +75,7 @@ const MediaPreview = memo(function MediaPreview({
       <div className='relative flex h-full w-full flex-col overflow-hidden'>
         <div className='absolute left-0 top-0 z-10 rounded-br-lg bg-primary px-2 py-1 text-xs text-white'>PDF</div>
         {url ? (
+          // eslint-disable-next-line react/iframe-missing-sandbox
           <iframe
             src={`${url}#view=FitH&toolbar=0&navpanes=0&scrollbar=0`}
             className='h-full w-full rounded-lg'
@@ -107,7 +108,7 @@ const MediaPreview = memo(function MediaPreview({
       {!url || loadError ? (
         <div className='flex h-full w-full items-center justify-center bg-gray-50'>
           {loadError ? (
-            <div className='text-muted-foreground text-center'>
+            <div className='text-center text-muted-foreground'>
               <div>Failed to load image</div>
             </div>
           ) : (
@@ -127,11 +128,11 @@ const MediaPreview = memo(function MediaPreview({
         />
       )}
       <div className='absolute bottom-2 right-2 flex gap-2'>
-        {onRotate && (
+        {Boolean(onRotate) && (
           <Button
             size='icon'
             variant='secondary'
-            onClick={(_event) => onRotate(index)}>
+            onClick={(_event) => onRotate?.(index)}>
             <TbRotateClockwise
               className='h-4 w-4'
               aria-hidden='true'
@@ -298,10 +299,11 @@ function CarouselView({
         <CarouselContent className='h-full'>
           {images.map((image, index) => {
             const isPdfFile = isPDF(image);
+            const rowKey = `#${image.size}-${image.type}-${index}`;
 
             return (
               <CarouselItem
-                key={`carousel-image-${index}`}
+                key={rowKey}
                 className='min-h-[1150px]'>
                 <Card className='flex h-full flex-col overflow-hidden'>
                   <CardContent className='relative flex flex-1 items-center bg-gray-50 p-0'>
@@ -313,7 +315,7 @@ function CarouselView({
                     />
                   </CardContent>
                   <CardFooter className='flex justify-between p-3'>
-                    <div className='text-muted-foreground text-sm'>
+                    <div className='text-sm text-muted-foreground'>
                       {isPdfFile ? "PDF" : "Image"} {index + 1} of {images.length}
                     </div>
                   </CardFooter>
@@ -344,9 +346,9 @@ export default function InvoicePreview({images, setImages}: Readonly<Props>) {
   const handleRotate = useCallback(
     (index: number) => {
       if (index < 0 || index >= images.length) return;
-      const imageToRotate = images[index];
+      const imageToRotate = images.at(index)!;
 
-      if (isPDF(imageToRotate!)) {
+      if (isPDF(imageToRotate)) {
         toast("PDF files cannot be rotated.", {
           duration: 4000,
         });
@@ -355,9 +357,9 @@ export default function InvoicePreview({images, setImages}: Readonly<Props>) {
 
       // Create an Image object to draw onto canvas
       const img = new globalThis.Image();
-      const imageUrl = URL.createObjectURL(imageToRotate!);
+      const imageUrl = URL.createObjectURL(imageToRotate);
 
-      img.onload = () => {
+      img.addEventListener("load", () => {
         try {
           const canvas = document.createElement("canvas");
           const ctx = canvas.getContext("2d");
@@ -389,19 +391,19 @@ export default function InvoicePreview({images, setImages}: Readonly<Props>) {
               // Clean up the temporary object URL
               URL.revokeObjectURL(imageUrl);
             },
-            imageToRotate!.type,
-            1.0, // Maintain full quality
+            imageToRotate.type,
+            1, // Maintain full quality
           );
         } catch (error) {
           console.error("Error rotating image:", error);
           URL.revokeObjectURL(imageUrl);
         }
-      };
+      });
 
-      img.onerror = () => {
+      img.addEventListener("error", () => {
         console.error("Failed to load image for rotation");
         URL.revokeObjectURL(imageUrl);
-      };
+      });
 
       // Start loading the image
       img.src = imageUrl;
@@ -453,13 +455,15 @@ export default function InvoicePreview({images, setImages}: Readonly<Props>) {
         },
       });
     },
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setImages is stable.
     [images],
   );
 
   // Case 1: No images:
   if (images.length === 0) {
     return (
-      <img
+      <Image
         className='mx-auto mb-10 h-2/3 w-2/3 rounded object-fill object-center p-10 md:h-1/2 md:w-1/2 lg:h-1/3 lg:w-1/3 xl:h-1/4 xl:w-1/4'
         src={PLACEHOLDER_IMAGE}
         width='600'
@@ -526,4 +530,6 @@ export default function InvoicePreview({images, setImages}: Readonly<Props>) {
       </Tabs>
     );
   }
+
+  return null;
 }

@@ -1,5 +1,6 @@
 /** @format */
 
+// @ts-ignore -- no types for this.
 import eslintPluginNext from "@next/eslint-plugin-next";
 import typescriptParser from "@typescript-eslint/parser";
 import eslintPluginFunctional from "eslint-plugin-functional";
@@ -8,9 +9,11 @@ import eslintPluginJsDoc from "eslint-plugin-jsdoc";
 import eslintPluginJsxA11y from "eslint-plugin-jsx-a11y";
 import eslintPluginNode from "eslint-plugin-n";
 import eslintPluginPerfectionist from "eslint-plugin-perfectionist";
+// @ts-ignore -- no types for this.
 import eslintPluginPromise from "eslint-plugin-promise";
 import eslintPluginReact from "eslint-plugin-react";
 import eslintPluginReactHooks from "eslint-plugin-react-hooks";
+// @ts-ignore -- no types for this.
 import eslintPluginSecurity from "eslint-plugin-security";
 import eslintPluginSonarJs from "eslint-plugin-sonarjs";
 import eslintPluginUnicorn from "eslint-plugin-unicorn";
@@ -85,7 +88,9 @@ const eslintConfig = tseslint.config(
       ...eslintPluginPromise.configs["flat/recommended"].rules,
 
       "functional/no-return-void": "off", // this rule is too strict; some functions return void.
+      "functional/immutable-data": "warn", // this rule is too strict; we use mutable data - warn.
       "functional/no-mixed-types": "off", // this rule is too strict; mixed types are allowed.
+      "functional/no-promise-reject": "off", // this rule is too strict; we need to reject promises.
       "functional/no-try-statements": "off", // this rule is too strict.
       "functional/no-throw-statements": "off", // this rule is too strict; useContext needs to throw.
       "functional/functional-parameters": "off", // this rule is too strict.
@@ -95,12 +100,13 @@ const eslintConfig = tseslint.config(
       "functional/type-declaration-immutability": "off", // we enforce readonly types, not immutability.
 
       "react/jsx-indent": "off", // this rule is not needed, we use Prettier for formatting.
-      "react/jsx-no-bind": "warn", // warn on performance issues but allow them.
+      "react/jsx-no-bind": "off", // jsx bind is allowed for small components; to turn back on.
       "react/jsx-newline": "off", // this rule is not needed, we use Prettier for formatting.
       "react/no-multi-comp": "off", // this rule is too strict; there are files where siblings are defined.
       "react/jsx-sort-props": "off", // this rule is not needed, we use Prettier for formatting.
       "react/jsx-no-literals": "off", // this rule is too strict; literals like emojis are allowed.
       "react/jsx-indent-props": "off", // this rule is not needed, we use Prettier for formatting.
+      "react/jsx-curly-newline": "off", // this rule is not needed, we use Prettier for formatting.
       "react/react-in-jsx-scope": "off", // Next.js automatically injects React into the scope.
       "react/forbid-component-props": "off", // this rule is too strict; we use custom components.
       "react/jsx-props-no-spreading": "off", // prop spreading is allowed.
@@ -114,9 +120,14 @@ const eslintConfig = tseslint.config(
       "unicorn/no-null": "off", // this rule is too strict; null is allowed.
       "unicorn/filename-case": "off", // we use custom filename casing.
       "unicorn/no-keyword-prefix": "off", // this rule is too strict.
+      "unicorn/number-literal-case": "off", // we format with lowercase letters by design.
       "unicorn/switch-case-braces": "off", // this rule is too strict; some case statements just return.
       "unicorn/prevent-abbreviations": "off", // this rule is too strict.
+      "unicorn/no-abusive-eslint-disable": "warn", // warn so that we do not forget.
       "unicorn/no-array-callback-reference": "off", // this rule is too strict.
+
+      "sonarjs/todo-tag": "warn", // warn on to-do tags.
+      "sonarjs/no-nested-functions": ["warn", {threshold: 5}], // allow up to 5 nested functions.
 
       "n/no-missing-import": "off", // default imports seem to not be supported.
       "n/no-unsupported-features/node-builtins": "off", // this rule is too strict; we make sure we have latest Node.js version.
@@ -126,6 +137,7 @@ const eslintConfig = tseslint.config(
       "perfectionist/sort-imports": "off", // this rule is biased; we use Prettier for sorting.
       "perfectionist/sort-jsx-props": "off", // this rule is biased; we use Prettier for sorting.
       "perfectionist/sort-interfaces": "off", // this rule is biased; we use Prettier for sorting.
+      "perfectionist/sort-switch-case": "off", // this rule is biased; we use Prettier for sorting.
       "perfectionist/sort-union-types": "off", // this rule is biased; we use Prettier for sorting.
       "perfectionist/sort-object-types": "off", // this rule is biased; we use Prettier for sorting.
       "perfectionist/sort-named-imports": "off", // this rule is biased; we use Prettier for sorting.

@@ -19,8 +19,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {motion} from "framer-motion";
-import {TbCapsuleHorizontal, TbEdit, TbPlus, TbTrash} from "react-icons/tb";
+import {motion} from "motion/react";
+import {TbEdit, TbMenu, TbPlus, TbTrash} from "react-icons/tb";
+import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
   metadata: Record<string, string>;
@@ -29,10 +30,14 @@ type Props = {
 /**
  * The MetadataTab component displays additional information about the invoice.
  * It shows metadata fields associated with the invoice and allows users to add new fields.
- * @param metadata - The metadata associated with the invoice.
+ * @param metadata The metadata associated with the invoice.
  * @returns The MetadataTab component, CSR'ed.
  */
 export function MetadataTab({metadata}: Readonly<Props>) {
+  const {open: openAddDialog} = useDialog("metadata", "add");
+  const {open: openEditDialog} = useDialog("metadata", "edit", metadata);
+  const {open: openDeleteDialog} = useDialog("metadata", "delete", metadata);
+
   return (
     <motion.div
       initial={{opacity: 0, y: 10}}
@@ -49,7 +54,7 @@ export function MetadataTab({metadata}: Readonly<Props>) {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  onClick={() => {}}
+                  onClick={openAddDialog}
                   size='sm'>
                   <TbPlus className='mr-2 h-4 w-4' />
                   Add Field
@@ -71,8 +76,8 @@ export function MetadataTab({metadata}: Readonly<Props>) {
                   animate={{opacity: 1, scale: 1}}
                   transition={{delay: index * 0.05}}
                   whileHover={{scale: 1.02}}
-                  className='hover:bg-muted/50 group relative flex flex-col space-y-1 rounded-md border p-3 transition-colors hover:border-primary/50'>
-                  <span className='text-muted-foreground text-sm font-medium'>
+                  className='group relative flex flex-col space-y-1 rounded-md border p-3 transition-colors hover:border-primary/50 hover:bg-muted/50'>
+                  <span className='text-sm font-medium text-muted-foreground'>
                     <Badge
                       variant='outline'
                       className='ml-2 text-xs'>
@@ -88,20 +93,20 @@ export function MetadataTab({metadata}: Readonly<Props>) {
                           variant='ghost'
                           size='icon'
                           className='h-8 w-8'>
-                          <TbCapsuleHorizontal className='h-4 w-4' />
+                          <TbMenu className='h-4 w-4' />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align='end'>
                         <DropdownMenuItem
-                          onClick={() => {}}
-                          disabled={true}>
+                          onClick={openEditDialog}
+                          disabled>
                           <TbEdit className='mr-2 h-4 w-4' />
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => {}}
+                          onClick={openDeleteDialog}
                           className='text-destructive focus:text-destructive'
-                          disabled={true}>
+                          disabled>
                           <TbTrash className='mr-2 h-4 w-4' />
                           Delete
                         </DropdownMenuItem>
@@ -113,7 +118,7 @@ export function MetadataTab({metadata}: Readonly<Props>) {
             </div>
           ) : (
             <div className='py-8 text-center'>
-              <p className='text-muted-foreground mb-4'>No metadata fields added yet</p>
+              <p className='mb-4 text-muted-foreground'>No metadata fields added yet</p>
               <Button
                 onClick={() => {}}
                 variant='outline'>

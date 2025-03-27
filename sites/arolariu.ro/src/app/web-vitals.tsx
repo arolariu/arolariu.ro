@@ -185,6 +185,7 @@ export function WebVitals() {
       try {
         const longTaskObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
+          // eslint-disable-next-line functional/no-loop-statements -- Using for..of for better readability
           for (const entry of entries) {
             saveToIndexedDB({
               name: `long-task-${entry.name}-${entry.entryType}`,
@@ -216,5 +217,6 @@ export function WebVitals() {
     });
   });
 
+  // eslint-disable-next-line react/jsx-no-useless-fragment -- This is a placeholder component.
   return <></>;
 }

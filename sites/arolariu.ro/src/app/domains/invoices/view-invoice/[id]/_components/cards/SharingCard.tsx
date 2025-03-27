@@ -1,6 +1,7 @@
 /** @format */
 
 import {useUserInformation} from "@/hooks";
+import {Invoice} from "@/types/invoices";
 import {
   Button,
   Card,
@@ -14,13 +15,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {motion} from "framer-motion";
+import {motion} from "motion/react";
 import Image from "next/image";
 import {TbArrowRight, TbDeselect, TbLock, TbLockCog, TbShare2, TbUser} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
-  sharedWith: string[];
+  invoice: Invoice;
 };
 
 /**
@@ -28,8 +29,8 @@ type Props = {
  * It includes the owner's information and a list of users with whom the invoice is shared.
  * @returns The SharingCard component, CSR'ed.
  */
-export function SharingCard({sharedWith}: Readonly<Props>) {
-  const {open} = useDialog("share");
+export function SharingCard({invoice}: Readonly<Props>) {
+  const {open} = useDialog("share", "edit", invoice);
   const {userInformation} = useUserInformation();
 
   return (
@@ -55,7 +56,7 @@ export function SharingCard({sharedWith}: Readonly<Props>) {
           </div>
           <div>
             <p className='font-medium'>Owner</p>
-            <p className='text-muted-foreground text-sm'>{userInformation?.user?.username}</p>
+            <p className='text-sm text-muted-foreground'>{userInformation?.user?.username}</p>
           </div>
           <div className='ml-auto flex items-center justify-end'>
             <TooltipProvider>
@@ -81,17 +82,17 @@ export function SharingCard({sharedWith}: Readonly<Props>) {
 
         <div>
           <h3 className='mb-2 text-sm font-medium'>Shared With</h3>
-          {sharedWith.length > 0 ? (
+          {invoice.sharedWith.length > 0 ? (
             <div className='space-y-2'>
-              {sharedWith.map((userId, index) => (
+              {invoice.sharedWith.map((userId, index) => (
                 <motion.div
-                  key={index}
+                  key={userId}
                   className='flex items-center'
                   initial={{opacity: 0, x: -20}}
                   animate={{opacity: 1, x: 0}}
                   transition={{delay: index * 0.1}}
                   whileHover={{x: 5}}>
-                  <div className='bg-muted mr-2 flex h-8 w-8 items-center justify-center rounded-full'>
+                  <div className='mr-2 flex h-8 w-8 items-center justify-center rounded-full bg-muted'>
                     <TbUser className='h-4 w-4' />
                   </div>
                   <span className='text-sm'>User {userId}</span>
@@ -114,7 +115,7 @@ export function SharingCard({sharedWith}: Readonly<Props>) {
               ))}
             </div>
           ) : (
-            <p className='text-muted-foreground text-sm'>Not shared with anyone</p>
+            <p className='text-sm text-muted-foreground'>Not shared with anyone</p>
           )}
         </div>
       </CardContent>

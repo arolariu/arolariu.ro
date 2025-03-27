@@ -25,7 +25,8 @@ type Props = {
  * @returns The MerchantCard component, CSR'ed.
  */
 export default function MerchantCard({merchant}: Readonly<Props>) {
-  const {open} = useDialog("merchant");
+  const {open: openMerchantInfoDialog} = useDialog("merchant", "view", merchant);
+  const {open: openMerchantReceiptsDialog} = useDialog("merchantReceipts", "view", merchant);
 
   return (
     <Card className='group transition-shadow duration-300 hover:shadow-md'>
@@ -39,7 +40,7 @@ export default function MerchantCard({merchant}: Readonly<Props>) {
           </div>
           <div>
             <p className='font-medium'>{merchant.name}</p>
-            <p className='text-muted-foreground text-sm'>Address: {merchant.address}</p>
+            <p className='text-sm text-muted-foreground'>Address: {merchant.address}</p>
           </div>
         </div>
         <div className='space-y-2'>
@@ -49,7 +50,7 @@ export default function MerchantCard({merchant}: Readonly<Props>) {
                 <Button
                   variant='outline'
                   className='group w-full'
-                  onClick={open}>
+                  onClick={openMerchantInfoDialog}>
                   <span>View Merchant Details</span>
                   <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
                 </Button>
@@ -66,7 +67,7 @@ export default function MerchantCard({merchant}: Readonly<Props>) {
                 <Button
                   variant='outline'
                   className='group w-full'
-                  onClick={() => {}}>
+                  onClick={openMerchantReceiptsDialog}>
                   <TbShoppingBag className='mr-2 h-4 w-4' />
                   <span>View All Receipts</span>
                   <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />

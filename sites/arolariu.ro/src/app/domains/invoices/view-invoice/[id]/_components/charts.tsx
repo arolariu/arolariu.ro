@@ -31,6 +31,8 @@ interface ChartProps {
   showAnimation?: boolean;
 }
 
+const defaultValueFormatter = (value: number) => `${value}`;
+
 /**
  * LineChart component for rendering a line chart.
  * @returns A responsive line chart.
@@ -40,7 +42,7 @@ export function LineChart({
   index,
   categories,
   colors,
-  valueFormatter = (value) => `${value}`,
+  valueFormatter = defaultValueFormatter,
   showLegend = true,
   showXAxis = true,
   showYAxis = true,
@@ -53,11 +55,11 @@ export function LineChart({
       <RechartsLineChart
         data={data}
         margin={{top: 10, right: 30, left: 0, bottom: 0}}>
-        {showGridLines && <CartesianGrid strokeDasharray='3 3' />}
-        {showXAxis && <XAxis dataKey={index} />}
-        {showYAxis && <YAxis />}
+        {Boolean(showGridLines) && <CartesianGrid strokeDasharray='3 3' />}
+        {Boolean(showXAxis) && <XAxis dataKey={index} />}
+        {Boolean(showYAxis) && <YAxis />}
         <Tooltip formatter={(value) => valueFormatter(Number(value))} />
-        {showLegend && <Legend />}
+        {Boolean(showLegend) && <Legend />}
         {categories.map((category, i) => (
           <Line
             key={category}
@@ -83,7 +85,7 @@ export function BarChart({
   index,
   categories,
   colors,
-  valueFormatter = (value) => `${value}`,
+  valueFormatter = defaultValueFormatter,
   showLegend = true,
   showXAxis = true,
   showYAxis = true,
@@ -96,11 +98,11 @@ export function BarChart({
       <RechartsBarChart
         data={data}
         margin={{top: 10, right: 30, left: 0, bottom: 0}}>
-        {showGridLines && <CartesianGrid strokeDasharray='3 3' />}
-        {showXAxis && <XAxis dataKey={index} />}
-        {showYAxis && <YAxis />}
+        {Boolean(showGridLines) && <CartesianGrid strokeDasharray='3 3' />}
+        {Boolean(showXAxis) && <XAxis dataKey={index} />}
+        {Boolean(showYAxis) && <YAxis />}
         <Tooltip formatter={(value) => valueFormatter(Number(value))} />
-        {showLegend && <Legend />}
+        {Boolean(showLegend) && <Legend />}
         {categories.map((category, i) => (
           <Bar
             key={category}
@@ -123,7 +125,7 @@ export function PieChart({
   index,
   categories,
   colors,
-  valueFormatter = (value) => `${value}`,
+  valueFormatter = defaultValueFormatter,
   showLegend = true,
   showAnimation = true,
 }: Readonly<ChartProps>) {
@@ -133,7 +135,7 @@ export function PieChart({
       height='100%'>
       <RechartsPieChart margin={{top: 10, right: 30, left: 0, bottom: 0}}>
         <Tooltip formatter={(value) => valueFormatter(Number(value))} />
-        {showLegend && <Legend />}
+        {Boolean(showLegend) && <Legend />}
         <Pie
           data={data}
           cx='50%'
@@ -146,7 +148,7 @@ export function PieChart({
           animationDuration={showAnimation ? 500 : 0}>
           {data.map((entry, index) => (
             <Cell
-              key={`cell-${index}`}
+              key={`${entry.name}-${entry.value}`}
               fill={colors[index % colors.length]}
             />
           ))}
@@ -156,65 +158,29 @@ export function PieChart({
   );
 }
 
+/**
+ * Type definition for ChartContainerProps.
+ */
 interface ChartContainerProps {
   children: React.ReactNode;
   config: Record<string, {label: string; color: string}>;
   className?: string;
 }
 
-export function ChartContainer({children, config, className = ""}: ChartContainerProps) {
-  // Create CSS variables for each color in the config
-  const style = Object.entries(config).reduce(
-    (acc, [key, {color}]) => {
-      acc[`--color-${key}`] = color;
-      return acc;
-    },
-    {} as Record<string, string>,
-  );
-
+/**
+ * ChartContainer component for rendering a container with CSS variables for colors.
+ * @returns A div element with CSS variables for colors.
+ */
+export function ChartContainer({children, config, className = ""}: Readonly<ChartContainerProps>) {
   return (
     <div
       className={`h-full w-full ${className}`}
-      style={style as React.CSSProperties}>
+      style={
+        {
+          "--color-value": config?.["value"]?.color,
+        } as React.CSSProperties
+      }>
       {children}
     </div>
   );
-}
-
-export function ChartTooltip({active, payload, label}: any) {
-  if (active && payload && payload.length) {
-    return (
-      <div className='bg-background rounded-md border p-2 text-sm shadow-sm'>
-        <p className='font-medium'>{label}</p>
-        {payload.map((entry: any, index: number) => (
-          <p
-            key={`item-${index}`}
-            style={{color: entry.color}}>
-            {entry.name}: {entry.value}
-          </p>
-        ))}
-      </div>
-    );
-  }
-
-  return null;
-}
-
-export function ChartTooltipContent({active, payload, label}: any) {
-  if (active && payload && payload.length) {
-    return (
-      <div className='bg-background rounded-md border p-2 text-sm shadow-sm'>
-        <p className='font-medium'>{label}</p>
-        {payload.map((entry: any, index: number) => (
-          <p
-            key={`item-${index}`}
-            style={{color: entry.color}}>
-            {entry.name}: {entry.value}
-          </p>
-        ))}
-      </div>
-    );
-  }
-
-  return null;
 }

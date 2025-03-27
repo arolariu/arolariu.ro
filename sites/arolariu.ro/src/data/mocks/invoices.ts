@@ -133,7 +133,7 @@ const generateFakeInvoiceProduct = (): Product => {
 };
 
 const shortIterable = Array.from({length: fake.number.int({min: 3, max: 10})});
-const longIterable = Array.from({length: fake.number.int({min: 10, max: 100})});
+const longIterable = Array.from({length: fake.number.int({min: 20, max: 100})});
 
 export const FakeProduct: Product = generateFakeInvoiceProduct();
 export const FakeMerchant: Merchant = generateFakeMerchant();

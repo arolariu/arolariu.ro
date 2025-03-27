@@ -29,6 +29,7 @@ import {
   TbToolsKitchen,
   TbTrash,
 } from "react-icons/tb";
+import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
   recipe: Recipe;
@@ -43,11 +44,19 @@ type Props = {
 export function RecipeCard({recipe}: Readonly<Props>) {
   const {name, complexity, description, ingredients, preparationTime, cookingTime} = recipe;
 
-  const complexityKey = Object.keys(RecipeComplexity)[complexity];
+  const complexityKey = Object.keys(RecipeComplexity).at(complexity);
   const complexityAsString = RecipeComplexity[complexityKey as keyof typeof RecipeComplexity];
 
-  const badgeVariant =
-    complexity === RecipeComplexity.Easy ? "default" : complexity === RecipeComplexity.Normal ? "secondary" : "destructive";
+  const getBadgeVariant = () => {
+    if (complexity === RecipeComplexity.Easy) return "default";
+    if (complexity === RecipeComplexity.Normal) return "secondary";
+    return "destructive";
+  };
+
+  const {open: openEditDialog} = useDialog("recipe", "edit", recipe);
+  const {open: openViewDialog} = useDialog("recipe", "view", recipe);
+  const {open: openDeleteDialog} = useDialog("recipe", "delete", recipe);
+  const {open: openShareDialog} = useDialog("recipe", "share", recipe);
 
   return (
     <Card className='overflow-hidden transition-shadow duration-300 hover:shadow-md'>
@@ -56,7 +65,7 @@ export function RecipeCard({recipe}: Readonly<Props>) {
           <div>
             <h3 className='text-lg font-semibold'>{name}</h3>
             <Badge
-              variant={badgeVariant}
+              variant={getBadgeVariant()}
               className='mt-1'>
               {complexityAsString}
             </Badge>
@@ -70,20 +79,26 @@ export function RecipeCard({recipe}: Readonly<Props>) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
-              <DropdownMenuItem className='cursor-pointer'>
+              <DropdownMenuItem
+                className='cursor-pointer'
+                onClick={openEditDialog}>
                 <TbEdit className='mr-2 h-4 w-4' />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem className='cursor-pointer text-red-500'>
+              <DropdownMenuItem
+                className='cursor-pointer text-red-500'
+                onClick={openDeleteDialog}>
                 <TbTrash className='mr-2 h-4 w-4' />
                 Delete
               </DropdownMenuItem>
-              <DropdownMenuItem className='cursor-pointer text-blue-500'>
+              <DropdownMenuItem
+                className='cursor-pointer text-blue-500'
+                onClick={openShareDialog}>
                 <TbShare className='mr-2 h-4 w-4' />
                 Share
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className='text-muted-foreground cursor-pointer'>
+              <DropdownMenuItem className='cursor-pointer text-muted-foreground'>
                 <TbHeart className='mr-2 h-4 w-4' />
                 Mark as Favorite
               </DropdownMenuItem>
@@ -91,25 +106,25 @@ export function RecipeCard({recipe}: Readonly<Props>) {
           </DropdownMenu>
         </div>
 
-        <p className='text-muted-foreground mb-2 text-sm'>{description}</p>
+        <p className='mb-2 text-sm text-muted-foreground'>{description}</p>
 
         <div className='space-y-4'>
-          <h4 className='text-muted-foreground text-sm'>Ingredients:</h4>
+          <h4 className='text-sm text-muted-foreground'>Ingredients:</h4>
           <ul className='list-disc pl-5 text-sm'>
-            {ingredients.slice(0, 3).map((ingredient, idx) => (
-              <li key={idx}>{ingredient.rawName}</li>
+            {ingredients.slice(0, 3).map((ingredient) => (
+              <li key={ingredient.rawName}>{ingredient.rawName}</li>
             ))}
             {ingredients.length > 3 && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <li className='text-muted-foreground cursor-help'>+{ingredients.length - 3} more</li>
+                    <li className='cursor-help text-muted-foreground'>+{ingredients.length - 3} more</li>
                   </TooltipTrigger>
                   <TooltipContent className='max-w-xs'>
                     <p className='mb-1 font-medium'>Additional ingredients:</p>
                     <ul className='list-disc pl-5'>
-                      {ingredients.slice(3).map((ingredient, idx) => (
-                        <li key={idx}>{ingredient.rawName}</li>
+                      {ingredients.slice(3).map((ingredient) => (
+                        <li key={ingredient.rawName}>{ingredient.rawName}</li>
                       ))}
                     </ul>
                   </TooltipContent>
@@ -120,13 +135,13 @@ export function RecipeCard({recipe}: Readonly<Props>) {
         </div>
 
         {/** Prep + Cook times */}
-        <div className='text-muted-foreground flex cursor-help gap-4 pt-4 text-xs'>
+        <div className='flex cursor-help gap-4 pt-4 text-xs text-muted-foreground'>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className='flex items-center'>
                   <TbClock className='mr-1 h-3 w-3' />
-                  Prep: {preparationTime}'
+                  Prep: {preparationTime}&lsquo;
                 </div>
               </TooltipTrigger>
               <TooltipContent side='bottom'>
@@ -137,7 +152,7 @@ export function RecipeCard({recipe}: Readonly<Props>) {
               <TooltipTrigger asChild>
                 <div className='flex items-center'>
                   <TbToolsKitchen className='mr-1 h-3 w-3' />
-                  Cook: {cookingTime}'
+                  Cook: {cookingTime}&lsquo;
                 </div>
               </TooltipTrigger>
               <TooltipContent side='bottom'>
@@ -158,7 +173,8 @@ export function RecipeCard({recipe}: Readonly<Props>) {
           </Button>
           <Button
             variant='default'
-            size='sm'>
+            size='sm'
+            onClick={openViewDialog}>
             View Recipe
             <TbLayoutBottombarExpand />
           </Button>

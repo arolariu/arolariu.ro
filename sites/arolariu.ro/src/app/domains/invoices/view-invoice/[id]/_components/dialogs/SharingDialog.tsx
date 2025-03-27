@@ -18,60 +18,54 @@ import {
   TabsTrigger,
   toast,
 } from "@arolariu/components";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {TbCheck, TbCopy, TbMail, TbQrcode} from "react-icons/tb";
 import QRCode from "react-qr-code";
 import {useDialog} from "../../_contexts/DialogContext";
-
-type Props = {
-  invoice: Invoice;
-};
 
 /**
  * The ExportDialog component allows users to share an invoice via link, email, or QR code.
  * It includes options to copy the link and QR code to the clipboard.
  * @returns The ExportDialog component, CSR'ed.
  */
-export function ExportDialog({invoice}: Readonly<Props>) {
+export function SharingDialog() {
   const [copied, setCopied] = useState<boolean>(false);
-  const {isOpen, open, close} = useDialog("share");
   const [email, setEmail] = useState<string>("");
+  const {
+    currentDialog: {payload},
+    isOpen,
+    open,
+    close,
+  } = useDialog("share");
 
-  const shareUrl = `https://invoice-app.com/invoice/${invoice.id}`;
+  const invoice = payload as Invoice;
+  const shareUrl = `${globalThis.location.origin}/invoices/${invoice.id}`;
 
-  const handleCopyLink = async () => {
+  const handleCopyLink = useCallback(async () => {
+    await navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    toast("Link copied!", {
+      description: "The invoice link has been copied to your clipboard",
+    });
+    setTimeout(() => setCopied(false), 2000);
+  }, [shareUrl]);
+
+  const handleCopyQRCode = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      toast("Link copied!", {
-        description: "The invoice link has been copied to your clipboard",
-      });
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      toast("Failed to copy link!", {
-        description: "Could not copy the link to clipboard",
-      });
-    }
-  };
-
-  const handleCopyQRCode = async () => {
-    try {
-      const qrCodeElement = document.getElementById("invoice-qr-code");
-
-      if (!qrCodeElement) {
-        throw new Error("QR code element not found");
-      }
+      const qrCodeElement = document.querySelector("#invoice-qr-code");
+      if (!qrCodeElement) throw new Error("QR code element not found");
 
       // Create a canvas to draw the QR code
       const canvas = document.createElement("canvas");
+
+      /* eslint-disable functional/immutable-data */
       canvas.width = 128;
       canvas.height = 128;
+      /* eslint-enable functional/immutable-data */
 
       // Get canvas context
       const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        throw new Error("Could not create canvas context");
-      }
+      if (!ctx) throw new Error("Could not create canvas context");
 
       // Convert SVG to image
       const img = new Image();
@@ -81,8 +75,9 @@ export function ExportDialog({invoice}: Readonly<Props>) {
 
       // Wait for the image to load
       await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
+        img.addEventListener("load", resolve);
+        img.addEventListener("error", reject);
+        // eslint-disable-next-line functional/immutable-data -- readability
         img.src = url;
       });
 
@@ -97,28 +92,29 @@ export function ExportDialog({invoice}: Readonly<Props>) {
 
       // Create clipboard item with image blob
       const item = new ClipboardItem({[blob.type]: blob});
-
-      // Write image to clipboard
       await navigator.clipboard.write([item]);
 
       toast("QR Code copied!", {
         description: "The QR code has been copied to your clipboard",
       });
-    } catch (err) {
-      console.error("Failed to copy image:", err);
+    } catch (error) {
+      console.error("Failed to copy image:", error);
       toast("Failed to copy image!", {
         description: "Could not copy the image to clipboard. This feature might not be supported in your browser.",
       });
     }
-  };
+  }, []);
 
-  const handleSendEmail = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast("Email sent!", {
-      description: `Invitation sent to ${email}`,
-    });
-    setEmail("");
-  };
+  const handleSendEmail = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      toast("Email sent!", {
+        description: `Invitation sent to ${email}`,
+      });
+      setEmail("");
+    },
+    [email],
+  );
 
   return (
     <Dialog
@@ -127,7 +123,7 @@ export function ExportDialog({invoice}: Readonly<Props>) {
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
           <DialogTitle>Share Invoice</DialogTitle>
-          <DialogDescription>Share "{invoice.name}" with others</DialogDescription>
+          <DialogDescription>Share &quot;{invoice.name}&quot; with others</DialogDescription>
         </DialogHeader>
 
         <Tabs
@@ -164,7 +160,7 @@ export function ExportDialog({invoice}: Readonly<Props>) {
                 {copied ? <TbCheck className='h-4 w-4' /> : <TbCopy className='h-4 w-4' />}
               </Button>
             </div>
-            <p className='text-muted-foreground text-sm'>Anyone with this link will be able to view this invoice.</p>
+            <p className='text-sm text-muted-foreground'>Anyone with this link will be able to view this invoice.</p>
           </TabsContent>
 
           <TabsContent
@@ -202,14 +198,11 @@ export function ExportDialog({invoice}: Readonly<Props>) {
                   value={shareUrl}
                   size={128}
                   style={{width: "128px"}}
-                  viewBox={`0 0 128 128`}
                   className='rounded-md'
-                  bgColor='#ffffff'
-                  fgColor='#000000'
                   level='L'
                 />
               </div>
-              <p className='text-muted-foreground text-center text-sm'>Scan this QR code to view the invoice on a mobile device.</p>
+              <p className='text-center text-sm text-muted-foreground'>Scan this QR code to view the invoice on a mobile device.</p>
               <Button
                 variant='outline'
                 onClick={handleCopyQRCode}

@@ -18,8 +18,7 @@ import {
   SheetTrigger,
 } from "@arolariu/components";
 
-// eslint-disable-next-line n/no-extraneous-import -- importing framer-motion is standard.
-import {motion} from "framer-motion";
+import {motion} from "motion/react";
 import Link from "next/link";
 import {useCallback, useState} from "react";
 import {TbChevronDown, TbMenu} from "react-icons/tb";
@@ -213,7 +212,7 @@ const MobileNavigationItem = ({
   }
 
   return (
-    <Collapsible className='bg-background/50 mb-2 w-full overflow-hidden rounded-lg border backdrop-blur-sm'>
+    <Collapsible className='mb-2 w-full overflow-hidden rounded-lg border bg-background/50 backdrop-blur-sm'>
       <div className='flex items-center'>
         <Link
           href={item.href}
@@ -241,7 +240,7 @@ const MobileNavigationItem = ({
           animate={{opacity: 1, height: "auto"}}
           exit={{opacity: 0, height: 0}}
           transition={{duration: 0.2}}
-          className='bg-muted/30 flex flex-col space-y-1 p-2'>
+          className='flex flex-col space-y-1 bg-muted/30 p-2'>
           {item.children.map((child) => (
             <MobileNavigationChildItem
               key={`mobile-child-${child.label}`}
@@ -300,7 +299,7 @@ const MobileNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>) =
           animate={{opacity: 1, height: "auto"}}
           exit={{opacity: 0, height: 0}}
           transition={{duration: 0.2}}
-          className='bg-muted/50 flex flex-col space-y-1 p-2'>
+          className='flex flex-col space-y-1 bg-muted/50 p-2'>
           {child.children.map((grandchild) => (
             <Link
               key={`mobile-grandchild-${grandchild.label}`}
@@ -328,7 +327,7 @@ export function DesktopNavigation() {
   }, []);
 
   return (
-    <div className='flex flex-row items-center justify-center justify-items-center space-x-1 text-center'>
+    <div className='z-20 flex flex-row items-center justify-center justify-items-center space-x-1 text-center'>
       {navigationItems.map((item) => (
         <div
           key={`desktop-${item.label}`}
@@ -336,7 +335,6 @@ export function DesktopNavigation() {
           <DesktopNavigationItem
             item={item}
             isOpen={openStates[item.label]}
-            // eslint-disable-next-line react/jsx-no-bind -- using inline memoized function for simplicity
             onOpenChange={(isOpen) => handleOpenChange(item.label, isOpen)}
           />
         </div>
@@ -392,7 +390,6 @@ export function MobileNavigation() {
                 <MobileNavigationItem
                   item={item}
                   isOpen={openStates[item.label]}
-                  // eslint-disable-next-line react/jsx-no-bind -- using inline memoized function for simplicity
                   onToggle={() => handleToggle(item.label)}
                 />
               </div>

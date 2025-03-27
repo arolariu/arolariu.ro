@@ -19,72 +19,60 @@ import {
   TabsTrigger,
   toast,
 } from "@arolariu/components";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {TbCopy, TbDownload, TbMail} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
-
-type Props = {
-  invoice: Invoice;
-  merchant: Merchant;
-};
 
 /**
  * The ShareAnalyticsDialog component allows users to share their spending analytics.
  * It includes options to download an image, copy it to the clipboard, or send it via email.
  * @returns The ShareAnalyticsDialog component, CSR'ed.
  */
-export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
-  const [email, setEmail] = useState("");
-  const [copied, setCopied] = useState(false);
-  const {isOpen, open, close} = useDialog("shareAnalytics");
+export function ShareAnalyticsDialog() {
+  const [email, setEmail] = useState<string>("");
+  const {
+    currentDialog: {payload},
+    isOpen,
+    open,
+    close,
+  } = useDialog("shareAnalytics");
 
-  const shareUrl = `https://invoice-app.com/analytics/${merchant.name.toLowerCase().replace(/\s+/g, "-")}`;
+  const {invoice, merchant} = payload as {invoice: Invoice; merchant: Merchant};
 
-  const handleCopyImage = async () => {
-    try {
-      // Get the image URL from the component
-      const imageUrl = `/placeholder.svg?height=200&width=400&text=Analytics+Preview+for+${merchant.name}`;
+  const handleCopyImage = useCallback(async () => {
+    // Get the image URL from the component
+    const imageUrl = `/placeholder.svg?height=200&width=400&text=Analytics+Preview+for+${merchant.name}/${invoice.id}`;
 
-      // Fetch the image data
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
+    // Fetch the image data
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
 
-      // Check if clipboard API is supported
-      if (!navigator.clipboard || !navigator.clipboard.write) {
-        throw new Error("Clipboard API not supported in this browser");
-      }
+    // Create a clipboard item with the image blob
+    const item = new ClipboardItem({[blob.type]: blob});
+    await navigator.clipboard.write([item]);
 
-      // Create a clipboard item with the image blob
-      const item = new ClipboardItem({[blob.type]: blob});
-
-      // Write the image to clipboard
-      await navigator.clipboard.write([item]);
-
-      toast("Image copied!", {
-        description: "The analytics image has been copied to your clipboard",
-      });
-    } catch (err) {
-      console.error("Failed to copy image:", err);
-      toast("Failed to copy image!", {
-        description: "Could not copy the image to clipboard. This feature might not be supported in your browser.",
-      });
-    }
-  };
-
-  const handleSendEmail = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast("Email sent!", {
-      description: `Analytics report sent to ${email}`,
+    toast("Image copied!", {
+      description: "The analytics image has been copied to your clipboard",
     });
-    setEmail("");
-  };
+  }, [merchant, invoice]);
 
-  const handleDownloadImage = () => {
+  const handleSendEmail = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      toast("Email sent!", {
+        description: `Analytics report sent to ${email}`,
+      });
+      setEmail("");
+    },
+    [email],
+  );
+
+  const handleDownloadImage = useCallback(() => {
     // In a real app, this would generate and download an image
     toast("Image saved!", {
       description: `Spending analytics for ${merchant.name} has been downloaded as PNG`,
     });
-  };
+  }, [merchant.name]);
 
   return (
     <Dialog
@@ -108,12 +96,12 @@ export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
             value='image'
             className='py-4'>
             <div className='space-y-4'>
-              <p className='text-muted-foreground text-sm'>
+              <p className='text-sm text-muted-foreground'>
                 Download or copy the analytics graph as a PNG image that you can share or save.
               </p>
               <div className='flex justify-center'>
                 <div className='w-full max-w-xs rounded-md border p-4'>
-                  <div className='bg-muted flex h-32 items-center justify-center rounded-md'>Analytics Preview</div>
+                  <div className='flex h-32 items-center justify-center rounded-md bg-muted'>Analytics Preview</div>
                 </div>
               </div>
             </div>
@@ -126,7 +114,7 @@ export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
                   Download graph
                 </Button>
                 <Button
-                  variant={"outline"}
+                  variant='outline'
                   onClick={handleCopyImage}
                   className='w-full'>
                   <TbCopy className='mr-2 h-4 w-4' />
@@ -140,7 +128,7 @@ export function ShareAnalyticsDialog({invoice, merchant}: Readonly<Props>) {
             value='email'
             className='py-4'>
             <div className='space-y-4'>
-              <p className='text-muted-foreground text-sm'>Send the analytics to an email address.</p>
+              <p className='text-sm text-muted-foreground'>Send the analytics to an email address.</p>
               <div className='space-y-2'>
                 <Label htmlFor='email'>Email address</Label>
                 <Input
