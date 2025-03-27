@@ -351,14 +351,50 @@
     }
   },
   "Home": {
-    "1stPanel": {
-      "subtitle": "The `arolariu.ro` platform is built using the latest stable technologies.",
-      "title": "Key Features"
-    },
     "appreciation": "THANK YOU FOR THE TIME SPENT ON THE WEBSITE.",
     "cta": "Start Exploring",
     "subtitle": "This platform was built by Alexandru-Razvan Olariu as a playground for new technologies. The platform is built using state-of-the-art, enterprise-grade technologies. <br> </br> <br> </br> You are welcome to explore all of the applications and services that are hosted on this domain space.",
-    "title": "Welcome to arolariu.ro"
+    "title": "Welcome to arolariu.ro",
+    "featuresTab": {
+      "title": "Key Features",
+      "description": "The `arolariu.ro` platform is built using the latest stable technologies.",
+      "learnMoreBtn": "Interesting? Click here to learn more...",
+      "nextJs": {
+        "title": "Next.JS 15",
+        "description": "The platform is built using NextJS - the most popular React framework for production.  It is designed for production-grade React applications. NextJS is the most popular React framework for a reason: it is fast, reliable, and easy to use."
+      },
+      "azure": {
+        "title": "Microsoft Azure",
+        "description": "The Microsoft Azure cloud is used to host the platform and all of its services. This ensures that the platform is always available and that it can scale on demand."
+      },
+      "csharp": {
+        "title": ".NET 8 LTS",
+        "description": "The platform is built using .NET 8 LTS - the latest stable version of .NET. This ensures that the platform is fast, reliable, and easy to use. The platform is built using C# and F#."
+      },
+      "svelte": {
+        "title": "Svelte",
+        "description": "Utilizing Svelte for lightning-fast, reactive UI components. The `cv.arolariu.ro` platform is built exclusively using Svelte and SvelteKit (v5)"
+      },
+      "otel": {
+        "title": "Open Telemetry",
+        "description": "Complete observability with integrated metrics, traces, and logs. Everything is instrumented using OpenTelemetry. This allows for a unified telemetry experience across the board. (3PO: metrics, logs, traces)"
+      },
+      "githubActions": {
+        "title": "GitHub Actions",
+        "description": "The DevOps experience is powered by GitHub Actions. (CI/CD, Testing, etc.)"
+      }
+    },
+    "technologyTab": {
+      "title": "Built for the Future.",
+      "description": "This platform leverages the latest in web technology, combining Next.js for the frontend with .NET for robust backend services, all deployed on Microsoft Azure.",
+      "points": {
+        "point1": "Serverless architecture for optimal scaling and performance",
+        "point2": "Full-stack TypeScript for type safety across the entire application",
+        "point3": "Comprehensive telemetry and monitoring with OpenTelemetry"
+      },
+      "learnMoreBtn": "Explore the Architecture",
+      "badgeTitle": "Modern Architecture"
+    }
   },
   "privacyPolicy": {
     "contactInformation": {

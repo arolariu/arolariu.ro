@@ -351,14 +351,50 @@
     }
   },
   "Home": {
-    "1stPanel": {
-      "subtitle": "Platforma `arolariu.ro` este construita folosind cele mai noi tehnologii stabile.",
-      "title": "Caracteristici cheie"
-    },
     "appreciation": "MULȚUMESC PENTRU TIMPUL PETRECUT PE SITE.",
     "cta": "Începeți să explorați",
     "subtitle": "Această platformă a fost construită de Alexandru-Răzvan Olariu ca loc de joacă pentru noile tehnologii. Platforma este construită folosind tehnologii de ultimă oră, de nivel enterprise. <br> </br> <br> </br> Sunteți binevenit să explorați toate aplicațiile și serviciile care sunt găzduite pe acest spațiu de domeniu.",
-    "title": "Bine ai venit pe arolariu.ro"
+    "title": "Bine ai venit pe arolariu.ro",
+    "featuresTab": {
+      "title": "Caracteristici cheie",
+      "description": "Platforma `arolariu.ro` este construita folosind cele mai noi tehnologii stabile.",
+      "learnMoreBtn": "Interesant? \nFaceți clic aici pentru a afla mai multe ...",
+      "nextJs": {
+        "title": "Next.JS 15",
+        "description": "Platforma este construită folosind NextJS - cel mai popular cadru React pentru producție.  Este proiectat pentru aplicații React de nivel de producție. NextJS este cel mai popular cadru React pentru un motiv: este rapid, fiabil și ușor de utilizat."
+      },
+      "azure": {
+        "title": "Microsoft Azure",
+        "description": "Cloud-ul Microsoft Azure este utilizat pentru a găzdui platforma și toate serviciile sale. Acest lucru asigură faptul că platforma este întotdeauna disponibilă și că poate fi extinsă la cerere."
+      },
+      "csharp": {
+        "title": ".NET 8 LTS",
+        "description": "Platforma este construită folosind .NET 8 LTS - cea mai recentă versiune stabilă a .NET. Acest lucru asigură faptul că platforma este rapidă, fiabilă și ușor de utilizat. Platforma este construită folosind C# și F#."
+      },
+      "svelte": {
+        "title": "Svelte",
+        "description": "Folosim Svelte pentru componente UI reactive, rapide, reactive. \nPlatforma `cv.arolariu.ro` este construită doar folosind Svelte și SvelteKit (v5)"
+      },
+      "otel": {
+        "title": "Open Telemetry",
+        "description": "Observabilitate completă cu metrici, urme și jurnale integrate. Totul este instrumentat utilizând OpenTelemetry. Acest lucru permite o experiență de telemetrie unificată pe toată linia. (3PO: metrici, jurnale, urme)"
+      },
+      "githubActions": {
+        "title": "GitHub Actions",
+        "description": "Experiența DevOps este alimentată de acțiuni Github. \n(CI/CD, testare etc.)"
+      }
+    },
+    "technologyTab": {
+      "title": "Construit pentru viitor.",
+      "description": "Această platformă utilizează cele mai recente tehnologii web, combinând Next.js pentru frontend cu .NET pentru servicii backend robuste, toate implementate pe Microsoft Azure.",
+      "points": {
+        "point1": "Arhitectură fără server pentru o scalare și performanță optimă",
+        "point2": "TypeScript full-stack pentru siguranța tipurilor în întreaga aplicație",
+        "point3": "Telemetrie și monitorizare cuprinzătoare cu OpenTelemetry"
+      },
+      "learnMoreBtn": "Explorați arhitectura",
+      "badgeTitle": "Arhitectură modernă"
+    }
   },
   "privacyPolicy": {
     "contactInformation": {

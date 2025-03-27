@@ -2,9 +2,10 @@
 
 "use client";
 
-import {Button} from "@arolariu/components";
+import {Badge, Button} from "@arolariu/components";
 import {motion} from "motion/react";
-import {TbExternalLink} from "react-icons/tb";
+import {useTranslations} from "next-intl";
+import {TbCheck, TbExternalLink} from "react-icons/tb";
 
 /**
  * This component showcases the technology stack used in the platform.
@@ -12,9 +13,26 @@ import {TbExternalLink} from "react-icons/tb";
  * @returns The technology showcase section of the homepage, CSR'ed.
  */
 export function TechnologiesSection() {
+  const t = useTranslations("Home.technologyTab");
+
+  const points = [
+    {
+      check: <TbCheck className='inline h-6 w-6 text-blue-500' />,
+      text: t("points.point1"),
+    },
+    {
+      check: <TbCheck className='inline h-6 w-6 text-blue-500' />,
+      text: t("points.point2"),
+    },
+    {
+      check: <TbCheck className='inline h-6 w-6 text-blue-500' />,
+      text: t("points.point3"),
+    },
+  ];
+
   return (
     <section className='relative py-20'>
-      <div className='absolute inset-0 bg-gradient-to-b from-background via-blue-950 to-background backdrop-blur-sm' />
+      <div className='absolute inset-0 bg-gradient-to-b from-background via-purple-200 to-background backdrop-blur-sm dark:via-blue-950' />
       <div className='container relative z-10 mx-auto px-4'>
         <div className='grid grid-cols-1 items-center gap-16 lg:grid-cols-2'>
           <motion.div
@@ -22,69 +40,21 @@ export function TechnologiesSection() {
             whileInView={{opacity: 1, x: 0}}
             viewport={{once: true}}
             transition={{duration: 0.8}}>
-            <div className='mb-4 inline-block rounded-full border border-primary/20 bg-primary/10 px-4 py-1 text-sm text-primary'>
-              Modern Architecture
-            </div>
-            <h2 className='mb-6 text-3xl font-bold md:text-4xl'>Built for the Future</h2>
-            <p className='mb-6 text-lg text-muted-foreground'>
-              This platform leverages the latest in web technology, combining Next.js for the frontend with .NET for robust backend
-              services, all deployed on Microsoft Azure.
-            </p>
+            <Badge className='text-md rounded-xl bg-gradient-to-r from-cyan-500 via-pink-500 to-purple-500'>{t("badgeTitle")}</Badge>
+            <h2 className='mb-6 text-3xl font-bold md:text-4xl'>{t("title")}</h2>
+            <span className='mb-6 block text-lg text-muted-foreground'>{t("description")}</span>
             <ul className='mb-8 space-y-4'>
-              <li className='flex items-start'>
-                <div className='mr-3 mt-1 text-primary'>
-                  <svg
-                    className='h-5 w-5'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    stroke='currentColor'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M5 13l4 4L19 7'
-                    />
-                  </svg>
-                </div>
-                <p>Serverless architecture for optimal scaling and performance</p>
-              </li>
-              <li className='flex items-start'>
-                <div className='mr-3 mt-1 text-primary'>
-                  <svg
-                    className='h-5 w-5'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    stroke='currentColor'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M5 13l4 4L19 7'
-                    />
-                  </svg>
-                </div>
-                <p>Full-stack TypeScript for type safety across the entire application</p>
-              </li>
-              <li className='flex items-start'>
-                <div className='mr-3 mt-1 text-primary'>
-                  <svg
-                    className='h-5 w-5'
-                    fill='none'
-                    viewBox='0 0 24 24'
-                    stroke='currentColor'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M5 13l4 4L19 7'
-                    />
-                  </svg>
-                </div>
-                <p>Comprehensive telemetry and monitoring with OpenTelemetry</p>
-              </li>
+              {points.map((point) => (
+                <li
+                  key={point.text}
+                  className='flex items-center space-x-4'>
+                  {point.check}
+                  <span>{point.text}</span>
+                </li>
+              ))}
             </ul>
-            <Button>
-              Explore Architecture <TbExternalLink className='ml-2 h-4 w-4' />
+            <Button className='w-full'>
+              {t("learnMoreBtn")} <TbExternalLink className='ml-2 h-4 w-4' />
             </Button>
           </motion.div>
 
@@ -98,27 +68,28 @@ export function TechnologiesSection() {
               <div className='absolute -top-3 left-4 bg-background px-2 py-1 text-xs font-medium'>architecture.tsx</div>
               <pre className='language-typescript overflow-x-auto p-4 text-sm'>
                 <code className='text-foreground'>
-                  {`// Modern architecture pattern
-const platform = {
+                  {`const platform = {
   frontend: {
     framework: "Next.js 14",
     styling: "TailwindCSS",
     stateManagement: "React Context + Hooks",
     dataFetching: "Relay GraphQL"
   },
+
   backend: {
     language: "C#",
     framework: ".NET 8",
     api: "ASP.NET Minimal APIs",
     database: "Azure SQL"
   },
+
   deployment: {
     platform: "Azure App Services",
     ci_cd: "GitHub Actions",
     monitoring: "OpenTelemetry",
     scaling: "Auto-scaling enabled"
   }
-};`}
+} satisfies arolariu.ro; // ✅`}
                 </code>
               </pre>
             </div>

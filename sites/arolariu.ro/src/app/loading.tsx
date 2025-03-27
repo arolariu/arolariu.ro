@@ -1,6 +1,7 @@
 /** @format */
 
-import {Skeleton} from "@/presentation/Skeleton";
+import {Skeleton} from "@arolariu/components";
+import {motion} from "motion/react";
 
 /**
  * A loading component.
@@ -8,37 +9,129 @@ import {Skeleton} from "@/presentation/Skeleton";
  */
 export default async function Loading() {
   return (
-    <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-4 px-5 py-24 text-center lg:flex-row lg:gap-8'>
-      <section className='pb-10'>
-        <div className='px-8 pb-10 sm:w-1/2'>
-          <Skeleton className='h-[500px] w-[300px] object-cover' />
-          <div>
-            <Skeleton className='w-[208px] max-w-full' />
-            <Skeleton className='w-[1960px] max-w-full' />
-            <Skeleton className='w-[64px] max-w-full' />
+    <div className='min-h-screen bg-background'>
+      {/* Header skeleton */}
+      <header className='fixed top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-sm'>
+        <div className='container mx-auto px-4'>
+          <div className='flex h-16 items-center justify-between'>
+            <Skeleton className='h-8 w-32' />
+            <div className='hidden items-center space-x-6 md:flex'>
+              <Skeleton className='h-4 w-16' />
+              <Skeleton className='h-4 w-16' />
+              <Skeleton className='h-4 w-16' />
+            </div>
+            <div className='flex items-center space-x-4'>
+              <Skeleton className='h-8 w-8 rounded-full' />
+              <Skeleton className='h-8 w-20' />
+            </div>
           </div>
-          <div className='mt-6 flex w-full border-0 px-5 py-2'>
-            <Skeleton className='w-[64px] max-w-full' />
-            <Skeleton className='w-[64px] max-w-full' />
-            <Skeleton className='w-[64px] max-w-full' />
+        </div>
+      </header>
+
+      {/* Hero section skeleton */}
+      <section className='relative min-h-screen overflow-hidden pt-20'>
+        <div className='container mx-auto px-4'>
+          <div className='grid min-h-[80vh] grid-cols-1 items-center gap-12 lg:grid-cols-2'>
+            {/* Left side - Text */}
+            <div className='relative z-10'>
+              <Skeleton className='mb-6 h-6 w-40' />
+              <Skeleton className='mb-4 h-16 w-full max-w-md' />
+              <Skeleton className='mb-6 h-16 w-full max-w-md' />
+              <Skeleton className='mb-8 h-6 w-full max-w-lg' />
+              <Skeleton className='mb-8 h-6 w-full max-w-lg' />
+              <div className='flex flex-wrap gap-4'>
+                <Skeleton className='h-10 w-36' />
+                <Skeleton className='h-10 w-36' />
+              </div>
+            </div>
+
+            {/* Right side - Sphere placeholder */}
+            <div className='relative flex flex-col items-center justify-center'>
+              <div className='relative mx-auto w-full max-w-[400px]'>
+                <Skeleton className='aspect-square w-full rounded-full opacity-50' />
+                <motion.div
+                  className='absolute inset-0 rounded-full border-2 border-primary/30'
+                  animate={{
+                    rotate: 360,
+                    scale: [0.9, 1.1, 0.9],
+                  }}
+                  transition={{
+                    duration: 8,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: "linear",
+                  }}
+                />
+                <motion.div
+                  className='absolute inset-0 rounded-full border border-primary/20'
+                  animate={{
+                    rotate: -360,
+                    scale: [1.1, 0.9, 1.1],
+                  }}
+                  transition={{
+                    duration: 10,
+                    repeat: Number.POSITIVE_INFINITY,
+                    ease: "linear",
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
-      <section className='pb-10'>
-        <div className='px-8 pb-10 sm:w-1/2'>
-          <Skeleton className='h-[500px] w-[300px] object-cover' />
-          <div>
-            <Skeleton className='w-[208px] max-w-full' />
-            <Skeleton className='w-[1960px] max-w-full' />
-            <Skeleton className='w-[64px] max-w-full' />
+
+      {/* Technology cards section */}
+      <section className='relative py-20'>
+        <div className='container mx-auto px-4'>
+          <div className='mb-16 text-center'>
+            <Skeleton className='mx-auto mb-4 h-6 w-40' />
+            <Skeleton className='mx-auto mb-6 h-10 w-64' />
+            <Skeleton className='mx-auto h-5 w-96' />
           </div>
-          <div className='mt-6 flex w-full border-0 px-5 py-2'>
-            <Skeleton className='w-[64px] max-w-full' />
-            <Skeleton className='w-[64px] max-w-full' />
-            <Skeleton className='w-[64px] max-w-full' />
+
+          <div className='grid grid-cols-1 gap-8 md:grid-cols-3'>
+            {Array.from({length: 6}).map((_, index) => (
+              <Skeleton
+                key={index}
+                className='h-64 w-full rounded-lg'
+              />
+            ))}
           </div>
         </div>
       </section>
-    </main>
+
+      {/* Footer skeleton */}
+      <footer className='relative bg-muted/50 py-12'>
+        <div className='container mx-auto px-4'>
+          <div className='grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4'>
+            <div>
+              <Skeleton className='mb-4 h-6 w-24' />
+              <Skeleton className='mb-2 h-4 w-full' />
+              <Skeleton className='h-4 w-3/4' />
+            </div>
+            <div>
+              <Skeleton className='mb-4 h-6 w-24' />
+              <Skeleton className='mb-2 h-4 w-32' />
+              <Skeleton className='mb-2 h-4 w-32' />
+              <Skeleton className='h-4 w-32' />
+            </div>
+            <div>
+              <Skeleton className='mb-4 h-6 w-24' />
+              <Skeleton className='mb-2 h-4 w-32' />
+              <Skeleton className='h-4 w-32' />
+            </div>
+            <div>
+              <Skeleton className='mb-4 h-6 w-24' />
+              <div className='flex space-x-4'>
+                <Skeleton className='h-8 w-8 rounded-full' />
+                <Skeleton className='h-8 w-8 rounded-full' />
+              </div>
+            </div>
+          </div>
+          <div className='mt-12 border-t border-border pt-8 text-center'>
+            <Skeleton className='mx-auto h-4 w-64' />
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }

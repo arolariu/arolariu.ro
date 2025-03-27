@@ -12,10 +12,10 @@ import {TechnologiesSection} from "./_components/Technologies";
  */
 export default function RenderHomeScreen() {
   return (
-    <>
+    <main>
       <HeroSection />
       <TechnologiesSection />
       <FeaturesSection />
-    </>
+    </main>
   );
 }

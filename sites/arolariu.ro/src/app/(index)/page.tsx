@@ -7,9 +7,5 @@ import RenderHomeScreen from "./island";
  * @returns The home page component.
  */
 export default async function Home() {
-  return (
-    <main>
-      <RenderHomeScreen />
-    </main>
-  );
+  return <RenderHomeScreen />;
 }

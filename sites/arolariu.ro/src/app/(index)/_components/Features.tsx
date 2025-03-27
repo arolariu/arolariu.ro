@@ -35,53 +35,49 @@ const Feature = ({title, icon, description}: Readonly<Props>) => {
  * @returns The features section of the homepage, CSR'ed.
  */
 export function FeaturesSection() {
-  const t = useTranslations("Home");
+  const t = useTranslations("Home.featuresTab");
   const features = [
     {
       icon: <TbBrandNextjs className='inline h-10 w-10' />,
-      title: "Next.js v14",
-      description:
-        "The platform is built using NextJS - the most popular React framework for production.  It is designed for production-grade React applications. NextJS is the most popular React framework for a reason: it is fast, reliable, and easy to use.",
+      title: t("nextJs.title"),
+      description: t("nextJs.description"),
     },
     {
       icon: <TbBrandAzure className='inline h-10 w-10' />,
-      title: "Microsoft Azure",
-      description:
-        "The Microsoft Azure cloud is used to host the platform and all of its services. This ensures that the platform is always available and that it can scale on demand.",
+      title: t("azure.title"),
+      description: t("azure.description"),
     },
     {
       icon: <TbBrandCSharp className='inline h-10 w-10' />,
-      title: ".NET 8 LTS",
-      description: "The backend services are built using the latest LTS version of .NET 8",
+      title: t("csharp.title"),
+      description: t("csharp.description"),
     },
     {
       icon: <TbBrandSvelte className='inline h-10 w-10' />,
-      title: "Svelte",
-      description:
-        "Utilizing Svelte for lightning-fast, reactive UI components. The `cv.arolariu.ro` platform is built exclusively using Svelte and SvelteKit (v5)",
+      title: t("svelte.title"),
+      description: t("svelte.description"),
     },
     {
       icon: <TbBinoculars className='inline h-10 w-10' />,
-      title: "OpenTelemetry",
-      description:
-        "Complete observability with integrated metrics, traces, and logs. Everything is instrumented using OpenTelemetry. This allows for a unified telemetry experience across the board. (3PO: metrics, logs, traces)",
+      title: t("otel.title"),
+      description: t("otel.description"),
     },
     {
       icon: <TbBrandGithub className='inline h-10 w-10' />,
-      title: "GitHub Actions",
-      description: "The DevOps experience is powered by GitHub Actions. (CI/CD, Testing, etc.)",
+      title: t("githubActions.title"),
+      description: t("githubActions.description"),
     },
-  ];
+  ] as const;
 
   return (
     <section className='py-12 sm:pb-16 lg:pb-20 xl:pb-24'>
       <article className='mx-auto max-w-screen-xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16'>
         <TypewriterText
-          words={[...t("1stPanel.title")]}
+          words={[...t("title")]}
           className='text-5xl font-bold'
           cursorClassName='h-10'
         />
-        <p className='mt-4 text-center text-gray-500'>{t("1stPanel.subtitle")}</p>
+        <p className='mt-4 text-center text-gray-500'>{t("description")}</p>
 
         <div className='mt-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3'>
           {features.map((feature) => (
@@ -96,11 +92,7 @@ export function FeaturesSection() {
         <Link
           href='/about'
           className='mx-auto mt-8 block text-center'>
-          <button
-            type='button'
-            className='text-md btn btn-primary text-white'>
-            Interesting? Click here to learn more...
-          </button>
+          {t("learnMoreBtn")}
         </Link>
       </article>
     </section>

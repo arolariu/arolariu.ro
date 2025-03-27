@@ -52,25 +52,28 @@ const FooterNavigation = () => {
       <div>
         <p className='cursor-default font-semibold tracking-wide text-white hover:text-yellow-500'>{t("subdomains")}</p>
         <ul className='mt-2 space-y-2'>
+          {SITE_NAME === "arolariu.ro" ? (
+            <li>
+              <Link
+                href='https://dev.arolariu.ro'
+                className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
+                <code>dev.arolariu.ro</code>
+              </Link>
+            </li>
+          ) : (
+            <li>
+              <Link
+                href='https://arolariu.ro'
+                className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
+                <code>arolariu.ro</code>
+              </Link>
+            </li>
+          )}
           <li>
             <Link
               href='https://api.arolariu.ro'
               className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
               <code>api.arolariu.ro</code>
-            </Link>
-          </li>
-          <li>
-            <Link
-              href='https://about.arolariu.ro'
-              className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
-              <code>about.arolariu.ro</code>
-            </Link>
-          </li>
-          <li>
-            <Link
-              href='https://dev.arolariu.ro'
-              className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
-              <code>dev.arolariu.ro</code>
             </Link>
           </li>
           <li>
