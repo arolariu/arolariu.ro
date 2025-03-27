@@ -2,9 +2,11 @@
 
 import en from "./messages/en.json";
 
-type Messages = typeof en;
+const locales = ["en", "ro"] as const;
 
-declare global {
-  // Use type safe message keys with `next-intl`
-  interface IntlMessages extends Messages {}
+declare module "next-intl" {
+  interface AppConfig {
+    Locale: (typeof locales)[number];
+    Messages: typeof en;
+  }
 }

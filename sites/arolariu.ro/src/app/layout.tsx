@@ -6,7 +6,7 @@ import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
 import {enUS, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
 import {NextIntlClientProvider as TranslationProvider} from "next-intl";
-import {getLocale, getMessages} from "next-intl/server";
+import {getLocale} from "next-intl/server";
 import {Suspense, type ReactNode} from "react";
 import Loading from "./loading";
 import ContextProviders from "./providers";
@@ -26,14 +26,13 @@ export {metadata} from "@/metadata";
  */
 export default async function RootLayout({children}: Readonly<{children: ReactNode}>) {
   const locale = await getLocale();
-  const messages = await getMessages({locale});
   const eulaCookie = await getCookie("eula-accepted");
 
   return (
     <AuthProvider localization={locale === "ro" ? roRO : enUS}>
       <FontProvider>
         <HtmlWrapper locale={locale}>
-          <TranslationProvider messages={messages}>
+          <TranslationProvider>
             <ContextProviders>
               <Header />
               <Suspense fallback={<Loading />}>{eulaCookie ? children : <Eula locale={locale} />}</Suspense>

@@ -1,12 +1,18 @@
 /** @format */
 import {getCookie} from "@/lib/actions/cookies.action";
+import {Locale} from "next-intl";
 import {getRequestConfig} from "next-intl/server";
 
 export default getRequestConfig(async () => {
   const locale = (await getCookie("locale")) ?? "en";
 
+  const supportedLocales = ["en", "ro"] as const;
+  if (!supportedLocales.includes(locale as Locale)) {
+    throw new Error(`[arolariu.ro::i18n] >>> Locale "${locale}" is not supported.`);
+  }
+
   return {
-    locale,
+    locale: locale as Locale,
     messages: (await import(`../../messages/${locale}.json`)).default,
   };
 });

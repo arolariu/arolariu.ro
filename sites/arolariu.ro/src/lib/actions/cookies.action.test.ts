@@ -14,7 +14,7 @@ describe("getCookie", () => {
     };
     (cookies as jest.Mock).mockResolvedValue(mockCookies);
 
-    const result = await getCookie({name: "testCookie"});
+    const result = await getCookie("testCookie");
 
     expect(result).toBe("testValue");
     expect(mockCookies.get).toHaveBeenCalledWith("testCookie");
@@ -26,7 +26,7 @@ describe("getCookie", () => {
     };
     (cookies as jest.Mock).mockResolvedValue(mockCookies);
 
-    const result = await getCookie({name: "nonExistentCookie"});
+    const result = await getCookie("nonExistentCookie");
 
     expect(result).toBeUndefined();
     expect(mockCookies.get).toHaveBeenCalledWith("nonExistentCookie");
@@ -40,9 +40,9 @@ describe("setCookie", () => {
     };
     (cookies as jest.Mock).mockResolvedValue(mockCookies);
 
-    await setCookie({name: "testCookie", value: "testValue"});
+    await setCookie("testCookie", "testValue");
 
-    expect(mockCookies.set).toHaveBeenCalledWith("testCookie", "testValue");
+    expect(mockCookies.set).toHaveBeenCalledWith("testCookie", "testValue", {path: "/"});
   });
 
   it("should handle setting a cookie with an empty value", async () => {
@@ -51,8 +51,8 @@ describe("setCookie", () => {
     };
     (cookies as jest.Mock).mockResolvedValue(mockCookies);
 
-    await setCookie({name: "emptyCookie", value: ""});
+    await setCookie("emptyCookie", "");
 
-    expect(mockCookies.set).toHaveBeenCalledWith("emptyCookie", "");
+    expect(mockCookies.set).toHaveBeenCalledWith("emptyCookie", "", {path: "/"});
   });
 });
