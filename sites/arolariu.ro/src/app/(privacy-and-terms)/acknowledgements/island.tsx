@@ -10,6 +10,12 @@ type Props = {
   lastUpdatedDate: string;
 };
 
+/**
+ * This component renders the acknowledgements screen for the third-party packages used in this project.
+ * It displays the title, last updated date, and a list of packages with their licenses.
+ * The component is designed to be used in a client-side rendered context.
+ * @returns The acknowledgements screen, CSR'ed.
+ */
 export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}: Readonly<Props>) {
   const t = useTranslations("Acknowledgements");
 

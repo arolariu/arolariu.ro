@@ -19,6 +19,12 @@ import {
   TabsTrigger,
 } from "@arolariu/components";
 
+/**
+ * This component renders a loading skeleton for the acknowledgements page.
+ * It displays placeholders for the header, last updated date, search and filter controls,
+ * tabs, and footer.
+ * The skeletons are used to indicate that the content is being loaded.
+ */
 export default async function Loading() {
   return (
     <div className='container mx-auto max-w-7xl py-10'>
@@ -69,10 +75,11 @@ export default async function Loading() {
             value='grid'
             className='w-full'>
             <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
-              {Array(9)
+              {Array.from({length: 9})
                 .fill(0)
                 .map((_, index) => (
                   <Card
+                    // eslint-disable-next-line react/no-array-index-key -- skeleton
                     key={index}
                     className='h-full'>
                     <CardHeader>
@@ -139,10 +146,12 @@ export default async function Loading() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Array(8)
+                  {Array.from({length: 8})
                     .fill(0)
                     .map((_, index) => (
-                      <TableRow key={index}>
+                      <TableRow
+                        // eslint-disable-next-line react/no-array-index-key -- skeleton
+                        key={index}>
                         <TableCell>
                           <Skeleton className='h-4 w-32' />
                         </TableCell>
