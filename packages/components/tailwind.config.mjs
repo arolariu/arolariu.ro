@@ -1,11 +1,9 @@
-import daisyUI from "daisyui";
-
 /**
  * @type {import('tailwindcss').Config}
  */
 const tailwindConfig = {
   darkMode: "class",
-  plugins: [daisyUI],
+  plugins: [],
   content: [
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
     "./stories/**/*.{js,ts,jsx,tsx,mdx}",
