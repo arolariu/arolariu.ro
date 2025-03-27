@@ -60,78 +60,50 @@ const articles = {
   termsOfService: articlesForTermsOfService,
 } as Record<TranslatedPage, TranslatedPageArticles>;
 
-const EnrichedTitle = ({pageType, titleKey}: Readonly<{pageType: TranslatedPage; titleKey: string}>) => {
-  const t = useTranslations<TranslatedPage>(pageType);
-
-  return (
-    <span className='text-2xl font-black tracking-widest underline'>
-      {t.rich<any>(titleKey as any, {
-        br: (chunks) => (
-          <>
-            <br />
-            {chunks}
-          </>
-        ),
-      })}
-    </span>
-  );
-};
-
-const EnrichedContent = ({pageType, contentKey}: Readonly<{pageType: TranslatedPage; contentKey: string}>) => {
-  const t = useTranslations<TranslatedPage>(pageType);
-
-  return (
-    <section className='text-pretty italic'>
-      {t.rich(contentKey as any, {
-        br: (chunks) => (
-          <>
-            <br />
-            {chunks}
-          </>
-        ),
-        code: (chunks) => <code className='font-extrabold text-blue-400'>{chunks}</code>,
-        ul: (chunks) => <ul className='list-inside list-disc pt-2'>{chunks}</ul>,
-        li: (chunks) => <li>{chunks}</li>,
-        span: (chunks) => <span>{chunks}</span>,
-      })}
-    </section>
-  );
-};
-
-const EnrichedLegalArticle = ({
-  pageType,
-  titleKey,
-  contentKey,
-}: Readonly<{pageType: TranslatedPage; titleKey: string; contentKey: string}>) => {
-  return (
-    <article className='w-full py-4'>
-      <EnrichedTitle
-        pageType={pageType}
-        titleKey={titleKey}
-      />
-      <EnrichedContent
-        pageType={pageType}
-        contentKey={contentKey}
-      />
-    </article>
-  );
-};
-
 /**
  * The EnhancedLegalArticles component renders a list of legal articles for a given page type.
  * @param pageType The type of page for which to render the legal articles.
  * @returns A list of legal articles for the given page type.
  */
 export default function EnhancedLegalArticles({pageType}: Readonly<{pageType: TranslatedPage}>) {
+  const t = useTranslations<TranslatedPage>(pageType);
   // eslint-disable-next-line security/detect-object-injection -- pageType is a controlled value
   const sections = articles.hasOwnProperty(pageType) ? articles[pageType] : [];
 
-  return sections.map((section) => (
-    <EnrichedLegalArticle
-      key={section.titleKey}
-      pageType={pageType}
-      titleKey={section.titleKey}
-      contentKey={section.contentKey}
-    />
-  ));
+  return sections.map((section) => {
+    const titleKey = section.titleKey as keyof TranslatedPageArticle;
+    const contentKey = section.contentKey as keyof TranslatedPageArticle;
+    return (
+      <article
+        className='w-full py-4'
+        key={titleKey}>
+        <span className='text-2xl font-black tracking-widest underline'>
+          {/* @ts-expect-error -- This is a known issue with the library */}
+          {t.rich(`${titleKey}`, {
+            br: (chunks) => (
+              <>
+                <br />
+                {chunks}
+              </>
+            ),
+          })}
+        </span>
+        <section className='text-pretty italic'>
+          {/* @ts-expect-error -- This is a known issue with the library */}
+          {t.rich(`${contentKey}`, {
+            br: (chunks) => (
+              <>
+                <br />
+                {chunks}
+              </>
+            ),
+            code: (chunks) => <code className='font-extrabold text-blue-400'>{chunks}</code>,
+            ul: (chunks) => <ul className='list-inside list-disc pt-2'>{chunks}</ul>,
+            li: (chunks) => <li>{chunks}</li>,
+            span: (chunks) => <span>{chunks}</span>,
+          })}
+        </section>
+      </article>
+    );
+  });
 }

@@ -2,7 +2,7 @@
 
 "use client";
 
-import {NamespaceKeys, useTranslations} from "next-intl";
+import {Messages, NamespaceKeys, useTranslations} from "next-intl";
 
 type Props = {
   sectionKey: string;
@@ -24,11 +24,12 @@ type Props = {
  * ```
  */
 export function RichText({sectionKey, textKey}: Readonly<Props>) {
-  const t = useTranslations<NamespaceKeys<IntlMessages, string>>(sectionKey as any);
+  const t = useTranslations<NamespaceKeys<Messages, string>>(sectionKey as any);
   const isTextKeyInNamespace = t.has(textKey as any);
 
   if (isTextKeyInNamespace) {
-    return t.rich(textKey as NamespaceKeys<IntlMessages, string>, {
+    // @ts-expect-error -- This is a known issue with the library
+    return t.rich(textKey, {
       strong: (chunks) => <strong>{chunks}</strong>,
       em: (chunks) => <em>{chunks}</em>,
       br: (chunks) => (
