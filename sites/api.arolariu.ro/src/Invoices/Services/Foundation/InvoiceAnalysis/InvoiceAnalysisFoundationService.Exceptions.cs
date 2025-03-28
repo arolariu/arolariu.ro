@@ -24,6 +24,7 @@ public partial class InvoiceAnalysisFoundationService
 	}
 
 	[SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>")]
+	[SuppressMessage("Style", "IDE0051:Remove unused private members", Justification = "<Pending>")]
 	private InvoiceFoundationValidationException CreateAndLogValidationException(Exception exception)
 	{
 		var invoiceFoundationValidationException = new InvoiceFoundationValidationException(exception);
@@ -33,6 +34,7 @@ public partial class InvoiceAnalysisFoundationService
 	}
 
 	[SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>")]
+	[SuppressMessage("Style", "IDE0051:Remove unused private members", Justification = "<Pending>")]
 	private InvoiceFoundationDependencyException CreateAndLogDependencyException(Exception exception)
 	{
 		var invoiceFoundationDependencyException = new InvoiceFoundationDependencyException(exception);
@@ -42,6 +44,7 @@ public partial class InvoiceAnalysisFoundationService
 	}
 
 	[SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>")]
+	[SuppressMessage("Style", "IDE0051:Remove unused private members", Justification = "<Pending>")]
 	private InvoiceFoundationDependencyValidationException CreateAndLogDependencyValidationException(Exception exception)
 	{
 		var invoiceFoundationDependencyValidationException = new InvoiceFoundationDependencyValidationException(exception);
