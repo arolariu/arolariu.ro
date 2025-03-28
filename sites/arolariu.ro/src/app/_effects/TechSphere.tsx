@@ -11,7 +11,7 @@ import * as THREE from "three";
  * The sphere rotates and has particles that move around it.
  * @returns The TechSphere component, which is a 3D sphere with particles.
  */
-export function TechSphere() {
+export default function TechSphere() {
   // Scene setup
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);

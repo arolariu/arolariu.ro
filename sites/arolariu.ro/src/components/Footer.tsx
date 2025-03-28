@@ -1,6 +1,6 @@
 /** @format */
 
-import logo from "@/../public/logo.svg";
+import logo from "@/app/logo.svg";
 import {COMMIT_SHA, SITE_NAME, TIMESTAMP} from "@/lib/utils.generic";
 import {useTranslations} from "next-intl";
 import {getTranslations} from "next-intl/server";

@@ -51,6 +51,14 @@
   }
 }
 
+
+.text {
+  font-family: var(--font-default);
+  font-weight: 400;
+  font-style: normal;
+}
+
+
 @layer base {
   * {
     @apply border-border;

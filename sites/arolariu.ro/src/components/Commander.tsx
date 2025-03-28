@@ -3,11 +3,24 @@
 "use client";
 
 import {useFontContext} from "@/contexts/FontContext";
+import {setCookie} from "@/lib/actions/cookies.action";
 import {CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator} from "@arolariu/components";
 import {useTheme} from "next-themes";
 import {useRouter} from "next/navigation";
 import {useCallback, useEffect, useState} from "react";
-import {TbAccessible, TbBrandGithub, TbCalculator, TbCalendar, TbCpu, TbHome, TbMoon, TbSettings, TbSun, TbTypeface} from "react-icons/tb";
+import {
+  TbAccessible,
+  TbBrandGithub,
+  TbCalculator,
+  TbCalendar,
+  TbCpu,
+  TbHome,
+  TbLanguage,
+  TbMoon,
+  TbSettings,
+  TbSun,
+  TbTypeface,
+} from "react-icons/tb";
 
 /**
  * Command palette component that provides a command input and a list of commands.
@@ -205,6 +218,27 @@ export function Commander() {
             }>
             <TbSettings className='mr-2 h-4 w-4' />
             <span>System</span>
+          </CommandItem>
+        </CommandGroup>
+        <CommandSeparator />
+        <CommandGroup heading='Set Language'>
+          <CommandItem
+            onSelect={() =>
+              runCommand(() => {
+                void setCookie("locale", "en");
+              })
+            }>
+            <TbLanguage className='mr-2 h-4 w-4' />
+            <span>English</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() =>
+              runCommand(() => {
+                void setCookie("locale", "ro");
+              })
+            }>
+            <TbLanguage className='mr-2 h-4 w-4' />
+            <span>Romanian</span>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />

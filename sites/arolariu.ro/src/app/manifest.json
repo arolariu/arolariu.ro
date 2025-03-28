@@ -66,5 +66,7 @@
   "scope": "/",
   "short_name": "arolariu",
   "start_url": "https://arolariu.ro/?launcher=pwa",
-  "theme_color": "#9013fe"
+  "theme_color": "#9013fe",
+  "prefer_related_applications": false,
+  "related_applications": []
 }

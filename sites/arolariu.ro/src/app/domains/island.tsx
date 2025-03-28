@@ -1,6 +1,7 @@
 /** @format */
 
 "use client";
+
 import {useTranslations} from "next-intl";
 import DomainServiceCard from "./_components/DomainServiceCard";
 
@@ -42,6 +43,7 @@ export default function RenderDomainsScreen() {
           description={t("services.invoices.card.description")}
           linkTo='/domains/invoices'
           imageUrl='/images/domains/invoice-management-system.png'
+          callToAction={t("services.callToAction")}
         />
       </section>
     </main>

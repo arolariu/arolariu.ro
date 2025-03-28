@@ -2,7 +2,7 @@
 
 "use client";
 
-import logo from "@/../public/logo.svg";
+import logo from "@/app/logo.svg";
 import {useWindowSize} from "@/hooks";
 import Image from "next/image";
 import Link from "next/link";

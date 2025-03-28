@@ -89,13 +89,15 @@ export default async function Loading() {
           </div>
 
           <div className='grid grid-cols-1 gap-8 md:grid-cols-3'>
-            {Array.from({length: 6}).map((_, index) => (
-              <Skeleton
-                // eslint-disable-next-line react/no-array-index-key -- skeleton
-                key={index}
-                className='h-64 w-full rounded-lg'
-              />
-            ))}
+            {Array.from({length: 6})
+              .fill(0)
+              .map((_, index) => (
+                <Skeleton
+                  // eslint-disable-next-line react/no-array-index-key -- skeleton
+                  key={index}
+                  className='h-64 w-full rounded-lg'
+                />
+              ))}
           </div>
         </div>
       </section>

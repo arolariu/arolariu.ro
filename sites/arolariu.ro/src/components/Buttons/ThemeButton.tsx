@@ -25,7 +25,7 @@ export function ThemeButton() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setTheme is a stable function.
   }, [theme]);
 
-  if (!mounted) return;
+  if (!mounted) return null;
   return (
     <motion.button
       className='relative h-10 w-10 rounded-full'

@@ -1,6 +1,5 @@
 /** @format */
 
-import {useTranslations} from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -9,6 +8,7 @@ type Props = {
   description: string;
   imageUrl: string;
   linkTo: string;
+  callToAction: string;
 };
 
 /**
@@ -16,9 +16,7 @@ type Props = {
  * This card wraps a service and displays its title, description, and a call to action button.
  * @returns The domain service card, with the service title, description, and call to action button.
  */
-export default function DomainServiceCard({title, description, imageUrl, linkTo}: Readonly<Props>) {
-  const t = useTranslations("Domains.services");
-
+export default function DomainServiceCard({title, description, imageUrl, linkTo, callToAction}: Readonly<Props>) {
   return (
     <section className='mb-6 max-w-80 rounded-xl border p-4 sm:mb-0'>
       <article className='h-64 overflow-hidden rounded-lg'>
@@ -36,7 +34,7 @@ export default function DomainServiceCard({title, description, imageUrl, linkTo}
         <Link
           href={linkTo}
           className='mt-3 inline-flex items-center text-indigo-500'>
-          {t("callToAction")}
+          {callToAction}
           <svg
             fill='none'
             stroke='currentColor'

@@ -12,7 +12,7 @@ import {TbCheck, TbExternalLink} from "react-icons/tb";
  * It highlights the modern architecture and the technologies employed.
  * @returns The technology showcase section of the homepage, CSR'ed.
  */
-export function TechnologiesSection() {
+export default function TechnologiesSection() {
   const t = useTranslations("Home.technologyTab");
 
   const points = [

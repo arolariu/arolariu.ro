@@ -1,6 +1,6 @@
 /** @format */
 
-import {Skeleton} from "@/presentation/Skeleton";
+import {Skeleton} from "@arolariu/components";
 
 /**
  * This function renders the loading screen for the auth pages.

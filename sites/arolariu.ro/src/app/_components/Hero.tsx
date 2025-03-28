@@ -3,7 +3,7 @@
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
-import {TechSphere} from "../_effects/TechSphere";
+import TechSphere from "../_effects/TechSphere";
 
 /**
  * The hero section of the homepage, CSR'ed.

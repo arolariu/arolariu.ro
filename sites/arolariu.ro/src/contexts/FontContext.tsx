@@ -2,7 +2,7 @@
 "use client";
 
 import {isBrowserStorageAvailable} from "@/lib/utils.client";
-import type {NextFont} from "next/dist/compiled/@next/font";
+import type {NextFontWithVariable} from "next/dist/compiled/@next/font";
 import {Atkinson_Hyperlegible, Caudex} from "next/font/google";
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from "react";
 
@@ -12,10 +12,11 @@ const STORAGE_KEY = "selectedFont";
  * Default font for the application.
  * This font is used when no other font is selected.
  */
-const defaultFont: NextFont = Caudex({
+const defaultFont: NextFontWithVariable = Caudex({
   weight: "700",
   style: "normal",
   subsets: ["latin"],
+  variable: "--font-default",
   preload: true,
 });
 
@@ -24,10 +25,11 @@ const defaultFont: NextFont = Caudex({
  * This font is used when the user selects the dyslexic font option.
  * It is designed to improve readability for individuals with dyslexia.
  */
-const dyslexicFont: NextFont = Atkinson_Hyperlegible({
+const dyslexicFont: NextFontWithVariable = Atkinson_Hyperlegible({
   weight: "400",
   style: "normal",
   subsets: ["latin"],
+  variable: "--font-dyslexic",
   preload: false,
 });
 
@@ -39,7 +41,7 @@ type FontType = "normal" | "dyslexic";
  * This interface is used to ensure type safety when consuming the context in components.
  */
 interface FontContextValueType {
-  font: NextFont;
+  font: NextFontWithVariable;
   setFont: (fontType: FontType) => void;
 }
 

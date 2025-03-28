@@ -34,7 +34,7 @@ const Feature = ({title, icon, description}: Readonly<Props>) => {
  * The features are built using the `Feature` component.
  * @returns The features section of the homepage, CSR'ed.
  */
-export function FeaturesSection() {
+export default function FeaturesSection() {
   const t = useTranslations("Home.featuresTab");
   const features = [
     {
