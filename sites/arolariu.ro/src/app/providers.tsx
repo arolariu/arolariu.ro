@@ -20,11 +20,9 @@ export default function ContextProviders({locale, children}: Readonly<{locale: "
       <FontProvider>
         <TranslationProvider>
           <ThemeProvider
-            scriptProps={{src: "/", async: true}}
+            scriptProps={{async: true}}
             attribute='class'
-            themes={["light", "dark"]}
-            enableSystem
-            disableTransitionOnChange>
+            themes={["light", "dark"]}>
             {children}
             <ToastProvider />
             <Commander />

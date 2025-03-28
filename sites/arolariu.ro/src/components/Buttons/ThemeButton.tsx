@@ -26,6 +26,8 @@ export function ThemeButton() {
   }, [theme]);
 
   if (!mounted) return null;
+  if (!theme) return null;
+
   return (
     <motion.button
       className='relative h-10 w-10 rounded-full'
