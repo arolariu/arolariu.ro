@@ -37,6 +37,7 @@
     "clean": "npx tsx scripts/clean.ts",
     "dev": "NODE_OPTIONS='--inspect' next dev --turbopack --experimental-https",
     "dev:classic": "NODE_OPTIONS='--inspect' next dev --experimental-https",
+    "dev:debug": "npm run build:before && next build --debug --profile --no-mangling && npm run build:after && npm run start",
     "email": "email dev",
     "format": "npx tsx scripts/format.ts",
     "generate": "npm run generate:translations && npm run generate:acknowledgements",

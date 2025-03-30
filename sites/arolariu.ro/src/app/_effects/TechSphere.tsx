@@ -3,7 +3,19 @@
 "use client";
 
 import {useCallback, useEffect, useRef} from "react";
-import * as THREE from "three";
+import {
+  BufferAttribute,
+  BufferGeometry,
+  DoubleSide,
+  IcosahedronGeometry,
+  Mesh,
+  MeshBasicMaterial,
+  PerspectiveCamera,
+  Points,
+  PointsMaterial,
+  Scene,
+  WebGLRenderer,
+} from "three";
 
 /**
  * The TechSphere component renders a 3D sphere with particles using Three.js.
@@ -13,13 +25,13 @@ import * as THREE from "three";
  */
 export default function TechSphere() {
   // Scene setup
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+  const scene = new Scene();
+  const camera = new PerspectiveCamera(75, 1, 0.1, 1000);
   camera.position.z = 5;
 
   // Create sphere
-  const geometry = new THREE.IcosahedronGeometry(3, 3);
-  const material = new THREE.MeshBasicMaterial({
+  const geometry = new IcosahedronGeometry(3, 3);
+  const material = new MeshBasicMaterial({
     color: 0x8b_5c_f6, // purple-500
     wireframe: true,
     transparent: true,
@@ -27,12 +39,12 @@ export default function TechSphere() {
     fog: true,
     depthTest: true, // enable depth testing for better rendering
     depthWrite: true, // enable depth writing for better rendering
-    side: THREE.DoubleSide, // render both sides of the geometry
+    side: DoubleSide, // render both sides of the geometry
   });
-  const sphere = new THREE.Mesh(geometry, material);
+  const sphere = new Mesh(geometry, material);
 
   // Create particles
-  const particlesGeometry = new THREE.BufferGeometry();
+  const particlesGeometry = new BufferGeometry();
   const particlesCount = 1000;
   const posArray = Float32Array.from(
     {length: particlesCount * 3},
@@ -41,20 +53,20 @@ export default function TechSphere() {
       (Math.random() - 0.5) * 5,
   );
 
-  particlesGeometry.setAttribute("position", new THREE.BufferAttribute(posArray, 3));
-  const particlesMaterial = new THREE.PointsMaterial({
+  particlesGeometry.setAttribute("position", new BufferAttribute(posArray, 3));
+  const particlesMaterial = new PointsMaterial({
     size: 0.05,
     color: 0x63_66_f1, // blue-500
     transparent: true,
     alphaTest: 0.5, // add alpha test for better rendering
   });
-  const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+  const particlesMesh = new Points(particlesGeometry, particlesMaterial);
 
   // Container reference element.
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Responsive size handler
-  const updateSize = useCallback((renderer: THREE.WebGLRenderer) => {
+  const updateSize = useCallback((renderer: WebGLRenderer) => {
     if (!containerRef.current) return;
     const containerWidth = containerRef.current.clientWidth;
     const width = Math.min(600, containerWidth);
@@ -64,7 +76,7 @@ export default function TechSphere() {
 
   // Animation loop handler
   const animate = useCallback(
-    (renderer: THREE.WebGLRenderer) => {
+    (renderer: WebGLRenderer) => {
       const rotationSpeed = {x: 0.003, y: 0.005};
       requestAnimationFrame(() => animate(renderer));
 
@@ -85,7 +97,7 @@ export default function TechSphere() {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const renderer = new THREE.WebGLRenderer({
+    const renderer = new WebGLRenderer({
       antialias: true,
       alpha: true,
     });
