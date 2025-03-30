@@ -7,8 +7,10 @@ import {enUS, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
 import {NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {ThemeProvider} from "next-themes";
+import dynamic from "next/dynamic";
 import React from "react";
-import {WebVitals} from "./web-vitals";
+
+const WebVitals = dynamic(() => import("./web-vitals").then((mod) => mod.WebVitals), {ssr: false});
 
 /**
  * This function provides the context for the app.
