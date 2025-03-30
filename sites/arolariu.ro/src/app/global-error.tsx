@@ -20,6 +20,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>) 
           onClick={() => reset()}>
           Try again
         </button>
+        <code>{JSON.stringify(error, null, 2)}</code>
       </body>
     </html>
   );
