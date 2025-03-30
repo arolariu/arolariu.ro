@@ -10,7 +10,7 @@ import {ThemeProvider} from "next-themes";
 import dynamic from "next/dynamic";
 import React from "react";
 
-const WebVitals = dynamic(() => import("./web-vitals").then((mod) => mod.WebVitals), {ssr: false});
+const WebVitals = dynamic(() => import("./web-vitals").then((mod) => mod.WebVitals));
 
 /**
  * This function provides the context for the app.
