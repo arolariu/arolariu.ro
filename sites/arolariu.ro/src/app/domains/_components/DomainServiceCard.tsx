@@ -16,7 +16,7 @@ type Props = {
  * This card wraps a service and displays its title, description, and a call to action button.
  * @returns The domain service card, with the service title, description, and call to action button.
  */
-export default function DomainServiceCard({title, description, imageUrl, linkTo, callToAction}: Readonly<Props>) {
+export default function DomainServiceCard({title, description, imageUrl, linkTo, callToAction}: Readonly<Props>): React.JSX.Element {
   return (
     <section className='mb-6 max-w-80 rounded-xl border p-4 sm:mb-0'>
       <article className='h-64 overflow-hidden rounded-lg'>

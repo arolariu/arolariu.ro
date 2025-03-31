@@ -22,7 +22,7 @@ interface GlobalErrorProps {
  * @param reset A function to reset the error state and retry the operation.
  * @returns A JSX element representing the global error message and retry button.
  */
-export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>) {
+export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>): React.JSX.Element {
   const [mounted, setMounted] = useState(false);
   const [progress, setProgress] = useState(0);
 

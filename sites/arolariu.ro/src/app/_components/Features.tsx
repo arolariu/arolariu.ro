@@ -15,7 +15,7 @@ type Props = {
   description: string;
 };
 
-const Feature = ({title, icon, description}: Readonly<Props>) => {
+const Feature = ({title, icon, description}: Readonly<Props>): React.JSX.Element => {
   return (
     <Card className='rounded-xl border border-gray-800 p-8 shadow-xl transition hover:border-pink-500/10 hover:shadow-pink-500/10'>
       <CardHeader className='items-center pb-4'>
@@ -34,7 +34,7 @@ const Feature = ({title, icon, description}: Readonly<Props>) => {
  * The features are built using the `Feature` component.
  * @returns The features section of the homepage, CSR'ed.
  */
-export default function FeaturesSection() {
+export default function FeaturesSection(): React.JSX.Element {
   const t = useTranslations("Home.featuresTab");
   const features = [
     {

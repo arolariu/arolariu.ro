@@ -9,6 +9,6 @@ import EnhancedLegalArticles from "../_components/EnhancedLegalArticles";
  * Each section will have a title and a content.
  * @returns All the sections of the terms of service page, CSR'ed.
  */
-export default function RenderTermsOfServiceScreen() {
+export default function RenderTermsOfServiceScreen(): React.JSX.Element {
   return <EnhancedLegalArticles pageType='termsOfService' />;
 }

@@ -14,7 +14,7 @@ import {useInView} from "react-intersection-observer";
  * The component uses the IntersectionObserver API to trigger animations when the section comes into view.
  * @returns A section element containing the competencies grid with animated entries
  */
-export default function Competencies() {
+export default function Competencies(): React.JSX.Element {
   const t = useTranslations("About.Author.Competencies");
   const [ref, inView] = useInView({
     triggerOnce: false,

@@ -16,7 +16,7 @@ type PerspectiveType = {
   quote: string;
 };
 
-const Perspective = ({perspective}: Readonly<{perspective: PerspectiveType}>) => {
+const Perspective = ({perspective}: Readonly<{perspective: PerspectiveType}>): React.JSX.Element => {
   return (
     <Card className='h-full overflow-visible border-none bg-card shadow-lg transition-all duration-300 hover:shadow-xl'>
       <CardContent className='relative px-6 pb-8 pt-12'>
@@ -53,7 +53,7 @@ const Perspective = ({perspective}: Readonly<{perspective: PerspectiveType}>) =>
  * @description A React component that displays a section of perspectives from various authors.
  * @returns A section element containing a grid of perspective cards with animation effects
  */
-export default function Perspectives() {
+export default function Perspectives(): React.JSX.Element {
   const t = useTranslations("About.Author.Perspectives");
   const [ref, inView] = useInView({
     triggerOnce: true,

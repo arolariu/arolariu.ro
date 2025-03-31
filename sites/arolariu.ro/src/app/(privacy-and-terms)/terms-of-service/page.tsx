@@ -13,7 +13,7 @@ export const metadata: Metadata = {
  * The terms of service page, which outlines the terms of service for arolariu.ro.
  * @returns The terms of service page, with the terms of service for arolariu.ro.
  */
-export default async function TermsOfServicePage() {
+export default async function TermsOfServicePage(): Promise<React.JSX.Element> {
   const t = await getTranslations("termsOfService");
 
   return (

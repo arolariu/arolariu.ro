@@ -11,7 +11,7 @@ import {TbTerminal, TbX} from "react-icons/tb";
  * A customizable terminal-like component that emulates a command-line interface.
  * @returns A rendered terminal component with interactive command-line interface
  */
-export default function Terminal() {
+export default function Terminal(): React.JSX.Element {
   const [visible, setVisible] = useState(false);
   const [currentCommand, setCurrentCommand] = useState("");
   const [commandHistory, setCommandHistory] = useState<string[]>([]);

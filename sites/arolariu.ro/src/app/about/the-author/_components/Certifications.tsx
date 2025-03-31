@@ -23,7 +23,7 @@ type CertificationType = {
  * @description This component renders a section showcasing professional certifications.
  * @returns A section containing certification cards with interactive elements
  */
-export default function Certifications() {
+export default function Certifications(): React.JSX.Element {
   const t = useTranslations("About.Author.Certifications");
   const [ref, inView] = useInView({
     triggerOnce: false,

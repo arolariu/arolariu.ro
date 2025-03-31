@@ -15,7 +15,7 @@ import {useRef} from "react";
  * The title is rendered with a typewriter effect and gradient text.
  * @returns A section containing the author's image, animated title, and subtitle
  */
-export default function Hero() {
+export default function Hero(): React.JSX.Element {
   const t = useTranslations("About.Author");
   const ref = useRef(null);
   const {scrollYProgress} = useScroll({

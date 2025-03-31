@@ -6,7 +6,7 @@ import {Skeleton} from "@arolariu/components";
  * This function renders the loading screen for the invoices domain.
  * @returns The loading screen for the invoices domain.
  */
-export default function Loading() {
+export default async function Loading(): Promise<React.JSX.Element> {
   return (
     <section>
       <div className='container mx-auto flex flex-col items-center justify-center px-5 py-24'>

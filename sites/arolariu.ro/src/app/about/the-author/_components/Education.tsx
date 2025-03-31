@@ -35,7 +35,7 @@ const EducationCard = ({
   index: number;
   item: EducationType;
   toggleFlip: (index: number) => void;
-}>) => {
+}>): React.JSX.Element => {
   return (
     <div className='perspective relative w-full 2xsm:h-[800px] md:h-[400px]'>
       <AnimatePresence
@@ -167,7 +167,7 @@ const EducationCard = ({
  * @description Component that displays the educational background of the author.
  * @returns A section containing the author's education information with animated cards.
  */
-export default function Education() {
+export default function Education(): React.JSX.Element {
   const t = useTranslations("About.Author.Education");
   const [ref, inView] = useInView({
     triggerOnce: false,

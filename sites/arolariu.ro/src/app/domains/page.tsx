@@ -14,6 +14,6 @@ export const metadata: Metadata = {
  * This page hosts the domain space services.
  * @returns The domains homepage SSR'ed component.
  */
-export default async function DomainsHomepage() {
+export default async function DomainsHomepage(): Promise<React.JSX.Element> {
   return <RenderDomainsScreen />;
 }

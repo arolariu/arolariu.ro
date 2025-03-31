@@ -16,7 +16,7 @@ type Props = {
  * The component is designed to be used in a client-side rendered context.
  * @returns The acknowledgements screen, CSR'ed.
  */
-export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}: Readonly<Props>) {
+export default function RenderAcknowledgementsScreen({packages, lastUpdatedDate}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("Acknowledgements");
 
   return (

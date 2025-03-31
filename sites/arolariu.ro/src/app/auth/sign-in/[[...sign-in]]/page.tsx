@@ -12,7 +12,7 @@ export const metadata: Metadata = {
  * The sign in page, which allows the user to sign in to the application.
  * @returns The sign in page, with the sign in component from Clerk.
  */
-export default function SignInPage() {
+export default function SignInPage(): React.JSX.Element {
   return (
     <section className='flex flex-col 2xsm:mt-16 2xsm:p-2 sm:p-4 md:mt-0 md:p-8'>
       <h1 className='my-4 text-center text-2xl font-extrabold'>Sign in by reusing your account from one of the following providers:</h1>

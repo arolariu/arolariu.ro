@@ -23,7 +23,7 @@ import {
  * The sphere rotates and has particles that move around it.
  * @returns The TechSphere component, which is a 3D sphere with particles.
  */
-export default function TechSphere() {
+export default function TechSphere(): React.JSX.Element {
   // Scene setup
   const scene = new Scene();
   const camera = new PerspectiveCamera(75, 1, 0.1, 1000);

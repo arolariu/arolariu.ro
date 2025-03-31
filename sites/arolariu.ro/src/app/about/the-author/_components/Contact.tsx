@@ -13,7 +13,7 @@ import {useInView} from "react-intersection-observer";
  * @description CSR'ed component that displays the author's contact information and collaboration interests.
  * @returns A section containing cards with contact information and collaboration opportunities
  */
-export default function Contact() {
+export default function Contact(): React.JSX.Element {
   const t = useTranslations("About.Author.Contact");
   const [ref, inView] = useInView({
     triggerOnce: false,

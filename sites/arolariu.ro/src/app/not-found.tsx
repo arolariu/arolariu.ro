@@ -16,7 +16,7 @@ export const metadata: Metadata = {
  * The 404 page.
  * @returns The 404 page.
  */
-export default async function NotFound() {
+export default async function NotFound(): Promise<React.JSX.Element> {
   const {user} = await fetchUser();
   const headersList = await headers();
   const t = await getTranslations("errors.404");

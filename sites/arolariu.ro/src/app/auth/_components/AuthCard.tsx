@@ -14,7 +14,7 @@ interface Props {
  * The card component for the authentication pages.
  * @returns The authentication card.
  */
-export default function AuthCard({title, description, ctaText, cardType}: Readonly<Props>) {
+export default function AuthCard({title, description, ctaText, cardType}: Readonly<Props>): React.JSX.Element {
   return (
     <article>
       <div className='flex h-64 items-center justify-center overflow-hidden rounded-lg'>

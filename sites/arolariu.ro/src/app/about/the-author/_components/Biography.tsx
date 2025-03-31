@@ -17,7 +17,7 @@ import {useInView} from "react-intersection-observer";
  * engaging presentation with gradients, blur effects, and staggered animations.
  * @returns A section containing the animated biography content
  */
-export default function Biography() {
+export default function Biography(): React.JSX.Element {
   const t = useTranslations("About.Author.Biography");
   const [ref, inView] = useInView({
     triggerOnce: false,

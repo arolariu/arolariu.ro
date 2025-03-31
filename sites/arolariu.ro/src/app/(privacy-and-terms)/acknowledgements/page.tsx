@@ -15,7 +15,7 @@ export const metadata: Metadata = {
  * Acknowledgements page for the third-party packages used in this project.
  * @returns The acknowledgements page, SSR'ed.
  */
-export default async function AcknowledgementsPage() {
+export default async function AcknowledgementsPage(): Promise<React.JSX.Element> {
   const lastUpdatedDate = new Date(TIMESTAMP).toUTCString();
 
   return (

@@ -22,7 +22,7 @@ type ExperienceType = {
   logo: React.JSX.Element;
 };
 
-const WorkCard = (props: Readonly<{experience: ExperienceType}>) => {
+const WorkCard = (props: Readonly<{experience: ExperienceType}>): React.JSX.Element => {
   const {experience} = props;
 
   return (
@@ -130,7 +130,7 @@ const WorkCard = (props: Readonly<{experience: ExperienceType}>) => {
  * detailed information about each role, including responsibilities, achievements, and skills.
  * @returns A section element containing the experience timeline and detailed work card
  */
-export default function Experience() {
+export default function Experience(): React.JSX.Element {
   const t = useTranslations("About.Author.Experiences");
   const [activeExpIndex, setActiveExpIndex] = useState<number>(0);
   const experiences = [

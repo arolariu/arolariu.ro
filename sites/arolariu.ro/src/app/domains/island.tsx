@@ -10,7 +10,7 @@ import DomainServiceCard from "./_components/DomainServiceCard";
  * It displays the services available for the domain.
  * @returns The Domains home screen.
  */
-export default function RenderDomainsScreen() {
+export default function RenderDomainsScreen(): React.JSX.Element {
   const t = useTranslations("Domains");
 
   return (

@@ -12,7 +12,7 @@ import TechSphere from "../_effects/TechSphere";
  * The hero section is animated using the `motion` library.
  * @returns The hero section of the homepage, CSR'ed.
  */
-export default function HeroSection() {
+export default function HeroSection(): React.JSX.Element {
   const t = useTranslations("Home");
   return (
     <section className='relative min-h-screen overflow-hidden py-20'>

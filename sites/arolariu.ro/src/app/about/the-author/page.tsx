@@ -32,7 +32,7 @@ export const metadata: Metadata = {
  * and a ScrollToTop utility for better navigation.
  * @returns The rendered AuthorPage component
  */
-export default async function AuthorPage() {
+export default async function AuthorPage(): Promise<React.JSX.Element> {
   return (
     <div
       className='relative min-h-screen bg-background text-foreground'

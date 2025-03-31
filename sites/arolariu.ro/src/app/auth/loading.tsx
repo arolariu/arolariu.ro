@@ -6,7 +6,7 @@ import {Skeleton} from "@arolariu/components";
  * This function renders the loading screen for the auth pages.
  * @returns The loading screen for the auth pages.
  */
-export default function Loading() {
+export default async function Loading(): Promise<React.JSX.Element> {
   return (
     <main>
       <div className='container mx-auto px-5 py-24'>

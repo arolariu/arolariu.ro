@@ -50,7 +50,7 @@ type PackageType = "all" | "production" | "development";
  * Component that displays a badge indicating the type of package (production or development).
  * @returns A badge indicating the type of package.
  */
-function PackageBadge({type}: Readonly<{type: PackageType}>) {
+function PackageBadge({type}: Readonly<{type: PackageType}>): React.JSX.Element {
   return type === "production" ? (
     <span className='rounded-full bg-green-100 px-3 py-1.5 text-xs font-medium text-green-800 transition-colors duration-200 hover:bg-green-200 dark:bg-green-900 dark:text-green-100 dark:hover:bg-green-800'>
       Production
@@ -66,7 +66,7 @@ function PackageBadge({type}: Readonly<{type: PackageType}>) {
  * Component that displays a dialog with the dependencies of a package.
  * @returns A dialog with the dependencies of a package.
  */
-function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>) {
+function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>): React.JSX.Element {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -112,7 +112,7 @@ function DependenciesDialog({pkg}: Readonly<{pkg: NodePackageInformation}>) {
  * as well as the total number of type definition packages.
  * @returns A table displaying package statistics by dependency type
  */
-export default function PackagesScreen({packages}: Readonly<Props>) {
+export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.Element {
   const {
     extractPackageType,
     filteredAndSortedPackages,

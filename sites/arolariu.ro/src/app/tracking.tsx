@@ -72,7 +72,7 @@ function HotjarAnalytics() {
  * This function renders the tracking scripts for the website.
  * @returns The JSX for the tracking scripts.
  */
-export default function Tracking() {
+export default function Tracking(): React.JSX.Element {
   return (
     <>
       <MicrosoftClarity />

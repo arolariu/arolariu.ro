@@ -14,7 +14,7 @@ export const metadata: Metadata = {
  * The main authentication page.
  * @returns The main authentication page.
  */
-export default async function AuthPage() {
+export default async function AuthPage(): Promise<React.JSX.Element> {
   const {isAuthenticated} = await fetchUser();
   if (isAuthenticated) return redirect("/");
   return <RenderAuthScreen />;

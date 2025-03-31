@@ -7,7 +7,7 @@ import AuthCard from "./_components/AuthCard";
  * The client-side authentication screen.
  * @returns The authentication screen.
  */
-export default function RenderAuthScreen() {
+export default function RenderAuthScreen(): React.JSX.Element {
   const t = useTranslations("Authentication.Island");
 
   return (

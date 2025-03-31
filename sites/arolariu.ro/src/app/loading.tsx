@@ -7,7 +7,7 @@ import {motion} from "motion/react";
  * A loading component.
  * @returns A loading component.
  */
-export default async function Loading() {
+export default async function Loading(): Promise<React.JSX.Element> {
   return (
     <div className='min-h-screen bg-background'>
       {/* Header skeleton */}

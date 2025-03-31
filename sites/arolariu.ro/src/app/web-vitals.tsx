@@ -159,7 +159,7 @@ const collectDeviceInfo = () => {
  * This function sets up the Web Vitals reporting.
  * @returns The Web Vitals reporting component.
  */
-export default function WebVitals() {
+export default function WebVitals(): React.JSX.Element {
   useEffect(() => {
     // Save initial device information
     saveToIndexedDB({

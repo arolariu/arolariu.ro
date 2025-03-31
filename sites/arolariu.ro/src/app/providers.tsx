@@ -16,7 +16,10 @@ const WebVitals = dynamic(() => import("./web-vitals"));
  * This function provides the context for the app.
  * @returns The context providers for the app.
  */
-export default function ContextProviders({locale, children}: Readonly<{locale: "en" | "ro"; children: React.ReactNode}>) {
+export default function ContextProviders({
+  locale,
+  children,
+}: Readonly<{locale: "en" | "ro"; children: React.ReactNode}>): React.JSX.Element {
   return (
     <AuthProvider localization={locale === "ro" ? roRO : enUS}>
       <FontProvider>

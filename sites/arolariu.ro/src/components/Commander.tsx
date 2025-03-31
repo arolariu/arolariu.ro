@@ -27,7 +27,7 @@ import {
  * It allows users to quickly navigate and perform actions within the application.
  * @returns The rendered command palette component.
  */
-export default function Commander() {
+export default function Commander(): React.JSX.Element {
   const router = useRouter();
   const {setTheme} = useTheme();
   const {setFont} = useFontContext();
