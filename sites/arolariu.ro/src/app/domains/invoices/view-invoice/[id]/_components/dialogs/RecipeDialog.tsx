@@ -624,6 +624,6 @@ export function RecipeDialog() {
     case "view":
       return <ReadDialog recipe={recipe} />;
     default:
-      return null;
+      return <></>;
   }
 }

@@ -8,7 +8,7 @@ import {SignedIn, SignedOut, SignInButton, UserButton, useUser} from "@clerk/nex
  * AuthButton component is a button that allows the user to sign in or out.
  * @returns The authentication button.
  */
-export function AuthButton() {
+export default function AuthButton() {
   const {isSignedIn, isLoaded} = useUser();
 
   if (isLoaded && isSignedIn)

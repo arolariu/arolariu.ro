@@ -20,7 +20,7 @@ import {
 
 import {motion} from "motion/react";
 import Link from "next/link";
-import {useCallback, useState} from "react";
+import React, {useCallback, useState} from "react";
 import {TbChevronDown, TbMenu} from "react-icons/tb";
 
 const navigationItems: NavigationItem[] = [
@@ -69,7 +69,7 @@ const DesktopNavigationItem = ({
   item: NavigationItem;
   isOpen?: boolean;
   onOpenChange?: (isOpen: boolean) => void;
-}>) => {
+}>): React.JSX.Element => {
   if (!item.children) {
     return (
       <Button
@@ -126,7 +126,7 @@ const DesktopNavigationItem = ({
   );
 };
 
-const DesktopNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>) => {
+const DesktopNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>): React.JSX.Element => {
   const [isSubOpen, setIsSubOpen] = useState(false); // State needs to be at this level
 
   if (!child.children) {
@@ -199,7 +199,7 @@ const MobileNavigationItem = ({
   item: NavigationItem;
   isOpen?: boolean;
   onToggle?: () => void;
-}>) => {
+}>): React.JSX.Element => {
   if (!item.children) {
     return (
       <Button
@@ -253,7 +253,7 @@ const MobileNavigationItem = ({
   );
 };
 
-const MobileNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>) => {
+const MobileNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>): React.JSX.Element => {
   const [isSubOpen, setIsSubOpen] = useState(false); // State needs to be at this level
 
   const handleSubToggle = useCallback(() => {
@@ -318,7 +318,7 @@ const MobileNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>) =
  * This component renders the desktop navigation.
  * @returns The desktop navigation component.
  */
-export function DesktopNavigation() {
+export function DesktopNavigation(): React.JSX.Element {
   // Store open states for top-level items
   const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
 
@@ -347,7 +347,7 @@ export function DesktopNavigation() {
  * This component renders the mobile navigation.
  * @returns The mobile navigation component.
  */
-export function MobileNavigation() {
+export function MobileNavigation(): React.JSX.Element {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   // Store open states for top-level items
   const [openStates, setOpenStates] = useState<Record<string, boolean>>({});

@@ -22,7 +22,10 @@ export default function ContextProviders({locale, children}: Readonly<{locale: "
       <FontProvider>
         <TranslationProvider>
           <ThemeProvider
-            scriptProps={{async: true}}
+            scriptProps={{async: true, id: "theme-script", src: "/theme.js"}}
+            enableSystem
+            enableColorScheme
+            defaultTheme='system'
             attribute='class'
             themes={["light", "dark"]}>
             {children}

@@ -531,5 +531,5 @@ export default function InvoicePreview({images, setImages}: Readonly<Props>) {
     );
   }
 
-  return null;
+  return <></>;
 }

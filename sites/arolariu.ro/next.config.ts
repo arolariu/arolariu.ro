@@ -20,8 +20,13 @@ const cspHeader = `
 const nextConfig: NextConfig = {
   basePath: "",
 
+  allowedDevOrigins: ["dummyImage.com", "localhost:3000"],
+
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
+    reactRemoveProperties: {
+      properties: ["^data-testid$"],
+    },
   },
 
   images: {

@@ -40,6 +40,6 @@ export function DialogContainer() {
     case "share":
       return <SharingDialog />;
     default:
-      return null;
+      return <></>;
   }
 }

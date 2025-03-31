@@ -126,7 +126,7 @@ const FooterNavigation = () => {
  * The footer component.
  * @returns The footer component.
  */
-export default async function Footer() {
+export default async function Footer(): Promise<React.JSX.Element> {
   const t = await getTranslations("Footer");
 
   return (

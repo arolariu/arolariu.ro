@@ -12,7 +12,7 @@ import {GoMoon, GoSun} from "react-icons/go";
  * This component allows the user to switch between light and dark themes.
  * @returns The theme switcher button that holds the theme switcher logic.
  */
-export function ThemeButton() {
+export default function ThemeButton(): React.JSX.Element {
   const [mounted, setMounted] = useState<boolean>(false);
   const {theme, setTheme} = useTheme();
 
@@ -25,8 +25,7 @@ export function ThemeButton() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setTheme is a stable function.
   }, [theme]);
 
-  if (!mounted) return null;
-  if (!theme) return null;
+  if (!mounted) return <></>;
 
   return (
     <motion.button

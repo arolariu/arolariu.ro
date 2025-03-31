@@ -226,6 +226,6 @@ export function MetadataDialog() {
     case "edit":
       return <UpdateDialog metadata={metadata} />;
     default:
-      return null;
+      return <></>;
   }
 }

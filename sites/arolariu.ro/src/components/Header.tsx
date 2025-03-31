@@ -4,16 +4,19 @@
 
 import logo from "@/app/logo.svg";
 import {useWindowSize} from "@/hooks";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import {AuthButton, ThemeButton} from "./Buttons";
 import {DesktopNavigation, MobileNavigation} from "./Navigation";
+
+const AuthButton = dynamic(() => import("./Buttons/AuthButton"), {ssr: false});
+const ThemeButton = dynamic(() => import("./Buttons/ThemeButton"), {ssr: false});
 
 /**
  * The header component.
  * @returns The header component.
  */
-export default function Header() {
+export default function Header(): React.JSX.Element {
   const {isMobile, isDesktop} = useWindowSize();
 
   return (

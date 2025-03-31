@@ -20,8 +20,8 @@ export default function HtmlWrapper({children, locale}: Readonly<HtmlWrapperProp
 
   return (
     <html
-      lang={locale}
       suppressHydrationWarning
+      lang={locale}
       className={className}
       dir='ltr'>
       <body className='bg-white text-black dark:bg-black dark:text-white'>{children}</body>
