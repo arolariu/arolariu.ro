@@ -7,8 +7,6 @@ import {dumpBrowserInformation} from "@/lib/utils.client";
 import {Badge, Button, Card, CardContent, CardFooter, Progress, Separator} from "@arolariu/components";
 import {useEffect, useState} from "react";
 import {TbArrowRight, TbCode, TbCpu, TbDatabase, TbLayersIntersect, TbRefresh, TbServer, TbTerminal} from "react-icons/tb";
-import ContextProviders from "./providers";
-import HtmlWrapper from "./wrapper";
 
 interface GlobalErrorProps {
   error: Error & {digest?: string};
@@ -42,14 +40,14 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
 
   if (!mounted)
     return (
-      <ContextProviders locale='en'>
-        <HtmlWrapper locale='en'>Loading...</HtmlWrapper>
-      </ContextProviders>
+      <html lang='en'>
+        <body>Loading...</body>
+      </html>
     );
 
   return (
-    <ContextProviders locale='en'>
-      <HtmlWrapper locale='en'>
+    <html lang='en'>
+      <body className='bg-white text-black dark:bg-black dark:text-white'>
         <Header />
 
         <section className='px-12 py-24'>
@@ -194,7 +192,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
             </div>
           </div>
         </section>
-      </HtmlWrapper>
-    </ContextProviders>
+      </body>
+    </html>
   );
 }
