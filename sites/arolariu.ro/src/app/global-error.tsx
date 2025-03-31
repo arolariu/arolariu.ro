@@ -2,7 +2,6 @@
 
 "use client";
 
-import Header from "@/components/Header";
 import {dumpBrowserInformation} from "@/lib/utils.client";
 import {Badge, Button, Card, CardContent, CardFooter, Progress, Separator} from "@arolariu/components";
 import {useEffect, useState} from "react";
@@ -48,8 +47,6 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
   return (
     <html lang='en'>
       <body className='bg-white text-black dark:bg-black dark:text-white'>
-        <Header />
-
         <section className='px-12 py-24'>
           {/* Main error card */}
           <Card className='border-destructive/50'>
