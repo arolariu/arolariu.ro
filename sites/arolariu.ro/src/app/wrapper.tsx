@@ -2,6 +2,7 @@
 "use client";
 
 import {useFontContext} from "@/contexts/FontContext";
+import {ThemeProvider} from "next-themes";
 
 type HtmlWrapperProps = {
   children: React.ReactNode;
@@ -24,7 +25,16 @@ export default function HtmlWrapper({children, locale}: Readonly<HtmlWrapperProp
       lang={locale}
       className={className}
       dir='ltr'>
-      <body className='bg-white text-black dark:bg-black dark:text-white'>{children}</body>
+      <body className='bg-white text-black dark:bg-black dark:text-white'>
+        <ThemeProvider
+          enableSystem
+          enableColorScheme
+          defaultTheme='system'
+          attribute='class'
+          themes={["light", "dark"]}>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

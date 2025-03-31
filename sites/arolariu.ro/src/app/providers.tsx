@@ -6,7 +6,6 @@ import {Toaster as ToastProvider} from "@arolariu/components";
 import {enUS, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
 import {NextIntlClientProvider as TranslationProvider} from "next-intl";
-import {ThemeProvider} from "next-themes";
 import dynamic from "next/dynamic";
 import React from "react";
 
@@ -24,18 +23,10 @@ export default function ContextProviders({
     <AuthProvider localization={locale === "ro" ? roRO : enUS}>
       <FontProvider>
         <TranslationProvider>
-          <ThemeProvider
-            scriptProps={{async: true, id: "theme-script", src: "/theme.js"}}
-            enableSystem
-            enableColorScheme
-            defaultTheme='system'
-            attribute='class'
-            themes={["light", "dark"]}>
-            {children}
-            <ToastProvider />
-            <Commander />
-            <WebVitals />
-          </ThemeProvider>
+          {children}
+          <ToastProvider />
+          <Commander />
+          <WebVitals />
         </TranslationProvider>
       </FontProvider>
     </AuthProvider>
