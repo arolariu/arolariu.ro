@@ -29,7 +29,7 @@ import {
 import Image from "next/image";
 import {memo, useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction} from "react";
 import {TbCarouselHorizontal, TbGridDots, TbRotateClockwise, TbTrash} from "react-icons/tb";
-import {useBlobUrls} from "../_hooks/useBlobUrls";
+import useBlobUrls from "../_hooks/useBlobUrls";
 
 type Props = {images: Blob[]; setImages: Dispatch<SetStateAction<Blob[]>>};
 const PLACEHOLDER_IMAGE = "https://dummyimage.com/600x900&text=placeholder";
@@ -531,5 +531,5 @@ export default function InvoicePreview({images, setImages}: Readonly<Props>) {
     );
   }
 
-  return <></>;
+  return false as unknown as React.JSX.Element;
 }

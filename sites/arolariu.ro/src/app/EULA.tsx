@@ -2,7 +2,7 @@
 
 "use client";
 
-import {getCookie, setCookie} from "@/lib/actions/cookies.action";
+import {getCookie, setCookie} from "@/lib/actions/cookies";
 import {
   Accordion,
   AccordionContent,
@@ -46,7 +46,7 @@ type Props = {locale: string};
  * The component includes sections for Terms of Service, Privacy Policy, and Cookies Policy.
  * @returns The EULA component, CSR'ed.
  */
-export default function Eula({locale}: Readonly<Props>) {
+export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("EULA");
   const [eulaCookie, setEulaCookie] = useState<boolean | null>(null);
   const [cookieState, setCookieState] = useState<CookieState>({
@@ -313,7 +313,7 @@ export default function Eula({locale}: Readonly<Props>) {
  * A shimmer for the EULA component.
  * @returns The EULA loading component.
  */
-function EulaLoading() {
+function EulaLoading(): React.JSX.Element {
   return (
     <Card className='border-2 shadow-lg'>
       <CardHeader className='space-y-4 text-center'>

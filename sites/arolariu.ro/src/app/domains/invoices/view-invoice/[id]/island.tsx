@@ -8,12 +8,12 @@ import {AnimatePresence, motion} from "motion/react";
 import {useRef} from "react";
 import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
 import {AnalyticsCard} from "./_components/cards/AnalyticsCard";
-import {InvoiceCard} from "./_components/cards/InvoiceCard";
-import {DialogContainer} from "./_components/dialogs/DialogContainer";
-import {InvoiceHeader} from "./_components/InvoiceHeader";
-import {SidebarSection} from "./_components/sidebar/SidebarSection";
-import {MetadataTab} from "./_components/tabs/MetadataTab";
-import {RecipesTab} from "./_components/tabs/RecipesTab";
+import InvoiceCard from "./_components/cards/InvoiceCard";
+import DialogContainer from "./_components/dialogs/DialogContainer";
+import InvoiceHeader from "./_components/InvoiceHeader";
+import SidebarSection from "./_components/sidebar/SidebarSection";
+import MetadataTab from "./_components/tabs/MetadataTab";
+import RecipesTab from "./_components/tabs/RecipesTab";
 import {CurrencyProvider} from "./_contexts/CurrencyContext";
 import {DialogProvider} from "./_contexts/DialogContext";
 

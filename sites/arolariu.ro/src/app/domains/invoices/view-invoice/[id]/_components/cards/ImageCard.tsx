@@ -23,7 +23,7 @@ type Props = {invoice: Invoice};
  * It includes buttons for expanding the image and reuploading it.
  * @returns The ImageCard component, CSR'ed.
  */
-export function ImageCard({invoice}: Readonly<Props>) {
+export default function ImageCard({invoice}: Readonly<Props>) {
   const photoLocation = invoice.photoLocation ?? "https://dummyimage.com/600x900&text=placeholder+image";
   return (
     <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>

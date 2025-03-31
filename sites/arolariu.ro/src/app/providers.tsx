@@ -1,6 +1,6 @@
 /** @format */
 
-import {Commander} from "@/components/Commander";
+import Commander from "@/components/Commander";
 import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
 import {Toaster as ToastProvider} from "@arolariu/components";
 import {enUS, roRO} from "@clerk/localizations";
@@ -10,7 +10,7 @@ import {ThemeProvider} from "next-themes";
 import dynamic from "next/dynamic";
 import React from "react";
 
-const WebVitals = dynamic(() => import("./web-vitals").then((mod) => mod.WebVitals));
+const WebVitals = dynamic(() => import("./web-vitals"));
 
 /**
  * This function provides the context for the app.

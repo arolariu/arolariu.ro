@@ -23,7 +23,7 @@ import {useDialog} from "../../_contexts/DialogContext";
  * The dialog is opened and closed using a custom hook.
  * @returns The JSX for the merchant dialog, CSR'ed.
  */
-export function MerchantDialog() {
+export default function MerchantDialog() {
   const {
     currentDialog: {payload},
     isOpen,

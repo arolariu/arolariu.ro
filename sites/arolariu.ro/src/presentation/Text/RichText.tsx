@@ -23,7 +23,7 @@ type Props = {
  * <RichText a11ySectionKey="about" a11yTextKey="description" />
  * ```
  */
-export function RichText({sectionKey, textKey}: Readonly<Props>) {
+export default function RichText({sectionKey, textKey}: Readonly<Props>) {
   const t = useTranslations<NamespaceKeys<Messages, string>>(sectionKey as any);
   const isTextKeyInNamespace = t.has(textKey as any);
 

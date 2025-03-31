@@ -1,8 +1,9 @@
 /** @format */
 
 "use client";
+
 import {usePaginationWithSearch} from "@/hooks/usePagination";
-import {Recipe} from "@/types/invoices";
+import type {Recipe} from "@/types/invoices";
 import {
   Button,
   Card,
@@ -18,7 +19,7 @@ import {
 import {motion} from "motion/react";
 import {TbConfetti, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
-import {RecipeCard} from "../cards/RecipeCard";
+import RecipeCard from "../cards/RecipeCard";
 
 type Props = {
   recipes: Recipe[];
@@ -30,7 +31,7 @@ type Props = {
  * It also provides a button to add a new recipe and a button to generate a recipe using AI.
  * @returns The recipes tab component, CSR'ed.
  */
-export function RecipesTab({recipes}: Readonly<Props>) {
+export default function RecipesTab({recipes}: Readonly<Props>) {
   const {open: openAddDialog} = useDialog("recipe", "add");
 
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: recipes, initialPageSize: 4});

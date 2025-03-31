@@ -30,7 +30,7 @@ import {useDialog} from "../../_contexts/DialogContext";
  * It includes a table for displaying items, pagination, and controls for adding new items.
  * @returns The JSX for the items dialog.
  */
-export function ItemsDialog() {
+export default function ItemsDialog() {
   const {
     currentDialog: {payload},
   } = useDialog("editItems");

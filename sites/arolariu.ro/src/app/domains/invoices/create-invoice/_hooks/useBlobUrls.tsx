@@ -21,7 +21,7 @@ import {useCallback, useEffect, useRef} from "react";
  * }
  * ```
  */
-export function useBlobUrls() {
+export default function useBlobUrls() {
   // Use a ref to ensure the Map persists across renders
   const urlCache = useRef<Map<Blob, string>>(new Map());
 

@@ -607,7 +607,7 @@ const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
  * It handles adding, editing, deleting, and viewing recipes.
  * @returns The rendered dialog component for recipes.
  */
-export function RecipeDialog() {
+export default function RecipeDialog() {
   const {
     currentDialog: {mode, payload},
   } = useDialog("recipe");
@@ -624,6 +624,6 @@ export function RecipeDialog() {
     case "view":
       return <ReadDialog recipe={recipe} />;
     default:
-      return <></>;
+      return false as unknown as React.JSX.Element;
   }
 }

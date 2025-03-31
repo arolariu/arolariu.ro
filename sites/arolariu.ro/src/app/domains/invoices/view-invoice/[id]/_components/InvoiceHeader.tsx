@@ -2,11 +2,11 @@
 
 "use client";
 
-import {Invoice} from "@/types/invoices";
+import type {Invoice} from "@/types/invoices";
 import {Button, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import {TbPrinter} from "react-icons/tb";
-import {CurrencySelector} from "./CurrencySelector";
+import CurrencySelector from "./CurrencySelector";
 
 type Props = {
   invoice: Invoice;
@@ -19,7 +19,7 @@ type Props = {
  * It includes the invoice ID, name, a badge for important invoices, and a print button.
  * @returns The InvoiceHeader component, CSR'ed.
  */
-export function InvoiceHeader({invoice, onPrint}: Readonly<Props>) {
+export default function InvoiceHeader({invoice, onPrint}: Readonly<Props>) {
   return (
     <motion.div
       initial={{opacity: 0, y: -20}}

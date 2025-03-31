@@ -7,7 +7,7 @@ import {Suspense, type ReactNode} from "react";
 import Loading from "./loading";
 import HtmlWrapper from "./wrapper";
 
-import {getCookie} from "@/lib/actions/cookies.action";
+import {getCookie} from "@/lib/actions/cookies";
 import "@arolariu/components/styles.css";
 import Eula from "./EULA";
 import "./globals.css";

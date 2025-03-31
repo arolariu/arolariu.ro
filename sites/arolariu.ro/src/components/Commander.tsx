@@ -3,7 +3,7 @@
 "use client";
 
 import {useFontContext} from "@/contexts/FontContext";
-import {setCookie} from "@/lib/actions/cookies.action";
+import {setCookie} from "@/lib/actions/cookies";
 import {CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator} from "@arolariu/components";
 import {useTheme} from "next-themes";
 import {useRouter} from "next/navigation";
@@ -27,7 +27,7 @@ import {
  * It allows users to quickly navigate and perform actions within the application.
  * @returns The rendered command palette component.
  */
-export function Commander() {
+export default function Commander() {
   const router = useRouter();
   const {setTheme} = useTheme();
   const {setFont} = useFontContext();

@@ -5,7 +5,7 @@
 import {motion} from "motion/react";
 import {useTheme} from "next-themes";
 import {useCallback, useEffect, useState} from "react";
-import {GoMoon, GoSun} from "react-icons/go";
+import {TbMoon, TbSun} from "react-icons/tb";
 
 /**
  * The theme switcher button component.
@@ -25,7 +25,7 @@ export default function ThemeButton(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setTheme is a stable function.
   }, [theme]);
 
-  if (!mounted) return <></>;
+  if (!mounted) return false as unknown as React.JSX.Element;
 
   return (
     <motion.button
@@ -41,7 +41,7 @@ export default function ThemeButton(): React.JSX.Element {
           opacity: theme === "dark" ? 1 : 0,
         }}
         transition={{duration: 0.2}}>
-        <GoMoon className='h-6 w-6 text-zinc-800 dark:text-zinc-200' />
+        <TbMoon className='h-6 w-6 text-zinc-800 dark:text-zinc-200' />
       </motion.div>
       <motion.div
         className='absolute inset-0 flex items-center justify-center'
@@ -51,7 +51,7 @@ export default function ThemeButton(): React.JSX.Element {
           opacity: theme === "light" ? 1 : 0,
         }}
         transition={{duration: 0.2}}>
-        <GoSun className='h-6 w-6 text-zinc-800 dark:text-zinc-200' />
+        <TbSun className='h-6 w-6 text-zinc-800 dark:text-zinc-200' />
       </motion.div>
     </motion.button>
   );

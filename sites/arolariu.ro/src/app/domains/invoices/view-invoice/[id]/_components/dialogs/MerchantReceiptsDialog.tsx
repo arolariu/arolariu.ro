@@ -40,7 +40,7 @@ import {useDialog} from "../../_contexts/DialogContext";
  * The dialog is opened and closed using a custom hook.
  * @returns The JSX for the merchant receipts dialog.
  */
-export function MerchantReceiptsDialog() {
+export default function MerchantReceiptsDialog() {
   const {
     currentDialog: {payload},
     isOpen,

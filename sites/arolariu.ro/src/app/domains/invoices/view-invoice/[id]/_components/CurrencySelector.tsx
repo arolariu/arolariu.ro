@@ -24,7 +24,7 @@ import {availableCurrencies, useCurrencyContext} from "../_contexts/CurrencyCont
  * It displays the currently selected currency and provides a tooltip with information about changing the currency display.
  * @returns The CurrencySelector component, CSR'ed.
  */
-export function CurrencySelector() {
+export default function CurrencySelector() {
   const {currency, setCurrency} = useCurrencyContext();
 
   const handleSetCurrency = (currency: {code: string; name: string; symbol: string; icon: React.JSX.Element}) => {

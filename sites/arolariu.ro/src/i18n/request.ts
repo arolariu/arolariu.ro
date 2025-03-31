@@ -1,5 +1,6 @@
 /** @format */
-import {getCookie} from "@/lib/actions/cookies.action";
+
+import {getCookie} from "@/lib/actions/cookies";
 import {Locale} from "next-intl";
 import {getRequestConfig} from "next-intl/server";
 

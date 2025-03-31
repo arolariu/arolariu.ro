@@ -33,7 +33,7 @@ type Props = {
  * @param items The list of invoice items to display.
  * @returns The ItemsTable component, CSR'ed.
  */
-export function ItemsTable({invoice}: Readonly<Props>) {
+export default function ItemsTable({invoice}: Readonly<Props>) {
   const {open} = useDialog("editItems", "edit", invoice);
 
   const totalAmount = invoice.items.reduce((acc, item) => acc + item.price * item.quantity, 0);

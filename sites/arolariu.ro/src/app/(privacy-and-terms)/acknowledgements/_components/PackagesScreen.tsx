@@ -37,8 +37,7 @@ import {motion} from "motion/react";
 
 import Link from "next/link";
 import {useCallback} from "react";
-import {FaExternalLinkAlt} from "react-icons/fa";
-import {TbPackage} from "react-icons/tb";
+import {TbExternalLink, TbPackage} from "react-icons/tb";
 import {usePackageFilters} from "../_hooks/usePackageFilters";
 
 type Props = {packages: NodePackagesJSON};
@@ -263,7 +262,7 @@ export default function PackagesScreen({packages}: Readonly<Props>) {
                               target='_blank'
                               rel='noopener noreferrer'
                               className='flex items-center text-sm text-muted-foreground transition-colors hover:text-primary'>
-                              <FaExternalLinkAlt className='mr-1 h-4 w-4' />
+                              <TbExternalLink className='mr-1 h-4 w-4' />
                               <span>Website</span>
                             </Link>
                             <DependenciesDialog pkg={pkg} />
@@ -322,7 +321,7 @@ export default function PackagesScreen({packages}: Readonly<Props>) {
                             rel='noopener noreferrer'
                             className='rounded-md p-2 transition-colors hover:bg-muted'
                             title='Website'>
-                            <FaExternalLinkAlt className='mx-auto h-4 w-4' />
+                            <TbExternalLink className='mx-auto h-4 w-4' />
                             <span className='sr-only'>Website</span>
                           </Link>
                         </TableCell>

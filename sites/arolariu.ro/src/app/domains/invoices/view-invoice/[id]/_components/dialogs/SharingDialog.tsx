@@ -28,7 +28,7 @@ import {useDialog} from "../../_contexts/DialogContext";
  * It includes options to copy the link and QR code to the clipboard.
  * @returns The ExportDialog component, CSR'ed.
  */
-export function SharingDialog() {
+export default function SharingDialog() {
   const [copied, setCopied] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const {

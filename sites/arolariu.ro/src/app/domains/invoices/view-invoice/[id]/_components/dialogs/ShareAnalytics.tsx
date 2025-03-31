@@ -28,7 +28,7 @@ import {useDialog} from "../../_contexts/DialogContext";
  * It includes options to download an image, copy it to the clipboard, or send it via email.
  * @returns The ShareAnalyticsDialog component, CSR'ed.
  */
-export function ShareAnalyticsDialog() {
+export default function ShareAnalyticsDialog() {
   const [email, setEmail] = useState<string>("");
   const {
     currentDialog: {payload},

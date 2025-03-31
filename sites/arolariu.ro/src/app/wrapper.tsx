@@ -13,7 +13,7 @@ type HtmlWrapperProps = {
  * This is done to ensure that the font is applied to the entire page.
  * @returns The HTML wrapper component.
  */
-export default function HtmlWrapper({children, locale}: Readonly<HtmlWrapperProps>) {
+export default function HtmlWrapper({children, locale}: Readonly<HtmlWrapperProps>): React.JSX.Element {
   const {
     font: {className},
   } = useFontContext();

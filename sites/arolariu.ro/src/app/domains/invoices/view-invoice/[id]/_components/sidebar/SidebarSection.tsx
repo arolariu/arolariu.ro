@@ -2,11 +2,11 @@
 
 "use client";
 
-import {Invoice, Merchant} from "@/types/invoices";
+import type {Invoice, Merchant} from "@/types/invoices";
 import {motion} from "motion/react";
-import {ImageCard} from "../cards/ImageCard";
+import ImageCard from "../cards/ImageCard";
 import MerchantCard from "../cards/MerchantCard";
-import {SharingCard} from "../cards/SharingCard";
+import SharingCard from "../cards/SharingCard";
 
 type Props = {
   invoice: Invoice;
@@ -19,7 +19,7 @@ type Props = {
  * It is animated using Framer Motion.
  * @returns The sidebar section component, CSR'ed.
  */
-export function SidebarSection({invoice, merchant}: Readonly<Props>) {
+export default function SidebarSection({invoice, merchant}: Readonly<Props>) {
   // Animation variants for the sidebar section
   const containerVariants = {
     hidden: {opacity: 0},

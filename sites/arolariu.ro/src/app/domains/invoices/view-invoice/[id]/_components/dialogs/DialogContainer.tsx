@@ -3,21 +3,21 @@
 "use client";
 
 import {useDialogs} from "../../_contexts/DialogContext";
-import {FeedbackDialog} from "./FeedbackDialog";
-import {ItemsDialog} from "./ItemsDialog";
-import {MerchantDialog} from "./MerchantDialog";
-import {MerchantReceiptsDialog} from "./MerchantReceiptsDialog";
-import {MetadataDialog} from "./MetadataDialog";
-import {RecipeDialog} from "./RecipeDialog";
-import {ShareAnalyticsDialog} from "./ShareAnalytics";
-import {SharingDialog} from "./SharingDialog";
+import FeedbackDialog from "./FeedbackDialog";
+import ItemsDialog from "./ItemsDialog";
+import MerchantDialog from "./MerchantDialog";
+import MerchantReceiptsDialog from "./MerchantReceiptsDialog";
+import MetadataDialog from "./MetadataDialog";
+import RecipeDialog from "./RecipeDialog";
+import ShareAnalyticsDialog from "./ShareAnalytics";
+import SharingDialog from "./SharingDialog";
 
 /**
  * The DialogContainer component manages the visibility and functionality of various dialogs
  * related to invoices, merchants, recipes, and metadata.
  * @returns The DialogContainer component, CSR'ed.
  */
-export function DialogContainer() {
+export default function DialogContainer(): React.JSX.Element {
   const {
     currentDialog: {type},
   } = useDialogs();
@@ -40,6 +40,6 @@ export function DialogContainer() {
     case "share":
       return <SharingDialog />;
     default:
-      return <></>;
+      return false as unknown as React.JSX.Element;
   }
 }

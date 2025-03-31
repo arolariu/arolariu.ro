@@ -1,7 +1,7 @@
 /** @format */
 
 import {cookies} from "next/headers";
-import {getCookie, setCookie} from "./cookies.action";
+import {deleteCookie, getCookie, setCookie} from "./cookies.action";
 
 jest.mock("next/headers", () => ({
   cookies: jest.fn(),
@@ -54,5 +54,29 @@ describe("setCookie", () => {
     await setCookie("emptyCookie", "");
 
     expect(mockCookies.set).toHaveBeenCalledWith("emptyCookie", "", {path: "/"});
+  });
+});
+
+describe("deleteCookie", () => {
+  it("should delete the cookie with the given name", async () => {
+    const mockCookies = {
+      delete: jest.fn(),
+    };
+    (cookies as jest.Mock).mockResolvedValue(mockCookies);
+
+    await deleteCookie("testCookie");
+
+    expect(mockCookies.delete).toHaveBeenCalledWith("testCookie");
+  });
+
+  it("should handle deleting a non-existent cookie", async () => {
+    const mockCookies = {
+      delete: jest.fn(),
+    };
+    (cookies as jest.Mock).mockResolvedValue(mockCookies);
+
+    await deleteCookie("nonExistentCookie");
+
+    expect(mockCookies.delete).toHaveBeenCalledWith("nonExistentCookie");
   });
 });

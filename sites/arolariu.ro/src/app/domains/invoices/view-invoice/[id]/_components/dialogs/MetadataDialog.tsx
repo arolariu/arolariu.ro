@@ -211,7 +211,7 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
  * It handles adding, editing, and deleting metadata.
  * @returns The rendered dialog component for metadata.
  */
-export function MetadataDialog() {
+export default function MetadataDialog() {
   const {
     currentDialog: {mode, payload},
   } = useDialog("metadata");
@@ -226,6 +226,6 @@ export function MetadataDialog() {
     case "edit":
       return <UpdateDialog metadata={metadata} />;
     default:
-      return <></>;
+      return false as unknown as React.JSX.Element;
   }
 }

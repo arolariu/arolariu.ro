@@ -30,7 +30,7 @@ type Props = {
  * It includes potential savings, difficulty level, and a button to view more tips.
  * @returns The TriviaTipsCard component, CSR'ed.
  */
-export function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
+export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
   // Mock savings tips
   const savingsTips = [
     {

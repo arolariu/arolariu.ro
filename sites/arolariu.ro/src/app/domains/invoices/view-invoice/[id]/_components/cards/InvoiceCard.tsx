@@ -20,7 +20,7 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {TbCreditCard, TbHeart} from "react-icons/tb";
-import {ItemsTable} from "../tables/ItemsTable";
+import ItemsTable from "../tables/ItemsTable";
 
 type Props = {
   invoice: Invoice;
@@ -33,7 +33,7 @@ type Props = {
  * The card also allows the user to mark the invoice as important.
  * @returns The InvoiceCard component, CSR'ed.
  */
-export function InvoiceCard({invoice, merchant}: Readonly<Props>) {
+export default function InvoiceCard({invoice, merchant}: Readonly<Props>) {
   const {paymentInformation, category, isImportant, description} = invoice;
 
   const categoryKey = Object.keys(InvoiceCategory).at(category);
