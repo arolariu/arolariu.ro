@@ -4,7 +4,7 @@ import withBundleAnalyzerInit from "@next/bundle-analyzer";
 import type {NextConfig} from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
-const trustedDomains = "*.arolariu.ro arolariu.ro";
+const trustedDomains = "*.arolariu.ro arolariu.ro *.clerk.com clerk.com *.accounts.dev accounts.dev";
 const cspHeader = `
     default-src 'self' blob: data: https: ${trustedDomains};
     script-src 'self' 'unsafe-inline' 'unsafe-eval' https: ${trustedDomains};
@@ -17,13 +17,17 @@ const cspHeader = `
     upgrade-insecure-requests;
 `;
 
+const isDevBuild = process.env.NODE_ENV === "development";
+console.log(">>> isDevBuild", isDevBuild);
+console.log(">>> NODE_ENV", process.env.NODE_ENV);
+
 const nextConfig: NextConfig = {
   basePath: "",
 
   allowedDevOrigins: ["dummyImage.com", "localhost:3000"],
 
   compiler: {
-    removeConsole: process.env.NODE_ENV === "production",
+    removeConsole: isDevBuild ? false : {exclude: ["error", "warn"]},
     reactRemoveProperties: {
       properties: ["^data-testid$"],
     },
@@ -71,10 +75,15 @@ const nextConfig: NextConfig = {
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains; preload",
           },
-          {
-            key: "Content-Security-Policy",
-            value: cspHeader.replace(/\n/gu, "").trim(),
-          },
+          isDevBuild
+            ? {
+                key: "Content-Security-Policy-Report-Only",
+                value: cspHeader.replace(/\n/gu, "").trim(),
+              }
+            : {
+                key: "Content-Security-Policy",
+                value: cspHeader.replace(/\n/gu, "").trim(),
+              },
           {
             key: "X-Content-Type-Options",
             value: "nosniff",
@@ -82,10 +91,6 @@ const nextConfig: NextConfig = {
           {
             key: "X-Frame-Options",
             value: "DENY",
-          },
-          {
-            key: "X-Built-With",
-            value: "ReactJS & NextJS",
           },
           {
             key: "Permissions-Policy",
@@ -108,10 +113,42 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   experimental: {
+    allowDevelopmentBuild: isDevBuild ? true : undefined,
+    serverSourceMaps: isDevBuild,
+    swcTraceProfiling: isDevBuild,
+    webpackMemoryOptimizations: !isDevBuild,
+    disableOptimizedLoading: isDevBuild,
+    optimizeServerReact: !isDevBuild,
+    serverMinification: !isDevBuild,
     optimizePackageImports: ["@arolariu/components"],
     serverActions: {
       bodySizeLimit: "10mb",
     },
+  },
+
+  productionBrowserSourceMaps: isDevBuild,
+  reactProductionProfiling: isDevBuild,
+  webpack: (config) => {
+    // Remove minifcation, chunking and optimization for dev builds
+    if (isDevBuild) {
+      console.log(">>> ⚙️ Removing minification, chunking and optimization for dev builds");
+      config.devtool = "source-map";
+      config.optimization.chunkIds = "named";
+      config.optimization.concatenateModules = false;
+      config.optimization.mangleExports = false;
+      config.optimization.mangleWasmImports = false;
+      config.optimization.mergeDuplicateChunks = false;
+      config.optimization.minimize = false;
+      config.optimization.minimizer = [];
+      config.optimization.moduleIds = "named";
+      config.optimization.nodeEnv = "development";
+      config.optimization.portableRecords = true;
+      config.optimization.providedExports = true;
+      config.optimization.runtimeChunk = false;
+      config.optimization.splitChunks = false;
+    }
+
+    return config;
   },
 
   typescript: {

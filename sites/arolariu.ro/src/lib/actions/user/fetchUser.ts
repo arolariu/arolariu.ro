@@ -9,6 +9,7 @@ import {currentUser, type User} from "@clerk/nextjs/server";
  * @returns A promise of the current user.
  */
 export async function fetchUser(): Promise<{isAuthenticated: boolean; user: User | null}> {
+  "use server";
   const user = await currentUser();
   const isAuthenticated = user !== null;
   return {isAuthenticated, user} as const;
