@@ -1,5 +1,4 @@
 /** @format */
-
 import {Skeleton} from "@arolariu/components";
 import {motion} from "motion/react";
 

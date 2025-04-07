@@ -115,7 +115,6 @@ const nextConfig: NextConfig = {
   experimental: {
     allowDevelopmentBuild: isDevBuild ? true : undefined,
     serverSourceMaps: isDevBuild,
-    swcTraceProfiling: isDevBuild,
     webpackMemoryOptimizations: !isDevBuild,
     disableOptimizedLoading: isDevBuild,
     optimizeServerReact: !isDevBuild,
@@ -128,6 +127,8 @@ const nextConfig: NextConfig = {
 
   productionBrowserSourceMaps: isDevBuild,
   reactProductionProfiling: isDevBuild,
+  transpilePackages: ["@arolariu/components"],
+
   webpack: (config) => {
     // Remove minifcation, chunking and optimization for dev builds
     if (isDevBuild) {

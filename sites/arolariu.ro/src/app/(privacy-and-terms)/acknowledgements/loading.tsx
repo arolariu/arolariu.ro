@@ -1,7 +1,5 @@
 /** @format */
 
-"use client";
-
 import {
   Card,
   CardContent,
