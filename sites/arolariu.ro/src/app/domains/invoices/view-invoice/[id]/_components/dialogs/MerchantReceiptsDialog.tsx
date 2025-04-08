@@ -89,7 +89,7 @@ export default function MerchantReceiptsDialog() {
         <div className='space-y-4'>
           <div className='flex flex-col gap-3 sm:flex-row'>
             <div className='relative flex-1'>
-              <TbSearch className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
+              <TbSearch className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
               <Input
                 placeholder='Search receipts...'
                 className='pl-8'
@@ -132,27 +132,27 @@ export default function MerchantReceiptsDialog() {
               <Table>
                 <TableHeader>
                   <TableRow className='bg-muted/50'>
-                    <TableHead className='px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground'>Receipt</TableHead>
-                    <TableHead className='px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground'>Date</TableHead>
-                    <TableHead className='px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground'>
+                    <TableHead className='text-muted-foreground px-4 py-3 text-xs font-medium tracking-wider uppercase'>Receipt</TableHead>
+                    <TableHead className='text-muted-foreground px-4 py-3 text-xs font-medium tracking-wider uppercase'>Date</TableHead>
+                    <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
                       Items #
                     </TableHead>
-                    <TableHead className='px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground'>
+                    <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
                       Actions
                     </TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className='divide-y divide-border bg-popover'>
+                <TableBody className='divide-border bg-popover divide-y'>
                   {paginatedItems.map((item) => {
                     const invoiceDate = formatDate(item.paymentInformation?.transactionDate || item.createdAt);
                     return (
                       <TableRow
                         key={item.id}
                         className='hover:bg-muted/50'>
-                        <TableCell className='whitespace-nowrap px-4 py-3 text-sm font-medium'>{item.name}</TableCell>
-                        <TableCell className='whitespace-nowrap px-4 py-3 text-sm'>{invoiceDate}</TableCell>
-                        <TableCell className='whitespace-nowrap px-4 py-3 text-right text-sm'>{item.items.length}</TableCell>
-                        <TableCell className='whitespace-nowrap px-4 py-3 text-right text-sm'>
+                        <TableCell className='px-4 py-3 text-sm font-medium whitespace-nowrap'>{item.name}</TableCell>
+                        <TableCell className='px-4 py-3 text-sm whitespace-nowrap'>{invoiceDate}</TableCell>
+                        <TableCell className='px-4 py-3 text-right text-sm whitespace-nowrap'>{item.items.length}</TableCell>
+                        <TableCell className='px-4 py-3 text-right text-sm whitespace-nowrap'>
                           <Button
                             variant='ghost'
                             size='sm'>
@@ -166,16 +166,16 @@ export default function MerchantReceiptsDialog() {
                 </TableBody>
                 <TableFooter>
                   <TableRow>
-                    <TableHead className='px-4 py-3 text-sm font-medium text-muted-foreground'>
+                    <TableHead className='text-muted-foreground px-4 py-3 text-sm font-medium'>
                       {receipts.length} receipts found (showing {paginatedItems.length})
                     </TableHead>
                     <TableCell
-                      className='px-4 py-3 text-right text-sm font-medium text-muted-foreground'
+                      className='text-muted-foreground px-4 py-3 text-right text-sm font-medium'
                       colSpan={2}>
                       Page {currentPage} of {totalPages}
                     </TableCell>
                     <TableCell
-                      className='px-4 py-3 text-right text-sm font-medium text-muted-foreground'
+                      className='text-muted-foreground px-4 py-3 text-right text-sm font-medium'
                       colSpan={2}>
                       <Button
                         variant='ghost'

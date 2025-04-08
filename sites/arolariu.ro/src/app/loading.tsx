@@ -1,4 +1,5 @@
 /** @format */
+"use client";
 import {Skeleton} from "@arolariu/components";
 import {motion} from "motion/react";
 
@@ -6,11 +7,11 @@ import {motion} from "motion/react";
  * A loading component.
  * @returns A loading component.
  */
-export default async function Loading(): Promise<React.JSX.Element> {
+export default function Loading(): React.JSX.Element {
   return (
-    <div className='min-h-screen bg-background'>
+    <div className='bg-background min-h-screen'>
       {/* Header skeleton */}
-      <header className='fixed top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-sm'>
+      <header className='border-border bg-background/80 fixed top-0 z-50 w-full border-b backdrop-blur-xs'>
         <div className='container mx-auto px-4'>
           <div className='flex h-16 items-center justify-between'>
             <Skeleton className='h-8 w-32' />
@@ -49,7 +50,7 @@ export default async function Loading(): Promise<React.JSX.Element> {
               <div className='relative mx-auto w-full max-w-[400px]'>
                 <Skeleton className='aspect-square w-full rounded-full opacity-50' />
                 <motion.div
-                  className='absolute inset-0 rounded-full border-2 border-primary/30'
+                  className='border-primary/30 absolute inset-0 rounded-full border-2'
                   animate={{
                     rotate: 360,
                     scale: [0.9, 1.1, 0.9],
@@ -61,7 +62,7 @@ export default async function Loading(): Promise<React.JSX.Element> {
                   }}
                 />
                 <motion.div
-                  className='absolute inset-0 rounded-full border border-primary/20'
+                  className='border-primary/20 absolute inset-0 rounded-full border'
                   animate={{
                     rotate: -360,
                     scale: [1.1, 0.9, 1.1],
@@ -102,7 +103,7 @@ export default async function Loading(): Promise<React.JSX.Element> {
       </section>
 
       {/* Footer skeleton */}
-      <footer className='relative bg-muted/50 py-12'>
+      <footer className='bg-muted/50 relative py-12'>
         <div className='container mx-auto px-4'>
           <div className='grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4'>
             <div>
@@ -129,7 +130,7 @@ export default async function Loading(): Promise<React.JSX.Element> {
               </div>
             </div>
           </div>
-          <div className='mt-12 border-t border-border pt-8 text-center'>
+          <div className='border-border mt-12 border-t pt-8 text-center'>
             <Skeleton className='mx-auto h-4 w-64' />
           </div>
         </div>

@@ -163,7 +163,7 @@ export default function Terminal(): React.JSX.Element {
                         handleCommand(currentCommand);
                       }
                     }}
-                    className='flex-grow border-none bg-transparent text-green-400 outline-none'
+                    className='grow border-none bg-transparent text-green-400 outline-hidden'
                   />
                   <motion.div
                     animate={{opacity: [1, 0]}}

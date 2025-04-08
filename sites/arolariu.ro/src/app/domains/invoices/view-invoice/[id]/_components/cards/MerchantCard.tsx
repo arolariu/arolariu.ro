@@ -35,12 +35,12 @@ export default function MerchantCard({merchant}: Readonly<Props>) {
       </CardHeader>
       <CardContent className='space-y-4'>
         <div className='flex items-center'>
-          <div className='mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10'>
-            <TbShoppingCart className='h-5 w-5 text-primary' />
+          <div className='bg-primary/10 mr-3 flex h-10 w-10 items-center justify-center rounded-full'>
+            <TbShoppingCart className='text-primary h-5 w-5' />
           </div>
           <div>
             <p className='font-medium'>{merchant.name}</p>
-            <p className='text-sm text-muted-foreground'>Address: {merchant.address}</p>
+            <p className='text-muted-foreground text-sm'>Address: {merchant.address}</p>
           </div>
         </div>
         <div className='space-y-2'>

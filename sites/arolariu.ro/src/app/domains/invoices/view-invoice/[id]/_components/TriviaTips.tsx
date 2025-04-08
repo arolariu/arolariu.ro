@@ -66,20 +66,20 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
     <Card>
       <CardHeader className='pb-2'>
         <CardTitle className='flex items-center text-lg'>
-          <TbSparkles className='mr-2 h-5 w-5 text-primary' />
+          <TbSparkles className='text-primary mr-2 h-5 w-5' />
           <span>Savings Tips</span>
         </CardTitle>
       </CardHeader>
       <CardContent className='space-y-4'>
         <motion.div
-          className='rounded-md border border-primary/20 bg-primary/10 p-3'
+          className='border-primary/20 bg-primary/10 rounded-md border p-3'
           whileHover={{scale: 1.02}}
           transition={{type: "spring", stiffness: 400, damping: 10}}>
           <div className='flex items-center justify-between'>
             <p className='text-sm font-medium'>Potential Savings</p>
             <p className='text-lg font-bold'>{formatCurrency(totalPotentialSavings)}</p>
           </div>
-          <p className='mt-1 text-xs text-muted-foreground'>Apply these tips to save on your next visit to {merchant.name}</p>
+          <p className='text-muted-foreground mt-1 text-xs'>Apply these tips to save on your next visit to {merchant.name}</p>
         </motion.div>
 
         <Separator />
@@ -88,13 +88,13 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
           {savingsTips.map((tip, index) => (
             <motion.div
               key={tip.id}
-              className='group rounded-md border p-3 hover:border-primary/50 hover:bg-muted/50'
+              className='group hover:border-primary/50 hover:bg-muted/50 rounded-md border p-3'
               initial={{opacity: 0, y: 10}}
               animate={{opacity: 1, y: 0}}
               transition={{delay: index * 0.1}}
               whileHover={{scale: 1.02, backgroundColor: "hsl(var(--muted) / 0.5)"}}>
               <div className='flex items-start gap-3'>
-                <div className='mt-0.5 rounded-md bg-primary/10 p-1.5 text-primary'>{tip.icon}</div>
+                <div className='bg-primary/10 text-primary mt-0.5 rounded-md p-1.5'>{tip.icon}</div>
                 <div className='flex-1'>
                   <div className='flex items-start justify-between'>
                     <div>
@@ -108,7 +108,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className='flex items-center text-sm font-medium text-success'>
+                          <div className='text-success flex items-center text-sm font-medium'>
                             <span>{formatCurrency(tip.potentialSavings)}</span>
                             <TbThumbUp className='ml-1 h-3.5 w-3.5' />
                           </div>
@@ -119,7 +119,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <p className='mt-1 text-sm text-muted-foreground'>{tip.description}</p>
+                  <p className='text-muted-foreground mt-1 text-sm'>{tip.description}</p>
                 </div>
               </div>
             </motion.div>
@@ -135,7 +135,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
           </Button>
         </div>
 
-        <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+        <div className='text-muted-foreground flex items-center gap-2 text-xs'>
           <TbAlertCircle className='h-3.5 w-3.5' />
           <span>Savings are estimates based on average prices and promotions</span>
         </div>

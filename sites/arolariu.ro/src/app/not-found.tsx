@@ -28,9 +28,9 @@ export default async function NotFound(): Promise<React.JSX.Element> {
   });
 
   return (
-    <main className='flex flex-col items-center justify-center justify-items-center px-5 py-24 text-xl 2xsm:text-lg'>
+    <main className='2xsm:text-lg flex flex-col items-center justify-center justify-items-center px-5 py-24 text-xl'>
       <section className='flex w-1/2 flex-col items-center justify-center justify-items-center text-center'>
-        <h1 className='mx-auto pb-8 2xsm:text-xl md:text-3xl'>{t("title")}</h1>
+        <h1 className='2xsm:text-xl mx-auto pb-8 md:text-3xl'>{t("title")}</h1>
         <span className='text-balance'>{t("subtitle")}</span>
       </section>
       <section className='my-4 py-4'>
@@ -39,7 +39,7 @@ export default async function NotFound(): Promise<React.JSX.Element> {
       </section>
       <section>
         <span className='text-center text-xs'>{t("falsePositive")}</span>
-        <div className='mt-4 flex items-center justify-between justify-items-center gap-4 2xsm:flex-col md:flex-row'>
+        <div className='2xsm:flex-col mt-4 flex items-center justify-between justify-items-center gap-4 md:flex-row'>
           <Link
             href=''
             className='btn btn-secondary mx-auto'>

@@ -18,12 +18,12 @@ type PerspectiveType = {
 
 const Perspective = ({perspective}: Readonly<{perspective: PerspectiveType}>): React.JSX.Element => {
   return (
-    <Card className='h-full overflow-visible border-none bg-card shadow-lg transition-all duration-300 hover:shadow-xl'>
-      <CardContent className='relative px-6 pb-8 pt-12'>
-        <div className='absolute -top-8 left-6 rounded-full bg-primary p-4 shadow-lg'>
-          <TbQuote className='h-6 w-6 text-primary-foreground' />
+    <Card className='bg-card h-full overflow-visible border-none shadow-lg transition-all duration-300 hover:shadow-xl'>
+      <CardContent className='relative px-6 pt-12 pb-8'>
+        <div className='bg-primary absolute -top-8 left-6 rounded-full p-4 shadow-lg'>
+          <TbQuote className='text-primary-foreground h-6 w-6' />
         </div>
-        <p className='mb-6 italic text-muted-foreground'>&ldquo;{perspective.quote}&rdquo;</p>
+        <p className='text-muted-foreground mb-6 italic'>&ldquo;{perspective.quote}&rdquo;</p>
         <div className='flex items-center gap-4'>
           <Avatar>
             <AvatarImage
@@ -39,7 +39,7 @@ const Perspective = ({perspective}: Readonly<{perspective: PerspectiveType}>): R
           </Avatar>
           <div>
             <p className='font-medium'>{perspective.author}</p>
-            <p className='text-sm text-muted-foreground'>
+            <p className='text-muted-foreground text-sm'>
               {perspective.position} - {perspective.company}
             </p>
           </div>
@@ -132,9 +132,9 @@ export default function Perspectives(): React.JSX.Element {
           className='mb-16 text-center'>
           <h2 className='relative mb-4 inline-block text-3xl font-bold md:text-4xl'>
             {t("title")}
-            <span className='absolute -bottom-2 left-0 right-0 h-1 rounded-full bg-gradient-to-r from-primary to-primary/30' />
+            <span className='from-primary to-primary/30 absolute right-0 -bottom-2 left-0 h-1 rounded-full bg-linear-to-r' />
           </h2>
-          <p className='mx-auto max-w-2xl text-muted-foreground'>{t("subtitle")}</p>
+          <p className='text-muted-foreground mx-auto max-w-2xl'>{t("subtitle")}</p>
         </motion.div>
 
         <motion.div

@@ -32,17 +32,17 @@ export default function TechnologiesSection(): React.JSX.Element {
 
   return (
     <section className='relative py-20'>
-      <div className='absolute inset-0 bg-gradient-to-b from-background via-purple-200 to-background backdrop-blur-sm dark:via-blue-950' />
-      <div className='container relative z-10 mx-auto px-4'>
+      <div className='from-background to-background absolute inset-0 bg-linear-to-b via-purple-200 backdrop-blur-xs dark:via-blue-950' />
+      <div className='relative z-10 container mx-auto px-4'>
         <div className='grid grid-cols-1 items-center gap-16 lg:grid-cols-2'>
           <motion.div
             initial={{opacity: 0, x: -30}}
             whileInView={{opacity: 1, x: 0}}
             viewport={{once: true}}
             transition={{duration: 0.8}}>
-            <Badge className='text-md rounded-xl bg-gradient-to-r from-cyan-500 via-pink-500 to-purple-500'>{t("badgeTitle")}</Badge>
+            <Badge className='text-md rounded-xl bg-linear-to-r from-cyan-500 via-pink-500 to-purple-500'>{t("badgeTitle")}</Badge>
             <h2 className='mb-6 text-3xl font-bold md:text-4xl'>{t("title")}</h2>
-            <span className='mb-6 block text-lg text-muted-foreground'>{t("description")}</span>
+            <span className='text-muted-foreground mb-6 block text-lg'>{t("description")}</span>
             <ul className='mb-8 space-y-4'>
               {points.map((point) => (
                 <li
@@ -64,8 +64,8 @@ export default function TechnologiesSection(): React.JSX.Element {
             viewport={{once: true}}
             transition={{duration: 0.8}}
             className='relative'>
-            <div className='relative rounded-lg border border-primary/20 bg-card/30 p-2 shadow-xl backdrop-blur-sm'>
-              <div className='absolute -top-3 left-4 bg-background px-2 py-1 text-xs font-medium'>architecture.tsx</div>
+            <div className='border-primary/20 bg-card/30 relative rounded-lg border p-2 shadow-xl backdrop-blur-xs'>
+              <div className='bg-background absolute -top-3 left-4 px-2 py-1 text-xs font-medium'>architecture.tsx</div>
               <pre className='language-typescript overflow-x-auto p-4 text-sm'>
                 <code className='text-foreground'>
                   {`const platform = {
@@ -95,7 +95,7 @@ export default function TechnologiesSection(): React.JSX.Element {
             </div>
 
             {/* Decorative elements */}
-            <div className='absolute -right-6 -top-6 h-12 w-12 rounded-full bg-primary/30 blur-xl' />
+            <div className='bg-primary/30 absolute -top-6 -right-6 h-12 w-12 rounded-full blur-xl' />
             <div className='absolute -bottom-6 -left-6 h-12 w-12 rounded-full bg-purple-500/30 blur-xl' />
           </motion.div>
         </div>

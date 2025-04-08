@@ -67,7 +67,7 @@ export default function Biography(): React.JSX.Element {
       {/* Colorful background elements */}
       <div className='absolute inset-0'>
         <motion.div
-          className='absolute -right-20 -top-20 h-64 w-64 rounded-full bg-blue-500/100 blur-3xl'
+          className='absolute -top-20 -right-20 h-64 w-64 rounded-full bg-blue-500/100 blur-3xl'
           animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.5, 0.3],
@@ -98,9 +98,9 @@ export default function Biography(): React.JSX.Element {
 
         <motion.div
           variants={itemVariants}
-          className='prose max-w-none dark:prose-invert'>
-          <div className='relative overflow-hidden rounded-xl border border-border/50 bg-card/50 p-6 shadow-lg backdrop-blur-sm md:p-8'>
-            <div className='absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500' />
+          className='prose dark:prose-invert max-w-none'>
+          <div className='border-border/50 bg-card/50 relative overflow-hidden rounded-xl border p-6 shadow-lg backdrop-blur-xs md:p-8'>
+            <div className='absolute top-0 left-0 h-1 w-full bg-linear-to-r from-blue-500 via-purple-500 to-pink-500' />
             {bioSections.map((section) => (
               <motion.div
                 key={section.content.slice(0, 20)}
@@ -111,7 +111,7 @@ export default function Biography(): React.JSX.Element {
             ))}
 
             <motion.div
-              className='absolute bottom-0 left-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500'
+              className='absolute bottom-0 left-0 h-1 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500'
               initial={{width: "0%"}}
               whileInView={{width: "100%"}}
               transition={{duration: 1.5, ease: "easeOut"}}

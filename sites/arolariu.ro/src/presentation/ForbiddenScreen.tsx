@@ -23,7 +23,7 @@ export default function ForbiddenScreen() {
         height={500}
       />
       <article className='w-full text-center lg:w-2/3'>
-        <h1 className='mb-4 inline bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-3xl font-medium text-transparent sm:text-4xl'>
+        <h1 className='mb-4 inline bg-linear-to-r from-pink-400 to-red-600 bg-clip-text text-3xl font-medium text-transparent sm:text-4xl'>
           {t("title")}
         </h1>
         <span className='mb-4 inline text-4xl font-black sm:text-4xl'> 😭 </span>
@@ -32,7 +32,7 @@ export default function ForbiddenScreen() {
       <article className='mb-12 flex justify-center'>
         <Link
           href={`${SITE_URL}/auth`}
-          className='inline-flex rounded border-0 bg-indigo-600 px-6 py-2 text-lg text-white hover:bg-indigo-700 focus:outline-none'>
+          className='inline-flex rounded border-0 bg-indigo-600 px-6 py-2 text-lg text-white hover:bg-indigo-700 focus:outline-hidden'>
           {t("callToAction")}
         </Link>
       </article>

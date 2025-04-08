@@ -92,7 +92,7 @@ export default function Certifications(): React.JSX.Element {
           transition={{duration: 0.6}}
           className='mb-16 text-center'>
           <h2 className='blue-underline relative mb-4 inline-block text-3xl font-bold md:text-4xl'>Certifications</h2>
-          <p className='mx-auto max-w-2xl text-muted-foreground'>
+          <p className='text-muted-foreground mx-auto max-w-2xl'>
             Professional certifications and credentials that Alexandru has earned throughout his career.
           </p>
         </motion.div>
@@ -113,9 +113,9 @@ export default function Certifications(): React.JSX.Element {
                 scale: 1.03,
                 transition: {duration: 0.2},
               }}>
-              <div className='relative h-[600px] overflow-hidden rounded-xl border border-border/50 bg-card p-6 shadow-md transition-all duration-300 hover:border-primary/30 hover:shadow-xl'>
+              <div className='border-border/50 bg-card hover:border-primary/30 relative h-[600px] overflow-hidden rounded-xl border p-6 shadow-md transition-all duration-300 hover:shadow-xl'>
                 <div className='mb-4 flex items-start justify-between'>
-                  <div className='rounded-lg bg-primary/10 p-3 text-primary'>
+                  <div className='bg-primary/10 text-primary rounded-lg p-3'>
                     <TbAward className='h-6 w-6' />
                   </div>
                   <Badge
@@ -127,14 +127,14 @@ export default function Certifications(): React.JSX.Element {
 
                 <h3 className='group-hover:text-glow mb-2 text-xl font-semibold'>{cert.name}</h3>
 
-                <div className='mb-4 flex items-center text-sm text-muted-foreground'>
+                <div className='text-muted-foreground mb-4 flex items-center text-sm'>
                   <span>{cert.issuer}</span>
                   <span className='mx-2'>•</span>
                   <span>{cert.issueDate}</span>
                 </div>
 
                 <div className='custom-scrollbar h-[350px] overflow-y-auto pr-2'>
-                  <p className='mb-4 text-sm text-muted-foreground'>{cert.description}</p>
+                  <p className='text-muted-foreground mb-4 text-sm'>{cert.description}</p>
 
                   {expandedCerts.includes(index) && (
                     <div className='mt-4'>
@@ -147,7 +147,7 @@ export default function Certifications(): React.JSX.Element {
                             initial={{opacity: 0, x: -10}}
                             animate={{opacity: 1, x: 0}}
                             transition={{delay: i * 0.1, duration: 0.3}}>
-                            <TbCheck className='mr-2 h-4 w-4 flex-shrink-0 text-primary' />
+                            <TbCheck className='text-primary mr-2 h-4 w-4 shrink-0' />
                             <span className='text-sm'>{skill}</span>
                           </motion.div>
                         ))}
@@ -156,12 +156,12 @@ export default function Certifications(): React.JSX.Element {
                   )}
                 </div>
 
-                <div className='absolute bottom-6 left-6 right-6 mt-4 flex items-center justify-between'>
+                <div className='absolute right-6 bottom-6 left-6 mt-4 flex items-center justify-between'>
                   <motion.a
                     href={cert.link}
                     target='_blank'
                     rel='noopener noreferrer'
-                    className='inline-flex items-center text-sm text-primary hover:underline'
+                    className='text-primary inline-flex items-center text-sm hover:underline'
                     whileHover={{x: 5}}>
                     View certification
                     <TbExternalLink className='ml-1 h-3 w-3' />
@@ -169,7 +169,7 @@ export default function Certifications(): React.JSX.Element {
 
                   <motion.button
                     onClick={() => toggleExpand(index)}
-                    className='flex items-center text-sm text-primary'
+                    className='text-primary flex items-center text-sm'
                     whileHover={{scale: 1.1}}>
                     {expandedCerts.includes(index) ? (
                       <>
@@ -186,7 +186,7 @@ export default function Certifications(): React.JSX.Element {
                 </div>
 
                 <motion.div
-                  className='absolute bottom-0 left-0 h-1 bg-primary'
+                  className='bg-primary absolute bottom-0 left-0 h-1'
                   initial={{width: "0%"}}
                   animate={{width: hoveredCert === index ? "100%" : "0%"}}
                   transition={{duration: 0.3}}
@@ -195,7 +195,7 @@ export default function Certifications(): React.JSX.Element {
 
               {hoveredCert === index && (
                 <motion.div
-                  className='absolute inset-0 -z-10 rounded-xl bg-primary/5 blur-xl'
+                  className='bg-primary/5 absolute inset-0 -z-10 rounded-xl blur-xl'
                   initial={{opacity: 0}}
                   animate={{opacity: 1}}
                   exit={{opacity: 0}}

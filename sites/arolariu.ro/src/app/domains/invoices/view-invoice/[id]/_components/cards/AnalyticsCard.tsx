@@ -128,7 +128,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
           <TabsContent
             value='trends'
             className='space-y-4'>
-            <div className='mb-2 text-sm text-muted-foreground'>Your spending at {merchant.name} over the past year</div>
+            <div className='text-muted-foreground mb-2 text-sm'>Your spending at {merchant.name} over the past year</div>
             <div className='h-[300px]'>
               <ChartContainer
                 config={{
@@ -152,11 +152,11 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
             </div>
             <div className='mt-4 grid grid-cols-2 gap-4'>
               <div className='space-y-1'>
-                <div className='text-sm text-muted-foreground'>Average Spend</div>
+                <div className='text-muted-foreground text-sm'>Average Spend</div>
                 <div className='text-xl font-bold'>{formatCurrency(2 * 0.85)}</div>
               </div>
               <div className='space-y-1'>
-                <div className='text-sm text-muted-foreground'>Year to Date</div>
+                <div className='text-muted-foreground text-sm'>Year to Date</div>
                 <div className='text-xl font-bold'>{formatCurrency(3 * 5.2)}</div>
               </div>
             </div>
@@ -165,7 +165,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
           <TabsContent
             value='comparison'
             className='space-y-4'>
-            <div className='mb-2 text-sm text-muted-foreground'>How {merchant.name} compares to other merchants</div>
+            <div className='text-muted-foreground mb-2 text-sm'>How {merchant.name} compares to other merchants</div>
             <div className='h-[300px]'>
               <ChartContainer
                 config={{
@@ -187,7 +187,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
                 />
               </ChartContainer>
             </div>
-            <div className='mt-2 text-sm text-muted-foreground'>
+            <div className='text-muted-foreground mt-2 text-sm'>
               {merchant.name} is{" "}
               {
                 // eslint-disable-next-line sonarjs/pseudo-random
@@ -205,7 +205,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
           <TabsContent
             value='breakdown'
             className='space-y-4'>
-            <div className='mb-2 text-sm text-muted-foreground'>Spending breakdown by category</div>
+            <div className='text-muted-foreground mb-2 text-sm'>Spending breakdown by category</div>
             <div className='h-[300px]'>
               <ChartContainer
                 config={{
@@ -231,7 +231,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
                 />
               </ChartContainer>
             </div>
-            <div className='mt-2 text-sm text-muted-foreground'>
+            <div className='text-muted-foreground mt-2 text-sm'>
               category represents{" "}
               {Math.round(
                 // eslint-disable-next-line sonarjs/pseudo-random

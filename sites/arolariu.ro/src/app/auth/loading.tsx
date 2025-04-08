@@ -1,12 +1,12 @@
 /** @format */
-
+"use client";
 import {Skeleton} from "@arolariu/components";
 
 /**
  * This function renders the loading screen for the auth pages.
  * @returns The loading screen for the auth pages.
  */
-export default async function Loading(): Promise<React.JSX.Element> {
+export default function Loading(): React.JSX.Element {
   return (
     <main>
       <div className='container mx-auto px-5 py-24'>
@@ -15,7 +15,7 @@ export default async function Loading(): Promise<React.JSX.Element> {
             <div className='flex h-64 items-center justify-center'>
               <Skeleton className='h-[500px] w-[300px] object-cover' />
             </div>
-            <div className='mb-3 mt-6'>
+            <div className='mt-6 mb-3'>
               <Skeleton className='w-[248px] max-w-full' />
             </div>
             <div className='leading-relaxed'>

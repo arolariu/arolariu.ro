@@ -71,7 +71,7 @@ export default function FeaturesSection(): React.JSX.Element {
 
   return (
     <section className='py-12 sm:pb-16 lg:pb-20 xl:pb-24'>
-      <article className='mx-auto max-w-screen-xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16'>
+      <article className='mx-auto max-w-(--breakpoint-xl) px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16'>
         <TypewriterText
           words={[...t("title")]}
           className='text-5xl font-bold'

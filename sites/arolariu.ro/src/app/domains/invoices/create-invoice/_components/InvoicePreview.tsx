@@ -73,7 +73,7 @@ const MediaPreview = memo(function MediaPreview({
   if (isPdfFile) {
     return (
       <div className='relative flex h-full w-full flex-col overflow-hidden'>
-        <div className='absolute left-0 top-0 z-10 rounded-br-lg bg-primary px-2 py-1 text-xs text-white'>PDF</div>
+        <div className='bg-primary absolute top-0 left-0 z-10 rounded-br-lg px-2 py-1 text-xs text-white'>PDF</div>
         {url ? (
           // eslint-disable-next-line react/iframe-missing-sandbox
           <iframe
@@ -84,10 +84,10 @@ const MediaPreview = memo(function MediaPreview({
           />
         ) : (
           <div className='flex h-full w-full items-center justify-center bg-gray-50'>
-            <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
+            <div className='border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
           </div>
         )}
-        <div className='absolute bottom-2 right-2'>
+        <div className='absolute right-2 bottom-2'>
           <Button
             size='icon'
             variant='destructive'
@@ -108,11 +108,11 @@ const MediaPreview = memo(function MediaPreview({
       {!url || loadError ? (
         <div className='flex h-full w-full items-center justify-center bg-gray-50'>
           {loadError ? (
-            <div className='text-center text-muted-foreground'>
+            <div className='text-muted-foreground text-center'>
               <div>Failed to load image</div>
             </div>
           ) : (
-            <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
+            <div className='border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
           )}
         </div>
       ) : (
@@ -127,7 +127,7 @@ const MediaPreview = memo(function MediaPreview({
           alt={`Invoice image ${index + 1}`}
         />
       )}
-      <div className='absolute bottom-2 right-2 flex gap-2'>
+      <div className='absolute right-2 bottom-2 flex gap-2'>
         {Boolean(onRotate) && (
           <Button
             size='icon'
@@ -315,7 +315,7 @@ function CarouselView({
                     />
                   </CardContent>
                   <CardFooter className='flex justify-between p-3'>
-                    <div className='text-sm text-muted-foreground'>
+                    <div className='text-muted-foreground text-sm'>
                       {isPdfFile ? "PDF" : "Image"} {index + 1} of {images.length}
                     </div>
                   </CardFooter>

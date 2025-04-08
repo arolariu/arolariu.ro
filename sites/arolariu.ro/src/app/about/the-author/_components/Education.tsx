@@ -37,7 +37,7 @@ const EducationCard = ({
   toggleFlip: (index: number) => void;
 }>): React.JSX.Element => {
   return (
-    <div className='perspective relative w-full 2xsm:h-[800px] md:h-[400px]'>
+    <div className='perspective 2xsm:h-[800px] relative w-full md:h-[400px]'>
       <AnimatePresence
         initial={false}
         mode='wait'>
@@ -53,28 +53,28 @@ const EducationCard = ({
               <CardContent className='grid h-full w-full grid-cols-1 md:grid-cols-3'>
                 <div className='flex h-full w-full flex-col items-center justify-center p-6 text-center md:col-span-1'>
                   <motion.div
-                    className='mb-4 flex h-20 w-20 cursor-pointer items-center justify-center rounded-full bg-primary/20'
+                    className='bg-primary/20 mb-4 flex h-20 w-20 cursor-pointer items-center justify-center rounded-full'
                     whileHover={{scale: 1.1, rotate: 5}}
                     onClick={() => toggleFlip(index)}>
-                    <TbSchool className='h-10 w-10 text-primary' />
+                    <TbSchool className='text-primary h-10 w-10' />
                   </motion.div>
                   <h3 className='text-glow text-xl font-bold'>{item.degree}</h3>
-                  <div className='mt-2 flex items-center justify-center text-muted-foreground'>
+                  <div className='text-muted-foreground mt-2 flex items-center justify-center'>
                     <TbCalendar className='mr-2 h-4 w-4' />
                     <span>{item.period}</span>
                   </div>
-                  <div className='mt-1 flex items-center justify-center text-muted-foreground'>
+                  <div className='text-muted-foreground mt-1 flex items-center justify-center'>
                     <TbMap className='mr-2 h-4 w-4' />
                     <span>{item.location}</span>
                   </div>
-                  <div className='mt-1 flex items-center justify-center text-muted-foreground'>
+                  <div className='text-muted-foreground mt-1 flex items-center justify-center'>
                     <TbBuildingCommunity className='mr-2 h-4 w-4' />
                     <span>{item.institution}</span>
                   </div>
                 </div>
                 <div className='flex h-full w-full flex-col p-6 md:col-span-2'>
                   <h4 className='mb-4 flex items-center text-lg font-semibold'>
-                    <TbBook className='mr-2 h-5 w-5 text-primary' />
+                    <TbBook className='text-primary mr-2 h-5 w-5' />
                     {item.coursesTitle}
                   </h4>
                   <ul className='space-y-2'>
@@ -88,17 +88,17 @@ const EducationCard = ({
                           x: 5,
                           transition: {duration: 0.2},
                         }}>
-                        <span className='mr-2 text-primary'>•</span>
+                        <span className='text-primary mr-2'>•</span>
                         <span>{course}</span>
                       </motion.li>
                     ))}
                   </ul>
-                  <span className='mt-4 text-muted-foreground'>{item.description}</span>
+                  <span className='text-muted-foreground mt-4'>{item.description}</span>
 
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='mt-4 w-fit text-primary'
+                    className='text-primary mt-4 w-fit'
                     onClick={() => toggleFlip(index)}>
                     <TbInfoCircle className='mr-2 h-4 w-4' />
                     {item.aboutTheProgramCta}
@@ -128,7 +128,7 @@ const EducationCard = ({
                   </Button>
                 </div>
 
-                <div className='custom-scrollbar flex-grow space-y-4 overflow-auto pr-2'>
+                <div className='custom-scrollbar grow space-y-4 overflow-auto pr-2'>
                   <div>
                     <h4 className='mb-2 text-lg font-semibold'>{item.aboutTheProgramTitle}</h4>
                     <p>{item.aboutTheProgramDescription}</p>
@@ -147,7 +147,7 @@ const EducationCard = ({
                             x: 5,
                             transition: {duration: 0.2},
                           }}>
-                          <span className='mr-2 text-primary'>•</span>
+                          <span className='text-primary mr-2'>•</span>
                           <span>{learning}</span>
                         </motion.li>
                       ))}
@@ -252,7 +252,7 @@ export default function Education(): React.JSX.Element {
         transition={{duration: 0.6}}
         className='mb-16 text-center'>
         <h2 className='blue-underline relative mb-4 inline-block text-3xl font-bold md:text-4xl'>{t("title")}</h2>
-        <p className='mx-auto max-w-2xl text-muted-foreground'>{t("subtitle")}</p>
+        <p className='text-muted-foreground mx-auto max-w-2xl'>{t("subtitle")}</p>
       </motion.div>
 
       <motion.div
@@ -276,7 +276,7 @@ export default function Education(): React.JSX.Element {
             />
             {activeIndex === index && !isFlipped.includes(index) && (
               <motion.div
-                className='absolute inset-0 -z-10 rounded-xl bg-primary/5 blur-xl'
+                className='bg-primary/5 absolute inset-0 -z-10 rounded-xl blur-xl'
                 initial={{opacity: 0}}
                 animate={{opacity: 1}}
                 exit={{opacity: 0}}

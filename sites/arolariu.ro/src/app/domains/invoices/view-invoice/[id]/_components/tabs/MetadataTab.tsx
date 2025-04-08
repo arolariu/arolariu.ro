@@ -76,8 +76,8 @@ export default function MetadataTab({metadata}: Readonly<Props>) {
                   animate={{opacity: 1, scale: 1}}
                   transition={{delay: index * 0.05}}
                   whileHover={{scale: 1.02}}
-                  className='group relative flex flex-col space-y-1 rounded-md border p-3 transition-colors hover:border-primary/50 hover:bg-muted/50'>
-                  <span className='text-sm font-medium text-muted-foreground'>
+                  className='group hover:border-primary/50 hover:bg-muted/50 relative flex flex-col space-y-1 rounded-md border p-3 transition-colors'>
+                  <span className='text-muted-foreground text-sm font-medium'>
                     <Badge
                       variant='outline'
                       className='ml-2 text-xs'>
@@ -86,7 +86,7 @@ export default function MetadataTab({metadata}: Readonly<Props>) {
                   </span>
                   <span>{value}</span>
 
-                  <div className='absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100'>
+                  <div className='absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100'>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -118,7 +118,7 @@ export default function MetadataTab({metadata}: Readonly<Props>) {
             </div>
           ) : (
             <div className='py-8 text-center'>
-              <p className='mb-4 text-muted-foreground'>No metadata fields added yet</p>
+              <p className='text-muted-foreground mb-4'>No metadata fields added yet</p>
               <Button
                 onClick={() => {}}
                 variant='outline'>

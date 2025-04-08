@@ -96,12 +96,12 @@ export default function ShareAnalyticsDialog() {
             value='image'
             className='py-4'>
             <div className='space-y-4'>
-              <p className='text-sm text-muted-foreground'>
+              <p className='text-muted-foreground text-sm'>
                 Download or copy the analytics graph as a PNG image that you can share or save.
               </p>
               <div className='flex justify-center'>
                 <div className='w-full max-w-xs rounded-md border p-4'>
-                  <div className='flex h-32 items-center justify-center rounded-md bg-muted'>Analytics Preview</div>
+                  <div className='bg-muted flex h-32 items-center justify-center rounded-md'>Analytics Preview</div>
                 </div>
               </div>
             </div>
@@ -128,7 +128,7 @@ export default function ShareAnalyticsDialog() {
             value='email'
             className='py-4'>
             <div className='space-y-4'>
-              <p className='text-sm text-muted-foreground'>Send the analytics to an email address.</p>
+              <p className='text-muted-foreground text-sm'>Send the analytics to an email address.</p>
               <div className='space-y-2'>
                 <Label htmlFor='email'>Email address</Label>
                 <Input

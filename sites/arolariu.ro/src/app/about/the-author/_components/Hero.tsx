@@ -30,7 +30,7 @@ export default function Hero(): React.JSX.Element {
     .split(" ")
     .map((word) => ({
       text: word,
-      className: "inline-block text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500",
+      className: "inline-block text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-purple-500",
     }));
 
   return (
@@ -44,7 +44,7 @@ export default function Hero(): React.JSX.Element {
           initial={{scale: 0.8, opacity: 0}}
           animate={{scale: 1, opacity: 1}}
           transition={{delay: 0.2, duration: 0.8}}
-          className='glow-effect relative mx-auto mb-6 h-32 w-32 overflow-hidden rounded-full border-4 border-primary/20 md:h-40 md:w-40'>
+          className='glow-effect border-primary/20 relative mx-auto mb-6 h-32 w-32 overflow-hidden rounded-full border-4 md:h-40 md:w-40'>
           <Image
             src='/images/about/the-author/author.jpeg'
             alt='Alexandru Olariu'

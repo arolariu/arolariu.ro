@@ -130,10 +130,10 @@ const Steps = () => {
           <div className='absolute inset-0 flex h-full w-10 items-center justify-center'>
             {step != steps.at(-1) && <div className='pointer-events-none h-full w-1 bg-gray-200' />}
           </div>
-          <div className='relative z-10 inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-indigo-500'>
+          <div className='relative z-10 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-500'>
             {step.icon}
           </div>
-          <div className='flex-grow pl-4'>
+          <div className='grow pl-4'>
             <h2 className='title-font mb-1 text-sm font-medium tracking-wider underline underline-offset-2'>{step.title}</h2>
             <p className='leading-relaxed'>{step.description}</p>
           </div>
@@ -164,11 +164,11 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
           alt='Invoice top SVG'
           width='500'
           height='500'
-          className='object-fill object-center 2xsm:pt-4 md:mx-auto md:h-full lg:h-1/2'
+          className='2xsm:pt-4 object-fill object-center md:mx-auto md:h-full lg:h-1/2'
           priority
         />
         <div className='mt-2 w-full lg:w-2/3'>
-          <h1 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-3xl font-medium text-transparent sm:text-4xl'>
+          <h1 className='mb-4 bg-linear-to-r from-pink-400 to-red-600 bg-clip-text text-3xl font-medium text-transparent sm:text-4xl'>
             {t("title")}
           </h1>
           <article className='mb-8 leading-relaxed'>
@@ -177,7 +177,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
           <div className='flex flex-col items-center justify-center justify-items-center gap-4 md:flex-row'>
             <Link
               href='/domains/invoices/create-invoice'
-              className='rounded border-0 bg-indigo-600 px-6 py-2 text-lg text-white hover:bg-indigo-700 focus:outline-none'>
+              className='rounded border-0 bg-indigo-600 px-6 py-2 text-lg text-white hover:bg-indigo-700 focus:outline-hidden'>
               {t("callToAction")}
             </Link>
 
@@ -185,7 +185,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
             {Boolean(isAuthenticated) && (
               <Link
                 href='/domains/invoices/view-invoices'
-                className='rounded border-0 bg-gray-100 px-6 py-2 text-lg text-gray-700 hover:bg-gray-200 focus:outline-none'>
+                className='rounded border-0 bg-gray-100 px-6 py-2 text-lg text-gray-700 hover:bg-gray-200 focus:outline-hidden'>
                 {t("showInvoices")}
               </Link>
             )}
@@ -202,7 +202,7 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
             alt='Invoice bottom SVG'
             width='500'
             height='500'
-            className='w-full object-fill object-center 2xsm:pt-4 md:mx-auto md:h-full lg:h-1/2'
+            className='2xsm:pt-4 w-full object-fill object-center md:mx-auto md:h-full lg:h-1/2'
           />
         </div>
       </section>

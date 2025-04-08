@@ -23,10 +23,10 @@ export default function HeroSection(): React.JSX.Element {
           animate={{opacity: 1, scale: 1}}
           transition={{duration: 0.8, delay: 0.3}}
           className='relative z-10'>
-          <h1 className='mt-6 text-4xl font-normal text-white 2xsm:text-center sm:mt-10 sm:text-5xl md:text-left lg:text-6xl xl:text-8xl'>
-            <span className='bg-gradient-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent'>{t("title")}</span>
+          <h1 className='2xsm:text-center mt-6 text-4xl font-normal text-white sm:mt-10 sm:text-5xl md:text-left lg:text-6xl xl:text-8xl'>
+            <span className='bg-linear-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent'>{t("title")}</span>
           </h1>
-          <p className='mt-4 max-w-lg text-xl text-gray-500 2xsm:text-center md:text-left lg:max-w-2xl'>
+          <p className='2xsm:text-center mt-4 max-w-lg text-xl text-gray-500 md:text-left lg:max-w-2xl'>
             {t.rich("subtitle", {
               br: (chunks) => (
                 <>
@@ -36,8 +36,8 @@ export default function HeroSection(): React.JSX.Element {
               ),
             })}
           </p>
-          <div className='relative mt-8 inline-flex 2xsm:ml-[26%] md:ml-0'>
-            <div className='absolute -inset-px rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all duration-200 group-hover:shadow-lg group-hover:shadow-cyan-500/50' />
+          <div className='2xsm:ml-[26%] relative mt-8 inline-flex md:ml-0'>
+            <div className='absolute -inset-px rounded-full bg-linear-to-r from-cyan-500 to-purple-500 transition-all duration-200 group-hover:shadow-lg group-hover:shadow-cyan-500/50' />
             <Link
               href='/domains'
               title=''
@@ -74,7 +74,7 @@ export default function HeroSection(): React.JSX.Element {
           className='relative flex flex-col items-center justify-center'>
           <div className='relative mx-auto w-full max-w-[400px]'>
             <motion.div
-              className='absolute -left-20 -top-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl'
+              className='bg-primary/20 absolute -top-20 -left-20 h-40 w-40 rounded-full blur-3xl'
               animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.3, 0.5, 0.3],
@@ -86,7 +86,7 @@ export default function HeroSection(): React.JSX.Element {
               }}
             />
             <motion.div
-              className='absolute -bottom-20 -right-20 h-40 w-40 rounded-full bg-purple-500/20 blur-3xl'
+              className='absolute -right-20 -bottom-20 h-40 w-40 rounded-full bg-purple-500/20 blur-3xl'
               animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.3, 0.5, 0.3],
@@ -106,7 +106,7 @@ export default function HeroSection(): React.JSX.Element {
             <div className='block w-full sm:hidden'>
               <div className='relative flex h-60 w-full items-center justify-center'>
                 <motion.div
-                  className='absolute h-32 w-32 rounded-full bg-primary/20 blur-xl'
+                  className='bg-primary/20 absolute h-32 w-32 rounded-full blur-xl'
                   animate={{
                     scale: [1, 1.2, 1],
                     opacity: [0.3, 0.5, 0.3],

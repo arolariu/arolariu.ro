@@ -241,7 +241,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                       <CardHeader>
                         <div className='flex items-center justify-between'>
                           <CardTitle className='text-xl'>{pkg.name}</CardTitle>
-                          <span className='rounded-full bg-muted px-2 py-1 text-xs'>{pkg.version}</span>
+                          <span className='bg-muted rounded-full px-2 py-1 text-xs'>{pkg.version}</span>
                         </div>
                         <div className='mt-2 flex items-center'>
                           <PackageBadge type={extractPackageType(pkg)} />
@@ -261,7 +261,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                               href={pkg.homepage}
                               target='_blank'
                               rel='noopener noreferrer'
-                              className='flex items-center text-sm text-muted-foreground transition-colors hover:text-primary'>
+                              className='text-muted-foreground hover:text-primary flex items-center text-sm transition-colors'>
                               <TbExternalLink className='mr-1 h-4 w-4' />
                               <span>Website</span>
                             </Link>
@@ -275,7 +275,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
               </div>
             ) : (
               <div className='py-12 text-center'>
-                <TbPackage className='mx-auto mb-4 h-12 w-12 text-muted-foreground' />
+                <TbPackage className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
                 <p className='text-muted-foreground'>No packages found.</p>
                 <p className='text-muted-foreground'>Try adjusting the filters above.</p>
               </div>
@@ -319,7 +319,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                             href={pkg.homepage}
                             target='_blank'
                             rel='noopener noreferrer'
-                            className='rounded-md p-2 transition-colors hover:bg-muted'
+                            className='hover:bg-muted rounded-md p-2 transition-colors'
                             title='Website'>
                             <TbExternalLink className='mx-auto h-4 w-4' />
                             <span className='sr-only'>Website</span>
@@ -332,7 +332,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
               </motion.div>
             ) : (
               <div className='py-12 text-center'>
-                <TbPackage className='mx-auto mb-4 h-12 w-12 text-muted-foreground' />
+                <TbPackage className='text-muted-foreground mx-auto mb-4 h-12 w-12' />
                 <p className='text-muted-foreground'>No packages found.</p>
                 <p className='text-muted-foreground'>Try adjusting the filters above.</p>
               </div>
@@ -350,7 +350,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
           <TbPackage className='mr-2 h-6 w-6' />
           <h2 className='text-xl font-semibold'>Open Source Matters</h2>
         </div>
-        <p className='mx-auto max-w-2xl text-muted-foreground'>
+        <p className='text-muted-foreground mx-auto max-w-2xl'>
           This project stands on the shoulders of giants. We&apos;re grateful for the open-source community and all the developers who have
           contributed to these packages.
         </p>

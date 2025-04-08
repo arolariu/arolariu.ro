@@ -64,7 +64,7 @@ export default function CurrencySelector() {
                   className={`flex items-center gap-2 ${curr.code === currency.code ? "bg-muted" : ""}`}>
                   {curr.icon}
                   <span>{curr.name}</span>
-                  <span className='ml-auto text-muted-foreground'>{curr.symbol}</span>
+                  <span className='text-muted-foreground ml-auto'>{curr.symbol}</span>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

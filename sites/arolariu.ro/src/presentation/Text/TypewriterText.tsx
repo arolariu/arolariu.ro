@@ -79,7 +79,7 @@ export const TypewriterText = ({words, className, cursorClassName}: Readonly<Pro
           repeat: Number.POSITIVE_INFINITY,
           repeatType: "reverse",
         }}
-        className={cn("ml-1 inline-block h-6 w-[2px] rounded-full bg-primary", cursorClassName)}
+        className={cn("bg-primary ml-1 inline-block h-6 w-[2px] rounded-full", cursorClassName)}
       />
     </div>
   );

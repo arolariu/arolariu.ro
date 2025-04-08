@@ -40,7 +40,7 @@ export default function SharingCard({invoice}: Readonly<Props>) {
       </CardHeader>
       <CardContent className='space-y-4'>
         <div className='flex items-center'>
-          <div className='mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10'>
+          <div className='bg-primary/10 mr-3 flex h-10 w-10 items-center justify-center rounded-full'>
             {userInformation?.user?.imageUrl ? (
               <Image
                 src={userInformation.user.imageUrl}
@@ -51,12 +51,12 @@ export default function SharingCard({invoice}: Readonly<Props>) {
                 priority
               />
             ) : (
-              <TbUser className='h-5 w-5 text-primary' />
+              <TbUser className='text-primary h-5 w-5' />
             )}
           </div>
           <div>
             <p className='font-medium'>Owner</p>
-            <p className='text-sm text-muted-foreground'>{userInformation?.user?.username}</p>
+            <p className='text-muted-foreground text-sm'>{userInformation?.user?.username}</p>
           </div>
           <div className='ml-auto flex items-center justify-end'>
             <TooltipProvider>
@@ -92,7 +92,7 @@ export default function SharingCard({invoice}: Readonly<Props>) {
                   animate={{opacity: 1, x: 0}}
                   transition={{delay: index * 0.1}}
                   whileHover={{x: 5}}>
-                  <div className='mr-2 flex h-8 w-8 items-center justify-center rounded-full bg-muted'>
+                  <div className='bg-muted mr-2 flex h-8 w-8 items-center justify-center rounded-full'>
                     <TbUser className='h-4 w-4' />
                   </div>
                   <span className='text-sm'>User {userId}</span>
@@ -115,7 +115,7 @@ export default function SharingCard({invoice}: Readonly<Props>) {
               ))}
             </div>
           ) : (
-            <p className='text-sm text-muted-foreground'>Not shared with anyone</p>
+            <p className='text-muted-foreground text-sm'>Not shared with anyone</p>
           )}
         </div>
       </CardContent>

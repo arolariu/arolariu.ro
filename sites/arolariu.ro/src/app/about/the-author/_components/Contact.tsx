@@ -83,7 +83,7 @@ export default function Contact(): React.JSX.Element {
         transition={{duration: 0.6}}
         className='mb-16 text-center'>
         <h2 className='blue-underline relative mb-4 inline-block text-3xl font-bold md:text-4xl'>{t("title")}</h2>
-        <span className='mx-auto block max-w-2xl text-muted-foreground'>{t("subtitle")}</span>
+        <span className='text-muted-foreground mx-auto block max-w-2xl'>{t("subtitle")}</span>
       </motion.div>
 
       <motion.div
@@ -93,8 +93,8 @@ export default function Contact(): React.JSX.Element {
         animate={inView ? "visible" : "hidden"}
         className='grid gap-8 md:grid-cols-2'>
         <motion.div variants={itemVariants}>
-          <Card className='h-full overflow-hidden border-none bg-card shadow-lg transition-all duration-300 hover:shadow-xl'>
-            <div className='absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-primary to-primary/30' />
+          <Card className='bg-card h-full overflow-hidden border-none shadow-lg transition-all duration-300 hover:shadow-xl'>
+            <div className='from-primary to-primary/30 absolute top-0 left-0 h-1 w-full bg-linear-to-r' />
 
             <CardHeader>
               <CardTitle className='text-glow'>{t("socials.title")}</CardTitle>
@@ -117,7 +117,7 @@ export default function Contact(): React.JSX.Element {
                       style={{backgroundColor: link.color}}
                     />
 
-                    <div className='group relative flex items-center justify-between overflow-hidden rounded-lg border border-border/50 p-3'>
+                    <div className='group border-border/50 relative flex items-center justify-between overflow-hidden rounded-lg border p-3'>
                       <div className='flex items-center'>
                         <div
                           className='mr-3 rounded-full p-2 transition-colors duration-300'
@@ -134,7 +134,7 @@ export default function Contact(): React.JSX.Element {
                         {link.id === "email" && (
                           <motion.button
                             onClick={copyEmail}
-                            className='rounded-full p-2 text-muted-foreground transition-colors duration-300 hover:text-primary'
+                            className='text-muted-foreground hover:text-primary rounded-full p-2 transition-colors duration-300'
                             whileHover={{scale: 1.1}}
                             whileTap={{scale: 0.95}}>
                             {copiedEmail ? <TbCheck className='h-4 w-4' /> : <TbCopy className='h-4 w-4' />}
@@ -145,7 +145,7 @@ export default function Contact(): React.JSX.Element {
                           href={link.href}
                           target={link.id === "email" ? undefined : "_blank"}
                           rel={link.id === "email" ? undefined : "noopener noreferrer"}
-                          className='rounded-full p-2 text-muted-foreground transition-colors duration-300 hover:text-primary'
+                          className='text-muted-foreground hover:text-primary rounded-full p-2 transition-colors duration-300'
                           whileHover={{scale: 1.1}}
                           whileTap={{scale: 0.95}}>
                           <TbExternalLink className='h-4 w-4' />
@@ -153,7 +153,7 @@ export default function Contact(): React.JSX.Element {
                       </div>
 
                       <motion.div
-                        className='absolute bottom-0 left-0 h-0.5 bg-primary'
+                        className='bg-primary absolute bottom-0 left-0 h-0.5'
                         initial={{width: "0%"}}
                         animate={{width: hoveredLink === link.id ? "100%" : "0%"}}
                         transition={{duration: 0.3}}
@@ -163,17 +163,17 @@ export default function Contact(): React.JSX.Element {
                 ))}
               </div>
 
-              <div className='border-t border-border/30 pt-4'>
-                <span className='block text-sm text-muted-foreground'>{t("socials.footer")}</span>
+              <div className='border-border/30 border-t pt-4'>
+                <span className='text-muted-foreground block text-sm'>{t("socials.footer")}</span>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className='relative h-full overflow-hidden border-none bg-card shadow-lg transition-all duration-300 hover:shadow-xl'>
+          <Card className='bg-card relative h-full overflow-hidden border-none shadow-lg transition-all duration-300 hover:shadow-xl'>
             <div className='bg-grid-pattern absolute inset-0 opacity-[0.03]' />
-            <div className='absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-primary to-primary/30' />
+            <div className='from-primary to-primary/30 absolute top-0 left-0 h-1 w-full bg-linear-to-r' />
 
             <CardHeader>
               <CardTitle className='text-glow'>{t("collaborate.title")}</CardTitle>
@@ -194,8 +194,8 @@ export default function Contact(): React.JSX.Element {
                     animate={{opacity: 1, scale: 1}}
                     transition={{delay: index * 0.1, duration: 2.5}}
                     whileHover={{scale: 1.05, transition: {duration: 0.3}}}
-                    className='rounded-lg bg-primary/10 p-3 text-center transition-colors duration-300 hover:bg-primary/50'>
-                    <span className='font-medium text-primary'>{field}</span>
+                    className='bg-primary/10 hover:bg-primary/50 rounded-lg p-3 text-center transition-colors duration-300'>
+                    <span className='text-primary font-medium'>{field}</span>
                   </motion.div>
                 ))}
               </div>

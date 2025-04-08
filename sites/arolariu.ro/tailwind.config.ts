@@ -1,7 +1,6 @@
 /** @format */
 
 import typography from "@tailwindcss/typography";
-import daisyUI from "daisyui";
 import type {Config} from "tailwindcss";
 import tailwindAnimate from "tailwindcss-animate";
 
@@ -83,7 +82,7 @@ const tailwindConfig = {
       },
     },
   },
-  plugins: [typography, tailwindAnimate, daisyUI],
+  plugins: [typography, tailwindAnimate],
   future: {hoverOnlyWhenSupported: true},
 } satisfies Config;
 

@@ -175,7 +175,7 @@ export default function Commander(): React.JSX.Element {
       onOpenChange={setOpen}>
       <CommandInput
         placeholder='Type a command or search...'
-        className='border-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-blue-500'
+        className='border-none focus-visible:ring-0 focus-visible:ring-blue-500 focus-visible:outline-hidden'
       />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>

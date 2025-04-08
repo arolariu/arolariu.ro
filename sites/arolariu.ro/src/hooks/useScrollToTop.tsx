@@ -54,7 +54,7 @@ export function ScrollToTop() {
           exit={{opacity: 0, scale: 0.5}}
           transition={{duration: 0.3}}
           onClick={handleScrollToTop}
-          className='fixed bottom-8 right-8 z-50 rounded-full bg-primary p-3 text-white shadow-lg transition-colors duration-300 hover:bg-primary/90'
+          className='bg-primary hover:bg-primary/90 fixed right-8 bottom-8 z-50 rounded-full p-3 text-white shadow-lg transition-colors duration-300'
           whileHover={{scale: 1.1}}
           whileTap={{scale: 0.9}}>
           <TbChevronUp className='h-6 w-6' />

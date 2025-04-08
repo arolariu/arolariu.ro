@@ -21,7 +21,7 @@ export default function Header(): React.JSX.Element {
 
   return (
     <header>
-      <nav className='navbar bg-white text-black dark:bg-black dark:text-white 2xsm:fixed 2xsm:top-0 2xsm:z-50 lg:relative lg:z-auto'>
+      <nav className='navbar 2xsm:fixed 2xsm:top-0 2xsm:z-50 bg-white text-black lg:relative lg:z-auto dark:bg-black dark:text-white'>
         <div className='navbar-start flex flex-row flex-nowrap'>
           {Boolean(isMobile) && <MobileNavigation />}
 
@@ -32,7 +32,7 @@ export default function Header(): React.JSX.Element {
               src={logo}
               alt=''
               aria-hidden
-              className='rounded-full ring-2 ring-indigo-500 2xsm:hidden lg:block'
+              className='2xsm:hidden rounded-full ring-2 ring-indigo-500 lg:block'
               width={40}
               height={40}
             />

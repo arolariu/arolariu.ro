@@ -104,7 +104,7 @@ export default function RecipesTab({recipes}: Readonly<Props>) {
             </div>
           ) : (
             <div className='py-8 text-center'>
-              <p className='mb-4 text-muted-foreground'>No recipes available yet</p>
+              <p className='text-muted-foreground mb-4'>No recipes available yet</p>
               <Button
                 onClick={() => {}}
                 variant='outline'>

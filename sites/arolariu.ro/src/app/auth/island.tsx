@@ -11,7 +11,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
   const t = useTranslations("Authentication.Island");
 
   return (
-    <section className='flex gap-4 2xsm:flex-col md:flex-row'>
+    <section className='2xsm:flex-col flex gap-4 md:flex-row'>
       <AuthCard
         cardType='sign-up'
         title='Sign up'

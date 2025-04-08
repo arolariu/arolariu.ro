@@ -116,7 +116,7 @@ export default function FeedbackDialog() {
               rows={4}
             />
           </div>
-          <small className='text-pretty text-xs text-gray-200 text-muted-foreground dark:text-gray-600'>
+          <small className='text-muted-foreground text-xs text-pretty text-gray-200 dark:text-gray-600'>
             {invoice.id}::{merchant.id}
           </small>
         </div>

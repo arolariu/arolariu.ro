@@ -1,4 +1,5 @@
 /** @format */
+"use client";
 
 import {
   Card,
@@ -23,7 +24,7 @@ import {
  * tabs, and footer.
  * The skeletons are used to indicate that the content is being loaded.
  */
-export default async function Loading(): Promise<React.JSX.Element> {
+export default function Loading(): React.JSX.Element {
   return (
     <div className='container mx-auto max-w-7xl py-10'>
       {/* Header skeleton */}

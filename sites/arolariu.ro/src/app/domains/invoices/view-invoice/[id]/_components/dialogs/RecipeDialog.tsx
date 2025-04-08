@@ -226,7 +226,7 @@ const CreateDialog = () => {
             <div className='space-y-2'>
               <Label htmlFor='prepTime'>Prep Time</Label>
               <div className='flex items-center'>
-                <TbClock className='mr-2 h-4 w-4 text-muted-foreground' />
+                <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='prepTime'
                   name='prepTime'
@@ -241,7 +241,7 @@ const CreateDialog = () => {
             <div className='space-y-2'>
               <Label htmlFor='cookTime'>Cook Time</Label>
               <div className='flex items-center'>
-                <TbToolsKitchen className='mr-2 h-4 w-4 text-muted-foreground' />
+                <TbToolsKitchen className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='cookTime'
                   name='cookTime'
@@ -327,14 +327,14 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 
             <div className='grid grid-cols-2 gap-4'>
               <Label htmlFor='preparationTime'>Prep Time</Label>
-              <TbClock className='mr-2 h-4 w-4 text-muted-foreground' />
+              <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
               <span>{recipe?.preparationTime || "Not specified"}</span>
             </div>
           </div>
 
           <div className='space-y-2'>
             <Label htmlFor='cookingTime'>Cook Time</Label>
-            <TbToolsKitchen3 className='mr-2 h-4 w-4 text-muted-foreground' />
+            <TbToolsKitchen3 className='text-muted-foreground mr-2 h-4 w-4' />
             <span>{recipe?.cookingTime || "Not specified"}</span>
           </div>
         </div>
@@ -523,7 +523,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             <div className='space-y-2'>
               <Label htmlFor='prepTime'>Prep Time</Label>
               <div className='flex items-center'>
-                <TbClock className='mr-2 h-4 w-4 text-muted-foreground' />
+                <TbClock className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='prepTime'
                   name='prepTime'
@@ -538,7 +538,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
             <div className='space-y-2'>
               <Label htmlFor='cookTime'>Cook Time</Label>
               <div className='flex items-center'>
-                <TbToolsKitchen className='mr-2 h-4 w-4 text-muted-foreground' />
+                <TbToolsKitchen className='text-muted-foreground mr-2 h-4 w-4' />
                 <Input
                   id='cookTime'
                   name='cookTime'

@@ -47,8 +47,8 @@ export default function MerchantDialog() {
         </DialogHeader>
         <div className='space-y-4 py-2'>
           <div className='flex items-center space-x-3'>
-            <div className='flex h-12 w-12 items-center justify-center rounded-full bg-primary/10'>
-              <TbBuilding className='h-6 w-6 text-primary' />
+            <div className='bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full'>
+              <TbBuilding className='text-primary h-6 w-6' />
             </div>
             <div>
               <h3 className='text-lg font-medium'>{merchant.name}</h3>
@@ -65,7 +65,7 @@ export default function MerchantDialog() {
               <TableRow>
                 <TableCell className='py-2 pl-0'>
                   <div className='flex items-center'>
-                    <TbMapPin className='mr-2 h-4 w-4 text-muted-foreground' />
+                    <TbMapPin className='text-muted-foreground mr-2 h-4 w-4' />
                     <span className='font-medium'>Address</span>
                   </div>
                 </TableCell>
@@ -74,7 +74,7 @@ export default function MerchantDialog() {
               <TableRow>
                 <TableCell className='py-2 pl-0'>
                   <div className='flex items-center'>
-                    <TbPhone className='mr-2 h-4 w-4 text-muted-foreground' />
+                    <TbPhone className='text-muted-foreground mr-2 h-4 w-4' />
                     <span className='font-medium'>Phone</span>
                   </div>
                 </TableCell>
@@ -83,7 +83,7 @@ export default function MerchantDialog() {
               <TableRow>
                 <TableCell className='py-2 pl-0'>
                   <div className='flex items-center'>
-                    <TbBuildingStore className='mr-2 h-4 w-4 text-muted-foreground' />
+                    <TbBuildingStore className='text-muted-foreground mr-2 h-4 w-4' />
                     <span className='font-medium'>Parent Company</span>
                   </div>
                 </TableCell>

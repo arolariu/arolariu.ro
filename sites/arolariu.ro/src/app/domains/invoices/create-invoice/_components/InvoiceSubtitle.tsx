@@ -17,7 +17,7 @@ export default function InvoiceSubtitle({images}: Readonly<Props>) {
 
   return (
     <div>
-      <h1 className='bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-xl text-transparent'>{titleText}</h1>
+      <h1 className='bg-linear-to-r from-pink-400 to-red-600 bg-clip-text text-xl text-transparent'>{titleText}</h1>
       <p className='mx-auto text-base leading-relaxed lg:w-2/3'>{subtitleText}</p>
     </div>
   );

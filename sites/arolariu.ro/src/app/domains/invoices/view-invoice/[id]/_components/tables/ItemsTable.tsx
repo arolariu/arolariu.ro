@@ -78,20 +78,20 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         </TooltipProvider>
       </div>
       <div className='overflow-hidden rounded-md border'>
-        <Table className='min-w-full divide-y divide-border'>
+        <Table className='divide-border min-w-full divide-y'>
           <TableHeader>
             <TableRow className='bg-muted/50'>
-              <TableHead className='px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground'>Item</TableHead>
-              <TableHead className='px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground'>Qty</TableHead>
-              <TableHead className='px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground'>
+              <TableHead className='text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wider uppercase'>Item</TableHead>
+              <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>Qty</TableHead>
+              <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
                 Price
               </TableHead>
-              <TableHead className='px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground'>
+              <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
                 Total
               </TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className='divide-y divide-border bg-popover'>
+          <TableBody className='divide-border bg-popover divide-y'>
             {paginatedItems.map((item, index) => (
               <motion.tr
                 key={item.rawName}
@@ -99,12 +99,12 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 animate={{opacity: 1, y: 0}}
                 transition={{delay: index * 0.05}}
                 className='hover:bg-muted/50'>
-                <td className='whitespace-nowrap px-4 py-3 text-sm'>{item.rawName}</td>
-                <td className='whitespace-nowrap px-4 py-3 text-right text-sm'>
+                <td className='px-4 py-3 text-sm whitespace-nowrap'>{item.rawName}</td>
+                <td className='px-4 py-3 text-right text-sm whitespace-nowrap'>
                   {item.quantity} {item.quantityUnit}
                 </td>
-                <td className='whitespace-nowrap px-4 py-3 text-right text-sm'>{formatCurrency(item.price)}</td>
-                <td className='whitespace-nowrap px-4 py-3 text-right text-sm font-medium'>{formatCurrency(item.price * item.quantity)}</td>
+                <td className='px-4 py-3 text-right text-sm whitespace-nowrap'>{formatCurrency(item.price)}</td>
+                <td className='px-4 py-3 text-right text-sm font-medium whitespace-nowrap'>{formatCurrency(item.price * item.quantity)}</td>
               </motion.tr>
             ))}
             {Array.from({length: 5 - paginatedItems.length}).map((_, index) => (
@@ -115,10 +115,10 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 animate={{opacity: 1, x: 0}}
                 transition={{delay: index * 0.05}}
                 className='h-12'>
-                <td className='whitespace-nowrap px-4 py-3 text-sm' />
-                <td className='whitespace-nowrap px-4 py-3 text-right text-sm' />
-                <td className='whitespace-nowrap px-4 py-3 text-right text-sm' />
-                <td className='whitespace-nowrap px-4 py-3 text-right text-sm' />
+                <td className='px-4 py-3 text-sm whitespace-nowrap' />
+                <td className='px-4 py-3 text-right text-sm whitespace-nowrap' />
+                <td className='px-4 py-3 text-right text-sm whitespace-nowrap' />
+                <td className='px-4 py-3 text-right text-sm whitespace-nowrap' />
               </motion.tr>
             ))}
           </TableBody>
@@ -135,8 +135,8 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
         </Table>
 
         {/* Pagination controls*/}
-        <div className='flex items-center justify-between border-t bg-popover p-4'>
-          <div className='text-sm text-muted-foreground'>
+        <div className='bg-popover flex items-center justify-between border-t p-4'>
+          <div className='text-muted-foreground text-sm'>
             {invoice.items.length} {invoice.items.length === 1 ? "item" : "items"} in total
           </div>
           <div className='flex items-center gap-2'>

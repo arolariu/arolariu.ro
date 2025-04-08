@@ -27,11 +27,11 @@ export default function AuthCard({title, description, ctaText, cardType}: Readon
           className='object-fill object-center'
         />
       </div>
-      <span className='mb-3 mt-6 text-2xl font-medium'>{title}</span>
+      <span className='mt-6 mb-3 text-2xl font-medium'>{title}</span>
       <p className='text-base leading-relaxed'>{description}</p>
       <Link
         href={`/auth/${cardType}/`}
-        className='btn btn-primary mt-6 rounded border-0 bg-indigo-600 p-4 text-white hover:bg-indigo-700 focus:outline-none'>
+        className='btn btn-primary mt-6 rounded border-0 bg-indigo-600 p-4 text-white hover:bg-indigo-700 focus:outline-hidden'>
         {ctaText}
       </Link>
     </article>

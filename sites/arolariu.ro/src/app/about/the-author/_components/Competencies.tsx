@@ -77,7 +77,7 @@ export default function Competencies(): React.JSX.Element {
         transition={{duration: 0.6}}
         className='mb-16 text-center'>
         <h2 className='blue-underline relative mb-4 inline-block text-3xl font-bold md:text-4xl'>{t("title")}</h2>
-        <p className='mx-auto max-w-2xl text-muted-foreground'>{t("subtitle")}</p>
+        <p className='text-muted-foreground mx-auto max-w-2xl'>{t("subtitle")}</p>
       </motion.div>
 
       <motion.div
@@ -95,10 +95,10 @@ export default function Competencies(): React.JSX.Element {
               scale: 1.03,
               transition: {duration: 0.2},
             }}>
-            <div className='relative h-full overflow-hidden rounded-xl border border-border/50 bg-card p-6 shadow-md transition-all duration-300 hover:border-primary/30 hover:bg-card/80 hover:shadow-xl'>
-              <div className='absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-primary to-primary/30' />
+            <div className='border-border/50 bg-card hover:border-primary/30 hover:bg-card/80 relative h-full overflow-hidden rounded-xl border p-6 shadow-md transition-all duration-300 hover:shadow-xl'>
+              <div className='from-primary to-primary/30 absolute top-0 left-0 h-1 w-full bg-linear-to-r' />
               <div className='mb-4 flex items-center gap-4'>
-                <div className='rounded-lg bg-primary/10 p-3 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground'>
+                <div className='bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground rounded-lg p-3 transition-colors duration-300'>
                   {skill.icon}
                 </div>
                 <h3 className='group-hover:text-glow text-xl font-semibold'>{skill.title}</h3>

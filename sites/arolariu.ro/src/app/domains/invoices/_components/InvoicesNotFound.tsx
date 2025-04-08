@@ -16,7 +16,7 @@ export default function InvoicesNotFound() {
       </article>
       <Link
         href='/domains/invoices/create-invoice'
-        className='mx-auto mt-8 inline-flex rounded border-0 bg-indigo-600 px-6 py-2 text-lg text-white hover:bg-indigo-700 focus:outline-none'>
+        className='mx-auto mt-8 inline-flex rounded border-0 bg-indigo-600 px-6 py-2 text-lg text-white hover:bg-indigo-700 focus:outline-hidden'>
         Upload an invoice here.
       </Link>
     </div>

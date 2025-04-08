@@ -100,7 +100,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
             animate={{scale: 1}}
             transition={{duration: 0.5}}
             className='flex justify-center'>
-            <TbShield className='h-12 w-12 text-primary' />
+            <TbShield className='text-primary h-12 w-12' />
           </motion.div>
           <CardTitle className='text-2xl font-bold md:text-3xl'>{t("title")}</CardTitle>
           <CardDescription className='text-base'>{t("subtitle")}</CardDescription>
@@ -118,7 +118,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
               </TabsTrigger>
               <Separator
                 orientation='vertical'
-                className='h-6 w-6 rounded-xl border-2 border-muted-foreground/50'
+                className='border-muted-foreground/50 h-6 w-6 rounded-xl border-2'
               />
               <TabsTrigger
                 value='ro'
@@ -144,14 +144,14 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <Card className='h-full transition-colors hover:border-primary'>
+              <Card className='hover:border-primary h-full transition-colors'>
                 <CardHeader className='pb-2'>
                   <CardTitle className='flex items-center gap-2'>
-                    <TbLock className='h-5 w-5 text-primary' />
+                    <TbLock className='text-primary h-5 w-5' />
                     {t("termsOfService.title")}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className='text-sm text-muted-foreground'>{t("termsOfService.subtitle")}</CardContent>
+                <CardContent className='text-muted-foreground text-sm'>{t("termsOfService.subtitle")}</CardContent>
                 <CardFooter>
                   <Dialog>
                     <DialogTrigger asChild>
@@ -162,7 +162,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                         {t("termsOfService.cta")}
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className='overflow-y-scroll 2xsm:max-h-[90vh] 2xsm:max-w-[90vw] md:max-h-[75vh] md:max-w-[75vw]'>
+                    <DialogContent className='2xsm:max-h-[90vh] 2xsm:max-w-[90vw] overflow-y-scroll md:max-h-[75vh] md:max-w-[75vw]'>
                       <DialogHeader>
                         <DialogTitle className='text-center'>{t("termsOfService.cta")}</DialogTitle>
                         <RenderTermsOfServiceScreen />
@@ -176,14 +176,14 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
             <motion.div
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
-              <Card className='h-full transition-colors hover:border-primary'>
+              <Card className='hover:border-primary h-full transition-colors'>
                 <CardHeader className='pb-2'>
                   <CardTitle className='flex items-center gap-2'>
-                    <TbShield className='h-5 w-5 text-primary' />
+                    <TbShield className='text-primary h-5 w-5' />
                     {t("privacyPolicy.title")}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className='text-sm text-muted-foreground'>{t("privacyPolicy.subtitle")}</CardContent>
+                <CardContent className='text-muted-foreground text-sm'>{t("privacyPolicy.subtitle")}</CardContent>
                 <CardFooter>
                   <Dialog>
                     <DialogTrigger asChild>
@@ -194,7 +194,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                         {t("privacyPolicy.cta")}
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className='overflow-y-scroll 2xsm:max-h-[90vh] 2xsm:max-w-[90vw] md:max-h-[75vh] md:max-w-[75vw]'>
+                    <DialogContent className='2xsm:max-h-[90vh] 2xsm:max-w-[90vw] overflow-y-scroll md:max-h-[75vh] md:max-w-[75vw]'>
                       <DialogHeader>
                         <DialogTitle className='text-center'>{t("privacyPolicy.cta")}</DialogTitle>
                         <RenderPrivacyPolicyScreen />
@@ -215,12 +215,12 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
             <div className='space-y-4'>
               <div className='flex items-center justify-between'>
                 <h3 className='flex items-center gap-2 text-lg font-medium'>
-                  <TbCookie className='h-5 w-5 text-primary' />
+                  <TbCookie className='text-primary h-5 w-5' />
                   {t("cookiesPolicy.title")}
                 </h3>
               </div>
 
-              <span className='text-sm text-muted-foreground'>{t("cookiesPolicy.subtitle")}</span>
+              <span className='text-muted-foreground text-sm'>{t("cookiesPolicy.subtitle")}</span>
 
               <Accordion
                 type='single'
@@ -229,14 +229,14 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                 <AccordionItem value='essential'>
                   <AccordionTrigger className='hover:no-underline'>
                     <div className='flex items-center gap-2'>
-                      <TbLock className='h-4 w-4 text-primary' />
+                      <TbLock className='text-primary h-4 w-4' />
                       <span>{t("cookiesPolicy.cookies.essential.title")}</span>
-                      <Badge className='ml-2 bg-primary'>Required</Badge>
+                      <Badge className='bg-primary ml-2'>Required</Badge>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className='space-y-4 p-2'>
-                      <p className='text-sm text-muted-foreground'>{t("cookiesPolicy.cookies.essential.description")}</p>
+                      <p className='text-muted-foreground text-sm'>{t("cookiesPolicy.cookies.essential.description")}</p>
                       <div className='flex items-center space-x-2'>
                         <Switch
                           id='essential'
@@ -256,7 +256,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                 <AccordionItem value='analytics'>
                   <AccordionTrigger className='hover:no-underline'>
                     <div className='flex items-center gap-2'>
-                      <TbInfoCircleFilled className='h-4 w-4 text-primary' />
+                      <TbInfoCircleFilled className='text-primary h-4 w-4' />
                       <span>{t("cookiesPolicy.cookies.analytics.title")}</span>
                       <Badge
                         className='ml-2'
@@ -267,7 +267,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className='space-y-4 p-2'>
-                      <p className='text-sm text-muted-foreground'>{t("cookiesPolicy.cookies.analytics.description")}</p>
+                      <p className='text-muted-foreground text-sm'>{t("cookiesPolicy.cookies.analytics.description")}</p>
                       <div className='flex items-center space-x-2'>
                         <Switch
                           id='analytics'
@@ -297,12 +297,12 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
             className='w-full'>
             <Button
               onClick={handleAccept}
-              className='w-full bg-primary hover:bg-primary/90'
+              className='bg-primary hover:bg-primary/90 w-full'
               size='lg'>
               <TbCheck className='mr-2 h-4 w-4' /> {t("accept")}
             </Button>
           </motion.div>
-          <p className='text-center text-xs text-muted-foreground'>{t("content").split(".")[0]}.</p>
+          <p className='text-muted-foreground text-center text-xs'>{t("content").split(".")[0]}.</p>
         </CardFooter>
       </Card>
     </motion.div>

@@ -160,7 +160,7 @@ export default function SharingDialog() {
                 {copied ? <TbCheck className='h-4 w-4' /> : <TbCopy className='h-4 w-4' />}
               </Button>
             </div>
-            <p className='text-sm text-muted-foreground'>Anyone with this link will be able to view this invoice.</p>
+            <p className='text-muted-foreground text-sm'>Anyone with this link will be able to view this invoice.</p>
           </TabsContent>
 
           <TabsContent
@@ -202,7 +202,7 @@ export default function SharingDialog() {
                   level='L'
                 />
               </div>
-              <p className='text-center text-sm text-muted-foreground'>Scan this QR code to view the invoice on a mobile device.</p>
+              <p className='text-muted-foreground text-center text-sm'>Scan this QR code to view the invoice on a mobile device.</p>
               <Button
                 variant='outline'
                 onClick={handleCopyQRCode}

@@ -113,35 +113,35 @@ export default function ItemsDialog() {
 
         <div className='space-y-4'>
           <div className='overflow-hidden rounded-md border'>
-            <Table className='min-w-full divide-y divide-border'>
+            <Table className='divide-border min-w-full divide-y'>
               <TableHeader>
                 <TableRow className='bg-muted/50'>
-                  <TableHead className='px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground'>
+                  <TableHead className='text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wider uppercase'>
                     Item
                   </TableHead>
-                  <TableHead className='px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground'>
+                  <TableHead className='text-muted-foreground px-4 py-3 text-center text-xs font-medium tracking-wider uppercase'>
                     Quantity
                   </TableHead>
-                  <TableHead className='px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground'>
+                  <TableHead className='text-muted-foreground px-4 py-3 text-center text-xs font-medium tracking-wider uppercase'>
                     Unit
                   </TableHead>
-                  <TableHead className='px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground'>
+                  <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
                     Price
                   </TableHead>
-                  <TableHead className='px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground'>
+                  <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
                     Total
                   </TableHead>
-                  <TableHead className='px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground'>
+                  <TableHead className='text-muted-foreground px-4 py-3 text-center text-xs font-medium tracking-wider uppercase'>
                     Actions
                   </TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody className='divide-y divide-border bg-popover'>
+              <TableBody className='divide-border bg-popover divide-y'>
                 {paginatedItems.map((item, index) => (
                   <TableRow
                     key={item.rawName}
                     className='hover:bg-muted/50'>
-                    <TableCell className='whitespace-nowrap px-4 py-3 text-sm font-medium'>
+                    <TableCell className='px-4 py-3 text-sm font-medium whitespace-nowrap'>
                       <Input
                         type='text'
                         name='rawName'
@@ -150,7 +150,7 @@ export default function ItemsDialog() {
                         className='w-48'
                       />
                     </TableCell>
-                    <TableCell className='whitespace-nowrap px-4 py-3 text-center text-sm'>
+                    <TableCell className='px-4 py-3 text-center text-sm whitespace-nowrap'>
                       <Input
                         type='number'
                         name='quantity'
@@ -159,7 +159,7 @@ export default function ItemsDialog() {
                         className='w-16 text-center'
                       />
                     </TableCell>
-                    <TableCell className='whitespace-nowrap px-4 py-3 text-center text-sm'>
+                    <TableCell className='px-4 py-3 text-center text-sm whitespace-nowrap'>
                       <Input
                         type='text'
                         name='quantityUnit'
@@ -168,7 +168,7 @@ export default function ItemsDialog() {
                         className='w-16 text-center'
                       />
                     </TableCell>
-                    <TableCell className='whitespace-nowrap px-4 py-3 text-right text-sm'>
+                    <TableCell className='px-4 py-3 text-right text-sm whitespace-nowrap'>
                       <Input
                         type='number'
                         name='price'
@@ -177,10 +177,10 @@ export default function ItemsDialog() {
                         className='w-16 text-right'
                       />
                     </TableCell>
-                    <TableCell className='whitespace-nowrap px-4 py-3 text-right text-sm font-medium'>
+                    <TableCell className='px-4 py-3 text-right text-sm font-medium whitespace-nowrap'>
                       {item.price * item.quantity}
                     </TableCell>
-                    <TableCell className='whitespace-nowrap px-4 py-3 text-center text-sm'>
+                    <TableCell className='px-4 py-3 text-center text-sm whitespace-nowrap'>
                       <Button
                         variant='ghost'
                         size='icon'
@@ -197,17 +197,17 @@ export default function ItemsDialog() {
               <TableFooter>
                 <TableRow className='bg-muted/50'>
                   <TableHead
-                    className='px-4 py-3 text-sm font-medium text-muted-foreground'
+                    className='text-muted-foreground px-4 py-3 text-sm font-medium'
                     colSpan={2}>
                     {editableItems.length} items found (showing {paginatedItems.length})
                   </TableHead>
                   <TableHead
-                    className='px-4 py-3 text-right text-sm font-medium text-muted-foreground'
+                    className='text-muted-foreground px-4 py-3 text-right text-sm font-medium'
                     colSpan={2}>
                     Page {currentPage} of {totalPages}
                   </TableHead>
                   <TableHead
-                    className='px-4 py-3 text-right text-sm font-medium text-muted-foreground'
+                    className='text-muted-foreground px-4 py-3 text-right text-sm font-medium'
                     colSpan={2}>
                     <Button
                       variant='ghost'
@@ -238,7 +238,7 @@ export default function ItemsDialog() {
               <TbPlus className='mr-2 h-4 w-4' />
               Add Item
             </Button>
-            <div className='text-sm text-muted-foreground'>
+            <div className='text-muted-foreground text-sm'>
               {items.length} {items.length === 1 ? "item" : "items"} in total
             </div>
           </div>

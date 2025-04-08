@@ -17,7 +17,7 @@ type Props = {
 
 export const ParallaxText = ({children, className, rows}: Readonly<Props>) => {
   return (
-    <div className={cn("parallax flex flex-col gap-1 overflow-hidden text-sm text-muted-foreground/50", className)}>
+    <div className={cn("parallax text-muted-foreground/50 flex flex-col gap-1 overflow-hidden text-sm", className)}>
       {rows.map((row, index) => (
         <motion.div
           // eslint-disable-next-line react/no-array-index-key

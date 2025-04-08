@@ -98,7 +98,7 @@ export default function RecipeCard({recipe}: Readonly<Props>) {
                 Share
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className='cursor-pointer text-muted-foreground'>
+              <DropdownMenuItem className='text-muted-foreground cursor-pointer'>
                 <TbHeart className='mr-2 h-4 w-4' />
                 Mark as Favorite
               </DropdownMenuItem>
@@ -106,10 +106,10 @@ export default function RecipeCard({recipe}: Readonly<Props>) {
           </DropdownMenu>
         </div>
 
-        <p className='mb-2 text-sm text-muted-foreground'>{description}</p>
+        <p className='text-muted-foreground mb-2 text-sm'>{description}</p>
 
         <div className='space-y-4'>
-          <h4 className='text-sm text-muted-foreground'>Ingredients:</h4>
+          <h4 className='text-muted-foreground text-sm'>Ingredients:</h4>
           <ul className='list-disc pl-5 text-sm'>
             {ingredients.slice(0, 3).map((ingredient) => (
               <li key={ingredient.rawName}>{ingredient.rawName}</li>
@@ -118,7 +118,7 @@ export default function RecipeCard({recipe}: Readonly<Props>) {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <li className='cursor-help text-muted-foreground'>+{ingredients.length - 3} more</li>
+                    <li className='text-muted-foreground cursor-help'>+{ingredients.length - 3} more</li>
                   </TooltipTrigger>
                   <TooltipContent className='max-w-xs'>
                     <p className='mb-1 font-medium'>Additional ingredients:</p>
@@ -135,7 +135,7 @@ export default function RecipeCard({recipe}: Readonly<Props>) {
         </div>
 
         {/** Prep + Cook times */}
-        <div className='flex cursor-help gap-4 pt-4 text-xs text-muted-foreground'>
+        <div className='text-muted-foreground flex cursor-help gap-4 pt-4 text-xs'>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -169,7 +169,7 @@ export default function RecipeCard({recipe}: Readonly<Props>) {
             variant='ghost'
             size='sm'>
             Visit Reference
-            <TbExternalLink className='ml-2 h-3 w-3 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5' />
+            <TbExternalLink className='ml-2 h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
           </Button>
           <Button
             variant='default'

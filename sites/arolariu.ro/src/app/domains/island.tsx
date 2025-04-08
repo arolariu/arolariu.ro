@@ -20,10 +20,10 @@ export default function RenderDomainsScreen(): React.JSX.Element {
           <div className='h-full w-24 bg-indigo-700' />
         </div>
         <div className='mb-12 flex flex-col flex-wrap py-6 sm:flex-row'>
-          <h1 className='align-center mb-2 justify-items-center bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-center text-5xl font-bold text-transparent sm:mb-0 sm:w-2/5'>
+          <h1 className='align-center mb-2 justify-items-center bg-linear-to-r from-pink-400 to-red-600 bg-clip-text text-center text-5xl font-bold text-transparent sm:mb-0 sm:w-2/5'>
             {t("title")}
           </h1>
-          <article className='pl-0 leading-relaxed 2xsm:mt-8 sm:w-3/5 sm:pl-10 md:mt-0'>
+          <article className='2xsm:mt-8 pl-0 leading-relaxed sm:w-3/5 sm:pl-10 md:mt-0'>
             {t.rich("subtitle", {
               br: (chunks: React.ReactNode) => (
                 <>
@@ -37,7 +37,7 @@ export default function RenderDomainsScreen(): React.JSX.Element {
         </div>
       </section>
 
-      <section className='flex flex-row flex-wrap gap-4 2xsm:items-center 2xsm:justify-center 2xsm:justify-items-center md:items-baseline md:justify-normal md:justify-items-start'>
+      <section className='2xsm:items-center 2xsm:justify-center 2xsm:justify-items-center flex flex-row flex-wrap gap-4 md:items-baseline md:justify-normal md:justify-items-start'>
         <DomainServiceCard
           title={t("services.invoices.card.title")}
           description={t("services.invoices.card.description")}

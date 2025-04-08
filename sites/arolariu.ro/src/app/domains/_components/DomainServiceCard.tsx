@@ -30,7 +30,7 @@ export default function DomainServiceCard({title, description, imageUrl, linkTo,
       </article>
       <article>
         <h2 className='title-font mt-5 text-center text-xl font-medium dark:text-gray-300'>{title}</h2>
-        <p className='mt-2 text-base italic leading-relaxed'>{description}</p>
+        <p className='mt-2 text-base leading-relaxed italic'>{description}</p>
         <Link
           href={linkTo}
           className='mt-3 inline-flex items-center text-indigo-500'>

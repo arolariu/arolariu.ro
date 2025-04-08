@@ -60,16 +60,16 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
 
                   <div>
                     <h3 className='mb-2 text-sm font-medium'>Error ID (digest)</h3>
-                    <div className='rounded-md bg-muted p-2 font-mono text-xs'>{error.digest ?? "N/A"}</div>
+                    <div className='bg-muted rounded-md p-2 font-mono text-xs'>{error.digest ?? "N/A"}</div>
                   </div>
                   <div>
                     <h3 className='mb-2 text-sm font-medium'>Error Cause</h3>
-                    <div className='rounded-md bg-muted p-2 font-mono text-xs'>{(error.cause as string) || "No cause available."}</div>
+                    <div className='bg-muted rounded-md p-2 font-mono text-xs'>{(error.cause as string) || "No cause available."}</div>
                   </div>
 
                   <div>
                     <h3 className='mb-2 text-sm font-medium'>Store</h3>
-                    <div className='h-32 overflow-auto rounded-md bg-muted p-2 font-mono text-xs'>
+                    <div className='bg-muted h-32 overflow-auto rounded-md p-2 font-mono text-xs'>
                       <pre>{dumpBrowserInformation()}</pre>
                     </div>
                   </div>
@@ -116,17 +116,17 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
                       value={progress}
                       className='h-2'
                     />
-                    <p className='mt-2 text-xs text-muted-foreground'>
+                    <p className='text-muted-foreground mt-2 text-xs'>
                       {progress < 100 ? "Analyzing system components..." : "Analysis complete"}
                     </p>
                   </div>
 
-                  <div className='rounded-md bg-muted p-3'>
+                  <div className='bg-muted rounded-md p-3'>
                     <div className='mb-2 flex items-center gap-2'>
                       <TbTerminal className='h-4 w-4' />
                       <h3 className='text-sm font-medium'>Recommended Action</h3>
                     </div>
-                    <p className='text-sm text-muted-foreground'>
+                    <p className='text-muted-foreground text-sm'>
                       Try refreshing the page. If the problem persists, contact your system administrator.
                     </p>
                   </div>
@@ -154,7 +154,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
 
         <section className='px-12 py-24'>
           {/* Technical details */}
-          <div className='rounded-md border border-border p-4'>
+          <div className='border-border rounded-md border p-4'>
             <div className='mb-3 flex items-center gap-2'>
               <TbCode className='h-4 w-4' />
               <h3 className='text-sm font-medium'>Technical Information</h3>
@@ -169,7 +169,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
               <div className='flex items-center gap-2'>
                 <TbArrowRight className='h-3 w-3' />
                 <span className='font-medium'>User Agent:</span>
-                <span className='truncate text-muted-foreground'>{mounted ? navigator.userAgent : "Unknown"}</span>
+                <span className='text-muted-foreground truncate'>{mounted ? navigator.userAgent : "Unknown"}</span>
               </div>
               <div className='flex items-center gap-2'>
                 <TbArrowRight className='h-3 w-3' />

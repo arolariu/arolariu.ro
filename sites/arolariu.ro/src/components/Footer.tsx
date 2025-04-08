@@ -27,7 +27,7 @@ const FooterHero = () => {
         href='/'
         aria-label='Go home'
         title='AROLARIU.RO'
-        className='inline-flex transform items-center transition-all duration-300 ease-in-out hover:scale-110 hover:text-yellow-500 2xsm:ml-[20%] md:ml-0'>
+        className='2xsm:ml-[20%] inline-flex transform items-center transition-all duration-300 ease-in-out hover:scale-110 hover:text-yellow-500 md:ml-0'>
         <Image
           src={logo}
           alt='The `arolariu.ro` logo.'
@@ -35,10 +35,10 @@ const FooterHero = () => {
           width={40}
           height={40}
         />
-        <span className='ml-2 text-xl font-bold uppercase tracking-wide'>{siteName}</span>
+        <span className='ml-2 text-xl font-bold tracking-wide uppercase'>{siteName}</span>
       </Link>
-      <div className='mt-4 text-sm 2xsm:px-4 2xsm:text-center md:px-0 md:text-left'>
-        <p className='prose text-pretty text-white 2xsm:text-center md:text-start'>{description}</p>
+      <div className='2xsm:px-4 2xsm:text-center mt-4 text-sm md:px-0 md:text-left'>
+        <p className='prose 2xsm:text-center text-pretty text-white md:text-start'>{description}</p>
       </div>
     </div>
   );
@@ -48,7 +48,7 @@ const FooterNavigation = () => {
   const t = useTranslations("Footer.navigation");
 
   return (
-    <div className='flex gap-8 2xsm:flex-col 2xsm:text-center lg:flex-row lg:text-left'>
+    <div className='2xsm:flex-col 2xsm:text-center flex gap-8 lg:flex-row lg:text-left'>
       <div>
         <p className='cursor-default font-semibold tracking-wide text-white hover:text-yellow-500'>{t("subdomains")}</p>
         <ul className='mt-2 space-y-2'>
@@ -141,27 +141,27 @@ export default async function Footer(): Promise<React.JSX.Element> {
         />
       </svg>
 
-      <div className='mx-auto pt-12 text-white md:px-24 lg:max-w-screen-xl lg:px-8'>
+      <div className='mx-auto pt-12 text-white md:px-24 lg:max-w-(--breakpoint-xl) lg:px-8'>
         <div className='mb-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3'>
           <FooterHero />
           <FooterNavigation />
         </div>
 
         {/* Footer metadata information */}
-        <div className='flex flex-row justify-between border-t py-5 2xsm:flex-wrap md:flex-nowrap'>
-          <p className='text-sm 2xsm:text-center md:text-left'>
+        <div className='2xsm:flex-wrap flex flex-row justify-between border-t py-5 md:flex-nowrap'>
+          <p className='2xsm:text-center text-sm md:text-left'>
             © {t("copyright")} 2022-{new Date().getFullYear()} Alexandru-Razvan Olariu. <br />
             <span className='ml-4'>
               {t("sourceCode")}
               <Link
                 href='https://github.com/arolariu/arolariu.ro/'
                 target='_blank'
-                className='italic text-yellow-500'>
+                className='text-yellow-500 italic'>
                 {t("sourceCodeAnchor")}
               </Link>
             </span>
           </p>
-          <div className='flex flex-row items-center 2xsm:mx-auto 2xsm:mt-8 2xsm:space-x-8 md:mx-0 md:mt-0 md:space-x-4'>
+          <div className='2xsm:mx-auto 2xsm:mt-8 2xsm:space-x-8 flex flex-row items-center md:mx-0 md:mt-0 md:space-x-4'>
             <Link
               href='https://github.com/arolariu'
               target='_blank'
@@ -178,7 +178,7 @@ export default async function Footer(): Promise<React.JSX.Element> {
             </Link>
           </div>
         </div>
-        <p className='text-sm text-slate-300 2xsm:text-center md:text-end'>
+        <p className='2xsm:text-center text-sm text-slate-300 md:text-end'>
           {t("builtOn")}
           <code
             className='tooltip tooltip-left cursor-help'

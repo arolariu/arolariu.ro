@@ -75,7 +75,7 @@ const DesktopNavigationItem = ({
       <Button
         variant='ghost'
         asChild
-        className='h-9 px-3 py-2 text-sm font-medium hover:bg-accent/50'>
+        className='hover:bg-accent/50 h-9 px-3 py-2 text-sm font-medium'>
         <Link href={item.href}>{item.label}</Link>
       </Button>
     );
@@ -88,14 +88,14 @@ const DesktopNavigationItem = ({
       <div className='flex items-center gap-0.5'>
         <Link
           href={item.href}
-          className='rounded-l-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent/50 focus:bg-accent/50 focus:outline-none'>
+          className='hover:bg-accent/50 focus:bg-accent/50 rounded-l-md px-3 py-2 text-sm font-medium transition-colors focus:outline-hidden'>
           {item.label}
         </Link>
         <DropdownMenuTrigger asChild>
           <Button
             variant='ghost'
             size='sm'
-            className='h-9 w-8 rounded-r-md p-0 hover:bg-accent/50 focus:bg-accent/50 focus:outline-none'>
+            className='hover:bg-accent/50 focus:bg-accent/50 h-9 w-8 rounded-r-md p-0 focus:outline-hidden'>
             <motion.div
               animate={{rotate: isOpen ? 180 : 0}}
               transition={{duration: 0.2}}>
@@ -133,7 +133,7 @@ const DesktopNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>):
     return (
       <DropdownMenuItem
         asChild
-        className='cursor-pointer focus:bg-accent/50'>
+        className='focus:bg-accent/50 cursor-pointer'>
         <Link href={child.href}>{child.label}</Link>
       </DropdownMenuItem>
     );
@@ -146,13 +146,13 @@ const DesktopNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>):
       <div className='relative flex w-full justify-between'>
         <Link
           href={child.href}
-          className='flex-1 rounded-l-md px-2 py-1.5 text-sm hover:bg-accent/50'>
+          className='hover:bg-accent/50 flex-1 rounded-l-md px-2 py-1.5 text-sm'>
           {child.label}
         </Link>
         <DropdownMenu
           open={isSubOpen}
           onOpenChange={setIsSubOpen}>
-          <DropdownMenuTrigger className='rounded-r-md p-1 hover:bg-accent/50'>
+          <DropdownMenuTrigger className='hover:bg-accent/50 rounded-r-md p-1'>
             <motion.div
               animate={{rotate: isSubOpen ? 180 : 0}}
               transition={{duration: 0.2}}>
@@ -174,7 +174,7 @@ const DesktopNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>):
                 <DropdownMenuItem
                   key={`desktop-grandchild-${grandchild.label}`}
                   asChild
-                  className='cursor-pointer focus:bg-accent/50'>
+                  className='focus:bg-accent/50 cursor-pointer'>
                   <Link
                     href={grandchild.href}
                     className='w-full'>
@@ -205,14 +205,14 @@ const MobileNavigationItem = ({
       <Button
         variant='ghost'
         asChild
-        className='h-auto w-full justify-start rounded-lg border px-4 py-3 font-medium hover:bg-accent/50'>
+        className='hover:bg-accent/50 h-auto w-full justify-start rounded-lg border px-4 py-3 font-medium'>
         <Link href={item.href}>{item.label}</Link>
       </Button>
     );
   }
 
   return (
-    <Collapsible className='mb-2 w-full overflow-hidden rounded-lg border bg-background/50 backdrop-blur-sm'>
+    <Collapsible className='bg-background/50 mb-2 w-full overflow-hidden rounded-lg border backdrop-blur-xs'>
       <div className='flex items-center'>
         <Link
           href={item.href}
@@ -224,7 +224,7 @@ const MobileNavigationItem = ({
             onClick={onToggle}
             variant='ghost'
             size='sm'
-            className='mr-2 h-8 w-8 rounded-full p-0 hover:bg-accent/50'>
+            className='hover:bg-accent/50 mr-2 h-8 w-8 rounded-full p-0'>
             <motion.div
               animate={{rotate: isOpen ? 180 : 0}}
               transition={{duration: 0.2}}>
@@ -240,7 +240,7 @@ const MobileNavigationItem = ({
           animate={{opacity: 1, height: "auto"}}
           exit={{opacity: 0, height: 0}}
           transition={{duration: 0.2}}
-          className='flex flex-col space-y-1 bg-muted/30 p-2'>
+          className='bg-muted/30 flex flex-col space-y-1 p-2'>
           {item.children.map((child) => (
             <MobileNavigationChildItem
               key={`mobile-child-${child.label}`}
@@ -264,7 +264,7 @@ const MobileNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>): 
     return (
       <Link
         href={child.href}
-        className='rounded-md px-3 py-2 transition-colors hover:bg-accent/50'>
+        className='hover:bg-accent/50 rounded-md px-3 py-2 transition-colors'>
         {child.label}
       </Link>
     );
@@ -283,7 +283,7 @@ const MobileNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>): 
             onClick={handleSubToggle}
             variant='ghost'
             size='sm'
-            className='mr-1 h-7 w-7 rounded-full p-0 hover:bg-accent/50'>
+            className='hover:bg-accent/50 mr-1 h-7 w-7 rounded-full p-0'>
             <motion.div
               animate={{rotate: isSubOpen ? 180 : 0}}
               transition={{duration: 0.2}}>
@@ -299,12 +299,12 @@ const MobileNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>): 
           animate={{opacity: 1, height: "auto"}}
           exit={{opacity: 0, height: 0}}
           transition={{duration: 0.2}}
-          className='flex flex-col space-y-1 bg-muted/50 p-2'>
+          className='bg-muted/50 flex flex-col space-y-1 p-2'>
           {child.children.map((grandchild) => (
             <Link
               key={`mobile-grandchild-${grandchild.label}`}
               href={grandchild.href}
-              className='rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent/50'>
+              className='hover:bg-accent/50 rounded-md px-3 py-1.5 text-sm transition-colors'>
               {grandchild.label}
             </Link>
           ))}
@@ -370,7 +370,7 @@ export function MobileNavigation(): React.JSX.Element {
         <Button
           variant='outline'
           size='icon'
-          className='transition-colors hover:bg-accent/50'>
+          className='hover:bg-accent/50 transition-colors'>
           <TbMenu className='h-5 w-5' />
           <span className='sr-only'>Toggle menu</span>
         </Button>
