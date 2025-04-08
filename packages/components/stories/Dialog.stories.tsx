@@ -1,4 +1,4 @@
-import * as React from "react";
+import React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import {
   Button,
@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./../dist/index";
+} from "./../dist";
 
 const meta: Meta<typeof Dialog> = {
   title: "Design System/Dialog",
@@ -26,9 +26,9 @@ export const Primary: Story = {
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Dependencies</DialogTitle>
-          <DialogDescription>
+        <DialogHeader className="text-red-500">
+          <DialogTitle className='text-blue-500'>Dependencies</DialogTitle>
+          <DialogDescription className='font-black'>
             This package has 0 dependencies.
           </DialogDescription>
         </DialogHeader>

@@ -12,7 +12,7 @@ const alertVariants = cva(
         default:
           "bg-white text-neutral-950 dark:bg-neutral-950 dark:text-neutral-50",
         destructive:
-          "text-neutral-50 [&>svg]:text-current *:data-[slot=alert-description]:text-neutral-50/80 dark:text-neutral-50 dark:*:data-[slot=alert-description]:text-neutral-50/80",
+          "text-neutral-50 [&>svg]:text-current data-[slot=alert-description]:*:text-neutral-50/80 dark:text-neutral-50 dark:data-[slot=alert-description]:*:text-neutral-50/80",
       },
     },
     defaultVariants: {

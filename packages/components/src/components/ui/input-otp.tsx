@@ -51,7 +51,7 @@ function InputOTPSlot({
       data-slot="input-otp-slot"
       data-active={isActive}
       className={cn(
-        "border-neutral-200 data-[active=true]:border-neutral-950 data-[active=true]:ring-neutral-950/50 data-[active=true]:aria-invalid:ring-red-500/20 dark:data-[active=true]:aria-invalid:ring-red-500/40 aria-invalid:border-red-500 data-[active=true]:aria-invalid:border-red-500 relative flex h-9 w-9 items-center justify-center border-y border-r text-sm shadow-xs transition-all outline-none first:rounded-l-md first:border-l last:rounded-r-md data-[active=true]:z-10 data-[active=true]:ring-[3px] dark:border-neutral-800 dark:data-[active=true]:border-neutral-300 dark:data-[active=true]:ring-neutral-300/50 dark:data-[active=true]:aria-invalid:ring-red-900/20 dark:dark:data-[active=true]:aria-invalid:ring-red-900/40 dark:aria-invalid:border-red-900 dark:data-[active=true]:aria-invalid:border-red-900",
+        "border-neutral-200 data-[active=true]:border-neutral-950 data-[active=true]:ring-neutral-950/50 data-[active=true]:aria-invalid:ring-red-500/20 dark:data-[active=true]:aria-invalid:ring-red-500/40 aria-invalid:border-red-500 data-[active=true]:aria-invalid:border-red-500 relative flex h-9 w-9 items-center justify-center border-y border-r text-sm shadow-2xs transition-all outline-hidden first:rounded-l-md first:border-l last:rounded-r-md data-[active=true]:z-10 data-[active=true]:ring-[3px] dark:border-neutral-800 dark:data-[active=true]:border-neutral-300 dark:data-[active=true]:ring-neutral-300/50 dark:data-[active=true]:aria-invalid:ring-red-900/20 dark:dark:data-[active=true]:aria-invalid:ring-red-900/40 dark:aria-invalid:border-red-900 dark:data-[active=true]:aria-invalid:border-red-900",
         className
       )}
       {...props}
