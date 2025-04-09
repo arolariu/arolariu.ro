@@ -6,9 +6,9 @@ const storybookConfig: StorybookConfig = {
   framework: "@storybook/nextjs",
   stories: ["../stories/**/*.stories.@(js|jsx|ts|tsx)"],
   addons: [
+    "@storybook/addon-essentials",
     "@storybook/addon-interactions",
     "@storybook/addon-onboarding",
-    "@storybook/addon-essentials",
     "@storybook/addon-themes",
     "@storybook/addon-links",
     "@storybook/addon-a11y",
