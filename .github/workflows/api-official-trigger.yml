@@ -49,10 +49,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.2
 
       - name: 📦 Installing the .NET runtime...
-        uses: actions/setup-dotnet@v4.0.1
+        uses: actions/setup-dotnet@v4.3.1
         with:
           dotnet-version: "8.x"
 
@@ -63,10 +63,10 @@ jobs:
     environment: ${{ inputs.environment || 'development'}}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.2
 
       - name: 📦 Installing the .NET runtime...
-        uses: actions/setup-dotnet@v4.0.1
+        uses: actions/setup-dotnet@v4.3.1
         with:
           dotnet-version: "8.x"
 
@@ -79,7 +79,7 @@ jobs:
         run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/backend
 
       - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4.4.0
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: .net-backend
           path: ${{env.DOTNET_ROOT}}/backend
@@ -94,12 +94,12 @@ jobs:
 
     steps:
       - name: ⏬ Download artifact from build job...
-        uses: actions/download-artifact@v4.1.8
+        uses: actions/download-artifact@v4.2.1
         with:
           name: .net-backend
 
       - name: 🔒 Handling the auth process to Azure Public Cloud...
-        uses: Azure/login@v2.1.1
+        uses: Azure/login@v2.3.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
