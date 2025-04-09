@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base
+FROM node:23-alpine AS base
 
 # Install dumb-init and corepack, update and upgrade the system
 RUN corepack enable && \
@@ -13,23 +13,13 @@ FROM base AS builder
 WORKDIR /app
 
 COPY . .
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
+COPY package.json yarn.lock ./
 
 # Install dependencies
-RUN \
-  if [ -f yarn.lock ]; then yarn install --immutable; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+RUN yarn install --immutable
 
 # Build the project, after dependencies are installed
-RUN \
-  if [ -f yarn.lock ]; then yarn build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+RUN yarn build
 
 FROM base AS runner
 WORKDIR /app
@@ -47,4 +37,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["dumb-init","node","server.js"]
+CMD ["dumb-init","node","server.mjs"]
