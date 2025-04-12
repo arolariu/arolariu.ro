@@ -141,7 +141,7 @@ export default function Perspectives(): React.JSX.Element {
           variants={containerVariants}
           initial='hidden'
           animate={inView ? "visible" : "hidden"}
-          className='grid gap-8 md:grid-cols-3'>
+          className='grid gap-8 md:grid-cols-2 lg:grid-cols-3'>
           {perspectives.map((perspective) => (
             <motion.div
               key={perspective.quote.slice(0, 20)}

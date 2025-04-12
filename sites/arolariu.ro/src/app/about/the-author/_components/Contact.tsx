@@ -91,7 +91,7 @@ export default function Contact(): React.JSX.Element {
         variants={containerVariants}
         initial='hidden'
         animate={inView ? "visible" : "hidden"}
-        className='grid gap-8 md:grid-cols-2'>
+        className='2xsm:gap-8 grid md:grid-cols-2 md:gap-0 lg:gap-8'>
         <motion.div variants={itemVariants}>
           <Card className='bg-card h-full overflow-hidden border-none shadow-lg transition-all duration-300 hover:shadow-xl'>
             <div className='from-primary to-primary/30 absolute top-0 left-0 h-1 w-full bg-linear-to-r' />
@@ -217,7 +217,7 @@ export default function Contact(): React.JSX.Element {
                     repeat: Number.POSITIVE_INFINITY,
                     repeatType: "reverse",
                   }}>
-                  <h3 className='text-glow-strong text-2xl font-bold'>{t("footer")}</h3>
+                  <h3 className='text-glow-strong text-2xl font-bold lg:text-5xl'>{t("footer")}</h3>
                 </motion.div>
               </motion.div>
             </CardContent>

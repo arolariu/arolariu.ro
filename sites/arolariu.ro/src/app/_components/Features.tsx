@@ -75,7 +75,7 @@ export default function FeaturesSection(): React.JSX.Element {
         <TypewriterText
           words={[...t("title")]}
           className='text-5xl font-bold'
-          cursorClassName='h-10'
+          cursorClassName='h-10 2xsm:hidden md:block'
         />
         <p className='mt-4 text-center text-gray-500'>{t("description")}</p>
 

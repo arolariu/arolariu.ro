@@ -288,15 +288,15 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                 initial={{opacity: 0}}
                 animate={{opacity: 1}}
                 transition={{duration: 0.5}}
-                className='rounded-md border'>
+                className='rounded-md border text-black dark:text-white'>
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Package</TableHead>
-                      <TableHead>Version</TableHead>
+                      <TableHead className='hidden md:table-cell'>Version</TableHead>
                       <TableHead className='hidden md:table-cell'>Type</TableHead>
                       <TableHead className='hidden lg:table-cell'>Description</TableHead>
-                      <TableHead className='hidden md:table-cell'>License</TableHead>
+                      <TableHead className='hidden xl:table-cell'>License</TableHead>
                       <TableHead className='hidden sm:table-cell'>Depedendencies</TableHead>
                       <TableHead>Website</TableHead>
                     </TableRow>
@@ -305,12 +305,14 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                     {filteredAndSortedPackages.map((pkg) => (
                       <TableRow key={pkg.name + pkg.version}>
                         <TableCell className='font-bold'>{pkg.name}</TableCell>
-                        <TableCell>{pkg.version}</TableCell>
+                        <TableCell className='hidden md:table-cell'>{pkg.version}</TableCell>
                         <TableCell className='hidden md:table-cell'>
                           <PackageBadge type={extractPackageType(pkg)} />
                         </TableCell>
-                        <TableCell className='hidden max-w-md text-pretty lg:table-cell'>{pkg.description}</TableCell>
-                        <TableCell className='hidden md:table-cell'>{pkg.license}</TableCell>
+                        <TableCell className='hidden lg:table-cell'>
+                          <p className='max-w-md text-pretty'>{pkg.description}</p>
+                        </TableCell>
+                        <TableCell className='hidden xl:table-cell'>{pkg.license}</TableCell>
                         <TableCell className='hidden sm:table-cell'>
                           <DependenciesDialog pkg={pkg} />
                         </TableCell>

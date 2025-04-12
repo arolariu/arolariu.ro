@@ -101,7 +101,7 @@ export default function Certifications(): React.JSX.Element {
           variants={containerVariants}
           initial='hidden'
           animate={inView ? "visible" : "hidden"}
-          className='grid gap-8 md:grid-cols-3'>
+          className='grid gap-8 md:grid-cols-2 lg:grid-cols-3'>
           {certifications.map((cert, index) => (
             <motion.div
               key={cert.code}

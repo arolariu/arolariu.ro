@@ -148,8 +148,8 @@ export default async function Footer(): Promise<React.JSX.Element> {
         </div>
 
         {/* Footer metadata information */}
-        <div className='2xsm:flex-wrap flex flex-row justify-between border-t py-5 md:flex-nowrap'>
-          <p className='2xsm:text-center text-sm md:text-left'>
+        <div className='flex flex-row flex-wrap justify-between gap-8 border-t py-5'>
+          <p className='2xsm:text-center 2xsm:mx-auto text-sm md:mx-0 md:text-left'>
             © {t("copyright")} 2022-{new Date().getFullYear()} Alexandru-Razvan Olariu. <br />
             <span className='ml-4'>
               {t("sourceCode")}
@@ -161,7 +161,7 @@ export default async function Footer(): Promise<React.JSX.Element> {
               </Link>
             </span>
           </p>
-          <div className='2xsm:mx-auto 2xsm:mt-8 2xsm:space-x-8 flex flex-row items-center md:mx-0 md:mt-0 md:space-x-4'>
+          <div className='2xsm:mx-auto flex flex-row items-center space-x-8 md:mx-0'>
             <Link
               href='https://github.com/arolariu'
               target='_blank'
@@ -181,7 +181,7 @@ export default async function Footer(): Promise<React.JSX.Element> {
         <p className='2xsm:text-center text-sm text-slate-300 md:text-end'>
           {t("builtOn")}
           <code
-            className='tooltip tooltip-left cursor-help'
+            className='tooltip md:tooltip-left 2xsm:tooltip-top cursor-help'
             data-tip={new Date(TIMESTAMP)}>
             {TIMESTAMP.split("T")[0]}
           </code>
