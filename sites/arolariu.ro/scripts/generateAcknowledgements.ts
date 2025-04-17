@@ -1,8 +1,7 @@
 /** @format */
 
 import type {NodePackageDependencyDependsOn, NodePackageDependencyType, NodePackageInformation} from "@/types";
-import {globSync} from "glob";
-import fs from "node:fs";
+import fs, {globSync} from "node:fs";
 import path from "node:path";
 import {EOL} from "os";
 
@@ -174,7 +173,7 @@ function extractDependenciesManifestPaths(verbose: boolean = false): string[] {
   pathToNodeModules = pathToNodeModules.replace(/\\/g, "/");
   console.info("[arolariu::acknowledgments] >>> Identified path to node_modules:", pathToNodeModules);
 
-  let packageRawPaths = globSync(pathToNodeModules, {ignore: "**/node_modules/**/node_modules/**"});
+  let packageRawPaths = globSync(pathToNodeModules);
   let packageDirectPaths: string[] = []; // this will contain direct paths to the package.json files
   for (const path of packageRawPaths) packageDirectPaths.push(...globSync(`${path}/**/package.json`));
   verbose && console.info("[arolariu::acknowledgments] >>> Found ", packageDirectPaths.length, " package.json files.");
