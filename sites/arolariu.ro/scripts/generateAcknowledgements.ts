@@ -67,13 +67,12 @@ function buildPackageManifests(
         peerDependencies?: Record<string, string>;
       } = JSON.parse(fs.readFileSync(packagePath, "utf-8"));
 
-      if (packageManifest.name === undefined) packageManifest.name = path.basename(path.dirname(packagePath)).replace(/\\/g, "/");
-      if (packageManifest.author === undefined) packageManifest.author = "unknown";
+      packageManifest.name ??= path.basename(path.dirname(packagePath)).replace(/\\/g, "/");
+      packageManifest.description ??= "This package has not provided a valid description.";
+      packageManifest.author ??= "unknown";
+      packageManifest.version ??= "unknown";
+
       if (typeof packageManifest.author === "object") packageManifest.author = packageManifest.author.name;
-      if (packageManifest.description === undefined) packageManifest.description = "This package has not provided a valid description.";
-
-      if (packageManifest.version === undefined) packageManifest.version = "unknown";
-
       if (packageManifest.homepage === undefined && typeof packageManifest.repository === "string")
         packageManifest.homepage = packageManifest.repository;
       if (packageManifest.homepage === undefined && typeof packageManifest.repository === "object")
@@ -102,6 +101,7 @@ function buildPackageManifests(
         pkgDependents.push({name, version});
       }
 
+      const sizeInBytes = fs.statSync(packagePath).size;
       const pkg: NodePackageInformation = {
         name: packageManifest.name,
         author: packageManifest.author,
@@ -109,6 +109,7 @@ function buildPackageManifests(
         homepage: packageManifest.homepage ?? "unknown",
         license: packageManifest.license ?? "unknown",
         version: packageManifest.version,
+        sizeInBytes: sizeInBytes,
         dependents: pkgDependents,
       } satisfies NodePackageInformation;
 
