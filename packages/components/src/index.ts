@@ -43,6 +43,7 @@ export { Calendar } from "./components/ui/calendar";
 
 export {
   Card,
+  CardAction,
   CardHeader,
   CardFooter,
   CardTitle,
