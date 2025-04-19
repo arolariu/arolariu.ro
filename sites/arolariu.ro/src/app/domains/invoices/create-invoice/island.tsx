@@ -53,7 +53,6 @@ export default function RenderCreateInvoiceScreen() {
 
   const handleImageServerSideUpload = useCallback(
     async (event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {
-      if (userInformation === null) return;
       try {
         event.preventDefault();
         setUploadStatus("PENDING__SERVERSIDE");

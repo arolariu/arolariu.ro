@@ -4,6 +4,7 @@
 
 import {useDialogs} from "../../_contexts/DialogContext";
 import FeedbackDialog from "./FeedbackDialog";
+import ImageDialog from "./ImageDialog";
 import ItemsDialog from "./ItemsDialog";
 import MerchantDialog from "./MerchantDialog";
 import MerchantReceiptsDialog from "./MerchantReceiptsDialog";
@@ -35,6 +36,8 @@ export default function DialogContainer(): React.JSX.Element {
       return <MerchantDialog />;
     case "metadata":
       return <MetadataDialog />;
+    case "image":
+      return <ImageDialog />;
     case "recipe":
       return <RecipeDialog />;
     case "share":

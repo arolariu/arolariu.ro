@@ -15,7 +15,7 @@ import {
   Textarea,
   toast,
 } from "@arolariu/components";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {TbStar} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
@@ -37,23 +37,67 @@ export default function FeedbackDialog() {
   } = useDialog("feedback");
 
   const {invoice, merchant} = payload as {invoice: Invoice; merchant: Merchant};
+  console.log(">>> FeedbackDialog", {invoice, merchant});
   const features = ["Spending Trends", "Price Comparisons", "Savings Tips", "Merchant Analysis", "Visual Charts", "Category Breakdown"];
 
-  const handleSubmit = () => {
-    if (rating === 0) {
-      toast("Rating required", {
-        description: "Please provide a star rating before submitting",
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      // Show loading toast
+      const loadingToast = toast("Sending invitation...", {
+        description: "Please wait while we send the invitation.",
+        className: "z-100",
       });
-      return;
-    }
 
-    // In a real app, this would submit the feedback to a server
-    toast("Feedback submitted", {
-      description: "Thank you for your feedback!",
-    });
+      if (rating === 0) {
+        toast.dismiss(loadingToast);
+        toast("Rating required", {
+          description: "Please provide a star rating before submitting",
+        });
+        return;
+      }
 
-    close();
-  };
+      try {
+        // Send feedback to the server
+        const response = await fetch(`/api/mail/invoices/feedback/${invoice.id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            feedbackFrom: "todo@todo.com",
+            feedbackText: feedback,
+            feedbackRating: rating,
+            feedbackFeatures: selectedFeatures,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`>>> Failed to send feedback: ${response.status}`);
+        }
+
+        toast.dismiss(loadingToast);
+        toast("Feedback sent!", {
+          description: `Feedback sent successfully`,
+          className: "z-100",
+        });
+        setRating(0);
+        setFeedback("");
+        setSelectedFeatures([]);
+        setHoveredRating(0);
+      } catch (error: unknown) {
+        console.error(">>> Failed to send feedback:", error);
+        toast.dismiss(loadingToast);
+        toast("An error occurred while submitting feedback", {
+          description: "Please try again later.",
+        });
+      } finally {
+        close();
+      }
+    },
+    [rating, close],
+  );
 
   const toggleFeature = (feature: string) => {
     setSelectedFeatures((prev) => (prev.includes(feature) ? prev.filter((f) => f !== feature) : [...prev, feature]));
@@ -116,18 +160,19 @@ export default function FeedbackDialog() {
               rows={4}
             />
           </div>
-          <small className='text-muted-foreground text-xs text-pretty text-gray-200 dark:text-gray-600'>
-            {invoice.id}::{merchant.id}
-          </small>
         </div>
 
         <DialogFooter>
-          <Button
-            variant='outline'
-            onClick={close}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit}>Submit Feedback</Button>
+          <form
+            onSubmit={handleSubmit}
+            className='flex items-center justify-between gap-4'>
+            <Button
+              variant='outline'
+              onClick={close}>
+              Cancel
+            </Button>
+            <Button type='submit'>Submit Feedback</Button>
+          </form>
         </DialogFooter>
       </DialogContent>
     </Dialog>

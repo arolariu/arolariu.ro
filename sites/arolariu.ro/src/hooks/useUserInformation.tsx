@@ -7,7 +7,7 @@ import {UserInformation} from "@/types";
 import {useEffect, useRef, useState} from "react";
 
 type HookReturnType = Readonly<{
-  userInformation: UserInformation | null;
+  userInformation: UserInformation;
   isLoading: boolean;
   isError: boolean;
 }>;
@@ -17,7 +17,11 @@ type HookReturnType = Readonly<{
  * @returns The user information and loading state.
  */
 export function useUserInformation(): HookReturnType {
-  const [userInformation, setUserInformation] = useState<UserInformation | null>(null);
+  const [userInformation, setUserInformation] = useState<UserInformation>({
+    user: null,
+    userIdentifier: "00000000-0000-0000-0000-000000000000",
+    userJwt: "",
+  });
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);

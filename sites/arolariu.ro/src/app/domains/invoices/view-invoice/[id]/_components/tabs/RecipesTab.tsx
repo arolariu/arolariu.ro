@@ -66,6 +66,7 @@ export default function RecipesTab({recipes}: Readonly<Props>) {
                 <TooltipTrigger asChild>
                   <Button
                     variant='ghost'
+                    className='cursor-pointer'
                     onClick={() => {}}
                     size='sm'>
                     <TbConfetti className='mr-2 h-4 w-4' />
@@ -79,6 +80,7 @@ export default function RecipesTab({recipes}: Readonly<Props>) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    className='cursor-pointer'
                     onClick={openAddDialog}
                     size='sm'>
                     <TbPlus className='mr-2 h-4 w-4' />
@@ -107,7 +109,8 @@ export default function RecipesTab({recipes}: Readonly<Props>) {
               <p className='text-muted-foreground mb-4'>No recipes available yet</p>
               <Button
                 onClick={() => {}}
-                variant='outline'>
+                variant='outline'
+                className='cursor-pointer'>
                 <TbPlus className='mr-2 h-4 w-4' />
                 Create Your First Recipe
               </Button>

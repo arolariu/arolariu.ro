@@ -25,7 +25,7 @@ export function useInvoice(invoiceIdentifier: string): HookOutputType {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
 
   useEffect(() => {
-    const fetchInvoiceForUser = async (userInformation: UserInformation) => {
+    const fetchInvoiceForUser = async (userInformation: UserInformation, invoiceIdentifier: string) => {
       setIsLoading(true);
 
       try {
@@ -33,16 +33,14 @@ export function useInvoice(invoiceIdentifier: string): HookOutputType {
         const invoice = await fetchInvoice(invoiceIdentifier, authToken);
         setInvoice(invoice);
       } catch (error: unknown) {
-        console.error(">>> Error fetching invoices in useInvoice hook:", error as Error);
+        console.error(">>> Error fetching invoice in useInvoice hook:", error as Error);
         setIsError(true);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (userInformation) {
-      fetchInvoiceForUser(userInformation);
-    }
+    fetchInvoiceForUser(userInformation, invoiceIdentifier);
   }, [userInformation, invoiceIdentifier]);
 
   return {invoice, isLoading, isError} as const;

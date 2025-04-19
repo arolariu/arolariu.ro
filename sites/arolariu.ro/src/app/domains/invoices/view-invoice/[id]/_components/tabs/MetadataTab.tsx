@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {TbEdit, TbMenu, TbPlus, TbTrash} from "react-icons/tb";
+import {TbEdit, TbPencil, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {
@@ -54,6 +54,7 @@ export default function MetadataTab({metadata}: Readonly<Props>) {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  className='cursor-pointer'
                   onClick={openAddDialog}
                   size='sm'>
                   <TbPlus className='mr-2 h-4 w-4' />
@@ -92,8 +93,8 @@ export default function MetadataTab({metadata}: Readonly<Props>) {
                         <Button
                           variant='ghost'
                           size='icon'
-                          className='h-8 w-8'>
-                          <TbMenu className='h-4 w-4' />
+                          className='h-8 w-8 cursor-pointer'>
+                          <TbPencil className='h-4 w-4' />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align='end'>

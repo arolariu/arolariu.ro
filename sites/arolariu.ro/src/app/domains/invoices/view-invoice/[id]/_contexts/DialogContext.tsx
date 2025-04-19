@@ -12,6 +12,7 @@ import {createContext, useCallback, useContext, useMemo, useRef, useState, type 
  */
 export type DialogType =
   | "share"
+  | "image"
   | "merchant"
   | "merchantReceipts"
   | "recipe"

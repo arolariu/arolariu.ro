@@ -49,7 +49,7 @@ export default function MerchantCard({merchant}: Readonly<Props>) {
               <TooltipTrigger asChild>
                 <Button
                   variant='outline'
-                  className='group w-full'
+                  className='group w-full cursor-pointer'
                   onClick={openMerchantInfoDialog}>
                   <span>View Merchant Details</span>
                   <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
@@ -66,7 +66,7 @@ export default function MerchantCard({merchant}: Readonly<Props>) {
               <TooltipTrigger asChild>
                 <Button
                   variant='outline'
-                  className='group w-full'
+                  className='group w-full cursor-pointer'
                   onClick={openMerchantReceiptsDialog}>
                   <TbShoppingBag className='mr-2 h-4 w-4' />
                   <span>View All Receipts</span>

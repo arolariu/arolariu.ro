@@ -1,20 +1,10 @@
 /** @format */
 
-import {Invoice} from "@/types/invoices";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@arolariu/components";
+import type {Invoice} from "@/types/invoices";
+import {Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Tooltip, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
-import {TbArrowUp, TbUpload} from "react-icons/tb";
+import {TbZoomInArea} from "react-icons/tb";
+import {useDialog} from "../../_contexts/DialogContext";
 
 type Props = {invoice: Invoice};
 
@@ -25,6 +15,8 @@ type Props = {invoice: Invoice};
  */
 export default function ImageCard({invoice}: Readonly<Props>) {
   const photoLocation = invoice.photoLocation ?? "https://dummyimage.com/600x900&text=placeholder+image";
+  const {open} = useDialog("image", "view", photoLocation);
+
   return (
     <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>
@@ -33,8 +25,9 @@ export default function ImageCard({invoice}: Readonly<Props>) {
       <CardContent className='flex justify-center'>
         <motion.img
           transition={{type: "spring", stiffness: 300, damping: 10}}
-          className='w-full rounded-md border object-cover'
+          className='w-full rounded-md border object-cover hover:cursor-zoom-in'
           src={photoLocation}
+          onClick={open}
           whileHover={{scale: 1.05}}
           alt=''
           aria-hidden
@@ -46,29 +39,12 @@ export default function ImageCard({invoice}: Readonly<Props>) {
             <TooltipTrigger asChild>
               <Button
                 variant='outline'
-                className='group w-full'
-                onClick={() => {}}>
+                className='w-full cursor-pointer'
+                onClick={open}>
                 <span>Expand Image</span>
-                <TbArrowUp className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                <TbZoomInArea className='ml-2 h-4 w-4 transition-transform' />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>View the full image of the receipt</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant='link'
-                className='group w-full'
-                onClick={() => {}}>
-                <TbUpload className='mr-2 h-4 w-4' />
-                <span>Reupload Image</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side='bottom'>
-              <p>Modify the original image</p>
-            </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </CardFooter>

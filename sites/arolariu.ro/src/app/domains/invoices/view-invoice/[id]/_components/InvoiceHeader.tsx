@@ -6,11 +6,9 @@ import type {Invoice} from "@/types/invoices";
 import {Button, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import {TbPrinter} from "react-icons/tb";
-import CurrencySelector from "./CurrencySelector";
 
 type Props = {
   invoice: Invoice;
-  onCurrencyChange: (currency: string) => void;
   onPrint: () => void;
 };
 
@@ -37,11 +35,11 @@ export default function InvoiceHeader({invoice, onPrint}: Readonly<Props>) {
         </div>
       </div>
       <div className='flex flex-wrap items-center gap-2'>
-        <CurrencySelector />
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                className='cursor-pointer'
                 variant='outline'
                 size='sm'
                 onClick={onPrint}>

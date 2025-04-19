@@ -106,14 +106,60 @@ export default function SharingDialog() {
   }, []);
 
   const handleSendEmail = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
-      toast("Email sent!", {
-        description: `Invitation sent to ${email}`,
+
+      // Show loading toast
+      const loadingToast = toast("Sending invitation...", {
+        description: "Please wait while we send the invitation.",
+        className: "z-100",
       });
-      setEmail("");
+
+      try {
+        // Get current user email (you might want to replace this with the actual user email from your auth system)
+        const userEmail = "ufcolonel@gmail.com"; // Leave empty to use only CC in the backend
+
+        // Call the API to send email
+        const response = await fetch(`/api/mail/invoices/share/${invoice.id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            toEmail: email,
+            fromEmail: userEmail,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`>>> Failed to send email: ${response.status}`);
+        }
+
+        // Dismiss loading toast
+        toast.dismiss(loadingToast);
+
+        // Show success message
+        toast("Email sent!", {
+          description: `Invitation sent to ${email}`,
+          className: "z-100",
+        });
+
+        // Clear the email input
+        setEmail("");
+      } catch (error) {
+        console.error("Failed to send email:", error);
+
+        // Dismiss loading toast
+        toast.dismiss(loadingToast);
+
+        // Show error message
+        toast("Failed to send email", {
+          description: "There was an error sending the invitation. Please try again.",
+          className: "z-100",
+        });
+      }
     },
-    [email],
+    [email, invoice.id],
   );
 
   return (
@@ -130,15 +176,21 @@ export default function SharingDialog() {
           defaultValue='link'
           className='w-full'>
           <TabsList className='grid w-full grid-cols-3'>
-            <TabsTrigger value='link'>
+            <TabsTrigger
+              value='link'
+              className='cursor-pointer'>
               <TbCopy className='mr-2 h-4 w-4' />
               Link
             </TabsTrigger>
-            <TabsTrigger value='email'>
+            <TabsTrigger
+              value='email'
+              className='cursor-pointer'>
               <TbMail className='mr-2 h-4 w-4' />
               Email
             </TabsTrigger>
-            <TabsTrigger value='qr'>
+            <TabsTrigger
+              value='qr'
+              className='cursor-pointer'>
               <TbQrcode className='mr-2 h-4 w-4' />
               QR Code
             </TabsTrigger>

@@ -1,20 +1,26 @@
 /** @format */
 
-import {FakeInvoice} from "@/data/mocks/invoices";
-import type {Invoice} from "@/types/invoices";
-import {Body, Column, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
+import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
-export default function SharedInvoice({username, invoice}: Readonly<{username: string; invoice: Invoice}>) {
-  if (process.env.NODE_ENV === "development") invoice = FakeInvoice;
+type Props = {
+  identifier: string;
+};
 
-  const totalAmount = invoice?.paymentInformation?.totalCostAmount ?? 0;
-  const currencySymbol = invoice?.paymentInformation?.currency.symbol ?? "N/A";
-  const dateOfPurchase = invoice?.paymentInformation?.transactionDate?.toLocaleDateString("en-gb") ?? "N/A";
+const DEVELOPMENT_PROPS = {
+  identifier: "0123-4567-8901",
+} satisfies Props;
+
+export default function SharedInvoice(props: Readonly<Props>) {
+  if (process.env.NODE_ENV === "development") {
+    props = DEVELOPMENT_PROPS;
+  }
+
+  const {identifier} = props;
 
   return (
     <Html>
       <Head>
-        <title>arolariu.ro | Invoice #{invoice?.id ?? Math.random().toString().slice(2, 12)}</title>
+        <title>{`arolariu.ro | Invoice #${identifier}`}</title>
         <Font
           fontFamily='Caudex'
           fallbackFontFamily='Verdana'
@@ -26,13 +32,11 @@ export default function SharedInvoice({username, invoice}: Readonly<{username: s
           fontStyle='normal'
         />
       </Head>
-      <Preview>Your invoice is ready to be shared!</Preview>
+      <Preview>An invoice has been shared with you!</Preview>
       <Tailwind>
         <Body className='bg-gray-200'>
           <Container className='m-auto w-[512px] max-w-[100%] px-[20px] py-[40px]'>
-            <Link
-              href='https://arolariu.ro'
-              target='_blank'>
+            <Link href='https://arolariu.ro'>
               <Img
                 src='https://arolariu.ro/manifest/android-chrome-384x384.png'
                 alt='arolariu.ro logo'
@@ -43,34 +47,13 @@ export default function SharedInvoice({username, invoice}: Readonly<{username: s
             </Link>
             <Section>
               <Row>
-                <Text className='font-bold'>Hello {username ?? "there"}!</Text>
+                <Text className='font-bold'>{`Hello there,`}</Text>
               </Row>
               <Row>
-                <Text>You've successfully made an invoice available for sharing. 🎉🎉</Text>
-                <Text>Here are the details of the shared invoice:</Text>
-              </Row>
-              <Section>
-                <Row>
-                  <Column>Merchant Name</Column>
-                  <Column>Total Amount</Column>
-                  <Column>Date of Purchase</Column>
-                </Row>
-                <Row>
-                  <Column>{/* TODO: fix! */}</Column>
-                  <Column>
-                    {totalAmount} {currencySymbol}
-                  </Column>
-                  <Column>{dateOfPurchase}</Column>
-                </Row>
-              </Section>
-              <Row>
+                <Text>Somebody has shared an invoice with you! 🎉🎉</Text>
                 <Text>
-                  You can save the following link to share the invoice with others: <br />
-                  <Link
-                    href={`https://arolariu.ro/invoices/view-invoice/${invoice?.id}`}
-                    target='_blank'>
-                    https://arolariu.ro/invoices/view-invoice/{invoice?.id}
-                  </Link>
+                  You can check it out by{" "}
+                  <Link href={`https://arolariu.ro/domains/invoices/view-invoice/${identifier}`}>clicking here</Link>.
                 </Text>
               </Row>
             </Section>
@@ -78,24 +61,22 @@ export default function SharedInvoice({username, invoice}: Readonly<{username: s
             <Section className='mb-[12px]'>
               <Row>
                 <Text className='font-bold'>Additional resources:</Text>
+                <Text>
+                  <Link href='https://arolariu.ro'>Visit the main website.</Link>
+                </Text>
+                <Text>
+                  <Link href='mailto:admin@arolariu.ro?subject=Feedback'>Submit feedback.</Link> <br />
+                  <small>We take feedback seriously. Your concerns are our priorities.</small>
+                </Text>
               </Row>
-              <Text>
-                <Link href='https://arolariu.ro'>Visit the main website.</Link>
-              </Text>
-              <Text>
-                <Link href='https://arolariu.ro/events'>See the current and upcoming events.</Link>
-              </Text>
-              <Text>
-                <Link href='mailto:admin@arolariu.ro?subject=Feedback'>Submit feedback.</Link> <br />
-                <small>We take feedback seriously. Your concerns are our priorities.</small>
-              </Text>
             </Section>
           </Container>
           <Container>
+            <Hr className='h-1 w-full rounded-xl bg-black' />
             <Section>
               <Row>
                 <Text style={{textAlign: "center", color: "#706a7b"}}>
-                  © 2022-{new Date().getFullYear()} AROLARIU.RO, All rights reserved. <br />
+                  © 2022-{new Date().getFullYear()} AROLARIU.RO <br /> All rights reserved. <br /> <br />
                   ❤️ Bucharest - Romania
                 </Text>
               </Row>

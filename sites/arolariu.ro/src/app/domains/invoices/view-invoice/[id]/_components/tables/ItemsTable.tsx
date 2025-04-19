@@ -66,7 +66,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 variant='outline'
                 size='sm'
                 onClick={open}
-                className='h-8'>
+                className='h-8 cursor-pointer'>
                 <TbEdit className='mr-1 h-3.5 w-3.5' />
                 Edit Items
               </Button>
@@ -142,6 +142,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
           <div className='flex items-center gap-2'>
             <Button
               variant='outline'
+              className='cursor-pointer'
               size='sm'
               onClick={handlePreviousPage}>
               Previous
@@ -151,6 +152,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
             </span>
             <Button
               variant='outline'
+              className='cursor-pointer'
               size='sm'
               onClick={handleNextPage}>
               Next

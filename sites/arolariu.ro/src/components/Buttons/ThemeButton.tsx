@@ -29,7 +29,7 @@ export default function ThemeButton(): React.JSX.Element {
 
   return (
     <motion.button
-      className='relative h-10 w-10 rounded-full'
+      className='relative h-10 w-10 cursor-pointer rounded-full border-2 border-zinc-800 transition-colors duration-300 hover:bg-zinc-100 dark:border-zinc-200 dark:hover:bg-zinc-800'
       onClick={handleSetTheme}
       aria-label='Toggle theme'
       whileTap={{scale: 0.95}}>

@@ -34,7 +34,7 @@ const generateFakeInvoice = (): Invoice => {
     lastUpdatedBy: fake.string.uuid(),
     name: fake.lorem.sentence(3),
     numberOfUpdates: fake.number.int({min: 0, max: 100}),
-    photoLocation: fake.image.url(),
+    photoLocation: fake.image.url({width: 800, height: 600}),
     userIdentifier: fake.string.uuid(),
     sharedWith: Array.from({length: fake.number.int({min: 0, max: 5})}, () => fake.string.uuid()),
     items: products,

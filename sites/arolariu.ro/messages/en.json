@@ -1,5 +1,20 @@
 {
   "About": {
+    "title": "About Us",
+    "subtitle": " The arolariu.ro story began in 2022, when the author - Alexandru-Razvan Olariu, wanted to understand how websites work. The whole platform and underlying integrations have been developed solely by the author, from what he has learnt along the years. Alexandru currently works as a software engineer at Microsoft. To learn more about him, check the right section of this page. The platform is built using the latest state-of-the-art technologies. To learn more about it, check the left section of this page.",
+    "cards": {
+      "platform": {
+        "title": "What is arolariu.ro?",
+        "subtitle": "The arolariu.ro platform is a collection of applications that are hosted under the arolariu.ro domain. The platform was built with the purpose of providing a unified experience for all of the applications and OSS projects that the author (Alexandru-Razvan Olariu) is working on. To learn more about the technologies that are used in the process and how they interact with each other, click the button below.",
+        "cta": "Learn more about the platform..."
+      },
+      "author": {
+        "title": "Who is arolariu?",
+        "subtitle": "arolariu is the alias/nickname of the author: Alexandru-Razvan Olariu. Alexandru is a well-tenured software engineer, solution architect and lifelong learner. To learn more about Alexandru, click the button below.",
+        "cta": "Learn more about the author..."
+      }
+    },
+    "footer": "Thank you!",
     "Author": {
       "Biography": {
         "FifthPoint": "Alexandru is open for collaboration in projects that involve any of the Internet of Things, Software Engineering and Network Engineering fields. He has a proven track record of providing high-quality solutions to complex problems and is always looking for new challenges.",

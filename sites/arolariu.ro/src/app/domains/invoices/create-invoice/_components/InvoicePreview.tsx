@@ -117,7 +117,7 @@ const MediaPreview = memo(function MediaPreview({
         </div>
       ) : (
         <Image
-          className='h-full w-full rounded-lg object-cover transition-all'
+          className='h-full w-full rounded-lg object-contain object-center transition-all'
           src={url}
           width={300}
           height={300}

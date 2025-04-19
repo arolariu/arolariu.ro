@@ -3,7 +3,7 @@
 "use client";
 
 import {formatCurrency} from "@/lib/utils.generic";
-import {Invoice, Merchant} from "@/types/invoices";
+import type {Invoice, Merchant} from "@/types/invoices";
 import {
   Button,
   Card,
@@ -93,6 +93,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
         </div>
         <div className='flex gap-2'>
           <Button
+            className='cursor-pointer'
             variant='outline'
             size='sm'
             onClick={openShare}>
@@ -100,6 +101,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
             Share
           </Button>
           <Button
+            className='cursor-pointer'
             variant='outline'
             size='sm'
             onClick={openFeedback}>
@@ -111,15 +113,21 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
       <CardContent>
         <Tabs defaultValue='trends'>
           <TabsList className='mb-4 grid w-full grid-cols-3'>
-            <TabsTrigger value='trends'>
+            <TabsTrigger
+              value='trends'
+              className='cursor-pointer'>
               <TbChartCandle className='mr-2 h-4 w-4' />
               Trends
             </TabsTrigger>
-            <TabsTrigger value='comparison'>
+            <TabsTrigger
+              value='comparison'
+              className='cursor-pointer'>
               <TbChartBar className='mr-2 h-4 w-4' />
               Comparison
             </TabsTrigger>
-            <TabsTrigger value='breakdown'>
+            <TabsTrigger
+              value='breakdown'
+              className='cursor-pointer'>
               <TbChartPie className='mr-2 h-4 w-4' />
               Breakdown
             </TabsTrigger>

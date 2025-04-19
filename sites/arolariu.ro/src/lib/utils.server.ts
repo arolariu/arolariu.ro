@@ -2,9 +2,16 @@
 
 import {Blob} from "node:buffer";
 import crypto from "node:crypto";
+import {Resend} from "resend";
 
 export const API_URL = process.env["API_URL"] ?? "";
 export const API_JWT = process.env["API_JWT"] ?? "";
+
+/**
+ * Singleton pattern class object that handles the interaction with the Resend API (mail).
+ * @see https://resend.com/docs/getting-started
+ */
+export const resend = new Resend(process.env["RESEND_API_KEY"]);
 
 /**
  * Function that extracts a base64 string from a blob

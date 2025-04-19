@@ -1,7 +1,7 @@
 /** @format */
 
 import {useUserInformation} from "@/hooks";
-import {Invoice} from "@/types/invoices";
+import type {Invoice} from "@/types/invoices";
 import {
   Button,
   Card,
@@ -64,7 +64,7 @@ export default function SharingCard({invoice}: Readonly<Props>) {
                 <TooltipTrigger asChild>
                   <Button
                     variant='outline'
-                    className='group ml-auto'
+                    className='group ml-auto cursor-pointer'
                     onClick={() => {}}>
                     <TbLockCog className='mr-2 h-4 w-4' />
                     <span>Manage Sharing</span>
@@ -101,7 +101,7 @@ export default function SharingCard({invoice}: Readonly<Props>) {
                       <TooltipTrigger asChild>
                         <Button
                           variant='ghost'
-                          className='ml-auto'
+                          className='ml-auto cursor-pointer'
                           onClick={() => {}}>
                           <TbDeselect className='h-4 w-4' />
                         </Button>
@@ -125,11 +125,11 @@ export default function SharingCard({invoice}: Readonly<Props>) {
             <TooltipTrigger asChild>
               <Button
                 variant='outline'
-                className='group w-full'
+                className='w-full cursor-pointer'
                 onClick={open}>
                 <TbShare2 className='mr-2 h-4 w-4' />
                 <span>Share Invoice</span>
-                <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                <TbArrowRight className='ml-2 h-4 w-4 transition-transform' />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -141,10 +141,10 @@ export default function SharingCard({invoice}: Readonly<Props>) {
             <TooltipTrigger asChild>
               <Button
                 variant='destructive'
-                className='group w-full'
+                className='w-full cursor-pointer'
                 onClick={() => {}}>
                 <span>Mark as Private</span>
-                <TbLock className='ml-2 h-4 w-4 transition-transform group-hover:translate-x-1' />
+                <TbLock className='ml-2 h-4 w-4 transition-transform' />
               </Button>
             </TooltipTrigger>
             <TooltipContent side='bottom'>

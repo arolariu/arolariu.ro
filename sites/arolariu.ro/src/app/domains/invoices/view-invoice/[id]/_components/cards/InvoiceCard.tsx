@@ -3,7 +3,7 @@
 "use client";
 
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
-import {Invoice, InvoiceCategory, Merchant, PaymentType} from "@/types/invoices";
+import {type Invoice, InvoiceCategory, type Merchant, PaymentType} from "@/types/invoices";
 import {
   Badge,
   Card,
@@ -53,8 +53,8 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>) {
                 <TooltipTrigger asChild>
                   <Badge
                     variant={isImportant === true ? "default" : "outline"}
-                    className='cursor-help transition-transform group-hover:scale-105'>
-                    <TbHeart className={cn("text-red-500 group-hover:text-red-700", isImportant && "fill-red-500")} />
+                    className='cursor-help transition-transform hover:scale-105'>
+                    <TbHeart className={cn("text-red-500 hover:text-red-700", isImportant && "fill-red-500")} />
                     {isImportant ? "IMPORTANT" : "Mark as Important"}
                   </Badge>
                 </TooltipTrigger>
@@ -79,10 +79,10 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>) {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className='cursor-pointer'>{formatDate(paymentInformation?.transactionDate)}</span>
+                    <span className='cursor-help'>{formatDate(paymentInformation?.transactionDate)}</span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <span className='cursor-pointer'>Exact date: {paymentInformation?.transactionDate.toISOString()}</span>
+                    <span>Exact date: {paymentInformation?.transactionDate.toISOString()}</span>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

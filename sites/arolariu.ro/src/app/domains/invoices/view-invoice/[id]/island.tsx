@@ -14,7 +14,6 @@ import InvoiceHeader from "./_components/InvoiceHeader";
 import SidebarSection from "./_components/sidebar/SidebarSection";
 import MetadataTab from "./_components/tabs/MetadataTab";
 import RecipesTab from "./_components/tabs/RecipesTab";
-import {CurrencyProvider} from "./_contexts/CurrencyContext";
 import {DialogProvider} from "./_contexts/DialogContext";
 
 /**
@@ -29,7 +28,7 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
   // Invoice data (mocked for this example)
   const invoice = FakeInvoice;
 
-  // Merchant data
+  // Merchant data (mocked for this example)
   const merchant = FakeMerchant;
 
   // Animation variants for Framer Motion
@@ -54,78 +53,79 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
 
   return (
     <DialogProvider>
-      <CurrencyProvider>
-        <section
-          className='container mx-auto py-12'
-          ref={printRef}>
-          {/* Header */}
-          <InvoiceHeader
-            invoice={invoice}
-            onCurrencyChange={() => {}}
-            onPrint={() => {}}
-          />
+      <section
+        className='container mx-auto py-12'
+        ref={printRef}>
+        {/* Header */}
+        <InvoiceHeader
+          invoice={invoice}
+          onPrint={() => {}}
+        />
 
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
-            <motion.div
-              variants={containerVariants}
-              initial='hidden'
-              animate='visible'
-              className='space-y-6 md:col-span-2'>
-              <InvoiceCard
-                invoice={invoice}
-                merchant={merchant}
-              />
+        <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+          <motion.div
+            variants={containerVariants}
+            initial='hidden'
+            animate='visible'
+            className='space-y-6 md:col-span-2'>
+            <InvoiceCard
+              invoice={invoice}
+              merchant={merchant}
+            />
 
-              {/* Tabs for Recipes and Metadata */}
-              <motion.div variants={itemVariants}>
-                <Tabs defaultValue='recipes'>
-                  <TabsList className='grid w-full grid-cols-2'>
-                    <TabsTrigger value='recipes'>
-                      <TbToolsKitchen className='mr-2 h-4 w-4' />
-                      Possible Recipes
-                    </TabsTrigger>
-                    <TabsTrigger value='metadata'>
-                      <TbShoppingCart className='mr-2 h-4 w-4' />
-                      Additional Info
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <AnimatePresence mode='wait'>
-                    <TabsContent
-                      value='recipes'
-                      className='mt-4'>
-                      <RecipesTab recipes={invoice.possibleRecipes} />
-                    </TabsContent>
-
-                    <TabsContent
-                      value='metadata'
-                      className='mt-4'>
-                      <MetadataTab metadata={invoice.additionalMetadata} />
-                    </TabsContent>
-                  </AnimatePresence>
-                </Tabs>
-              </motion.div>
-
-              {/* Expanded Statistics Card */}
-              <motion.div variants={itemVariants}>
-                <AnalyticsCard
-                  invoice={invoice}
-                  merchant={merchant}
-                />
-              </motion.div>
-            </motion.div>
-
-            {/* Right column - Sidebar */}
+            {/* Tabs for Recipes and Metadata */}
             <motion.div variants={itemVariants}>
-              <SidebarSection
+              <Tabs defaultValue='recipes'>
+                <TabsList className='grid w-full grid-cols-2'>
+                  <TabsTrigger
+                    value='recipes'
+                    className='cursor-pointer'>
+                    <TbToolsKitchen className='mr-2 h-4 w-4' />
+                    Possible Recipes
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value='metadata'
+                    className='cursor-pointer'>
+                    <TbShoppingCart className='mr-2 h-4 w-4' />
+                    Additional Info
+                  </TabsTrigger>
+                </TabsList>
+
+                <AnimatePresence mode='wait'>
+                  <TabsContent
+                    value='recipes'
+                    className='mt-4'>
+                    <RecipesTab recipes={invoice.possibleRecipes} />
+                  </TabsContent>
+
+                  <TabsContent
+                    value='metadata'
+                    className='mt-4'>
+                    <MetadataTab metadata={invoice.additionalMetadata} />
+                  </TabsContent>
+                </AnimatePresence>
+              </Tabs>
+            </motion.div>
+
+            {/* Expanded Statistics Card */}
+            <motion.div variants={itemVariants}>
+              <AnalyticsCard
                 invoice={invoice}
                 merchant={merchant}
               />
             </motion.div>
-          </div>
-        </section>
-        <DialogContainer />
-      </CurrencyProvider>
+          </motion.div>
+
+          {/* Right column - Sidebar */}
+          <motion.div variants={itemVariants}>
+            <SidebarSection
+              invoice={invoice}
+              merchant={merchant}
+            />
+          </motion.div>
+        </div>
+      </section>
+      <DialogContainer />
     </DialogProvider>
   );
 }
