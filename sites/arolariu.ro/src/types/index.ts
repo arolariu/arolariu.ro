@@ -23,7 +23,6 @@ export type NodePackageInformation = {
   homepage: string;
   license: string;
   author: string;
-  sizeInBytes: number;
   dependents?: NodePackageDependencyDependsOn[];
 };
 

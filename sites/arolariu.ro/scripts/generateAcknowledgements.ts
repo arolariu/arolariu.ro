@@ -101,7 +101,6 @@ function buildPackageManifests(
         pkgDependents.push({name, version});
       }
 
-      const sizeInBytes = fs.statSync(packagePath).size;
       const pkg: NodePackageInformation = {
         name: packageManifest.name,
         author: packageManifest.author,
@@ -109,7 +108,6 @@ function buildPackageManifests(
         homepage: packageManifest.homepage ?? "unknown",
         license: packageManifest.license ?? "unknown",
         version: packageManifest.version,
-        sizeInBytes: sizeInBytes,
         dependents: pkgDependents,
       } satisfies NodePackageInformation;
 
