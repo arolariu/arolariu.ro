@@ -6,6 +6,7 @@
 ![types](https://img.shields.io/npm/types/@arolariu/components)
 ![downloads](https://img.shields.io/npm/dm/@arolariu/components)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
+![Tree-Shakeable](https://img.shields.io/badge/tree--shakeable-true-brightgreen.svg)
 
 A collection of reusable, accessible UI components for React applications, built on top of [Radix UI](https://www.radix-ui.com/) primitives and inspired by [shadcn/ui](https://ui.shadcn.com/).
 
@@ -89,11 +90,12 @@ import { Button } from "@arolariu/components";
 
 ## 🧰 Available Components
 
-This library includes over 30 components, organized by category:
+This library includes over 60 components, organized by category:
 
 | Category         | Components                                                        |
 | ---------------- | ----------------------------------------------------------------- |
 | **Layout**       | `Card`, `AspectRatio`, `Separator`, `Resizable`                   |
+| **Background**   | `HoleBackground`, `DotBackground`, `GradientBackground`           |
 | **Inputs**       | `Button`, `Input`, `Textarea`, `Checkbox`, `RadioGroup`, `Select` |
 | **Navigation**   | `Breadcrumb`, `Tabs`, `NavigationMenu`, `Sidebar`                 |
 | **Overlays**     | `Dialog`, `Drawer`, `Sheet`, `Popover`, `Tooltip`                 |
@@ -170,9 +172,9 @@ export default function CSR_Page() {
 
 ## 🌐 Browser Support
 
-- 🌟 Chrome/Edge (All versions starting 2018)
-- 🦊 Firefox (All versions starting 2018)
-- 🧭 Safari (All versions starting 2018)
+- 🌟 Chrome/Edge (All modern versions from 2020 onwards)
+- 🦊 Firefox (All modern versions from 2020 onwards)
+- 🧭 Safari (All modern versions from 2020 onwards)
 
 ## 👥 Contributing
 
@@ -199,10 +201,12 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 🙏 Acknowledgments
 
 - [Radix UI](https://www.radix-ui.com/) for providing accessible primitives
+- [Animate-UI](https://animate-ui.com) for animated components
+- [Magic-UI](https://magic-ui.com) for utility components
+- [Aceternity-UI](https://aceternity-ui.com) for utility components
 - [shadcn/ui](https://ui.shadcn.com/) for inspiration and component patterns
 - [Tailwind CSS](https://tailwindcss.com/) for styling utilities
-- [Rollup](https://rollupjs.org/) for bundling
-- [Vite](https://vitejs.dev/) for the development environment
+- [RsBuild](https://rsbuild.dev/) for bundling and building
 - [TypeScript](https://www.typescriptlang.org/) for static typing
 
 ---

@@ -329,3 +329,57 @@ export {
 export { useIsMobile } from "./hooks/use-mobile";
 
 export { cn } from "./lib/utils";
+
+// Animate-UI exports:
+export {
+  FlipButton,
+  type FlipButtonProps,
+  type FlipDirection,
+} from "./components/ui/flip-button";
+
+export {
+  RippleButton,
+  type RippleButtonProps,
+} from "./components/ui/ripple-button";
+
+export {
+  CountingNumber,
+  type CountingNumberProps,
+} from "./components/ui/counting-number";
+
+export {
+  GradientText,
+  type GradientTextProps,
+} from "./components/ui/gradient-text";
+
+export {
+  HighlightText,
+  type HighlightTextProps,
+} from "./components/ui/highlight-text";
+
+export {
+  BubbleBackground,
+  type BubbleBackgroundProps,
+} from "./components/ui/bubble-background";
+
+export {
+  FireworksBackground,
+  type FireworksBackgroundProps,
+} from "./components/ui/fireworks-background";
+
+export {
+  GradientBackground,
+  type GradientBackgroundProps,
+} from "./components/ui/gradient-background";
+
+export {
+  HoleBackground,
+  type HoleBackgroundProps,
+} from "./components/ui/hole-background";
+
+// Magic UI exports:
+export { Scratcher } from "./components/ui/scratcher";
+export { DotBackground } from "./components/ui/dot-background";
+
+// Aceternity UI exports:
+export { BackgroundBeams } from "./components/ui/background-beams";

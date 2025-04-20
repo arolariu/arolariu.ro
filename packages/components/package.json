@@ -102,12 +102,14 @@
     "cmdk": "^1.1.1",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
-    "lucide-react": "0.501.0",
+    "lucide-react": "^0.501.0",
+    "motion": "^12.7.4",
     "next-themes": "^0.4.6",
     "react-day-picker": "9.6.7",
     "react-hook-form": "7.56.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.3",
+    "shiki": "^3.2.2",
     "sonner": "^2.0.3",
     "tailwind-merge": "3.0.2",
     "tailwindcss-animate": "1.0.7",
@@ -115,8 +117,10 @@
     "zod": "^3.24.3"
   },
   "peerDependencies": {
+    "motion": "^12",
     "react": "^18.2 || ^19",
-    "react-dom": "^18.2 || ^19"
+    "react-dom": "^18.2 || ^19",
+    "tailwindcss": "^4"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "3.2.5",
@@ -199,6 +203,12 @@
       "require": "./dist/cjs/components/ui/avatar.cjs",
       "default": "./dist/esm/components/ui/avatar.js"
     },
+    "./background-beams": {
+      "types": "./dist/types/components/ui/background-beams.d.ts",
+      "import": "./dist/esm/components/ui/background-beams.js",
+      "require": "./dist/cjs/components/ui/background-beams.cjs",
+      "default": "./dist/esm/components/ui/background-beams.js"
+    },
     "./badge": {
       "types": "./dist/types/components/ui/badge.d.ts",
       "import": "./dist/esm/components/ui/badge.js",
@@ -210,6 +220,12 @@
       "import": "./dist/esm/components/ui/breadcrumb.js",
       "require": "./dist/cjs/components/ui/breadcrumb.cjs",
       "default": "./dist/esm/components/ui/breadcrumb.js"
+    },
+    "./bubble-background": {
+      "types": "./dist/types/components/ui/bubble-background.d.ts",
+      "import": "./dist/esm/components/ui/bubble-background.js",
+      "require": "./dist/cjs/components/ui/bubble-background.cjs",
+      "default": "./dist/esm/components/ui/bubble-background.js"
     },
     "./button": {
       "types": "./dist/types/components/ui/button.d.ts",
@@ -265,11 +281,23 @@
       "require": "./dist/cjs/components/ui/context-menu.cjs",
       "default": "./dist/esm/components/ui/context-menu.js"
     },
+    "./counting-number": {
+      "types": "./dist/types/components/ui/counting-number.d.ts",
+      "import": "./dist/esm/components/ui/counting-number.js",
+      "require": "./dist/cjs/components/ui/counting-number.cjs",
+      "default": "./dist/esm/components/ui/counting-number.js"
+    },
     "./dialog": {
       "types": "./dist/types/components/ui/dialog.d.ts",
       "import": "./dist/esm/components/ui/dialog.js",
       "require": "./dist/cjs/components/ui/dialog.cjs",
       "default": "./dist/esm/components/ui/dialog.js"
+    },
+    "./dot-background": {
+      "types": "./dist/types/components/ui/dot-background.d.ts",
+      "import": "./dist/esm/components/ui/dot-background.js",
+      "require": "./dist/cjs/components/ui/dot-background.cjs",
+      "default": "./dist/esm/components/ui/dot-background.js"
     },
     "./drawer": {
       "types": "./dist/types/components/ui/drawer.d.ts",
@@ -283,11 +311,47 @@
       "require": "./dist/cjs/components/ui/dropdown-menu.cjs",
       "default": "./dist/esm/components/ui/dropdown-menu.js"
     },
+    "./fireworks-background": {
+      "types": "./dist/types/components/ui/fireworks-background.d.ts",
+      "import": "./dist/esm/components/ui/fireworks-background.js",
+      "require": "./dist/cjs/components/ui/fireworks-background.cjs",
+      "default": "./dist/esm/components/ui/fireworks-background.js"
+    },
+    "./flip-button": {
+      "types": "./dist/types/components/ui/flip-button.d.ts",
+      "import": "./dist/esm/components/ui/flip-button.js",
+      "require": "./dist/cjs/components/ui/flip-button.cjs",
+      "default": "./dist/esm/components/ui/flip-button.js"
+    },
     "./form": {
       "types": "./dist/types/components/ui/form.d.ts",
       "import": "./dist/esm/components/ui/form.js",
       "require": "./dist/cjs/components/ui/form.cjs",
       "default": "./dist/esm/components/ui/form.js"
+    },
+    "./gradient-background": {
+      "types": "./dist/types/components/ui/gradient-background.d.ts",
+      "import": "./dist/esm/components/ui/gradient-background.js",
+      "require": "./dist/cjs/components/ui/gradient-background.cjs",
+      "default": "./dist/esm/components/ui/gradient-background.js"
+    },
+    "./gradient-text": {
+      "types": "./dist/types/components/ui/gradient-text.d.ts",
+      "import": "./dist/esm/components/ui/gradient-text.js",
+      "require": "./dist/cjs/components/ui/gradient-text.cjs",
+      "default": "./dist/esm/components/ui/gradient-text.js"
+    },
+    "./highlight-text": {
+      "types": "./dist/types/components/ui/highlight-text.d.ts",
+      "import": "./dist/esm/components/ui/highlight-text.js",
+      "require": "./dist/cjs/components/ui/highlight-text.cjs",
+      "default": "./dist/esm/components/ui/highlight-text.js"
+    },
+    "./hole-background": {
+      "types": "./dist/types/components/ui/hole-background.d.ts",
+      "import": "./dist/esm/components/ui/hole-background.js",
+      "require": "./dist/cjs/components/ui/hole-background.cjs",
+      "default": "./dist/esm/components/ui/hole-background.js"
     },
     "./hover-card": {
       "types": "./dist/types/components/ui/hover-card.d.ts",
@@ -354,6 +418,18 @@
       "import": "./dist/esm/components/ui/resizable.js",
       "require": "./dist/cjs/components/ui/resizable.cjs",
       "default": "./dist/esm/components/ui/resizable.js"
+    },
+    "./ripple-button": {
+      "types": "./dist/types/components/ui/ripple-button.d.ts",
+      "import": "./dist/esm/components/ui/ripple-button.js",
+      "require": "./dist/cjs/components/ui/ripple-button.cjs",
+      "default": "./dist/esm/components/ui/ripple-button.js"
+    },
+    "./scratcher": {
+      "types": "./dist/types/components/ui/scratcher.d.ts",
+      "import": "./dist/esm/components/ui/scratcher.js",
+      "require": "./dist/cjs/components/ui/scratcher.cjs",
+      "default": "./dist/esm/components/ui/scratcher.js"
     },
     "./scroll-area": {
       "types": "./dist/types/components/ui/scroll-area.d.ts",

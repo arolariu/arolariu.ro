@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 0.0.37 - (2025-04-20)
 
 - Bump radix-ui packages to latest versions.
+- Refactor readme.md to include new components.
+- Added some `Animate-UI` components (9).
+- Added some `Magic-UI` components (2).
+- Added some `Aceternity-UI` components (1).
 
 ## 0.0.36 - (2025-04-17)
 
