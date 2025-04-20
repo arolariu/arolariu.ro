@@ -2,7 +2,7 @@
 
 "use client";
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";

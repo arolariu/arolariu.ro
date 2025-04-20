@@ -153,7 +153,7 @@ type Props = {
  * and a section to view invoices if the user is authenticated.
  * @returns The invoice domain screen, which is the main page for the invoice domain.
  */
-export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Props>) {
+export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations("Domains.services.invoices.service.main-page");
 
   return (

@@ -13,7 +13,7 @@ type Props = {invoice: Invoice};
  * It includes buttons for expanding the image and reuploading it.
  * @returns The ImageCard component, CSR'ed.
  */
-export default function ImageCard({invoice}: Readonly<Props>) {
+export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element {
   const photoLocation = invoice.photoLocation ?? "https://dummyimage.com/600x900&text=placeholder+image";
   const {open} = useDialog("image", "view", photoLocation);
 

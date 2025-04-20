@@ -1,6 +1,7 @@
 /** @format */
 "use client";
-import {Skeleton} from "@arolariu/components";
+
+import {Skeleton} from "@arolariu/components/skeleton";
 import {motion} from "motion/react";
 
 /**

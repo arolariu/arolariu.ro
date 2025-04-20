@@ -4,7 +4,15 @@
 
 import {useFontContext} from "@/contexts/FontContext";
 import {setCookie} from "@/lib/actions/cookies";
-import {CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator} from "@arolariu/components";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@arolariu/components/command";
 import {useTheme} from "next-themes";
 import {useRouter} from "next/navigation";
 import {useCallback, useEffect, useState} from "react";

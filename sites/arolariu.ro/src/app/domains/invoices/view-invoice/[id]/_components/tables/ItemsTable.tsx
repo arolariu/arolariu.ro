@@ -2,7 +2,7 @@
 
 "use client";
 
-import {usePaginationWithSearch} from "@/hooks/usePagination";
+import {usePaginationWithSearch} from "@/hooks";
 import {formatCurrency} from "@/lib/utils.generic";
 import {Invoice} from "@/types/invoices";
 import {

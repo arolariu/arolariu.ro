@@ -24,7 +24,7 @@ type Props = {
  * It includes the merchant's name and address, and buttons to view more details or all receipts from this merchant.
  * @returns The MerchantCard component, CSR'ed.
  */
-export default function MerchantCard({merchant}: Readonly<Props>) {
+export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Element {
   const {open: openMerchantInfoDialog} = useDialog("merchant", "view", merchant);
   const {open: openMerchantReceiptsDialog} = useDialog("merchantReceipts", "view", merchant);
 

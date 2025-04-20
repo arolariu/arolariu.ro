@@ -9,7 +9,7 @@ import Link from "next/link";
  * This function renders a screen that tells the user that they are forbidden from accessing a certain resource.
  * @returns Render a screen that tells the user that they are forbidden from accessing a certain resource.
  */
-export default function ForbiddenScreen() {
+export default function ForbiddenScreen(): React.JSX.Element {
   const t = useTranslations("Forbidden.Screen");
 
   return (

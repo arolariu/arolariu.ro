@@ -1,6 +1,6 @@
 /** @format */
 
-import {User} from "@clerk/nextjs/server";
+import type {User} from "@clerk/nextjs/server";
 
 /**
  * The type of a node package.

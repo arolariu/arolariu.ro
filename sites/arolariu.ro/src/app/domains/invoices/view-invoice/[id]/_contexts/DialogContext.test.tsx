@@ -1,7 +1,7 @@
 /** @format */
 
 import {act, renderHook} from "@testing-library/react";
-import {ReactNode} from "react";
+import type {ReactNode} from "react";
 import {DialogProvider, useDialog} from "./DialogContext";
 
 // Wrapper component to provide context for the hooks

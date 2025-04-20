@@ -2,7 +2,7 @@
 
 "use client";
 
-import {Badge} from "@arolariu/components";
+import {Badge} from "@arolariu/components/badge";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import React, {useState} from "react";

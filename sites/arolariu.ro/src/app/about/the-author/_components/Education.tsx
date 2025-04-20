@@ -2,7 +2,8 @@
 
 "use client";
 
-import {Button, Card, CardContent} from "@arolariu/components";
+import {Button} from "@arolariu/components/button";
+import {Card, CardContent} from "@arolariu/components/card";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {useCallback, useState} from "react";

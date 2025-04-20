@@ -2,7 +2,8 @@
 
 "use client";
 
-import {Badge, Card, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
+import {Badge} from "@arolariu/components/badge";
+import {Card, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
 import {motion} from "motion/react";
 import {useState} from "react";
 import {TbCalendar, TbCode, TbRocket, TbServer, TbTools, TbUser} from "react-icons/tb";
@@ -11,7 +12,7 @@ import {TbCalendar, TbCode, TbRocket, TbServer, TbTools, TbUser} from "react-ico
  * The Timeline component displays the development timeline of the arolariu.ro platform.
  * @returns The Timeline component, CSR'ed.
  */
-export default function Timeline() {
+export default function Timeline(): React.JSX.Element {
   const [hoveredEvent, setHoveredEvent] = useState<number | null>(null);
 
   const timelineEvents = [

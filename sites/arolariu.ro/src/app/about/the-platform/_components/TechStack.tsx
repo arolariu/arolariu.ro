@@ -2,7 +2,8 @@
 
 "use client";
 
-import {Card, CardContent, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
+import {Card, CardContent} from "@arolariu/components/card";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components/tabs";
 import {AnimatePresence, motion} from "motion/react";
 import {useState} from "react";
 import {
@@ -29,7 +30,7 @@ import {
  * It displays the technology stack used in the project.
  * @returns The technology stack component, CSR'ed.
  */
-export default function TechStack() {
+export default function TechStack(): React.JSX.Element {
   const techCategories = [
     {
       id: "frontend",

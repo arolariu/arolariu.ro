@@ -18,7 +18,7 @@ import {
   TabsTrigger,
   toast,
 } from "@arolariu/components";
-import {useCallback, useState} from "react";
+import React, {useCallback, useState} from "react";
 import {TbCheck, TbCopy, TbMail, TbQrcode} from "react-icons/tb";
 import QRCode from "react-qr-code";
 import {useDialog} from "../../_contexts/DialogContext";
@@ -28,7 +28,7 @@ import {useDialog} from "../../_contexts/DialogContext";
  * It includes options to copy the link and QR code to the clipboard.
  * @returns The ExportDialog component, CSR'ed.
  */
-export default function SharingDialog() {
+export default function SharingDialog(): React.JSX.Element {
   const [copied, setCopied] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const {

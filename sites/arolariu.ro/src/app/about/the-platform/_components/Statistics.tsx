@@ -2,7 +2,7 @@
 
 "use client";
 
-import {Card, CardContent} from "@arolariu/components";
+import {Card, CardContent} from "@arolariu/components/card";
 import {motion} from "motion/react";
 import {TbCode, TbGlobe, TbServer, TbUser} from "react-icons/tb";
 
@@ -10,7 +10,7 @@ import {TbCode, TbGlobe, TbServer, TbUser} from "react-icons/tb";
  * The Statistics component displays key metrics and statistics about the arolariu.ro platform.
  * @returns The Statistics component, CSR'ed.
  */
-export default function Statistics() {
+export default function Statistics(): React.JSX.Element {
   const stats = [
     {
       value: 10,

@@ -1,6 +1,6 @@
 /** @format */
 
-import {Merchant, MerchantCategory} from "@/types/invoices";
+import {type Merchant, MerchantCategory} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -23,7 +23,7 @@ import {useDialog} from "../../_contexts/DialogContext";
  * The dialog is opened and closed using a custom hook.
  * @returns The JSX for the merchant dialog, CSR'ed.
  */
-export default function MerchantDialog() {
+export default function MerchantDialog(): React.JSX.Element {
   const {
     currentDialog: {payload},
     isOpen,

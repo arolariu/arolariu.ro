@@ -14,7 +14,7 @@ export const metadata: Metadata = {
  * The invoice management system homepage.
  * @returns The invoice management system homepage.
  */
-export default async function InvoicePage() {
+export default async function InvoicePage(): Promise<React.JSX.Element> {
   const {isAuthenticated} = await fetchUser();
   return <RenderInvoiceDomainScreen isAuthenticated={isAuthenticated} />;
 }

@@ -2,7 +2,7 @@
 
 "use client";
 
-import {usePaginationWithSearch} from "@/hooks/usePagination";
+import {usePaginationWithSearch} from "@/hooks";
 import {Invoice, Product, ProductCategory} from "@/types/invoices";
 import {
   Button,
@@ -30,7 +30,7 @@ import {useDialog} from "../../_contexts/DialogContext";
  * It includes a table for displaying items, pagination, and controls for adding new items.
  * @returns The JSX for the items dialog.
  */
-export default function ItemsDialog() {
+export default function ItemsDialog(): React.JSX.Element {
   const {
     currentDialog: {payload},
   } = useDialog("editItems");

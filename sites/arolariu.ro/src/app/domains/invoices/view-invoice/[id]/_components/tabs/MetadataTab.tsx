@@ -33,7 +33,7 @@ type Props = {
  * @param metadata The metadata associated with the invoice.
  * @returns The MetadataTab component, CSR'ed.
  */
-export default function MetadataTab({metadata}: Readonly<Props>) {
+export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Element {
   const {open: openAddDialog} = useDialog("metadata", "add");
   const {open: openEditDialog} = useDialog("metadata", "edit", metadata);
   const {open: openDeleteDialog} = useDialog("metadata", "delete", metadata);

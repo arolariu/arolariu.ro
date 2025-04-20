@@ -2,7 +2,7 @@
 
 "use client";
 
-import {Invoice, Merchant} from "@/types/invoices";
+import type {Invoice, Merchant} from "@/types/invoices";
 import {
   Button,
   Dialog,
@@ -28,7 +28,7 @@ import {useDialog} from "../../_contexts/DialogContext";
  * It includes options to download an image, copy it to the clipboard, or send it via email.
  * @returns The ShareAnalyticsDialog component, CSR'ed.
  */
-export default function ShareAnalyticsDialog() {
+export default function ShareAnalyticsDialog(): React.JSX.Element {
   const [email, setEmail] = useState<string>("");
   const {
     currentDialog: {payload},

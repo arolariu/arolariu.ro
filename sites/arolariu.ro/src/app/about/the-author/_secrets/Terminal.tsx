@@ -2,7 +2,7 @@
 
 "use client";
 
-import {Button} from "@arolariu/components";
+import {Button} from "@arolariu/components/button";
 import {AnimatePresence, motion} from "motion/react";
 import {useEffect, useRef, useState} from "react";
 import {TbTerminal, TbX} from "react-icons/tb";

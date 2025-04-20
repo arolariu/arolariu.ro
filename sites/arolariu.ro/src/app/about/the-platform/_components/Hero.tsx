@@ -2,7 +2,7 @@
 
 "use client";
 
-import {Button} from "@arolariu/components";
+import {Button} from "@arolariu/components/button";
 import {motion, useScroll, useTransform} from "motion/react";
 import {useRef} from "react";
 import {TbCode, TbDeviceLaptop, TbSparkles} from "react-icons/tb";
@@ -12,7 +12,7 @@ import {TbCode, TbDeviceLaptop, TbSparkles} from "react-icons/tb";
  * It features a background animation, a title, a subtitle, and two buttons for exploring projects and technologies.
  * @returns The Hero component, CSR'ed.
  */
-export default function Hero() {
+export default function Hero(): React.JSX.Element {
   const ref = useRef(null);
   const {scrollYProgress} = useScroll({
     target: ref,

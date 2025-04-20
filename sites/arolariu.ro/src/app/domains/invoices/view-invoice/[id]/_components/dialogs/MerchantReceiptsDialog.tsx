@@ -6,7 +6,7 @@
 /* eslint-disable */
 
 import {FakeInvoiceBigList} from "@/data/mocks/invoices";
-import {usePaginationWithSearch} from "@/hooks/usePagination";
+import {usePaginationWithSearch} from "@/hooks";
 import {formatDate} from "@/lib/utils.generic";
 import type {Invoice, Merchant} from "@/types/invoices";
 import {
@@ -40,7 +40,7 @@ import {useDialog} from "../../_contexts/DialogContext";
  * The dialog is opened and closed using a custom hook.
  * @returns The JSX for the merchant receipts dialog.
  */
-export default function MerchantReceiptsDialog() {
+export default function MerchantReceiptsDialog(): React.JSX.Element {
   const {
     currentDialog: {payload},
     isOpen,

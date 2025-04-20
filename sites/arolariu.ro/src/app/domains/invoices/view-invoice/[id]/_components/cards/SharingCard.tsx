@@ -29,7 +29,7 @@ type Props = {
  * It includes the owner's information and a list of users with whom the invoice is shared.
  * @returns The SharingCard component, CSR'ed.
  */
-export default function SharingCard({invoice}: Readonly<Props>) {
+export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Element {
   const {open} = useDialog("share", "edit", invoice);
   const {userInformation} = useUserInformation();
 

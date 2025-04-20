@@ -1,6 +1,6 @@
 /** @format */
 
-import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components";
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components/dialog";
 import Image from "next/image";
 import {useDialog} from "../../_contexts/DialogContext";
 
@@ -9,7 +9,7 @@ import {useDialog} from "../../_contexts/DialogContext";
  * It is used to show the image of a receipt when the user clicks on it.
  * @returns The ImageDialog component, CSR'ed.
  */
-export default function ImageDialog() {
+export default function ImageDialog(): React.JSX.Element {
   const {
     currentDialog: {payload},
     isOpen,

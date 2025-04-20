@@ -1,6 +1,7 @@
 /** @format */
 "use client";
-import {Skeleton} from "@arolariu/components";
+
+import {Skeleton} from "@arolariu/components/skeleton";
 
 /**
  * This function renders the loading screen for the invoices domain.

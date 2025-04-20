@@ -24,7 +24,7 @@ import {useDialog} from "../../_contexts/DialogContext";
  * It includes a star rating, feature selection, and a textarea for additional comments.
  * @returns The FeedbackDialog component, CSR'ed.
  */
-export default function FeedbackDialog() {
+export default function FeedbackDialog(): React.JSX.Element {
   const [rating, setRating] = useState<number>(0);
   const [feedback, setFeedback] = useState<string>("");
   const [hoveredRating, setHoveredRating] = useState<number>(0);

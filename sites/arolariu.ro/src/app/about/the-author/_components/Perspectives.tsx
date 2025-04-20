@@ -2,7 +2,8 @@
 
 "use client";
 
-import {Avatar, AvatarFallback, AvatarImage, Card, CardContent} from "@arolariu/components";
+import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components/avatar";
+import {Card, CardContent} from "@arolariu/components/card";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {TbQuote} from "react-icons/tb";

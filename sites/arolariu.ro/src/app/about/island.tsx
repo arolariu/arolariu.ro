@@ -1,7 +1,7 @@
 /** @format */
 "use client";
 
-import {Card, CardContent, CardFooter, CardHeader} from "@arolariu/components";
+import {Card, CardContent, CardFooter, CardHeader} from "@arolariu/components/card";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,7 +10,7 @@ import Link from "next/link";
  * This is the about page.
  * @returns The about page, CSR'ed.
  */
-export default function RenderAboutScreen() {
+export default function RenderAboutScreen(): React.JSX.Element {
   const t = useTranslations("About");
 
   return (

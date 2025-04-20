@@ -41,7 +41,7 @@ type Props = {
  * The card also provides options to edit, delete, or share the recipe.
  * @returns The RecipeCard component, CSR'ed.
  */
-export default function RecipeCard({recipe}: Readonly<Props>) {
+export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element {
   const {name, complexity, description, ingredients, preparationTime, cookingTime} = recipe;
 
   const complexityKey = Object.keys(RecipeComplexity).at(complexity);

@@ -3,7 +3,7 @@
 "use client";
 
 import {TypewriterText} from "@/presentation/Text";
-import {Card, CardContent, CardHeader} from "@arolariu/components";
+import {Card, CardContent, CardHeader} from "@arolariu/components/card";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 

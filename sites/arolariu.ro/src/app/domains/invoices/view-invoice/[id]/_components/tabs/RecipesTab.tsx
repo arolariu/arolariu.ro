@@ -2,7 +2,7 @@
 
 "use client";
 
-import {usePaginationWithSearch} from "@/hooks/usePagination";
+import {usePaginationWithSearch} from "@/hooks";
 import type {Recipe} from "@/types/invoices";
 import {
   Button,
@@ -31,7 +31,7 @@ type Props = {
  * It also provides a button to add a new recipe and a button to generate a recipe using AI.
  * @returns The recipes tab component, CSR'ed.
  */
-export default function RecipesTab({recipes}: Readonly<Props>) {
+export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Element {
   const {open: openAddDialog} = useDialog("recipe", "add");
 
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: recipes, initialPageSize: 4});
