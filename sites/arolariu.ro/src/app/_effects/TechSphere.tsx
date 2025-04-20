@@ -80,13 +80,16 @@ export default function TechSphere(): React.JSX.Element {
       const rotationSpeed = {x: 0.003, y: 0.005};
       requestAnimationFrame(() => animate(renderer));
 
-      // Rotate sphere
+      // eslint-disable-next-line functional/immutable-data -- readability
       sphere.rotation.x += rotationSpeed.x;
+      // eslint-disable-next-line functional/immutable-data -- readability
       sphere.rotation.y += rotationSpeed.y;
 
-      // Rotate particles slightly
+      // eslint-disable-next-line functional/immutable-data -- readability
       particlesMesh.rotation.x += 0.001;
+      // eslint-disable-next-line functional/immutable-data -- readability
       particlesMesh.rotation.y += 0.001;
+      // eslint-disable-next-line functional/immutable-data -- readability
       particlesMesh.rotation.z += 0.001;
 
       renderer.render(scene, camera);

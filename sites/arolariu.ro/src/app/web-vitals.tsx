@@ -217,6 +217,5 @@ export default function WebVitals(): React.JSX.Element {
     });
   });
 
-  // eslint-disable-next-line react/jsx-no-useless-fragment -- This is a placeholder component.
   return false as unknown as React.JSX.Element;
 }

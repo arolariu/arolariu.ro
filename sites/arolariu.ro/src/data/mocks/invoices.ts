@@ -20,6 +20,11 @@ const generateFakeInvoice = (): Invoice => {
   const invoiceCategory = fake.number.int({min: 1, max: 3}) as InvoiceCategory;
   const products = Array.from({length: fake.number.int({min: 3, max: 30})}, generateFakeInvoiceProduct);
   const totalAmount = products.reduce((acc, product) => acc + product.totalPrice, 0);
+  const currency = {
+    code: fake.finance.currencyCode(),
+    name: fake.finance.currencyName(),
+    symbol: fake.finance.currencySymbol(),
+  } satisfies Currency;
 
   return {
     id: fake.string.uuid(),
@@ -41,11 +46,7 @@ const generateFakeInvoice = (): Invoice => {
     paymentInformation: {
       transactionDate: fake.date.past(),
       paymentType: fake.number.int({min: 0, max: 4}) as PaymentType,
-      currency: {
-        code: fake.finance.currencyCode(),
-        name: fake.finance.currencyName(),
-        symbol: fake.finance.currencySymbol(),
-      } satisfies Currency,
+      currency: currency,
       totalCostAmount: totalAmount,
       totalTaxAmount: fake.number.float({min: totalAmount * 0.05, max: totalAmount / 2, multipleOf: 3}),
     } satisfies PaymentInformation,

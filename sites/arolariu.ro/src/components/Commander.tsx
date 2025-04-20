@@ -69,8 +69,8 @@ export default function Commander(): React.JSX.Element {
       // eslint-disable-next-line unicorn/no-array-for-each -- readability
       elements.forEach((element, index) => {
         const colorIndex = index % colors.length;
-        // eslint-disable-next-line functional/immutable-data -- readability
-        element.style.background = colors[colorIndex] ?? "#FF5733";
+        // eslint-disable-next-line security/detect-object-injection -- safe array
+        element.style.background = colors[colorIndex] ?? "#FF5733"; // eslint-disable-line functional/immutable-data -- readability
       });
     }, 500);
 
@@ -112,9 +112,15 @@ export default function Commander(): React.JSX.Element {
 
     const draw = () => {
       if (!ctx) return;
+
+      // eslint-disable-next-line functional/immutable-data -- readability
       ctx.fillStyle = "rgba(0, 0, 0, 0.04)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // eslint-disable-next-line functional/immutable-data -- readability
       ctx.fillStyle = "#0F0";
+
+      // eslint-disable-next-line functional/immutable-data -- readability
       ctx.font = fontSize + "px monospace";
 
       // Create a new array by mapping over the drop positions

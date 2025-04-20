@@ -63,14 +63,10 @@ const CreateDialog = () => {
     }));
   }, []);
 
-  const handleCreate = useCallback(
-    () => {
-      console.log("Recipe created:", recipe);
-      close();
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- close() is stable.
-    [recipe],
-  );
+  const handleCreate = useCallback(() => {
+    console.log("Recipe created:", recipe);
+    close();
+  }, [recipe]);
 
   return (
     <Dialog

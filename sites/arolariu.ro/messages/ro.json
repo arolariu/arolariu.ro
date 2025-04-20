@@ -220,7 +220,22 @@
       },
       "subtitle": "Alexandru-Razvan Olariu este autorul platformei pe care o navigați în prezent.",
       "title": "Faceți cunoștință cu autorul."
-    }
+    },
+    "title": "Despre noi",
+    "subtitle": " Povestea arolariu.ro a început în 2022, când autorul - Alexandru-Răzvan Olariu, a vrut să înțeleagă cum funcționează site-urile. Întreaga platformă și integrările subiacente au fost dezvoltate exclusiv de autor, din ceea ce a învățat de-a lungul anilor. Alexandru lucrează în prezent ca inginer software la Microsoft. Pentru a afla mai multe despre el, consultați secțiunea din dreapta a acestei pagini. Platforma este construită folosind cele mai noi tehnologii de ultimă oră. Pentru a afla mai multe despre el, consultați secțiunea din stânga a acestei pagini.",
+    "cards": {
+      "platform": {
+        "title": "Ce este arolariu.ro?",
+        "subtitle": "Platforma arolariu.ro este o colecție de aplicații care sunt găzduite sub domeniul arolariu.ro. Platforma a fost construită cu scopul de a oferi o experiență unificată pentru toate aplicațiile și proiectele OSS la care lucrează autorul (Alexandru-Răzvan Olariu). Pentru a afla mai multe despre tehnologiile care sunt folosite în acest proces și modul în care acestea interacționează între ele, dați click pe butonul de mai jos.",
+        "cta": "Aflați mai multe despre platformă ..."
+      },
+      "author": {
+        "title": "Cine este arolariu?",
+        "subtitle": "arolariu este pseudonimul/nickname-ul autorului: Alexandru-Răzvan Olariu. Alexandru este un inginer software cu vechime, arhitect de soluții și învățător pe tot parcursul vieții. Pentru a afla mai multe despre Alexandru, faceți clic pe butonul de mai jos.",
+        "cta": "Aflați mai multe despre autor ..."
+      }
+    },
+    "footer": "Vă mulțumesc!"
   },
   "Acknowledgements": {
     "lastUpdate": "Ultima actualizare pe:",

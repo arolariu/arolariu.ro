@@ -135,7 +135,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
             </CardContent>
             <CardFooter className='flex items-center justify-between justify-items-center'>
               <Button
-                onClick={() => reset()}
+                onClick={reset}
                 className='gap-2'
                 size='lg'>
                 <TbRefresh className='h-4 w-4' />
