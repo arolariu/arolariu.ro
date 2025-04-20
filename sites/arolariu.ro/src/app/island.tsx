@@ -2,6 +2,7 @@
 
 "use client";
 
+import {BackgroundBeams} from "@arolariu/components/background-beams";
 import FeaturesSection from "./_components/Features";
 import HeroSection from "./_components/Hero";
 import TechnologiesSection from "./_components/Technologies";
@@ -13,6 +14,7 @@ import TechnologiesSection from "./_components/Technologies";
 export default function RenderHomeScreen(): React.JSX.Element {
   return (
     <main>
+      <BackgroundBeams className='pointer-events-none' />
       <HeroSection />
       <TechnologiesSection />
       <FeaturesSection />
