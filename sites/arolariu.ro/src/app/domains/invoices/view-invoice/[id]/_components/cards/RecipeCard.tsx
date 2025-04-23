@@ -29,7 +29,7 @@ import {
   TbToolsKitchen,
   TbTrash,
 } from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 type Props = {
   recipe: Recipe;
@@ -53,10 +53,10 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
     return "destructive";
   };
 
-  const {open: openEditDialog} = useDialog("recipe", "edit", recipe);
-  const {open: openViewDialog} = useDialog("recipe", "view", recipe);
-  const {open: openDeleteDialog} = useDialog("recipe", "delete", recipe);
-  const {open: openShareDialog} = useDialog("recipe", "share", recipe);
+  const {open: openEditDialog} = useDialog("INVOICE_RECIPE", "edit", recipe);
+  const {open: openViewDialog} = useDialog("INVOICE_RECIPE", "view", recipe);
+  const {open: openDeleteDialog} = useDialog("INVOICE_RECIPE", "delete", recipe);
+  const {open: openShareDialog} = useDialog("INVOICE_RECIPE", "share", recipe);
 
   return (
     <Card className='overflow-hidden transition-shadow duration-300 hover:shadow-md'>

@@ -2,9 +2,8 @@
 
 /**
  * Extracts a Base64-encoded string from a Blob object.
- *
- * @param {Blob} blob - The Blob object to extract the Base64 string from.
- * @returns {Promise<string>} A promise that resolves to the Base64-encoded string.
+ * @param blob The Blob object to extract the Base64 string from.
+ * @returns A promise that resolves to the Base64-encoded string.
  */
 export async function extractBase64FromBlob(blob: Blob): Promise<string> {
   return new Promise((resolve) => {
@@ -27,6 +26,7 @@ export async function extractBase64FromBlob(blob: Blob): Promise<string> {
  * @returns True if the storage is available, false otherwise.
  */
 export function isBrowserStorageAvailable(type: "localStorage" | "sessionStorage"): boolean {
+  // eslint-disable-next-line functional/no-let -- We need to declare storage outside the try block
   let storage;
   try {
     storage = window[type];

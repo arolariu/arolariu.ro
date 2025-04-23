@@ -4,7 +4,7 @@ import type {Invoice} from "@/types/invoices";
 import {Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Tooltip, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import {TbZoomInArea} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 type Props = {invoice: Invoice};
 
@@ -15,7 +15,7 @@ type Props = {invoice: Invoice};
  */
 export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element {
   const photoLocation = invoice.photoLocation ?? "https://dummyimage.com/600x900&text=placeholder+image";
-  const {open} = useDialog("image", "view", photoLocation);
+  const {open} = useDialog("INVOICE_IMAGE", "view", photoLocation);
 
   return (
     <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>

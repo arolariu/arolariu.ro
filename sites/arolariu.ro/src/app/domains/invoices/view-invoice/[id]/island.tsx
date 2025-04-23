@@ -7,14 +7,14 @@ import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useRef} from "react";
 import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
+import DialogContainer from "../../_contexts/DialogContainer";
+import {DialogProvider} from "../../_contexts/DialogContext";
 import {AnalyticsCard} from "./_components/cards/AnalyticsCard";
 import InvoiceCard from "./_components/cards/InvoiceCard";
-import DialogContainer from "./_components/dialogs/DialogContainer";
 import InvoiceHeader from "./_components/InvoiceHeader";
 import SidebarSection from "./_components/sidebar/SidebarSection";
 import MetadataTab from "./_components/tabs/MetadataTab";
 import RecipesTab from "./_components/tabs/RecipesTab";
-import {DialogProvider} from "./_contexts/DialogContext";
 
 /**
  * This function renders the view invoice page.

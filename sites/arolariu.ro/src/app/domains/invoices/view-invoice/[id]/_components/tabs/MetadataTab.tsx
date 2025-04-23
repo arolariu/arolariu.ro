@@ -21,7 +21,7 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {TbEdit, TbPencil, TbPlus, TbTrash} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 type Props = {
   metadata: Record<string, string>;
@@ -34,9 +34,9 @@ type Props = {
  * @returns The MetadataTab component, CSR'ed.
  */
 export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Element {
-  const {open: openAddDialog} = useDialog("metadata", "add");
-  const {open: openEditDialog} = useDialog("metadata", "edit", metadata);
-  const {open: openDeleteDialog} = useDialog("metadata", "delete", metadata);
+  const {open: openAddDialog} = useDialog("INVOICE_METADATA", "add");
+  const {open: openEditDialog} = useDialog("INVOICE_METADATA", "edit", metadata);
+  const {open: openDeleteDialog} = useDialog("INVOICE_METADATA", "delete", metadata);
 
   return (
     <motion.div

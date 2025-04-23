@@ -23,7 +23,7 @@ import {
 } from "@arolariu/components";
 import {useState} from "react";
 import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
  * This function renders a dialog that allows users to edit invoice items.
@@ -33,11 +33,13 @@ import {useDialog} from "../../_contexts/DialogContext";
 export default function ItemsDialog(): React.JSX.Element {
   const {
     currentDialog: {payload},
-  } = useDialog("editItems");
+    isOpen,
+    open,
+    close,
+  } = useDialog("INVOICE_ITEMS");
 
   const {items} = payload as Invoice;
 
-  const {isOpen, open, close} = useDialog("editItems");
   const [editableItems, setEditableItems] = useState<Product[]>(items || []);
   const {currentPage, setCurrentPage, totalPages, paginatedItems} = usePaginationWithSearch<Product>({
     items: editableItems,

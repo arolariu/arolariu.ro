@@ -7,6 +7,13 @@ import type {CreateEmailOptions} from "resend";
 
 type Props = {params: Promise<{id: string}>};
 
+/**
+ * POST /api/mail/invoices/share/[id]
+ * This route is used to send an email with a shared invoice.
+ * It uses the Resend API to send the email.
+ * @param request The request object containing the email data.
+ * @returns A JSON response indicating success or failure.
+ */
 export async function POST(request: NextRequest, {params}: Props) {
   const {id} = await params;
   const {toEmail, fromEmail} = (await request.json()) as {

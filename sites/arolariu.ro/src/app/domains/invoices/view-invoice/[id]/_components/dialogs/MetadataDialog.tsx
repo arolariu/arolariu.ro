@@ -15,7 +15,7 @@ import {
 } from "@arolariu/components";
 import {useCallback, useState} from "react";
 import {TbDiscFilled} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 // Define valid metadata keys and which ones are readonly
 export const VALID_METADATA_KEYS = [
@@ -31,7 +31,7 @@ export const VALID_METADATA_KEYS = [
 ];
 
 const AddDialog = () => {
-  const {isOpen, open, close} = useDialog("metadata");
+  const {isOpen, open, close} = useDialog("INVOICE_METADATA");
   const [addedMetadata, setAddedMetadata] = useState<{key: string; value: string}>({
     key: "",
     value: "",
@@ -105,7 +105,7 @@ const AddDialog = () => {
 };
 
 const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
-  const {isOpen, open, close} = useDialog("metadata");
+  const {isOpen, open, close} = useDialog("INVOICE_METADATA");
   const [editedMetadata, setEditedMetadata] = useState<Record<string, string>>(metadata);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,7 +169,7 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
 };
 
 const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
-  const {isOpen, open, close} = useDialog("metadata");
+  const {isOpen, open, close} = useDialog("INVOICE_METADATA");
 
   const handleDelete = () => {
     // Delete the metadata
@@ -214,7 +214,7 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
 export default function MetadataDialog(): React.JSX.Element {
   const {
     currentDialog: {mode, payload},
-  } = useDialog("metadata");
+  } = useDialog("INVOICE_METADATA");
 
   const metadata = payload as Record<string, string>;
 

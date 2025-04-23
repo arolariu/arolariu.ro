@@ -10,9 +10,9 @@ export const TIMESTAMP = process.env["TIMESTAMP"] ?? "";
 export const CONFIG_STORE = process.env["CONFIG_STORE"] ?? "";
 
 /**
- * Function that generates a GUID from an ArrayBuffer
- * @param arraybuffer The ArrayBuffer to generate the GUID from
- * @returns A UUIDv4 compliant GUID, converted to a string
+ * Function that generates a GUID from an ArrayBuffer object, using UUIDv4 format.
+ * @param arraybuffer The ArrayBuffer to generate the GUID from.
+ * @returns A UUIDv4 compliant GUID, converted to a string.
  * @example
  * GUID: b23090df-9e68-4c12-ae2a-5368db13b6c1
  * GUID: 8b3f7b7e-6b1b-4b7b-8b1b-4b7b8b1b4b7b

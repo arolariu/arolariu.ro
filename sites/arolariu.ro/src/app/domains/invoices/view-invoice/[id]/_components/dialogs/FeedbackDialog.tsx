@@ -17,7 +17,7 @@ import {
 } from "@arolariu/components";
 import {useCallback, useState} from "react";
 import {TbStar} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
  * The FeedbackDialog component allows users to provide feedback on the analytics.
@@ -34,7 +34,7 @@ export default function FeedbackDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("feedback");
+  } = useDialog("INVOICE_FEEDBACK");
 
   const {invoice, merchant} = payload as {invoice: Invoice; merchant: Merchant};
   console.log(">>> FeedbackDialog", {invoice, merchant});

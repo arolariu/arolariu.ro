@@ -25,8 +25,7 @@ export default async function updateInvoice(invoiceInformation: Invoice, userInf
       body: JSON.stringify(invoiceInformation),
     });
 
-    if (response.ok) return (await response.json()) as Invoice;
-    else return null;
+    return response.ok ? (response.json() as Promise<Invoice>) : null;
   } catch (error) {
     console.error("Error updating the invoice:", error);
     return null;

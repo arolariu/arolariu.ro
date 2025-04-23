@@ -7,9 +7,8 @@ import type {Invoice} from "@/types/invoices";
 
 /**
  * Analyzes an invoice for a given user.
- *
- * @param id - The identifier of the invoice to be analyzed.
- * @param authToken - The JWT token of the user.
+ * @param id The identifier of the invoice to be analyzed.
+ * @param authToken The JWT token of the user.
  * @returns A promise that resolves to the analyzed Invoice object or null if the analysis fails.
  */
 export default async function analyzeInvoice(id: string, authToken: string): Promise<Invoice | null> {
@@ -25,8 +24,7 @@ export default async function analyzeInvoice(id: string, authToken: string): Pro
       body: "1",
     });
 
-    if (response.ok) return response.json() as Promise<Invoice>;
-    else return null;
+    return response.ok ? (response.json() as Promise<Invoice>) : null;
   } catch (error) {
     console.error("Error analyzing the invoice:", error);
     throw error;

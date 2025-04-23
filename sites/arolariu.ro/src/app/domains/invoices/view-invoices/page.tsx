@@ -1,5 +1,6 @@
 /** @format */
 
+import {FakeInvoiceBigList} from "@/data/mocks/invoices";
 import {fetchUser} from "@/lib/actions/user/fetchUser";
 import {RichText} from "@/presentation/Text";
 import type {Metadata} from "next";
@@ -20,6 +21,8 @@ export default async function ViewInvoicesPage() {
   const {user} = await fetchUser();
   const username = user?.fullName ?? "dear guest";
 
+  const invoices = FakeInvoiceBigList;
+
   return (
     <main className='container mx-auto px-5 py-24'>
       <section className='mb-20 flex w-full flex-col text-center'>
@@ -33,7 +36,9 @@ export default async function ViewInvoicesPage() {
           />
         </article>
       </section>
-      <RenderViewInvoicesScreen />
+      <section>
+        <RenderViewInvoicesScreen invoices={invoices} />
+      </section>
     </main>
   );
 }

@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@arolariu/components";
 import {TbBuilding, TbBuildingStore, TbMapPin, TbPhone} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
  * This function renders a dialog that displays information about a specific merchant.
@@ -29,7 +29,7 @@ export default function MerchantDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("merchant");
+  } = useDialog("INVOICE_MERCHANT");
 
   const merchant = payload as Merchant;
 

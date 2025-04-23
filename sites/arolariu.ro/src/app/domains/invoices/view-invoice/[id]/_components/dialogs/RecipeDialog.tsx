@@ -38,10 +38,10 @@ import {
 } from "@arolariu/components";
 import {useCallback, useState} from "react";
 import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbToolsKitchen3, TbWand, TbX} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 const CreateDialog = () => {
-  const {isOpen, open, close} = useDialog("recipe");
+  const {isOpen, open, close} = useDialog("INVOICE_RECIPE");
   const [recipe, setRecipe] = useState<Recipe>({
     name: "",
     description: "",
@@ -272,7 +272,7 @@ const CreateDialog = () => {
 };
 
 const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
-  const {isOpen, open, close} = useDialog("recipe");
+  const {isOpen, open, close} = useDialog("INVOICE_RECIPE");
 
   return (
     <Dialog
@@ -348,7 +348,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 };
 
 const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
-  const {isOpen, open, close} = useDialog("recipe");
+  const {isOpen, open, close} = useDialog("INVOICE_RECIPE");
 
   const [recipeDetails, setRecipeDetails] = useState<Recipe>(recipe);
 
@@ -569,7 +569,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 };
 
 const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
-  const {isOpen, open, close} = useDialog("recipe");
+  const {isOpen, open, close} = useDialog("INVOICE_RECIPE");
 
   const handleDelete = useCallback(() => {}, []);
 
@@ -606,7 +606,7 @@ const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 export default function RecipeDialog(): React.JSX.Element {
   const {
     currentDialog: {mode, payload},
-  } = useDialog("recipe");
+  } = useDialog("INVOICE_RECIPE");
 
   const recipe = payload as Recipe;
 

@@ -2,7 +2,7 @@
 
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components/dialog";
 import Image from "next/image";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
  * The ImageDialog component displays an image in a dialog.
@@ -15,7 +15,7 @@ export default function ImageDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("image");
+  } = useDialog("INVOICE_IMAGE");
 
   const image = payload as string;
 

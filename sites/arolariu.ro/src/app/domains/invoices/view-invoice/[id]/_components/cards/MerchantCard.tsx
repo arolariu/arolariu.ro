@@ -13,7 +13,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {TbArrowRight, TbShoppingBag, TbShoppingCart} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 type Props = {
   merchant: Merchant;
@@ -25,8 +25,8 @@ type Props = {
  * @returns The MerchantCard component, CSR'ed.
  */
 export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Element {
-  const {open: openMerchantInfoDialog} = useDialog("merchant", "view", merchant);
-  const {open: openMerchantReceiptsDialog} = useDialog("merchantReceipts", "view", merchant);
+  const {open: openMerchantInfoDialog} = useDialog("INVOICE_MERCHANT", "view", merchant);
+  const {open: openMerchantReceiptsDialog} = useDialog("INVOICE_MERCHANT_INVOICES", "view", merchant);
 
   return (
     <Card className='group transition-shadow duration-300 hover:shadow-md'>

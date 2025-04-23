@@ -41,7 +41,7 @@ export default async function uploadBlob(
     const containerClient = storageClient.getContainerClient(containerName);
 
     const uuid = crypto.randomUUID();
-    let officialBlobName = blobName ?? `${uuid}.${originalFile.type.split("/")[1] as string}`;
+    const officialBlobName = blobName ?? `${uuid}.${originalFile.type.split("/")[1] as string}`;
     const blockBlobClient = containerClient.getBlockBlobClient(officialBlobName);
 
     const arrayBuffer = await originalFile.arrayBuffer();

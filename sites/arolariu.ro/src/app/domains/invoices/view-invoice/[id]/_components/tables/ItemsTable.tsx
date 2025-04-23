@@ -21,7 +21,7 @@ import {
 import {motion} from "motion/react";
 import {useCallback} from "react";
 import {TbEdit} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 type Props = {
   invoice: Invoice;
@@ -34,7 +34,7 @@ type Props = {
  * @returns The ItemsTable component, CSR'ed.
  */
 export default function ItemsTable({invoice}: Readonly<Props>) {
-  const {open} = useDialog("editItems", "edit", invoice);
+  const {open} = useDialog("INVOICE_ITEMS", "edit", invoice);
 
   const totalAmount = invoice.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: invoice.items, initialPageSize: 5});

@@ -7,6 +7,12 @@ import type {CreateEmailOptions} from "resend";
 
 type Props = {params: Promise<{id: string}>};
 
+/**
+ * This function handles the POST request to send feedback emails.
+ * It extracts the feedback details from the request body and sends an email using the Resend service.
+ * @param request The incoming request object containing feedback details in JSON format.
+ * @returns A JSON response indicating success or failure of the email sending process.
+ */
 export async function POST(request: NextRequest, {params}: Props) {
   const {id} = await params;
   const {feedbackFrom, feedbackText, feedbackRating, feedbackFeatures} = (await request.json()) as {

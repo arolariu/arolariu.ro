@@ -32,7 +32,7 @@ import {
 } from "@arolariu/components";
 import {useEffect, useState} from "react";
 import {TbArrowsUpDown, TbCalendar, TbDownload, TbSearch} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
  * This function renders a dialog that displays all receipts from a specific merchant.
@@ -46,7 +46,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("merchantReceipts");
+  } = useDialog("INVOICE_MERCHANT_INVOICES");
   const merchant = payload as Merchant;
 
   const [searchQuery, setSearchQuery] = useState<string>("");

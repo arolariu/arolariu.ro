@@ -21,7 +21,7 @@ import {
 } from "@arolariu/components";
 import {useCallback, useState} from "react";
 import {TbCopy, TbDownload, TbMail} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
  * The ShareAnalyticsDialog component allows users to share their spending analytics.

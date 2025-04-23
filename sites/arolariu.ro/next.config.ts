@@ -157,4 +157,5 @@ const withBundleAnalyzer = withBundleAnalyzerInit({
 
 const withTranslation = createNextIntlPlugin();
 
-export default withBundleAnalyzer(withTranslation(nextConfig));
+const finalConfig = withBundleAnalyzer(withTranslation(nextConfig));
+export default finalConfig;

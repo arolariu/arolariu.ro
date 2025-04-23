@@ -18,7 +18,7 @@ import {
 } from "@arolariu/components";
 import {memo, useMemo} from "react";
 import {TbChartBar, TbChartCandle, TbChartPie, TbMessage, TbShare} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 import {BarChart, ChartContainer, LineChart, PieChart} from "../charts";
 
 type Props = {
@@ -28,7 +28,7 @@ type Props = {
 
 // Create a memoized version of the component to prevent unnecessary re-renders
 export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Readonly<Props>) {
-  const {open: openFeedback} = useDialog("feedback", "add", {invoice, merchant});
+  const {open: openFeedback} = useDialog("INVOICE_FEEDBACK", "add", {invoice, merchant});
   const {open: openShare} = useDialog("shareAnalytics", "add", {invoice, merchant});
 
   // Generate mock data for the charts

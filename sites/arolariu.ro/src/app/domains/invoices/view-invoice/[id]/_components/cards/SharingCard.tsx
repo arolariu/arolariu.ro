@@ -18,7 +18,7 @@ import {
 import {motion} from "motion/react";
 import Image from "next/image";
 import {TbArrowRight, TbDeselect, TbLock, TbLockCog, TbShare2, TbUser} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 type Props = {
   invoice: Invoice;
@@ -30,7 +30,7 @@ type Props = {
  * @returns The SharingCard component, CSR'ed.
  */
 export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Element {
-  const {open} = useDialog("share", "edit", invoice);
+  const {open} = useDialog("INVOICE_SHARE", "edit", invoice);
   const {userInformation} = useUserInformation();
 
   return (

@@ -21,7 +21,7 @@ import {
 import React, {useCallback, useState} from "react";
 import {TbCheck, TbCopy, TbMail, TbQrcode} from "react-icons/tb";
 import QRCode from "react-qr-code";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
  * The ExportDialog component allows users to share an invoice via link, email, or QR code.
@@ -36,7 +36,7 @@ export default function SharingDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("share");
+  } = useDialog("INVOICE_SHARE");
 
   const invoice = payload as Invoice;
   const shareUrl = `${globalThis.location.origin}/invoices/${invoice.id}`;

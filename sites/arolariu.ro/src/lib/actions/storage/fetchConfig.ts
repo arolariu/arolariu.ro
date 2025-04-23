@@ -8,7 +8,7 @@ import {AppConfigurationClient} from "@azure/app-configuration";
 /**
  * Server action that fetches a configuration value from Azure App Configuration.
  * @param key The key of the configuration value to fetch.
- * @returns The value of the configuration value.
+ * @returns The value of the configuration value, if available.
  */
 export default async function fetchConfigurationValue(key: string): Promise<string> {
   console.log("Trying to fetch the following key:", key);

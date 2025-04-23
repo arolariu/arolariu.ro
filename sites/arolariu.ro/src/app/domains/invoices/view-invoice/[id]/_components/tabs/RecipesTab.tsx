@@ -18,7 +18,7 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {TbConfetti, TbPlus} from "react-icons/tb";
-import {useDialog} from "../../_contexts/DialogContext";
+import {useDialog} from "../../../../_contexts/DialogContext";
 import RecipeCard from "../cards/RecipeCard";
 
 type Props = {
@@ -32,7 +32,7 @@ type Props = {
  * @returns The recipes tab component, CSR'ed.
  */
 export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Element {
-  const {open: openAddDialog} = useDialog("recipe", "add");
+  const {open: openAddDialog} = useDialog("INVOICE_RECIPE", "add");
 
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: recipes, initialPageSize: 4});
 
