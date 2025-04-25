@@ -165,7 +165,7 @@ describe("useDialog", () => {
       result.current.open();
     });
 
-    expect(result.current.currentDialog.type).toBe("share");
+    expect(result.current.currentDialog.type).toBe("INVOICE_SHARE");
     expect(result.current.currentDialog.mode).toBe("edit");
     expect(result.current.currentDialog.payload).toStrictEqual({id: 1});
 
