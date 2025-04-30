@@ -234,6 +234,8 @@ export default function SharingDialog(): React.JSX.Element {
               </div>
               <Button
                 type='submit'
+                // eslint-disable-next-line sonarjs/slow-regex -- client-side validation
+                disabled={!email || !/\S+@\S+\.\S+/.test(email)}
                 className='w-full'>
                 <TbMail className='mr-2 h-4 w-4' />
                 Send Invitation

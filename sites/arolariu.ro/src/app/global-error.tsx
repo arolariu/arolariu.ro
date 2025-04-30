@@ -136,7 +136,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
             <CardFooter className='flex items-center justify-between justify-items-center'>
               <Button
                 onClick={reset}
-                className='gap-2'
+                className='cursor-pointer gap-2'
                 size='lg'>
                 <TbRefresh className='h-4 w-4' />
                 Retry
@@ -144,7 +144,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
               <Button
                 variant='outline'
                 onClick={() => globalThis.window.location.reload()}
-                className='gap-2'
+                className='cursor-pointer gap-2'
                 size='lg'>
                 Reload Application
               </Button>

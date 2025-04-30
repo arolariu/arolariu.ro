@@ -2,15 +2,18 @@
 
 "use client";
 
-import FeedbackDialog from "../view-invoice/[id]/_components/dialogs/FeedbackDialog";
-import ImageDialog from "../view-invoice/[id]/_components/dialogs/ImageDialog";
-import ItemsDialog from "../view-invoice/[id]/_components/dialogs/ItemsDialog";
-import MerchantDialog from "../view-invoice/[id]/_components/dialogs/MerchantDialog";
-import MerchantReceiptsDialog from "../view-invoice/[id]/_components/dialogs/MerchantReceiptsDialog";
-import MetadataDialog from "../view-invoice/[id]/_components/dialogs/MetadataDialog";
-import RecipeDialog from "../view-invoice/[id]/_components/dialogs/RecipeDialog";
-import ShareAnalyticsDialog from "../view-invoice/[id]/_components/dialogs/ShareAnalytics";
-import SharingDialog from "../view-invoice/[id]/_components/dialogs/SharingDialog";
+import InvoiceFeedbackDialog from "../view-invoice/[id]/_components/dialogs/FeedbackDialog";
+import InvoiceImageDialog from "../view-invoice/[id]/_components/dialogs/ImageDialog";
+import InvoiceItemsDialog from "../view-invoice/[id]/_components/dialogs/ItemsDialog";
+import InvoiceMerchantDialog from "../view-invoice/[id]/_components/dialogs/MerchantDialog";
+import InvoiceMerchantReceiptsDialog from "../view-invoice/[id]/_components/dialogs/MerchantReceiptsDialog";
+import InvoiceMetadataDialog from "../view-invoice/[id]/_components/dialogs/MetadataDialog";
+import InvoiceRecipeDialog from "../view-invoice/[id]/_components/dialogs/RecipeDialog";
+import InvoiceShareAnalyticsDialog from "../view-invoice/[id]/_components/dialogs/ShareAnalytics";
+import InvoiceSharingDialog from "../view-invoice/[id]/_components/dialogs/SharingDialog";
+import InvoicesExportDialog from "../view-invoices/_components/dialogs/ExportDialog";
+import InvoicesImportDialog from "../view-invoices/_components/dialogs/ImportDialog";
+import InvoicesInvoiceShareDialog from "../view-invoices/_components/dialogs/ShareDialog";
 import {useDialogs} from "./DialogContext";
 
 /**
@@ -25,23 +28,29 @@ export default function DialogContainer(): React.JSX.Element {
 
   switch (type) {
     case "INVOICE_ITEMS":
-      return <ItemsDialog />;
+      return <InvoiceItemsDialog />;
     case "shareAnalytics":
-      return <ShareAnalyticsDialog />;
+      return <InvoiceShareAnalyticsDialog />;
     case "INVOICE_FEEDBACK":
-      return <FeedbackDialog />;
+      return <InvoiceFeedbackDialog />;
     case "INVOICE_MERCHANT":
-      return <MerchantDialog />;
+      return <InvoiceMerchantDialog />;
     case "INVOICE_MERCHANT_INVOICES":
-      return <MerchantReceiptsDialog />;
+      return <InvoiceMerchantReceiptsDialog />;
     case "INVOICE_METADATA":
-      return <MetadataDialog />;
+      return <InvoiceMetadataDialog />;
     case "INVOICE_IMAGE":
-      return <ImageDialog />;
+      return <InvoiceImageDialog />;
     case "INVOICE_RECIPE":
-      return <RecipeDialog />;
+      return <InvoiceRecipeDialog />;
     case "INVOICE_SHARE":
-      return <SharingDialog />;
+      return <InvoiceSharingDialog />;
+    case "INVOICES_SHARE":
+      return <InvoicesInvoiceShareDialog />;
+    case "INVOICES_IMPORT":
+      return <InvoicesImportDialog />;
+    case "INVOICES_EXPORT":
+      return <InvoicesExportDialog />;
     default:
       return false as unknown as React.JSX.Element;
   }

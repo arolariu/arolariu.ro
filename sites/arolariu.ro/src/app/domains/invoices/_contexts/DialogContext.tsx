@@ -21,6 +21,10 @@ export type DialogType =
   | "INVOICE_ITEMS"
   | "INVOICE_DELETE"
   | "INVOICE_FEEDBACK"
+  | "INVOICES_SHARE"
+  | "INVOICES_IMPORT"
+  | "INVOICES_EXPORT"
+  | "INVOICES_DELETE"
   | "analysisOptions"
   | "shareAnalytics"
   | null; // null is used to indicate no dialog is open

@@ -2,10 +2,10 @@
 
 import type {Currency} from "@/types/DDD";
 import {
+  InvoiceCategory,
   RecipeComplexity,
   type Allergen,
   type Invoice,
-  type InvoiceCategory,
   type Merchant,
   type MerchantCategory,
   type PaymentInformation,
@@ -17,7 +17,7 @@ import {
 import {faker as fake} from "@faker-js/faker";
 
 const generateFakeInvoice = (): Invoice => {
-  const invoiceCategory = fake.number.int({min: 1, max: 3}) as InvoiceCategory;
+  const invoiceCategory = fake.number.int({min: 0, max: 400, multipleOf: 100}) as InvoiceCategory;
   const products = Array.from({length: fake.number.int({min: 3, max: 30})}, generateFakeInvoiceProduct);
   const totalAmount = products.reduce((acc, product) => acc + product.totalPrice, 0);
   const currency = {

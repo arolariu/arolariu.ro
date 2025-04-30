@@ -6,11 +6,13 @@ import {createJSONStorage, devtools, persist} from "zustand/middleware";
 
 type States = {
   invoices: Invoice[];
+  selectedInvoices: Invoice[];
   merchants: Merchant[];
 };
 
 type Actions = {
   setInvoices: (invoices: Invoice[]) => void;
+  setSelectedInvoices: (selectedInvoices: Invoice[]) => void;
   setMerchants: (merchants: Merchant[]) => void;
 };
 
@@ -19,8 +21,10 @@ const devStore = create<States & Actions>()(
     persist(
       (set) => ({
         invoices: [],
+        selectedInvoices: [],
         merchants: [],
         setInvoices: (invoices: Invoice[]) => set((state) => ({...state, invoices})),
+        setSelectedInvoices: (selectedInvoices: Invoice[]) => set((state) => ({...state, selectedInvoices})),
         setMerchants: (merchants: Merchant[]) => set((state) => ({...state, merchants})),
       }),
       {
@@ -35,8 +39,10 @@ const prodStore = create<States & Actions>()(
   persist(
     (set) => ({
       invoices: [],
+      selectedInvoices: [],
       merchants: [],
       setInvoices: (invoices: Invoice[]) => set((state) => ({...state, invoices})),
+      setSelectedInvoices: (selectedInvoices: Invoice[]) => set((state) => ({...state, selectedInvoices})),
       setMerchants: (merchants: Merchant[]) => set((state) => ({...state, merchants})),
     }),
     {
@@ -46,4 +52,5 @@ const prodStore = create<States & Actions>()(
   ),
 );
 
-export const useZustandStore = process.env.NODE_ENV === "production" ? prodStore : devStore;
+const isProduction = process.env.NODE_ENV === "production";
+export const useZustandStore = isProduction ? prodStore : devStore;

@@ -3,6 +3,7 @@
 import withBundleAnalyzerInit from "@next/bundle-analyzer";
 import type {NextConfig} from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import type {RemotePattern} from "next/dist/shared/lib/image-config";
 
 const trustedDomains = "*.arolariu.ro arolariu.ro *.clerk.com clerk.com *.accounts.dev accounts.dev";
 const cspHeader = `
@@ -18,13 +19,11 @@ const cspHeader = `
 `;
 
 const isDevBuild = process.env.NODE_ENV === "development";
-console.log(">>> isDevBuild", isDevBuild);
+console.log(">>> isDevBuild", isDevBuild ? "✅" : "❌");
 console.log(">>> NODE_ENV", process.env.NODE_ENV);
 
 const nextConfig: NextConfig = {
   basePath: "",
-
-  allowedDevOrigins: ["dummyImage.com", "localhost:3000", "loremflickr.com", "picsum.photos"],
 
   compiler: {
     removeConsole: isDevBuild ? false : {exclude: ["error", "warn"]},
@@ -38,15 +37,27 @@ const nextConfig: NextConfig = {
       new URL("https://cdn.arolariu.ro"), // CDN assets.
       new URL("https://clerk.com"), // Clerk - auth-as-a-service assets.
       new URL("https://accounts.dev"), // Clerk - auth-as-a-service assets.
-      new URL("https://*.clerk.com"), // Clerk - auth-as-a-service assets.
-      new URL("https://*.accounts.dev"), // Clerk - auth-as-a-service assets.
+      new URL("https://**.clerk.com"), // Clerk - auth-as-a-service assets.
+      new URL("https://**.accounts.dev"), // Clerk - auth-as-a-service assets.
       new URL("https://arolariustorage.blob.core.windows.net"), // External assets.
-      new URL("https://*.googleusercontent.com"), // External assets.
-      new URL("https://*.githubusercontent.com"), // External assets.
-
-      ...(isDevBuild ? [new URL("https://dummyimage.com")] : []), // Dummy image assets.
-      ...(isDevBuild ? [new URL("https://picsum.photos")] : []), // Dummy image assets.
-      ...(isDevBuild ? [new URL("https://loremflickr.com")] : []), // Dummy image assets.
+      new URL("https://**.googleusercontent.com"), // External assets.
+      new URL("https://**.githubusercontent.com"), // External assets.
+      ...(isDevBuild
+        ? ([
+            {
+              protocol: "https",
+              hostname: "loremflickr.com",
+            },
+            {
+              protocol: "https",
+              hostname: "picsum.photos",
+            },
+            {
+              protocol: "https",
+              hostname: "dummyimage.com",
+            },
+          ] satisfies RemotePattern[])
+        : []),
     ],
   },
 
@@ -107,6 +118,7 @@ const nextConfig: NextConfig = {
     disableOptimizedLoading: isDevBuild,
     optimizeServerReact: !isDevBuild,
     serverMinification: !isDevBuild,
+    typedEnv: true,
     optimizePackageImports: ["@arolariu/components"],
     serverActions: {
       bodySizeLimit: "10mb",
@@ -157,5 +169,6 @@ const withBundleAnalyzer = withBundleAnalyzerInit({
 
 const withTranslation = createNextIntlPlugin();
 
+console.log(">>> ⚙️ Image patterns: \n\t", nextConfig.images?.remotePatterns?.map((pattern) => pattern?.hostname).join(", \n\t"));
 const finalConfig = withBundleAnalyzer(withTranslation(nextConfig));
 export default finalConfig;
