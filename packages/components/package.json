@@ -73,8 +73,8 @@
     "build:clean": "rimraf dist",
     "build:copy": "tsx scripts/copy-files.ts",
     "build:exports": "tsx scripts/generate-exports.ts",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build:storybook": "storybook build",
+    "storybook": "storybook dev -p 6006"
   },
   "dependencies": {
     "@hookform/resolvers": "5.0.1",
