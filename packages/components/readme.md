@@ -7,6 +7,7 @@
 ![downloads](https://img.shields.io/npm/dm/@arolariu/components)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
 ![Tree-Shakeable](https://img.shields.io/badge/tree--shakeable-true-brightgreen.svg)
+![GitHub Stars](https://img.shields.io/github/stars/arolariu/arolariu.ro?style=social)
 
 A collection of reusable, accessible UI components for React applications, built on top of [Radix UI](https://www.radix-ui.com/) primitives and inspired by [shadcn/ui](https://ui.shadcn.com/).
 
@@ -32,7 +33,7 @@ A collection of reusable, accessible UI components for React applications, built
 - **📦 Multiple Module Formats** - ESM, CommonJS, and UMD support
 - **♿ Accessibility** - Built on Radix UI primitives with their ARIA compliance standard
 - **🎨 Customizable** - Override styles with Tailwind CSS and/or your styling methods
-- **🔄 Modern** - Designed for React 18+ and modern browsers
+- **🔄 Modern** - Designed for React 18+ and modern (year 2020+) browsers
 - **🪶 Zero Runtime CSS** - Uses Tailwind for styling
 - **🖥️ Server-Side Rendering Compatible** - Works with Next.js and other SSR frameworks
 

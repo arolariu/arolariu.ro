@@ -22,7 +22,7 @@ export default defineConfig({
           js: "[name].js",
           css: "[name].css",
         },
-      }
+      },
     },
     {
       bundle: false,
@@ -37,7 +37,7 @@ export default defineConfig({
           css: "[name].css",
         },
       },
-    }
+    },
   ],
   output: {
     target: "web",
@@ -45,13 +45,10 @@ export default defineConfig({
       js: "source-map",
     },
   },
-  plugins: [
-    pluginReact(),
-  ],
+  plugins: [pluginReact()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
 });
-
