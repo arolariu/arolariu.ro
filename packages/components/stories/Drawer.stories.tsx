@@ -17,8 +17,67 @@ import {
 const meta: Meta<typeof Drawer> = {
   title: "Design System/Drawer",
   component: Drawer,
+  tags: ["autodocs"], // Enable autodocs for this story
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Drawer Component**
+
+A responsive and interactive panel that slides in from the edge of the screen, commonly used for navigation, forms, or displaying supplementary content, especially on mobile devices. Built upon the \`vaul\` library, adapted for shadcn/ui styling.
+
+**Core Components (from \`vaul\`):**
+*   \`<Drawer>\` (aliased from \`Vaul.Root\`): The root component managing the drawer state and context.
+*   \`<DrawerTrigger>\` (aliased from \`Vaul.Trigger\`): The element (usually a button) that opens the drawer.
+*   \`<DrawerPortal>\` (aliased from \`Vaul.Portal\`): Renders the drawer content into the document body.
+*   \`<DrawerOverlay>\` (aliased from \`Vaul.Overlay\`): The semi-transparent background layer shown behind the drawer.
+*   \`<DrawerContent>\` (aliased from \`Vaul.Content\`): The main container for the drawer's content that slides into view. Accepts \`className\` for styling.
+*   \`<DrawerHeader>\`: A semantic container (\`<div>\`) for the top section, typically holding title and description.
+*   \`<DrawerTitle>\` (aliased from \`Vaul.Title\`): The main heading (\`<h2>\`) within the header.
+*   \`<DrawerDescription>\` (aliased from \`Vaul.Description\`): Supporting text (\`<p>\`) within the header.
+*   \`<DrawerFooter>\`: A semantic container (\`<div>\`) for the bottom section, often for action buttons.
+*   \`<DrawerClose>\` (aliased from \`Vaul.Close\`): A button specifically designed to close the drawer.
+
+**Key Features & Props (from \`vaul\`):**
+*   **Responsive**: Designed with mobile interactions in mind (swipe-to-close).
+*   **Direction (\`direction\` prop):** Controls which edge the drawer slides from ('top', 'bottom', 'left', 'right'). Default is typically 'bottom'.
+*   **Snap Points**: Supports defining snap points (\`snapPoints\` prop) for intermediate open states, especially useful for bottom sheets.
+*   **State Management**: Supports controlled (\`open\`, \`onOpenChange\`) and uncontrolled behavior.
+*   **Background Scaling (\`shouldScaleBackground\` prop):** Optionally scales down the background page content when the drawer is open (default: true).
+*   **Accessibility**: \`vaul\` aims to provide accessible dialog behavior.
+
+See the [shadcn/ui Drawer documentation](https://ui.shadcn.com/docs/components/drawer) and the [Vaul documentation](https://vaul.emilkowal.ski/) for more details.
+        `,
+      },
+    },
+  },
+  argTypes: {
+    direction: {
+      control: "select",
+      options: ["top", "bottom", "left", "right"],
+      description: "The direction from which the drawer slides in.",
+      table: {
+        defaultValue: { summary: "bottom" },
+      },
+    },
+    open: {
+      control: "boolean",
+      description: "Controlled open state.",
+    },
+    onOpenChange: {
+      action: "onOpenChange",
+      description: "Callback when the open state changes.",
+    },
+    shouldScaleBackground: {
+      control: "boolean",
+      description:
+        "Whether the background should scale down when the drawer is open.",
+      table: {
+        defaultValue: { summary: true },
+      },
+    },
+    // Other props from Vaul like snapPoints, activeSnapPoint, etc. are available but not explicitly listed here.
   },
 };
 
@@ -28,6 +87,14 @@ type Story = StoryObj<typeof Drawer>;
 
 // Basic bottom drawer
 export const Bottom: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "The default drawer behavior, sliding up from the bottom. Ideal for mobile interfaces.",
+      },
+    },
+  },
   render: () => (
     <Drawer>
       <DrawerTrigger asChild>
@@ -60,8 +127,19 @@ export const Bottom: Story = {
 
 // Top drawer
 export const Top: Story = {
-  render: () => (
-    <Drawer direction="top">
+  args: {
+    direction: "top",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A drawer sliding down from the top, useful for notifications or quick settings.",
+      },
+    },
+  },
+  render: (args) => (
+    <Drawer {...args}>
       <DrawerTrigger asChild>
         <Button variant="outline">Open Top Drawer</Button>
       </DrawerTrigger>
@@ -90,8 +168,19 @@ export const Top: Story = {
 
 // Left drawer
 export const Left: Story = {
-  render: () => (
-    <Drawer direction="left">
+  args: {
+    direction: "left",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A drawer sliding in from the left, commonly used for side navigation menus.",
+      },
+    },
+  },
+  render: (args) => (
+    <Drawer {...args}>
       <DrawerTrigger asChild>
         <Button variant="outline">Open Left Drawer</Button>
       </DrawerTrigger>
@@ -136,8 +225,19 @@ export const Left: Story = {
 
 // Right drawer
 export const Right: Story = {
-  render: () => (
-    <Drawer direction="right">
+  args: {
+    direction: "right",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A drawer sliding in from the right, suitable for context panels or details.",
+      },
+    },
+  },
+  render: (args) => (
+    <Drawer {...args}>
       <DrawerTrigger asChild>
         <Button variant="outline">Open Right Drawer</Button>
       </DrawerTrigger>
@@ -166,6 +266,14 @@ export const Right: Story = {
 
 // Drawer with form
 export const WithForm: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates embedding a form within a drawer for tasks like editing profiles.",
+      },
+    },
+  },
   render: () => (
     <Drawer>
       <DrawerTrigger asChild>
@@ -228,6 +336,14 @@ export const WithForm: Story = {
 
 // Nested drawers
 export const NestedDrawers: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows how drawers can be nested within each other, useful for multi-step processes or hierarchical information.",
+      },
+    },
+  },
   render: () => (
     <Drawer>
       <DrawerTrigger asChild>
@@ -281,6 +397,14 @@ export const NestedDrawers: Story = {
 
 // Customized drawer
 export const CustomizedDrawer: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Illustrates applying custom styling and structure, like a shopping cart example with a distinct header, item list, and summary footer.",
+      },
+    },
+  },
   render: () => (
     <Drawer>
       <DrawerTrigger asChild>

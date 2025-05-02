@@ -15,8 +15,91 @@ import {
 const meta: Meta<typeof HoverCard> = {
   title: "Design System/Cards/Hover Card",
   component: HoverCard,
+  tags: ["autodocs"], // Enable autodocs for this story
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Hover Card Component**
+
+Displays a pop-up card containing supplementary information when a user hovers over a trigger element. Built upon the Radix UI Hover Card primitive.
+
+**Core Components (from Radix UI):**
+*   \`<HoverCard>\`: The root component managing state and context. Accepts props like \`open\`, \`defaultOpen\`, \`onOpenChange\`, \`openDelay\`, \`closeDelay\`.
+*   \`<HoverCardTrigger>\`: The element that, when hovered, triggers the opening of the hover card content. It should wrap the interactive element.
+*   \`<HoverCardPortal>\`: (Optional) Renders the content into a specific part of the DOM, typically the document body. \`<HoverCardContent>\` uses this by default.
+*   \`<HoverCardContent>\`: The container for the content that appears in the pop-up card. Handles positioning relative to the trigger, styling, and accessibility attributes. Accepts props like \`side\`, \`sideOffset\`, \`align\`, \`alignOffset\`.
+*   \`<HoverCardArrow>\`: (Optional) Renders an arrow pointing from the content to the trigger.
+
+**Key Features & Props (from Radix UI):**
+*   **Hover Trigger**: Opens automatically when the pointer enters the \`<HoverCardTrigger>\` (after \`openDelay\`) and closes when the pointer leaves the trigger or content (after \`closeDelay\`).
+*   **Delay Control**: \`openDelay\` (default 700ms) and \`closeDelay\` (default 300ms) props allow customization of the timing.
+*   **Positioning**: Customizable positioning relative to the trigger using \`side\` ('top', 'right', 'bottom', 'left'), \`align\` ('start', 'center', 'end'), and offset props.
+*   **Accessibility**: Designed to be accessible, although hover-triggered content can present challenges for keyboard-only users. Consider providing alternative access methods if the content is critical.
+*   **Portal Rendering**: Ensures the pop-up appears correctly above other page elements.
+
+See the [shadcn/ui Hover Card documentation](https://ui.shadcn.com/docs/components/hover-card) and the [Radix UI Hover Card documentation](https://www.radix-ui.com/primitives/docs/components/hover-card) for more details.
+        `,
+      },
+    },
+  },
+  argTypes: {
+    openDelay: {
+      control: "number",
+      description:
+        "The duration in milliseconds from when the pointer enters the trigger until the hover card opens.",
+      table: {
+        type: { summary: "number" },
+        defaultValue: { summary: "700" },
+      },
+    },
+    closeDelay: {
+      control: "number",
+      description:
+        "The duration in milliseconds from when the pointer leaves the trigger or content until the hover card closes.",
+      table: {
+        type: { summary: "number" },
+        defaultValue: { summary: "300" },
+      },
+    },
+    // Props for HoverCardContent (positioning)
+    side: {
+      control: "select",
+      options: ["top", "right", "bottom", "left"],
+      description:
+        "The preferred side of the trigger to render the content relative to.",
+      table: {
+        type: { summary: '"top" | "right" | "bottom" | "left"' },
+        defaultValue: { summary: "bottom" },
+      },
+    },
+    sideOffset: {
+      control: "number",
+      description: "The distance in pixels from the trigger.",
+      table: {
+        type: { summary: "number" },
+        defaultValue: { summary: "0" },
+      },
+    },
+    align: {
+      control: "select",
+      options: ["start", "center", "end"],
+      description: "The preferred alignment against the trigger.",
+      table: {
+        type: { summary: '"start" | "center" | "end"' },
+        defaultValue: { summary: "center" },
+      },
+    },
+    alignOffset: {
+      control: "number",
+      description:
+        "An offset in pixels from the 'start' or 'end' alignment options.",
+      table: {
+        type: { summary: "number" },
+        defaultValue: { summary: "0" },
+      },
+    },
   },
 };
 
@@ -26,6 +109,14 @@ type Story = StoryObj<typeof HoverCard>;
 
 // Basic hover card example
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A simple hover card triggered by a link-styled button, showing basic user information.",
+      },
+    },
+  },
   render: () => (
     <HoverCard>
       <HoverCardTrigger asChild>
@@ -57,6 +148,14 @@ export const Basic: Story = {
 
 // User profile hover card
 export const UserProfile: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A more detailed user profile card triggered by a button containing an avatar. Includes stats and join date.",
+      },
+    },
+  },
   render: () => (
     <HoverCard>
       <HoverCardTrigger asChild>
@@ -120,6 +219,14 @@ export const UserProfile: Story = {
 
 // Product info hover card
 export const ProductInfo: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Displays product or plan details when hovering over a link. Includes features and a call-to-action button.",
+      },
+    },
+  },
   render: () => (
     <HoverCard>
       <HoverCardTrigger asChild>
@@ -198,6 +305,14 @@ export const ProductInfo: Story = {
 
 // Image preview hover card
 export const ImagePreview: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows a larger preview of an image when hovering over a thumbnail. Uses a slight open delay.",
+      },
+    },
+  },
   render: () => (
     <HoverCard openDelay={300}>
       <HoverCardTrigger asChild>
@@ -228,6 +343,14 @@ export const ImagePreview: Story = {
 
 // Help text hover card
 export const HelpText: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Provides contextual help or explanation when hovering over an icon next to a form field or label.",
+      },
+    },
+  },
   render: () => (
     <div className="flex items-center gap-2">
       <label htmlFor="api-key" className="text-sm font-medium">
@@ -282,6 +405,14 @@ export const HelpText: Story = {
 
 // Custom positioned hover card
 export const CustomPosition: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates how to control the position (side and alignment) of the hover card relative to the trigger using \`<HoverCardContent>\` props.",
+      },
+    },
+  },
   render: () => (
     <div className="grid grid-cols-2 gap-20">
       <HoverCard>
@@ -345,6 +476,14 @@ export const CustomPosition: Story = {
 
 // Custom timing hover card
 export const CustomTiming: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Illustrates customizing the open and close delays of the hover card using the \`openDelay\` and \`closeDelay\` props on the root \`<HoverCard>\` component.",
+      },
+    },
+  },
   render: () => (
     <div className="flex gap-8">
       <div>

@@ -5,6 +5,34 @@ import { Label, Switch } from "../dist";
 const meta: Meta<typeof Switch> = {
   title: "Design System/Switch",
   component: Switch,
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Switch Component**
+
+A two-state toggle control that allows users to switch between an 'on' (checked) and 'off' (unchecked) state. Built upon the Radix UI Switch primitive.
+
+**Core Components (from Radix UI):**
+*   \`<Switch>\`: The root component, rendering as a \`<button>\` with \`role="switch"\`. Manages the checked state. Accepts props like \`checked\`, \`defaultChecked\`, \`onCheckedChange\`, \`disabled\`, \`required\`, \`name\`, \`value\`.
+*   \`<SwitchThumb>\`: (Used internally by shadcn/ui \`<Switch>\`) The visual element (\`<span>\`) that slides or moves to indicate the current state (on/off).
+
+**Key Features & Props (from Radix UI):**
+*   **Toggle State**: Represents a boolean on/off state.
+*   **State Management**: Supports controlled (\`checked\`, \`onCheckedChange\`) and uncontrolled (\`defaultChecked\`) state.
+*   **Accessibility**:
+    *   Provides the correct ARIA role (\`role="switch"\`) and state (\`aria-checked\`, \`aria-disabled\`).
+    *   Supports keyboard interaction (Space or Enter key toggles the state).
+    *   Requires an associated \`<Label>\` (using \`htmlFor\` and matching \`id\`) for screen reader users to understand its purpose.
+*   **Form Integration**: Includes \`name\` and \`value\` props for use in forms, and \`required\` for validation.
+*   **Styling**: Styled using Tailwind CSS. The position of the thumb and the background color of the root element typically change based on the checked state.
+
+See the [shadcn/ui Switch documentation](https://ui.shadcn.com/docs/components/switch) and the [Radix UI Switch documentation](https://www.radix-ui.com/primitives/docs/components/switch) for more details.
+        `,
+      },
+    },
+  },
   tags: ["autodocs"],
   args: {
     disabled: false,
@@ -34,6 +62,13 @@ type Story = StoryObj<typeof Switch>;
 
 export const Default: Story = {
   args: {},
+  parameters: {
+    docs: {
+      description: {
+        story: "A basic Switch component in its default (unchecked) state.",
+      },
+    },
+  },
   render: (args) => <Switch {...args} />,
 };
 
@@ -41,11 +76,25 @@ export const Checked: Story = {
   args: {
     defaultChecked: true,
   },
+  parameters: {
+    docs: {
+      description: {
+        story: "A Switch component that is initially in the checked state.",
+      },
+    },
+  },
 };
 
 export const Disabled: Story = {
   args: {
     disabled: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "A disabled Switch component that cannot be interacted with.",
+      },
+    },
   },
 };
 
@@ -57,6 +106,14 @@ export const DisabledChecked: Story = {
 };
 
 export const WithLabel: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A Switch component accompanied by a Label, providing context for the toggle.",
+      },
+    },
+  },
   render: (args) => (
     <div className="flex items-center space-x-2">
       <Switch id="airplane-mode" {...args} />
@@ -66,6 +123,14 @@ export const WithLabel: Story = {
 };
 
 export const Controlled: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "An example of a controlled Switch where the checked state is managed by React state.",
+      },
+    },
+  },
   render: function ControlledSwitch() {
     const [checked, setChecked] = React.useState(false);
     return (
@@ -102,7 +167,7 @@ export const FormExample: Story = {
           alert(
             `Form submitted! Marketing emails: ${
               formData.get("marketing") ? "Yes" : "No"
-            }`
+            }`,
           );
         }}
         className="w-full max-w-sm space-y-4"

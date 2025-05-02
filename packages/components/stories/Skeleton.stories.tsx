@@ -14,7 +14,35 @@ const meta: Meta<typeof Skeleton> = {
   component: Skeleton,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Skeleton Component**
+
+Used to display a placeholder preview of content while data is loading. It improves perceived performance by rendering the shape of the expected content immediately.
+
+**Core Component:**
+*   \`<Skeleton>\`: A simple \`<div>\` element styled to appear as a placeholder.
+
+**Key Features:**
+*   **Placeholder**: Renders a gray, often animated (subtle pulse), shape that mimics the structure of the content being loaded.
+*   **Styling**: Primarily styled using Tailwind CSS utility classes. Key classes include:
+    *   \`animate-pulse\`: Applies the pulsing animation.
+    *   \`bg-muted\` / \`bg-neutral-200\` etc.: Sets the background color.
+    *   \`h-*\`, \`w-*\`: Define the height and width of the placeholder shape.
+    *   \`rounded-*\`: Controls the border radius (e.g., \`rounded-full\` for avatar placeholders, \`rounded-md\` for cards).
+*   **Composition**: Used by composing multiple \`<Skeleton>\` elements together to represent the layout of the loading content (e.g., combining rectangles for text lines and a circle for an avatar).
+
+**Usage:**
+*   Typically rendered conditionally based on a loading state. When loading is true, show the \`<Skeleton>\` structure; when false, show the actual content.
+*   Apply height, width, and border-radius classes directly to the \`<Skeleton>\` component to match the dimensions of the content it represents.
+
+See the [shadcn/ui Skeleton documentation](https://ui.shadcn.com/docs/components/skeleton) for more details and examples.
+        `,
+      },
+    },
   },
+  tags: ["autodocs"],
 };
 
 export default meta;
@@ -23,6 +51,14 @@ type Story = StoryObj<typeof Skeleton>;
 
 // Basic skeleton shapes
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A basic Skeleton placeholder with default dimensions (height and width).",
+      },
+    },
+  },
   render: () => (
     <div className="flex items-center space-x-4">
       <Skeleton className="h-12 w-12 rounded-full" />
@@ -36,6 +72,14 @@ export const Basic: Story = {
 
 // Card skeleton
 export const CardSkeleton: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A more complex Skeleton structure designed to resemble a card layout, including placeholders for an image, title, and text content.",
+      },
+    },
+  },
   render: () => (
     <Card className="w-[350px]">
       <CardHeader className="gap-2">
@@ -57,6 +101,14 @@ export const CardSkeleton: Story = {
 
 // User card skeleton
 export const UserCardSkeleton: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A Skeleton structure designed to resemble a user card layout, including placeholders for avatars and text content.",
+      },
+    },
+  },
   render: () => (
     <div className="flex flex-col space-y-5">
       <div className="flex items-center space-x-4">
@@ -86,6 +138,14 @@ export const UserCardSkeleton: Story = {
 
 // Table skeleton
 export const TableSkeleton: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A Skeleton structure designed to resemble a table layout, including placeholders for rows and columns.",
+      },
+    },
+  },
   render: () => (
     <div className="w-[600px] rounded-md border">
       <div className="border-b px-4 py-3">
@@ -119,6 +179,14 @@ export const TableSkeleton: Story = {
 
 // Dashboard skeleton
 export const DashboardSkeleton: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A Skeleton structure designed to resemble a dashboard layout, including placeholders for widgets and charts.",
+      },
+    },
+  },
   render: () => (
     <div className="w-[600px] space-y-4">
       <div className="flex items-center justify-between">
@@ -149,6 +217,14 @@ export const DashboardSkeleton: Story = {
 
 // Comment skeleton
 export const CommentSkeleton: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A Skeleton structure designed to resemble a comment layout, including placeholders for avatars and text content.",
+      },
+    },
+  },
   render: () => (
     <div className="w-[500px] space-y-4">
       {Array(3)
@@ -176,6 +252,14 @@ export const CommentSkeleton: Story = {
 
 // Custom colors
 export const CustomColors: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates applying custom colors to the Skeleton component using CSS classes.",
+      },
+    },
+  },
   render: () => (
     <div className="flex flex-col space-y-6 w-[300px]">
       <div className="space-y-2">

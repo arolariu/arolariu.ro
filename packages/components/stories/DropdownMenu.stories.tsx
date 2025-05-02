@@ -35,6 +35,68 @@ import {
 const meta: Meta<typeof DropdownMenu> = {
   title: "Design System/Dropdown",
   component: DropdownMenu,
+  tags: ["autodocs"], // Enable autodocs for this story
+  parameters: {
+    docs: {
+      description: {
+        component: `
+**Dropdown Menu Component**
+
+Displays a menu of actions or options triggered by an element (like a button), appearing in a popover. Built upon the Radix UI Dropdown Menu primitive, ensuring robust accessibility and keyboard navigation.
+
+**Core Components (from Radix UI):**
+*   \`<DropdownMenu>\`: The root component managing state and context. Accepts props like \`open\`, \`defaultOpen\`, \`onOpenChange\`, \`modal\`, \`dir\`.
+*   \`<DropdownMenuTrigger>\`: The element (usually a \`<Button>\`) that toggles the menu's visibility on click or keyboard interaction.
+*   \`<DropdownMenuPortal>\`: (Optional) Renders the menu content into a specific part of the DOM, typically the document body. \`<DropdownMenuContent>\` uses this by default.
+*   \`<DropdownMenuContent>\`: The container for the menu items that appears as a popover. Handles positioning, styling, focus management, and accessibility attributes. Accepts props like \`side\`, \`sideOffset\`, \`align\`, \`alignOffset\`, \`loop\`.
+*   \`<DropdownMenuGroup>\`: A semantic container (\`<div>\`) to group related menu items.
+*   \`<DropdownMenuItem>\`: Represents a single action item (\`<div>\` with \`role="menuitem"\`). Handles selection via click or Enter key. Accepts \`disabled\` and \`onSelect\` props.
+*   \`<DropdownMenuCheckboxItem>\`: A menu item (\`<div>\` with \`role="menuitemcheckbox"\`) that can be checked or unchecked. Requires \`checked\` and \`onCheckedChange\` props. Includes an indicator area.
+*   \`<DropdownMenuRadioGroup>\`: Groups \`<DropdownMenuRadioItem>\` components, managing a single selected value. Requires \`value\` and \`onValueChange\` props.
+*   \`<DropdownMenuRadioItem>\`: A menu item (\`<div>\` with \`role="menuitemradio"\`) within a radio group. Requires a \`value\` prop. Includes an indicator area.
+*   \`<DropdownMenuLabel>\`: A non-interactive label (\`<div>\`) used for titling sections within the menu.
+*   \`<DropdownMenuSeparator>\`: A visual divider (\`<div>\` with \`role="separator"\`) between items or groups.
+*   \`<DropdownMenuShortcut>\`: Displays supplementary text (e.g., keyboard shortcut) aligned to the right within an item.
+*   \`<DropdownMenuSub>\`: Container for creating nested submenus. Manages the open state of the submenu.
+*   \`<DropdownMenuSubTrigger>\`: An item (\`<div>\` with \`role="menuitem"\`) that opens a submenu on hover or keyboard interaction. Requires a corresponding \`<DropdownMenuSubContent\`.
+*   \`<DropdownMenuSubContent>\`: The content container for a submenu, appearing adjacent to the trigger.
+*   \`<DropdownMenuArrow>\`: (Optional) Renders an arrow pointing from the content to the trigger.
+
+**Key Features:**
+*   **Accessibility**: Full keyboard navigation (arrow keys, Home, End, Enter, Space, Escape), focus management, and ARIA roles/attributes.
+*   **Modality (\`modal\` prop):** Controls whether interaction outside the menu is prevented (default: true).
+*   **Positioning**: Customizable positioning relative to the trigger (\`side\`, \`align\`, offsets).
+*   **Composition**: Highly composable for creating complex menus with checkboxes, radio groups, and submenus.
+
+See the [shadcn/ui Dropdown Menu documentation](https://ui.shadcn.com/docs/components/dropdown-menu) and the [Radix UI Dropdown Menu documentation](https://www.radix-ui.com/primitives/docs/components/dropdown-menu) for comprehensive details.
+        `,
+      },
+    },
+  },
+  argTypes: {
+    open: {
+      control: "boolean",
+      description: "Controlled open state of the dropdown menu.",
+    },
+    onOpenChange: {
+      action: "onOpenChange",
+      description: "Callback when the open state changes.",
+    },
+    modal: {
+      control: "boolean",
+      description:
+        "Determines if the menu behaves modally (prevents interaction outside).",
+      table: {
+        defaultValue: { summary: true },
+      },
+    },
+    dir: {
+      control: "radio",
+      options: ["ltr", "rtl"],
+      description: "Text direction.",
+    },
+    // Note: DropdownMenuContent props like side, align, sideOffset, alignOffset etc. are controlled via the content component itself.
+  },
 };
 
 export default meta;
@@ -43,6 +105,13 @@ type Story = StoryObj<typeof DropdownMenu>;
 
 // Basic dropdown menu
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "A simple dropdown menu with basic text items and separators.",
+      },
+    },
+  },
   render: () => (
     <div className="flex items-center justify-center p-10">
       <DropdownMenu>
@@ -64,6 +133,14 @@ export const Basic: Story = {
 
 // With icons
 export const WithIcons: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates adding icons (using lucide-react) and keyboard shortcuts to menu items.",
+      },
+    },
+  },
   render: () => (
     <div className="flex items-center justify-center p-10">
       <DropdownMenu>
@@ -100,6 +177,14 @@ export const WithIcons: Story = {
 
 // With checkboxes
 export const WithCheckboxes: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows how to use \`<DropdownMenuCheckboxItem>\` for toggleable options, managing state with React hooks.",
+      },
+    },
+  },
   render: function WithCheckboxesExample() {
     const [showStatusBar, setShowStatusBar] = React.useState(true);
     const [showActivityBar, setShowActivityBar] = React.useState(false);
@@ -141,6 +226,14 @@ export const WithCheckboxes: Story = {
 
 // With radio items
 export const WithRadioItems: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Illustrates using \`<DropdownMenuRadioGroup>\` and \`<DropdownMenuRadioItem>\` for selecting one option from a set.",
+      },
+    },
+  },
   render: function WithRadioItemsExample() {
     const [position, setPosition] = React.useState("bottom");
 
@@ -173,6 +266,14 @@ export const WithRadioItems: Story = {
 
 // With sub menus
 export const WithSubMenus: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates creating nested menus using \`<DropdownMenuSub>\`, \`<DropdownMenuSubTrigger>\`, and \`<DropdownMenuSubContent>\`.",
+      },
+    },
+  },
   render: () => (
     <div className="flex items-center justify-center p-10">
       <DropdownMenu>
@@ -224,6 +325,14 @@ export const WithSubMenus: Story = {
 
 // Complex example with multiple sections and groups
 export const ComplexExample: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A more elaborate example combining labels, groups, separators, icons, shortcuts, and submenus to build a realistic settings menu.",
+      },
+    },
+  },
   render: () => (
     <div className="flex items-center justify-center p-10">
       <DropdownMenu>
@@ -299,6 +408,14 @@ export const ComplexExample: Story = {
 
 // Context menu example (right-click)
 export const ContextMenuExample: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows how to trigger a dropdown menu using the `onContextMenu` event (right-click) instead of a standard button click.",
+      },
+    },
+  },
   render: function ContextMenuExample() {
     return (
       <div className="flex items-center justify-center p-10">
@@ -341,6 +458,14 @@ export const ContextMenuExample: Story = {
 
 // Inset items
 export const InsetItems: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates the `inset` prop on \`<DropdownMenuItem>\` and \`<DropdownMenuLabel>\` to align items visually when some items have icons/checkboxes and others don't.",
+      },
+    },
+  },
   render: () => (
     <div className="flex items-center justify-center p-10">
       <DropdownMenu>
@@ -363,6 +488,14 @@ export const InsetItems: Story = {
 
 // Disabled items
 export const DisabledItems: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Illustrates how to disable individual menu items, checkbox items, and radio items using the `disabled` prop.",
+      },
+    },
+  },
   render: () => (
     <div className="flex items-center justify-center p-10">
       <DropdownMenu>

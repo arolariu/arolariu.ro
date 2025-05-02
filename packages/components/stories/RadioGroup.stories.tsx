@@ -5,6 +5,36 @@ import { RadioGroup, RadioGroupItem } from "../dist";
 const meta: Meta<typeof RadioGroup> = {
   title: "Design System/RadioGroup",
   component: RadioGroup,
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Radio Group Component**
+
+A set of checkable buttons (radio buttons) where only one option can be selected at a time within the group. Built upon the Radix UI Radio Group primitive.
+
+**Core Components (from Radix UI):**
+*   \`<RadioGroup>\`: The root component (\`<div>\` with \`role="radiogroup"\`) that groups the radio items and manages the selected value. Accepts props like \`value\`, \`defaultValue\`, \`onValueChange\`, \`disabled\`, \`required\`, \`orientation\`, \`loop\`, \`name\`.
+*   \`<RadioGroupItem>\`: Represents a single radio button input (\`<button>\` with \`role="radio"\`). Requires a unique \`value\` prop. Includes a \`<RadioGroupIndicator>\` internally. Must be associated with a \`<label>\`.
+*   \`<RadioGroupIndicator>\`: (Used internally by \`<RadioGroupItem>\`) The visual element (often a dot) that indicates the selected state.
+
+**Key Features & Props (from Radix UI):**
+*   **Single Selection**: Enforces that only one \`<RadioGroupItem>\` within the group can be selected.
+*   **State Management**: Supports controlled (\`value\`, \`onValueChange\`) and uncontrolled (\`defaultValue\`) state.
+*   **Accessibility**:
+    *   Provides correct ARIA roles (\`radiogroup\`, \`radio\`) and states (\`aria-checked\`, \`aria-disabled\`).
+    *   Full keyboard navigation support (Arrow keys to move between items, Space key to select).
+    *   Requires associated \`<label>\` elements for each \`<RadioGroupItem>\` (using \`htmlFor\` and matching \`id\`) for screen reader accessibility.
+*   **Layout**: Supports \`orientation\` ('horizontal' or 'vertical') for layout direction.
+*   **Form Integration**: Includes \`name\` prop for form submission and \`required\` prop for validation.
+
+See the [shadcn/ui Radio Group documentation](https://ui.shadcn.com/docs/components/radio-group) and the [Radix UI Radio Group documentation](https://www.radix-ui.com/primitives/docs/components/radio-group) for comprehensive details.
+        `,
+      },
+    },
+  },
+  tags: ["autodocs"],
 };
 
 export default meta;
@@ -13,6 +43,14 @@ type Story = StoryObj<typeof RadioGroup>;
 
 // Basic radio group
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A basic RadioGroup with multiple options. Users can select only one option at a time.",
+      },
+    },
+  },
   render: () => (
     <RadioGroup defaultValue="option-one">
       <div className="flex items-center space-x-2">
@@ -48,6 +86,14 @@ export const Basic: Story = {
 
 // Radio group with disabled item
 export const WithDisabledItem: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows a RadioGroup where one of the options is disabled and cannot be selected.",
+      },
+    },
+  },
   render: () => (
     <RadioGroup defaultValue="default">
       <div className="flex items-center space-x-2">
@@ -83,6 +129,14 @@ export const WithDisabledItem: Story = {
 
 // Horizontal layout
 export const HorizontalLayout: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Displays the RadioGroup options horizontally instead of the default vertical layout.",
+      },
+    },
+  },
   render: () => (
     <RadioGroup defaultValue="option-one" className="flex gap-6">
       <div className="flex items-center space-x-2">
@@ -118,6 +172,14 @@ export const HorizontalLayout: Story = {
 
 // Card-styled radio group
 export const CardRadioGroup: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates a card-styled RadioGroup where each option is presented as a card with additional details.",
+      },
+    },
+  },
   render: () => (
     <RadioGroup defaultValue="card1" className="grid grid-cols-3 gap-4">
       <div>
@@ -206,6 +268,14 @@ export const CardRadioGroup: Story = {
 
 // Form example with validation
 export const FormExample: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "An example of a controlled RadioGroup where the selected value is managed by React state, allowing for interaction tracking or conditional logic based on the selection.",
+      },
+    },
+  },
   render: function FormRadioGroup() {
     const [selected, setSelected] = React.useState<string>("email");
 

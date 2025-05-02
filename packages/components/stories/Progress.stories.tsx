@@ -7,7 +7,29 @@ const meta: Meta<typeof Progress> = {
   component: Progress,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Progress Component**
+
+Displays an indicator showing the completion progress of a task, typically represented as a horizontal bar. Built upon the Radix UI Progress primitive.
+
+**Core Components (from Radix UI):**
+*   \`<Progress>\`: The root component (\`<div>\`) representing the progress bar container. It provides context for the indicator and manages the progress value. Accepts \`value\` (number 0-100) and \`max\` (default 100) props.
+*   \`<ProgressIndicator>\`: (Used internally by the shadcn/ui component) The element (\`<div>\`) that visually represents the progress percentage. Its width is dynamically calculated based on the \`value\` and \`max\` props from the root component.
+
+**Key Features & Props:**
+*   **Value Representation**: Visually indicates progress based on the \`value\` prop (a number between 0 and \`max\`).
+*   **Accessibility**: Automatically includes appropriate ARIA attributes (\`role="progressbar"\`, \`aria-valuenow\`, \`aria-valuemin\`, \`aria-valuemax\`) for screen reader support.
+*   **Styling**: Styled using Tailwind CSS. The background of the root element represents the track, and the indicator's background represents the filled portion. The width of the indicator is controlled via inline styles based on the progress value.
+*   **Indeterminate State**: While Radix UI supports an indeterminate state (when \`value\` is null), the default shadcn/ui styling might primarily focus on determinate progress.
+
+See the [shadcn/ui Progress documentation](https://ui.shadcn.com/docs/components/progress) and the [Radix UI Progress documentation](https://www.radix-ui.com/primitives/docs/components/progress) for more details.
+        `,
+      },
+    },
   },
+  tags: ["autodocs"],
 };
 
 export default meta;
@@ -21,6 +43,14 @@ export const Basic: Story = {
       <Progress value={33} className="w-full" />
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A basic Progress bar example showing a specific completion percentage (e.g., 33%).",
+      },
+    },
+  },
 };
 
 // Different values
@@ -49,6 +79,14 @@ export const DifferentValues: Story = {
       </div>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Examples of Progress bars with different completion values ranging from 0% to 100%.",
+      },
+    },
+  },
 };
 
 // Custom colors
@@ -77,6 +115,14 @@ export const CustomColors: Story = {
       />
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates customizing the Progress bar's color using Tailwind CSS utility classes.",
+      },
+    },
+  },
 };
 
 // With labels
@@ -106,6 +152,14 @@ export const WithLabels: Story = {
       </div>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows a Progress bar with a text label indicating the current percentage value.",
+      },
+    },
+  },
 };
 
 // Different sizes
@@ -130,6 +184,14 @@ export const DifferentSizes: Story = {
       </div>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Examples of Progress bars with different sizes, ranging from small to extra large.",
+      },
+    },
+  },
 };
 
 // Interactive progress
@@ -159,8 +221,8 @@ export const Interactive: Story = {
               {progress === 100
                 ? "Upload complete"
                 : progress === 0
-                ? "Ready to upload"
-                : "Uploading..."}
+                  ? "Ready to upload"
+                  : "Uploading..."}
             </div>
             <div>{progress}%</div>
           </div>
@@ -170,11 +232,19 @@ export const Interactive: Story = {
           {progress === 100
             ? "Upload again"
             : progress === 0
-            ? "Start upload"
-            : "Uploading..."}
+              ? "Start upload"
+              : "Uploading..."}
         </Button>
       </div>
     );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "An interactive Progress bar example where the user can start and reset the progress.",
+      },
+    },
   },
 };
 
@@ -208,6 +278,14 @@ export const Indeterminate: Story = {
       </div>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Displays an indeterminate Progress bar, used when the completion percentage is unknown or cannot be determined.",
+      },
+    },
+  },
 };
 
 // Progress with steps
@@ -242,6 +320,14 @@ export const WithSteps: Story = {
         </div>
       </div>
     );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A Progress bar example with steps, showing the current step and total steps.",
+      },
+    },
   },
 };
 
@@ -279,5 +365,13 @@ export const Animated: Story = {
         </div>
       </div>
     );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "An example of an animated Progress bar where the value updates over time, simulating a task in progress.",
+      },
+    },
   },
 };

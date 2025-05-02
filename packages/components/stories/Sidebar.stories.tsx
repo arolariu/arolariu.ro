@@ -38,8 +38,42 @@ const meta: Meta<typeof Sidebar> = {
   title: "Design System/Sidebar",
   component: Sidebar,
   parameters: {
-    layout: "fullscreen",
+    layout: "fullscreen", // Use fullscreen layout for sidebar
+    docs: {
+      description: {
+        component: `
+**Sidebar Component**
+
+A custom, composite component designed for creating collapsible side navigation panels. It provides structure for headers, content areas (with menus or groups), and footers, along with mechanisms for toggling the collapsed state.
+
+**Core Components:**
+*   \`<SidebarProvider>\`: (Optional) Wraps the application or layout section to provide context for the sidebar's state (collapsed/expanded) if controlled globally.
+*   \`<Sidebar>\`: The main container element for the sidebar. Manages its own collapsed state if not using the Provider. Applies styles based on collapsed state.
+*   \`<SidebarHeader>\`: Container for the top section of the sidebar, often holding a logo and a trigger button.
+*   \`<SidebarTrigger>\`: A button (usually an icon button) used to toggle the collapsed/expanded state of the sidebar. Interacts with the Sidebar or SidebarProvider context.
+*   \`<SidebarContent>\`: The main scrollable area for navigation items or other content.
+*   \`<SidebarMenu>\`: A container (\`<ul>\`) for a list of primary navigation items.
+*   \`<SidebarMenuItem>\`: A single navigation item (\`<li>\`), typically containing a link or button (\`<SidebarMenuButton>\`). Adapts appearance based on collapsed state.
+*   \`<SidebarMenuButton>\`: An interactive element (link or button) within a \`<SidebarMenuItem>\`. Displays an icon and optionally text (hidden when collapsed).
+*   \`<SidebarGroup>\`: A collapsible section within the sidebar content, used to group related items under a label.
+*   \`<SidebarGroupLabel>\`: The trigger element for toggling the visibility of a \`<SidebarGroupContent>\`.
+*   \`<SidebarGroupContent>\`: The container for items within a collapsible group.
+*   \`<SidebarSeparator>\`: A visual divider line.
+*   \`<SidebarFooter>\`: Container for the bottom section of the sidebar, often holding user profile links or logout buttons.
+
+**Key Features:**
+*   **Collapsible**: Supports toggling between a full-width and a collapsed (icon-only) state.
+*   **State Management**: Can manage its collapsed state internally or be controlled via the \`<SidebarProvider>\` context.
+*   **Structured Content**: Provides semantic components for organizing header, footer, menus, and collapsible groups.
+*   **Responsive Adaptation**: Automatically adjusts the display of text labels in menu items based on the collapsed state.
+*   **Styling**: Uses Tailwind CSS for styling and transitions between states.
+
+**Note**: This is a custom component specific to this project, not part of the standard shadcn/ui library.
+        `,
+      },
+    },
   },
+  tags: ["autodocs"],
 };
 
 export default meta;
@@ -69,6 +103,14 @@ const otherNavItems: NavItem[] = [
 
 // Basic sidebar
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A basic Sidebar layout with a header, navigation items (including nested items), content area, and footer.",
+      },
+    },
+  },
   render: () => (
     <div className="h-[600px] border rounded-md overflow-hidden">
       <SidebarProvider>
@@ -137,6 +179,14 @@ export const Basic: Story = {
 
 // Collapsible sidebar
 export const Collapsible: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates a collapsible Sidebar. A button allows toggling between the expanded and collapsed states. Icons are typically shown in the collapsed state.",
+      },
+    },
+  },
   render: function CollapsibleSidebar() {
     const [collapsed, setCollapsed] = React.useState(false);
 
@@ -239,6 +289,14 @@ export const Collapsible: Story = {
 
 // Sidebar with groups
 export const WithGroups: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "This example shows how to organize sidebar items into logical groups with labels.",
+      },
+    },
+  },
   render: () => (
     <div className="h-[600px] border rounded-md overflow-hidden">
       <SidebarProvider>
@@ -355,6 +413,14 @@ export const WithGroups: Story = {
 
 // Mobile sidebar with trigger
 export const MobileWithTrigger: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "This sidebar is designed to work on both mobile and desktop. On small screens, it becomes a drawer that can be toggled using the menu button in the header. Try resizing your browser to see how it behaves.",
+      },
+    },
+  },
   render: () => (
     <div className="h-[600px] border rounded-md overflow-hidden">
       <SidebarProvider>
@@ -436,6 +502,14 @@ export const MobileWithTrigger: Story = {
 
 // Custom styled sidebar
 export const CustomStyled: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "This example shows a sidebar with custom styling to match your brand colors. The gradient background and custom hover effects create a unique look and feel.",
+      },
+    },
+  },
   render: () => (
     <div className="h-[600px] border rounded-md overflow-hidden">
       <SidebarProvider>

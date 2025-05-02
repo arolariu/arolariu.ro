@@ -11,6 +11,52 @@ import { ChevronDownIcon } from "lucide-react";
 const meta: Meta<typeof Collapsible> = {
   title: "Design System/Collapsible",
   component: Collapsible,
+  tags: ["autodocs"], // Enable autodocs for this story
+  parameters: {
+    docs: {
+      description: {
+        component: `
+**Collapsible Component**
+
+An interactive component that toggles the visibility of a content section, often used for accordions, disclosure widgets, or hiding/showing details. Built upon the Radix UI Collapsible primitive.
+
+**Core Components:**
+*   \`<Collapsible>\`: The root component that manages the open/closed state and provides context. Accepts props like \`open\`, \`defaultOpen\`, \`onOpenChange\`, and \`disabled\`.
+*   \`<CollapsibleTrigger>\`: The interactive element (usually a \`<button>\`) that controls the state of the collapsible. Clicking it toggles the visibility of the \`<CollapsibleContent>\`. Automatically handles ARIA attributes (\`aria-controls\`, \`aria-expanded\`).
+*   \`<CollapsibleContent>\`: The container for the content that is conditionally rendered or hidden based on the collapsible's state. Handles animation and visibility.
+
+**Key Features & Props (from Radix UI):**
+*   **State Management**: Supports both controlled (\`open\`, \`onOpenChange\`) and uncontrolled (\`defaultOpen\`) state management.
+*   **Animation**: Provides smooth height transition animations for opening and closing the content area.
+*   **Accessibility**: Adheres to WAI-ARIA patterns for disclosure widgets, ensuring proper keyboard navigation and screen reader announcements via the trigger and content attributes.
+*   **Disabled State**: The \`disabled\` prop on the root component prevents interaction with the trigger.
+
+See the [shadcn/ui Collapsible documentation](https://ui.shadcn.com/docs/components/collapsible) and the [Radix UI Collapsible documentation](https://www.radix-ui.com/primitives/docs/components/collapsible) for more details.
+        `,
+      },
+    },
+  },
+  argTypes: {
+    open: {
+      control: "boolean",
+      description: "The controlled open state of the collapsible.",
+    },
+    defaultOpen: {
+      control: "boolean",
+      description: "The initial open state when uncontrolled.",
+    },
+    onOpenChange: {
+      action: "openChange",
+      description: "Event handler called when the open state changes.",
+    },
+    disabled: {
+      control: "boolean",
+      description: "Prevents the collapsible from being opened or closed.",
+      table: {
+        defaultValue: { summary: "Lorem Ipsum" },
+      },
+    },
+  },
 };
 
 export default meta;
@@ -19,6 +65,14 @@ type Story = StoryObj<typeof Collapsible>;
 
 // Basic collapsible
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A simple collapsible with a trigger button (using an icon) and content that toggles visibility.",
+      },
+    },
+  },
   render: () => {
     const [isOpen, setIsOpen] = React.useState(false);
 
@@ -49,6 +103,14 @@ export const Basic: Story = {
 
 // Collapsible with custom trigger
 export const CustomTrigger: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates using a different element (a Button with text and icon) as the trigger, changing its text based on the open state.",
+      },
+    },
+  },
   render: () => {
     const [isOpen, setIsOpen] = React.useState(false);
 
@@ -83,6 +145,14 @@ export const CustomTrigger: Story = {
 
 // FAQ style collapsible
 export const FAQStyle: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows how multiple Collapsible components can be used to create an FAQ-like interface, where each question acts as a trigger.",
+      },
+    },
+  },
   render: () => {
     const [openItems, setOpenItems] = React.useState<Record<string, boolean>>({
       "item-1": false,

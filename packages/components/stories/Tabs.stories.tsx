@@ -15,6 +15,37 @@ import {
 const meta: Meta<typeof Tabs> = {
   title: "Design System/Tabs",
   component: Tabs,
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Tabs Component**
+
+Displays a set of layered content sections (tab panels), where only one section is visible at a time, controlled by selecting the corresponding tab trigger. Built upon the Radix UI Tabs primitive.
+
+**Core Components (from Radix UI):**
+*   \`<Tabs>\`: The root component (\`<div>\`) managing the state (active tab) and context. Accepts props like \`value\`, \`defaultValue\`, \`onValueChange\`, \`orientation\`, \`activationMode\`.
+*   \`<TabsList>\`: The container (\`<div>\` with \`role="tablist"\`) for the tab trigger buttons. Manages focus and keyboard navigation between triggers. Accepts \`loop\` prop.
+*   \`<TabsTrigger>\`: The interactive button (\`<button>\` with \`role="tab"\`) that activates its associated tab panel when clicked or selected via keyboard. Requires a unique \`value\` prop matching a \`<TabsContent>\` component. Handles ARIA attributes (\`aria-selected\`, \`aria-controls\`). Accepts \`disabled\`.
+*   \`<TabsContent>\`: The container (\`<div>\` with \`role="tabpanel"\`) for the content associated with a specific tab. Requires a unique \`value\` prop matching a \`<TabsTrigger>\`. Only the content corresponding to the active tab trigger is visible. Handles ARIA attributes (\`aria-labelledby\`).
+
+**Key Features & Props (from Radix UI):**
+*   **Content Switching**: Efficiently displays one content panel at a time based on the selected trigger.
+*   **State Management**: Supports controlled (\`value\`, \`onValueChange\`) and uncontrolled (\`defaultValue\`) state for the active tab.
+*   **Accessibility**:
+    *   Provides correct ARIA roles (\`tablist\`, \`tab\`, \`tabpanel\`) and states/properties (\`aria-selected\`, \`aria-controls\`, \`aria-labelledby\`).
+    *   Full keyboard navigation support for the tab list (Arrow keys, Home, End). Enter/Space activates tabs.
+*   **Layout**: Supports \`orientation\` ('horizontal' (default) or 'vertical').
+*   **Activation Mode**: Controls whether tabs activate on focus (\`activationMode="automatic"\`) or only on selection (\`activationMode="manual"\`, default).
+*   **Styling**: Styled using Tailwind CSS, allowing customization of the list, triggers (including active state), and content panels.
+
+See the [shadcn/ui Tabs documentation](https://ui.shadcn.com/docs/components/tabs) and the [Radix UI Tabs documentation](https://www.radix-ui.com/primitives/docs/components/tabs) for comprehensive details.
+        `,
+      },
+    },
+  },
+  tags: ["autodocs"],
 };
 
 export default meta;
@@ -23,6 +54,14 @@ type Story = StoryObj<typeof Tabs>;
 
 // Basic tabs
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A basic Tabs component with three tabs ('Account', 'Password', and 'Settings'). Clicking a tab trigger displays its corresponding content panel.",
+      },
+    },
+  },
   render: () => (
     <Tabs defaultValue="account" className="w-[400px]">
       <TabsList>
@@ -54,6 +93,14 @@ export const Basic: Story = {
 
 // Tabs with icons
 export const WithIcons: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Tabs with icons displayed alongside the tab triggers. Includes tabs for 'Profile', 'Notifications', and 'Analytics'.",
+      },
+    },
+  },
   render: () => (
     <Tabs defaultValue="profile" className="w-[400px]">
       <TabsList className="grid w-full grid-cols-3">
@@ -170,6 +217,14 @@ export const WithIcons: Story = {
 
 // Vertical tabs
 export const Vertical: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Displays Tabs oriented vertically, with tab triggers listed in a column and content panels displayed beside them.",
+      },
+    },
+  },
   render: () => (
     <div className="flex gap-4 w-[600px]">
       <Tabs defaultValue="tab1" orientation="vertical" className="w-full">
@@ -225,6 +280,14 @@ export const Vertical: Story = {
 
 // Custom styled tabs
 export const CustomStyled: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Tabs with custom styling applied to the tab triggers and content panels. Includes tabs for 'Dashboard', 'Projects', and 'Reports'.",
+      },
+    },
+  },
   render: () => (
     <Tabs defaultValue="tab1" className="w-[400px]">
       <TabsList className="bg-blue-100 dark:bg-blue-900/50">

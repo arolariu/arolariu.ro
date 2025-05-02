@@ -13,6 +13,40 @@ import {
 const meta: Meta<typeof Button> = {
   title: "Design System/Buttons/Button",
   component: Button,
+  tags: ["autodocs"],
+  parameters: {
+    docs: {
+      description: {
+        component: `
+**Button Component**
+
+Renders an interactive button element, providing consistent styling and behavior. Built using \`@radix-ui/react-slot\` for optional rendering as a child element and \`cva\` for managing variants.
+
+**Core Component:**
+*   \`<Button>\`: The primary component. Renders as a standard HTML \`<button>\` by default.
+
+**Key Features:**
+*   **Variants**: Supports multiple visual styles via the \`variant\` prop:
+    *   \`default\`: Standard filled button.
+    *   \`destructive\`: Styled for actions with negative consequences.
+    *   \`outline\`: Button with a border and transparent background.
+    *   \`secondary\`: Less prominent style than default.
+    *   \`ghost\`: Minimal styling, often used for actions within other components.
+    *   \`link\`: Styled like a hyperlink.
+*   **Sizes**: Control padding and font size using the \`size\` prop:
+    *   \`default\`: Standard size.
+    *   \`sm\`: Small size.
+    *   \`lg\`: Large size.
+    *   \`icon\`: Optimized for containing only an icon (square aspect ratio).
+*   **Composition**: Can render as its child element using the \`asChild\` prop. This is useful for integrating with routing libraries (e.g., \`<Button asChild><Link to="/home">Home</Link></Button>\`) while retaining button styles.
+*   **States**: Includes styles for hover, focus, active, and disabled states. The \`disabled\` prop makes the button non-interactive.
+*   **Accessibility**: Provides clear focus indicators and uses the native \`<button>\` element for inherent accessibility, unless \`asChild\` is used.
+
+See the [shadcn/ui Button documentation](https://ui.shadcn.com/docs/components/button) for more details and examples.
+        `,
+      },
+    },
+  },
   argTypes: {
     variant: {
       options: [
@@ -29,6 +63,20 @@ const meta: Meta<typeof Button> = {
       options: ["default", "sm", "lg", "icon"],
       control: { type: "select" },
     },
+    asChild: {
+      control: "boolean",
+      description: "Render as the child component instead of a <button>.",
+      table: {
+        defaultValue: { summary: "false" },
+      },
+    },
+    disabled: {
+      control: "boolean",
+      description: "Disable the button, making it non-interactive.",
+      table: {
+        defaultValue: { summary: "false" },
+      },
+    },
   },
 };
 
@@ -38,11 +86,27 @@ type Story = StoryObj<typeof Button>;
 
 // Default button
 export const Default: Story = {
-  render: () => <Button>Click me</Button>,
+  args: {
+    children: "Click me",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "The default button style.",
+      },
+    },
+  },
 };
 
 // All button variants
 export const AllVariants: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Showcase of all available button variants.",
+      },
+    },
+  },
   render: () => (
     <div className="flex flex-wrap gap-4">
       <Button variant="default">Default</Button>
@@ -57,6 +121,14 @@ export const AllVariants: Story = {
 
 // Button sizes
 export const Sizes: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates the different button sizes: `sm`, `default`, `lg`, and `icon`.",
+      },
+    },
+  },
   render: () => (
     <div className="flex flex-wrap items-center gap-4">
       <Button size="sm">Small</Button>
@@ -71,6 +143,13 @@ export const Sizes: Story = {
 
 // Buttons with icons
 export const WithIcons: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Examples of buttons containing icons alongside text.",
+      },
+    },
+  },
   render: () => (
     <div className="flex flex-wrap gap-4">
       <Button>
@@ -95,6 +174,14 @@ export const WithIcons: Story = {
 
 // Icon buttons
 export const IconButtons: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Buttons that contain only an icon, typically used for toolbars or compact UIs. Requires `size='icon'`.",
+      },
+    },
+  },
   render: () => (
     <div className="flex flex-wrap gap-4">
       <Button size="icon" variant="default">
@@ -123,6 +210,18 @@ export const IconButtons: Story = {
 
 // Disabled state
 export const Disabled: Story = {
+  args: {
+    disabled: true,
+    children: "Disabled",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates the appearance of buttons in the disabled state across different variants.",
+      },
+    },
+  },
   render: () => (
     <div className="flex flex-wrap gap-4">
       <Button disabled>Disabled</Button>
@@ -147,6 +246,14 @@ export const Disabled: Story = {
 
 // Loading state
 export const Loading: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Example of buttons indicating a loading or busy state. This typically involves adding an animated icon and disabling the button.",
+      },
+    },
+  },
   render: function LoadingButtons() {
     return (
       <div className="flex flex-wrap gap-4">
@@ -169,6 +276,14 @@ export const Loading: Story = {
 
 // As child example (with anchor)
 export const AsChild: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Using the `asChild` prop to render an anchor tag (`<a>`) styled as a button.",
+      },
+    },
+  },
   render: () => (
     <div className="flex flex-wrap gap-4">
       <Button asChild>
@@ -183,6 +298,14 @@ export const AsChild: Story = {
 
 // Button group
 export const ButtonGroup: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "An example showing how buttons can be grouped visually, often using a container with specific styling.",
+      },
+    },
+  },
   render: () => (
     <div className="inline-flex flex-wrap gap-1 rounded-md border p-1">
       <Button variant="secondary">Profile</Button>
@@ -194,6 +317,14 @@ export const ButtonGroup: Story = {
 
 // Custom styled button
 export const CustomStyled: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates applying custom CSS classes to override or extend the default button styles.",
+      },
+    },
+  },
   render: () => (
     <div className="flex flex-wrap gap-4">
       <Button className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800">

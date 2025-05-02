@@ -24,7 +24,33 @@ const meta: Meta<typeof InputOTP> = {
   component: InputOTP,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**InputOTP Component**
+
+A specialized input component designed for entering one-time passcodes (OTPs), typically consisting of multiple character slots. Built upon the \`input-otp\` library, adapted for shadcn/ui.
+
+**Core Components:**
+*   \`<InputOTP>\`: The root component managing the state and context. Accepts \`maxLength\`, \`value\`, \`onChange\`, etc.
+*   \`<InputOTPGroup>\`: A container (\`<div>\`) for grouping the input slots. Uses Flexbox for layout.
+*   \`<InputOTPSlot>\`: Represents a single character input slot (\`<input>\`). Requires an \`index\` prop corresponding to its position. Handles focus management, input, and deletion logic.
+*   \`<InputOTPSeparator>\`: A decorative element (\`<div>\`) used to visually separate groups of slots (e.g., after 3 digits).
+
+**Key Features:**
+*   **Slot-Based Input**: Provides individual slots for each character of the OTP.
+*   **Automatic Focus Management**: Focus automatically moves to the next slot upon input and to the previous slot upon deletion (Backspace).
+*   **Paste Handling**: Supports pasting codes directly into the slots.
+*   **Controlled/Uncontrolled**: Can be used as a controlled component (\`value\`, \`onChange\`) or uncontrolled.
+*   **Form Integration**: Designed to work within forms, often used with libraries like \`react-hook-form\`.
+*   **Accessibility**: Includes necessary ARIA attributes for accessibility.
+
+See the [shadcn/ui Input OTP documentation](https://ui.shadcn.com/docs/components/input-otp) for more details and examples.
+        `,
+      },
+    },
   },
+  tags: ["autodocs"],
 };
 
 export default meta;
@@ -33,6 +59,13 @@ type Story = StoryObj<typeof InputOTP>;
 
 // Basic OTP input
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "A basic example of the InputOTP component with 6 slots.",
+      },
+    },
+  },
   render: () => (
     <InputOTP maxLength={6}>
       <InputOTPGroup>
@@ -49,6 +82,14 @@ export const Basic: Story = {
 
 // OTP with separators
 export const WithSeparators: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates using `InputOTPSeparator` to visually group OTP digits.",
+      },
+    },
+  },
   render: () => (
     <InputOTP maxLength={6}>
       <InputOTPGroup>
@@ -67,6 +108,14 @@ export const WithSeparators: Story = {
 
 // Numeric OTP
 export const NumericOTP: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "An example restricting input to only numeric characters using the `pattern` prop.",
+      },
+    },
+  },
   render: () => (
     <InputOTP maxLength={4} pattern="^[0-9]+$">
       <InputOTPGroup>
@@ -81,6 +130,14 @@ export const NumericOTP: Story = {
 
 // OTP with custom styling
 export const CustomStyled: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows how to apply custom styling to the `InputOTPGroup` and `InputOTPSlot` components using Tailwind CSS classes.",
+      },
+    },
+  },
   render: () => (
     <InputOTP maxLength={4}>
       <InputOTPGroup className="gap-4">
@@ -98,6 +155,14 @@ export const CustomStyled: Story = {
 
 // OTP with Form Validation
 export const WithFormValidation: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Integrates the InputOTP component within a form using `react-hook-form` and `zod` for validation. It demonstrates handling form submission and displaying validation messages.",
+      },
+    },
+  },
   render: function OTPFormExample() {
     // Define form schema
     const formSchema = z.object({
@@ -161,6 +226,14 @@ export const WithFormValidation: Story = {
 
 // OTP with different sizes
 export const DifferentSizes: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Illustrates how to control the size of the InputOTP component using the `size` prop (`sm`, `default`, `lg`) and how to apply custom dimensions.",
+      },
+    },
+  },
   render: () => (
     <div className="space-y-8">
       <div>
@@ -219,6 +292,14 @@ export const DifferentSizes: Story = {
 
 // OTP with customized separator
 export const CustomSeparator: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates customizing the appearance and content of the `InputOTPSeparator`.",
+      },
+    },
+  },
   render: () => (
     <InputOTP maxLength={6}>
       <InputOTPGroup className="gap-2">
@@ -241,6 +322,14 @@ export const CustomSeparator: Story = {
 
 // SMS verification example
 export const SMSVerification: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A more complex example simulating an SMS verification flow, including a countdown timer, resend functionality, and form integration.",
+      },
+    },
+  },
   render: function SMSVerificationExample() {
     const [countdown, setCountdown] = React.useState(30);
     const [isCounting, setIsCounting] = React.useState(true);

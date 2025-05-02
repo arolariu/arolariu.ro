@@ -5,6 +5,30 @@ import { Separator } from "../dist";
 const meta: Meta<typeof Separator> = {
   title: "Design System/Separator",
   component: Separator,
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Separator Component**
+
+Visually or semantically separates content sections. Renders as a horizontal or vertical line. Built upon the Radix UI Separator primitive.
+
+**Core Component:**
+*   \`<Separator>\`: The main component, wrapping the Radix \`Separator.Root\`.
+
+**Key Features & Props (from Radix UI):**
+*   **Orientation**: Controls the direction of the separator line via the \`orientation\` prop ('horizontal' (default) or 'vertical').
+*   **Accessibility (\`decorative\` prop):**
+    *   If \`decorative\` is true (default), the separator is purely visual and ignored by screen readers (renders as \`<div>\`).
+    *   If \`decorative\` is false, it renders with \`role="separator"\` and provides semantic meaning to assistive technologies. Vertical separators require an explicit \`aria-orientation="vertical"\` when not decorative.
+*   **Styling**: Styled using Tailwind CSS. Typically applies a border or background color and height/width depending on the orientation. Horizontal separators often have margins (\`my-*\`) for spacing. Vertical separators require the parent container to have a defined height (e.g., using Flexbox and \`h-*\`).
+
+See the [shadcn/ui Separator documentation](https://ui.shadcn.com/docs/components/separator) and the [Radix UI Separator documentation](https://www.radix-ui.com/primitives/docs/components/separator) for more details.
+        `,
+      },
+    },
+  },
   tags: ["autodocs"],
   argTypes: {
     orientation: {
@@ -30,6 +54,14 @@ export const Default: Story = {
     orientation: "horizontal",
     decorative: true,
   },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Displays a horizontal Separator, typically used to divide sections of content stacked vertically.",
+      },
+    },
+  },
   render: (args) => (
     <div className="w-full max-w-md">
       <div className="space-y-1">
@@ -50,6 +82,14 @@ export const Vertical: Story = {
     orientation: "vertical",
     decorative: true,
   },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Displays a vertical Separator, used to divide content arranged horizontally. Requires a parent container with a defined height.",
+      },
+    },
+  },
   render: (args) => (
     <div className="flex h-16 items-center gap-4 max-w-md">
       <div>
@@ -66,6 +106,14 @@ export const Vertical: Story = {
 };
 
 export const InList: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows a Separator used within a block of text to create a visual break.",
+      },
+    },
+  },
   render: () => (
     <div className="w-full max-w-md space-y-4">
       <h4 className="text-sm font-medium leading-none">List with Separators</h4>
@@ -88,6 +136,14 @@ export const InList: Story = {
 };
 
 export const InNavigation: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A purely decorative Separator (`orientation='horizontal'` is the default). It provides visual separation without semantic meaning.",
+      },
+    },
+  },
   render: () => (
     <div className="w-full max-w-md space-y-4">
       <h4 className="text-lg font-medium">Navigation Example</h4>
@@ -113,6 +169,14 @@ export const InNavigation: Story = {
 };
 
 export const InForm: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A purely decorative Separator (`orientation='horizontal'` is the default). It provides visual separation without semantic meaning.",
+      },
+    },
+  },
   render: () => (
     <div className="w-full max-w-md space-y-6">
       <h4 className="text-lg font-medium">Form with Separators</h4>
@@ -160,6 +224,14 @@ export const InForm: Story = {
 };
 
 export const CustomStyling: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates applying custom styles (e.g., color, thickness) to the Separator using CSS classes.",
+      },
+    },
+  },
   render: () => (
     <div className="w-full max-w-md space-y-6">
       <h4 className="text-lg font-medium">Custom Styled Separators</h4>

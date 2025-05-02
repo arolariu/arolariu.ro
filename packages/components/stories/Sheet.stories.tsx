@@ -19,7 +19,37 @@ const meta: Meta<typeof Sheet> = {
   component: Sheet,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Sheet Component**
+
+A modal panel that slides in from one of the edges of the screen (top, bottom, left, or right). Often used for navigation menus, forms, or supplementary details, especially in mobile-first designs. This component is essentially a pre-configured \`<Dialog>\` with specific animations and positioning for the slide-in effect.
+
+**Core Components (Composition based on Dialog):**
+*   \`<Sheet>\`: The root component managing the sheet's open state (equivalent to \`<Dialog>\`).
+*   \`<SheetTrigger>\`: The element (usually a \`<Button>\`) that opens the sheet (equivalent to \`<DialogTrigger>\`).
+*   \`<SheetPortal>\`: (Used internally by \`<SheetContent>\`) Renders content into the document body.
+*   \`<SheetOverlay>\`: The background overlay layer (equivalent to \`<DialogOverlay>\`).
+*   \`<SheetContent>\`: The main container for the sheet's content that slides into view. Accepts a \`side\` prop ('top', 'bottom', 'left', 'right') to control the origin and applies appropriate animations and positioning. Includes a close button by default. (Equivalent to \`<DialogContent>\` with added side-specific variants).
+*   \`<SheetHeader>\`: A semantic container (\`<div>\`) for the top section, typically holding title and description.
+*   \`<SheetTitle>\`: The main heading (\`<h2>\`) within the header (equivalent to \`<DialogTitle>\`).
+*   \`<SheetDescription>\`: Supporting text (\`<p>\`) within the header (equivalent to \`<DialogDescription>\`).
+*   \`<SheetFooter>\`: A semantic container (\`<div>\`) for the bottom section, often for action buttons.
+*   \`<SheetClose>\`: A button specifically designed to close the sheet (equivalent to \`<DialogClose>\`).
+
+**Key Features:**
+*   **Slide-in Animation**: Provides distinct animations based on the \`side\` prop ('top', 'bottom', 'left', 'right') specified on \`<SheetContent>\`.
+*   **Modal Behavior**: Inherits the modal behavior from the underlying Dialog primitive (focus trapping, prevents interaction outside).
+*   **Accessibility**: Inherits accessibility features from Radix UI Dialog (ARIA roles, keyboard navigation).
+*   **Responsive**: Commonly used for mobile navigation patterns but works on all screen sizes.
+
+See the [shadcn/ui Sheet documentation](https://ui.shadcn.com/docs/components/sheet) for more details and examples. It builds upon the concepts of the Dialog component.
+        `,
+      },
+    },
   },
+  tags: ["autodocs"],
 };
 
 export default meta;
@@ -28,6 +58,14 @@ type Story = StoryObj<typeof Sheet>;
 
 // Basic sheet (right side)
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A basic Sheet example sliding in from the right side (default). Contains a title, description, form elements, and a footer with a close button.",
+      },
+    },
+  },
   render: () => (
     <Sheet>
       <SheetTrigger asChild>
@@ -66,6 +104,14 @@ export const Basic: Story = {
 
 // Left side sheet
 export const Left: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates a Sheet configured to slide in from the left side of the screen.",
+      },
+    },
+  },
   render: () => (
     <Sheet>
       <SheetTrigger asChild>
@@ -156,6 +202,14 @@ export const Left: Story = {
 
 // Top sheet
 export const Top: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates a Sheet configured to slide in from the top of the screen.",
+      },
+    },
+  },
   render: () => (
     <Sheet>
       <SheetTrigger asChild>
@@ -196,6 +250,14 @@ export const Top: Story = {
 
 // Bottom sheet
 export const Bottom: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates a Sheet configured to slide in from the bottom of the screen.",
+      },
+    },
+  },
   render: () => (
     <Sheet>
       <SheetTrigger asChild>
@@ -243,6 +305,14 @@ export const Bottom: Story = {
 
 // Multiple sheet sizes
 export const Sizes: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows how to customize the size (width or height depending on the side) of the Sheet content area using CSS classes.",
+      },
+    },
+  },
   render: () => (
     <div className="flex flex-wrap gap-4">
       <Sheet>
@@ -324,6 +394,14 @@ export const Sizes: Story = {
 
 // Custom styled sheet
 export const CustomStyled: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A sheet with custom styling to match your application's design system.",
+      },
+    },
+  },
   render: () => (
     <Sheet>
       <SheetTrigger asChild>

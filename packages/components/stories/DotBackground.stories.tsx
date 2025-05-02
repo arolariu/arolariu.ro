@@ -5,8 +5,100 @@ import { DotBackground } from "../dist";
 const meta: Meta<typeof DotBackground> = {
   title: "Design System/Backgrounds/Dot Background",
   component: DotBackground,
+  tags: ["autodocs"], // Enable autodocs for this story
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component: `
+**Dot Background Component**
+
+A custom component that generates a repeating dot pattern background using SVG. Ideal for creating subtle, grid-like visual textures.
+
+**Core Component:**
+*   \`<DotBackground>\`: The main component that renders an SVG element containing the dot pattern.
+
+**Key Features & Props:**
+*   **Pattern Definition**: Uses an SVG \`<pattern>\` element to define a single cell of the grid containing a dot (\`<circle>\`).
+*   **Customization**:
+    *   \`width\`, \`height\`: Control the spacing of the grid (size of the pattern cell).
+    *   \`cr\`: Defines the radius of the dots.
+    *   \`cx\`, \`cy\`: Offset the dot's position within its grid cell.
+    *   \`x\`, \`y\`: Offset the entire pattern's starting position.
+*   **Styling**:
+    *   \`className\`: Applies CSS classes to the root \`<svg>\` element. Crucial for setting the dot color (e.g., \`text-neutral-300/20\`) and potentially opacity or filters.
+    *   \`glow\`: If true, applies a CSS \`filter: drop-shadow(...)\` to create a glowing effect around the dots (color inherited from text color).
+*   **Rendering**: Renders an \`<svg>\` element positioned absolutely to fill its parent container, with a \`<rect>\` element that fills the SVG area using the defined pattern (\`fill="url(#pattern-dots)"\`).
+
+**Technical Details:**
+*   The SVG \`patternUnits\` is set to \`userSpaceOnUse\`, meaning the \`width\` and \`height\` props define the pattern size in pixels.
+*   The component is designed to be placed inside a container with \`position: relative\` or \`absolute\` for proper layering.
+        `,
+      },
+    },
+  },
+  argTypes: {
+    width: {
+      control: "number",
+      description: "The horizontal spacing between dots.",
+      table: {
+        defaultValue: { summary: 16 },
+      },
+    },
+    height: {
+      control: "number",
+      description: "The vertical spacing between dots.",
+      table: {
+        defaultValue: { summary: 16 },
+      },
+    },
+    cr: {
+      control: "number",
+      description: "The radius of each dot.",
+      table: {
+        defaultValue: { summary: 1 },
+      },
+    },
+    cx: {
+      control: "number",
+      description: "Horizontal offset of the dot within its grid cell.",
+      table: {
+        defaultValue: { summary: 0 },
+      },
+    },
+    cy: {
+      control: "number",
+      description: "Vertical offset of the dot within its grid cell.",
+      table: {
+        defaultValue: { summary: 0 },
+      },
+    },
+    x: {
+      control: "number",
+      description: "Horizontal offset of the entire pattern.",
+      table: {
+        defaultValue: { summary: 0 },
+      },
+    },
+    y: {
+      control: "number",
+      description: "Vertical offset of the entire pattern.",
+      table: {
+        defaultValue: { summary: 0 },
+      },
+    },
+    glow: {
+      control: "boolean",
+      description: "Adds a glowing effect to the dots using a CSS filter.",
+      table: {
+        defaultValue: { summary: false },
+      },
+    },
+    className: {
+      control: "text",
+      description:
+        "CSS class name for the SVG element (useful for setting color, e.g., `text-neutral-300/20`).",
+    },
   },
 };
 
@@ -23,6 +115,13 @@ const BackgroundWrapper = ({ children, className = "", height = "400px" }) => (
 
 // Basic example
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Displays the default dot background pattern.",
+      },
+    },
+  },
   render: () => (
     <BackgroundWrapper>
       <DotBackground />
@@ -32,15 +131,33 @@ export const Basic: Story = {
 
 // With glowing effect
 export const WithGlowingDots: Story = {
-  render: () => (
+  args: {
+    glow: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "Applies a glow effect to the dots using the `glow` prop.",
+      },
+    },
+  },
+  render: (args) => (
     <BackgroundWrapper>
-      <DotBackground glow={true} />
+      <DotBackground {...args} />
     </BackgroundWrapper>
   ),
 };
 
 // Custom spacing
 export const CustomSpacing: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates different dot densities by adjusting the `width` and `height` props.",
+      },
+    },
+  },
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
       <BackgroundWrapper
@@ -88,6 +205,14 @@ export const CustomSpacing: Story = {
 
 // Custom dot radius
 export const CustomDotRadius: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows how changing the `cr` (circle radius) prop affects the size of the dots.",
+      },
+    },
+  },
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
       <BackgroundWrapper
@@ -125,6 +250,14 @@ export const CustomDotRadius: Story = {
 
 // Different colors
 export const DifferentColors: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Illustrates setting the dot color using the `className` prop (e.g., Tailwind text color utilities) on different background colors.",
+      },
+    },
+  },
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
       <BackgroundWrapper
@@ -172,6 +305,14 @@ export const DifferentColors: Story = {
 
 // With offset
 export const WithOffset: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows the effect of offsetting the entire pattern (`x`, `y`) or the position of dots within their cells (`cx`, `cy`).",
+      },
+    },
+  },
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
       <BackgroundWrapper
@@ -199,6 +340,14 @@ export const WithOffset: Story = {
 
 // Interactive showcase with content
 export const WithContent: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates using the dot background as a backdrop for foreground content, combining several customization props.",
+      },
+    },
+  },
   render: () => (
     <div className="p-4">
       <div
@@ -232,6 +381,14 @@ export const WithContent: Story = {
 
 // Full page background
 export const FullPageBackground: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows how the component can be used to cover the entire viewport as a page background.",
+      },
+    },
+  },
   render: () => (
     <div className="h-screen w-screen p-0 m-0">
       <div className="relative w-full h-full">

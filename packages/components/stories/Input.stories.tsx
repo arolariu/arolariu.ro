@@ -5,8 +5,82 @@ import { Input, Label, Button } from "../dist";
 const meta: Meta<typeof Input> = {
   title: "Design System/Input",
   component: Input,
+  tags: ["autodocs"], // Enable autodocs for this story
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Input Component**
+
+Renders a standard HTML \`<input>\` element with consistent styling applied, suitable for text-based user input in forms.
+
+**Core Component:**
+*   \`<Input>\`: A styled wrapper around the native \`<input>\` element.
+
+**Key Features & Props:**
+*   **Native Attributes**: Accepts all standard HTML \`<input>\` attributes, including:
+    *   \`type\`: ('text', 'password', 'email', 'number', 'search', 'tel', 'url', 'date', etc.) - Determines the input behavior and appearance.
+    *   \`placeholder\`: Text displayed when the input is empty.
+    *   \`value\`, \`defaultValue\`: For controlled or uncontrolled input state.
+    *   \`onChange\`: Callback function triggered when the input value changes.
+    *   \`disabled\`: Disables user interaction.
+    *   \`required\`, \`minLength\`, \`maxLength\`, \`pattern\`: For form validation.
+    *   \`id\`, \`name\`: For form submission and label association.
+*   **Styling**: Applies consistent visual styling (padding, border, background, focus ring) using Tailwind CSS utility classes. The specific styles adapt based on the theme (light/dark).
+*   **Accessibility**: Relies on the native \`<input>\` element's accessibility. It's crucial to pair it with a \`<Label>\` component using matching \`id\` and \`htmlFor\` attributes for proper screen reader support.
+
+See the [shadcn/ui Input documentation](https://ui.shadcn.com/docs/components/input) for more details and examples.
+        `,
+      },
+    },
+  },
+  argTypes: {
+    type: {
+      control: "select",
+      options: [
+        "text",
+        "password",
+        "email",
+        "number",
+        "search",
+        "tel",
+        "url",
+        "date",
+        "time",
+        "datetime-local",
+        "month",
+        "week",
+      ],
+      description: "The type attribute of the input element.",
+      table: {
+        type: { summary: "string" },
+        defaultValue: { summary: "text" },
+      },
+    },
+    placeholder: {
+      control: "text",
+      description: "Placeholder text for the input.",
+      table: {
+        type: { summary: "string" },
+      },
+    },
+    disabled: {
+      control: "boolean",
+      description: "Whether the input is disabled.",
+      table: {
+        type: { summary: "boolean" },
+        defaultValue: { summary: "false" },
+      },
+    },
+    className: {
+      control: "text",
+      description: "Additional CSS classes to apply to the input.",
+      table: {
+        type: { summary: "string" },
+      },
+    },
+    // Standard input attributes like value, onChange, etc., are also available
   },
 };
 
@@ -15,6 +89,13 @@ type Story = StoryObj<typeof Input>;
 
 // Basic input
 export const Default: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "The default appearance of the Input component.",
+      },
+    },
+  },
   render: () => (
     <div className="w-80">
       <Input placeholder="Type something..." />
@@ -24,6 +105,14 @@ export const Default: Story = {
 
 // With label
 export const WithLabel: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Associating an Input component with a Label using \`htmlFor\` and \`id\`.",
+      },
+    },
+  },
   render: () => (
     <div className="w-80 space-y-2">
       <Label htmlFor="name">Name</Label>
@@ -34,6 +123,13 @@ export const WithLabel: Story = {
 
 // Disabled state
 export const Disabled: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Demonstrates the appearance of a disabled Input component.",
+      },
+    },
+  },
   render: () => (
     <div className="w-80">
       <Input placeholder="Disabled input" disabled />
@@ -43,6 +139,14 @@ export const Disabled: Story = {
 
 // Input types
 export const InputTypes: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Showcases various \`type\` attributes available for the Input component (e.g., email, password, number, date, file).",
+      },
+    },
+  },
   render: () => (
     <div className="w-80 space-y-4">
       <div className="space-y-2">
@@ -85,6 +189,14 @@ export const InputTypes: Story = {
 
 // Input validation states
 export const ValidationStates: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Illustrates how to visually represent valid and invalid input states, typically by adding custom border colors or using ARIA attributes like \`aria-invalid\`.",
+      },
+    },
+  },
   render: () => (
     <div className="w-80 space-y-4">
       <div className="space-y-2">
@@ -108,6 +220,14 @@ export const ValidationStates: Story = {
 
 // Input with icon
 export const WithIcon: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Examples of adding icons inside the Input component, usually for search or email fields, requiring custom positioning and padding.",
+      },
+    },
+  },
   render: () => (
     <div className="w-80 space-y-4">
       <div className="relative">
@@ -151,6 +271,14 @@ export const WithIcon: Story = {
 
 // Input with button
 export const WithButton: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Combining an Input component with a Button or other elements, often used for search bars or URL inputs.",
+      },
+    },
+  },
   render: () => (
     <div className="space-y-4">
       <div className="flex w-80">
@@ -170,6 +298,14 @@ export const WithButton: Story = {
 
 // Input sizes
 export const Sizes: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates different size variations of the Input component by applying custom height and text size classes.",
+      },
+    },
+  },
   render: () => (
     <div className="w-80 space-y-4">
       <div className="space-y-2">
@@ -192,6 +328,14 @@ export const Sizes: Story = {
 
 // Input group
 export const InputGroup: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Grouping multiple related Input components within a \`<fieldset>\` for better form structure and accessibility.",
+      },
+    },
+  },
   render: () => (
     <div className="w-80 space-y-4">
       <fieldset className="space-y-4 border rounded-md p-4">
@@ -230,6 +374,14 @@ export const InputGroup: Story = {
 
 // Input with contextual help
 export const WithHelp: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Providing helpful text or hints below the Input component to guide the user.",
+      },
+    },
+  },
   render: () => (
     <div className="w-80 space-y-6">
       <div className="space-y-2">
@@ -266,6 +418,14 @@ export const WithHelp: Story = {
 
 // Interactive form example
 export const FormExample: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A complete form example demonstrating the use of Input components along with Labels and Buttons within a form structure.",
+      },
+    },
+  },
   render: () => (
     <div className="w-96 p-6 border rounded-lg shadow-sm">
       <h2 className="text-xl font-semibold mb-4">Create an account</h2>

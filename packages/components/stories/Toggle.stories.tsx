@@ -20,6 +20,32 @@ const meta: Meta<typeof Toggle> = {
   component: Toggle,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Toggle Component**
+
+A two-state button that can be either 'on' (pressed) or 'off' (unpressed). Useful for representing boolean states or actions like toggling formatting. Built upon the Radix UI Toggle primitive.
+
+**Core Component:**
+*   \`<Toggle>\`: The main component, rendering as a \`<button>\` with \`aria-pressed\` state. Manages its pressed state.
+
+**Key Features & Props (from Radix UI & cva):**
+*   **Pressed State**: Represents a boolean on/off state, visually indicated by styling changes and managed via the \`pressed\` or \`defaultPressed\` prop.
+*   **State Management**: Supports controlled (\`pressed\`, \`onPressedChange\`) and uncontrolled (\`defaultPressed\`) state.
+*   **Accessibility**:
+    *   Renders as a \`<button>\` element.
+    *   Uses \`aria-pressed\` attribute to convey the current state to assistive technologies.
+    *   Requires an accessible label, either via its text content or an \`aria-label\` prop, especially if it only contains an icon.
+*   **Styling Variants (\`cva\` based):**
+    *   \`variant\`: Controls the visual style ('default', 'outline').
+    *   \`size\`: Controls padding and font size ('default', 'sm', 'lg').
+*   **Disabled State**: Accepts a \`disabled\` prop to make the toggle non-interactive.
+
+See the [shadcn/ui Toggle documentation](https://ui.shadcn.com/docs/components/toggle) and the [Radix UI Toggle documentation](https://www.radix-ui.com/primitives/docs/components/toggle) for more details.
+        `,
+      },
+    },
   },
   argTypes: {
     variant: {
@@ -41,6 +67,7 @@ const meta: Meta<typeof Toggle> = {
       description: "Whether the toggle is disabled",
     },
   },
+  tags: ["autodocs"],
 };
 
 export default meta;
@@ -53,6 +80,14 @@ export const Basic: Story = {
     children: "Toggle me",
     "aria-label": "Toggle bold",
     defaultPressed: false,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A basic Toggle button with text. Clicking it toggles its pressed state.",
+      },
+    },
   },
 };
 
@@ -76,6 +111,13 @@ export const Variants: Story = {
       </div>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Examples of Toggle buttons with different visual variants.",
+      },
+    },
+  },
 };
 
 // Toggle sizes
@@ -105,6 +147,13 @@ export const Sizes: Story = {
       </div>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Examples of Toggle buttons with different sizes.",
+      },
+    },
+  },
 };
 
 // Text formatting example
@@ -122,6 +171,14 @@ export const TextFormatting: Story = {
       </Toggle>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Toggle buttons for text formatting options like bold, italic, and underline.",
+      },
+    },
+  },
 };
 
 // Text alignment example
@@ -142,6 +199,14 @@ export const TextAlignment: Story = {
       </Toggle>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Toggle buttons for text alignment options like left, center, right, and justify.",
+      },
+    },
+  },
 };
 
 // With disabled state
@@ -171,6 +236,13 @@ export const DisabledStates: Story = {
       </div>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story: "Examples of Toggle buttons in disabled states.",
+      },
+    },
+  },
 };
 
 // Toggle with custom styling
@@ -202,6 +274,14 @@ export const CustomStyling: Story = {
       </Toggle>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Examples of Toggle buttons with custom styling for different actions.",
+      },
+    },
+  },
 };
 
 // Toggle group example
@@ -241,4 +321,12 @@ export const ToggleGroupExample: Story = {
       </div>
     </div>
   ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Examples of grouped Toggle buttons for notifications and view options.",
+      },
+    },
+  },
 };

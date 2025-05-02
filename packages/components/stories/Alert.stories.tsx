@@ -11,6 +11,41 @@ import {
 const meta: Meta<typeof Alert> = {
   title: "Design System/Alert",
   component: Alert,
+  tags: ["autodocs"], // Enable autodocs for this story
+  parameters: {
+    docs: {
+      description: {
+        component: `
+**Alert Component**
+
+Displays a prominent message to attract user attention, often indicating status or important information. Based on simple div elements with variants controlled by \`cva\`.
+
+**Core Components:**
+*   \`<Alert>\`: The main container div. Accepts a \`variant\` prop ('default', 'destructive') to control styling.
+*   \`<AlertTitle>\`: A heading element (usually \`<h5>\`) for the alert's title.
+*   \`<AlertDescription>\`: A paragraph element (\`<p>\`) for the main body text of the alert.
+
+**Key Features:**
+*   Provides distinct visual styles for different alert types (e.g., default, destructive).
+*   Designed to be used with icons (like those from \`lucide-react\`) placed directly within the \`<Alert>\` component for visual context.
+*   Flexible structure allows for simple text or more complex content within the description.
+
+See the [shadcn/ui Alert documentation](https://ui.shadcn.com/docs/components/alert) for more details and examples.
+        `,
+      },
+    },
+  },
+  argTypes: {
+    variant: {
+      options: ["default", "destructive"],
+      control: { type: "radio" },
+      description: "The visual style of the alert.",
+      table: {
+        defaultValue: { summary: "default" },
+      },
+    },
+    // Children are implicitly handled by the render function/args
+  },
 };
 
 export default meta;
@@ -19,8 +54,19 @@ type Story = StoryObj<typeof Alert>;
 
 // Default alert
 export const Default: Story = {
-  render: () => (
-    <Alert>
+  args: {
+    variant: "default",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "The default alert style, suitable for general information.",
+      },
+    },
+  },
+  render: (args) => (
+    <Alert {...args}>
+      <InfoIcon />
       <AlertTitle>Default Alert</AlertTitle>
       <AlertDescription>
         This is a default alert — check it out!
@@ -31,8 +77,20 @@ export const Default: Story = {
 
 // Destructive alert
 export const Destructive: Story = {
-  render: () => (
-    <Alert variant="destructive">
+  args: {
+    variant: "destructive",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "The destructive alert style, used for errors or critical warnings.",
+      },
+    },
+  },
+  render: (args) => (
+    <Alert {...args}>
+      <AlertCircleIcon />
       <AlertTitle>Error Alert</AlertTitle>
       <AlertDescription>
         There was a problem with your request. Please try again.

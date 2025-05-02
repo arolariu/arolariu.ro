@@ -16,7 +16,34 @@ const meta: Meta<typeof Pagination> = {
   component: Pagination,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Pagination Component**
+
+Provides navigation controls (links, buttons) for browsing through paginated content, allowing users to jump between pages. Composed of several semantic sub-components.
+
+**Core Components:**
+*   \`<Pagination>\`: The root container component, typically a \`<nav>\` element with appropriate ARIA labeling (\`aria-label="pagination"\`).
+*   \`<PaginationContent>\`: A container (\`<ul>\`) for the pagination items, usually using Flexbox for layout.
+*   \`<PaginationItem>\`: A list item (\`<li>\`) wrapping each pagination element (link, ellipsis, button).
+*   \`<PaginationLink>\`: An anchor tag (\`<a>\`) representing a link to a specific page. Accepts an \`isActive\` prop for styling the current page link. Can be used with routing libraries via the \`asChild\` prop. Often includes \`aria-current={isActive ? "page" : undefined}\`.
+*   \`<PaginationPrevious>\`: A specialized \`<PaginationLink>\` component (usually rendering an anchor tag) for navigating to the previous page. Typically contains a "Previous" label and/or icon.
+*   \`<PaginationNext>\`: A specialized \`<PaginationLink>\` component (usually rendering an anchor tag) for navigating to the next page. Typically contains a "Next" label and/or icon.
+*   \`<PaginationEllipsis>\`: Represents one or more omitted page links (\`<span>\`), often used when there are many pages. Typically renders an ellipsis character ('...').
+
+**Key Features:**
+*   **Semantic Structure**: Uses \`nav\`, \`ul\`, \`li\` for accessibility and SEO.
+*   **Accessibility**: Includes ARIA attributes (\`aria-label\`, \`aria-current\`) for screen reader support. Active links clearly indicate the current page. Previous/Next links provide clear navigation cues.
+*   **Composable**: Allows flexible arrangement of page links, previous/next buttons, and ellipsis indicators.
+*   **Styling**: Uses Tailwind CSS utility classes for styling links, buttons, and the active state.
+
+See the [shadcn/ui Pagination documentation](https://ui.shadcn.com/docs/components/pagination) for more details and examples. Note that this component primarily provides the UI structure; the logic for handling page changes, total page counts, and generating links needs to be implemented separately based on the application's state management and routing.
+        `,
+      },
+    },
   },
+  tags: ["autodocs"],
 };
 
 export default meta;
@@ -25,6 +52,14 @@ type Story = StoryObj<typeof Pagination>;
 
 // Basic pagination
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Displays a basic pagination setup with previous/next buttons and a few page links. The active page is highlighted.",
+      },
+    },
+  },
   render: () => (
     <Pagination>
       <PaginationContent>
@@ -52,6 +87,14 @@ export const Basic: Story = {
 
 // Pagination with ellipsis
 export const WithEllipsis: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates pagination with ellipsis (...) to indicate omitted page numbers, useful for navigating large sets of pages.",
+      },
+    },
+  },
   render: () => (
     <Pagination>
       <PaginationContent>
@@ -91,6 +134,14 @@ export const WithEllipsis: Story = {
 
 // Pagination with custom item count
 export const CustomItemCount: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows how to dynamically generate a specific number of pagination links based on the total number of pages.",
+      },
+    },
+  },
   render: () => (
     <Pagination>
       <PaginationContent>
@@ -114,6 +165,14 @@ export const CustomItemCount: Story = {
 
 // Disabled pagination items
 export const DisabledItems: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Illustrates how pagination controls (like the 'Previous' button) can be disabled, typically when navigating to the first or last page.",
+      },
+    },
+  },
   render: () => (
     <Pagination>
       <PaginationContent>
@@ -141,6 +200,14 @@ export const DisabledItems: Story = {
 
 // Interactive pagination
 export const Interactive: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Provides a fully interactive pagination example using React state to manage the current page. It uses `Button` components for navigation instead of `PaginationLink` and demonstrates conditional rendering of page numbers and ellipsis.",
+      },
+    },
+  },
   render: function InteractivePagination() {
     const [currentPage, setCurrentPage] = React.useState(4);
     const totalPages = 10;
@@ -293,6 +360,14 @@ export const Interactive: Story = {
 
 // Compact pagination (mobile friendly)
 export const Compact: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Presents a compact layout suitable for smaller screens. It allows items to wrap and displays the current page context ('Page X of Y').",
+      },
+    },
+  },
   render: () => (
     <Pagination>
       <PaginationContent className="flex-wrap">
@@ -323,6 +398,14 @@ export const Compact: Story = {
 
 // Custom styled pagination
 export const CustomStyled: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates applying custom CSS classes to pagination components for unique styling, overriding the default appearance.",
+      },
+    },
+  },
   render: () => (
     <Pagination>
       <PaginationContent>

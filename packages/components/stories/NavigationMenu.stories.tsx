@@ -18,14 +18,48 @@ const meta: Meta<typeof NavigationMenu> = {
   component: NavigationMenu,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Navigation Menu Component**
+
+Provides a structured and accessible way to build top-level navigation menus, often used in website headers, supporting dropdowns and complex layouts. Built upon the Radix UI Navigation Menu primitive.
+
+**Core Components (from Radix UI):**
+*   \`<NavigationMenu>\`: The root component managing state, context, and layout direction. Accepts props like \`value\`, \`defaultValue\`, \`onValueChange\`, \`orientation\`, \`dir\`, \`delayDuration\`, \`skipDelayDuration\`. Includes \`<NavigationMenuViewport>\` by default.
+*   \`<NavigationMenuList>\`: The container (\`<ul>\`) for the top-level navigation items (\`<NavigationMenuItem>\`). Typically uses Flexbox for layout.
+*   \`<NavigationMenuItem>\`: A list item (\`<li>\`) wrapping either a trigger (\`<NavigationMenuTrigger>\`) or a link (\`<NavigationMenuLink>\`).
+*   \`<NavigationMenuTrigger>\`: An element (usually a button) that toggles the visibility of associated \`<NavigationMenuContent>\`. Includes a dropdown indicator icon. Styled using \`navigationMenuTriggerStyle\`. Handles ARIA attributes (\`aria-expanded\`, \`aria-controls\`).
+*   \`<NavigationMenuContent>\`: The container (\`<div>\`) that appears when a trigger is activated. Holds the dropdown content (often structured with \`ul\`/\`li\` or custom components). Handles animation and positioning relative to the viewport or trigger.
+*   \`<NavigationMenuLink>\`: A styled link component (\`<a>\`) for navigation. Can be used as a top-level item or within content. Includes styles for active states and interactions. Can integrate with routing libraries via \`asChild\`. Based on Radix UI Link.
+*   \`<NavigationMenuIndicator>\`: A visual element (\`<div>\`), often an arrow, that moves to indicate the currently active trigger when its content is open. Positioned relative to the list. Can be animated.
+*   \`<NavigationMenuViewport>\`: An absolutely positioned container (\`<div>\`) that wraps and positions all open \`<NavigationMenuContent>\` components, ensuring consistent alignment and animation. Can be disabled via the \`viewport\` prop on \`<NavigationMenu>\`.
+
+**Helper Styles:**
+*   \`navigationMenuTriggerStyle\`: A \`cva\` style function providing base styling for triggers and links intended to look like triggers.
+
+**Key Features:**
+*   **Accessibility**: Full keyboard navigation (Tab, Shift+Tab, Arrow keys, Enter, Space, Escape), focus management, and ARIA roles/attributes for menu structures.
+*   **Hover/Focus Intent**: Uses delays (\`delayDuration\`, \`skipDelayDuration\`) to manage opening/closing based on user intent, preventing accidental activation.
+*   **Flexible Layout**: Supports horizontal and vertical orientations. Content areas allow for complex layouts beyond simple lists.
+*   **Viewport Positioning**: Ensures dropdown content remains visible within the browser viewport.
+
+See the [shadcn/ui Navigation Menu documentation](https://ui.shadcn.com/docs/components/navigation-menu) and the [Radix UI Navigation Menu documentation](https://www.radix-ui.com/primitives/docs/components/navigation-menu) for comprehensive details.
+        `,
+      },
+    },
   },
+  tags: ["autodocs"], // Add autodocs tag
 };
 
 export default meta;
 
 type Story = StoryObj<typeof NavigationMenu>;
 
-// Basic navigation menu
+/**
+ * A basic navigation menu with dropdowns for 'Getting started' and 'Components',
+ * and a direct link for 'Documentation'.
+ */
 export const Basic: Story = {
   render: () => (
     <NavigationMenu>
@@ -283,7 +317,7 @@ export const MobileFriendly: Story = {
         <NavigationMenu
           className={cn(
             "transition-all duration-200",
-            isOpen ? "block" : "hidden md:block"
+            isOpen ? "block" : "hidden md:block",
           )}
         >
           <NavigationMenuList className="flex-col md:flex-row space-y-2 md:space-y-0">
@@ -350,7 +384,7 @@ const ListItem = React.forwardRef<
           ref={ref}
           className={cn(
             "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-neutral-100 focus:bg-neutral-100 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800",
-            className
+            className,
           )}
           {...props}
         >

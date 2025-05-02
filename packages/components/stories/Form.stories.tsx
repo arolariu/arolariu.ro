@@ -29,8 +29,37 @@ import {
 const meta: Meta<typeof Form> = {
   title: "Design System/Form",
   component: Form,
+  tags: ["autodocs"], // Enable autodocs for this story
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Form Component & Hooks**
+
+Provides a structured way to build accessible and validated forms using \`react-hook-form\` for state management and \`zod\` for schema validation, integrated with shadcn/ui components.
+
+**Core Components & Concepts:**
+*   **\`useForm\` Hook (from \`react-hook-form\`):** Initializes the form state, validation rules (using a Zod schema via \`zodResolver\`), default values, and provides methods (\`handleSubmit\`, \`control\`, \`formState\`, etc.).
+*   **\`<Form>\` Component:** The root form provider. It accepts the return value of \`useForm\` and passes the form context down to its children using \`FormProvider\` from \`react-hook-form\`. Renders an HTML \`<form>\` element and attaches the \`onSubmit\` handler.
+*   **\`<FormField>\` Component:** Connects a specific form input to the \`react-hook-form\` state. It uses the \`control\` object from \`useForm\` and requires a \`name\` prop matching a field in the Zod schema. It uses a render prop pattern (\`render\` prop) to pass field state (\`field\` object) and field state (\`fieldState\` object) to the actual input component.
+*   **\`<FormItem>\` Component:** A wrapper (\`<div>\`) providing structure and spacing for a single form field, including its label, input, description, and error message.
+*   **\`<FormLabel>\` Component:** Renders a \`<Label>\` associated with the form field.
+*   **\`<FormControl>\` Component:** A wrapper (\`<div>\`) around the actual input component (e.g., \`<Input>\`, \`<Select>\`, \`<Checkbox>\`). It receives the \`field\` props (\`onChange\`, \`onBlur\`, \`value\`, \`ref\`) from \`<FormField>\` and spreads them onto the input.
+*   **\`<FormDescription>\` Component:** Optional helper text (\`<p>\`) displayed below the input to provide context or instructions.
+*   **\`<FormMessage>\` Component:** Displays validation error messages (\`<p>\`) for the associated field, automatically populated from \`react-hook-form\`'s \`formState.errors\`.
+
+**Key Features:**
+*   **Schema Validation**: Leverages Zod schemas for robust type checking and validation rules, integrated via \`@hookform/resolvers/zod\`.
+*   **State Management**: Simplifies form state handling (values, errors, touched fields, submission state) using \`react-hook-form\`.
+*   **Accessibility**: Encourages proper association of labels with inputs and provides clear error feedback.
+*   **Integration**: Seamlessly integrates with shadcn/ui input components (\`<Input>\`, \`<Select>\`, etc.) through the \`<FormControl>\` and \`field\` props.
+*   **Developer Experience**: Simplifies complex form logic and validation implementation.
+
+See the [shadcn/ui Form documentation](https://ui.shadcn.com/docs/components/form), [React Hook Form documentation](https://react-hook-form.com/docs), and [Zod documentation](https://zod.dev/) for comprehensive details.
+        `,
+      },
+    },
   },
 };
 
@@ -40,6 +69,14 @@ type Story = StoryObj<typeof Form>;
 
 // Basic login form
 export const LoginForm: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A basic login form with email, password, and a 'remember me' checkbox. Demonstrates basic field setup, validation with Zod, and submission handling.",
+      },
+    },
+  },
   render: function LoginFormExample() {
     // Define form schema
     const formSchema = z.object({
@@ -138,6 +175,14 @@ export const LoginForm: Story = {
 
 // Registration form with more fields
 export const RegistrationForm: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A more complex registration form including name, email, password confirmation, select dropdown (role), textarea (bio), and terms acceptance checkbox. Shows cross-field validation (password confirmation) and various input types.",
+      },
+    },
+  },
   render: function RegistrationFormExample() {
     // Define form schema
     const formSchema = z
@@ -324,6 +369,14 @@ export const RegistrationForm: Story = {
 
 // Form with different field types
 export const DifferentFieldTypes: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Showcases various common form field types integrated within the Form component structure: Input, Textarea, Select, Checkbox, Switch, and RadioGroup.",
+      },
+    },
+  },
   render: function FieldTypesExample() {
     // Define form schema
     const formSchema = z.object({
@@ -512,6 +565,14 @@ export const DifferentFieldTypes: Story = {
 
 // Form with validation
 export const ValidationForm: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Highlights different validation rules using Zod, including min/max length, regex patterns, email format, number checks, URL format, and required booleans. Validation messages are displayed using \`<FormMessage>\`.",
+      },
+    },
+  },
   render: function ValidationFormExample() {
     // Define form schema with validation
     const formSchema = z.object({

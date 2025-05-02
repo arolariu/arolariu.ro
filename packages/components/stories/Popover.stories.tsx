@@ -4,18 +4,46 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
+  PopoverAnchor,
   Button,
-  Input,
   Label,
+  Input,
 } from "../dist";
-import { Settings, PlusCircle, Check, ChevronsUpDown } from "lucide-react";
 
 const meta: Meta<typeof Popover> = {
   title: "Design System/Popover",
   component: Popover,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Popover Component**
+
+Displays rich content in a pop-up container that appears relative to a trigger element. Useful for showing additional information, forms, or controls without requiring a full modal dialog. Built upon the Radix UI Popover primitive.
+
+**Core Components (from Radix UI):**
+*   \`<Popover>\`: The root component managing state and context. Accepts props like \`open\`, \`defaultOpen\`, \`onOpenChange\`, \`modal\`.
+*   \`<PopoverTrigger>\`: The element (usually a \`<Button>\`) that toggles the popover's visibility on click. Handles ARIA attributes (\`aria-haspopup\`, \`aria-expanded\`, \`aria-controls\`).
+*   \`<PopoverPortal>\`: (Optional) Renders the content into a specific part of the DOM, typically the document body. \`<PopoverContent>\` uses this by default.
+*   \`<PopoverContent>\`: The container for the popover's content that appears. Handles positioning, styling, focus management (if modal), and accessibility attributes. Accepts props like \`side\`, \`sideOffset\`, \`align\`, \`alignOffset\`, \`avoidCollisions\`.
+*   \`<PopoverClose>\`: A button specifically designed to close the popover. Can be placed anywhere within the \`<PopoverContent>\`.
+*   \`<PopoverAnchor>\`: (Optional) An element that can be used as the reference point for positioning the \`<PopoverContent>\`, instead of the \`<PopoverTrigger>\`.
+*   \`<PopoverArrow>\`: (Optional) Renders an arrow pointing from the content to the trigger or anchor.
+
+**Key Features & Props (from Radix UI):**
+*   **Trigger Interaction**: Opens/closes typically via clicking the trigger. Closes on Escape key press or interaction outside (if not modal).
+*   **Modality (\`modal\` prop):** If true, traps focus within the popover and prevents interaction with outside elements. If false (default), allows interaction outside.
+*   **Positioning**: Highly customizable positioning relative to the trigger or anchor using \`side\`, \`align\`, and offset props. Includes collision detection (\`avoidCollisions\`) to keep content within the viewport.
+*   **Accessibility**: Manages focus appropriately (especially in modal mode) and provides necessary ARIA attributes.
+*   **Portal Rendering**: Ensures the popover appears correctly above other page elements.
+
+See the [shadcn/ui Popover documentation](https://ui.shadcn.com/docs/components/popover) and the [Radix UI Popover documentation](https://www.radix-ui.com/primitives/docs/components/popover) for comprehensive details.
+        `,
+      },
+    },
   },
+  tags: ["autodocs"],
 };
 
 export default meta;
@@ -24,6 +52,14 @@ type Story = StoryObj<typeof Popover>;
 
 // Basic popover
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A basic Popover example. Clicking the button triggers the popover, which displays simple text content. The popover closes when clicking outside or pressing Escape.",
+      },
+    },
+  },
   render: () => (
     <Popover>
       <PopoverTrigger asChild>
@@ -79,6 +115,14 @@ export const Basic: Story = {
 
 // Popover with settings
 export const WithSettings: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates embedding a form within a Popover. This allows users to input data directly within the popover interface, useful for quick edits or settings adjustments.",
+      },
+    },
+  },
   render: () => (
     <Popover>
       <PopoverTrigger asChild>
@@ -146,6 +190,14 @@ export const WithSettings: Story = {
 
 // Popover with actions
 export const WithActions: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Illustrates a controlled Popover where the open/closed state is managed externally using React state. This provides more control over the popover's behavior.",
+      },
+    },
+  },
   render: () => (
     <Popover>
       <PopoverTrigger asChild>
@@ -196,6 +248,14 @@ export const WithActions: Story = {
 
 // Popover with selection
 export const WithSelection: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows how to use a custom element (an icon button in this case) as the trigger for the Popover, instead of the default button.",
+      },
+    },
+  },
   render: () => (
     <Popover>
       <PopoverTrigger asChild>
@@ -218,7 +278,7 @@ export const WithSelection: Story = {
               >
                 {category}
               </div>
-            )
+            ),
           )}
         </div>
       </PopoverContent>
@@ -228,6 +288,14 @@ export const WithSelection: Story = {
 
 // Popover with custom styling
 export const CustomStyling: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A non-modal Popover example. Unlike a modal, interacting with elements outside the popover does not automatically close it.",
+      },
+    },
+  },
   render: () => (
     <Popover>
       <PopoverTrigger asChild>
@@ -262,6 +330,14 @@ export const CustomStyling: Story = {
 
 // Positioned popovers
 export const PositionedPopovers: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Illustrates various positioning options for the Popover component, including top, right, bottom, and left.",
+      },
+    },
+  },
   render: () => (
     <div className="flex flex-wrap gap-4 items-center justify-center">
       <Popover>

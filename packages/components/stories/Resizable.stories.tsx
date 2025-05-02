@@ -19,7 +19,32 @@ const meta: Meta<typeof ResizablePanelGroup> = {
   component: ResizablePanelGroup,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Resizable Components**
+
+A set of components for creating layouts with panels that can be resized by dragging handles between them. Built upon the \`react-resizable-panels\` library.
+
+**Core Components (from \`react-resizable-panels\`):**
+*   \`<ResizablePanelGroup>\`: The root container that manages the layout and state of its child panels and handles. Requires a \`direction\` prop ('horizontal' or 'vertical'). Accepts props like \`onLayout\` (callback with panel sizes), \`autoSaveId\` (for persisting layout to localStorage).
+*   \`<ResizablePanel>\`: Represents a single panel within the group. Accepts props like \`defaultSize\` (initial size percentage), \`minSize\`, \`maxSize\` (constraints in percentage), \`order\`, \`collapsible\`, \`onCollapse\`, \`onExpand\`.
+*   \`<ResizableHandle>\`: The draggable divider element placed between two \`<ResizablePanel>\` components. Accepts a \`withHandle\` prop to render a visual grabber indicator inside. Handles drag events to resize adjacent panels. Accepts \`disabled\` and \`onDragging\` props.
+
+**Key Features:**
+*   **Directional Layout**: Supports both horizontal (side-by-side) and vertical (stacked) panel arrangements via the \`direction\` prop on the group.
+*   **Size Control**: Allows setting default sizes, minimum/maximum size constraints for panels. Sizes are typically specified in percentages.
+*   **Drag Interaction**: Provides draggable handles for users to intuitively resize panels.
+*   **Persistence**: Can automatically save and restore layout configurations to \`localStorage\` using the \`autoSaveId\` prop.
+*   **Collapsible Panels**: Supports making panels collapsible down to a minimum size or completely hidden.
+*   **Accessibility**: \`react-resizable-panels\` includes keyboard support (Arrow keys, Home, End) for resizing handles when focused.
+
+See the [shadcn/ui Resizable documentation](https://ui.shadcn.com/docs/components/resizable) and the [react-resizable-panels documentation](https://react-resizable-panels.vercel.app/) for comprehensive details and advanced usage.
+        `,
+      },
+    },
   },
+  tags: ["autodocs"],
 };
 
 export default meta;
@@ -28,6 +53,13 @@ type Story = StoryObj<typeof ResizablePanelGroup>;
 
 // Basic horizontal resizable panels
 export const BasicHorizontal: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Demonstrates a horizontal ResizablePanelGroup. Panels are arranged side-by-side, and the vertical handle allows resizing their widths.",
+      },
+    },
+  },
   render: () => (
     <div className="h-[500px] max-w-[800px] rounded-lg border">
       <ResizablePanelGroup
@@ -52,6 +84,13 @@ export const BasicHorizontal: Story = {
 
 // Basic vertical resizable panels
 export const BasicVertical: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Demonstrates a vertical ResizablePanelGroup. Panels are stacked vertically, and the horizontal handle allows resizing their heights.",
+      },
+    },
+  },
   render: () => (
     <div className="h-[500px] max-w-[800px] rounded-lg border">
       <ResizablePanelGroup direction="vertical" className="h-full rounded-lg border">
@@ -79,6 +118,13 @@ export const BasicVertical: Story = {
 
 // Multiple resizable panels
 export const MultipleResizablePanels: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "An example of nesting ResizablePanelGroups to create more complex, multi-dimensional resizable layouts.",
+      },
+    },
+  },
   render: () => (
     <div className="h-[500px] max-w-[800px] rounded-lg border">
       <ResizablePanelGroup direction="horizontal" className="h-full rounded-lg border">
@@ -160,6 +206,13 @@ export const MultipleResizablePanels: Story = {
 
 // IDE Layout
 export const IDELayout: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Illustrates setting initial default sizes for the panels within the ResizablePanelGroup.",
+      },
+    },
+  },
   render: () => (
     <div className="h-[600px] max-w-[1200px] rounded-lg border">
       <ResizablePanelGroup direction="vertical" className="h-full rounded-lg border">
@@ -258,6 +311,13 @@ export const IDELayout: Story = {
 
 // Custom Handle
 export const CustomHandle: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows a ResizablePanelGroup with a visible handle that includes grabber dots for better visual indication of the draggable area.",
+      },
+    },
+  },
   render: () => (
     <div className="h-[400px] max-w-[800px] rounded-lg border">
       <ResizablePanelGroup
@@ -296,6 +356,13 @@ export const CustomHandle: Story = {
 
 // Collapsible panels with cards
 export const CollapsiblePanels: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Shows a panel within the group that can be collapsed to a minimum size (or zero) and potentially expanded again.",
+      },
+    },
+  },
   render: function CollapsiblePanelsExample() {
     const [isCollapsed, setIsCollapsed] = React.useState(false);
     

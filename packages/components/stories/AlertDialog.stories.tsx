@@ -16,6 +16,40 @@ import {
 const meta: Meta<typeof AlertDialog> = {
   title: "Design System/Dialogs/Alert Dialog",
   component: AlertDialog,
+  tags: ["autodocs"], // Enable autodocs for this story
+  parameters: {
+    docs: {
+      description: {
+        component: `
+**Alert Dialog Component**
+
+A modal dialog that interrupts the user's workflow to convey critical information or require confirmation for an action, typically one with destructive consequences. Built upon the Radix UI Dialog primitive, ensuring accessibility features like focus trapping and appropriate ARIA roles.
+
+**Core Components:**
+*   \`<AlertDialog>\`: The root component managing the dialog's open state and context.
+*   \`<AlertDialogTrigger>\`: An element (usually a \`<Button>\`) that, when interacted with, opens the dialog.
+*   \`<AlertDialogContent>\`: The modal window container that appears, overlaying the main content. It renders within a \`<AlertDialogPortal>\` by default. Handles styling and positioning.
+*   \`<AlertDialogHeader>\`: A semantic container for the dialog's title and description.
+*   \`<AlertDialogTitle>\`: The main heading (\`<h2>\`) of the alert dialog.
+*   \`<AlertDialogDescription>\`: Supporting text (\`<p>\`) providing context or details about the alert.
+*   \`<AlertDialogFooter>\`: A container typically holding the action buttons.
+*   \`<AlertDialogCancel>\`: A button styled and pre-configured to close the dialog without performing the primary action. Automatically handles closing logic.
+*   \`<AlertDialogAction>\`: A button styled and pre-configured to represent the confirmation or primary action. Often triggers an \`onClick\` handler before closing the dialog.
+
+**Key Features:**
+*   Modal behavior prevents interaction with the underlying page content.
+*   Focus is automatically trapped within the dialog for accessibility.
+*   Keyboard accessible (e.g., Escape key closes the dialog via Cancel).
+*   Designed specifically for critical confirmations, differentiating it from a standard \`<Dialog>\`.
+
+See the [shadcn/ui Alert Dialog documentation](https://ui.shadcn.com/docs/components/alert-dialog) for more details and examples.
+        `,
+      },
+    },
+  },
+  // Note: Most props are on the sub-components, not the root AlertDialog.
+  // We can document common patterns or sub-component props if needed,
+  // but autodocs primarily works on the main component's props.
 };
 
 export default meta;
@@ -24,6 +58,14 @@ type Story = StoryObj<typeof AlertDialog>;
 
 // Basic alert dialog
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A standard alert dialog prompting the user to confirm a potentially destructive action (like deleting data).",
+      },
+    },
+  },
   render: () => (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -48,6 +90,14 @@ export const Basic: Story = {
 
 // Custom styled alert dialog
 export const Custom: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates applying custom styles to various parts of the Alert Dialog for unique visual theming.",
+      },
+    },
+  },
   render: () => (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -80,6 +130,14 @@ export const Custom: Story = {
 
 // Information alert dialog
 export const Information: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "An example of using the Alert Dialog structure for informational messages that require acknowledgement, without a 'Cancel' option.",
+      },
+    },
+  },
   render: () => (
     <AlertDialog>
       <AlertDialogTrigger asChild>

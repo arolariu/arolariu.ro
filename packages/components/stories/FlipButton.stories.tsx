@@ -18,6 +18,37 @@ const meta: Meta<typeof FlipButton> = {
   component: FlipButton,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Flip Button Component**
+
+A custom button component that displays a 3D flipping animation on click, revealing a different 'back' face. Built using the standard \`<Button>\` component and Framer Motion for the animation.
+
+**Core Component:**
+*   \`<FlipButton>\`: The main component that wraps the button logic and animation.
+
+**Key Features & Props:**
+*   **Flip Animation**: Uses Framer Motion's \`animate\` function and CSS \`rotateY\` transform to create a 3D flip effect when the button is clicked.
+*   **Front & Back Content**: Accepts props for content on both faces:
+    *   \`frontLabel\`, \`backLabel\`: Text content for each face.
+    *   \`frontIcon\`, \`backIcon\`: Optional React node (e.g., lucide icon) for each face.
+*   **State Management**: Uses React state (\`useState\`) to track the flipped state (\`isFlipped\`).
+*   **Customization**:
+    *   \`duration\`: Controls the speed of the flip animation (in seconds).
+    *   Inherits \`variant\` and \`size\` props from the underlying \`<Button>\` component for styling.
+    *   Accepts standard button props like \`disabled\`, \`onClick\`, \`className\`.
+*   **Styling**: Uses CSS perspective and transform styles (\`preserve-3d\`, \`rotateY\`, \`backface-visibility\`) to achieve the 3D effect. The front and back faces are positioned absolutely within the button.
+
+**Technical Details:**
+*   Wraps the content in a \`motion.div\` to enable Framer Motion animations.
+*   Applies \`transformStyle: "preserve-3d"\` to the main button container.
+*   Positions the front and back content absolutely. The back face initially has \`rotateY(180deg)\` and \`backfaceVisibility: "hidden"\`.
+*   The \`onClick\` handler toggles the \`isFlipped\` state.
+*   A Framer Motion animation targets the inner \`motion.div\`, animating \`rotateY\` to 180deg or 0deg based on the \`isFlipped\` state.
+        `,
+      },
+    },
   },
   argTypes: {
     frontLabel: {

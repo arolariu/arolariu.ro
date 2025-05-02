@@ -5,6 +5,33 @@ import { ScrollArea, ScrollBar } from "../dist";
 const meta: Meta<typeof ScrollArea> = {
   title: "Design System/ScrollArea",
   component: ScrollArea,
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Scroll Area Component**
+
+Provides a styled scrollable container, enhancing the native browser scroll behavior with custom scrollbars. Built upon the Radix UI Scroll Area primitive.
+
+**Core Components (from Radix UI):**
+*   \`<ScrollArea>\`: The root component (\`<div>\`) that wraps the content to be scrolled. It establishes the scrollable viewport.
+*   \`<ScrollAreaViewport>\`: (Used internally by shadcn/ui \`<ScrollArea>\`) The direct container (\`<div>\`) for the scrollable content.
+*   \`<ScrollBar>\`: Represents the visual scrollbar track and thumb (\`<div>\`). Requires an \`orientation\` prop ('vertical' or 'horizontal').
+*   \`<ScrollAreaThumb>\`: (Used internally by shadcn/ui \`<ScrollBar>\`) The draggable part (\`<div>\`) of the scrollbar.
+
+**Key Features & Props:**
+*   **Custom Scrollbars**: Replaces native browser scrollbars with themeable, consistently styled scrollbars (\`<ScrollBar>\`).
+*   **Orientation**: Automatically displays vertical or horizontal scrollbars based on content overflow. The \`<ScrollBar>\` component explicitly requires the \`orientation\` prop.
+*   **Accessibility**: Radix UI ensures the underlying primitives are accessible, although custom scrollbars can sometimes pose challenges compared to native ones.
+*   **Styling**: Styled using Tailwind CSS. The appearance of the viewport, scrollbar track, and thumb can be customized via CSS classes.
+*   **Composition**: Requires wrapping the content within \`<ScrollArea>\`. The \`<ScrollBar>\` component is placed as a direct child of \`<ScrollArea>\`.
+
+See the [shadcn/ui Scroll Area documentation](https://ui.shadcn.com/docs/components/scroll-area) and the [Radix UI Scroll Area documentation](https://www.radix-ui.com/primitives/docs/components/scroll-area) for more details.
+        `,
+      },
+    },
+  },
   tags: ["autodocs"],
   argTypes: {
     orientation: {
@@ -24,6 +51,14 @@ type Story = StoryObj<typeof ScrollArea>;
 export const Default: Story = {
   args: {
     className: "h-[200px] w-[350px] rounded-md border p-4",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A basic ScrollArea containing long content that requires scrolling. A default styled scrollbar appears when needed.",
+      },
+    },
   },
   render: (args) => (
     <ScrollArea {...args}>
@@ -49,6 +84,14 @@ export const Default: Story = {
 };
 
 export const Horizontal: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates a ScrollArea configured for horizontal scrolling, suitable for wide content like images or tables.",
+      },
+    },
+  },
   render: () => (
     <ScrollArea className="w-96 whitespace-nowrap rounded-md border">
       <div className="flex p-4">
@@ -133,6 +176,14 @@ export const NestedScrollAreas: Story = {
 };
 
 export const CustomScrollbar: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows how to apply custom styles to the ScrollBar component within the ScrollArea.",
+      },
+    },
+  },
   render: () => (
     <div className="space-y-4">
       <h4 className="text-sm font-medium">Custom Scrollbar Styling</h4>
@@ -175,6 +226,14 @@ export const CustomScrollbar: Story = {
 };
 
 export const WithContent: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Illustrates a ScrollArea constrained to a fixed height and width, forcing scrollbars to appear if the content exceeds these dimensions.",
+      },
+    },
+  },
   render: () => (
     <ScrollArea className="h-[400px] w-[600px] rounded-md border">
       <div className="p-6">

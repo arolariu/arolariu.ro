@@ -7,6 +7,32 @@ const meta: Meta<typeof BubbleBackground> = {
   component: BubbleBackground,
   parameters: {
     layout: "fullscreen",
+    docs: {
+      description: {
+        component: `
+**Bubble Background Component**
+
+A custom component that renders an animated background with floating, colored bubbles. Uses HTML canvas for rendering and animation.
+
+**Key Features:**
+*   Generates a dynamic background effect with moving and fading bubbles.
+*   Highly customizable through props:
+    *   \`bubbleCount\`: Controls the density of bubbles.
+    *   \`minSize\`, \`maxSize\`: Define the size range of bubbles.
+    *   \`minOpacity\`, \`maxOpacity\`: Control the transparency range.
+    *   \`minVelocity\`, \`maxVelocity\`: Determine the speed range of bubbles.
+    *   \`colors\`: An array of color strings (e.g., hex codes) to use for the bubbles.
+*   Uses \`requestAnimationFrame\` for smooth animation performance.
+*   Resizes automatically with the container element.
+
+**Technical Details:**
+*   Creates a \`<canvas>\` element positioned absolutely to fill its parent container.
+*   Manages an array of bubble objects, each with properties like position, size, color, opacity, and velocity.
+*   The animation loop updates each bubble's position and opacity, redrawing the canvas on each frame.
+*   Bubbles reset their position when they move off-screen, creating a continuous effect.
+        `,
+      },
+    },
   },
   argTypes: {
     className: {

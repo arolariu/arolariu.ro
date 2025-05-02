@@ -14,12 +14,41 @@ import {
   AlertCircleIcon,
 } from "lucide-react";
 
-const meta: Meta<typeof Tooltip> = {
+const meta: Meta<typeof TooltipProvider> = {
   title: "Design System/Tooltip",
-  component: Tooltip,
+  // Showing TooltipProvider in the docs, but examples use Tooltip
+  component: TooltipProvider,
   parameters: {
     layout: "centered",
+    docs: {
+      description: {
+        component: `
+**Tooltip Component**
+
+Displays a small contextual pop-up label when a user hovers over or focuses an element, providing brief information or hints. Built upon the Radix UI Tooltip primitive. Requires a \`<TooltipProvider>\` ancestor.
+
+**Core Components (from Radix UI):**
+*   \`<TooltipProvider>\`: The root provider component that manages global tooltip behavior, such as open/close delays. It should wrap the application part where tooltips are used. Accepts \`delayDuration\` and \`skipDelayDuration\` props.
+*   \`<Tooltip>\`: The main component managing the state for a single tooltip instance. Accepts props like \`open\`, \`defaultOpen\`, \`onOpenChange\`, \`delayDuration\`.
+*   \`<TooltipTrigger>\`: The element (often a button or icon) that, when hovered or focused, triggers the tooltip to appear. It should wrap the interactive element. Handles ARIA attributes (\`aria-describedby\`).
+*   \`<TooltipPortal>\`: (Optional) Renders the tooltip content into a specific part of the DOM. \`<TooltipContent>\` uses this by default.
+*   \`<TooltipContent>\`: The container (\`<div>\` with \`role="tooltip"\`) for the content that appears in the pop-up. Handles positioning, styling, and accessibility attributes. Accepts props like \`side\`, \`sideOffset\`, \`align\`, \`alignOffset\`, \`avoidCollisions\`.
+*   \`<TooltipArrow>\`: (Optional) Renders an arrow pointing from the content to the trigger.
+
+**Key Features & Props (from Radix UI):**
+*   **Trigger Interaction**: Opens on hover/focus of the trigger (after \`delayDuration\`) and closes on blur/pointer leave.
+*   **Delay Control**: Global delays set on \`<TooltipProvider>\` (\`delayDuration\`, default 700ms; \`skipDelayDuration\`, default 300ms for quick re-opening). Can be overridden per \`<Tooltip>\`.
+*   **Positioning**: Customizable positioning relative to the trigger using \`side\`, \`align\`, and offset props on \`<TooltipContent>\`. Includes collision detection.
+*   **Accessibility**: Provides the correct ARIA role (\`role="tooltip"\`) and links the content to the trigger via \`aria-describedby\` for screen reader users. Tooltips are typically not focusable themselves.
+*   **Provider Requirement**: Tooltips rely on the \`<TooltipProvider>\` to function correctly, managing delays and global state.
+
+See the [shadcn/ui Tooltip documentation](https://ui.shadcn.com/docs/components/tooltip) and the [Radix UI Tooltip documentation](https://www.radix-ui.com/primitives/docs/components/tooltip) for comprehensive details.
+        `,
+      },
+    },
   },
+  tags: ["autodocs"],
+  // Wrap all stories in TooltipProvider
   decorators: [
     (Story) => (
       <TooltipProvider>
@@ -35,6 +64,14 @@ type Story = StoryObj<typeof Tooltip>;
 
 // Basic tooltip
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A basic Tooltip that appears when hovering over or focusing the trigger button. Displays simple text content.",
+      },
+    },
+  },
   render: () => (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -49,6 +86,13 @@ export const Basic: Story = {
 
 // With icon trigger
 export const WithIconTrigger: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Demonstrates using icons as triggers for the Tooltip.",
+      },
+    },
+  },
   render: () => (
     <div className="flex gap-8">
       <Tooltip>
@@ -83,6 +127,14 @@ export const WithIconTrigger: Story = {
 
 // With side and align options
 export const Positioning: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates configuring the Tooltip to appear in different positions relative to the trigger element.",
+      },
+    },
+  },
   render: () => (
     <div className="grid grid-cols-2 gap-8">
       <Tooltip>
@@ -126,6 +178,13 @@ export const Positioning: Story = {
 
 // With custom styling
 export const CustomStyling: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Illustrates using custom styles for the Tooltip content.",
+      },
+    },
+  },
   render: () => (
     <div className="flex gap-8">
       <Tooltip>
@@ -163,6 +222,14 @@ export const CustomStyling: Story = {
 
 // With delay duration
 export const WithDelay: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows a Tooltip configured with a delay before it appears on hover/focus.",
+      },
+    },
+  },
   render: () => (
     <TooltipProvider delayDuration={1000}>
       <div className="flex gap-4">
@@ -181,6 +248,14 @@ export const WithDelay: Story = {
 
 // With complex content
 export const ComplexContent: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Illustrates using custom React components or richer content within the Tooltip instead of just plain text.",
+      },
+    },
+  },
   render: () => (
     <Tooltip>
       <TooltipTrigger asChild>

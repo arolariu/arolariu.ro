@@ -14,6 +14,35 @@ import { FolderIcon, HomeIcon, FileIcon } from "lucide-react";
 const meta: Meta<typeof Breadcrumb> = {
   title: "Design System/Breadcrumb",
   component: Breadcrumb,
+  tags: ["autodocs"], // Enable autodocs for this story
+  parameters: {
+    docs: {
+      description: {
+        component: `
+**Breadcrumb Component**
+
+Provides navigational context, showing the user's path through a hierarchical structure (e.g., website pages, file system). Composed of several sub-components for structure and semantics.
+
+**Core Components:**
+*   \`<Breadcrumb>\`: The root container component, typically a \`<nav>\` element with appropriate ARIA labeling (\`aria-label="breadcrumb"\`).
+*   \`<BreadcrumbList>\`: An ordered list (\`<ol>\`) wrapping the breadcrumb items.
+*   \`<BreadcrumbItem>\`: A list item (\`<li>\`) representing a single step in the path.
+*   \`<BreadcrumbLink>\`: An anchor tag (\`<a>\`) used for clickable links to parent pages or sections. Often used within \`<BreadcrumbItem>\`. Can be used with routing libraries via the \`asChild\` prop.
+*   \`<BreadcrumbPage>\`: A span (\`<span>\`) representing the current page or location in the hierarchy. Typically the last item and not interactive. Includes \`aria-current="page"\` for accessibility.
+*   \`<BreadcrumbSeparator>\`: A decorative element (usually a list item \`<li>\` with \`role="presentation"\`) displayed between breadcrumb items. Defaults to a forward slash icon but can be customized.
+*   \`<BreadcrumbEllipsis>\`: Represents one or more collapsed items, often used in responsive designs to shorten long paths. Typically renders an ellipsis icon and might be interactive (e.g., within a dropdown) in more complex implementations.
+
+**Key Features:**
+*   Semantic HTML structure (\`nav\`, \`ol\`, \`li\`) for accessibility and SEO.
+*   Uses ARIA attributes (\`aria-label\`, \`aria-current\`) for screen reader support.
+*   Flexible composition allows for icons, custom separators, and responsive collapsing patterns.
+
+See the [shadcn/ui Breadcrumb documentation](https://ui.shadcn.com/docs/components/breadcrumb) for more details and examples.
+        `,
+      },
+    },
+  },
+  // Note: Most props are on the sub-components.
 };
 
 export default meta;
@@ -22,6 +51,14 @@ type Story = StoryObj<typeof Breadcrumb>;
 
 // Basic breadcrumb
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A standard breadcrumb trail showing navigation hierarchy with links and the current page.",
+      },
+    },
+  },
   render: () => (
     <Breadcrumb>
       <BreadcrumbList>
@@ -43,6 +80,14 @@ export const Basic: Story = {
 
 // With icons
 export const WithIcons: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Breadcrumb items can include icons alongside text for better visual representation.",
+      },
+    },
+  },
   render: () => (
     <Breadcrumb>
       <BreadcrumbList>
@@ -73,6 +118,14 @@ export const WithIcons: Story = {
 
 // With ellipsis for long paths
 export const WithEllipsis: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Uses \`<BreadcrumbEllipsis>\` to shorten long breadcrumb trails, often used in responsive designs to save space.",
+      },
+    },
+  },
   render: () => (
     <Breadcrumb>
       <BreadcrumbList>
@@ -104,6 +157,14 @@ export const WithEllipsis: Story = {
 
 // Custom separator
 export const CustomSeparator: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates replacing the default separator (slash) with custom content or styling within \`<BreadcrumbSeparator>\`.",
+      },
+    },
+  },
   render: () => (
     <Breadcrumb>
       <BreadcrumbList>
@@ -130,6 +191,14 @@ export const CustomSeparator: Story = {
 
 // Responsive breadcrumb
 export const Responsive: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows a common pattern for responsive breadcrumbs, collapsing intermediate items into an ellipsis on smaller screens.",
+      },
+    },
+  },
   render: () => (
     <div className="space-y-4">
       <div>
@@ -189,6 +258,14 @@ export const Responsive: Story = {
 
 // Custom styled
 export const CustomStyled: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Example of applying custom styles (background, text colors, etc.) to the breadcrumb components.",
+      },
+    },
+  },
   render: () => (
     <Breadcrumb>
       <BreadcrumbList className="bg-blue-50 dark:bg-blue-950/30 px-3 py-2 rounded-lg">

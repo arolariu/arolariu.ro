@@ -5,6 +5,40 @@ import { Badge } from "../dist";
 const meta: Meta<typeof Badge> = {
   title: "Design System/Badge",
   component: Badge,
+  tags: ["autodocs"], // Enable autodocs for this story
+  parameters: {
+    docs: {
+      description: {
+        component: `
+**Badge Component**
+
+Displays a small, inline element typically used for labeling, categorization, or status indicators. Based on a simple div element with variants controlled by \`cva\`.
+
+**Core Component:**
+*   \`<Badge>\`: The single component representing the badge. It accepts a \`variant\` prop ('default', 'secondary', 'destructive', 'outline') to control visual styling.
+
+**Key Features:**
+*   Provides several pre-defined visual styles through the \`variant\` prop.
+*   Easily customizable with standard CSS classes for colors, padding, borders, etc.
+*   Can contain text, icons, or other simple inline content.
+*   Uses Tailwind CSS utility classes for styling by default.
+
+See the [shadcn/ui Badge documentation](https://ui.shadcn.com/docs/components/badge) for more details and examples.
+        `,
+      },
+    },
+  },
+  argTypes: {
+    variant: {
+      options: ["default", "secondary", "destructive", "outline"],
+      control: { type: "select" },
+      description: "The visual style of the badge.",
+      table: {
+        defaultValue: { summary: "default" },
+      },
+    },
+    // Children are implicitly handled
+  },
 };
 
 export default meta;
@@ -13,26 +47,75 @@ type Story = StoryObj<typeof Badge>;
 
 // Default badge
 export const Default: Story = {
-  render: () => <Badge>Default</Badge>,
+  args: {
+    variant: "default",
+    children: "Default",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "The standard badge style.",
+      },
+    },
+  },
 };
 
 // Secondary badge
 export const Secondary: Story = {
-  render: () => <Badge variant="secondary">Secondary</Badge>,
+  args: {
+    variant: "secondary",
+    children: "Secondary",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A secondary badge style, often used for less prominent information.",
+      },
+    },
+  },
 };
 
 // Destructive badge
 export const Destructive: Story = {
-  render: () => <Badge variant="destructive">Destructive</Badge>,
+  args: {
+    variant: "destructive",
+    children: "Destructive",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A badge style used to indicate errors, warnings, or negative status.",
+      },
+    },
+  },
 };
 
 // Outline badge
 export const Outline: Story = {
-  render: () => <Badge variant="outline">Outline</Badge>,
+  args: {
+    variant: "outline",
+    children: "Outline",
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: "An outlined badge style, providing a lighter visual weight.",
+      },
+    },
+  },
 };
 
 // With icon
 export const WithIcon: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "Badges can include icons alongside text content.",
+      },
+    },
+  },
   render: () => (
     <div className="flex gap-4">
       <Badge>
@@ -86,6 +169,14 @@ export const WithIcon: Story = {
 
 // Custom styled badges
 export const CustomStyled: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates applying custom background, hover, and border colors using CSS classes.",
+      },
+    },
+  },
   render: () => (
     <div className="flex gap-4 flex-wrap">
       <Badge className="bg-blue-500 hover:bg-blue-600 border-blue-500">

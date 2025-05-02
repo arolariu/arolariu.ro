@@ -19,8 +19,36 @@ const meta: Meta<typeof Table> = {
   title: "Design System/Table",
   component: Table,
   parameters: {
-    layout: "centered",
+    layout: "padded", // Use padded layout for tables
+    docs: {
+      description: {
+        component: `
+**Table Component**
+
+Renders data in a standard HTML tabular format, applying consistent styling. Uses native HTML table elements (\`<table>\`, \`<thead>\`, \`<tbody>\`, \`<tfoot>\`, \`<tr>\`, \`<th>\`, \`<td>\`, \`<caption>\`) wrapped with styled components.
+
+**Core Components:**
+*   \`<Table>\`: The main container, rendering an HTML \`<table>\` element with base styling.
+*   \`<TableHeader>\`: Renders an HTML \`<thead>\` element to group header content.
+*   \`<TableBody>\`: Renders an HTML \`<tbody>\` element to group the main data rows.
+*   \`<TableFooter>\`: Renders an HTML \`<tfoot>\` element to group footer content (e.g., totals, summaries).
+*   \`<TableRow>\`: Renders an HTML \`<tr>\` element representing a single row within the header, body, or footer. Includes hover effects and borders.
+*   \`<TableHead>\`: Renders an HTML \`<th>\` element, typically used within \`<TableHeader>\`. Represents a header cell. Styled with font weight and alignment.
+*   \`<TableCell>\`: Renders an HTML \`<td>\` element, used within \`<TableBody>\` or \`<TableFooter>\`. Represents a standard data cell. Styled with padding and alignment.
+*   \`<TableCaption>\`: Renders an HTML \`<caption>\` element, providing a title or description for the table. Positioned below the table by default.
+
+**Key Features:**
+*   **Semantic HTML**: Uses standard HTML table elements for structure and accessibility.
+*   **Styling**: Applies consistent padding, borders, alignment, and hover states using Tailwind CSS utility classes.
+*   **Composition**: Follows standard HTML table structure, allowing for flexible composition of headers, bodies, footers, rows, and cells.
+*   **Accessibility**: Relies on the inherent accessibility of native HTML table elements. Proper use of \`<th>\` with \`scope\` attributes (implicitly handled by placement in \`<thead>\`) and \`<caption>\` enhances screen reader support.
+
+See the [shadcn/ui Table documentation](https://ui.shadcn.com/docs/components/table) for more details and examples of usage with data mapping, sorting, and selection.
+        `,
+      },
+    },
   },
+  tags: ["autodocs"],
 };
 
 export default meta;
@@ -125,6 +153,14 @@ const products = [
 
 // Basic table
 export const Basic: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "A basic Table displaying invoice data with a header, body, and caption. Demonstrates standard table structure and cell rendering.",
+      },
+    },
+  },
   render: () => (
     <div className="rounded-md border w-[600px]">
       <Table>
@@ -156,6 +192,14 @@ export const Basic: Story = {
 
 // Table with custom styling
 export const CustomStyling: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Demonstrates adding striped rows to the Table for improved readability using CSS classes on `TableRow`.",
+      },
+    },
+  },
   render: () => (
     <div className="rounded-md border w-[600px]">
       <Table>
@@ -194,8 +238,8 @@ export const CustomStyling: Story = {
                     invoice.paymentStatus === "Paid"
                       ? "default"
                       : invoice.paymentStatus === "Pending"
-                      ? "outline"
-                      : "destructive"
+                        ? "outline"
+                        : "destructive"
                   }
                 >
                   {invoice.paymentStatus}
@@ -225,6 +269,14 @@ export const CustomStyling: Story = {
 
 // Table with selection
 export const WithSelection: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Shows a Table where rows highlight on hover, providing visual feedback.",
+      },
+    },
+  },
   render: () => (
     <div className="rounded-md border w-[700px]">
       <Table>
@@ -274,6 +326,13 @@ export const WithSelection: Story = {
 
 // Table with sortable headers
 export const SortableColumns: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story: "A Table with visible borders around the table and its cells.",
+      },
+    },
+  },
   render: () => (
     <div className="rounded-md border w-[700px]">
       <Table>
@@ -328,6 +387,14 @@ export const SortableColumns: Story = {
 
 // Table with expandable rows
 export const ExpandableRows: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "Illustrates a more compact Table layout with reduced cell padding.",
+      },
+    },
+  },
   render: function ExpandableTable() {
     const [expandedRows, setExpandedRows] = React.useState<
       Record<string, boolean>
@@ -379,8 +446,8 @@ export const ExpandableRows: Story = {
                         invoice.paymentStatus === "Paid"
                           ? "default"
                           : invoice.paymentStatus === "Pending"
-                          ? "outline"
-                          : "destructive"
+                            ? "outline"
+                            : "destructive"
                       }
                     >
                       {invoice.paymentStatus}
