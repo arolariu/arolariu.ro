@@ -351,4 +351,3 @@ const GridView = ({invoices}: Readonly<{invoices: Invoice[]}>): React.JSX.Elemen
     </motion.div>
   );
 };
-

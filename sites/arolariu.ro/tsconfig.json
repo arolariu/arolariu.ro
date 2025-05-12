@@ -47,19 +47,20 @@
         "name": "next"
       }
     ],
+    "baseUrl": "./",
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["@types/jest", "@types/node", "@types/react", "@types/react-dom"],
+    "types": ["@types/node", "@types/react", "@types/react-dom"],
     "stripInternal": true
   },
   "include": [
     "**/*.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "**/*.mjs",
     ".next/types/**/*.ts",
-    "next.config.ts"
-, "postcss.config.js"  ],
+    "next.config.ts",
+    "postcss.config.js"
+  ],
   "exclude": ["node_modules"]
 }

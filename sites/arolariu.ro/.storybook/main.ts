@@ -3,8 +3,8 @@
 import type {StorybookConfig} from "@storybook/nextjs";
 
 const storybookConfig: StorybookConfig = {
-  framework: "@storybook/nextjs",
-  stories: ["../stories/**/*.stories.@(js|jsx|ts|tsx)"],
+  stories: ["../{src,stories}/**/*.stories.@(js|jsx|ts|tsx)"],
+
   addons: [
     "@storybook/addon-essentials",
     "@storybook/addon-interactions",
@@ -13,10 +13,19 @@ const storybookConfig: StorybookConfig = {
     "@storybook/addon-links",
     "@storybook/addon-a11y",
   ],
+
+  framework: {
+    name: "@storybook/nextjs",
+    options: {},
+  },
+
   docs: {defaultName: "Documentation"},
+
   staticDirs: ["../public"],
+
   features: {
     experimentalRSC: true,
   },
 } satisfies StorybookConfig;
+
 export default storybookConfig;
