@@ -82,6 +82,7 @@ jobs:
           corepack enable
           yarn install --immutable
           yarn playwright install --with-deps
+          yarn generate
         working-directory: ./sites/arolariu.ro
 
       - name: 🧪 Running Jest Unit tests...
