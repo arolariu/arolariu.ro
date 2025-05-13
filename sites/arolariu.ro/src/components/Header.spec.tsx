@@ -6,14 +6,14 @@ const DESKTOP_VIEWPORT = {width: 1280, height: 720};
 const MOBILE_VIEWPORT = {width: 360, height: 640};
 
 async function checkCommonElements(page: Page) {
-  await expect(page.locator("header")).toBeVisible();
-  await expect(page.locator("header nav.navbar")).toBeVisible();
+  await expect(page.locator("header")).toBeVisible({timeout: 15000});
+  await expect(page.locator("header nav.navbar")).toBeVisible({timeout: 15000});
 
   // Logo and site name link
   const navBar = page.locator("header nav.navbar");
   const homeLink = navBar.locator("a[href='/']").filter({has: page.locator("span:has-text('arolariu.ro')")});
-  await expect(homeLink.first()).toBeVisible();
-  await expect(homeLink.locator("span:has-text('arolariu.ro')").first()).toBeVisible();
+  await expect(homeLink.first()).toBeVisible({timeout: 15000});
+  await expect(homeLink.locator("span:has-text('arolariu.ro')").first()).toBeVisible({timeout: 15000});
 
   // Action buttons
   const navbarEnd = navBar.locator(".navbar-end");

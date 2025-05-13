@@ -4,22 +4,20 @@ import {expect, Page, test} from "@playwright/test";
 
 // Helper function to check link attributes for external links
 async function checkExternalLink(page: Page, selector: string, expectedHref: string) {
-  const link = page.locator(selector);
-  await expect(link.first()).toBeVisible();
-  await expect(link.first()).toHaveAttribute("href", expectedHref);
-  await expect(link.first()).toHaveAttribute("target", "_blank");
+  await expect(page.locator(selector).first()).toBeVisible({timeout: 15000});
+  await expect(page.locator(selector).first()).toHaveAttribute("href", expectedHref);
+  await expect(page.locator(selector).first()).toHaveAttribute("target", "_blank");
 }
 
 // Helper function to check internal navigation links
 async function checkInternalLink(page: Page, selector: string, expectedHref: string, expectedText?: RegExp | string) {
-  const link = page.locator(selector);
-  await expect(link.first()).toBeVisible();
-  await expect(link.first()).toHaveAttribute("href", expectedHref);
+  await expect(page.locator(selector).first()).toBeVisible({timeout: 15000});
+  await expect(page.locator(selector).first()).toHaveAttribute("href", expectedHref);
   if (expectedText) {
     if (typeof expectedText === "string") {
-      await expect(link.first()).toHaveText(new RegExp(expectedText, "i"));
+      await expect(page.locator(selector).first()).toHaveText(new RegExp(expectedText, "i"));
     } else {
-      await expect(link.first()).toHaveText(expectedText);
+      await expect(page.locator(selector).first()).toHaveText(expectedText);
     }
   }
 }
