@@ -2,34 +2,39 @@
 
 import {defineConfig, devices} from "@playwright/test";
 
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
 export default defineConfig({
-  testMatch: "**/*.spec.ts",
   retries: process.env["CI"] ? 2 : 0,
   workers: process.env["CI"] ? 1 : undefined,
   reporter: "html",
-  use: {
-    baseURL: "http://localhost:3000",
-    trace: "on-first-retry",
-  },
 
   projects: [
     {
-      name: "chromium",
-      use: {...devices["Desktop Chrome"]},
+      name: "e2e-chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "https://localhost:3000",
+        ignoreHTTPSErrors: true,
+      },
+      testMatch: "src/**/*.spec.ts",
     },
     {
-      name: "webkit",
-      use: {...devices["Desktop Safari"]},
+      name: "e2e-webkit",
+      use: {
+        ...devices["Desktop Safari"],
+        baseURL: "https://localhost:3000",
+        ignoreHTTPSErrors: true,
+      },
+      testMatch: "src/**/*.spec.ts",
     },
   ],
 
-  webServer: {
-    command: "next dev",
-    timeout: 60000 * 3, // 3 minutes
-    url: "http://localhost:3000",
-    reuseExistingServer: true,
-  },
+  webServer: [
+    {
+      command: "npm run dev",
+      url: "https://localhost:3000", // Ensure this matches your dev server
+      reuseExistingServer: !process.env["CI"],
+      timeout: 120 * 1000,
+      ignoreHTTPSErrors: true, // Add if using self-signed certs for the server itself
+    },
+  ],
 });

@@ -43,12 +43,14 @@
     "format": "tsx scripts/format.ts",
     "generate": "npm run generate:translations && npm run generate:acknowledgements",
     "generate:acknowledgements": "tsx scripts/generateAcknowledgements.ts",
+    "generate:environment": "tsx scripts/generateEnvironment.ts",
     "generate:translations": "tsx scripts/generateTranslations.ts",
     "lint": "eslint src/ --no-cache --config eslint.config.ts",
     "lint:fix": "eslint src/ --fix --config eslint.config.ts",
     "lint:inspect": "eslint --inspect-config",
-    "setup:azure": "cross-env INFRA='azure' tsx scripts/generateEnv.ts",
-    "setup:local": "cross-env INFRA='local' tsx scripts/generateEnv.ts",
+    "setup": "npm run generate:environment",
+    "setup:azure": "cross-env INFRA='azure' npm run setup",
+    "setup:local": "cross-env INFRA='local' npm run setup",
     "start": "next start",
     "start:debug": "cross-env NODE_OPTIONS='--inspect' NODE_ENV=development node --enable-source-maps .next/standalone/server.js",
     "storybook": "storybook dev -p 6006",
@@ -149,7 +151,7 @@
     "ts-node": "10.9.2",
     "tsx": "4.19.4",
     "typescript": "5.8.2",
-    "typescript-eslint": "8.32.0"
+    "typescript-eslint": "8.32.1"
   },
   "browserslist": [
     "last 1 version",
