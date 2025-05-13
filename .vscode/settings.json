@@ -1,0 +1,17 @@
+{
+  "typescript.autoClosingTags": true,
+  "typescript.tsserver.maxTsServerMemory": 8192,
+  "typescript.tsserver.nodePath": "node",
+  "i18n-ally.localesPaths": [
+    "sites/arolariu.ro/messages",
+    "sites/arolariu.ro/src/i18n"
+  ],
+  "i18n-ally.keystyle": "nested",
+  "workbench.editor.customLabels.patterns": {
+    "**/app/**/page.{ts,tsx}": "${dirname} - RSC - page",
+    "**/app/**/island.{ts,tsx}": "${dirname} - RCC - island",
+    "**/app/**/layout.{ts,tsx}": "${dirname} - layout",
+    "**/app/**/route.{ts,tsx}": "${dirname} - route"
+  }
+}
+
