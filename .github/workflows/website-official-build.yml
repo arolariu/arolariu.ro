@@ -3,6 +3,8 @@ name: "website-official-build"
 permissions:
   id-token: write
   contents: read
+  issues: write
+  pull-requests: write
 
 defaults:
   run:
@@ -77,20 +79,88 @@ jobs:
 
       - name: 📦 Installing dependencies...
         run: |
-          corepack enable && \
-          yarn && yarn dlx playwright install --with-deps
+          corepack enable
+          yarn install --frozen-lockfile
+          yarn playwright install --with-deps
+        working-directory: ./sites/arolariu.ro
+
+      - name: 🔒 Scan for Yarn package vulnerabilities
+        run: yarn audit --level high
+        working-directory: ./sites/arolariu.ro
 
       - name: 🧪 Running unit tests...
         run: yarn test:jest
+        working-directory: ./sites/arolariu.ro
 
-      - name: 🧪 Preparing UI tests...
-        run: yarn playwright install && yarn storybook:build --quiet
+      - name: 🧪 Preparing UI tests (Building Storybook)...
+        run: yarn storybook:build --quiet
+        working-directory: ./sites/arolariu.ro
 
-      - name: 🧪 Running Smoke & Integration tests...
+      - name: 🧪 Running Smoke & Integration tests (Playwright on Storybook)...
         run: |
           yarn dlx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
             "yarn dlx http-server storybook-static --port 6006 --silent" \
             "yarn dlx wait-on tcp:6006 && yarn storybook:test"
+        working-directory: ./sites/arolariu.ro
+
+      - name: 📤 Upload Playwright Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
+          path: sites/arolariu.ro/playwright-report/
+          retention-days: 7
+
+      - name: ❓ Find Pull Request
+        if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
+        id: find_pr
+        uses: jwalton/gh-find-current-pr@v1
+        with:
+          state: open
+
+      - name: 💬 Comment on Pull Request with Test Results
+        if: always() && steps.find_pr.outputs.pr_number && github.event_name == 'push' && github.ref == 'refs/heads/preview'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = ${{ steps.find_pr.outputs.pr_number }};
+            if (!prNumber || prNumber === 'null' || prNumber === '') {
+              console.log('No open PR found for this commit on the preview branch, or find_pr step did not output a PR number.');
+              return;
+            }
+
+            const jobStatus = '${{ job.status }}';
+            const commitSha = '${{ github.sha }}'.substring(0, 7);
+            let commentBody = `## Playwright Test Results for Workflow Run [#${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n`;
+            commentBody += `**Branch:** \`${{ github.ref_name }}\`\n`;
+            commentBody += `**Commit:** \`${commitSha}\`\n\n`;
+
+            if (jobStatus === 'success') {
+              commentBody += '✅ All Playwright tests passed!\n\n';
+            } else if (jobStatus === 'failure') {
+              commentBody += '❌ Playwright tests failed.\n\n';
+            } else {
+              commentBody += `⚠️ Playwright tests status: ${jobStatus}.\n\n`;
+            }
+            commentBody += `🔗 [View Full Test Report Artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)\n`;
+
+            try {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: parseInt(prNumber),
+                body: commentBody
+              });
+              console.log(`Commented on PR #${prNumber}`);
+            } catch (error) {
+              console.error(`Failed to comment on PR #${prNumber}: ${error.message}`);
+              if (error.status === 404) {
+                console.log('PR not found, it might have been closed or merged.');
+              } else if (error.status === 403) {
+                console.log('Permission denied. Ensure GITHUB_TOKEN has issues:write or pull-requests:write permission.');
+              }
+            }
 
   build:
     name: ⚒️ Build phase (2/2)
@@ -119,7 +189,7 @@ jobs:
         run: |
           touch .env
           echo "TIMESTAMP=$(date -u  +"%Y-%m-%dT%H:%M:%S"Z)" >> .env
-          json='${{ toJson(env) }}' # We convert the env object to it's JSON representation.
+          json='${{ toJson(env) }}'
           for key in $(echo $json | jq -r 'keys[]'); do
             value=$(echo $json | jq -r '.'$key)
             echo "$key=$value" >> .env
