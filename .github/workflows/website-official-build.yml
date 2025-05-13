@@ -92,6 +92,8 @@ jobs:
       - name: 🧪 Running Playwright E2E Component tests...
         run: yarn test:playwright
         working-directory: ./sites/arolariu.ro
+        env:
+          CI: "true"
 
       - name: 🧪 Preparing UI tests (Building Storybook)...
         run: yarn storybook:build --quiet
