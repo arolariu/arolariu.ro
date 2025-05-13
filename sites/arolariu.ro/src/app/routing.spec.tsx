@@ -3,6 +3,7 @@
 import {expect, test} from "@playwright/test";
 
 const routes = [
+  // Index page:
   "/",
 
   // About routes:

@@ -122,12 +122,12 @@ jobs:
           state: open
 
       - name: 💬 Comment on Pull Request with Test Results
-        if: always() && steps.find_pr.outputs.pr_number && github.event_name == 'push' && github.ref == 'refs/heads/preview'
+        if: always() && steps.find_pr.outputs.pr && github.event_name == 'push' && github.ref == 'refs/heads/preview'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const prNumber = ${{ steps.find_pr.outputs.pr_number }};
+            const prNumber = ${{ steps.find_pr.outputs.pr }};
             if (!prNumber || prNumber === 'null' || prNumber === '') {
               console.log('No open PR found for this commit on the preview branch, or find_pr step did not output a PR number.');
               return;
