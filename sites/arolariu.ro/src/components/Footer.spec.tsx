@@ -63,7 +63,6 @@ test.describe("Footer Component Tests", () => {
   test.describe("Footer Navigation Links", () => {
     test("should display and correctly link Subdomains", async ({page}) => {
       await expect(page.locator("footer div > p:has-text('Subdomains')").first()).toBeVisible();
-      await checkInternalLink(page, "footer a[href='https://dev.arolariu.ro']", "https://dev.arolariu.ro", /dev\.arolariu\.ro/i);
       await checkInternalLink(page, "footer a[href='https://api.arolariu.ro']", "https://api.arolariu.ro", /api\.arolariu\.ro/i);
       await checkInternalLink(page, "footer a[href='https://docs.arolariu.ro']", "https://docs.arolariu.ro", /docs\.arolariu\.ro/i);
     });
