@@ -30,6 +30,19 @@ test.describe("Header Component Tests", () => {
     await page.goto("/");
   });
 
+  test.afterEach(async ({page}, testInfo) => {
+    // Create a descriptive name for the screenshot
+    // Replace non-alphanumeric characters (except hyphen and underscore) with a hyphen for file system compatibility
+    const screenshotName = testInfo.titlePath.join("_").replace(/[^a-zA-Z0-9_\-]/g, "-") + ".png";
+    const screenshotPath = testInfo.outputPath(screenshotName);
+
+    // Take and save the screenshot
+    await page.screenshot({path: screenshotPath});
+
+    // Attach the screenshot to the test report
+    await testInfo.attach(screenshotName, {path: screenshotPath, contentType: "image/png"});
+  });
+
   test.describe("Desktop View (width: 1280px)", () => {
     test.beforeEach(async ({page}) => {
       await page.setViewportSize(DESKTOP_VIEWPORT);

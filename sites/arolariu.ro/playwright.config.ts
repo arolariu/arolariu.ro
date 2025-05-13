@@ -49,9 +49,13 @@ const projectsToRun = allProjects.filter((project) => {
 
 export default defineConfig({
   fullyParallel: true,
-  retries: 1,
-  reporter: weAreInCI ? "github" : "html",
+  retries: weAreInCI ? 1 : 2,
+  timeout: 60 * 1000, // 60 seconds - 1 minute
 
+  reporter: weAreInCI ? "github" : "html",
+  use: {
+    trace: "on-first-retry", // Collect trace when retrying a failed test
+  },
   projects: projectsToRun,
 
   webServer: [

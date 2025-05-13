@@ -140,13 +140,13 @@ jobs:
             commentBody += `**Commit:** \`${commitSha}\`\n\n`;
 
             if (jobStatus === 'success') {
-              commentBody += '✅ All Playwright tests passed!\n\n';
+              commentBody += '✅ All Playwright tests passed! Screenshots for each test are included in the report.\n\n';
             } else if (jobStatus === 'failure') {
-              commentBody += '❌ Playwright tests failed.\n\n';
+              commentBody += '❌ Playwright tests failed. Screenshots for each test are included in the report to help with debugging.\n\n';
             } else {
-              commentBody += `⚠️ Playwright tests status: ${jobStatus}.\n\n`;
+              commentBody += `⚠️ Playwright tests status: ${jobStatus}. Screenshots may be available in the report.\n\n`;
             }
-            commentBody += `🔗 [View Full Test Report Artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)\n`;
+            commentBody += `🔗 [View Full Test Report (including screenshots) Artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)\n`;
 
             try {
               await github.rest.issues.createComment({

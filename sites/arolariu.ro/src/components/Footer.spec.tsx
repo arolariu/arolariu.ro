@@ -27,6 +27,19 @@ test.describe("Footer Component Tests", () => {
     await page.goto("/"); // Navigate to a page where the Footer is present
   });
 
+  test.afterEach(async ({page}, testInfo) => {
+    // Create a descriptive name for the screenshot
+    // Replace non-alphanumeric characters (except hyphen and underscore) with a hyphen for file system compatibility
+    const screenshotName = testInfo.titlePath.join("_").replace(/[^a-zA-Z0-9_-]/g, "-") + ".png";
+    const screenshotPath = testInfo.outputPath(screenshotName);
+
+    // Take and save the screenshot
+    await page.screenshot({path: screenshotPath});
+
+    // Attach the screenshot to the test report
+    await testInfo.attach(screenshotName, {path: screenshotPath, contentType: "image/png"});
+  });
+
   test.describe("Footer Hero Section", () => {
     test("should display the site logo and name, linking to home", async ({page}) => {
       const footerHeroLink = page.locator("footer a[title='AROLARIU.RO']");
