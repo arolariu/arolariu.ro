@@ -80,16 +80,16 @@ jobs:
       - name: 📦 Installing dependencies...
         run: |
           corepack enable
-          yarn install --frozen-lockfile
+          yarn install --immutable
           yarn playwright install --with-deps
         working-directory: ./sites/arolariu.ro
 
-      - name: 🔒 Scan for Yarn package vulnerabilities
-        run: yarn audit --level high
+      - name: 🧪 Running Jest Unit tests...
+        run: yarn test:jest
         working-directory: ./sites/arolariu.ro
 
-      - name: 🧪 Running unit tests...
-        run: yarn test:jest
+      - name: 🧪 Running Playwright E2E Component tests...
+        run: yarn test:playwright
         working-directory: ./sites/arolariu.ro
 
       - name: 🧪 Preparing UI tests (Building Storybook)...
