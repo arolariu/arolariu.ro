@@ -136,7 +136,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const script = require('./.github/scripts/create-pr-comment.js')
-            await script({github, context, core, exec: require('@actions/exec')})
+            await script({github, context, core, exec})
 
   build:
     name: ⚒️ Build phase (2/2)
