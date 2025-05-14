@@ -114,6 +114,9 @@ const nextConfig: NextConfig = {
   experimental: {
     allowDevelopmentBuild: isDevBuild ? true : undefined,
     serverSourceMaps: isDevBuild,
+    turbopackSourceMaps: isDevBuild,
+    turbopackMinify: !isDevBuild,
+    turbopackTreeShaking: !isDevBuild,
     webpackMemoryOptimizations: !isDevBuild,
     disableOptimizedLoading: isDevBuild,
     optimizeServerReact: !isDevBuild,
