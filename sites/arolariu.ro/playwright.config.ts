@@ -50,6 +50,7 @@ const projectsToRun = allProjects.filter((project) => {
 export default defineConfig({
   fullyParallel: true,
   retries: weAreInCI ? 1 : 2,
+  workers: "75%",
   timeout: 60 * 1000, // 60 seconds - 1 minute
 
   reporter: weAreInCI ? "github" : "html",
@@ -68,3 +69,4 @@ export default defineConfig({
     },
   ],
 });
+
