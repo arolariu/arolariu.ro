@@ -149,8 +149,24 @@ jobs:
             const { execSync } = require('child_process');
             execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
 
-            // Now run the script
-            const script = require('./.github/scripts/dist/create-pr-comment.js');
+            // Dynamically require ts-node to run the TypeScript file directly
+            execSync('cd .github/scripts && npm install --no-save ts-node typescript @types/node', { stdio: 'inherit' });
+
+            // Use ts-node to execute the script directly from the source folder
+            const path = require('path');
+            const { register } = require('./.github/scripts/node_modules/ts-node');
+
+            // Register ts-node to handle TypeScript files
+            register({
+              transpileOnly: true,
+              compilerOptions: {
+                module: 'commonjs',
+                target: 'es2020',
+              }
+            });
+
+            // Now run the script directly from src
+            const script = require('./.github/scripts/src/create-pr-comment.ts');
             await script.default({github, context, core, exec});
 
   build:

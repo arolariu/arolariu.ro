@@ -4,7 +4,8 @@
     "private": true,
     "description": "Helper package that contains type-safe scripts for GitHub Actions workflows.",
     "scripts": {
-        "build": "tsc"
+        "build": "tsc",
+        "test:jest-helper": "npx ts-node .github/scripts/lib/jest-helper.test.ts"
     },
     "dependencies": {
         "@actions/core": "^1.11.1",
