@@ -121,7 +121,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jest-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
-          path: sites/arolariu.ro/jest-reports/
+          path: sites/arolariu.ro/jest-report/
           retention-days: 7
 
       - name: ❓ Find Pull Request
