@@ -63,7 +63,7 @@ export default defineConfig({
     {
       command: "npm run dev",
       reuseExistingServer: !weAreInCI,
-      url: "https://localhost:3000", // Ensure this matches your dev server
+      url: "https://localhost:3000",
       timeout: 300 * 1000, // 300 seconds - 5 minutes
       ignoreHTTPSErrors: true, // Add if using self-signed certs for the server itself
     },
