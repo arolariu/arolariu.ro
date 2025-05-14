@@ -51,3 +51,6 @@ certificates
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# type safety for messages:
+messages/*.d.json.ts

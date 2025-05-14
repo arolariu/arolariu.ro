@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const {user} = await fetchUser();
   const userPrimaryAddress = user?.primaryEmailAddress?.emailAddress;
-  const userHasValidEmail = userPrimaryAddress != null && userPrimaryAddress !== undefined;
+  const userHasValidEmail = userPrimaryAddress != null && userPrimaryAddress != undefined;
 
   const emailHash = userHasValidEmail ? await crypto.subtle.digest("SHA-256", new TextEncoder().encode(userPrimaryAddress)) : null;
 

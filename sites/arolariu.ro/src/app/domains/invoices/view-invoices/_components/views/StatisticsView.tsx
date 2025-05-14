@@ -13,6 +13,9 @@ type Props = {
  * @returns This function renders the statistics view for the invoices.
  */
 export default function RenderStatisticsView({invoices}: Readonly<Props>): React.JSX.Element {
+  // todo: complete this.
+  console.log(invoices);
+
   return (
     <div className='space-y-4'>
       <div className='flex flex-col justify-between gap-4 sm:flex-row'>

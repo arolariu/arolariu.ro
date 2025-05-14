@@ -22,7 +22,7 @@ import tseslint from "typescript-eslint";
 
 const eslintConfig = tseslint.config({
   name: "[arolariu.ro::TSX] main linter configuration",
-  files: ["**/*.ts", "**/*.tsx"],
+  files: ["**/*.{ts,tsx}"],
   languageOptions: {
     ecmaVersion: "latest",
     parser: typescriptParser,
@@ -131,6 +131,7 @@ const eslintConfig = tseslint.config({
     "n/no-missing-import": "off", // default imports seem to not be supported.
     "n/no-unsupported-features/node-builtins": "off", // this rule is too strict; we make sure we have latest Node.js version.
 
+    "perfectionist/sort-enums": "off", // this rule is biased; we use Prettier for sorting.
     "perfectionist/sort-objects": "off", // this rule is biased; we use Prettier for sorting.
     "perfectionist/sort-modules": "off", // this rule is biased; we use Prettier for sorting.
     "perfectionist/sort-imports": "off", // this rule is biased; we use Prettier for sorting.
@@ -141,6 +142,7 @@ const eslintConfig = tseslint.config({
     "perfectionist/sort-union-types": "off", // this rule is biased; we use Prettier for sorting.
     "perfectionist/sort-object-types": "off", // this rule is biased; we use Prettier for sorting.
     "perfectionist/sort-named-imports": "off", // this rule is biased; we use Prettier for sorting.
+    "perfectionist/sort-named-exports": "off", // this rule is biased; we use Prettier for sorting.
     "perfectionist/sort-intersection-types": "off", // this rule is biased; we use Prettier for sorting.
 
     "jsdoc/require-param": "off", // JSDocs are not required for every function.
@@ -161,7 +163,7 @@ const eslintConfig = tseslint.config({
 
 // Add the global ignores to the default config.
 eslintConfig.forEach((config) => {
-  const ignoreList = ["*.config.{js,ts}", "**/node_modules/**", "**/*.test.{ts,tsx}", "**/*.ts"];
+  const ignoreList = ["*.config.{js,ts}", "**/node_modules/**", "**/*.{test,spec,stories}.{ts,tsx}"];
   config.ignores = config.ignores ? [...config.ignores, ...ignoreList] : [...ignoreList];
 });
 

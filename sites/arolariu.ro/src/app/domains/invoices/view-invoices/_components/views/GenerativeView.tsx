@@ -48,6 +48,9 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // todo: complete this.
+  console.log(invoices);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({behavior: "smooth"});
   };

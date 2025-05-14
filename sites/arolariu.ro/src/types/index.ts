@@ -34,7 +34,8 @@ export type NodePackageInformation = {
 export type NodePackagesJSON = {[depType in NodePackageDependencyType]?: NodePackageInformation[]};
 
 /**
- * The status of an upload.
+ * The status of an upload operation.
+ * This is used to track the status of an upload operation.
  */
 export type UploadStatus =
   | "UNKNOWN"
@@ -45,6 +46,9 @@ export type UploadStatus =
   | "FAILURE__CLIENTSIDE" // The upload failed on the client-side.
   | "FAILURE__SERVERSIDE"; // The upload failed on the server-side.
 
+/**
+ * The type of the object that represents information about a user.
+ */
 export type UserInformation = {
   user: User | null;
   userIdentifier: string;

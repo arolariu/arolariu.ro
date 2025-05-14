@@ -167,7 +167,11 @@ const withBundleAnalyzer = withBundleAnalyzerInit({
   enabled: process.env["ANALYZE"] === "true",
 });
 
-const withTranslation = createNextIntlPlugin();
+const withTranslation = createNextIntlPlugin({
+  experimental: {
+    createMessagesDeclaration: "./messages/en.json",
+  },
+});
 
 console.log(">>> ⚙️ Image patterns: \n\t", nextConfig.images?.remotePatterns?.map((pattern) => pattern?.hostname).join(", \n\t"));
 const finalConfig = withBundleAnalyzer(withTranslation(nextConfig));

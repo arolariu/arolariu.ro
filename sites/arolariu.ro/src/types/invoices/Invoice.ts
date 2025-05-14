@@ -35,6 +35,7 @@ export interface Invoice extends NamedEntity<string> {
    * It is a GUIDv4 formatted identifier string.
    */
   userIdentifier: string;
+
   /**
    * The list of users that the invoice is shared with.
    * It is a list of GUIDv4 formatted identifier strings.
@@ -42,32 +43,39 @@ export interface Invoice extends NamedEntity<string> {
    * If the list contains a special GUIDv4 identifier string, the invoice is considered public.
    */
   sharedWith: string[];
+
   /**
    * The category of the invoice.
    */
   category: InvoiceCategory;
+
   /**
    * The URL location of the photo of the invoice.
    * It is a string that represents the URL location of the photo of the invoice.
    */
   photoLocation: string;
+
   /**
    * The payment information of the invoice.
    */
   paymentInformation: PaymentInformation | null;
+
   /**
    * The reference identifier of the merchant that issued the invoice.
    * It is a GUIDv4 formatted identifier string.
    */
   merchantReference: string;
+
   /**
    * The list of items that are present on the invoice.
    */
   items: Product[];
+
   /**
    * The list of recipes that can be made from the items on the invoice.
    */
   possibleRecipes: Recipe[];
+
   /**
    * Additional metadata for the invoice.
    */

@@ -30,18 +30,18 @@ export default function RichText({sectionKey, textKey}: Readonly<Props>) {
   if (isTextKeyInNamespace) {
     // @ts-expect-error -- This is a known issue with the library
     return t.rich(textKey, {
-      strong: (chunks) => <strong>{chunks}</strong>,
-      em: (chunks) => <em>{chunks}</em>,
-      br: (chunks) => (
+      strong: (chunks: React.ReactNode) => <strong>{chunks}</strong>,
+      em: (chunks: React.ReactNode) => <em>{chunks}</em>,
+      br: (chunks: React.ReactNode) => (
         <>
           {chunks}
           <br />
         </>
       ),
-      code: (chunks) => <code className='font-extrabold text-blue-400'>{chunks}</code>,
-      ul: (chunks) => <ul className='list-inside list-disc pt-2'>{chunks}</ul>,
-      li: (chunks) => <li>{chunks}</li>,
-      span: (chunks) => <span>{chunks}</span>,
+      code: (chunks: React.ReactNode) => <code className='font-extrabold text-blue-400'>{chunks}</code>,
+      ul: (chunks: React.ReactNode) => <ul className='list-inside list-disc pt-2'>{chunks}</ul>,
+      li: (chunks: React.ReactNode) => <li>{chunks}</li>,
+      span: (chunks: React.ReactNode) => <span>{chunks}</span>,
     });
   }
 

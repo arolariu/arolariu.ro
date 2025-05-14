@@ -3,6 +3,7 @@
   "compilerOptions": {
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
+    "allowArbitraryExtensions": true,
     "allowImportingTsExtensions": true,
     "alwaysStrict": true,
     "noFallthroughCasesInSwitch": true,

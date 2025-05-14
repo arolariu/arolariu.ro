@@ -14,9 +14,9 @@ export const API_JWT = process.env["API_JWT"] ?? "";
 export const resend = new Resend(process.env["RESEND_API_KEY"]);
 
 /**
- * Function that extracts a base64 string from a blob
+ * This function extracts a base64 string from a blob, and returns the mime type.
  * @param base64String The base64 string to extract the mime type from
- * @returns The mime type
+ * @returns The mime type, or null if not found
  */
 export function getMimeTypeFromBase64(base64String: string): string | null {
   const match = /^data:(.*?);base64,/u.exec(base64String);
@@ -24,9 +24,11 @@ export function getMimeTypeFromBase64(base64String: string): string | null {
 }
 
 /**
- * Function that converts a base64 string to a Blob
+ * This async function converts a base64 string to a Blob object.
+ * It uses the atob function to decode the base64 string and create a Blob object from it.
  * @param base64String The base64 string to convert
- * @returns The Blob object
+ * @returns The Blob object created from the base64 string
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/atob
  */
 export async function convertBase64ToBlob(base64String: string): Promise<Blob> {
   // Extract and store the mime type.
@@ -42,30 +44,32 @@ export async function convertBase64ToBlob(base64String: string): Promise<Blob> {
   return new Blob([byteArray], {type: mimeType});
 }
 
-function __base64UrlEncode(str: string): string {
-  return Buffer.from(str).toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-}
-
-type JwtHeader = {alg: string; typ: string};
-type JwtPayload = {[key: string]: any};
-
 /**
- * This function creates a JWT token.
- * @param header  The header of the JWT token.
- * @param payload  The payload of the JWT token.
- * @param secret  The secret to sign the JWT token with.
- * @returns  The JWT token signed with the secret, header, and payload.
+ * This function creates a JWT token, using the header, payload, and secret.
+ * It uses the HMAC SHA256 algorithm to sign the token.
+ * @param header The header of the JWT token, which contains the algorithm and type.
+ * @param payload The payload of the JWT token, which contains the claims.
+ * @param secret The secret to sign the JWT token with, which is a string.
+ * @returns The JWT token signed with the secret, header, and payload.
+ * @see https://jwt.io/
  */
-export function createJwtToken(header: JwtHeader, payload: JwtPayload, secret: string): string {
-  const encodedHeader = __base64UrlEncode(JSON.stringify(header));
-  const encodedPayload = __base64UrlEncode(JSON.stringify(payload));
+export function createJwtToken(
+  header: Readonly<{alg: string; typ: string}>,
+  payload: Readonly<{[key: string]: any}>,
+  secret: Readonly<string>,
+): Readonly<string> {
+  const __base64UrlEncode__ = (str: string): Readonly<string> =>
+    Buffer.from(str).toString("base64").replaceAll("=", "").replaceAll("+", "-").replaceAll("/", "_");
+
+  const encodedHeader = __base64UrlEncode__(JSON.stringify(header));
+  const encodedPayload = __base64UrlEncode__(JSON.stringify(payload));
   const signature = crypto
     .createHmac("sha256", secret)
     .update(`${encodedHeader}.${encodedPayload}`)
     .digest("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
+    .replaceAll("=", "")
+    .replaceAll("+", "-")
+    .replaceAll("/", "_");
 
-  return `${encodedHeader}.${encodedPayload}.${signature}`;
+  return `${encodedHeader}.${encodedPayload}.${signature}` as const;
 }
