@@ -44,13 +44,6 @@ const BUNDLE_TARGET_FOLDERS = [
     "sites/api.arolariu.ro",
     "sites/docs.arolariu.ro",
 ];
-/**
- * Retrieves file sizes for specified folders from a given git branch.
- * @param params - The script parameters (for core and exec).
- * @param branchName - The name of the branch (e.g., 'refs/remotes/origin/main', 'HEAD').
- * @param targetFolders - An array of folder paths to inspect.
- * @returns A map of file paths to their sizes in bytes.
- */
 async function getFileSizesFromGit(params, branchName, targetFolders) {
     const { core, exec } = params;
     const filesMap = {};
@@ -101,11 +94,6 @@ async function getFileSizesFromGit(params, branchName, targetFolders) {
     }
     return filesMap;
 }
-/**
- * Generates the initial workflow information section for the PR comment.
- * @param workflowInfo - Basic workflow, PR, and job status information.
- * @returns Markdown string for the workflow info section.
- */
 function getWorkflowInfoSection({ prNumber, prUrl, runId, workflowRunUrl, shortCurrentCommitSha, commitUrl, branchName, jobStatus, }) {
     const statusEmoji = jobStatus === "success" ? "✅" : jobStatus === "failure" ? "❌" : "⚠️";
     const statusText = jobStatus.charAt(0).toUpperCase() + jobStatus.slice(1);
@@ -114,13 +102,6 @@ function getWorkflowInfoSection({ prNumber, prUrl, runId, workflowRunUrl, shortC
     section += `----\n`;
     return section;
 }
-/**
- * Generates the branch comparison table section (commits, not bundle sizes).
- * @param params - The script parameters.
- * @param currentCommitSha - The full SHA of the current commit.
- * @param shortCurrentCommitSha - The short SHA of the current commit.
- * @returns Markdown string for the branch comparison section.
- */
 async function getBranchCommitComparisonSection(params, currentCommitSha, shortCurrentCommitSha) {
     const { core, exec } = params;
     let section = `### 📊 Branch Comparison\n\n`;
@@ -147,11 +128,6 @@ async function getBranchCommitComparisonSection(params, currentCommitSha, shortC
     section += `----\n`;
     return section;
 }
-/**
- * Generates the Jest test results section.
- * @param core - The GitHub Actions core helper.
- * @returns Markdown string for the Jest test results section.
- */
 async function getJestResultsSection(core) {
     let section = `### 🧪 Jest Test Results\n\n`;
     const jestSummaryPath = path.join(process.env.GITHUB_WORKSPACE ?? ".", "sites/arolariu.ro/jest-summary.json");
@@ -198,12 +174,6 @@ async function getJestResultsSection(core) {
     section += `----\n`;
     return section;
 }
-/**
- * Generates the Playwright test results section.
- * @param jobStatus - The status of the job (e.g., "success", "failure").
- * @param workflowRunUrl - The URL to the workflow run for artifact links.
- * @returns Markdown string for the Playwright test results section.
- */
 function getPlaywrightResultsSection(jobStatus, workflowRunUrl) {
     let statusEmoji;
     if (jobStatus === "success") {
@@ -230,12 +200,6 @@ function getPlaywrightResultsSection(jobStatus, workflowRunUrl) {
     section += `----\n`;
     return section;
 }
-/**
- * Generates the bundle size comparison section with dropdowns for each target folder.
- * @param params - The script parameters.
- * @param targetFolders - An array of folder paths to compare.
- * @returns Markdown string for the bundle size comparison section.
- */
 async function getBundleSizeComparisonSection(params, targetFolders) {
     const { core, exec } = params;
     let section = `### 📦 Bundle Size Analysis (vs. Main)\n\n`;
@@ -280,7 +244,6 @@ async function getBundleSizeComparisonSection(params, targetFolders) {
                 else if (mainSize !== undefined &&
                     previewSize !== undefined &&
                     mainSize !== previewSize) {
-                    // Ensure both are defined before comparing
                     status = "Modified";
                     diff = previewSize - mainSize;
                     changed = true;
@@ -293,7 +256,6 @@ async function getBundleSizeComparisonSection(params, targetFolders) {
             const numFilesChanged = filesInFolder.length;
             if (numFilesChanged > 0 || folderDiff !== 0) {
                 anyChangesOverall = true;
-                // Determine diff sign
                 let diffSign = "";
                 if (folderDiff > 0) {
                     diffSign = "+";
@@ -324,7 +286,6 @@ async function getBundleSizeComparisonSection(params, targetFolders) {
                     section += `|--------------------------------|-------------|----------------|------------|----------|\n`;
                     filesInFolder.sort((a, b) => a.path.localeCompare(b.path));
                     for (const item of filesInFolder) {
-                        // Determine item diff sign
                         let itemDiffSign = "";
                         if (item.diff > 0) {
                             itemDiffSign = "+";
@@ -336,8 +297,7 @@ async function getBundleSizeComparisonSection(params, targetFolders) {
                             ? "---"
                             : `${itemDiffSign}${(0, pretty_bytes_1.default)(Math.abs(item.diff))}`;
                         const relativePath = item.path.substring(folder.length + 1);
-                        section += `| \`${relativePath}\` | ${(0, pretty_bytes_1.default)(item.mainSize ?? 0 // Use ?? 0 to handle undefined for prettyBytes
-                        )} | ${(0, pretty_bytes_1.default)(item.previewSize ?? 0)} | ${itemDiffDisplay} | ${item.status} |\n`;
+                        section += `| \`${relativePath}\` | ${(0, pretty_bytes_1.default)(item.mainSize ?? 0)} | ${(0, pretty_bytes_1.default)(item.previewSize ?? 0)} | ${itemDiffDisplay} | ${item.status} |\n`;
                     }
                     section += `\n`;
                 }
@@ -371,11 +331,6 @@ async function getBundleSizeComparisonSection(params, targetFolders) {
     section += `----\n`;
     return section;
 }
-/**
- * Main function to create a comment on a pull request with test and build results.
- * @param params - The script parameters.
- * @returns A promise that resolves when the comment is created or if the process is skipped.
- */
 exports.default = async (params) => {
     const { github: octokit, context, core } = params;
     const prNumberStr = process.env.PR_NUMBER;
