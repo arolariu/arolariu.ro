@@ -53,6 +53,8 @@ jobs:
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0 # Fetch all history for all branches and tags
 
       - name: 📦 Installing Node.js...
         uses: actions/setup-node@v4.4.0
@@ -124,46 +126,17 @@ jobs:
       - name: 💬 Comment on Pull Request with Test Results
         if: always() && steps.find_pr.outputs.pr && github.event_name == 'push' && github.ref == 'refs/heads/preview'
         uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.find_pr.outputs.pr }}
+          JOB_STATUS: ${{ job.status }}
+          COMMIT_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          BRANCH_NAME: ${{ github.ref_name }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const prNumber = ${{ steps.find_pr.outputs.pr }};
-            if (!prNumber || prNumber === 'null' || prNumber === '') {
-              console.log('No open PR found for this commit on the preview branch, or find_pr step did not output a PR number.');
-              return;
-            }
-
-            const jobStatus = '${{ job.status }}';
-            const commitSha = '${{ github.sha }}'.substring(0, 7);
-            let commentBody = `## Playwright Test Results for Workflow Run [#${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n\n`;
-            commentBody += `**Branch:** \`${{ github.ref_name }}\`\n`;
-            commentBody += `**Commit:** \`${commitSha}\`\n\n`;
-
-            if (jobStatus === 'success') {
-              commentBody += '✅ All Playwright tests passed! Screenshots for each test are included in the report.\n\n';
-            } else if (jobStatus === 'failure') {
-              commentBody += '❌ Playwright tests failed. Screenshots for each test are included in the report to help with debugging.\n\n';
-            } else {
-              commentBody += `⚠️ Playwright tests status: ${jobStatus}. Screenshots may be available in the report.\n\n`;
-            }
-            commentBody += `🔗 [View Full Test Report (including screenshots) Artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)\n`;
-
-            try {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: parseInt(prNumber),
-                body: commentBody
-              });
-              console.log(`Commented on PR #${prNumber}`);
-            } catch (error) {
-              console.error(`Failed to comment on PR #${prNumber}: ${error.message}`);
-              if (error.status === 404) {
-                console.log('PR not found, it might have been closed or merged.');
-              } else if (error.status === 403) {
-                console.log('Permission denied. Ensure GITHUB_TOKEN has issues:write or pull-requests:write permission.');
-              }
-            }
+            const script = require('./.github/scripts/create-pr-comment.js')
+            await script({github, context, core, exec: require('@actions/exec')})
 
   build:
     name: ⚒️ Build phase (2/2)
