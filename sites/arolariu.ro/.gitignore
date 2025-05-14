@@ -48,8 +48,7 @@ certificates
 *storybook.log
 /test-results/
 /playwright-report/
-/blob-report/
-/playwright/.cache/
+/jest-report/
 
 # type safety for messages:
 messages/*.d.json.ts

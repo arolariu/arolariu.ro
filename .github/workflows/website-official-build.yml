@@ -145,6 +145,11 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            // Install dependencies required by the script
+            const { execSync } = require('child_process');
+            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
+
+            // Now run the script
             const script = require('./.github/scripts/dist/create-pr-comment.js');
             await script.default({github, context, core, exec});
 
