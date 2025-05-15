@@ -91,27 +91,11 @@ jobs:
         run: yarn test:jest
         working-directory: ./sites/arolariu.ro
 
-      - name: 📤 Upload Jest Test Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jest-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
-          path: sites/arolariu.ro/code-cov/jest-report/
-          retention-days: 7
-
       - name: 🧪 Running Playwright E2E Component tests...
         run: yarn test:playwright
         working-directory: ./sites/arolariu.ro
         env:
           CI: "true"
-
-      - name: 📤 Upload Playwright Test Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
-          path: sites/arolariu.ro/code-cov/playwright-report/
-          retention-days: 7
 
       - name: 🧪 Preparing UI tests (Building Storybook)...
         run: yarn storybook:build --quiet
@@ -130,6 +114,14 @@ jobs:
         uses: jwalton/gh-find-current-pr@v1
         with:
           state: open
+
+      - name: 📤 Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
+          path: sites/arolariu.ro/code-cov/
+          retention-days: 7
 
       - name: 💬 Create PR Comment
         uses: actions/github-script@v7

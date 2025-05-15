@@ -40,8 +40,8 @@ async function getCoverageFromJson(
     const coverageSummaryData: JestCoverageSummary =
       JSON.parse(coverageSummaryRaw);
 
-    let table = `| File                    | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s |\n`;
-    table += `|-------------------------|---------|----------|---------|---------|-------------------|\n`;
+    let table = `| File                    | % Statements | % Branch | % Functions | % Lines |\n`;
+    table += `|-------------------------|---------|----------|---------|---------|\n`;
 
     const formatCoverageRow = (
       filePathOrKey: string,
@@ -61,20 +61,19 @@ async function getCoverageFromJson(
       if (!coverageData) {
         return `| ${fileNameDisplay.padEnd(
           23
-        )} | N/A     | N/A      | N/A     | N/A     | N/A               |\n`;
+        )} | N/A     | N/A      | N/A     | N/A     |\n`;
       }
 
       const stmts = coverageData.statements.pct.toFixed(2);
       const branch = coverageData.branches.pct.toFixed(2);
       const funcs = coverageData.functions.pct.toFixed(2);
       const lines = coverageData.lines.pct.toFixed(2);
-      const uncoveredLines = "N/A"; // Placeholder, as this is not standard in json-summary
 
       return `| ${fileNameDisplay.padEnd(23)} | ${stmts.padStart(
         7
       )} | ${branch.padStart(8)} | ${funcs.padStart(7)} | ${lines.padStart(
         7
-      )} | ${uncoveredLines.padEnd(17)} |\n`;
+      )} |\n`;
     };
 
     // "All files" row
@@ -94,7 +93,6 @@ async function getCoverageFromJson(
       );
     }
 
-    table += `|-------------------------|---------|----------|---------|---------|-------------------|\n\n`;
     return table;
   } catch (error) {
     const err = error as Error;
@@ -103,7 +101,7 @@ async function getCoverageFromJson(
     );
     return `| Error reading/parsing ${path.basename(
       coverageJsonPath
-    )}. | N/A     | N/A      | N/A     | N/A     | See action logs.  |\n|-------------------------|---------|----------|---------|---------|-------------------|\n\n`;
+    )}. | N/A     | N/A      | N/A     | N/A     |\n|-------------------------|---------|----------|---------|---------|\n\n`;
   }
 }
 
