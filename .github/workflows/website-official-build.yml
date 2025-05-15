@@ -96,7 +96,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jest-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
-          path: sites/arolariu.ro/jest-report/
+          path: sites/arolariu.ro/code-cov/jest-report/
           retention-days: 7
 
       - name: 🧪 Running Playwright E2E Component tests...
@@ -110,7 +110,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
-          path: sites/arolariu.ro/playwright-report/
+          path: sites/arolariu.ro/code-cov/playwright-report/
           retention-days: 7
 
       - name: 🧪 Preparing UI tests (Building Storybook)...

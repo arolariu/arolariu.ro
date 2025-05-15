@@ -25,7 +25,7 @@ const config: Config = {
   // todo: collectCoverageFrom
   coverageDirectory: "code-cov/jest-report",
   coverageProvider: "v8",
-  coverageReporters: ["html", "text", "json", "lcov"],
+  coverageReporters: ["html", "text", "json-summary", "lcov", "clover", "cobertura"],
   coverageThreshold: {
     global: {
       // todo: up to 95% after fixing all tests

@@ -56,9 +56,9 @@ export default defineConfig({
   outputDir: "code-cov/playwright-report",
 
   reporter: [
-    ["junit", {outputFile: "code-cov/playwright-report/junit.xml"}],
-    ["json", {outputFile: "code-cov/playwright-report/results.json"}],
     ["html", {outputFolder: "code-cov/playwright-report/html", open: "never"}],
+    ["json", {outputFile: "code-cov/playwright-report/results.json"}],
+    ["junit", {outputFile: "code-cov/playwright-report/junit.xml"}],
     weAreInCI ? ["github"] : ["list", {printSteps: true}],
   ],
 
