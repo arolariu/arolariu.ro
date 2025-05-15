@@ -52,12 +52,20 @@ export default defineConfig({
   retries: weAreInCI ? 1 : 2,
   workers: "75%",
   timeout: 60 * 1000, // 60 seconds - 1 minute
-
-  reporter: weAreInCI ? "github" : "html",
-  use: {
-    trace: "on-first-retry", // Collect trace when retrying a failed test
-  },
   projects: projectsToRun,
+  outputDir: "code-cov/playwright-report",
+
+  reporter: [
+    ["junit", {outputFile: "code-cov/playwright-report/junit.xml"}],
+    ["json", {outputFile: "code-cov/playwright-report/results.json"}],
+    ["html", {outputFolder: "code-cov/playwright-report/html", open: "never"}],
+    weAreInCI ? ["github"] : ["list", {printSteps: true}],
+  ],
+
+  use: {
+    trace: "on-first-retry",
+    video: weAreInCI ? "retain-on-failure" : "on-first-retry",
+  },
 
   webServer: [
     {

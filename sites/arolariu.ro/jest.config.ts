@@ -22,9 +22,10 @@ const config: Config = {
   bail: 0,
   clearMocks: true,
   collectCoverage: true,
-  coverageDirectory: "jest-report",
+  // todo: collectCoverageFrom
+  coverageDirectory: "code-cov/jest-report",
   coverageProvider: "v8",
-  coverageReporters: ["json", "text", "lcov", "clover"],
+  coverageReporters: ["html", "text", "json", "lcov"],
   coverageThreshold: {
     global: {
       // todo: up to 95% after fixing all tests

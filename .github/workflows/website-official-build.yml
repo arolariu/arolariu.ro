@@ -91,11 +91,27 @@ jobs:
         run: yarn test:jest
         working-directory: ./sites/arolariu.ro
 
+      - name: 📤 Upload Jest Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
+          path: sites/arolariu.ro/jest-report/
+          retention-days: 7
+
       - name: 🧪 Running Playwright E2E Component tests...
         run: yarn test:playwright
         working-directory: ./sites/arolariu.ro
         env:
           CI: "true"
+
+      - name: 📤 Upload Playwright Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
+          path: sites/arolariu.ro/playwright-report/
+          retention-days: 7
 
       - name: 🧪 Preparing UI tests (Building Storybook)...
         run: yarn storybook:build --quiet
@@ -107,22 +123,6 @@ jobs:
             "yarn dlx http-server storybook-static --port 6006 --silent" \
             "yarn dlx wait-on tcp:6006 && yarn storybook:test"
         working-directory: ./sites/arolariu.ro
-
-      - name: 📤 Upload Playwright Test Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
-          path: sites/arolariu.ro/playwright-report/
-          retention-days: 7
-
-      - name: 📤 Upload Jest Test Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jest-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
-          path: sites/arolariu.ro/jest-report/
-          retention-days: 7
 
       - name: ❓ Find Pull Request
         if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
@@ -168,6 +168,12 @@ jobs:
             // Now run the script directly from src
             const script = require('./.github/scripts/src/create-pr-comment.ts');
             await script.default({github, context, core, exec});
+
+      - name: ☂️ Uploading code coverage report to CodeCov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: "sites/arolariu.ro/code-cov"
 
   build:
     name: ⚒️ Build phase (2/2)
