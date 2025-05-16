@@ -1,0 +1,12 @@
+/* TEAM */
+    Lead Developer: Alexandru-Razvan Olariu
+    Contact: admin@arolariu.ro
+    GitHub: @arolariu
+    Website: https://arolariu.ro
+
+/* SITE */
+    Last update: 2025-05-16
+    Standards: Next.js, React, Tailwind CSS, TypeScript
+    Components: @arolariu/components
+    Software: Visual Studio Code, Docker, GitHub Actions
+    Hosting: Azure App Services

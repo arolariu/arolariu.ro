@@ -2,4 +2,4 @@ Contact: admin@arolariu.ro
 Preferred-Languages: en, ro
 Expires: 2025-12-31T22:00:00.000Z
 Canonical: https://arolariu.ro/security.txt
-Acknowledgments: https://arolariu.ro/acknowledgments
+Acknowledgments: https://arolariu.ro/acknowledgements

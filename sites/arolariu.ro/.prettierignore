@@ -27,6 +27,7 @@ readme.md
 **/**/*.mdx
 **/**/*.json
 **/**/*.txt
+**/**/*.xml
 
 # Lockfiles:
 package-lock.json
