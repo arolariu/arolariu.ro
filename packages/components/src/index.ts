@@ -383,3 +383,18 @@ export { DotBackground } from "./components/ui/dot-background";
 
 // Aceternity UI exports:
 export { BackgroundBeams } from "./components/ui/background-beams";
+
+// Jia Wei Ng export (https://github.com/jiaweing/DropDrawer):
+export {
+  DropDrawer,
+  DropDrawerContent,
+  DropDrawerFooter,
+  DropDrawerGroup,
+  DropDrawerItem,
+  DropDrawerLabel,
+  DropDrawerSeparator,
+  DropDrawerSub,
+  DropDrawerSubContent,
+  DropDrawerSubTrigger,
+  DropDrawerTrigger,
+} from "./components/ui/dropdrawer";

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump radix-ui packages to latest versions.
 - Bump core rslib / rsbuild packages to latest versions.
 - Added Storybook stories for all major components.
+- Added `DropDrawer` component - thanks [Jia Wei Ng](https://github.com/jiaweing/DropDrawer).
 
 ## 0.0.37 - (2025-04-20)
 

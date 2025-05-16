@@ -318,6 +318,12 @@
       "require": "./dist/cjs/components/ui/dropdown-menu.cjs",
       "default": "./dist/esm/components/ui/dropdown-menu.js"
     },
+    "./dropdrawer": {
+      "types": "./dist/types/components/ui/dropdrawer.d.ts",
+      "import": "./dist/esm/components/ui/dropdrawer.js",
+      "require": "./dist/cjs/components/ui/dropdrawer.cjs",
+      "default": "./dist/esm/components/ui/dropdrawer.js"
+    },
     "./fireworks-background": {
       "types": "./dist/types/components/ui/fireworks-background.d.ts",
       "import": "./dist/esm/components/ui/fireworks-background.js",
