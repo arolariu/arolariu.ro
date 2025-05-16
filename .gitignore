@@ -9,6 +9,9 @@
 **/.env
 **/_site/**
 
-# System Files
+# MacOS cache files
 .DS_Store
 Thumbs.db
+
+# Next.js SWC cache
+.next/
