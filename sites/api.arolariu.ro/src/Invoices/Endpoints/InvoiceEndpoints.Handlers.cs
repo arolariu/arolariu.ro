@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Endpoints;
+namespace arolariu.Backend.Domain.Invoices.Endpoints;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -20,7 +20,7 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public static partial class InvoiceEndpoints
 {
 	#region CRUD operations for the Invoice Standard Endpoints
-	private static async partial Task<IResult> CreateNewInvoiceAsync(
+	internal static async partial Task<IResult> CreateNewInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromBody] CreateInvoiceDto invoiceDto,
@@ -74,7 +74,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> RetrieveSpecificInvoiceAsync(
+	internal static async partial Task<IResult> RetrieveSpecificInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -159,7 +159,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> RetrieveAllInvoicesAsync(
+	internal static async partial Task<IResult> RetrieveAllInvoicesAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		ClaimsPrincipal principal)
@@ -228,7 +228,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> UpdateSpecificInvoiceAsync(
+	internal static async partial Task<IResult> UpdateSpecificInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -310,7 +310,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> DeleteInvoiceAsync(
+	internal static async partial Task<IResult> DeleteInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -397,7 +397,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> AddProductToInvoiceAsync(
+	internal static async partial Task<IResult> AddProductToInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -479,7 +479,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> RetrieveProductsFromInvoiceAsync(
+	internal static async partial Task<IResult> RetrieveProductsFromInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -578,7 +578,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> RemoveProductFromInvoiceAsync(
+	internal static async partial Task<IResult> RemoveProductFromInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -670,7 +670,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> UpdateProductInInvoiceAsync(
+	internal static async partial Task<IResult> UpdateProductInInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -771,7 +771,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
+	internal static async partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -881,7 +881,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> AddMerchantToInvoiceAsync(
+	internal static async partial Task<IResult> AddMerchantToInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -972,7 +972,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> RemoveMerchantFromInvoiceAsync(
+	internal static async partial Task<IResult> RemoveMerchantFromInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -1062,7 +1062,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> UpdateMerchantInInvoiceAsync(
+	internal static async partial Task<IResult> UpdateMerchantInInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -1153,7 +1153,7 @@ public static partial class InvoiceEndpoints
 	#endregion
 
 	#region CRUD operations for the Merchant Standard Endpoints
-	private static async partial Task<IResult> CreateNewMerchantAsync(
+	internal static async partial Task<IResult> CreateNewMerchantAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromBody] CreateMerchantDto merchantDto,
@@ -1225,7 +1225,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> RetrieveAllMerchantsAsync(
+	internal static async partial Task<IResult> RetrieveAllMerchantsAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromBody] Guid parentCompanyId,
@@ -1297,7 +1297,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> RetrieveSpecificMerchantAsync(
+	internal static async partial Task<IResult> RetrieveSpecificMerchantAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -1371,7 +1371,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> UpdateSpecificMerchantAsync(
+	internal static async partial Task<IResult> UpdateSpecificMerchantAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -1453,7 +1453,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> DeleteMerchantAsync(
+	internal static async partial Task<IResult> DeleteMerchantAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -1535,7 +1535,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
+	internal static async partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -1620,7 +1620,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> AddInvoiceToMerchantAsync(
+	internal static async partial Task<IResult> AddInvoiceToMerchantAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -1716,7 +1716,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> RemoveInvoiceFromMerchantAsync(
+	internal static async partial Task<IResult> RemoveInvoiceFromMerchantAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -1812,7 +1812,7 @@ public static partial class InvoiceEndpoints
 		}
 	}
 
-	private static async partial Task<IResult> RetrieveProductsFromMerchantAsync(
+	internal static async partial Task<IResult> RetrieveProductsFromMerchantAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
@@ -1911,7 +1911,7 @@ public static partial class InvoiceEndpoints
 	#endregion
 
 	#region Analysis operations
-	private static async partial Task<IResult> AnalyzeInvoiceAsync(
+	internal static async partial Task<IResult> AnalyzeInvoiceAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
