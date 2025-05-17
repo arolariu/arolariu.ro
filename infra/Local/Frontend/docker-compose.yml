@@ -13,4 +13,10 @@ services:
       - arolariu-network
       - default
     ports:
-      - "8080:80"
+      - "8888:80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
+      - "traefik.http.services.whoami.loadbalancer.server.port=80"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      - "traefik.http.routers.whoami.tls.certresolver=myresolver" # Added for Let's Encrypt

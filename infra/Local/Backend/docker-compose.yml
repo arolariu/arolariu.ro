@@ -32,3 +32,9 @@ services:
       KC_DB_USERNAME: sa
       KC_DB_PASSWORD: qazWSXedcRFV1234!
       KC_LOG_LEVEL: INFO
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=Host(`keycloak.localhost`)"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+      - "traefik.http.routers.keycloak.entrypoints=websecure"
+      - "traefik.http.routers.keycloak.tls.certresolver=myresolver" # Added for Let's Encrypt
