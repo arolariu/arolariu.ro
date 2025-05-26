@@ -203,8 +203,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 - [Radix UI](https://www.radix-ui.com/) for providing accessible primitives
 - [Animate-UI](https://animate-ui.com) for animated components
-- [Magic-UI](https://magic-ui.com) for utility components
-- [Aceternity-UI](https://aceternity-ui.com) for utility components
+- [Magic-UI](https://magicui.design/) for utility components
+- [Aceternity-UI](https://ui.aceternity.com/) for utility components
 - [shadcn/ui](https://ui.shadcn.com/) for inspiration and component patterns
 - [Tailwind CSS](https://tailwindcss.com/) for styling utilities
 - [RsBuild](https://rsbuild.dev/) for bundling and building
