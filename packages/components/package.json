@@ -39,6 +39,7 @@
     "LICENSE",
     "changelog.md",
     "readme.md",
+    "DEBUGGING.md",
     "tsconfig.json",
     "tailwind.config.mjs"
   ],

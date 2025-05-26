@@ -129,6 +129,37 @@ The NPM package delivers declaration maps for each component, providing detailed
 
 The declaration maps, coupled with source code that's available under the `src` directory makes troubleshooting and debugging components extremely easy.
 
+## 🔍 Debugging and Development Support
+
+This package is fully optimized for debugging with comprehensive development tools:
+
+### ✅ Complete Source Map Support
+
+- **JavaScript source maps** (`.js.map`, `.cjs.map`) for accurate debugging
+- **CSS source maps** (`.css.map`) for Tailwind CSS debugging
+- **TypeScript declaration maps** for IDE IntelliSense
+- **Original source access** via included `src/` directory
+
+### 🛠️ Development Features
+
+- **Breakpoint debugging** in original TypeScript source
+- **Stack trace accuracy** pointing to exact source locations
+- **Browser DevTools integration** with full source mapping
+- **IDE debugging support** for VS Code, WebStorm, and others
+
+### 📖 Comprehensive Documentation
+
+For detailed debugging instructions, troubleshooting, and development setup, see our **[Debugging Guide](./DEBUGGING.md)**.
+
+The guide covers:
+
+- Browser DevTools configuration
+- IDE setup for debugging
+- Common issues and solutions
+- Performance analysis tools
+- Component introspection methods
+- Source map validation
+
 ## 🔍 TypeScript Support
 
 This library includes comprehensive TypeScript definitions. All components are properly typed and have declaration maps for tight integration.

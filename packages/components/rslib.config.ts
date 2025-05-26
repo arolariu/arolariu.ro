@@ -43,6 +43,7 @@ export default defineConfig({
     target: "web",
     sourceMap: {
       js: "source-map",
+      css: true,
     },
   },
   plugins: [pluginReact()],
