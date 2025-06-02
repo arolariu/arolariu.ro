@@ -31,7 +31,7 @@ const HighlightText = React.forwardRef<HTMLSpanElement, HighlightTextProps>(
       transition = { duration: 2, ease: "easeInOut" },
       ...props
     },
-    ref
+    ref,
   ) => {
     const localRef = React.useRef<HTMLSpanElement>(null);
     React.useImperativeHandle(ref, () => localRef.current as HTMLSpanElement);
@@ -57,14 +57,14 @@ const HighlightText = React.forwardRef<HTMLSpanElement, HighlightTextProps>(
         }}
         className={cn(
           `relative inline-block px-2 py-1 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-500 dark:to-purple-500`,
-          className
+          className,
         )}
         {...props}
       >
         {text}
       </motion.span>
     );
-  }
+  },
 );
 HighlightText.displayName = "HighlightText";
 

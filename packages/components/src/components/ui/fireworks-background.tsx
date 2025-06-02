@@ -36,7 +36,7 @@ const createParticle = (
   direction: number,
   gravity: number,
   friction: number,
-  size: number
+  size: number,
 ): ParticleType => {
   const vx = Math.cos(direction) * speed;
   const vy = Math.sin(direction) * speed;
@@ -106,7 +106,7 @@ const createFirework = (
   size: number,
   particleSpeed: { min: number; max: number } | number,
   particleSize: { min: number; max: number } | number,
-  onExplode: (particles: ParticleType[]) => void
+  onExplode: (particles: ParticleType[]) => void,
 ): FireworkType => {
   const angle = -Math.PI / 2 + rand(-0.3, 0.3);
   const vx = Math.cos(angle) * speed;
@@ -157,8 +157,8 @@ const createFirework = (
             particleAngle,
             0.05,
             0.98,
-            localParticleSize
-          )
+            localParticleSize,
+          ),
         );
       }
       onExplode(particles);
@@ -185,7 +185,7 @@ const createFirework = (
 };
 
 const getValueByRange = (
-  range: { min: number; max: number } | number
+  range: { min: number; max: number } | number,
 ): number => {
   if (typeof range === "number") {
     return range;
@@ -227,13 +227,13 @@ const FireworksBackground = React.forwardRef<
       particleSize = { min: 1, max: 5 },
       ...props
     },
-    ref
+    ref,
   ) => {
     const canvasRef = React.useRef<HTMLCanvasElement>(null);
     const containerRef = React.useRef<HTMLDivElement>(null);
     React.useImperativeHandle(
       ref,
-      () => containerRef.current as HTMLDivElement
+      () => containerRef.current as HTMLDivElement,
     );
 
     React.useEffect(() => {
@@ -282,8 +282,8 @@ const FireworksBackground = React.forwardRef<
             size,
             particleSpeed,
             particleSize,
-            handleExplosion
-          )
+            handleExplosion,
+          ),
         );
         const timeout = rand(300, 800) / population;
         setTimeout(launchFirework, timeout);
@@ -336,8 +336,8 @@ const FireworksBackground = React.forwardRef<
             size,
             particleSpeed,
             particleSize,
-            handleExplosion
-          )
+            handleExplosion,
+          ),
         );
       };
 
@@ -370,7 +370,7 @@ const FireworksBackground = React.forwardRef<
         />
       </div>
     );
-  }
+  },
 );
 
 FireworksBackground.displayName = "FireworksBackground";

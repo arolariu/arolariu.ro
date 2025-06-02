@@ -67,7 +67,7 @@ function ContextMenuSubTrigger({
       data-inset={inset}
       className={cn(
         "focus:bg-neutral-100 focus:text-neutral-900 data-[state=open]:bg-neutral-100 data-[state=open]:text-neutral-900 flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 dark:focus:bg-neutral-800 dark:focus:text-neutral-50 dark:data-[state=open]:bg-neutral-800 dark:data-[state=open]:text-neutral-50",
-        className
+        className,
       )}
       {...props}
     >
@@ -86,7 +86,7 @@ function ContextMenuSubContent({
       data-slot="context-menu-sub-content"
       className={cn(
         "bg-white text-neutral-950 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-hidden rounded-md border border-neutral-200 p-1 shadow-lg dark:bg-neutral-950 dark:text-neutral-50 dark:border-neutral-800",
-        className
+        className,
       )}
       {...props}
     />
@@ -103,7 +103,7 @@ function ContextMenuContent({
         data-slot="context-menu-content"
         className={cn(
           "bg-white text-neutral-950 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-context-menu-content-available-height) min-w-[8rem] origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border border-neutral-200 p-1 shadow-md dark:bg-neutral-950 dark:text-neutral-50 dark:border-neutral-800",
-          className
+          className,
         )}
         {...props}
       />
@@ -127,7 +127,7 @@ function ContextMenuItem({
       data-variant={variant}
       className={cn(
         "focus:bg-neutral-100 focus:text-neutral-900 data-[variant=destructive]:text-red-500 data-[variant=destructive]:focus:bg-red-500/10 dark:data-[variant=destructive]:focus:bg-red-500/20 data-[variant=destructive]:focus:text-red-500 data-[variant=destructive]:*:[svg]:!text-destructive [&_svg:not([class*='text-'])]:text-neutral-500 relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 dark:focus:bg-neutral-800 dark:focus:text-neutral-50 dark:data-[variant=destructive]:text-red-900 dark:data-[variant=destructive]:focus:bg-red-900/10 dark:dark:data-[variant=destructive]:focus:bg-red-900/20 dark:data-[variant=destructive]:focus:text-red-900 dark:[&_svg:not([class*='text-'])]:text-neutral-400",
-        className
+        className,
       )}
       {...props}
     />
@@ -145,7 +145,7 @@ function ContextMenuCheckboxItem({
       data-slot="context-menu-checkbox-item"
       className={cn(
         "focus:bg-neutral-100 focus:text-neutral-900 relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 dark:focus:bg-neutral-800 dark:focus:text-neutral-50",
-        className
+        className,
       )}
       checked={checked}
       {...props}
@@ -170,7 +170,7 @@ function ContextMenuRadioItem({
       data-slot="context-menu-radio-item"
       className={cn(
         "focus:bg-neutral-100 focus:text-neutral-900 relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 dark:focus:bg-neutral-800 dark:focus:text-neutral-50",
-        className
+        className,
       )}
       {...props}
     >
@@ -197,7 +197,7 @@ function ContextMenuLabel({
       data-inset={inset}
       className={cn(
         "text-neutral-950 px-2 py-1.5 text-sm font-medium data-[inset]:pl-8 dark:text-neutral-50",
-        className
+        className,
       )}
       {...props}
     />
@@ -213,7 +213,7 @@ function ContextMenuSeparator({
       data-slot="context-menu-separator"
       className={cn(
         "bg-neutral-200 -mx-1 my-1 h-px dark:bg-neutral-800",
-        className
+        className,
       )}
       {...props}
     />
@@ -229,7 +229,7 @@ function ContextMenuShortcut({
       data-slot="context-menu-shortcut"
       className={cn(
         "text-neutral-500 ml-auto text-xs tracking-widest dark:text-neutral-400",
-        className
+        className,
       )}
       {...props}
     />
