@@ -1,11 +1,9 @@
 /** @format */
 
-import {type Metadata} from "next";
+import type {Metadata} from "next";
 import RenderViewInvoiceScreen from "./island";
 
-interface Props {
-  params: {id: string};
-}
+type Props = {params: Promise<{id: string}>};
 
 export const metadata: Metadata = {
   title: "View Invoice",
@@ -13,13 +11,17 @@ export const metadata: Metadata = {
 };
 
 /**
- * The view invoice page.
- * @returns Render the view invoice page.
+ * The view invoice page, which allows the user to view a specific invoice.
+ * This page uses a dynamic route to display a specific invoice.
+ * @returns Render the view invoice page, SSR'ed.
  */
 export default async function ViewInvoicePage({params}: Readonly<Props>) {
+  const resolvedParams = await params;
+  const invoiceIdentifier = resolvedParams.id;
+
   return (
-    <main className='overflow-hidden px-5 py-24'>
-      <RenderViewInvoiceScreen invoiceIdentifier={params.id} />
+    <main className='overflow-hidden py-24'>
+      <RenderViewInvoiceScreen invoiceIdentifier={invoiceIdentifier} />
     </main>
   );
 }

@@ -2,72 +2,90 @@
 
 "use client";
 
-import {useZustandStore} from "@/hooks/stateStore";
-import useInvoices from "@/hooks/useInvoices";
-import Invoice from "@/types/invoices/Invoice";
-import {useEffect, useState} from "react";
-import InvoicesNotFound from "../_components/InvoicesNotFound";
-import {InvoiceFilters} from "./_components/InvoiceFilters";
-import {InvoiceList} from "./_components/InvoiceList";
+import type {Invoice} from "@/types/invoices";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
+import {motion} from "motion/react";
+import DialogContainer from "../_contexts/DialogContainer";
+import {DialogProvider} from "../_contexts/DialogContext";
 import InvoicesHeader from "./_components/InvoicesHeader";
+import RenderGenerativeView from "./_components/views/GenerativeView";
+import RenderInvoicesView from "./_components/views/InvoicesView";
+import RenderStatisticsView from "./_components/views/StatisticsView";
+
+type Props = {
+  invoices: Invoice[];
+};
 
 /**
  * This function renders the view invoices page.
  * @returns This function renders the view invoices page.
  */
-export default function RenderViewInvoicesScreen() {
-  const {invoices: previousInvoices, setInvoices: setPreviousInvoices} = useZustandStore();
-  const {invoices: currentInvoices, isLoading} = useInvoices();
-  const [shownInvoices, setShownInvoices] = useState<Invoice[]>(previousInvoices);
-  const [displayStyle, setDisplayStyle] = useState<"grid" | "list">("list");
-  const [filters, setFilters] = useState({
-    isImportant: false,
-    dayOnly: false,
-    nightOnly: false,
-  });
-
-  useEffect(() => {
-    if (currentInvoices && currentInvoices !== previousInvoices) setPreviousInvoices(currentInvoices);
-    let filteredInvoices = previousInvoices;
-
-    const timeOfPurchase = (invoice: Invoice): number => {
-      const date = new Date(invoice.paymentInformation?.dateOfPurchase ?? 0);
-      return date.getHours();
-    };
-
-    if (filters.isImportant) {
-      filteredInvoices = filteredInvoices.filter((invoice) => invoice.isImportant);
-    }
-
-    if (filters.dayOnly) {
-      filteredInvoices = filteredInvoices.filter(
-        (invoice) => timeOfPurchase(invoice) >= 6 && timeOfPurchase(invoice) < 18,
-      );
-    }
-
-    if (filters.nightOnly) {
-      filteredInvoices = filteredInvoices.filter(
-        (invoice) => timeOfPurchase(invoice) < 6 || timeOfPurchase(invoice) >= 18,
-      );
-    }
-    setShownInvoices(filteredInvoices);
-  }, [filters, previousInvoices, currentInvoices, isLoading]);
-
-  if (currentInvoices?.length === 0 || previousInvoices.length === 0) return <InvoicesNotFound />;
+export default function RenderViewInvoicesScreen({invoices}: Readonly<Props>): React.JSX.Element {
   return (
-    <section>
-      <InvoicesHeader shownInvoices={shownInvoices} />
-      <InvoiceFilters
-        filters={filters}
-        displayStyle={displayStyle}
-        setDisplayStyle={setDisplayStyle}
-        setFilters={setFilters}
-      />
-      <hr className='pb-16' />
-      <InvoiceList
-        invoices={shownInvoices}
-        displayStyle={displayStyle}
-      />
-    </section>
+    <DialogProvider>
+      <motion.section>
+        <InvoicesHeader />
+        <motion.article>
+          <Tabs
+            defaultValue='invoices'
+            className='w-full'>
+            <TabsList className='grid w-full max-w-md grid-cols-3'>
+              <TabsTrigger
+                value='invoices'
+                className='cursor-pointer'>
+                Invoices
+              </TabsTrigger>
+              <TabsTrigger
+                value='statistics'
+                className='cursor-pointer'>
+                Statistics
+              </TabsTrigger>
+              <TabsTrigger
+                value='liveAnalysis'
+                className='cursor-pointer'>
+                Live Analysis
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent
+              value='invoices'
+              className='mt-6'>
+              <motion.div
+                key='invoices'
+                initial={{opacity: 0, y: 20}}
+                animate={{opacity: 1, y: 0}}
+                exit={{opacity: 0, y: -20}}
+                transition={{duration: 0.3}}>
+                <RenderInvoicesView invoices={invoices} />
+              </motion.div>
+            </TabsContent>
+            <TabsContent
+              value='statistics'
+              className='mt-6'>
+              <motion.div
+                key='statistics'
+                initial={{opacity: 0, y: 20}}
+                animate={{opacity: 1, y: 0}}
+                exit={{opacity: 0, y: -20}}
+                transition={{duration: 0.3}}>
+                <RenderStatisticsView invoices={invoices} />
+              </motion.div>
+            </TabsContent>
+            <TabsContent
+              value='liveAnalysis'
+              className='mt-6'>
+              <motion.div
+                key='liveAnalysis'
+                initial={{opacity: 0, y: 20}}
+                animate={{opacity: 1, y: 0}}
+                exit={{opacity: 0, y: -20}}
+                transition={{duration: 0.3}}>
+                <RenderGenerativeView invoices={invoices} />
+              </motion.div>
+            </TabsContent>
+          </Tabs>
+        </motion.article>
+      </motion.section>
+      <DialogContainer />
+    </DialogProvider>
   );
 }

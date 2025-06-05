@@ -12,6 +12,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 public partial class InvoiceProcessingService
 {
+	#region Delegates
 	private delegate Task CallbackFunctionForTasksWithNoReturn();
 
 	private delegate Task<Invoice> CallbackFunctionForTasksWithInvoiceReturn();
@@ -25,7 +26,9 @@ public partial class InvoiceProcessingService
 	private delegate Task<Merchant> CallbackFunctionForTasksWithMerchantReturn();
 
 	private delegate Task<IEnumerable<Merchant>> CallbackFunctionForTasksWithMerchantListReturn();
+	#endregion
 
+	#region TryCatchAync method
 	private async Task TryCatchAsync(CallbackFunctionForTasksWithNoReturn callbackFunction)
 	{
 		try
@@ -221,7 +224,9 @@ public partial class InvoiceProcessingService
 			throw CreateAndLogServiceException(exception);
 		}
 	}
+	#endregion
 
+	#region Processing service exception builders
 	private InvoiceProcessingServiceValidationException CreateAndLogValidationException(Exception exception)
 	{
 		var invoiceProcessingValidationException = new InvoiceProcessingServiceValidationException(exception.Message, exception);
@@ -253,4 +258,5 @@ public partial class InvoiceProcessingService
 		logger.LogInvoiceProcessingServiceException(exceptionMessage);
 		return invoiceProcessingServiceException;
 	}
+	#endregion
 }

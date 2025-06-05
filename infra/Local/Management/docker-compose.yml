@@ -12,16 +12,62 @@ networks:
     internal: false
 
 services:
-  whoami:
-    image: traefik/whoami
-    container_name: whoami
+  traefik:
+    image: "traefik:v3.0"
+    container_name: "traefik"
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-v", "http://localhost:50607/health"]
-      interval: 3s
-      timeout: 1s
-      retries: 10
+    security_opt:
+      - no-new-privileges:true
     networks:
       - arolariu-network
     ports:
-      - "8080:80"
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Traefik dashboard
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik/traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "./letsencrypt:/letsencrypt"
+    command:
+      - "--api.insecure=true" # Keep this if you want to access the dashboard over HTTP, otherwise remove or set to false for production
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=admin@arolariu.ro"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      
+      # Redirect HTTP to HTTPS
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.tls=true" # Use Traefik's default cert for localhost
+      # - "traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$$apr1$$yourhashedpasswordhere"
+
+  healthchecks:
+    image: linuxserver/healthchecks
+    container_name: healthchecks
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - SITE_ROOT=https://health.localhost
+      - SITE_DOMAIN=localhost
+      - SUPERUSER_EMAIL=admin@arolariu.ro
+      - SUPERUSER_PASSWORD=admin1234
+    volumes:
+      - ./healthcheck:/config
+    networks:
+      - arolariu-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.healthchecks.rule=Host(`health.localhost`)"
+      - "traefik.http.routers.healthchecks.entrypoints=websecure"
+      - "traefik.http.services.healthchecks.loadbalancer.server.port=8000"
+      - "traefik.http.routers.healthchecks.tls=true"

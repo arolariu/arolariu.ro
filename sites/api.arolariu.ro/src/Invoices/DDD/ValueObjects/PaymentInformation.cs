@@ -6,44 +6,32 @@ using System.Diagnostics.CodeAnalysis;
 /// The payment information record.
 /// </summary>
 [ExcludeFromCodeCoverage]
-public record PaymentInformation
+public sealed record PaymentInformation
 {
 	/// <summary>
 	/// The date of purchase.
 	/// </summary>
-	public DateTimeOffset DateOfPurchase { get; set; }
+	public DateTimeOffset TransactionDate { get; set; } = DateTimeOffset.Now;
 
 	/// <summary>
 	/// The payment type.
 	/// </summary>
-	public PaymentType PaymentType { get; set; }
+	public PaymentType PaymentType { get; set; } = PaymentType.UNKNOWN;
 
 	/// <summary>
-	/// The currency name.
+	/// The original currency.
 	/// </summary>
-	public string CurrencyName { get; set; } = "N/A";
+	public Currency Currency { get; set; } = new Currency();
 
 	/// <summary>
-	/// The currency symbol.
+	/// The total amount, in the original currency.
 	/// </summary>
-	public string CurrencySymbol { get; set; } = string.Empty;
+	public decimal TotalCostAmount { get; set; } = 0.0m;
 
 	/// <summary>
-	/// The total amount.
+	/// The tax amount, in the original currency.
 	/// </summary>
-	public decimal TotalAmount { get; set; } = 0;
-
-	/// <summary>
-	/// The total tax.
-	/// </summary>
-	public decimal TotalTax { get; set; } = 0;
-
-	/// <summary>
-	/// Parameterless constructor.
-	/// </summary>
-	public PaymentInformation()
-	{
-	}
+	public decimal TotalTaxAmount { get; set; } = 0.0m;
 }
 
 /// <summary>
@@ -57,32 +45,32 @@ public enum PaymentType
 	UNKNOWN = 0,
 
 	/// <summary>
-	/// The payment type is cash.
+	/// The payment type is via cash.
 	/// </summary>
-	CASH = 1,
+	CASH = 100,
 
 	/// <summary>
-	/// The payment type is card.
+	/// The payment type is via card.
 	/// </summary>
-	CARD = 2,
+	CARD = 200,
 
 	/// <summary>
-	/// The payment type is transfer.
+	/// The payment type is via bank transfer.
 	/// </summary>
-	TRANSFER = 3,
+	TRANSFER = 300,
 
 	/// <summary>
-	/// The payment type is mobile payment.
+	/// The payment type is via mobile payment.
 	/// </summary>
-	MobilePayment = 4,
+	MOBILEPAYMENT = 400,
 
 	/// <summary>
-	/// The payment type is voucher.
+	/// The payment type is via voucher(s).
 	/// </summary>
-	Voucher,
+	VOUCHER=500,
 
 	/// <summary>
 	/// The payment type is other.
 	/// </summary>
-	Other,
+	Other=9999,
 }

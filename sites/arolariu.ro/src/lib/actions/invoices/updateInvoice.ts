@@ -3,8 +3,8 @@
 "use server";
 
 import {API_URL} from "@/lib/utils.server";
-import Invoice from "@/types/invoices/Invoice";
-import {UserInformation} from "@/types/UserInformation";
+import type {UserInformation} from "@/types";
+import type {Invoice} from "@/types/invoices";
 
 /**
  * Server Action that updates an invoice.
@@ -12,10 +12,7 @@ import {UserInformation} from "@/types/UserInformation";
  * @param userInformation The user information to use for the request.
  * @returns The updated invoice, or null if the request failed.
  */
-export default async function updateInvoice(
-  invoiceInformation: Invoice,
-  userInformation: UserInformation,
-): Promise<Invoice | null> {
+export default async function updateInvoice(invoiceInformation: Invoice, userInformation: UserInformation): Promise<Invoice | null> {
   try {
     console.info(">>> Updating invoice for user:", userInformation);
 
@@ -28,8 +25,7 @@ export default async function updateInvoice(
       body: JSON.stringify(invoiceInformation),
     });
 
-    if (response.ok) return (await response.json()) as Invoice;
-    else return null;
+    return response.ok ? (response.json() as Promise<Invoice>) : null;
   } catch (error) {
     console.error("Error updating the invoice:", error);
     return null;

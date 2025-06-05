@@ -1,0 +1,40 @@
+# This docker-compose will spin up the backend services for arolariu.ro
+
+name: "arolariu-backend"
+
+networks:
+  arolariu-network:
+    external: true
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.6
+    container_name: keycloak
+    restart: always
+    command: start-dev
+    ports:
+      - "8084:8080"
+    networks:
+      - arolariu-network
+      - default
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: qazWSXedcRFV1234!
+      KC_HOSTNAME_URL: "http://localhost:8084"
+      KC_HOSTNAME_ADMIN_URL: "http://localhost:8084"
+      KC_HOSTNAME_DEBUG: true
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_HTTP_ENABLED: true
+      KC_PROXY: edge
+      KC_DB: mssql
+      KC_DB_URL: jdbc:sqlserver://mssql:1433;databaseName=arolariu-sql;encrypt=optional;loginTimeout=30;
+      KC_DB_USERNAME: sa
+      KC_DB_PASSWORD: qazWSXedcRFV1234!
+      KC_LOG_LEVEL: INFO
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=Host(`keycloak.localhost`)"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+      - "traefik.http.routers.keycloak.entrypoints=websecure"
+      - "traefik.http.routers.keycloak.tls.certresolver=myresolver" # Added for Let's Encrypt

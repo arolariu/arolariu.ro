@@ -1,1 +1,8 @@
 blank_issues_enabled: false
+contact_links:
+  - name: Ask a question / Discuss
+    url: https://github.com/arolariu/arolariu.ro/discussions/new
+    about: Please ask and answer questions here.
+  - name: Project Documentation
+    url: https://docs.arolariu.ro
+    about: Check our documentation for more information.

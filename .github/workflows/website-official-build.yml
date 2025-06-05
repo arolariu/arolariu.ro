@@ -3,6 +3,8 @@ name: "website-official-build"
 permissions:
   id-token: write
   contents: read
+  issues: write
+  pull-requests: write
 
 defaults:
   run:
@@ -50,10 +52,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0 # Fetch all history for all branches and tags
 
       - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v4.0.2
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: latest
 
@@ -77,17 +81,91 @@ jobs:
 
       - name: 📦 Installing dependencies...
         run: |
-          corepack enable && \
-          yarn && yarn dlx playwright install --with-deps
+          corepack enable
+          yarn install --immutable
+          yarn playwright install --with-deps
+          yarn generate
+        working-directory: ./sites/arolariu.ro
 
-      - name: 🧪 Preparing UI tests...
+      - name: 🧪 Running Jest Unit tests...
+        run: yarn test:jest
+        working-directory: ./sites/arolariu.ro
+
+      - name: 🧪 Running Playwright E2E Component tests...
+        run: yarn test:playwright
+        working-directory: ./sites/arolariu.ro
+        env:
+          CI: "true"
+
+      - name: 🧪 Preparing UI tests (Building Storybook)...
         run: yarn storybook:build --quiet
+        working-directory: ./sites/arolariu.ro
 
-      - name: 🧪 Running Smoke & Integration tests...
+      - name: 🧪 Running Smoke & Integration tests (Playwright on Storybook)...
         run: |
           yarn dlx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
             "yarn dlx http-server storybook-static --port 6006 --silent" \
-            "yarn dlx wait-on tcp:6006 && npm run storybook:test"
+            "yarn dlx wait-on tcp:6006 && yarn storybook:test"
+        working-directory: ./sites/arolariu.ro
+
+      - name: ❓ Find Pull Request
+        if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
+        id: find_pr
+        uses: jwalton/gh-find-current-pr@v1
+        with:
+          state: open
+
+      - name: 📤 Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
+          path: sites/arolariu.ro/code-cov/
+          retention-days: 7
+
+      - name: 💬 Create PR Comment
+        uses: actions/github-script@v7
+        if: github.event_name == 'push' && github.ref == 'refs/heads/preview' && steps.find_pr.outputs.number
+        env:
+          PR_NUMBER: ${{ steps.find_pr.outputs.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JOB_STATUS: ${{ job.status }}
+          COMMIT_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          BRANCH_NAME: ${{ github.ref_name }}
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Install dependencies required by the script
+            const { execSync } = require('child_process');
+            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
+
+            // Dynamically require ts-node to run the TypeScript file directly
+            execSync('cd .github/scripts && npm install --no-save ts-node typescript @types/node', { stdio: 'inherit' });
+
+            // Use ts-node to execute the script directly from the source folder
+            const path = require('path');
+            const { register } = require('./.github/scripts/node_modules/ts-node');
+
+            // Register ts-node to handle TypeScript files
+            register({
+              transpileOnly: true,
+              compilerOptions: {
+                module: 'commonjs',
+                target: 'es2020',
+              }
+            });
+
+            // Now run the script directly from src
+            const script = require('./.github/scripts/src/create-pr-comment.ts');
+            await script.default({github, context, core, exec});
+
+      - name: ☂️ Uploading code coverage report to CodeCov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: "sites/arolariu.ro/code-cov"
 
   build:
     name: ⚒️ Build phase (2/2)
@@ -96,10 +174,10 @@ jobs:
     environment: ${{ inputs.environment || 'development'}}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.2
 
       - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v2.1.1
+        uses: Azure/login@v2.3.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -116,7 +194,7 @@ jobs:
         run: |
           touch .env
           echo "TIMESTAMP=$(date -u  +"%Y-%m-%dT%H:%M:%S"Z)" >> .env
-          json='${{ toJson(env) }}' # We convert the env object to it's JSON representation.
+          json='${{ toJson(env) }}'
           for key in $(echo $json | jq -r 'keys[]'); do
             value=$(echo $json | jq -r '.'$key)
             echo "$key=$value" >> .env

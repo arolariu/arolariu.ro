@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json.schemastore.org/web-manifest",
+  "background_color": "#000000",
+  "categories": [
+    "education",
+    "productivity",
+    "utilities"
+  ],
+  "description": "The `arolariu.ro` platform consists of a complex website, made by Alexandru-Razvan Olariu, a software engineer that is based in Romania.",
+  "dir": "ltr",
+  "display": "standalone",
+  "icons": [
+    {
+      "sizes": "72x72",
+      "src": "manifest/android-chrome-72x72.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "96x96",
+      "src": "manifest/android-chrome-96x96.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "128x128",
+      "src": "manifest/android-chrome-128x128.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "144x144",
+      "src": "manifest/android-chrome-144x144.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "192x192",
+      "src": "manifest/android-chrome-192x192.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "384x384",
+      "src": "manifest/android-chrome-384x384.png",
+      "type": "image/png"
+    },
+    {
+      "sizes": "512x512",
+      "src": "manifest/android-chrome-512x512.png",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Invoices Management System (IMS)",
+      "short_name": "IMS",
+      "description": "The Invoices Management System (IMS) is a platform that allows you to manage your invoices, in a secure and efficient way.",
+      "url": "/domains/invoices"
+    },
+    {
+      "name": "Chat Rooms",
+      "description": "The Chat Rooms service allows you to chat with other people, in real-time, using enterprise-grade technologies.",
+      "url": "/domains/live"
+    }
+  ],
+  "id": "pwa.arolariu.ro",
+  "lang": "en",
+  "name": "arolariu.ro",
+  "orientation": "portrait",
+  "scope": "/",
+  "short_name": "arolariu",
+  "start_url": "https://arolariu.ro/?launcher=pwa",
+  "theme_color": "#9013fe",
+  "prefer_related_applications": false,
+  "related_applications": []
+}

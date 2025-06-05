@@ -8,13 +8,13 @@
 .node-version
 .gitattributes
 .prettierignore
+.prettierrc
 .editorconfig
 .gitignore
 
 # current directory exceptions:
 *.json
 public
-src/components/ui
 readme.md
 
 # exceptions for all directories:
@@ -26,6 +26,8 @@ readme.md
 **/**/*.jpg
 **/**/*.mdx
 **/**/*.json
+**/**/*.txt
+**/**/*.xml
 
 # Lockfiles:
 package-lock.json

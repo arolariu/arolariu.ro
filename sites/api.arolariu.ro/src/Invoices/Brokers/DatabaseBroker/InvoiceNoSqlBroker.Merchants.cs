@@ -48,6 +48,26 @@ public partial class InvoiceNoSqlBroker
 	}
 
 	/// <inheritdoc/>
+	public async ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync()
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsAsync));
+		var database = CosmosClient.GetDatabase("arolariu");
+		var container = database.GetContainer("merchants");
+
+		var merchantList = new List<Merchant>();
+		var query = new QueryDefinition("SELECT * FROM c");
+		var iterator = container.GetItemQueryIterator<Merchant>(query);
+
+		while (iterator.HasMoreResults)
+		{
+			var response = await iterator.ReadNextAsync().ConfigureAwait(false);
+			merchantList.AddRange(response);
+		}
+
+		return merchantList;
+	}
+
+	/// <inheritdoc/>
 	public async ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId)
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantsAsync));
@@ -68,6 +88,22 @@ public partial class InvoiceNoSqlBroker
 	}
 
 	/// <inheritdoc/>
+	public async ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant)
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantAsync));
+		var database = CosmosClient.GetDatabase("arolariu");
+		var container = database.GetContainer("merchants");
+
+		var merchant = await ReadMerchantAsync(merchantIdentifier).ConfigureAwait(false);
+		var partitionKey = new PartitionKey(merchant?.ParentCompanyId.ToString());
+
+		var response = await container.ReplaceItemAsync(updatedMerchant, merchantIdentifier.ToString(), partitionKey).ConfigureAwait(false);
+		
+		var newMerchant = response.Resource;
+		return newMerchant;
+	}
+
+	/// <inheritdoc/>
 	public async ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant)
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantAsync));
@@ -77,7 +113,8 @@ public partial class InvoiceNoSqlBroker
 		var partitionKey = new PartitionKey(currentMerchant?.ParentCompanyId.ToString());
 		var response = await container.UpsertItemAsync(updatedMerchant, partitionKey).ConfigureAwait(false);
 
-		return response.Resource;
+		var newMerchant = response.Resource;
+		return newMerchant;
 	}
 
 	/// <inheritdoc/>

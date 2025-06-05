@@ -2,43 +2,43 @@
 
 "use client";
 
-import {ToastAction} from "@/components/ui/toast";
-import {useToast} from "@/components/ui/use-toast";
-import useUserInformation from "@/hooks/useUserInformation";
+import {useUserInformation} from "@/hooks";
 import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
+import {toast} from "@arolariu/components";
 import {useRouter} from "next/navigation";
+import {useCallback} from "react";
 
 /**
  * Component that renders the invoice not analyzed view.
  * @returns The JSX for the invoice not analyzed view.
  */
 export default function InvoiceNotAnalyzed({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
-  const {toast} = useToast();
-  const router = useRouter();
   const {userInformation} = useUserInformation();
-  const handleAnalysis = async (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    await analyzeInvoice(invoiceIdentifier, userInformation!);
-    toast({
-      title: "Invoice Analyzed",
-      description: `The invoice with the identifier ${invoiceIdentifier} has been analyzed.`,
-      duration: 5000,
-      action: (
-        <ToastAction
-          altText='View invoice'
-          onClick={() => {
-            router.push(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
-            router.refresh();
-          }}>
-          View invoice
-        </ToastAction>
-      ),
-    });
-  };
+  const router = useRouter();
+
+  const handleAnalysis = useCallback(
+    async (event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      const authToken = userInformation?.userJwt;
+      await analyzeInvoice(invoiceIdentifier, authToken!);
+      toast("Invoice analyzed", {
+        description: `The invoice with the identifier ${invoiceIdentifier} has been analyzed.`,
+        duration: 5000,
+        action: {
+          label: "View Invoice",
+          onClick: () => {
+            router.push(`/invoices/view-invoice/${invoiceIdentifier}`);
+          },
+        },
+        icon: <span className='text-white'>✔️</span>,
+      });
+    },
+    [invoiceIdentifier, userInformation, router],
+  );
 
   return (
     <section className='flex flex-col flex-nowrap items-center justify-center justify-items-center'>
-      <article className='mx-auto flex-initial 2xsm:w-full lg:w-1/2'>
+      <article className='2xsm:w-full mx-auto flex-initial lg:w-1/2'>
         <h1 className='text-center text-2xl font-bold'>Invoice {invoiceIdentifier} has not been analyzed!</h1>
       </article>
       <article>

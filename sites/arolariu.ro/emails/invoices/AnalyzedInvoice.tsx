@@ -1,22 +1,8 @@
 /** @format */
 
-import Invoice from "@/types/invoices/Invoice";
-import {
-  Body,
-  Container,
-  Font,
-  Head,
-  Hr,
-  Html,
-  Img,
-  Link,
-  Preview,
-  Row,
-  Section,
-  Tailwind,
-  Text,
-} from "@react-email/components";
-import {FakeInvoice} from "../../data/mocks/invoices";
+import {FakeInvoice} from "@/data/mocks/invoices";
+import type {Invoice} from "@/types/invoices";
+import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
 export default function AnalyzedInvoice({username, invoice}: Readonly<{username: string; invoice: Invoice}>) {
   if (process.env.NODE_ENV === "development") invoice = FakeInvoice;

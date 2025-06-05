@@ -20,9 +20,22 @@ public interface IMerchantOrchestrationService
 	/// Reads a merchant object.
 	/// </summary>
 	/// <param name="identifier"></param>
-	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
-	public Task<Merchant> ReadMerchantObject(Guid identifier, Guid userIdentifier);
+	public Task<Merchant> ReadMerchantObject(Guid identifier);
+
+	/// <summary>
+	/// Reads a merchant object.
+	/// </summary>
+	/// <param name="identifier"></param>
+	/// <param name="parentCompanyId"></param>
+	/// <returns></returns>
+	public Task<Merchant> ReadMerchantObject(Guid identifier, Guid parentCompanyId);
+
+	/// <summary>
+	/// Reads all merchant objects.
+	/// </summary>
+	/// <returns></returns>
+	public Task<IEnumerable<Merchant>> ReadAllMerchantObjects();
 
 	/// <summary>
 	/// Reads all merchant objects.
@@ -34,10 +47,25 @@ public interface IMerchantOrchestrationService
 	/// <summary>
 	/// Updates a merchant object.
 	/// </summary>
+	/// <param name="merchantIdentifier"></param>
+	/// <param name="updatedMerchant"></param>
+	/// <returns></returns>
+	public Task<Merchant> UpdateMerchantObject(Guid merchantIdentifier, Merchant updatedMerchant);
+
+	/// <summary>
+	/// Updates a merchant object.
+	/// </summary>
 	/// <param name="currentMerchant"></param>
 	/// <param name="updatedMerchant"></param>
 	/// <returns></returns>
 	public Task<Merchant> UpdateMerchantObject(Merchant currentMerchant, Merchant updatedMerchant);
+
+	/// <summary>
+	/// Deletes a merchant object.
+	/// </summary>
+	/// <param name="identifier"></param>
+	/// <returns></returns>
+	public Task DeleteMerchantObject(Guid identifier);
 
 	/// <summary>
 	/// Deletes a merchant object.

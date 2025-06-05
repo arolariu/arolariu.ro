@@ -1,9 +1,10 @@
-/**
- * Represents a recipe from the invoice domain system.
- *
- * @format
- */
+/** @format */
 
+import type {Product} from "./index.ts";
+
+/**
+ * Enum representing the complexity of a recipe.
+ */
 export enum RecipeComplexity {
   Unknown = 0,
   Easy = 1,
@@ -11,10 +12,17 @@ export enum RecipeComplexity {
   Hard = 3,
 }
 
+/**
+ * Represents a recipe from the invoice domain system.
+ */
 export type Recipe = {
   name: string;
+  description: string;
   duration: string;
   complexity: RecipeComplexity;
-  recipeIngredients: string[];
-  observations: string[];
+  ingredients: Product[];
+  instructions: string;
+  preparationTime: number;
+  cookingTime: number;
+  referenceForMoreDetails: string;
 };

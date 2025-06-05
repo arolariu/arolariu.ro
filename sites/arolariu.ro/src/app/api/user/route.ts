@@ -1,10 +1,9 @@
 /** @format */
 
+import {fetchUser} from "@/lib/actions/user/fetchUser";
 import {generateGuid} from "@/lib/utils.generic";
-import {API_JWT} from "@/lib/utils.server";
-import {UserInformation} from "@/types/UserInformation";
-import {currentUser} from "@clerk/nextjs/server";
-import * as jose from "jose";
+import {API_JWT, createJwtToken} from "@/lib/utils.server";
+import type {UserInformation} from "@/types";
 import {NextResponse} from "next/server";
 
 export const dynamic = "force-dynamic";
@@ -14,25 +13,25 @@ export const dynamic = "force-dynamic";
  * @returns The auth response that contains the user object.
  */
 export async function GET() {
-  const user = await currentUser();
-  let userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
-  const isGuestUser = userId === "00000000-0000-0000-0000-000000000000";
+  const {user} = await fetchUser();
+  const userPrimaryAddress = user?.primaryEmailAddress?.emailAddress;
+  const userHasValidEmail = userPrimaryAddress != null && userPrimaryAddress != undefined;
 
-  const idHash = isGuestUser ? null : await crypto.subtle.digest("SHA-256", new TextEncoder().encode(userId));
-  const userIdentifier = idHash ? generateGuid(idHash) : "00000000-0000-0000-0000-000000000000";
+  const emailHash = userHasValidEmail ? await crypto.subtle.digest("SHA-256", new TextEncoder().encode(userPrimaryAddress)) : null;
 
-  const secret = new TextEncoder().encode(API_JWT);
+  const userIdentifier = emailHash ? generateGuid(emailHash) : "00000000-0000-0000-0000-000000000000";
+
   const header = {alg: "HS256", typ: "JWT"};
   const payload = {
     iss: "https://auth.arolariu.ro",
     aud: "https://api.arolariu.ro",
     iat: Math.floor(Date.now() / 1000),
     nbf: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 5 * 60,
+    exp: Math.floor(Date.now() / 1000) + 30 * 60, // add 30 minutes to the token.
     sub: user?.id ?? "guest",
     userIdentifier: userIdentifier,
-  } satisfies jose.JWTPayload;
+  };
 
-  const userJwt = await new jose.SignJWT(payload).setProtectedHeader(header).sign(secret);
+  const userJwt = createJwtToken(header, payload, API_JWT);
   return NextResponse.json({user, userIdentifier, userJwt} satisfies UserInformation, {status: 200});
 }

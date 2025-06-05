@@ -1,24 +1,27 @@
-/**
- * Represents the payment information of an invoice from the invoice domain system.
- *
- * @format
- */
+/** @format */
 
+import type {Currency} from "../DDD";
+
+/**
+ * Enum representing the different types of payments.
+ */
 export enum PaymentType {
-  Unknown,
-  Cash,
-  Card,
-  Transfer,
-  MobilePayment,
-  Voucher,
-  Other,
+  Unknown = 0,
+  Cash = 100,
+  Card = 200,
+  Transfer = 300,
+  MobilePayment = 400,
+  Voucher = 500,
+  Other = 9999,
 }
 
+/**
+ * Represents the payment information of an invoice from the invoice domain system.
+ */
 export type PaymentInformation = {
-  dateOfPurchase: Date;
+  transactionDate: Date;
   paymentType: PaymentType;
-  currencyName: string;
-  currencySymbol: string;
-  totalAmount: number;
-  totalTax: number;
+  currency: Currency;
+  totalCostAmount: number;
+  totalTaxAmount: number;
 };

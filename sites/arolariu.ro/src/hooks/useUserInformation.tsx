@@ -1,42 +1,58 @@
 /** @format */
 
+"use client";
+
 import {SITE_URL} from "@/lib/utils.generic";
-import type {UserInformation} from "@/types/UserInformation";
-import {useEffect, useState, type DependencyList} from "react";
+import {UserInformation} from "@/types";
+import {useEffect, useRef, useState} from "react";
+
+type HookReturnType = Readonly<{
+  userInformation: UserInformation;
+  isLoading: boolean;
+  isError: boolean;
+}>;
 
 /**
  * This hook fetches the user information.
  * @returns The user information and loading state.
  */
-export default function useUserInformation(
-  {dependencyArray}: Readonly<{dependencyArray: DependencyList}> = {dependencyArray: []} as const,
-) {
-  const [userInformation, setUserInformation] = useState<UserInformation | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+export function useUserInformation(): HookReturnType {
+  const [userInformation, setUserInformation] = useState<UserInformation>({
+    user: null,
+    userIdentifier: "00000000-0000-0000-0000-000000000000",
+    userJwt: "",
+  });
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
 
   useEffect(() => {
-    const abortController = new AbortController();
-    const {signal} = abortController;
+    abortControllerRef.current?.abort("New request initiated.");
 
-    const fetchUserInformation = async () => {
+    // eslint-disable-next-line functional/immutable-data -- We need to mutate the ref.
+    abortControllerRef.current = new AbortController();
+    const {signal} = abortControllerRef.current;
+
+    const fetchUserInformation = async (signal: AbortSignal) => {
       try {
         setIsLoading(true);
         const userInformationResponse = await fetch(`${SITE_URL}/api/user`, {signal});
         const userInformationAsJson = await userInformationResponse.json();
         setUserInformation(userInformationAsJson as UserInformation);
-      } catch (error) {
-        console.error("useUserInformation", error);
+      } catch (error: unknown) {
+        console.error(">>> Error fetching user information in useUserInformation hook:", error as Error);
         setIsError(true);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchUserInformation().catch((error: unknown) => console.error("useUserInformation", error));
+    fetchUserInformation(signal);
 
-    return () => abortController.abort();
-  }, dependencyArray);
+    return () => {
+      abortControllerRef.current?.abort("Request aborted by cleanup function.");
+    };
+  }, []);
 
   return {userInformation, isLoading, isError};
 }

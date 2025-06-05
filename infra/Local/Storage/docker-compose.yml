@@ -1,11 +1,15 @@
 # This docker-compose will spin up the following data storage containers:
 # - Microsoft SQL Server (MSSQL);
 # - Microsoft NoSQL Server (CosmosDB);
+# - Azure Storage Emulator (Azurite for blob storage);
+# - Redis Cache Server;
 
 name: "arolariu-storage"
 
 volumes:
-  storage:
+  cosmos-data:
+  redis-data:
+  azurite-data:
 
 networks:
   arolariu-network:
@@ -16,11 +20,10 @@ services:
     image: "mcr.microsoft.com/mssql/server:2022-latest"
     container_name: "mssql"
     environment:
-      MSSQL_SA_PASSWORD: "P@ssw0rd1234!"
+      MSSQL_SA_PASSWORD: "qazWSXedcRFV1234!"
       ACCEPT_EULA: "Y"
     healthcheck:
-      test:
-        ["CMD", "sqlcmd", "-U", "sa", "-P", "P@ssw0rd1234!", "-Q", "SELECT 1"]
+      test: CMD sqlcmd -U sa -P qazWSXedcRFV1234! -Q "SELECT 1"
       interval: 30s
       timeout: 10s
       retries: 2
@@ -28,8 +31,16 @@ services:
     ports:
       - "8082:1433" # MSSQL default port
     networks:
-      - default
       - arolariu-network
+      - default
+    volumes:
+      - "./sqlSchema.sql:/usr/sql/sqlSchema.sql"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mssql.rule=Host(`mssql.localhost`)"
+      - "traefik.http.services.mssql.loadbalancer.server.port=1433"
+      - "traefik.http.routers.mssql.entrypoints=websecure"
+      - "traefik.http.routers.mssql.tls.certresolver=myresolver" # Added for Let's Encrypt
 
   cosmosdb:
     image: "mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest"
@@ -44,9 +55,73 @@ services:
       - "10254:10254"
       - "10255:10255"
     volumes:
-      - "storage:/var/opt/cosmosdb"
-      - "storage:/var/opt/cosmosdb/data"
-      - "storage:/var/opt/cosmosdb/logs"
+      - "cosmos-data:/var/opt/cosmosdb"
+      - "cosmos-data:/var/opt/cosmosdb/data"
+      - "cosmos-data:/var/opt/cosmosdb/logs"
     networks:
-      - default
       - arolariu-network
+      - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cosmosdb.rule=Host(`cosmosdb.localhost`)"
+      - "traefik.http.services.cosmosdb.loadbalancer.server.port=8081"
+      - "traefik.http.routers.cosmosdb.entrypoints=websecure"
+      - "traefik.http.routers.cosmosdb.tls.certresolver=myresolver" # Added for Let's Encrypt
+
+  azurite:
+    image: "mcr.microsoft.com/azure-storage/azurite:latest"
+    container_name: "azurite"
+    command: "azurite --oauth basic --blobPort 10000 --queuePort 10001 --tablePort 10002" # Removed --cert and --key flags
+    ports:
+      - "10000:10000" # Blob service
+      - "10001:10001" # Queue service
+      - "10002:10002" # Table service
+    volumes:
+      - "azurite-data:/data"
+    networks:
+      - arolariu-network
+      - default
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10000/__health"] # Changed healthcheck to use curl against Azurite's health endpoint
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: "unless-stopped"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.azurite-blob.rule=Host(`azurite-blob.localhost`)"
+      - "traefik.http.services.azurite-blob.loadbalancer.server.port=10000"
+      - "traefik.http.routers.azurite-blob.entrypoints=websecure"
+      - "traefik.http.routers.azurite-blob.tls.certresolver=myresolver" # Added for Let's Encrypt
+      - "traefik.http.routers.azurite-queue.rule=Host(`azurite-queue.localhost`)"
+      - "traefik.http.services.azurite-queue.loadbalancer.server.port=10001"
+      - "traefik.http.routers.azurite-queue.entrypoints=websecure"
+      - "traefik.http.routers.azurite-queue.tls.certresolver=myresolver" # Added for Let's Encrypt
+      - "traefik.http.routers.azurite-table.rule=Host(`azurite-table.localhost`)"
+      - "traefik.http.services.azurite-table.loadbalancer.server.port=10002"
+      - "traefik.http.routers.azurite-table.entrypoints=websecure"
+      - "traefik.http.routers.azurite-table.tls.certresolver=myresolver" # Added for Let's Encrypt
+
+  redis:
+    image: "redis:alpine"
+    container_name: "redis"
+    command: redis-server --requirepass RedisPassword123! --appendonly yes
+    ports:
+      - "6379:6379" # Redis default port
+    volumes:
+      - "redis-data:/data"
+    networks:
+      - arolariu-network
+      - default
+    healthcheck:
+      test: redis-cli -a RedisPassword123! ping | grep PONG
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: "unless-stopped"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.redis.rule=Host(`redis.localhost`)"
+      - "traefik.http.services.redis.loadbalancer.server.port=6379"
+      - "traefik.http.routers.redis.entrypoints=websecure"
+      - "traefik.http.routers.redis.tls.certresolver=myresolver" # Added for Let's Encrypt

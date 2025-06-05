@@ -3,6 +3,7 @@
   "compilerOptions": {
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
+    "allowArbitraryExtensions": true,
     "allowImportingTsExtensions": true,
     "alwaysStrict": true,
     "noFallthroughCasesInSwitch": true,
@@ -24,12 +25,7 @@
     "removeComments": true,
     "allowJs": true,
     "checkJs": true,
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext",
-      "webworker"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
     "target": "esnext",
     "diagnostics": true,
     "extendedDiagnostics": true,
@@ -52,15 +48,11 @@
         "name": "next"
       }
     ],
+    "baseUrl": "./",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
-    "types": [
-      "@types/node",
-      "@serwist/next/typings"
-    ],
+    "types": ["@types/node", "@types/react", "@types/react-dom"],
     "stripInternal": true
   },
   "include": [
@@ -68,11 +60,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "postcss.config.cjs"
+    "next.config.ts",
+    "postcss.config.js"
   ],
-  "exclude": [
-    "node_modules",
-    "**/*.md",
-    "**/*.mdx"
-  ]
+  "exclude": ["node_modules"]
 }

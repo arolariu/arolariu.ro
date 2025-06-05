@@ -1,19 +1,5 @@
 /** @format */
-import {
-  Body,
-  Container,
-  Font,
-  Head,
-  Hr,
-  Html,
-  Img,
-  Link,
-  Preview,
-  Row,
-  Section,
-  Tailwind,
-  Text,
-} from "@react-email/components";
+import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
 export default function DeletedInvoice({username, invoiceId}: Readonly<{username: string; invoiceId: string}>) {
   if (process.env.NODE_ENV === "development") invoiceId = "1234567890";

@@ -1,13 +1,10 @@
 /** @format */
 
-import RenderForbiddenScreen from "@/app/domains/_components/RenderForbiddenScreen";
-import {fetchUser} from "@/lib/actions/fetchUser";
-import {type Metadata} from "next";
-import RenderEditInvoiceScreen from "./island";
+import {fetchUser} from "@/lib/actions/user/fetchUser";
+import ForbiddenScreen from "@/presentation/ForbiddenScreen";
+import type {Metadata} from "next";
 
-interface Props {
-  params: {id: string};
-}
+type Props = {params: Promise<{id: string}>};
 
 export const metadata: Metadata = {
   title: "Invoice Management System - Edit Invoice",
@@ -15,16 +12,21 @@ export const metadata: Metadata = {
 };
 
 /**
- * The edit invoice page.
- * @returns The edit invoice page.
+ * The edit invoice page, for editing a specific invoice.
+ * This page uses a dynamic route to display a specific invoice.
+ * @returns The edit invoice page, SSR'ed.
  */
 export default async function EditInvoicePage({params}: Readonly<Props>) {
-  const {isAuthenticated} = await fetchUser();
+  const pageParams = await params;
+  const invoiceIdentifier = pageParams.id;
+  console.log("Invoice ID:", invoiceIdentifier);
 
-  if (!isAuthenticated) return <RenderForbiddenScreen />;
+  const {isAuthenticated} = await fetchUser();
+  if (!isAuthenticated) return <ForbiddenScreen />;
+
   return (
     <main className='px-5 py-24'>
-      <RenderEditInvoiceScreen invoiceIdentifier={params.id} />
+      <h1> WIP !!!!</h1>
     </main>
   );
 }

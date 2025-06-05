@@ -1,7 +1,10 @@
 /** @format */
 
-import {fetchUser} from "@/lib/actions/fetchUser";
-import {type Metadata} from "next";
+import {FakeInvoiceBigList} from "@/data/mocks/invoices";
+import {fetchUser} from "@/lib/actions/user/fetchUser";
+import {RichText} from "@/presentation/Text";
+import type {Metadata} from "next";
+import {getTranslations} from "next-intl/server";
 import RenderViewInvoicesScreen from "./island";
 
 export const metadata: Metadata = {
@@ -10,26 +13,32 @@ export const metadata: Metadata = {
 };
 
 /**
- * The view invoices page.
- * @returns The view invoices page.
+ * The view invoices page, SSR'ed.
+ * @returns The view invoices page server-side component.
  */
 export default async function ViewInvoicesPage() {
+  const t = await getTranslations("Domains.services.invoices.service.view-invoices");
   const {user} = await fetchUser();
-  const username = user?.username ?? "dear guest";
+  const username = user?.fullName ?? "dear guest";
+
+  const invoices = FakeInvoiceBigList;
 
   return (
     <main className='container mx-auto px-5 py-24'>
       <section className='mb-20 flex w-full flex-col text-center'>
-        <h1 className='mb-4 bg-gradient-to-r from-pink-400 to-red-600 bg-clip-text text-2xl font-medium text-transparent sm:text-3xl'>
-          Welcome, <span>{username}</span>!
+        <h1 className='mb-4 bg-linear-to-r from-pink-400 to-red-600 bg-clip-text text-2xl font-medium text-transparent sm:text-3xl'>
+          {t("title", {name: username})}
         </h1>
         <article className='mx-auto text-base leading-relaxed lg:w-2/3'>
-          This is your digital receipts inventory. <br /> Here you can find the receipts that you&apos;ve uploaded so
-          far. <br />
-          By clicking on a receipt, you will be redirected to that specific receipt&apos;s page.
+          <RichText
+            sectionKey='Domains.services.invoices.service.view-invoices'
+            textKey='subtitle'
+          />
         </article>
       </section>
-      <RenderViewInvoicesScreen />
+      <section>
+        <RenderViewInvoicesScreen invoices={invoices} />
+      </section>
     </main>
   );
 }

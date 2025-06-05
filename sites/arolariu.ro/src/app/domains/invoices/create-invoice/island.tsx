@@ -2,14 +2,12 @@
 
 "use client";
 
-import {Button} from "@/components/ui/button";
-import {ToastAction} from "@/components/ui/toast";
-import {useToast} from "@/components/ui/use-toast";
-import useUserInformation from "@/hooks/useUserInformation";
+import {useUserInformation} from "@/hooks";
 import uploadInvoice from "@/lib/actions/invoices/uploadInvoice";
 import {extractBase64FromBlob} from "@/lib/utils.client";
-import {UploadStatus} from "@/types/UploadStatus";
-import {useState} from "react";
+import type {UploadStatus} from "@/types";
+import {toast} from "@arolariu/components";
+import {useCallback, useState} from "react";
 import InvoicePreview from "./_components/InvoicePreview";
 import InvoiceSubmitForm from "./_components/InvoiceSubmitForm";
 import InvoiceSubtitle from "./_components/InvoiceSubtitle";
@@ -19,54 +17,71 @@ import InvoiceSubtitle from "./_components/InvoiceSubtitle";
  * @returns The JSX for the invoice upload page.
  */
 export default function RenderCreateInvoiceScreen() {
-  const {toast} = useToast();
+  const {userInformation} = useUserInformation();
   const [images, setImages] = useState<Blob[]>([]);
-  const {userInformation} = useUserInformation({dependencyArray: [images]});
-  const [uploadStatus, setUploadStatus] = useState<UploadStatus>(UploadStatus.UNKNOWN);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus>("UNKNOWN");
 
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setImages([]);
-    setUploadStatus(UploadStatus.UNKNOWN);
-  };
+    setUploadStatus("UNKNOWN");
+  }, []);
 
-  const handleImageClientSideUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    event.preventDefault();
-    const {files} = event.target;
-    if (files && files.length > 0) {
-      const images = [...files] as Blob[];
-      setImages(images);
-      toast({
-        title: `You have uploaded ${images.length} image${images.length > 1 ? "s" : ""}.`,
-        variant: "default",
-        duration: 3000,
-        action: (
-          <ToastAction
-            altText='Clear'
-            className='flex flex-row items-center justify-center justify-items-center gap-2'>
-            <Button onClick={resetState}>Clear.</Button>
-          </ToastAction>
-        ),
-      });
-    }
-  };
-
-  const handleImageServerSideUpload = async (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    const imagesCopy = [...images];
-    for (const image of imagesCopy) {
-      const base64 = await extractBase64FromBlob(image); // client-action
-      const {status} = await uploadInvoice(base64, userInformation!); // server-action
-      if (status === "SUCCESS") {
-        setImages((images) => {
-          return images.filter((imageInState) => imageInState !== image);
+  const handleImageClientSideUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      event.preventDefault();
+      setUploadStatus("PENDING__CLIENTSIDE");
+      const {files} = event.target;
+      if (files && files.length > 0) {
+        const images = [...files] as Blob[];
+        setImages(images);
+        setUploadStatus("SUCCESS__CLIENTSIDE");
+        toast("Upload successful", {
+          description: `${images.length} images uploaded.`,
+          duration: 5000,
+          style: {
+            backgroundColor: "green",
+            color: "white",
+          },
+          icon: <span className='text-white'>✔️</span>,
         });
       }
+    } catch (error: unknown) {
+      console.error(">>> Error in handleImageClientSideUpload:", error as Error);
+      setUploadStatus("FAILURE__CLIENTSIDE");
     }
-  };
+  }, []);
+
+  const handleImageServerSideUpload = useCallback(
+    async (event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {
+      try {
+        event.preventDefault();
+        setUploadStatus("PENDING__SERVERSIDE");
+        const imagesCopy = [...images];
+        // eslint-disable-next-line functional/no-loop-statements
+        for (const image of imagesCopy) {
+          const blobInformation = await extractBase64FromBlob(image); // client-action
+          const {status} = await uploadInvoice({blobInformation, userInformation}); // server-action
+          if (status === "SUCCESS") {
+            setImages((images) => {
+              return images.filter((imageInState) => imageInState !== image);
+            });
+          }
+        }
+        setUploadStatus("SUCCESS__SERVERSIDE");
+      } catch (error: unknown) {
+        console.error(">>> Error in handleImageServerSideUpload:", error as Error);
+        setUploadStatus("FAILURE__SERVERSIDE");
+      }
+    },
+    [images, userInformation],
+  );
 
   return (
     <section className='h-full w-full'>
-      <InvoicePreview images={images} />
+      <InvoicePreview
+        images={images}
+        setImages={setImages}
+      />
       <InvoiceSubtitle images={images} />
       <InvoiceSubmitForm
         images={images}

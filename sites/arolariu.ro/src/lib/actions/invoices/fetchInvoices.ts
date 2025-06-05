@@ -2,29 +2,29 @@
 
 "use server";
 
-import {UserInformation} from "@/types/UserInformation";
-import Invoice from "@/types/invoices/Invoice";
+import type {Invoice} from "@/types/invoices";
 import {API_URL} from "../../utils.server";
 
 /**
  * Server action that fetches all invoices for a user.
- * @param user The user for which to fetch the invoices.
- * @returns A promise of the invoices, or null if the request failed.
+ * @param authToken The JWT token of the user.
+ * @returns A promise of the invoices, or undefined if the request failed.
  */
-export default async function fetchInvoices(userInformation: UserInformation): Promise<Invoice[] | null> {
+export default async function fetchInvoices(authToken: string): Promise<Invoice[]> {
+  console.info(">>> Executing server action::fetchInvoices, with:", {authToken});
+
   try {
-    console.info(">>> Fetching invoices for user:", userInformation);
     const response = await fetch(`${API_URL}/rest/v1/invoices/`, {
       headers: {
-        Authorization: `Bearer ${userInformation.userJwt}`,
+        Authorization: `Bearer ${authToken}`,
         "Content-Type": "application/json",
       },
     });
 
-    if (response.status === 200) return (await response.json()) as Invoice[];
-    else return null;
+    if (response.ok) return response.json() as Promise<Invoice[]>;
+    else throw new Error(`Failed to fetch invoices. Status: ${response.status}`);
   } catch (error) {
     console.error("Error fetching the invoices from the server:", error);
-    return null;
+    throw error;
   }
 }

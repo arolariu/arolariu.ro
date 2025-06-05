@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<OutputType>Library</OutputType>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net9.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
@@ -35,14 +35,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
-		<PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.8" />
-		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.8" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Identity.Core" Version="8.0.8" />
-		<PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="8.0.8" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
-		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.1.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.5" />
+		<PackageReference Include="Microsoft.AspNetCore.Authorization" Version="9.0.5" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.5" />
+		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.51.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.5" />
+		<PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.5" />
+		<PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="9.0.5" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
+		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.10.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,36 +1,22 @@
 /** @format */
 
-import "server-only";
-
-import {AppConfigurationClient} from "@azure/app-configuration";
 import {Blob} from "node:buffer";
+import crypto from "node:crypto";
 import {Resend} from "resend";
-import {CONFIG_STORE} from "./utils.generic";
-
-/**
- * Singleton pattern class object that handles the interaction with the Resend API (mail).
- */
-export const resend = new Resend(process.env["RESEND_API_KEY"]);
 
 export const API_URL = process.env["API_URL"] ?? "";
 export const API_JWT = process.env["API_JWT"] ?? "";
 
 /**
- * Function to fetch a configuration value from Azure App Configuration.
- * @param key The key of the configuration value to fetch.
- * @returns The value of the configuration value.
+ * Singleton pattern class object that handles the interaction with the Resend API (mail).
+ * @see https://resend.com/docs/getting-started
  */
-export async function fetchConfigurationValue(key: string): Promise<string> {
-  console.log("Trying to fetch the following key:", key);
-  const client = new AppConfigurationClient(CONFIG_STORE);
-  const setting = await client.getConfigurationSetting({key});
-  return setting.value ?? "";
-}
+export const resend = new Resend(process.env["RESEND_API_KEY"]);
 
 /**
- * Function that extracts a base64 string from a blob
+ * This function extracts a base64 string from a blob, and returns the mime type.
  * @param base64String The base64 string to extract the mime type from
- * @returns The mime type
+ * @returns The mime type, or null if not found
  */
 export function getMimeTypeFromBase64(base64String: string): string | null {
   const match = /^data:(.*?);base64,/u.exec(base64String);
@@ -38,9 +24,11 @@ export function getMimeTypeFromBase64(base64String: string): string | null {
 }
 
 /**
- * Function that converts a base64 string to a Blob
+ * This async function converts a base64 string to a Blob object.
+ * It uses the atob function to decode the base64 string and create a Blob object from it.
  * @param base64String The base64 string to convert
- * @returns The Blob object
+ * @returns The Blob object created from the base64 string
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/atob
  */
 export async function convertBase64ToBlob(base64String: string): Promise<Blob> {
   // Extract and store the mime type.
@@ -54,4 +42,34 @@ export async function convertBase64ToBlob(base64String: string): Promise<Blob> {
 
   const byteArray = new Uint8Array(byteArrays);
   return new Blob([byteArray], {type: mimeType});
+}
+
+/**
+ * This function creates a JWT token, using the header, payload, and secret.
+ * It uses the HMAC SHA256 algorithm to sign the token.
+ * @param header The header of the JWT token, which contains the algorithm and type.
+ * @param payload The payload of the JWT token, which contains the claims.
+ * @param secret The secret to sign the JWT token with, which is a string.
+ * @returns The JWT token signed with the secret, header, and payload.
+ * @see https://jwt.io/
+ */
+export function createJwtToken(
+  header: Readonly<{alg: string; typ: string}>,
+  payload: Readonly<{[key: string]: any}>,
+  secret: Readonly<string>,
+): Readonly<string> {
+  const __base64UrlEncode__ = (str: string): Readonly<string> =>
+    Buffer.from(str).toString("base64").replaceAll("=", "").replaceAll("+", "-").replaceAll("/", "_");
+
+  const encodedHeader = __base64UrlEncode__(JSON.stringify(header));
+  const encodedPayload = __base64UrlEncode__(JSON.stringify(payload));
+  const signature = crypto
+    .createHmac("sha256", secret)
+    .update(`${encodedHeader}.${encodedPayload}`)
+    .digest("base64")
+    .replaceAll("=", "")
+    .replaceAll("+", "-")
+    .replaceAll("/", "_");
+
+  return `${encodedHeader}.${encodedPayload}.${signature}` as const;
 }

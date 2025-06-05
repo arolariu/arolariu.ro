@@ -1,11 +1,13 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Azure;
@@ -15,6 +17,7 @@ using Microsoft.Extensions.Options;
 
 /// <summary>
 /// The Azure OpenAI broker service.
+/// This concrete class will use the Azure OpenAI client to perform the invoice analysis.
 /// </summary>
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
 #pragma warning disable OPENAI001 // acknowledge the fact that the OpenAI API is not yet stable
@@ -45,25 +48,26 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
 
 		invoice.Name = await GenerateInvoiceName(invoice).ConfigureAwait(false);
 		invoice.Description = await GenerateInvoiceDescription(invoice).ConfigureAwait(false);
-		invoice.PossibleRecipes = await GenerateInvoiceRecipes(invoice).ConfigureAwait(false);
 
-
-		var products = invoice.Items;
-		foreach (var product in products)
+		#region Generate possible products
+		foreach (var product in invoice.Items)
 		{
+			// TODO: further processing of the product.
 			product.Category = await GenerateProductCategory(product).ConfigureAwait(false);
 			product.DetectedAllergens = await GenerateProductAllergens(product).ConfigureAwait(false);
 		}
-
-		var merchant = invoice.Merchant;
-		if (merchant is not null)
+		#endregion
+		
+		#region Generate possible recipes.
+		var possibleRecipesCollection = await GenerateInvoiceRecipes(invoice).ConfigureAwait(false);
+		foreach (var recipe in possibleRecipesCollection)
 		{
-			merchant.Category = await GenerateMerchantCategory(merchant).ConfigureAwait(false);
-			merchant.Description = await GenerateMerchantDescription(merchant).ConfigureAwait(false);
-			invoice.Merchant = merchant;
+			// TODO: further processing of the recipe.
+			invoice.PossibleRecipes.Add(recipe);
 		}
+		#endregion
+		// TODO: further processing of the invoice.
 
-		invoice.Items = products;
 		invoice.Category = await GenerateInvoiceCategory(invoice).ConfigureAwait(false);
 		return invoice;
 	}

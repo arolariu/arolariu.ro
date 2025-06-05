@@ -1,6 +1,8 @@
 ﻿namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -32,11 +34,8 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 		CosmosClient = client;
 	}
 
-	private static void SetModelReferences(ModelBuilder modelBuilder)
+	private static void SetModelReferencesForInvoiceModel(ModelBuilder modelBuilder)
 	{
-		ArgumentNullException.ThrowIfNull(modelBuilder);
-
-		#region Map the invoice entity to the invoices container.
 		modelBuilder.Entity<Invoice>(entity =>
 		{
 			entity.ToContainer("invoices");
@@ -54,8 +53,10 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 			entity.Property(i => i.NumberOfUpdates).HasConversion<int>();
 			entity.Property(i => i.LastUpdatedBy).HasConversion<string>();
 			entity.Property(i => i.PhotoLocation).HasConversion<string>();
+			entity.Property(i => i.MerchantReference).HasConversion<string>();
 			entity.Property(i => i.CreatedAt).HasConversion<DateTimeOffset>();
 			entity.Property(i => i.LastUpdatedAt).HasConversion<DateTimeOffset>();
+			entity.Property(i => i.SharedWith).HasConversion(new ValueConverterForIEnumerableOf<Guid>());
 			#endregion
 
 			entity.HasIndex(invoice => invoice.id);
@@ -65,180 +66,135 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
 		modelBuilder.Entity<Invoice>().OwnsMany<Product>(navigationExpression: invoice => invoice.Items,
 			buildAction: items =>
-		{
-			items.ToTable("products");
-			items.ToJsonProperty("Items");
+			{
+				items.ToJsonProperty("Items");
 
-			items.Property(item => item.RawName)
+				items.Property(item => item.RawName)
 				.ToJsonProperty("RawName")
 				.HasConversion<string>();
 
-			items.Property(item => item.GenericName)
+				items.Property(item => item.GenericName)
 				.ToJsonProperty("GenericName")
 				.HasConversion<string>();
 
-			items.Property(item => item.Category)
+				items.Property(item => item.Category)
 				.ToJsonProperty("Category")
 				.HasConversion<string>();
 
-			items.Property(item => item.Quantity)
+				items.Property(item => item.Quantity)
 				.ToJsonProperty("Quantity")
 				.HasConversion<decimal>();
 
-			items.Property(items => items.QuantityUnit)
+				items.Property(items => items.QuantityUnit)
 				.ToJsonProperty("QuantityUnit")
 				.HasConversion<string>();
 
-			items.Property(item => item.ProductCode)
+				items.Property(item => item.ProductCode)
 				.ToJsonProperty("ProductCode")
 				.HasConversion<string>();
 
-			items.Property(item => item.Price)
+				items.Property(item => item.Price)
 				.ToJsonProperty("Price")
 				.HasConversion<decimal>();
 
-			items.Property(item => item.DetectedAllergens)
+				items.Property(item => item.DetectedAllergens)
 				.ToJsonProperty("DetectedAllergens")
-				.HasConversion(new IEnumerableOfXTypeValueConverter<Allergen>());
-		});
+				.HasConversion(new ValueConverterForIEnumerableOf<Allergen>());
+			});
 
 		modelBuilder.Entity<Invoice>().OwnsMany<Recipe>(navigationExpression: invoice => invoice.PossibleRecipes,
 			buildAction: recipes =>
-		{
-			recipes.ToJsonProperty("PossibleRecipes");
+			{
+				recipes.ToJsonProperty("PossibleRecipes");
 
-			recipes.Property(recipe => recipe.Name)
+				recipes.Property(recipe => recipe.Name)
 				.ToJsonProperty("Name")
 				.HasConversion<string>();
 
-			recipes.Property(recipe => recipe.Duration)
+				recipes.Property(recipe => recipe.Description)
+				.ToJsonProperty("Description")
+				.HasConversion<string>();
+
+				recipes.Property(recipe => recipe.Duration)
 				.ToJsonProperty("Duration")
 				.HasConversion<TimeOnly>();
 
-			recipes.Property(recipe => recipe.Complexity)
+				recipes.Property(recipe => recipe.Complexity)
 				.ToJsonProperty("Complexity")
 				.HasConversion<string>();
 
-			recipes.Property(recipe => recipe.Ingredients)
+				recipes.Property(recipe => recipe.Ingredients)
 				.ToJsonProperty("Ingredients")
-				.HasConversion(new IEnumerableOfXTypeValueConverter<string>());
+				.HasConversion(new ValueConverterForIEnumerableOf<Product>());
 
-			recipes.Property(recipe => recipe.Observations)
-				.ToJsonProperty("Observations")
-				.HasConversion(new IEnumerableOfXTypeValueConverter<string>());
-		});
+				recipes.Property(recipe => recipe.ReferenceForMoreDetails)
+				.ToJsonProperty("ReferenceForMoreDetails")
+				.HasConversion<string>();
+			});
 
 		modelBuilder.Entity<Invoice>().OwnsOne<PaymentInformation>(navigationExpression: invoice => invoice.PaymentInformation,
 			buildAction: paymentInformation =>
-		{
-			paymentInformation.ToJsonProperty("PaymentInformation");
+			{
+				paymentInformation.ToJsonProperty("PaymentInformation");
 
-			paymentInformation.Property(pi => pi.DateOfPurchase)
-				.ToJsonProperty("DateOfPurchase")
+				paymentInformation.Property(pi => pi.TransactionDate)
+				.ToJsonProperty("TransactionDate")
 				.HasConversion<DateTimeOffset>();
 
-			paymentInformation.Property(pi => pi.PaymentType)
+				paymentInformation.Property(pi => pi.PaymentType)
 				.ToJsonProperty("PaymentType")
 				.HasConversion<string>();
 
-			paymentInformation.Property(pi => pi.CurrencyName)
-				.ToJsonProperty("CurrencyName")
-				.HasConversion<string>();
+				paymentInformation.Property(pi => pi.Currency)
+				.ToJsonProperty("Currency");
 
-			paymentInformation.Property(pi => pi.CurrencySymbol)
-				.ToJsonProperty("CurrencySymbol")
-				.HasConversion<string>();
-
-			paymentInformation.Property(pi => pi.TotalAmount)
-				.ToJsonProperty("TotalAmount")
+				paymentInformation.Property(pi => pi.TotalCostAmount)
+				.ToJsonProperty("TotalCostAmount")
 				.HasConversion<decimal>();
 
-			paymentInformation.Property(pi => pi.TotalTax)
-				.ToJsonProperty("TotalTax")
+				paymentInformation.Property(pi => pi.TotalTaxAmount)
+				.ToJsonProperty("TotalTaxAmount")
 				.HasConversion<decimal>();
-		});
+			});
+	}
 
-		modelBuilder.Entity<Invoice>().OwnsOne<Merchant>(navigationExpression: invoice => invoice.Merchant,
-			buildAction: merchant =>
+	private static void SetModelReferencesForMerchantModel(ModelBuilder modelBuilder)
+	{
+		modelBuilder.Entity<Merchant>(entity =>
 		{
-			merchant.ToTable("merchants");
-			merchant.ToJsonProperty("Merchant");
+			entity.ToContainer("merchants");
 
-			merchant.Property(m => m.id).ToJsonProperty("id").HasConversion<string>();
-			merchant.Property(m => m.ParentCompanyId).HasConversion<string>();
+			entity.Property(m => m.id).ToJsonProperty("id").HasConversion<string>();
+			entity.Property(m => m.ParentCompanyId).HasConversion<string>();
 
 			#region Base types
-			merchant.Property(m => m.Name).HasConversion<string>();
-			merchant.Property(m => m.Address).HasConversion<string>();
-			merchant.Property(m => m.Category).HasConversion<string>();
-			merchant.Property(m => m.CreatedBy).HasConversion<string>();
-			merchant.Property(m => m.IsImportant).HasConversion<bool>();
-			merchant.Property(m => m.IsSoftDeleted).HasConversion<bool>();
-			merchant.Property(m => m.Description).HasConversion<string>();
-			merchant.Property(m => m.PhoneNumber).HasConversion<string>();
-			merchant.Property(m => m.NumberOfUpdates).HasConversion<int>();
-			merchant.Property(m => m.LastUpdatedBy).HasConversion<string>();
-			merchant.Property(m => m.CreatedAt).HasConversion<DateTimeOffset>();
-			merchant.Property(m => m.LastUpdatedAt).HasConversion<DateTimeOffset>();
+			entity.Property(i => i.Name).HasConversion<string>();
+			entity.Property(i => i.Category).HasConversion<string>();
+			entity.Property(i => i.CreatedBy).HasConversion<string>();
+			entity.Property(i => i.IsImportant).HasConversion<bool>();
+			entity.Property(i => i.IsSoftDeleted).HasConversion<bool>();
+			entity.Property(i => i.Description).HasConversion<string>();
+			entity.Property(i => i.NumberOfUpdates).HasConversion<int>();
+			entity.Property(i => i.LastUpdatedBy).HasConversion<string>();
+			entity.Property(i => i.CreatedAt).HasConversion<DateTimeOffset>();
+			entity.Property(i => i.LastUpdatedAt).HasConversion<DateTimeOffset>();
 			#endregion
+
+			entity.HasIndex(merchant => merchant.id);
+			entity.HasPartitionKey(merchant => merchant.ParentCompanyId);
+			entity.HasNoDiscriminator(); // we will only store merchants in this container
 		});
-		#endregion
+	}
 
-		/* 
-		 * The following code is used to map the merchant and product entities to their respective containers.
-		 * The merchant and product entities are stored in separate containers.
-		 * The merchant entity is stored in the "merchants" container.
-		 * The product entity is stored in the "products" container.
-			#region Map the merchant entity to the merchant container.
-			modelBuilder.Entity<Merchant>(entity =>
-			{
-				entity.ToContainer("merchants");
+	private static void SetModelReferences(ModelBuilder modelBuilder)
+	{
+		ArgumentNullException.ThrowIfNull(modelBuilder);
 
-				entity.Property(m => m.Id).ToJsonProperty("id").HasConversion<string>();
-				entity.Property(m => m.ParentCompanyId).HasConversion<string>();
-
-				#region Base types
-				entity.Property(i => i.Name).HasConversion<string>();
-				entity.Property(i => i.Category).HasConversion<string>();
-				entity.Property(i => i.CreatedBy).HasConversion<string>();
-				entity.Property(i => i.IsImportant).HasConversion<bool>();
-				entity.Property(i => i.IsSoftDeleted).HasConversion<bool>();
-				entity.Property(i => i.Description).HasConversion<string>();
-				entity.Property(i => i.NumberOfUpdates).HasConversion<int>();
-				entity.Property(i => i.LastUpdatedBy).HasConversion<string>();
-				entity.Property(i => i.CreatedAt).HasConversion<DateTimeOffset>();
-				entity.Property(i => i.LastUpdatedAt).HasConversion<DateTimeOffset>();
-				#endregion
-
-				entity.HasIndex(merchant => merchant.Id);
-				entity.HasPartitionKey(merchant => merchant.ParentCompanyId);
-				entity.HasNoDiscriminator(); // we will only store merchants in this container
-			});
-			#endregion
-
-			#region Map the product entity to the products container.
-			modelBuilder.Entity<Product>(entity =>
-			{
-				entity.ToContainer("products");
-
-				entity.Property(i => i.Id).ToJsonProperty("id").HasConversion<string>();
-
-				#region Base types
-				entity.Property(i => i.RawName).HasConversion<string>();
-				entity.Property(i => i.GenericName).HasConversion<string>();
-				entity.Property(i => i.Category).HasConversion<string>();
-				entity.Property(i => i.Quantity).HasConversion<decimal>();
-				entity.Property(i => i.QuantityUnit).HasConversion<string>();
-				entity.Property(i => i.ProductCode).HasConversion<string>();
-				entity.Property(i => i.Price).HasConversion<decimal>();
-				#endregion
-
-				entity.HasIndex(product => product.Id);
-				entity.HasPartitionKey(product => product.Id);
-				entity.HasNoDiscriminator(); // we will only store products in this container
-			});
-			#endregion
-		*/
+		// Map the invoice entity to the invoices container.
+		SetModelReferencesForInvoiceModel(modelBuilder);
+		
+		// Map the merchant entity to the merchant container.
+		SetModelReferencesForMerchantModel(modelBuilder);
 	}
 
 	/// <inheritdoc/>

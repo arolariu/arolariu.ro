@@ -1,0 +1,551 @@
+{
+  "name": "@arolariu/components",
+  "displayName": "@arolariu/components",
+  "version": "0.0.39",
+  "description": "A collection of reusable components for React applications, built as ESM & CJS modules with tree shake, minify and bundler optimizations enabled, for the lowest bundle size (import cost)! 😍",
+  "homepage": "https://arolariu.ro",
+  "repository": {
+    "type": "git",
+    "directory": "packages/components",
+    "url": "https://github.com/arolariu/arolariu.ro"
+  },
+  "author": {
+    "name": "Alexandru-Razvan Olariu",
+    "email": "admin@arolariu.ro",
+    "url": "https://arolariu.ro"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "source": "src/index.ts",
+  "main": "dist/cjs/index.cjs",
+  "module": "dist/esm/index.js",
+  "style": "dist/index.css",
+  "types": "dist/types/index.d.ts",
+  "typings": "dist/types/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/types/*"
+      ],
+      ".": [
+        "./dist/types/index.d.ts"
+      ]
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "LICENSE",
+    "changelog.md",
+    "readme.md",
+    "DEBUGGING.md",
+    "tsconfig.json",
+    "tailwind.config.mjs"
+  ],
+  "packageManager": "yarn@4.9.1+sha512.f95ce356460e05be48d66401c1ae64ef84d163dd689964962c6888a9810865e39097a5e9de748876c2e0bf89b232d583c33982773e9903ae7a76257270986538",
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": [
+    "Component Library",
+    "React",
+    "React 18",
+    "React 19",
+    "ReactJS",
+    "Tailwind",
+    "TailwindCSS",
+    "Radix-UI",
+    "Magic-UI",
+    "Animate-UI",
+    "Aceternity-UI",
+    "ShadCN"
+  ],
+  "bugs": {
+    "url": "https://github.com/arolariu/arolariu.ro/issues",
+    "email": "admin@arolariu.ro"
+  },
+  "scripts": {
+    "build": "npm run build:clean && rslib build && npm run build:exports && npm run build:copy",
+    "build:clean": "rimraf dist",
+    "build:copy": "tsx scripts/copy-files.ts",
+    "build:exports": "tsx scripts/generate-exports.ts",
+    "build:storybook": "storybook build",
+    "storybook": "storybook dev -p 6006"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "5.0.1",
+    "@radix-ui/react-accordion": "1.2.11",
+    "@radix-ui/react-alert-dialog": "1.1.14",
+    "@radix-ui/react-aspect-ratio": "1.1.7",
+    "@radix-ui/react-avatar": "1.1.10",
+    "@radix-ui/react-checkbox": "1.3.2",
+    "@radix-ui/react-collapsible": "1.1.11",
+    "@radix-ui/react-context-menu": "2.2.15",
+    "@radix-ui/react-dialog": "1.1.14",
+    "@radix-ui/react-dropdown-menu": "2.1.15",
+    "@radix-ui/react-hover-card": "1.1.14",
+    "@radix-ui/react-label": "2.1.7",
+    "@radix-ui/react-menubar": "1.1.15",
+    "@radix-ui/react-navigation-menu": "1.2.13",
+    "@radix-ui/react-popover": "1.1.14",
+    "@radix-ui/react-progress": "1.1.7",
+    "@radix-ui/react-radio-group": "1.3.7",
+    "@radix-ui/react-scroll-area": "1.2.9",
+    "@radix-ui/react-select": "2.2.5",
+    "@radix-ui/react-separator": "1.1.7",
+    "@radix-ui/react-slider": "1.3.5",
+    "@radix-ui/react-slot": "1.2.3",
+    "@radix-ui/react-switch": "1.2.5",
+    "@radix-ui/react-tabs": "1.1.12",
+    "@radix-ui/react-toggle": "1.1.9",
+    "@radix-ui/react-toggle-group": "1.1.10",
+    "@radix-ui/react-tooltip": "1.2.7",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "cmdk": "1.1.1",
+    "embla-carousel-react": "8.6.0",
+    "input-otp": "1.4.2",
+    "lucide-react": "0.511.0",
+    "motion": "12.15.0",
+    "next-themes": "0.4.6",
+    "react-day-picker": "9.7.0",
+    "react-hook-form": "7.56.4",
+    "react-resizable-panels": "3.0.2",
+    "recharts": "2.15.3",
+    "shiki": "3.4.2",
+    "sonner": "2.0.3",
+    "tailwind-merge": "3.3.0",
+    "tailwindcss-animate": "1.0.7",
+    "vaul": "1.1.2",
+    "zod": "3.25.32"
+  },
+  "peerDependencies": {
+    "motion": "^12",
+    "react": "^18.2 || ^19",
+    "react-dom": "^18.2 || ^19",
+    "tailwindcss": "^4"
+  },
+  "devDependencies": {
+    "@microsoft/api-extractor": "7.52.8",
+    "@rsbuild/core": "1.3.22",
+    "@rsbuild/plugin-react": "1.3.1",
+    "@rslib/core": "0.9.0",
+    "@storybook/addon-a11y": "8.6.14",
+    "@storybook/addon-docs": "8.6.14",
+    "@storybook/addon-essentials": "8.6.14",
+    "@storybook/addon-interactions": "8.6.14",
+    "@storybook/addon-links": "8.6.14",
+    "@storybook/addon-storysource": "8.6.14",
+    "@storybook/addon-themes": "8.6.14",
+    "@tailwindcss/postcss": "4.1.7",
+    "@types/node": "22.15.23",
+    "@types/react": "19.1.6",
+    "@types/react-dom": "19.1.5",
+    "cssnano": "7.0.7",
+    "playwright": "1.52.0",
+    "postcss": "8.5.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "rimraf": "6.0.1",
+    "storybook": "8.6.14",
+    "storybook-addon-rslib": "1.0.1",
+    "storybook-builder-rsbuild": "1.0.1",
+    "storybook-react-rsbuild": "1.0.1",
+    "tailwindcss": "4.1.7",
+    "tsx": "4.19.4",
+    "typescript": "5.8.3"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/types/*.d.ts",
+      "import": "./dist/esm/*.js",
+      "require": "./dist/cjs/*.cjs",
+      "default": "./dist/esm/*.js"
+    },
+    "./tailwind": {
+      "import": "./dist/esm/tailwind.js",
+      "require": "./dist/cjs/tailwind.cjs",
+      "default": "./dist/esm/tailwind.js"
+    },
+    "./package.json": "./package.json",
+    "./styles": "./dist/index.css",
+    "./styles.css": "./dist/index.css",
+    "./accordion": {
+      "types": "./dist/types/components/ui/accordion.d.ts",
+      "import": "./dist/esm/components/ui/accordion.js",
+      "require": "./dist/cjs/components/ui/accordion.cjs",
+      "default": "./dist/esm/components/ui/accordion.js"
+    },
+    "./alert-dialog": {
+      "types": "./dist/types/components/ui/alert-dialog.d.ts",
+      "import": "./dist/esm/components/ui/alert-dialog.js",
+      "require": "./dist/cjs/components/ui/alert-dialog.cjs",
+      "default": "./dist/esm/components/ui/alert-dialog.js"
+    },
+    "./alert": {
+      "types": "./dist/types/components/ui/alert.d.ts",
+      "import": "./dist/esm/components/ui/alert.js",
+      "require": "./dist/cjs/components/ui/alert.cjs",
+      "default": "./dist/esm/components/ui/alert.js"
+    },
+    "./aspect-ratio": {
+      "types": "./dist/types/components/ui/aspect-ratio.d.ts",
+      "import": "./dist/esm/components/ui/aspect-ratio.js",
+      "require": "./dist/cjs/components/ui/aspect-ratio.cjs",
+      "default": "./dist/esm/components/ui/aspect-ratio.js"
+    },
+    "./avatar": {
+      "types": "./dist/types/components/ui/avatar.d.ts",
+      "import": "./dist/esm/components/ui/avatar.js",
+      "require": "./dist/cjs/components/ui/avatar.cjs",
+      "default": "./dist/esm/components/ui/avatar.js"
+    },
+    "./background-beams": {
+      "types": "./dist/types/components/ui/background-beams.d.ts",
+      "import": "./dist/esm/components/ui/background-beams.js",
+      "require": "./dist/cjs/components/ui/background-beams.cjs",
+      "default": "./dist/esm/components/ui/background-beams.js"
+    },
+    "./badge": {
+      "types": "./dist/types/components/ui/badge.d.ts",
+      "import": "./dist/esm/components/ui/badge.js",
+      "require": "./dist/cjs/components/ui/badge.cjs",
+      "default": "./dist/esm/components/ui/badge.js"
+    },
+    "./breadcrumb": {
+      "types": "./dist/types/components/ui/breadcrumb.d.ts",
+      "import": "./dist/esm/components/ui/breadcrumb.js",
+      "require": "./dist/cjs/components/ui/breadcrumb.cjs",
+      "default": "./dist/esm/components/ui/breadcrumb.js"
+    },
+    "./bubble-background": {
+      "types": "./dist/types/components/ui/bubble-background.d.ts",
+      "import": "./dist/esm/components/ui/bubble-background.js",
+      "require": "./dist/cjs/components/ui/bubble-background.cjs",
+      "default": "./dist/esm/components/ui/bubble-background.js"
+    },
+    "./button": {
+      "types": "./dist/types/components/ui/button.d.ts",
+      "import": "./dist/esm/components/ui/button.js",
+      "require": "./dist/cjs/components/ui/button.cjs",
+      "default": "./dist/esm/components/ui/button.js"
+    },
+    "./calendar": {
+      "types": "./dist/types/components/ui/calendar.d.ts",
+      "import": "./dist/esm/components/ui/calendar.js",
+      "require": "./dist/cjs/components/ui/calendar.cjs",
+      "default": "./dist/esm/components/ui/calendar.js"
+    },
+    "./card": {
+      "types": "./dist/types/components/ui/card.d.ts",
+      "import": "./dist/esm/components/ui/card.js",
+      "require": "./dist/cjs/components/ui/card.cjs",
+      "default": "./dist/esm/components/ui/card.js"
+    },
+    "./carousel": {
+      "types": "./dist/types/components/ui/carousel.d.ts",
+      "import": "./dist/esm/components/ui/carousel.js",
+      "require": "./dist/cjs/components/ui/carousel.cjs",
+      "default": "./dist/esm/components/ui/carousel.js"
+    },
+    "./chart": {
+      "types": "./dist/types/components/ui/chart.d.ts",
+      "import": "./dist/esm/components/ui/chart.js",
+      "require": "./dist/cjs/components/ui/chart.cjs",
+      "default": "./dist/esm/components/ui/chart.js"
+    },
+    "./checkbox": {
+      "types": "./dist/types/components/ui/checkbox.d.ts",
+      "import": "./dist/esm/components/ui/checkbox.js",
+      "require": "./dist/cjs/components/ui/checkbox.cjs",
+      "default": "./dist/esm/components/ui/checkbox.js"
+    },
+    "./collapsible": {
+      "types": "./dist/types/components/ui/collapsible.d.ts",
+      "import": "./dist/esm/components/ui/collapsible.js",
+      "require": "./dist/cjs/components/ui/collapsible.cjs",
+      "default": "./dist/esm/components/ui/collapsible.js"
+    },
+    "./command": {
+      "types": "./dist/types/components/ui/command.d.ts",
+      "import": "./dist/esm/components/ui/command.js",
+      "require": "./dist/cjs/components/ui/command.cjs",
+      "default": "./dist/esm/components/ui/command.js"
+    },
+    "./context-menu": {
+      "types": "./dist/types/components/ui/context-menu.d.ts",
+      "import": "./dist/esm/components/ui/context-menu.js",
+      "require": "./dist/cjs/components/ui/context-menu.cjs",
+      "default": "./dist/esm/components/ui/context-menu.js"
+    },
+    "./counting-number": {
+      "types": "./dist/types/components/ui/counting-number.d.ts",
+      "import": "./dist/esm/components/ui/counting-number.js",
+      "require": "./dist/cjs/components/ui/counting-number.cjs",
+      "default": "./dist/esm/components/ui/counting-number.js"
+    },
+    "./dialog": {
+      "types": "./dist/types/components/ui/dialog.d.ts",
+      "import": "./dist/esm/components/ui/dialog.js",
+      "require": "./dist/cjs/components/ui/dialog.cjs",
+      "default": "./dist/esm/components/ui/dialog.js"
+    },
+    "./dot-background": {
+      "types": "./dist/types/components/ui/dot-background.d.ts",
+      "import": "./dist/esm/components/ui/dot-background.js",
+      "require": "./dist/cjs/components/ui/dot-background.cjs",
+      "default": "./dist/esm/components/ui/dot-background.js"
+    },
+    "./drawer": {
+      "types": "./dist/types/components/ui/drawer.d.ts",
+      "import": "./dist/esm/components/ui/drawer.js",
+      "require": "./dist/cjs/components/ui/drawer.cjs",
+      "default": "./dist/esm/components/ui/drawer.js"
+    },
+    "./dropdown-menu": {
+      "types": "./dist/types/components/ui/dropdown-menu.d.ts",
+      "import": "./dist/esm/components/ui/dropdown-menu.js",
+      "require": "./dist/cjs/components/ui/dropdown-menu.cjs",
+      "default": "./dist/esm/components/ui/dropdown-menu.js"
+    },
+    "./dropdrawer": {
+      "types": "./dist/types/components/ui/dropdrawer.d.ts",
+      "import": "./dist/esm/components/ui/dropdrawer.js",
+      "require": "./dist/cjs/components/ui/dropdrawer.cjs",
+      "default": "./dist/esm/components/ui/dropdrawer.js"
+    },
+    "./fireworks-background": {
+      "types": "./dist/types/components/ui/fireworks-background.d.ts",
+      "import": "./dist/esm/components/ui/fireworks-background.js",
+      "require": "./dist/cjs/components/ui/fireworks-background.cjs",
+      "default": "./dist/esm/components/ui/fireworks-background.js"
+    },
+    "./flip-button": {
+      "types": "./dist/types/components/ui/flip-button.d.ts",
+      "import": "./dist/esm/components/ui/flip-button.js",
+      "require": "./dist/cjs/components/ui/flip-button.cjs",
+      "default": "./dist/esm/components/ui/flip-button.js"
+    },
+    "./form": {
+      "types": "./dist/types/components/ui/form.d.ts",
+      "import": "./dist/esm/components/ui/form.js",
+      "require": "./dist/cjs/components/ui/form.cjs",
+      "default": "./dist/esm/components/ui/form.js"
+    },
+    "./gradient-background": {
+      "types": "./dist/types/components/ui/gradient-background.d.ts",
+      "import": "./dist/esm/components/ui/gradient-background.js",
+      "require": "./dist/cjs/components/ui/gradient-background.cjs",
+      "default": "./dist/esm/components/ui/gradient-background.js"
+    },
+    "./gradient-text": {
+      "types": "./dist/types/components/ui/gradient-text.d.ts",
+      "import": "./dist/esm/components/ui/gradient-text.js",
+      "require": "./dist/cjs/components/ui/gradient-text.cjs",
+      "default": "./dist/esm/components/ui/gradient-text.js"
+    },
+    "./highlight-text": {
+      "types": "./dist/types/components/ui/highlight-text.d.ts",
+      "import": "./dist/esm/components/ui/highlight-text.js",
+      "require": "./dist/cjs/components/ui/highlight-text.cjs",
+      "default": "./dist/esm/components/ui/highlight-text.js"
+    },
+    "./hole-background": {
+      "types": "./dist/types/components/ui/hole-background.d.ts",
+      "import": "./dist/esm/components/ui/hole-background.js",
+      "require": "./dist/cjs/components/ui/hole-background.cjs",
+      "default": "./dist/esm/components/ui/hole-background.js"
+    },
+    "./hover-card": {
+      "types": "./dist/types/components/ui/hover-card.d.ts",
+      "import": "./dist/esm/components/ui/hover-card.js",
+      "require": "./dist/cjs/components/ui/hover-card.cjs",
+      "default": "./dist/esm/components/ui/hover-card.js"
+    },
+    "./input-otp": {
+      "types": "./dist/types/components/ui/input-otp.d.ts",
+      "import": "./dist/esm/components/ui/input-otp.js",
+      "require": "./dist/cjs/components/ui/input-otp.cjs",
+      "default": "./dist/esm/components/ui/input-otp.js"
+    },
+    "./input": {
+      "types": "./dist/types/components/ui/input.d.ts",
+      "import": "./dist/esm/components/ui/input.js",
+      "require": "./dist/cjs/components/ui/input.cjs",
+      "default": "./dist/esm/components/ui/input.js"
+    },
+    "./label": {
+      "types": "./dist/types/components/ui/label.d.ts",
+      "import": "./dist/esm/components/ui/label.js",
+      "require": "./dist/cjs/components/ui/label.cjs",
+      "default": "./dist/esm/components/ui/label.js"
+    },
+    "./menubar": {
+      "types": "./dist/types/components/ui/menubar.d.ts",
+      "import": "./dist/esm/components/ui/menubar.js",
+      "require": "./dist/cjs/components/ui/menubar.cjs",
+      "default": "./dist/esm/components/ui/menubar.js"
+    },
+    "./navigation-menu": {
+      "types": "./dist/types/components/ui/navigation-menu.d.ts",
+      "import": "./dist/esm/components/ui/navigation-menu.js",
+      "require": "./dist/cjs/components/ui/navigation-menu.cjs",
+      "default": "./dist/esm/components/ui/navigation-menu.js"
+    },
+    "./pagination": {
+      "types": "./dist/types/components/ui/pagination.d.ts",
+      "import": "./dist/esm/components/ui/pagination.js",
+      "require": "./dist/cjs/components/ui/pagination.cjs",
+      "default": "./dist/esm/components/ui/pagination.js"
+    },
+    "./popover": {
+      "types": "./dist/types/components/ui/popover.d.ts",
+      "import": "./dist/esm/components/ui/popover.js",
+      "require": "./dist/cjs/components/ui/popover.cjs",
+      "default": "./dist/esm/components/ui/popover.js"
+    },
+    "./progress": {
+      "types": "./dist/types/components/ui/progress.d.ts",
+      "import": "./dist/esm/components/ui/progress.js",
+      "require": "./dist/cjs/components/ui/progress.cjs",
+      "default": "./dist/esm/components/ui/progress.js"
+    },
+    "./radio-group": {
+      "types": "./dist/types/components/ui/radio-group.d.ts",
+      "import": "./dist/esm/components/ui/radio-group.js",
+      "require": "./dist/cjs/components/ui/radio-group.cjs",
+      "default": "./dist/esm/components/ui/radio-group.js"
+    },
+    "./resizable": {
+      "types": "./dist/types/components/ui/resizable.d.ts",
+      "import": "./dist/esm/components/ui/resizable.js",
+      "require": "./dist/cjs/components/ui/resizable.cjs",
+      "default": "./dist/esm/components/ui/resizable.js"
+    },
+    "./ripple-button": {
+      "types": "./dist/types/components/ui/ripple-button.d.ts",
+      "import": "./dist/esm/components/ui/ripple-button.js",
+      "require": "./dist/cjs/components/ui/ripple-button.cjs",
+      "default": "./dist/esm/components/ui/ripple-button.js"
+    },
+    "./scratcher": {
+      "types": "./dist/types/components/ui/scratcher.d.ts",
+      "import": "./dist/esm/components/ui/scratcher.js",
+      "require": "./dist/cjs/components/ui/scratcher.cjs",
+      "default": "./dist/esm/components/ui/scratcher.js"
+    },
+    "./scroll-area": {
+      "types": "./dist/types/components/ui/scroll-area.d.ts",
+      "import": "./dist/esm/components/ui/scroll-area.js",
+      "require": "./dist/cjs/components/ui/scroll-area.cjs",
+      "default": "./dist/esm/components/ui/scroll-area.js"
+    },
+    "./select": {
+      "types": "./dist/types/components/ui/select.d.ts",
+      "import": "./dist/esm/components/ui/select.js",
+      "require": "./dist/cjs/components/ui/select.cjs",
+      "default": "./dist/esm/components/ui/select.js"
+    },
+    "./separator": {
+      "types": "./dist/types/components/ui/separator.d.ts",
+      "import": "./dist/esm/components/ui/separator.js",
+      "require": "./dist/cjs/components/ui/separator.cjs",
+      "default": "./dist/esm/components/ui/separator.js"
+    },
+    "./sheet": {
+      "types": "./dist/types/components/ui/sheet.d.ts",
+      "import": "./dist/esm/components/ui/sheet.js",
+      "require": "./dist/cjs/components/ui/sheet.cjs",
+      "default": "./dist/esm/components/ui/sheet.js"
+    },
+    "./sidebar": {
+      "types": "./dist/types/components/ui/sidebar.d.ts",
+      "import": "./dist/esm/components/ui/sidebar.js",
+      "require": "./dist/cjs/components/ui/sidebar.cjs",
+      "default": "./dist/esm/components/ui/sidebar.js"
+    },
+    "./skeleton": {
+      "types": "./dist/types/components/ui/skeleton.d.ts",
+      "import": "./dist/esm/components/ui/skeleton.js",
+      "require": "./dist/cjs/components/ui/skeleton.cjs",
+      "default": "./dist/esm/components/ui/skeleton.js"
+    },
+    "./slider": {
+      "types": "./dist/types/components/ui/slider.d.ts",
+      "import": "./dist/esm/components/ui/slider.js",
+      "require": "./dist/cjs/components/ui/slider.cjs",
+      "default": "./dist/esm/components/ui/slider.js"
+    },
+    "./sonner": {
+      "types": "./dist/types/components/ui/sonner.d.ts",
+      "import": "./dist/esm/components/ui/sonner.js",
+      "require": "./dist/cjs/components/ui/sonner.cjs",
+      "default": "./dist/esm/components/ui/sonner.js"
+    },
+    "./switch": {
+      "types": "./dist/types/components/ui/switch.d.ts",
+      "import": "./dist/esm/components/ui/switch.js",
+      "require": "./dist/cjs/components/ui/switch.cjs",
+      "default": "./dist/esm/components/ui/switch.js"
+    },
+    "./table": {
+      "types": "./dist/types/components/ui/table.d.ts",
+      "import": "./dist/esm/components/ui/table.js",
+      "require": "./dist/cjs/components/ui/table.cjs",
+      "default": "./dist/esm/components/ui/table.js"
+    },
+    "./tabs": {
+      "types": "./dist/types/components/ui/tabs.d.ts",
+      "import": "./dist/esm/components/ui/tabs.js",
+      "require": "./dist/cjs/components/ui/tabs.cjs",
+      "default": "./dist/esm/components/ui/tabs.js"
+    },
+    "./textarea": {
+      "types": "./dist/types/components/ui/textarea.d.ts",
+      "import": "./dist/esm/components/ui/textarea.js",
+      "require": "./dist/cjs/components/ui/textarea.cjs",
+      "default": "./dist/esm/components/ui/textarea.js"
+    },
+    "./toggle-group": {
+      "types": "./dist/types/components/ui/toggle-group.d.ts",
+      "import": "./dist/esm/components/ui/toggle-group.js",
+      "require": "./dist/cjs/components/ui/toggle-group.cjs",
+      "default": "./dist/esm/components/ui/toggle-group.js"
+    },
+    "./toggle": {
+      "types": "./dist/types/components/ui/toggle.d.ts",
+      "import": "./dist/esm/components/ui/toggle.js",
+      "require": "./dist/cjs/components/ui/toggle.cjs",
+      "default": "./dist/esm/components/ui/toggle.js"
+    },
+    "./tooltip": {
+      "types": "./dist/types/components/ui/tooltip.d.ts",
+      "import": "./dist/esm/components/ui/tooltip.js",
+      "require": "./dist/cjs/components/ui/tooltip.cjs",
+      "default": "./dist/esm/components/ui/tooltip.js"
+    },
+    "./use-mobile": {
+      "types": "./dist/types/components/ui/use-mobile.d.ts",
+      "import": "./dist/esm/components/ui/use-mobile.js",
+      "require": "./dist/cjs/components/ui/use-mobile.cjs",
+      "default": "./dist/esm/components/ui/use-mobile.js"
+    },
+    "./utils": {
+      "types": "./dist/types/components/ui/utils.d.ts",
+      "import": "./dist/esm/components/ui/utils.js",
+      "require": "./dist/cjs/components/ui/utils.cjs",
+      "default": "./dist/esm/components/ui/utils.js"
+    }
+  }
+}

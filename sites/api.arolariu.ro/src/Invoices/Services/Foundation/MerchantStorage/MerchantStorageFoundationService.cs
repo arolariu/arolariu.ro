@@ -62,11 +62,32 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
+	public async Task DeleteMerchantObject(Guid identifier) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantObject));
+
+		ValidateMerchantIdentifierIsSet(identifier);
+
+		await invoiceNoSqlBroker.DeleteMerchantAsync(identifier).ConfigureAwait(false);
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
 	public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllMerchantObjects));
 		var merchants = await invoiceNoSqlBroker.ReadMerchantsAsync(parentCompanyId).ConfigureAwait(false);
+
+		return merchants;
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects() =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllMerchantObjects));
+		var merchants = await invoiceNoSqlBroker.ReadMerchantsAsync().ConfigureAwait(false);
 
 		return merchants;
 	}).ConfigureAwait(false);
@@ -86,6 +107,18 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 	}).ConfigureAwait(false);
 
 	/// <inheritdoc/>
+	public async Task<Merchant> ReadMerchantObject(Guid identifier) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObject));
+
+		ValidateMerchantIdentifierIsSet(identifier);
+
+		var merchant = await invoiceNoSqlBroker.ReadMerchantAsync(identifier).ConfigureAwait(false);
+		return merchant!;
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
 	public async Task<Merchant> UpdateMerchantObject(Merchant currentMerchant, Merchant updatedMerchant) =>
 	await TryCatchAsync(async () =>
 	{
@@ -96,5 +129,20 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 			.ConfigureAwait(false);
 
 		return merchant;
+	}).ConfigureAwait(false);
+
+	/// <inheritdoc/>
+	public async Task<Merchant> UpdateMerchantObject(Guid merchantIdentifier, Merchant updatedMerchant) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
+		var currentMerchant = await invoiceNoSqlBroker.ReadMerchantAsync(merchantIdentifier).ConfigureAwait(false);
+		ArgumentNullException.ThrowIfNull(currentMerchant);
+
+		var newMerchant = await invoiceNoSqlBroker
+			.UpdateMerchantAsync(currentMerchant, updatedMerchant)
+			.ConfigureAwait(false);
+
+		return newMerchant;
 	}).ConfigureAwait(false);
 }

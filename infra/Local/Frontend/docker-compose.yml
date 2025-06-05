@@ -1,0 +1,22 @@
+# This docker-compose.yml file is a part of the arolariu.ro project.
+
+networks:
+  arolariu-network:
+    external: true
+
+services:
+  whoami:
+    image: traefik/whoami
+    container_name: whoami
+    restart: unless-stopped
+    networks:
+      - arolariu-network
+      - default
+    ports:
+      - "8888:80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
+      - "traefik.http.services.whoami.loadbalancer.server.port=80"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      - "traefik.http.routers.whoami.tls.certresolver=myresolver" # Added for Let's Encrypt

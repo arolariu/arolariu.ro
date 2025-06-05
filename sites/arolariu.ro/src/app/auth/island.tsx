@@ -1,28 +1,28 @@
 /** @format */
 
+import {useTranslations} from "next-intl";
 import AuthCard from "./_components/AuthCard";
 
 /**
- * The authentication screen.
+ * The client-side authentication screen.
  * @returns The authentication screen.
  */
-export default function RenderAuthScreen() {
+export default function RenderAuthScreen(): React.JSX.Element {
+  const t = useTranslations("Authentication.Island");
+
   return (
-    <section className='flex gap-4 2xsm:flex-col md:flex-row'>
+    <section className='2xsm:flex-col flex gap-4 md:flex-row'>
       <AuthCard
-        title='Become a new member today.'
-        description='Being part of the `arolariu.ro` domain space allows you to save your profile across all the different domains
-          hosted under the `arolariu.ro` umbrella. You can benefit from seamless synchronization and a unified
-          experience across all the domains.'
-        ctaText='Sign up.'
         cardType='sign-up'
+        title='Sign up'
+        ctaText='Sign up x50'
+        description='Sign up!!'
       />
       <AuthCard
-        title='Continue as an existing member.'
-        description='Sign in using your member credentials. Your profile will be kept in sync during this browser session. You can
-          benefit from seamless synchronization and a unified experience across all the domains.'
-        ctaText='Sign in.'
         cardType='sign-in'
+        title={t("title")}
+        ctaText={t("callToAction")}
+        description={t("description")}
       />
     </section>
   );

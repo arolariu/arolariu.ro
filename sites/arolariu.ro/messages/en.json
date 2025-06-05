@@ -1,150 +1,621 @@
 {
-  "Home": {
-    "title": "Welcome to arolariu.ro",
-    "subtitle": "This platform was built by Alexandru-Razvan Olariu as a playground for new technologies. The platform is built using state-of-the-art, enterprise-grade technologies. <br> </br> <br> </br> You are welcome to explore all of the applications and services that are hosted on this domain space.",
-    "cta": "Start Exploring",
-    "appreciation": "THANK YOU FOR THE TIME SPENT ON THE WEBSITE.",
-    "1stPanel": {
-      "title": "Key Features",
-      "subtitle": "The `arolariu.ro` platform is built using the latest stable technologies."
-    }
-  },
-  "termsOfService": {
-    "title": "Terms of Service",
-    "last_updated": "Last updated: 2024-01-01",
-    "terms": {
-      "generalTerms": {
-        "title": "General Terms",
-        "content": "By accessing and placing an order with AROLARIU.RO, you confirm that you are in agreement with and bound by the terms of service contained in the Terms & Conditions outlined below. These terms apply to the entire website and any email or other type of communication between you and AROLARIU.RO. Under no circumstances shall AROLARIU.RO team be liable for any direct, indirect, special, incidental or consequential damages, including, but not limited to, loss of data or profit, arising out of the use, or the inability to use, the materials on this site, even if AROLARIU.RO team or an authorized representative has been advised of the possibility of such damages. If your use of materials from this site results in the need for servicing, repair or correction of equipment or data, you assume any costs thereof. AROLARIU.RO will not be responsible for any outcome that may occur during the course of usage of our resources. We reserve the rights to change prices and revise the resources usage policy in any moment."
+  "About": {
+    "title": "About Us",
+    "subtitle": " The arolariu.ro story began in 2022, when the author - Alexandru-Razvan Olariu, wanted to understand how websites work. The whole platform and underlying integrations have been developed solely by the author, from what he has learnt along the years. Alexandru currently works as a software engineer at Microsoft. To learn more about him, check the right section of this page. The platform is built using the latest state-of-the-art technologies. To learn more about it, check the left section of this page.",
+    "cards": {
+      "platform": {
+        "title": "What is arolariu.ro?",
+        "subtitle": "The arolariu.ro platform is a collection of applications that are hosted under the arolariu.ro domain. The platform was built with the purpose of providing a unified experience for all of the applications and OSS projects that the author (Alexandru-Razvan Olariu) is working on. To learn more about the technologies that are used in the process and how they interact with each other, click the button below.",
+        "cta": "Learn more about the platform..."
       },
-      "licenseTerms": {
-        "title": "License Terms",
-        "content": "By purchasing a product of AROLARIU.RO, you are granted a non-exclusive, non-transferable license to access the product. The product is for personal and commercial use. You are allowed to install the product on more than one computer or device, but you are not allowed to share the product with other individuals. You may not modify, adapt, translate, reverse engineer, decompile, disassemble or create derivative works based on the product without the prior written consent of AROLARIU.RO. You may not sell, rent, lease, or sublicense the product. You may not make the product available over a network where it could be used by multiple devices at the same time. You may not use the product to infringe on any copyright or trademark. You may not use the product to create any material that is unlawful, harmful, threatening, abusive, harassing, tortious, defamatory, vulgar, obscene, libelous, invasive of another's privacy, hateful, or racially, ethnically or otherwise objectionable."
-      },
-      "definitionTerms": {
-        "title": "Definitions",
-        "content": "The terms 'us' or 'we' or 'our' refers to AROLARIU.RO, the owner of the website. A customer is the person or organization that buys or agrees to buy the product. Our 'product' refers to the website, products, or services offered for sale on our website. A 'user' is a person who uses our website or services. The term 'you' refers to the user or viewer of our website."
-      },
-      "restrictionTerms": {
-        "title": "Restrictions",
-        "content": "You are specifically restricted from publishing, selling, sublicensing, or otherwise commercializing any website material; using this website in any way that is or may be damaging to this website; using this website in any way that impacts user access to this website; using this website contrary to applicable laws and regulations, or in any way may cause harm to the website, or to any person or business entity; engaging in any data mining, data harvesting, data extracting or any other similar activity in relation to this website; using this website to engage in any advertising or marketing."
-      },
-      "consentTerms": {
-        "title": "Your Consent",
-        "content": "We've updated our Terms & Conditions to provide you with complete transparency into what is being set when you visit our site and how it's being used. By using our website, you hereby consent to our Terms of Service and agree to the Terms & Conditions."
-      },
-      "linksToOtherSitesTerms": {
-        "title": "Links to Other Websites",
-        "content": "Our service may contain links to other websites that are not operated by Us. If you click on a third party link, you will be directed to that third party's site. We strongly advise you to review the Terms & Conditions of every site that you visit. We have no control over and assume no responsibility for the content, Terms & Conditions or practices of any third party sites or services."
-      },
-      "cookiesTerms": {
-        "title": "Cookies",
-        "content": "We use 'Cookies' to identify the areas of our website that you have visited. A Cookie is a small piece of data stored on your computer or mobile device by your web browser. We use Cookies to enhance the performance and functionality of our service but are non-essential to their use. However, without these cookies, certain functionality like videos may become unavailable or you would be required to enter your login details every time you visit our platform as we would not be able to remember that you had logged in previously. Most web browsers can be set to disable the use of Cookies. However, if you disable Cookies, you may not be able to access functionality on our website correctly or at all. We never place Personally Identifiable Information in Cookies."
-      },
-      "changesToTos": {
-        "title": "Changes to Terms of Service",
-        "content": "AROLARIU.RO reserves the right to change these Terms of Service at any time. We do, however, recommend that you read this page regularly to ensure that you are aware of any changes. Your continued use of the website following the posting of changes will mean that you accept and agree to the changes. You acknowledge and agree that we may stop (permanently or temporarily) providing the Service (or any features within the Service) to you or to users generally at our sole discretion, without prior notice to you. You may stop using the Service at any time. You do not need to specifically inform us when you stop using the Service. You acknowledge and agree that if we disable access to your account, you may be prevented from accessing the Service, your account details or any files or other materials which is contained in your account"
-      },
-      "updateOfServicesTerms": {
-        "title": "Updates to the Service",
-        "content": "AROLARIU.RO is constantly updating its services, which means that we may add or remove features, products, or functionalities, and we may also suspend or stop the service altogether. We may take any of these actions at any time, and when we do, we may not provide you with any notice beforehand. You acknowledge that AROLARIU.RO may establish general practices and limits concerning use of the service, including without limitation the maximum period of time that data or other content will be retained by the service and the maximum storage space that will be allotted on AROLARIU.RO's servers on your behalf. You agree that AROLARIU.RO has no responsibility or liability for the deletion or failure to store any data or other content maintained or uploaded by the service. You acknowledge that AROLARIU.RO reserves the right to terminate accounts that are inactive for an extended period of time. You agree that we have no obligation to (i) provide any Updates, or (ii) continue to provide or enable any particular features and/or functionalities of the service to you. You further agree that all Updates will be (i) deemed to constitute an integral part of the service, and (ii) subject to the terms and conditions of this Agreement."
-      },
-      "thirdPartyTerms": {
-        "title": "Third Party Services",
-        "content": "In using the service, you may use third-party services, products, software, embeds, or applications developed by a third party ('Third Party Services'). Any use of a Third Party Service is at your own risk, and we shall not be responsible or liable to anyone for Third Party websites or Services. You acknowledge and agree that we shall not be responsible or liable for any damage or loss caused or alleged to be caused by or in connection with the use of any such content, goods or services available on or through any such websites or services. We do not assume and shall not have any liability or responsibility to you or any other person or entity for any Third-Party Services. Third-Party Services and links therefore are provided solely as a convenience to you and you access and use them entirely at your own risk and subject to such third parties' terms and conditions."
-      },
-      "terminationTerms": {
-        "title": "Termination",
-        "content": "We may terminate or suspend your account and bar access to the service immediately, without prior notice or liability, under our sole discretion, for any reason whatsoever and without limitation, including but not limited to a breach of the Terms. If you wish to terminate your account, you may simply discontinue using the service. All provisions of the Terms which by their nature should survive termination shall survive termination, including, without limitation, ownership provisions, warranty disclaimers, indemnity and limitations of liability."
-      },
-      "copyrightTerms": {
-        "title": "Copyright Protection",
-        "content": "If you are a copyright owner or such owner’s agent and believe any material from us constitutes an infringement on your copyright, please contact us setting forth the following information: (a) a physical or electronic signature of the copyright owner or a person authorized to act on his behalf; (b) identification of the material that is claimed to be infringing; (c) your contact information, including your address, telephone number, and an email; (d) a statement by you that you have a good faith belief that use of the material is not authorized by the copyright owners; and (e) the a statement that the information in the notification is accurate, and, under penalty of perjury you are authorized to act on behalf of the owner."
-      },
-      "noWarrantiesTerms": {
-        "title": "No Warranties",
-        "content": "This website is provided 'as is,' with all faults, and AROLARIU.RO makes no express or implied representations or warranties, of any kind related to this website or the materials contained on this website. Additionally, nothing contained on this website shall be construed as providing consult or advice to you. The service is provided to you 'AS IS' and 'AS AVAILABLE' and with all faults and defects without warranty of any kind. To the maximum extent permitted under applicable law, we, on our own behalf and on behalf of our affiliates and our respective licensors and service providers, expressly disclaims all warranties, whether express, implied, statutory or otherwise, with respect to the service, including all implied warranties of merchantability, fitness for a particular purpose, title and non-infringement, and warranties that may arise out of course of dealing, course of performance, usage or trade practice. Without limitation to the foregoing, we provide no warranty or undertaking, and make no representation of any kind that the service will meet your requirements, achieve any intended results, be compatible or work with any other software, websites, systems or services, operate without interruption, meet any performance or reliability standards or be error free or that any errors or defects can or will be corrected. Without limiting the foregoing, neither us nor any provider makes any representation or warranty of any kind, express or implied: (i) as to the operation or availability of the service, or the information, content, and materials or products included thereon; (ii) that the service will be uninterrupted or error-free; (iii) as to the accuracy, reliability, or currency of any information or content provided through the service; or (iv) that the service, its servers, the content, or e-mails sent from or on behalf of us are free of viruses, scripts, trojan horses, worms, malware, timebombs or other harmful components. Some jurisdictions do not allow the exclusion of or limitations on implied warranties or the limitations on the applicable statutory rights of a consumer, so some or all of the above exclusions and limitations may not apply to you."
-      },
-      "liabilityTerms": {
-        "title": "Limitation of Liability",
-        "content": "To the fullest extent permitted by applicable law, in no event will AROLARIU.RO be liable to you on any legal theory for any incidental, direct, indirect, punitive, actual, consequential, special, exemplary, or other damages, including without limitation, loss of revenue or income, lost profits, pain and suffering, emotional distress, cost of substitute goods or services, or similar damages suffered or incurred by you or any third party that arise in connection with the service (or the termination thereof for any reason), even if AROLARIU.RO has been advised of the possibility of such damages. AROLARIU.RO shall not be liable for any damages, liability or losses arising out of: (i) your use of or reliance on the service or your inability to access or use the service; or (ii) any transaction or relationship between you and any third party provider, even if AROLARIU.RO has been advised of the possibility of such damages. AROLARIU.RO shall not be liable for delay or failure in performance resulting from causes beyond AROLARIU.RO's reasonable control. You acknowledge that the service may be subject to limitations, delays, and other problems inherent in the use of the internet and electronic communications. AROLARIU.RO is not responsible for any delays, delivery failures, or other damage resulting from such problems. To the maximum extent permitted by applicable law, in no event shall we or our suppliers be liable for any special, incidental, indirect, or consequential damages whatsoever (including, but not limited to, damages for loss of profits, for loss of data or other information, for business interruption, for personal injury, for loss of privacy arising out of or in any way related to the use of or inability to use the service, third-party software and/or third-party hardware used with the service, or otherwise in connection with any provision of this Agreement), even if we or any supplier has been advised of the possibility of such damages and even if the remedy fails of its essential purpose. Some states/jurisdictions do not allow the exclusion or limitation of incidental or consequential damages, so the above limitation or exclusion may not apply to you."
-      },
-      "severabilityTerms": {
-        "title": "Severability",
-        "content": "If any provision of these Terms is held to be unenforceable or invalid, such provision will be changed and interpreted to accomplish the objectives of such provision to the greatest extent possible under applicable law and the remaining provisions will continue in full force and effect. This Agreement, together with the Privacy Policy and any other legal notices published by us on the Services, shall constitute the entire agreement between you and us concerning the Services. If any provision of this Agreement is deemed invalid by a court of competent jurisdiction, the invalidity of such provision shall not affect the validity of the remaining provisions of this Agreement, which shall remain in full force and effect. No waiver of any term of this Agreement shall be deemed a further or continuing waiver of such term or any other term, and our failure to assert any right or provision under this Agreement shall not constitute a waiver of such right or provision. YOU AND US AGREE THAT ANY CAUSE OF ACTION ARISING OUT OF OR RELATED TO THE SERVICES MUST COMMENCE WITHIN ONE (1) YEAR AFTER THE CAUSE OF ACTION ACCRUES. OTHERWISE, SUCH CAUSE OF ACTION IS PERMANENTLY BARRED."
-      },
-      "waiverTerms": {
-        "title": "Waiver",
-        "content": "Except as provided herein, the failure to exercise a right or require performance of an obligation under this Agreement shall not affect a party's ability to exercise such right or require such performance at any time thereafter nor shall be the waiver of a breach constitute a waiver of any subsequent breach. No failure to exercise, and no delay in exercising, on the part of either party, any right or any power under this Agreement shall operate as a waiver of that right or power. Nor shall any single or partial exercise of any right or power under this Agreement preclude further exercise of that or any other right granted herein. In the event of a conflict between this Agreement and any applicable purchase or other terms, the terms of this Agreement shall govern."
-      },
-      "amendmentsTerms": {
-        "title": "Amendments to Agreement",
-        "content": "We reserve the right to modify, supplement or replace the terms of the Agreement, effective upon posting at www.arolariu.ro or notifying you otherwise. If you do not want to agree to changes to the Agreement, you can terminate the Agreement at any time per the terms herein. If a revision is material we will provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion. By continuing to access or use our service after any revisions become effective, you agree to be bound by the revised terms. If you do not agree to the new terms, you are no longer authorized to use our service."
-      },
-      "entireAgreementTerms": {
-        "title": "Entire Agreement",
-        "content": "The Terms of Service constitute the entire agreement between you and AROLARIU.RO regarding your use of the service and supersede all prior and contemporaneous written or oral agreements between you and AROLARIU.RO. You may be subject to additional terms and conditions that apply when you use or purchase other AROLARIU.RO's services, which AROLARIU.RO will provide to you at the time of such use or purchase."
-      },
-      "arbitrateTerms": {
-        "title": "Arbitration",
-        "content": "This Agreement and any dispute or claim arising out of, or related to, it, its interpretation, or the breach, termination or validity thereof, the relationships which result from this Agreement, including the performance, breach, or validity of this Agreement, shall be governed by the laws of Romania. The exclusive jurisdiction and venue for any action under this Agreement shall be the courts located in Romania and you hereby submit to the personal jurisdiction of such courts. You hereby waive any right to a jury trial in any proceeding arising out of or related to this Agreement. The United Nations Convention on Contracts for the International Sale of Goods does not apply to this Agreement. The term “dispute” means any dispute, action, or other controversy between you and us concerning the Services or this agreement, whether in contract, warranty, tort, statute, regulation, ordinance, or any other legal or equitable basis. “Dispute” will be given the broadest possible meaning allowable under law."
-      },
-      "disputeNoticeTerms": {
-        "title": "Notice of Dispute",
-        "content": "In the event of a dispute, you or AROLARIU.RO must give the other a Notice of Dispute, which is a written statement that sets forth the name, address, and contact information of the party giving it, the facts giving rise to the dispute, and the relief requested. You must send any Notice of Dispute by email to: admin@arolariu.ro. AROLARIU.RO will send any Notice of Dispute to you by mail to your address if we have it, or otherwise to your email address. You and AROLARIU.RO will attempt to resolve any dispute through informal negotiation within sixty (60) days from the date the Notice of Dispute is sent. After sixty (60) days, you or AROLARIU.RO may commence arbitration."
-      },
-      "submissionsAndPrivacyTerms": {
-        "title": "Submissions and Privacy",
-        "content": "When you visit the website or send emails to us, you are communicating with us electronically. You consent to receive communications from us electronically. We will communicate with you by email or by posting notices on the website. You agree that all agreements, notices, disclosures, and other communications that we provide electronically satisfy any legal requirement that such communications be in writing. AROLARIU.RO may, but shall not be obligated to, monitor, review, or edit User Content. In all cases, AROLARIU.RO reserves the right to remove or disable access to any User Content for any or no reason, including but not limited to, User Content that, in AROLARIU.RO's sole discretion, violates the Agreements. AROLARIU.RO may take these actions without prior notification to you or any third party. Removal or disabling of access to User Content shall be at our sole discretion, and we do not promise to remove or disable access to any specific User Content. In the event that you submit or post any ideas, creative suggestions, designs, photographs, information, advertisements, data or proposals, including ideas for new or improved products, services, features, technologies or promotions, you expressly agree that such submissions will automatically be treated as non-confidential and non-proprietary and will become the sole property of us without any compensation or credit to you whatsoever. We and our affiliates shall have no obligations with respect to such submissions or posts and may use the ideas contained in such submissions or posts for any purposes in any medium in perpetuity, including, but not limited to, developing, manufacturing, and marketing products and services using such ideas."
-      },
-      "promotionTerms": {
-        "title": "Promotions",
-        "content": "We may, from time to time, include contests, promotions, sweepstakes, or other activities (“Promotions”) that require you to submit material or information concerning yourself. Please note that all Promotions may be governed by separate rules that may contain certain eligibility requirements, such as restrictions as to age and geographic location. You are responsible to read all Promotions rules to determine whether or not you are eligible to participate. If you enter any Promotion, you agree to abide by and to comply with all Promotions Rules. Additional terms and conditions may apply to purchases of goods or services on or through the Services, which terms and conditions are made a part of this Agreement by this reference. Any promotions made available through the service may be governed by rules that are separate from these Terms. If you participate in any promotions, please review the applicable rules as well as our Privacy Policy. If the rules for a promotion conflict with these Terms, the promotion rules will apply."
-      },
-      "typographyErrorsTerms": {
-        "title": "Typography Errors",
-        "content": "In the event that a AROLARIU.RO product is mistakenly listed at an incorrect price, AROLARIU.RO reserves the right to refuse or cancel any orders placed for the product listed at the incorrect price. AROLARIU.RO reserves the right to refuse or cancel any such orders whether or not the order has been confirmed and your credit card charged. If your credit card has already been charged for the purchase and your order is cancelled, AROLARIU.RO shall issue a credit to your credit card account in the amount of the incorrect price."
-      },
-      "miscellaneousTerms": {
-        "title": "Miscellaneous",
-        "content": "If for any reason a court of competent jurisdiction finds any provision or portion of these Terms & Conditions to be unenforceable, the remainder of these Terms & Conditions will continue in full force and effect. Any waiver of any provision of these Terms & Conditions will be effective only if in writing and signed by an authorized representative of us. We will be entitled to injunctive or other equitable relief (without the obligations of posting any bond or surety) in the event of any breach or anticipatory breach by you. We operate and control our Service from our offices in Romania. The Service is not intended for distribution to or use by any person or entity in any jurisdiction or country where such distribution or use would be contrary to law or regulation. Accordingly, those persons who choose to access our Service from other locations do so on their own initiative and are solely responsible for compliance with local laws, if and to the extent local laws are applicable. These Terms & Conditions (which include and incorporate our Privacy Policy) contains the entire understanding, and supersedes all prior understandings, between you and us concerning its subject matter, and cannot be changed or modified by you. The section headings used in this Agreement are for convenience only and will not be given any legal import. The failure of either party to exercise in any respect any right provided for herein shall not be deemed a waiver of any further rights hereunder. AROLARIU.RO shall not be liable for any failure to perform its obligations hereunder where such failure results from any cause"
-      },
-      "disclaimerTerms": {
-        "title": "Disclaimer",
-        "content": "To the maximum extent permitted by applicable law, we exclude all representations, warranties, and conditions relating to our website and the use of this website. We shall not be liable for any damages arising out of the use or inability to use the materials on AROLARIU.RO's website, even if AROLARIU.RO or an authorized representative of AROLARIU.RO has been notified, orally or in writing, of the possibility of such damage. Because some jurisdictions do not allow limitations on implied warranties, or limitations of liability for consequential or incidental damages, these limitations may not apply to you. We are not responsible for any content, code or any other imprecision. We do not provide warranties or guarantees. In no event shall we be liable for any special, direct, indirect, consequential, or incidental damages or any damages whatsoever, whether in an action of contract, negligence or other tort, arising out of or in connection with the use of the Service or the contents of the Service. We reserve the right to make additions, deletions, or modifications to the contents on the Service at any time without prior notice. Our Service and its contents are provided 'AS IS' and 'AS AVAILABLE' without any warranty or representations of any kind, whether express or implied. We are a distributor and not a publisher of the content supplied by third parties; as such, our exercises no editorial control over such content and makes no warranty or representation as to the accuracy, reliability or currency of any information, content, service or merchandise provided through or accessible via our Service. Without limiting the foregoing, We specifically disclaim all warranties and representations in any content transmitted on or in connection with our Service or on sites that may appear as links on our Service, or in the products provided as a part of, or otherwise in connection with, our Service, including without limitation any warranties of merchantability, fitness for a particular purpose or non-infringement of third party rights. No oral advice or written information given by us or any of its affiliates, employees, officers, directors, agents, or the like will create a warranty. Price and availability information is subject to change without notice. Without limiting the foregoing, we do not warrant that our Service will be uninterrupted, uncorrupted, timely, or error-free."
+      "author": {
+        "title": "Who is arolariu?",
+        "subtitle": "arolariu is the alias/nickname of the author: Alexandru-Razvan Olariu. Alexandru is a well-tenured software engineer, solution architect and lifelong learner. To learn more about Alexandru, click the button below.",
+        "cta": "Learn more about the author..."
       }
     },
-    "contactInformation": {
-      "title": "Contact Information",
-      "content": "If you have any questions about our Terms of Service, please contact us at admin@arolariu.ro"
+    "footer": "Thank you!",
+    "Author": {
+      "Biography": {
+        "FifthPoint": "Alexandru is open for collaboration in projects that involve any of the Internet of Things, Software Engineering and Network Engineering fields. He has a proven track record of providing high-quality solutions to complex problems and is always looking for new challenges.",
+        "FirstPoint": "Alexandru is a {age} years old software engineer and solution architect. He currently works at Microsoft as a software engineer in the E+D MSAI FAST organization, building solutions that are used by millions of users worldwide.",
+        "FourthPoint": "Alexandru enjoys reading technical books and playing with new technologies. He has built this platform as a \"test-bench\" for new technologies and as a way to learn new things. He is also a big fan of the \"open-source\" movement and has contributed to Microsoft's OSS repositories (dotnet/core, dotnet/docs, azure/docs).",
+        "SecondPoint": "Alexandru was born on the 8th of January, year 2000 in a small city called Curtea de Argeș in Romania. He got his first computer when he was just 5 years old - a Pentium 4 E2200 2.2Ghz Dual-Core  with 512 MB of RAM. Since then, he's been running different versions of Windows (started with Windows 98!), tinkering with his personal computer and developing his computer skills by playing video games. He also learnt a good amount of English and was able to fluently read, write and speak in English by the age of 12!",
+        "ThirdPoint": "Alexandru is a video game enthusiast. He used to be a professional player, ranking at #70 in Romania for the video game called \"DotA 2\". He enjoys playing strategy games that have a focus on mechanics and a technical setting like Age of Empires, Age of Mythology, etc. He also enjoys playing games such as Red Alert, StarCraft, and other RTS games.",
+        "title": "About Alexandru"
+      },
+      "Certifications": {
+        "certificates": {
+          "ai900": {
+            "code": "AI-900",
+            "coreSkills": "# Machine Learning # Computer Vision # Natural Language Processing # Conversational AI # Responsible AI",
+            "description": "Demonstrates knowledge of common AI and machine learning workloads and how to implement them on Azure. This certification is intended for candidates with both technical and non-technical backgrounds.",
+            "issuer": "Microsoft",
+            "issuerDate": "2023",
+            "link": "https://learn.microsoft.com/en-us/certifications/azure-ai-fundamentals/",
+            "name": "Microsoft Certified: Azure AI Fundamentals"
+          },
+          "az900": {
+            "code": "AZ-900",
+            "coreSkills": "# Cloud Concepts # Core Azure Services # Security, Privacy, Compliance, and Trust # Azure Pricing, SLA, and Lifecycle",
+            "description": "Validates foundational knowledge of cloud services and how those services are provided with Microsoft Azure. The certification is intended for candidates who are just beginning to work with cloud-based solutions and services.",
+            "issuer": "Microsoft",
+            "issuerDate": "2023",
+            "link": "https://learn.microsoft.com/en-us/certifications/azure-fundamentals/",
+            "name": "Microsoft Certified: Azure Fundamentals"
+          }
+        },
+        "subtitle": "Professional certifications and credentials that Alexandru has earned throughout his career.",
+        "title": "Certifications"
+      },
+      "Competencies": {
+        "competences": {
+          "agileMethodologies": {
+            "description": "Alexandru has learned about agile working and agile methodologies since he was a student in his BSc degree. He follows the agile manifesto and is a big fan of the Kanban technique of planning.",
+            "title": "Agile Methodologies"
+          },
+          "algorithmicSkills": {
+            "description": "Alexandru has completed many Hacker Rank, Hacker Earth and Leet Code challenges published from 2019 until 2021. He has a strong algorithmic thinking and is able to construct complex algorithms with ease.",
+            "title": "Algorithmic Skills"
+          },
+          "customerCentric": {
+            "description": "Alexandru has been working with customers for many years, in his tenure at Microsoft. He has gained a lot of knowledge and is able to put himself in the shoes of the customer. He is able to understand the customer's needs and to deliver solutions that are exactly tailored to their needs.",
+            "title": "Customer Centric"
+          },
+          "domainDrivenDesign": {
+            "description": "Alexandru follows domain-driven design principles strongly. He is able to combine DDD with TDD to create complex solutions that are easy to maintain and extend. He is also a big fan of the \"onion architecture\" and \"clean architecture\" approaches.",
+            "title": "Domain-Driven Design (DDD)"
+          },
+          "engineeringExcellence": {
+            "description": "Alexandru is passionate about delivering the best solutions for the problem and for the customer. He is always striving to deliver the best software and to follow understood engineering excellence practices. A perfect solution is a solution that is easy to maintain, extend and understand, not the one that is the most complex.",
+            "title": "Engineering Excellence"
+          },
+          "testDrivenDevelopment": {
+            "description": "Alexandru is a firm believer of test-driven development. He constantly applies this approach to his projects and he is always trying to improve his testing skills. He is also a big fan of the \"red-green-refactor\" approach.",
+            "title": "Test-Driven Development (TDD)"
+          }
+        },
+        "subtitle": "A showcase of Alexandru's technical skills and professional competencies.",
+        "title": "Alexandru's Competences"
+      },
+      "Contact": {
+        "collaborate": {
+          "discipline1": "Software Engineering",
+          "discipline2": "Internet of Things",
+          "discipline3": "Cloud Native Applications",
+          "discipline4": "Network Engineering",
+          "footer": " If you have an interesting project or opportunity that aligns with Alexandru's expertise, don't hesitate to reach out. He's always eager to explore new challenges and collaborations.",
+          "subtitle": "Alexandru is open for collaboration in projects that involve any of the following fields:",
+          "title": "Let's collaborate!"
+        },
+        "footer": "Thank you.",
+        "socials": {
+          "footer": "To reach out to him, use one of the above contact methods.",
+          "subtitle": "Feel free to reach out for collaborations, questions, or just to say hello!",
+          "title": "Get in touch"
+        },
+        "subtitle": "If you would like to get in touch with Alexandru, please use the below ways of contact.",
+        "title": "Connect with Alexandru"
+      },
+      "Education": {
+        "subtitle": "Alexandru's academic background and learning journey.",
+        "title": "Education",
+        "university": {
+          "aseBucharest": {
+            "aboutTheProgram_cta": "See more details",
+            "aboutTheProgram_description": "The BSc in Computer Science at the University of Bucharest is a rigorous program that provides students with a strong foundation in theoretical computer science and practical software development. The curriculum emphasizes problem-solving skills, algorithmic thinking, and software engineering principles.",
+            "aboutTheProgram_learnings": "# Design and analyze algorithms and data structures # Develop software using various programming paradigms # Implement database systems and manage data # Understand computer networks and distributed systems # Apply software engineering principles to real-world problems",
+            "aboutTheProgram_learnings_title": "Key Learning Outcomes",
+            "aboutTheProgram_title": "About the program",
+            "degree": "BSc. Computer Science & Economy",
+            "description": "Bachelor's degree in Computer Science and Economy from the Bucharest University of Economic Studies in Bucharest, Romania. Finished in top 1% according to thesis rating statistics.",
+            "institution": "Academia de Studii Economice",
+            "keyCourses": "# Software Engineering # Computer Networks # Operating Systems # Algorithms & Data Structures # Database Management Systems # Web Development # Mobile Development",
+            "keyCourses_title": "Key courses",
+            "location": "Bucharest, Romania",
+            "period": "2019 - 2022",
+            "status": "Completed"
+          },
+          "malmoSweden": {
+            "aboutTheProgram_cta": "See more details",
+            "aboutTheProgram_description": "The MSc in Internet of Things at Malmö University is a cutting-edge program that prepares students for the challenges and opportunities of the IoT revolution. The curriculum emphasizes hands-on learning, interdisciplinary collaboration, and real-world applications.",
+            "aboutTheProgram_learnings": "# Design and implement IoT systems using various hardware and software platforms # Analyze and manage data generated by IoT devices # Apply machine learning and artificial intelligence techniques to IoT applications # Understand the security and privacy implications of IoT systems # Collaborate with industry partners on real-world projects",
+            "aboutTheProgram_learnings_title": "Key Learning Outcomes",
+            "aboutTheProgram_title": "About the program",
+            "degree": "MSc. Internet of Things",
+            "description": "Previously enrolled in the MSc. Internet of Things program at Malmö University, Sweden. Interrupted due to personal and unforeseen circumstances in 2024.",
+            "institution": "Malmö University",
+            "keyCourses": "# Internet of Things # Cloud Computing # Data Science # Machine Learning # Artificial Intelligence # Computer Vision # Robotics",
+            "keyCourses_title": "Key courses",
+            "location": "Malmö, Sweden",
+            "period": "2023 - 2024",
+            "status": "Interrupted"
+          }
+        }
+      },
+      "Experiences": {
+        "intel": {
+          "achievements": "# Developed color space converters (CSC) in C and Assembly x8086 (YUV->RGB, Grayscale).# Created 10+ types of image filters such as Fish Eye, Sobel, Edge Detection, Box Blur, etc.# Refactored .ASM code to better perform on IoT & Embedded Systems devices.",
+          "company": "Intel",
+          "description": "The Timisoara site addresses several focus areas where software for various hardware components, image processing algorithms, and low-level and high-level implementations of component parts of neural networks are actively being developed.",
+          "location": "Remote (Romania - Timisoara)",
+          "period": "2021 (6 Months)",
+          "responsibilites": "#Mastering skills in the world of image processing. #Gaining a grasp of the domain of Machine Learning (ML). #Practicing the achieved knowledge by developing different color space converters.",
+          "techAndSkills": "# C # C++ #Intel x8086 Assembly # Color Space Converters # Python # Embedded Compute # Internet of Things",
+          "title": "Embedded Engineer"
+        },
+        "microsoft1": {
+          "achievements": "# Constantly pushed myself to achieve the best customer feedback. (Current score: 4.94 / 5.00) # Created troubleshooting guides for the Azure Virtual Desktop (AVD) solution. # Currently working with Fortune 500 clients and industry leading professionals. # Provided continuous feedback to the Product Group (PG) for Azure Virtual Desktop (AVD) regarding the implementation of certain features and services.",
+          "company": "Microsoft",
+          "description": "With over 12,000 employees worldwide, the Microsoft Customer Experience & Success (CE&S) organization is responsible for the strategy, design, and implementation of the Microsoft end-to-end customer experience.",
+          "location": "Remote (EMEA)",
+          "period": "2021 - 2023",
+          "responsibilites": "#Provide knowledge sharing, technical coaching and mentoring to fellow colleagues; #Problem solving through deep troubleshooting, debugging, log analysis, A/B testing; #Identify and respond to business critical customer issues specific to Azure services such as Azure Virtual Desktop; #Work exclusively with Fortune 500 customers to understand their technical needs, and define an action plan to meet them, collaborating with peers or other teams regularly. ",
+          "techAndSkills": "# Network Traffic Analysis # Azure # Customer-centric Approach # Business Relationships # Incident Manager",
+          "title": "Technical Support Engineer"
+        },
+        "microsoft2": {
+          "achievements": "# Orchestrated and implemented the three pillars of observability (3PO) in our microservices architecture using Open Telemetry standards; built automated monitoring and alerting triggers based on p95/p99 bucket statistics (metrics, spans, E2E flows). # Assisted with major contributions to the development of an in-house .NET library that implements the ODataV4 data consumption protocol for NoSQL database engines such as Azure Data Explorer (ADX). # Took leadership of two key areas for DX: documentation & product adoption. Built outstanding documentation and leveraged static site generator tools (DocFX) to automatically generate API documentation from code; offered API consumption layers in form of micro-frontend UIs, PowerShell Cmdlets and OpenAPI spec files (Swagger / Postman).",
+          "company": "Microsoft",
+          "description": "As governments today look at technology innovation, there is a need to address the rapidly evolving demands of their citizens while protecting the most sensitive data and delivering on promises of trust and security. Modernization of government services without compromising security, digitization of manual processes and improved user experiences for both citizens and government employees are all benefits of digital transformation, and the right technology platforms can create even better opportunities for social and economic growth.",
+          "location": "Remote (Romania)",
+          "period": "2023 - 2024",
+          "responsibilites": "# Deliver one E+C Data Platform that is capable of running cross-clouds and cross-tenant in sovereign environments and air-gapped scenarios. # Manage and assure the wellbeing of the Runtime in Sovereign Environments (RISE) Data Platform operations.# Build a novel data mesh enterprise architecture using data engineering concepts, tools like Azure Data Factory and other data warehouse notions.",
+          "techAndSkills": "# .NET # Azure # Microservices # Cloud-Native Applications # Agile Methodologies # DevOps # Domain-Driven Design #Test-Driven Development #Project Management",
+          "title": "Software Engineer"
+        },
+        "microsoft3": {
+          "achievements": " ",
+          "company": "Microsoft",
+          "description": "Alexandru is currently working at Microsoft as a software engineer in the E+D MSAI FAST organization.",
+          "location": "Remote (Norway)",
+          "period": "2024 - Present",
+          "responsibilites": " ",
+          "techAndSkills": " # React # GraphQL # Large-Scale Development # Cloud-Native Applications # Agile Methodologies # Engineering Excellence # Leadership",
+          "title": "Fullstack Software Engineer"
+        },
+        "subtitle": "A journey through Alexandru's professional career and the companies he's worked with.",
+        "title": "Professional Experience",
+        "ubisoft": {
+          "achievements": "# Contributed to the development of cloud-native applications using .NET and Azure, # Implemented microservices architecture for scalable and resilient systems, # Collaborated with cross-functional teams to deliver high-quality software solutions, # Participated in code reviews and mentored junior developers",
+          "company": "Ubisoft",
+          "description": "Alexandru is currently working at Microsoft as a software engineer in the E+D MSAI FAST organization. He is building solutions that are used by millions of users worldwide. He is also a big fan of the \"open-source\" movement and has contributed to Microsoft's OSS repositories (dotnet/core, dotnet/docs, azure/docs and fluentui).",
+          "location": "Hybrid (Romania)",
+          "period": "2020 - 2021",
+          "responsibilites": "# Developed and maintained cloud-native applications using .NET and Azure, # Designed and implemented microservices architecture for scalable and resilient systems, # Collaborated with cross-functional teams to deliver high-quality software solutions, # Participated in code reviews and mentored junior developers",
+          "techAndSkills": "# Unit Testing # Integration Testing # A/B Testing # Performance Testing # Automatic Testing # E2E Testing",
+          "title": "QA/QC Engineer"
+        }
+      },
+      "Perspectives": {
+        "perspectiveFromX": {
+          "author": "Anonymous",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Senior Software Engineer",
+          "quote": "The thing that I appreciate a lot about you is your relentless pursuit of improvement and your willingness to challenge the status quo. Your commitment to continuous self-development is evident in the way you approach every task with a mindset geared towards innovation and excellence. Your ability to question existing methods and propose better alternatives has been instrumental in driving our projects forward. This proactive attitude not only enhances the quality of our work but also inspires the team to strive for higher standards. I am happy to have worked with you and hope our paths will cross again in the future."
+        },
+        "perspectiveFromXX": {
+          "author": "Anonymous",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Senior Software Engineer",
+          "quote": "Alex is an intelligent engineer whose capabilities shone brightly during our collaboration on our projects. He consistently demonstrates eagerness to assist the team with any request, showcasing his dedication to collective success. His proactive approach to problem-solving and dedication to system stability greatly benefit our team's workflow. Additionally, Alex's availability and willingness to support others during our release flow highlight his value as a colleague who prioritizes teamwork and collaboration."
+        },
+        "perspectiveFromXY": {
+          "author": "Anonymous",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Senior Escalation Engineer",
+          "quote": "Alex, if I am to choose one thing, I value the most about working with you, it has to be your mindset - as it includes multiple aspects. Working with you is genuine, funny, wise and relevant at the same time. It is easy to notice that your daily drivers are commitment, reasoning and continuous learning. I admire your approach, your genuine desire to help, to build on the success of others and to support everyone in their growth which is such a rare value. On top of that I value your patience, as well as the great amount of knowledge you bring into our interactions. The way you manage stressful situations and your overall approach have the power to shape a positive outcome for any matter or topic."
+        },
+        "perspectiveFromXZ": {
+          "author": "Anonymous",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Senior Software Engineer",
+          "quote": "I've been consistently impressed with your work output. You always deliver high-quality work, paying close attention to details and ensuring that everything is done to the best of your abilities, Additionally, you have a deep understanding of the technical aspects of our work, which has been a valuable asset for the team. Your willingness to share your knowledge and experience with others has been invaluable and it's clear that you take pride in mentoring others and helping them grow."
+        },
+        "perspectiveFromY": {
+          "author": "Anonymous",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Software Engineer II",
+          "quote": "I really appreciate your proactive approach and collaborative spirit, and your support and friendly communication style have been very positive to my onboarding experience and to learning the ins and outs of our project. Your ability to communicate effectively and keep everyone in the loop is something I'm looking up to, you are experienced with dealing with cross-functional teams, especially with our partner teams, with learning their needs and solving their problems. Your technical skills are impressive and your attention to detail is commendable."
+        },
+        "perspectiveFromZ": {
+          "author": "Anonymous",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Senior Software Engineer",
+          "quote": "You always step up to help, sharing your time generously, even when you have your own pressing tasks. Your quick and helpful replies to any questions are greatly appreciated. You take a prioritized and meticulous approach, providing instant solutions that not only unblock us in the short term but also outline long-term fixes and their implementation timelines. Your solution-oriented mindset is a true asset for our team. Your expertise, willingness to assist, and pleasant personality make you a great colleague. Keep up the great work!"
+        },
+        "subtitle": "Perspectives from colleagues who have worked with or alongside Alexandru.",
+        "title": "Perspectives"
+      },
+      "subtitle": "Alexandru-Razvan Olariu is the author of the platform that you are currently browsing.",
+      "title": "Meet the author."
+    }
+  },
+  "Acknowledgements": {
+    "lastUpdate": "Last updated on: {date}",
+    "packages": {
+      "subtitle": "This website could not have been possible without the following third-party packages. I would like to thank the authors of these packages for their hard work and dedication to the open-source community.",
+      "title": "Third-party packages"
+    },
+    "title": "Acknowledgements"
+  },
+  "Authentication": {
+    "Button": {
+      "login": "Login",
+      "logout": "Logout"
+    },
+    "Island": {
+      "callToAction": "Perform auth",
+      "description": "Sign in using our secure OAuth 2.0 auth server. Your profile will be kept in sync during this browser session. You can use your social media accounts to sign in.",
+      "title": "Authenticate with our secure OAuth 2.0 auth server."
+    }
+  },
+  "Domains": {
+    "services": {
+      "callToAction": "Visit this domain service",
+      "invoices": {
+        "card": {
+          "description": "This domain space service assists with the digital transformation of physical receipts. It allows users to upload receipts, and get carefully-crafted insights into their spending habits.",
+          "title": "Invoice Management System"
+        },
+        "service": {
+          "create-page": {
+            "disclaimer": "In order to save your invoice, please create an account or sign in.",
+            "subtitle__after": "Review the uploaded receipt photo. If it is correct, proceed to the next step.",
+            "subtitle__before": "Carefully photograph or scan your paper receipt. Attach the digital image from your device, here.",
+            "title__after": "ARE THESE THE CORRECT PHOTOS...?!",
+            "title__before": "UPLOAD A PICTURE OF THE PAPER RECEIPT!"
+          },
+          "main-page": {
+            "callToAction": "Upload receipt",
+            "description": "Receipts are great for keeping your own accounting. However, what if you could upload these receipts somewhere, and get powerful insights into your habits? What if you could automatically get a list of all the products you bought in the last year? <br></br> <br></br> Unleash the power of our platform! <br></br> Throw away the Excel tables and hop on the digital train now!",
+            "showInvoices": "My receipts",
+            "steps": {
+              "step-1": {
+                "description": "Create an account on our platform, so that you can store and manage your own receipts securely. We adhere to the best industry standards in terms of security. Your receipt information is safe.",
+                "title": "STEP 1 - Onboard yourself"
+              },
+              "step-2": {
+                "description": "Upload your paper receipt. The system will then perform the full analysis. We try as much as possible to have a fully automated process, but sometimes we may need your help.",
+                "title": "STEP 2 - Start your journey"
+              },
+              "step-3": {
+                "description": "Delve into the analysis provided by us. You can download the full analysis report as a PDF file for your own records.",
+                "title": "STEP 3 - Explore the digital receipt"
+              },
+              "step-4": {
+                "description": "Augment your analysis with our AI-powered insights. Collect knowledge into your purchase habits and discover new recipes specifically crafted from your day-to-day shopping list.",
+                "title": "STEP 4 - Gather powerful knowledge"
+              },
+              "step-5": {
+                "description": "We aim to create one of the best, open-source receipt-scanning platform. We would love to hear your feedback on how we can improve our platform.",
+                "title": "STEP 5 - Offer your feedback"
+              }
+            },
+            "title": "Turn your paper receipts into powerful digital knowledge."
+          },
+          "view-invoices": {
+            "subtitle": "This is your digital receipts inventory. <br></br> Here you can find the receipts that you've uploaded so far. <br></br> By clicking on a receipt, you will be redirected to that specific receipt's page.",
+            "title": "Welcome, {name}!"
+          }
+        }
+      }
+    },
+    "subtitle": "The <code>arolariu.ro</code> platform offers a wide range of services under it&apos;s umbrella. <br></br> Most of the services require that you have an account created on this platform, so that your data can be safely synchronized between all of the domain services. <br></br> <br></br> Here you can see a showcase of all domain services that are available for exploration.",
+    "title": "Domain Space Services"
+  },
+  "EULA": {
+    "accept": "Accept EULA",
+    "content": "By using this website, you agree to the terms and conditions and to the privacy policy of the End User License Agreement (EULA). Please read the following documents carefully before using the website:",
+    "cookiesPolicy": {
+      "cookies": {
+        "analytics": {
+          "checkbox": "Enabling the analytics cookies to helps us to improve our website.",
+          "description": "These cookies allow us to count visits and traffic sources, so we can measure and improve the performance of our site. They help us know which pages are the most and least popular and see how visitors move around the site. All information these cookies collect is aggregated and therefore can be considered anonymous.",
+          "title": "Analytics Cookies"
+        },
+        "cta": "Save cookies configuration",
+        "essential": {
+          "checkbox": "This option cannot be disabled. Essential cookies are always enabled.",
+          "description": "Essential cookies are necessary for the website to function properly. This category only includes cookies that ensures basic functionalities and security features of the website.",
+          "title": "Essential Cookies"
+        }
+      },
+      "subtitle": "Manage your cookie settings. You can enable or disable different types of cookies below.",
+      "title": "Cookies Preference"
+    },
+    "privacyPolicy": {
+      "title": "Privacy Policy",
+      "subtitle": "Our Privacy Policy explains how we collect, use, and protect your personal information when you use our services.",
+      "cta": "View Policy"
+    },
+    "termsOfService": {
+      "title": "Terms of Service",
+      "subtitle": "Our Terms of Service outline the rules and guidelines for using our platform, including user responsibilities and our obligations.",
+      "cta": "View Terms"
+    },
+    "title": "End User License Agreement (EULA)",
+    "subtitle": "Please review our terms and conditions before using the website."
+  },
+  "Footer": {
+    "builtOn": "Built on ",
+    "copyright": "Copyright",
+    "navigation": {
+      "about": "About",
+      "acknowledgements": "Acknowledgements",
+      "privacyPolicy": "Privacy Policy",
+      "subdomains": "Subdomains",
+      "termsOfService": "Terms of Service",
+      "what": "What is this?"
+    },
+    "sourceCode": "Source code is available ",
+    "sourceCodeAnchor": "here (GitHub repo)",
+    "subtitle": "The platform is built using the latest stable, state-of-the-art technologies and with enterprise-grade experience. <br></br> <br></br> We hope that you have a great experience when exploring this platform."
+  },
+  "Forbidden": {
+    "Screen": {
+      "callToAction": "Join the arolariu.ro domain.",
+      "description": "Unfortunately, this functionality requires you to have an account on our domain. By creating an account on our platform or signing in with an existing account, you will be able to access our whole arsenal of services, including this one.",
+      "title": "You're missing out on the fun!"
+    }
+  },
+  "Home": {
+    "appreciation": "THANK YOU FOR THE TIME SPENT ON THE WEBSITE.",
+    "cta": "Start Exploring",
+    "subtitle": "This platform was built by Alexandru-Razvan Olariu as a playground for new technologies. The platform is built using state-of-the-art, enterprise-grade technologies. <br> </br> <br> </br> You are welcome to explore all of the applications and services that are hosted on this domain space.",
+    "title": "Welcome to arolariu.ro",
+    "featuresTab": {
+      "title": "Key Features",
+      "description": "The `arolariu.ro` platform is built using the latest stable technologies.",
+      "learnMoreBtn": "Interesting? Click here to learn more...",
+      "nextJs": {
+        "title": "Next.JS 15",
+        "description": "The platform is built using NextJS - the most popular React framework for production.  It is designed for production-grade React applications. NextJS is the most popular React framework for a reason: it is fast, reliable, and easy to use."
+      },
+      "azure": {
+        "title": "Microsoft Azure",
+        "description": "The Microsoft Azure cloud is used to host the platform and all of its services. This ensures that the platform is always available and that it can scale on demand."
+      },
+      "csharp": {
+        "title": ".NET 8 LTS",
+        "description": "The platform is built using .NET 8 LTS - the latest stable version of .NET. This ensures that the platform is fast, reliable, and easy to use. The platform is built using C# and F#."
+      },
+      "svelte": {
+        "title": "Svelte",
+        "description": "Utilizing Svelte for lightning-fast, reactive UI components. The `cv.arolariu.ro` platform is built exclusively using Svelte and SvelteKit (v5)"
+      },
+      "otel": {
+        "title": "Open Telemetry",
+        "description": "Complete observability with integrated metrics, traces, and logs. Everything is instrumented using OpenTelemetry. This allows for a unified telemetry experience across the board. (3PO: metrics, logs, traces)"
+      },
+      "githubActions": {
+        "title": "GitHub Actions",
+        "description": "The DevOps experience is powered by GitHub Actions. (CI/CD, Testing, etc.)"
+      }
+    },
+    "technologyTab": {
+      "title": "Built for the Future.",
+      "description": "This platform leverages the latest in web technology, combining Next.js for the frontend with .NET for robust backend services, all deployed on Microsoft Azure.",
+      "points": {
+        "point1": "Serverless architecture for optimal scaling and performance",
+        "point2": "Full-stack TypeScript for type safety across the entire application",
+        "point3": "Comprehensive telemetry and monitoring with OpenTelemetry"
+      },
+      "learnMoreBtn": "Explore the Architecture",
+      "badgeTitle": "Modern Architecture"
     }
   },
   "privacyPolicy": {
-    "title": "Privacy Policy",
+    "contactInformation": {
+      "content": "If you have any questions about our Privacy Policy, please contact us at admin@arolariu.ro",
+      "title": "Contact Information"
+    },
     "last_updated": "Last updated: 2024-01-01",
-    "terms": {}
+    "terms": {
+      "childrenPrivacy": {
+        "content": "Our website is not intended for children under the age of 13. We do not knowingly collect Personal Data from children under the age of 13. If you are a parent or guardian and you are aware that your child has provided us with Personal Data, please contact us. If we become aware that we have collected Personal Data from children without verification of parental consent, we will take steps to remove that information from our servers.",
+        "title": "Children's Privacy"
+      },
+      "cookiesDefinition": {
+        "content": "Cookies are small pieces of data stored on your device (computer or mobile device). Cookies are used to improve your experience on our website and to provide you with relevant content. For more information on cookies, please visit https://www.allaboutcookies.org/ <br></br><br></br><br></br> We use cookies to collect information about your device and your use of our website. Our website analytics provider uses cookies to generate statistical and other information about website use by means of cookies. <br></br><br></br><br></br> You can opt-out of cookies by using the settings in your browser. Please note that if you disable cookies, you may not be able to use all the features of our website. <br></br><br></br><br></br> We will only retain your Personal Data for as long as necessary for the purpose for which that data was collected and to the extent required by applicable law. When we no longer need Personal Data, we will remove it from our systems and/or take steps to anonymize it.",
+        "title": "What are Cookies?"
+      },
+      "dataCollectionTerms": {
+        "content": "a) When you make a purchase or attempt to make a purchase, we collect the following types of Personal Data: <ul> <li> Payment Information such as your billing address, phone number, credit card, debit card and/or other payment method information; </li><li> Account Information such as your name, username, e-mail address; </li><li> Purchase Information specifically if personalized or unique;</li> <li>Demographic Data;</li> <li>Location Data.</li> </ul> <br></br><br></br> b) When you visit and use our website, we automatically collect the following types of Personal Data: <ul> <li> Payment Information such as your billing address, phone number, credit card, debit card and/or other payment method information; </li> <li>Device Data, such as your computer, phone, tablet or other device you use to access our website;</li> <li>Communication Data, such as your preferences for receiving communications from us;</li> <li>Feedback, such as customer support, product reviews, surveys and/or other feedback;</li> <li>Content Data, such as content you submit to us: posts, documents, audio, images, etc.;</li> <li>Usage Data, such as how you use our website, products and services;</li> <li>Account Information such as your name, username, e-mail address;</li> <li>Purchase Information specifically if personalized or unique;</li> <li>Demographic Data;</li> <li>Location Data;</li></ul>",
+        "title": "What Personal Data We Collect"
+      },
+      "dataTransferTerms": {
+        "content": "Where possible, we store and process data on servers within the general geographical region where you reside (note: this may not be within the country in which you reside). <span> Specifically, for European based users, companies and customers, we have servers in the European Economic Area (EEA). </span> Your Personal Data may also be transferred to, and maintained on, servers residing outside of your state, province, country or other governmental jurisdiction where the data laws may differ from those in your jurisdiction. We will take appropriate steps to ensure that your Personal Data is treated securely and in accordance with this Policy as well as applicable data protection law. Data may be kept in other countries that are considered adequate under your laws. <br></br><br></br><br></br><br></br> More information about these clauses can be found here: https://eur-lex.europa.eu/legal-content/en/TXT/?uri=CELEX:32021D0914",
+        "title": "International Data Transfer and Storage"
+      },
+      "deviceUsageTerms": {
+        "content": "When you visit a <code>AROLARIU.RO</code> website and/or mobile application, we automatically collect and store information about your visit using browser cookies (files which are sent by us to your computer), or similar technologies. You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent. The `Help` feature on most browsers will provide information on how to accept cookies, disable cookies or to notify you when receiving a new cookie. If you do not accept cookies, you may not be able to use some features of our Service and we recommend that you leave them turned on. <br></br><br></br><br></br> We also process information when you use our services and products. This information may include: <ul> <li>   Information about your interactions with our services, including the time and date of your interactions,   and your interactions with our emails; </li> <li>   Information about your use of our services, including the type of browser you use, access times, pages   viewed, your IP address; </li> <li>   Information about your purchases, including the items you purchase, the date of purchase, and the payment   method you use; </li> <li>   Information about your device, including the type of device, its operating system, and mobile network   information; </li> <li>   Other information you provide to us, including your feedback, comments, and other information you provide   to us; </li> <li>Information about your location, including your general location based on your IP address;</li> <li>Other information we collect with your consent or as permitted or required by law;</li> <li>Information about your preferences, including your language preferences.</li> </ul>",
+        "title": "Device and Usage Data"
+      },
+      "exerciseRights": {
+        "content": "To exercise your rights, please contact us using the contact details provided under the “Contact Us” section below. We will respond to your request within a reasonable timeframe and in accordance with applicable law. <br></br><br></br> For your own safety and security, we may need to verify your identity before responding to your request. We will make reasonable efforts to verify your identity by asking for information that we have on file about you.",
+        "title": "How to Exercise Your Rights"
+      },
+      "howWeCollectDataTerms": {
+        "content": "We collect Personal Data in the following ways: <br></br><br></br> <span>1. From you.</span> <br></br> We collect Personal Data from you when you provide it to us directly or indirectly, by using our website, products or services. This includes: <br></br> <ul> <li>When you create an account or purchase products on our website;</li> <li>When you download software and/our our mobile application;</li> <li>When you participate in our surveys, contests or promotions;</li> <li>When you create content through our products and services;</li> <li>When you contact us with an inquiry or to report a problem;</li> <li>When you express interest(s) in our products and services;</li> <li>When you use our website, products or services;</li> <li>When you interact with us on social media;</li> <li>When you subscribe to our newsletter;</li> <li>When you provide it to us directly;</li> <li>When you communicate with us.</li> </ul> <br></br><br></br><br></br><br></br> <span>2. Automated technologies or interactions.</span> <br></br> <br></br> As you interact with our website, we may automatically collect the following types of data (all as described above): Device Data about your equipment, Usage Data about your browsing actions and patterns, and Contact Data where tasks carried out via our website remain uncompleted, such as incomplete orders or abandoned baskets. We collect this data by using cookies, server logs and other similar technologies. Please see our Cookie section (below) for further details. <br></br><br></br><br></br><br></br> <span>3. Third parties or publicly available sources.</span> <br></br><br></br> We may receive Personal Data about you from various third parties, including: <ul> <li>   Account Information and Payment Data from third parties, including organizations (such as law enforcement   agencies), associations and groups, who share data for the purposes of fraud prevention and detection and   credit risk reduction </li> <li>Contact, Financial and Transaction Data from providers of technical, payment and delivery services</li> <li>Technical Data from analytics providers such as Google Analytics</li> <li>Identity and Contact Data from data brokers or aggregators</li> <li>Identity and Contact Data from publicly available sources</li> </ul> <br></br><br></br><br></br><br></br><span> If you provide us, or our service providers, with any Personal Data relating to other individuals, you represent that you have the authority to do so and acknowledge that it will be used in accordance with this Policy. If you believe that your Personal Data has been provided to us improperly, or to otherwise exercise your rights relating to your Personal Data, please contact us by using the information set out in the “Contact Us” section below.</span>",
+        "title": "How We Collect Personal Data"
+      },
+      "legalTerms": {
+        "content": "We may use or disclose your Personal Data in order to comply with a legal obligation, in connection with a request from a public or government authority, or in connection with court or tribunal proceedings, to prevent loss of life or injury, or to protect our rights or property. Where possible and practical to do so, we will tell you in advance of such disclosure.",
+        "title": "Legal Requirements"
+      },
+      "personalDataRights": {
+        "content": "You have the right to access, correct, update or delete your Personal Data. You also have the right to object to the processing of your Personal Data, ask us to restrict the processing of your Personal Data or request portability of your Personal Data. You can exercise these rights by contacting us using the contact details provided under the &ldquo;Contact us&rdquo; section below. <br></br><br></br><br></br> Depending on your geographical location and citizenship, your rights are subject to local data privacy regulations. These rights may include: <ul> <li>   Right to be Forgotten (right to erasure) (GDPR Article 17, CCPA/CPRA, CPA, VCDPA, CTDPA, UCPA, LGPD,   POPIA) </li> <li>Right to Access (PIPEDA, GDPR Article 15, CCPA/CPRA, CPA, VCDPA, CTDPA, UCPA, LGPD, POPIA)</li> <li>Right to Rectification (PIPEDA, GDPR Article 16, CPRA, CPA, VCDPA, CTDPA, LGPD, POPIA)</li> <li>Nondiscrimination and nonretaliation (CCPA/CPRA, CPA, VCDPA, CTDPA, UCPA)</li> <li>Right to Restriction of Processing (GDPR Article 18, LGPD)</li> <li>Right to Opt Out (CPRA, CPA, VCDPA, CTDPA, UCPA)</li> <li>Right to Portability (PIPEDA, GDPR Article 20, LGPD)</li> <li>Right to Objection (GDPR Article 21, LGPD, POPIA)</li> </ul> <br></br><br></br><br></br> If you want to file an appeal or complaint about how we process your Personal Data, you can contact us using the contact details provided under the &ldquo;Contact us&rdquo; section below. You also have the right to file a complaint with the data protection authority in your jurisdiction. <br></br> In the case that you did contact us and you are not satisfied with our response, you have the right to file an appeal with the attorney general located here: <ul> <li>   If you are based in the EEA, please visit https://edpb.europa.eu/about-edpb/about-edpb/members_en website for a list of local data protection authorities. </li> <li>   If you are based in Connecticut, please visit https://portal.ct.gov/AG/Common/Complaint-Form-Landing-page website to file a complaint. </li> <li> If you are based in Colorado, please visit https://complaints.coag.gov/s/contact-us website to file a complaint. </li> <li> If you are based in Virginia, please visit https://www.oag.state.va.us/consumer-protection/index.php/file-a-complaint website to file a complaint. </li></ul>",
+        "title": "Your Rights for Your Personal Data"
+      },
+      "policyChanges": {
+        "content": "We may update this Policy from time to time. If we make significant changes, we will let you know, but please regularly check this Policy to ensure you are aware of the most updated version.",
+        "title": "Changes to this Policy"
+      },
+      "processingDataTerms": {
+        "content": "We collect and use your Personal Data with your consent to provide, maintain, and develop our products and services and understand how to further improve them. <br></br><br></br><br></br> These purposes include: <ul> <li>Building a safe and secure environment for our users and our community;</li> <li>Conducting research and analysis to improve our products and services;</li> <li>Communicating with you about your account, purchases, or inquiries;</li> <li>Investigate and prevent security incidents and other illegal activities;</li> <li>Personalizing your experience with our products and services;</li> <li>Deliver, maintain and improve our products and services;</li> <li>Providing you with the products and services you request;</li> <li>Providing you with marketing communications;</li> <li>Providing you with customer support;</li> <li>Protecting our products and services;</li> <li>Other purposes with your consent;</li> <li>Complying with legal obligations.</li> </ul> <br></br><br></br><br></br><br></br> Where we process your Personal Data to provide a product or service, we do so because it is necessary to perform contractual obligations. All of the above processing is necessary in our legitimate interests to provide products and services and to maintain our relationship with you and to protect our business for example against fraud. Consent will be required to initiate services with you. New consent will be required if any changes are made to the type of data collected. Within our contract, if you fail to provide consent, some services may not be available to you.",
+        "title": "Purpose and Legal Basis for the Processing of Personal Data"
+      },
+      "processingTerms": {
+        "content": "This policy applies when you visit our website, use our products or services, or interact with us. <br></br> Additionally, this policy applies when you: <ul> <li> Make use of our application and services as an authorized user;</li> <li>Visit any of our websites that link to this Privacy Policy;</li> <li>Receive any communication from us, including e-mails.</li></ul>",
+        "title": "Processing Activities"
+      },
+      "safeDataTerms": {
+        "content": "We have implemented appropriate technical and organizational security measures designed to protect the security of any Personal Data we process. However, please also remember that we cannot guarantee that the internet itself is 100% secure. Although we will do our best to protect your Personal Data, the transmission of Personal Data to and from our website is at your own risk. You should only access the services within a secure environment. <br></br><br></br><br></br> We have appropriate organizational safeguards and security measures in place to protect your Personal Data from being accidentally lost, used or accessed in an unauthorized way, altered or disclosed. <br></br><br></br><br></br> The communication between your browser and our website uses a secure encrypted connection wherever your Personal Data is involved. <br></br><br></br><br></br> We require any third party who is contracted to process your Personal Data on our behalf to have security measures in place to protect your data and to treat such data in accordance with the law. <br></br><br></br><br></br> In the unfortunate event of a Personal Data breach, we will notify you and any applicable regulator when we are legally required to do so.",
+        "title": "How We Keep Your Data Safe"
+      },
+      "scopeTerms": {
+        "content": "This policy applies to the <code> AROLARIU.RO </code> website, products, and services. It also applies to the use of our website, products, and services by our customers, partners, and visitors. <br></br><br></br> This Policy does not apply to third-party applications, websites, products, services or platforms that may be accessed through (non-<code>AROLARIU.RO</code>) links that we may provide to you. These sites are owned and operated independently from us, and they have their own separate privacy and data collection practices. Any Personal Data that you provide to these websites will be governed by the third-party's own privacy policy. We cannot accept liability for the actions or policies of these independent sites, and we are not responsible for the content or privacy practices of such sites.",
+        "title": "Scope of the Policy"
+      },
+      "serviceProviderTerms": {
+        "content": "We may use a third party service provider, independent contractors, agencies, or consultants to deliver and help us improve our products and services. We may share your Personal Data with marketing agencies, database service providers, backup and disaster recovery service providers, e-mail service providers and others but only to maintain and improve our products and services. <br></br><br></br> For further information on the recipients of your Personal Data, please contact us by using the information in the “Contact Us” section below.",
+        "title": "Service Providers and Other Third Parties"
+      },
+      "sharingAndDisclosureTerms": {
+        "content": "We will share your Personal Data with third parties only in the ways set out in this Policy or set out at the point when the Personal Data is collected. <br></br><br></br><br></br> We also use Google Analytics to help us understand how our customers use the site. You can read more about how Google uses your Personal Data here: https://www.google.com/intl/en/policies/privacy/ <br></br><br></br><br></br> You can also opt-out of Google Analytics here: https://tools.google.com/dlpage/gaoptout <br></br><br></br><br></br> We may also share your Personal Data with third parties where required by law, where it is necessary to administer the relationship between us or where we have another legitimate interest in doing so. We may also share your Personal Data with third parties to whom we may choose to sell, transfer, or merge parts of our business or our assets. Alternatively, we may seek to acquire other businesses or merge with them. <br></br><br></br><br></br> For more information about how targeted advertising works, you can visit the Network Advertising Initiative's (NAI) educational page at: https://www.networkadvertising.org/understanding-online-advertising/how-does-it-work <br></br><br></br><br></br> Additionally, you can opt out of some of these services by visiting the Digital Advertising Alliance's opt-out: https: //optout.aboutads.info/",
+        "title": "Sharing and Disclosure of Personal Data"
+      },
+      "thirdPartyData": {
+        "content": "We may receive your Personal Data from third parties such as companies subscribing to <code>AROLARIU.RO</code> services, partners and other sources. This Personal Data is not collected by us but by a third party and is subject to the relevant third party's own separate privacy and data collection policies. We do not have any control or input on how your Personal Data is handled by third parties. As always, you have the right to review and rectify this information. If you have any questions you should first contact the relevant third party for further information about your Personal Data. Where that third party is unresponsive to your rights, you may contact the Data Protection Officer at <code> AROLARIU.RO </code> (contact details below). <br></br><br></br><br></br>  Our websites and services may contain links to other websites, applications and services maintained by third parties. The information practices of such other services, or of social media networks that host our branded social media pages, are governed by third parties's privacy statements, which you should review to better understand those third parties's privacy practices.",
+        "title": "Data we collect from third parties"
+      },
+      "whatIsTerms": {
+        "content": "At <code> AROLARIU.RO </code> (“us”, “we”, “our” or the ”Company“) we value your privacy and the importance of safeguarding your data. This Privacy Policy (the “Policy”) describes our privacy practices for the activities set out below. <br></br> <br></br> As per your rights, we inform you how we collect, store, access, and otherwise process information relating to individuals. In this Policy, personal data (“Personal Data”) refers to any information that on its own, or in combination with other available information, can identify an individual. <br></br> <br></br> We are committed to protecting your privacy in accordance with the highest level of privacy regulation. As such, we follow the obligations under the below regulations: <ul> <li> California\"s Consumer Privacy Act (CCPA) / California Privacy Rights Act (CPRA) and California Online Privacy Protection Act (CalOPPA) </li> <li> Canada\"s Personal Information Protection and Electronic Documents Act (PIPEDA) and the applicable provincial legislations </li> <li> The European Union\"s General Data Protection Regulation (GDPR) </li> <li> South Africa\"s Protection of Personal Information Act (POPIA) </li> <li> Virginia Consumer Data Protection Act (VCDPA) </li> <li> Brazil\"s Data Protection Legislation (LGPD) </li> <li> Connecticut Data Privacy Act (CTDPA) </li> <li> Utah Consumer Privacy Act (UCPA) Colorado Privacy Act (CPA) </li> </ul>",
+        "title": "What is AROLARIU.RO?"
+      },
+      "withdrawingConsent": {
+        "content": "If you have given your consent to the processing of your Personal Data, you have the right to withdraw your consent at any time. To withdraw your consent, please contact us using the contact details provided under the “Contact Us” section below.",
+        "title": "Withdrawing Consent"
+      }
+    },
+    "title": "Privacy Policy"
   },
-  "EULA": {
-    "title": "End User License Agreement (EULA)",
-    "content": "By using this website, you agree to the terms and conditions of the End User License Agreement (EULA).<br></br>Please read the following documents carefully before using the website:",
-    "termsOfService": "Terms of Service",
-    "privacyPolicy": "Privacy Policy",
-    "accept": "Accept EULA",
-    "cookiesPolicy": {
-      "title": "Cookies Preference",
-      "subtitle": "Manage your cookie settings. You can enable or disable different types of cookies below.",
-      "cookies": {
-        "cta": "Save cookies configuration",
-        "essential": {
-          "title": "Essential Cookies",
-          "description": "Essential cookies are necessary for the website to function properly. <br> </br> This category only includes cookies that ensures basic functionalities and security features of the website.",
-          "checkbox": "This option cannot be disabled. Essential cookies are always enabled."
-        },
-        "analytics": {
-          "title": "Analytics Cookies",
-          "description": "These cookies allow us to count visits and traffic sources, so we can measure and improve the performance of our site. <br></br> They help us know which pages are the most and least popular and see how visitors move around the site. <br></br> <em>All information these cookies collect is aggregated and therefore can be considered anonymous.</em>",
-          "checkbox": "Enabling the analytics cookies to helps us to improve our website."
-        }
+  "termsOfService": {
+    "contactInformation": {
+      "content": "If you have any questions about our Terms of Service, please contact us at admin@arolariu.ro",
+      "title": "Contact Information"
+    },
+    "last_updated": "Last updated: 2024-01-01",
+    "terms": {
+      "amendmentsTerms": {
+        "content": "We reserve the right to modify, supplement or replace the terms of the Agreement, effective upon posting at www.arolariu.ro or notifying you otherwise. If you do not want to agree to changes to the Agreement, you can terminate the Agreement at any time per the terms herein. If a revision is material we will provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion. By continuing to access or use our service after any revisions become effective, you agree to be bound by the revised terms. If you do not agree to the new terms, you are no longer authorized to use our service.",
+        "title": "Amendments to Agreement"
+      },
+      "arbitrateTerms": {
+        "content": "This Agreement and any dispute or claim arising out of, or related to, it, its interpretation, or the breach, termination or validity thereof, the relationships which result from this Agreement, including the performance, breach, or validity of this Agreement, shall be governed by the laws of Romania. The exclusive jurisdiction and venue for any action under this Agreement shall be the courts located in Romania and you hereby submit to the personal jurisdiction of such courts. You hereby waive any right to a jury trial in any proceeding arising out of or related to this Agreement. The United Nations Convention on Contracts for the International Sale of Goods does not apply to this Agreement. The term “dispute” means any dispute, action, or other controversy between you and us concerning the Services or this agreement, whether in contract, warranty, tort, statute, regulation, ordinance, or any other legal or equitable basis. “Dispute” will be given the broadest possible meaning allowable under law.",
+        "title": "Arbitration"
+      },
+      "changesToTos": {
+        "content": "AROLARIU.RO reserves the right to change these Terms of Service at any time. We do, however, recommend that you read this page regularly to ensure that you are aware of any changes. Your continued use of the website following the posting of changes will mean that you accept and agree to the changes. You acknowledge and agree that we may stop (permanently or temporarily) providing the Service (or any features within the Service) to you or to users generally at our sole discretion, without prior notice to you. You may stop using the Service at any time. You do not need to specifically inform us when you stop using the Service. You acknowledge and agree that if we disable access to your account, you may be prevented from accessing the Service, your account details or any files or other materials which is contained in your account",
+        "title": "Changes to Terms of Service"
+      },
+      "consentTerms": {
+        "content": "We've updated our Terms & Conditions to provide you with complete transparency into what is being set when you visit our site and how it's being used. By using our website, you hereby consent to our Terms of Service and agree to the Terms & Conditions.",
+        "title": "Your Consent"
+      },
+      "cookiesTerms": {
+        "content": "We use 'Cookies' to identify the areas of our website that you have visited. A Cookie is a small piece of data stored on your computer or mobile device by your web browser. We use Cookies to enhance the performance and functionality of our service but are non-essential to their use. However, without these cookies, certain functionality like videos may become unavailable or you would be required to enter your login details every time you visit our platform as we would not be able to remember that you had logged in previously. Most web browsers can be set to disable the use of Cookies. However, if you disable Cookies, you may not be able to access functionality on our website correctly or at all. We never place Personally Identifiable Information in Cookies.",
+        "title": "Cookies"
+      },
+      "copyrightTerms": {
+        "content": "If you are a copyright owner or such owner’s agent and believe any material from us constitutes an infringement on your copyright, please contact us setting forth the following information: (a) a physical or electronic signature of the copyright owner or a person authorized to act on his behalf; (b) identification of the material that is claimed to be infringing; (c) your contact information, including your address, telephone number, and an email; (d) a statement by you that you have a good faith belief that use of the material is not authorized by the copyright owners; and (e) the a statement that the information in the notification is accurate, and, under penalty of perjury you are authorized to act on behalf of the owner.",
+        "title": "Copyright Protection"
+      },
+      "definitionTerms": {
+        "content": "The terms 'us' or 'we' or 'our' refers to AROLARIU.RO, the owner of the website. A customer is the person or organization that buys or agrees to buy the product. Our 'product' refers to the website, products, or services offered for sale on our website. A 'user' is a person who uses our website or services. The term 'you' refers to the user or viewer of our website.",
+        "title": "Definitions"
+      },
+      "disclaimerTerms": {
+        "content": "To the maximum extent permitted by applicable law, we exclude all representations, warranties, and conditions relating to our website and the use of this website. We shall not be liable for any damages arising out of the use or inability to use the materials on AROLARIU.RO's website, even if AROLARIU.RO or an authorized representative of AROLARIU.RO has been notified, orally or in writing, of the possibility of such damage. Because some jurisdictions do not allow limitations on implied warranties, or limitations of liability for consequential or incidental damages, these limitations may not apply to you. We are not responsible for any content, code or any other imprecision. We do not provide warranties or guarantees. In no event shall we be liable for any special, direct, indirect, consequential, or incidental damages or any damages whatsoever, whether in an action of contract, negligence or other tort, arising out of or in connection with the use of the Service or the contents of the Service. We reserve the right to make additions, deletions, or modifications to the contents on the Service at any time without prior notice. Our Service and its contents are provided 'AS IS' and 'AS AVAILABLE' without any warranty or representations of any kind, whether express or implied. We are a distributor and not a publisher of the content supplied by third parties; as such, our exercises no editorial control over such content and makes no warranty or representation as to the accuracy, reliability or currency of any information, content, service or merchandise provided through or accessible via our Service. Without limiting the foregoing, We specifically disclaim all warranties and representations in any content transmitted on or in connection with our Service or on sites that may appear as links on our Service, or in the products provided as a part of, or otherwise in connection with, our Service, including without limitation any warranties of merchantability, fitness for a particular purpose or non-infringement of third party rights. No oral advice or written information given by us or any of its affiliates, employees, officers, directors, agents, or the like will create a warranty. Price and availability information is subject to change without notice. Without limiting the foregoing, we do not warrant that our Service will be uninterrupted, uncorrupted, timely, or error-free.",
+        "title": "Disclaimer"
+      },
+      "disputeNoticeTerms": {
+        "content": "In the event of a dispute, you or AROLARIU.RO must give the other a Notice of Dispute, which is a written statement that sets forth the name, address, and contact information of the party giving it, the facts giving rise to the dispute, and the relief requested. You must send any Notice of Dispute by email to: admin@arolariu.ro. AROLARIU.RO will send any Notice of Dispute to you by mail to your address if we have it, or otherwise to your email address. You and AROLARIU.RO will attempt to resolve any dispute through informal negotiation within sixty (60) days from the date the Notice of Dispute is sent. After sixty (60) days, you or AROLARIU.RO may commence arbitration.",
+        "title": "Notice of Dispute"
+      },
+      "entireAgreementTerms": {
+        "content": "The Terms of Service constitute the entire agreement between you and AROLARIU.RO regarding your use of the service and supersede all prior and contemporaneous written or oral agreements between you and AROLARIU.RO. You may be subject to additional terms and conditions that apply when you use or purchase other AROLARIU.RO's services, which AROLARIU.RO will provide to you at the time of such use or purchase.",
+        "title": "Entire Agreement"
+      },
+      "generalTerms": {
+        "content": "By accessing and placing an order with AROLARIU.RO, you confirm that you are in agreement with and bound by the terms of service contained in the Terms & Conditions outlined below. These terms apply to the entire website and any email or other type of communication between you and AROLARIU.RO. Under no circumstances shall AROLARIU.RO team be liable for any direct, indirect, special, incidental or consequential damages, including, but not limited to, loss of data or profit, arising out of the use, or the inability to use, the materials on this site, even if AROLARIU.RO team or an authorized representative has been advised of the possibility of such damages. If your use of materials from this site results in the need for servicing, repair or correction of equipment or data, you assume any costs thereof. AROLARIU.RO will not be responsible for any outcome that may occur during the course of usage of our resources. We reserve the rights to change prices and revise the resources usage policy in any moment.",
+        "title": "General Terms"
+      },
+      "liabilityTerms": {
+        "content": "To the fullest extent permitted by applicable law, in no event will AROLARIU.RO be liable to you on any legal theory for any incidental, direct, indirect, punitive, actual, consequential, special, exemplary, or other damages, including without limitation, loss of revenue or income, lost profits, pain and suffering, emotional distress, cost of substitute goods or services, or similar damages suffered or incurred by you or any third party that arise in connection with the service (or the termination thereof for any reason), even if AROLARIU.RO has been advised of the possibility of such damages. AROLARIU.RO shall not be liable for any damages, liability or losses arising out of: (i) your use of or reliance on the service or your inability to access or use the service; or (ii) any transaction or relationship between you and any third party provider, even if AROLARIU.RO has been advised of the possibility of such damages. AROLARIU.RO shall not be liable for delay or failure in performance resulting from causes beyond AROLARIU.RO's reasonable control. You acknowledge that the service may be subject to limitations, delays, and other problems inherent in the use of the internet and electronic communications. AROLARIU.RO is not responsible for any delays, delivery failures, or other damage resulting from such problems. To the maximum extent permitted by applicable law, in no event shall we or our suppliers be liable for any special, incidental, indirect, or consequential damages whatsoever (including, but not limited to, damages for loss of profits, for loss of data or other information, for business interruption, for personal injury, for loss of privacy arising out of or in any way related to the use of or inability to use the service, third-party software and/or third-party hardware used with the service, or otherwise in connection with any provision of this Agreement), even if we or any supplier has been advised of the possibility of such damages and even if the remedy fails of its essential purpose. Some states/jurisdictions do not allow the exclusion or limitation of incidental or consequential damages, so the above limitation or exclusion may not apply to you.",
+        "title": "Limitation of Liability"
+      },
+      "licenseTerms": {
+        "content": "By purchasing a product of AROLARIU.RO, you are granted a non-exclusive, non-transferable license to access the product. The product is for personal and commercial use. You are allowed to install the product on more than one computer or device, but you are not allowed to share the product with other individuals. You may not modify, adapt, translate, reverse engineer, decompile, disassemble or create derivative works based on the product without the prior written consent of AROLARIU.RO. You may not sell, rent, lease, or sublicense the product. You may not make the product available over a network where it could be used by multiple devices at the same time. You may not use the product to infringe on any copyright or trademark. You may not use the product to create any material that is unlawful, harmful, threatening, abusive, harassing, tortious, defamatory, vulgar, obscene, libelous, invasive of another's privacy, hateful, or racially, ethnically or otherwise objectionable.",
+        "title": "License Terms"
+      },
+      "linksToOtherSitesTerms": {
+        "content": "Our service may contain links to other websites that are not operated by Us. If you click on a third party link, you will be directed to that third party's site. We strongly advise you to review the Terms & Conditions of every site that you visit. We have no control over and assume no responsibility for the content, Terms & Conditions or practices of any third party sites or services.",
+        "title": "Links to Other Websites"
+      },
+      "miscellaneousTerms": {
+        "content": "If for any reason a court of competent jurisdiction finds any provision or portion of these Terms & Conditions to be unenforceable, the remainder of these Terms & Conditions will continue in full force and effect. Any waiver of any provision of these Terms & Conditions will be effective only if in writing and signed by an authorized representative of us. We will be entitled to injunctive or other equitable relief (without the obligations of posting any bond or surety) in the event of any breach or anticipatory breach by you. We operate and control our Service from our offices in Romania. The Service is not intended for distribution to or use by any person or entity in any jurisdiction or country where such distribution or use would be contrary to law or regulation. Accordingly, those persons who choose to access our Service from other locations do so on their own initiative and are solely responsible for compliance with local laws, if and to the extent local laws are applicable. These Terms & Conditions (which include and incorporate our Privacy Policy) contains the entire understanding, and supersedes all prior understandings, between you and us concerning its subject matter, and cannot be changed or modified by you. The section headings used in this Agreement are for convenience only and will not be given any legal import. The failure of either party to exercise in any respect any right provided for herein shall not be deemed a waiver of any further rights hereunder. AROLARIU.RO shall not be liable for any failure to perform its obligations hereunder where such failure results from any cause",
+        "title": "Miscellaneous"
+      },
+      "noWarrantiesTerms": {
+        "content": "This website is provided 'as is,' with all faults, and AROLARIU.RO makes no express or implied representations or warranties, of any kind related to this website or the materials contained on this website. Additionally, nothing contained on this website shall be construed as providing consult or advice to you. The service is provided to you 'AS IS' and 'AS AVAILABLE' and with all faults and defects without warranty of any kind. To the maximum extent permitted under applicable law, we, on our own behalf and on behalf of our affiliates and our respective licensors and service providers, expressly disclaims all warranties, whether express, implied, statutory or otherwise, with respect to the service, including all implied warranties of merchantability, fitness for a particular purpose, title and non-infringement, and warranties that may arise out of course of dealing, course of performance, usage or trade practice. Without limitation to the foregoing, we provide no warranty or undertaking, and make no representation of any kind that the service will meet your requirements, achieve any intended results, be compatible or work with any other software, websites, systems or services, operate without interruption, meet any performance or reliability standards or be error free or that any errors or defects can or will be corrected. Without limiting the foregoing, neither us nor any provider makes any representation or warranty of any kind, express or implied: (i) as to the operation or availability of the service, or the information, content, and materials or products included thereon; (ii) that the service will be uninterrupted or error-free; (iii) as to the accuracy, reliability, or currency of any information or content provided through the service; or (iv) that the service, its servers, the content, or e-mails sent from or on behalf of us are free of viruses, scripts, trojan horses, worms, malware, timebombs or other harmful components. Some jurisdictions do not allow the exclusion of or limitations on implied warranties or the limitations on the applicable statutory rights of a consumer, so some or all of the above exclusions and limitations may not apply to you.",
+        "title": "No Warranties"
+      },
+      "promotionTerms": {
+        "content": "We may, from time to time, include contests, promotions, sweepstakes, or other activities (“Promotions”) that require you to submit material or information concerning yourself. Please note that all Promotions may be governed by separate rules that may contain certain eligibility requirements, such as restrictions as to age and geographic location. You are responsible to read all Promotions rules to determine whether or not you are eligible to participate. If you enter any Promotion, you agree to abide by and to comply with all Promotions Rules. Additional terms and conditions may apply to purchases of goods or services on or through the Services, which terms and conditions are made a part of this Agreement by this reference. Any promotions made available through the service may be governed by rules that are separate from these Terms. If you participate in any promotions, please review the applicable rules as well as our Privacy Policy. If the rules for a promotion conflict with these Terms, the promotion rules will apply.",
+        "title": "Promotions"
+      },
+      "restrictionTerms": {
+        "content": "You are specifically restricted from publishing, selling, sublicensing, or otherwise commercializing any website material; using this website in any way that is or may be damaging to this website; using this website in any way that impacts user access to this website; using this website contrary to applicable laws and regulations, or in any way may cause harm to the website, or to any person or business entity; engaging in any data mining, data harvesting, data extracting or any other similar activity in relation to this website; using this website to engage in any advertising or marketing.",
+        "title": "Restrictions"
+      },
+      "severabilityTerms": {
+        "content": "If any provision of these Terms is held to be unenforceable or invalid, such provision will be changed and interpreted to accomplish the objectives of such provision to the greatest extent possible under applicable law and the remaining provisions will continue in full force and effect. This Agreement, together with the Privacy Policy and any other legal notices published by us on the Services, shall constitute the entire agreement between you and us concerning the Services. If any provision of this Agreement is deemed invalid by a court of competent jurisdiction, the invalidity of such provision shall not affect the validity of the remaining provisions of this Agreement, which shall remain in full force and effect. No waiver of any term of this Agreement shall be deemed a further or continuing waiver of such term or any other term, and our failure to assert any right or provision under this Agreement shall not constitute a waiver of such right or provision. YOU AND US AGREE THAT ANY CAUSE OF ACTION ARISING OUT OF OR RELATED TO THE SERVICES MUST COMMENCE WITHIN ONE (1) YEAR AFTER THE CAUSE OF ACTION ACCRUES. OTHERWISE, SUCH CAUSE OF ACTION IS PERMANENTLY BARRED.",
+        "title": "Severability"
+      },
+      "submissionsAndPrivacyTerms": {
+        "content": "When you visit the website or send emails to us, you are communicating with us electronically. You consent to receive communications from us electronically. We will communicate with you by email or by posting notices on the website. You agree that all agreements, notices, disclosures, and other communications that we provide electronically satisfy any legal requirement that such communications be in writing. AROLARIU.RO may, but shall not be obligated to, monitor, review, or edit User Content. In all cases, AROLARIU.RO reserves the right to remove or disable access to any User Content for any or no reason, including but not limited to, User Content that, in AROLARIU.RO's sole discretion, violates the Agreements. AROLARIU.RO may take these actions without prior notification to you or any third party. Removal or disabling of access to User Content shall be at our sole discretion, and we do not promise to remove or disable access to any specific User Content. In the event that you submit or post any ideas, creative suggestions, designs, photographs, information, advertisements, data or proposals, including ideas for new or improved products, services, features, technologies or promotions, you expressly agree that such submissions will automatically be treated as non-confidential and non-proprietary and will become the sole property of us without any compensation or credit to you whatsoever. We and our affiliates shall have no obligations with respect to such submissions or posts and may use the ideas contained in such submissions or posts for any purposes in any medium in perpetuity, including, but not limited to, developing, manufacturing, and marketing products and services using such ideas.",
+        "title": "Submissions and Privacy"
+      },
+      "terminationTerms": {
+        "content": "We may terminate or suspend your account and bar access to the service immediately, without prior notice or liability, under our sole discretion, for any reason whatsoever and without limitation, including but not limited to a breach of the Terms. If you wish to terminate your account, you may simply discontinue using the service. All provisions of the Terms which by their nature should survive termination shall survive termination, including, without limitation, ownership provisions, warranty disclaimers, indemnity and limitations of liability.",
+        "title": "Termination"
+      },
+      "thirdPartyTerms": {
+        "content": "In using the service, you may use third-party services, products, software, embeds, or applications developed by a third party ('Third Party Services'). Any use of a Third Party Service is at your own risk, and we shall not be responsible or liable to anyone for Third Party websites or Services. You acknowledge and agree that we shall not be responsible or liable for any damage or loss caused or alleged to be caused by or in connection with the use of any such content, goods or services available on or through any such websites or services. We do not assume and shall not have any liability or responsibility to you or any other person or entity for any Third-Party Services. Third-Party Services and links therefore are provided solely as a convenience to you and you access and use them entirely at your own risk and subject to such third parties' terms and conditions.",
+        "title": "Third Party Services"
+      },
+      "typographyErrorsTerms": {
+        "content": "In the event that a AROLARIU.RO product is mistakenly listed at an incorrect price, AROLARIU.RO reserves the right to refuse or cancel any orders placed for the product listed at the incorrect price. AROLARIU.RO reserves the right to refuse or cancel any such orders whether or not the order has been confirmed and your credit card charged. If your credit card has already been charged for the purchase and your order is cancelled, AROLARIU.RO shall issue a credit to your credit card account in the amount of the incorrect price.",
+        "title": "Typography Errors"
+      },
+      "updateOfServicesTerms": {
+        "content": "AROLARIU.RO is constantly updating its services, which means that we may add or remove features, products, or functionalities, and we may also suspend or stop the service altogether. We may take any of these actions at any time, and when we do, we may not provide you with any notice beforehand. You acknowledge that AROLARIU.RO may establish general practices and limits concerning use of the service, including without limitation the maximum period of time that data or other content will be retained by the service and the maximum storage space that will be allotted on AROLARIU.RO's servers on your behalf. You agree that AROLARIU.RO has no responsibility or liability for the deletion or failure to store any data or other content maintained or uploaded by the service. You acknowledge that AROLARIU.RO reserves the right to terminate accounts that are inactive for an extended period of time. You agree that we have no obligation to (i) provide any Updates, or (ii) continue to provide or enable any particular features and/or functionalities of the service to you. You further agree that all Updates will be (i) deemed to constitute an integral part of the service, and (ii) subject to the terms and conditions of this Agreement.",
+        "title": "Updates to the Service"
+      },
+      "waiverTerms": {
+        "content": "Except as provided herein, the failure to exercise a right or require performance of an obligation under this Agreement shall not affect a party's ability to exercise such right or require such performance at any time thereafter nor shall be the waiver of a breach constitute a waiver of any subsequent breach. No failure to exercise, and no delay in exercising, on the part of either party, any right or any power under this Agreement shall operate as a waiver of that right or power. Nor shall any single or partial exercise of any right or power under this Agreement preclude further exercise of that or any other right granted herein. In the event of a conflict between this Agreement and any applicable purchase or other terms, the terms of this Agreement shall govern.",
+        "title": "Waiver"
+      }
+    },
+    "title": "Terms of Service"
+  },
+  "errors": {
+    "404": {
+      "title": "404 - Page not found.",
+      "subtitle": "It seems that the page that you've landed on is not present on the website. If this page should exist, please report this to the site administrator.",
+      "additionalInfo": "Additional Information:",
+      "falsePositive": "If you think that this page should exist and you're facing an error, please report this to the site administrator.",
+      "buttons": {
+        "returnButton": "Go back to the home page.",
+        "submitErrorButton": "Submit false error."
       }
     }
   }

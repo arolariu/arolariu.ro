@@ -1,14 +1,15 @@
 /** @format */
 
-import {Skeleton} from "@/components/ui/skeleton";
+import {Skeleton} from "@arolariu/components/skeleton";
 
 /**
- * The loading screen for the about homepage
- * @returns Loading screen for the about homepage
+ * The loading screen for the about index page.
+ * @returns Loading screen, CSR'ed or SSR'ed (?).
+ * @see https://nextjs.org/docs/app/building-your-application/routing/loading-ui
  */
-export default function Loading() {
+export default function Loading(): React.JSX.Element {
   return (
-    <main>
+    <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center pt-24 text-center'>
       <section>
         <center className='container mx-auto px-5 pt-24'>
           <Skeleton className='h-[20px] w-[250px] rounded-xl' />

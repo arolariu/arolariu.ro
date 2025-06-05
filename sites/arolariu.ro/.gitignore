@@ -1,5 +1,6 @@
 # dependencies
-/node_modules
+node_modules/
+
 /.pnp
 .pnp.js
 
@@ -22,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+licenses.json
 
 # local env files
 .env*.local
@@ -44,7 +46,9 @@ next-env.d.ts
 certificates
 
 *storybook.log
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
+
+# Code Coverage
+code-cov/
+
+# type safety for messages:
+messages/*.d.json.ts

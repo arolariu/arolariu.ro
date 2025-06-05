@@ -1,39 +1,34 @@
 /** @format */
 
-import {Toaster as ToastProvider} from "@/components/ui/toaster";
-import {ClerkProvider, GoogleOneTap} from "@clerk/nextjs";
+import Commander from "@/components/Commander";
+import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
+import {Toaster as ToastProvider} from "@arolariu/components";
+import {enUS, roRO} from "@clerk/localizations";
+import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
 import {NextIntlClientProvider as TranslationProvider} from "next-intl";
-import {getLocale, getMessages} from "next-intl/server";
-import {ThemeProvider} from "next-themes";
-import {ReactNode} from "react";
-import {WebVitals as VitalsProvider} from "./web-vitals";
+import dynamic from "next/dynamic";
+import React from "react";
+
+const WebVitals = dynamic(() => import("./web-vitals"));
 
 /**
  * This function provides the context for the app.
  * @returns The context providers for the app.
  */
-export default async function ContextProviders({children}: Readonly<{children: ReactNode}>) {
-  const locale = await getLocale();
-  const messages = await getMessages({locale});
-
+export default function ContextProviders({
+  locale,
+  children,
+}: Readonly<{locale: "en" | "ro"; children: React.ReactNode}>): React.JSX.Element {
   return (
-    <ClerkProvider
-      afterSignInUrl='/'
-      afterSignUpUrl='/'
-      afterSignOutUrl='/'
-      signInUrl='/auth/sign-in'
-      signUpUrl='/auth/sign-up'>
-      <TranslationProvider messages={messages}>
-        <ThemeProvider
-          attribute='class'
-          themes={["light", "dark"]}
-          enableSystem={false}>
-          <VitalsProvider />
-          <GoogleOneTap />
+    <AuthProvider localization={locale === "ro" ? roRO : enUS}>
+      <FontProvider>
+        <TranslationProvider>
           {children}
           <ToastProvider />
-        </ThemeProvider>
-      </TranslationProvider>
-    </ClerkProvider>
+          <Commander />
+          <WebVitals />
+        </TranslationProvider>
+      </FontProvider>
+    </AuthProvider>
   );
 }
