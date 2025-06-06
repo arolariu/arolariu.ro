@@ -36,7 +36,7 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
       from = "top",
       ...props
     },
-    ref
+    ref,
   ) => {
     const isVertical = from === "top" || from === "bottom";
     const rotateAxis = isVertical ? "rotateX" : "rotateY";
@@ -47,7 +47,7 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
     const buildVariant = (
       opacity: number,
       rotation: number,
-      offset: string | null = null
+      offset: string | null = null,
     ): Variant => ({
       opacity,
       [rotateAxis]: rotation,
@@ -73,7 +73,7 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
         whileTap={{ scale: 0.95 }}
         className={cn(
           "relative inline-block h-10 px-4 py-2 text-sm font-medium cursor-pointer perspective-[1000px] focus:outline-none",
-          className
+          className,
         )}
         {...props}
       >
@@ -83,7 +83,7 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
           className={cn(
             defaultSpanClassName,
             "bg-muted text-black dark:text-white",
-            frontClassName
+            frontClassName,
           )}
         >
           {frontText}
@@ -94,7 +94,7 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
           className={cn(
             defaultSpanClassName,
             "bg-primary text-primary-foreground",
-            backClassName
+            backClassName,
           )}
         >
           {backText}
@@ -102,7 +102,7 @@ const FlipButton = React.forwardRef<HTMLButtonElement, FlipButtonProps>(
         <span className="invisible">{frontText}</span>
       </motion.button>
     );
-  }
+  },
 );
 
 FlipButton.displayName = "FlipButton";

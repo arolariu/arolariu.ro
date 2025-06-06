@@ -22,7 +22,7 @@ const GradientText = React.forwardRef<HTMLSpanElement, GradientTextProps>(
       transition = { duration: 50, repeat: Infinity, ease: "linear" },
       ...props
     },
-    ref
+    ref,
   ) => {
     const baseStyle: React.CSSProperties = {
       backgroundImage: gradient,
@@ -57,7 +57,7 @@ const GradientText = React.forwardRef<HTMLSpanElement, GradientTextProps>(
         )}
       </span>
     );
-  }
+  },
 );
 
 GradientText.displayName = "GradientText";

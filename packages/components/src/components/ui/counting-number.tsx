@@ -36,7 +36,7 @@ const CountingNumber = React.forwardRef<HTMLSpanElement, CountingNumberProps>(
       className,
       ...props
     },
-    ref
+    ref,
   ) => {
     const localRef = React.useRef<HTMLSpanElement>(null);
     React.useImperativeHandle(ref, () => localRef.current as HTMLSpanElement);
@@ -46,8 +46,8 @@ const CountingNumber = React.forwardRef<HTMLSpanElement, CountingNumberProps>(
       typeof decimalPlaces === "number"
         ? decimalPlaces
         : numberStr.includes(".")
-        ? numberStr.split(".")[1].length
-        : 0;
+          ? numberStr.split(".")[1].length
+          : 0;
 
     const motionVal = useMotionValue(fromNumber);
     const springVal = useSpring(motionVal, transition);
@@ -100,7 +100,7 @@ const CountingNumber = React.forwardRef<HTMLSpanElement, CountingNumberProps>(
         {initialText}
       </span>
     );
-  }
+  },
 );
 
 CountingNumber.displayName = "CountingNumber";

@@ -19,14 +19,14 @@ const GradientBackground = React.forwardRef<
       transition = { duration: 15, ease: "easeInOut", repeat: Infinity },
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
       <motion.div
         ref={ref}
         className={cn(
           "size-full bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 bg-[length:400%_400%]",
-          className
+          className,
         )}
         animate={{
           backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
@@ -35,7 +35,7 @@ const GradientBackground = React.forwardRef<
         {...props}
       />
     );
-  }
+  },
 );
 
 GradientBackground.displayName = "GradientBackground";
