@@ -65,7 +65,7 @@ jobs:
         run: |
           touch .env
           echo "TIMESTAMP=$(date -u  +"%Y-%m-%dT%H:%M:%S"Z)" >> .env
-          json='${{ toJson(env) }}' # We convert the env object to it's JSON representation.
+          json='${{ toJson(env) }}'
           for key in $(echo $json | jq -r 'keys[]'); do
             value=$(echo $json | jq -r '.'$key)
             echo "$key=$value" >> .env
@@ -85,28 +85,23 @@ jobs:
           yarn install --immutable
           yarn playwright install --with-deps
           yarn generate
-        working-directory: ./sites/arolariu.ro
 
       - name: 🧪 Running Jest Unit tests...
         run: yarn test:jest
-        working-directory: ./sites/arolariu.ro
 
       - name: 🧪 Running Playwright E2E Component tests...
         run: yarn test:playwright
-        working-directory: ./sites/arolariu.ro
         env:
           CI: "true"
 
       - name: 🧪 Preparing UI tests (Building Storybook)...
         run: yarn storybook:build --quiet
-        working-directory: ./sites/arolariu.ro
 
       - name: 🧪 Running Smoke & Integration tests (Playwright on Storybook)...
         run: |
           yarn dlx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
             "yarn dlx http-server storybook-static --port 6006 --silent" \
             "yarn dlx wait-on tcp:6006 && yarn storybook:test"
-        working-directory: ./sites/arolariu.ro
 
       - name: ❓ Find Pull Request
         if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
@@ -120,7 +115,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
-          path: sites/arolariu.ro/code-cov/
+          path: code-cov/
           retention-days: 7
 
       - name: 💬 Create PR Comment
