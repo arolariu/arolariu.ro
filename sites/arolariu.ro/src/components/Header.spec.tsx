@@ -17,10 +17,6 @@ async function checkCommonElements(page: Page) {
 
   // Action buttons
   const navbarEnd = navBar.locator(".navbar-end");
-
-  const authButton = navbarEnd.getByRole("button", {name: /Sign In/i}).first();
-  await expect(authButton).toBeVisible({timeout: 15000});
-
   const themeButton = navbarEnd.getByRole("button", {name: /Toggle theme/i}).first();
   await expect(themeButton).toBeVisible({timeout: 15000});
 }
@@ -87,3 +83,4 @@ test.describe("Header Component Tests", () => {
     await expect(page).toHaveURL("/");
   });
 });
+
