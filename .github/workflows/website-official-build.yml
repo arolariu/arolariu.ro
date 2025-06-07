@@ -19,9 +19,9 @@ on:
       environment:
         description: "The environment to deploy to. (e.g. 'development', 'production')"
         options:
-          - "DEVELOPMENT"
-          - "PRODUCTION"
-        default: "DEVELOPMENT"
+          - "development"
+          - "production"
+        default: "development"
         required: true
         type: choice
       container_name:
@@ -34,13 +34,13 @@ on:
         type: choice
 
 env:
-  SITE_NAME: ${{ inputs.environment == 'PRODUCTION' && 'arolariu.ro' || 'dev.arolariu.ro' }}
-  SITE_URL: ${{ inputs.environment == 'PRODUCTION' && 'https://arolariu.ro' || 'https://dev.arolariu.ro' }}
+  SITE_NAME: ${{ inputs.environment == 'production' && 'arolariu.ro' || 'dev.arolariu.ro' }}
+  SITE_URL: ${{ inputs.environment == 'production' && 'https://arolariu.ro' || 'https://dev.arolariu.ro' }}
   SITE_ENV: ${{ inputs.environment || 'development'}}
   API_NAME: "api.arolariu.ro"
   API_URL: "https://api.arolariu.ro"
   COMMIT_SHA: ${{ github.sha }}
-  USE_CDN: ${{ inputs.environment == 'PRODUCTION' && 'true' || 'false' }}
+  USE_CDN: ${{ inputs.environment == 'production' && 'true' || 'false' }}
   AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
   AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
 
@@ -211,11 +211,11 @@ jobs:
       - name: 🏗️ Building the docker container...
         env:
           CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
-          CONTAINER_TAG: ${{inputs.environment == 'PRODUCTION' && github.sha || 'latest'}}
+          CONTAINER_TAG: ${{inputs.environment == 'production' && github.sha || 'latest'}}
         run: docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} .
 
       - name: ⏫ Pushing the docker container...
         env:
           CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
-          CONTAINER_TAG: ${{inputs.environment == 'PRODUCTION' && github.sha || 'latest'}}
+          CONTAINER_TAG: ${{inputs.environment == 'production' && github.sha || 'latest'}}
         run: docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}
