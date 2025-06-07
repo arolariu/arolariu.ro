@@ -18,6 +18,12 @@ const cspHeader = `
     upgrade-insecure-requests;
 `;
 
+const weAreInCI = process.env["CI"] === "true"; // flag set for Playwright tests in CI.
+console.log(">>> We are in CI:", weAreInCI ? "✅" : "❌");
+
+const isCdnEnabled = process.env["USE_CDN"] === "true";
+console.log(">>> CDN enabled:", isCdnEnabled ? "✅" : "❌");
+
 const isDevBuild = process.env.NODE_ENV === "development";
 console.log(">>> isDevBuild", isDevBuild ? "✅" : "❌");
 console.log(">>> NODE_ENV", process.env.NODE_ENV);
@@ -161,7 +167,7 @@ const nextConfig: NextConfig = {
   },
 
   pageExtensions: ["ts", "tsx"],
-  assetPrefix: process.env["USE_CDN"] === "true" ? "https://cdn.arolariu.ro" : undefined,
+  assetPrefix: isCdnEnabled && !weAreInCI ? "https://cdn.arolariu.ro" : undefined,
   compress: false, // We use AFD built-in compression for static assets.
   trailingSlash: true,
 };
