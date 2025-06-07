@@ -28,7 +28,7 @@ jobs:
       - name: "[API::1/3] 🏗️ Installing the API dependencies..."
         run: |
           dotnet workload restore
-          dotnet restore
+          dotnet restore ./arolariu.slnx
 
       - name: "[API::2/3] ⚙️ Starting setup for the DocFX documentation platform..."
         run: |
