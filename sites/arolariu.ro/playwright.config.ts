@@ -63,17 +63,20 @@ export default defineConfig({
   ],
 
   use: {
+    bypassCSP: true,
+    ignoreHTTPSErrors: true,
+    screenshot: "only-on-failure",
     trace: "on-first-retry",
     video: weAreInCI ? "retain-on-failure" : "on-first-retry",
   },
 
   webServer: [
     {
-      command: "npm run dev",
+      command: "yarn dev",
       reuseExistingServer: !weAreInCI,
       url: "https://localhost:3000",
       timeout: 300 * 1000, // 300 seconds - 5 minutes
-      ignoreHTTPSErrors: true, // Add if using self-signed certs for the server itself
+      ignoreHTTPSErrors: true,
     },
   ],
 });
