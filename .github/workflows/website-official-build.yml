@@ -112,10 +112,11 @@ jobs:
 
       - name: 📤 Upload Test Reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: test-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
-          path: code-cov/
+          path: sites/arolariu.ro/code-cov/
+          if-no-files-found: error
           retention-days: 7
 
       - name: 💬 Create PR Comment
