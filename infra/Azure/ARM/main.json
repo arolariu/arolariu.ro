@@ -6,7 +6,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "15674699268996987211"
+      "templateHash": "16958176397159950098"
     },
     "description": "This bicep file is the main entry point for any zero-touch deployment.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>"
@@ -14,7 +14,6 @@
   "parameters": {
     "resourceGroupName": {
       "type": "string",
-      "defaultValue": "myResourceGroup",
       "minLength": 1,
       "maxLength": 90,
       "metadata": {
@@ -23,7 +22,6 @@
     },
     "resourceGroupAuthor": {
       "type": "string",
-      "defaultValue": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
       "minLength": 5,
       "maxLength": 100,
       "metadata": {
@@ -32,7 +30,6 @@
     },
     "resourceGroupLocation": {
       "type": "string",
-      "defaultValue": "swedencentral",
       "allowedValues": [
         "swedencentral",
         "norwayeast",
@@ -54,7 +51,7 @@
   "resources": {
     "resourceGroup": {
       "type": "Microsoft.Resources/resourceGroups",
-      "apiVersion": "2024-03-01",
+      "apiVersion": "2025-04-01",
       "name": "[parameters('resourceGroupName')]",
       "location": "[parameters('resourceGroupLocation')]",
       "tags": {
@@ -74,7 +71,10 @@
         },
         "mode": "Incremental",
         "parameters": {
-          "location": {
+          "resourceDeploymentDate": {
+            "value": "[parameters('resourceDeploymentDate')]"
+          },
+          "resourceLocation": {
             "value": "[parameters('resourceGroupLocation')]"
           }
         },
@@ -86,7 +86,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.36.1.42791",
-              "templateHash": "7408789491243768013"
+              "templateHash": "7568348932261934147"
             },
             "description": "This file acts a facade that will be called by the main bicep file. This file contains all module deployments (compute, storage, identity, etc.). This file is responsible for deploying all the modules.",
             "author": "Alexandru-Razvan Olariu"
@@ -99,9 +99,8 @@
                 "description": "The date when the deployment is executed."
               }
             },
-            "location": {
+            "resourceLocation": {
               "type": "string",
-              "defaultValue": "swedencentral",
               "allowedValues": [
                 "swedencentral",
                 "norwayeast",
@@ -127,6 +126,12 @@
                 },
                 "mode": "Incremental",
                 "parameters": {
+                  "resourceLocation": {
+                    "value": "[parameters('resourceLocation')]"
+                  },
+                  "resourceDeploymentDate": {
+                    "value": "[parameters('resourceDeploymentDate')]"
+                  },
                   "resourceConventionPrefix": {
                     "value": "[variables('resourceConventionPrefix')]"
                   }
@@ -139,7 +144,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.36.1.42791",
-                      "templateHash": "7707239516470481147"
+                      "templateHash": "754130318372479635"
                     }
                   },
                   "definitions": {
@@ -168,9 +173,20 @@
                   "parameters": {
                     "resourceDeploymentDate": {
                       "type": "string",
-                      "defaultValue": "[utcNow()]",
                       "metadata": {
                         "description": "The date when the deployment is executed."
+                      }
+                    },
+                    "resourceLocation": {
+                      "type": "string",
+                      "allowedValues": [
+                        "swedencentral",
+                        "norwayeast",
+                        "westeurope",
+                        "northeurope"
+                      ],
+                      "metadata": {
+                        "description": "The location for the resources."
                       }
                     },
                     "resourceConventionPrefix": {
@@ -196,6 +212,12 @@
                         "parameters": {
                           "userAssignedManagedIdentityNamePrefix": {
                             "value": "[variables('managedIdentitiesNamePrefix')]"
+                          },
+                          "userAssignedManagedIdentityLocation": {
+                            "value": "[parameters('resourceLocation')]"
+                          },
+                          "userAssignedManagedIdentityDeploymentDate": {
+                            "value": "[parameters('resourceDeploymentDate')]"
                           }
                         },
                         "template": {
@@ -206,7 +228,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "10131378856244812724"
+                              "templateHash": "9246392451260014152"
                             },
                             "description": "This template will create three user assigned managed identities: Front-End, Back-End, Infrastructure",
                             "author": "Alexandru-Razvan Olariu"
@@ -243,23 +265,49 @@
                             },
                             "userAssignedManagedIdentityLocation": {
                               "type": "string",
-                              "defaultValue": "[resourceGroup().location]",
+                              "allowedValues": [
+                                "swedencentral",
+                                "norwayeast",
+                                "westeurope",
+                                "northeurope"
+                              ],
                               "metadata": {
                                 "description": "The location of the user assigned managed identities"
+                              }
+                            },
+                            "userAssignedManagedIdentityDeploymentDate": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The date when the deployment is executed."
                               }
                             }
                           },
                           "variables": {
+                            "commonTags": {
+                              "environment": "PRODUCTION",
+                              "deploymentType": "Bicep",
+                              "deploymentDate": "[parameters('userAssignedManagedIdentityDeploymentDate')]",
+                              "deploymentAuthor": "Alexandru-Razvan Olariu",
+                              "module": "identity",
+                              "costCenter": "infrastructure",
+                              "owner": "Alexandru-Razvan Olariu",
+                              "project": "arolariu.ro",
+                              "version": "2.0.0",
+                              "criticality": "high",
+                              "dataClassification": "internal",
+                              "backup": "required",
+                              "resourceType": "Managed Identity"
+                            },
                             "identities": [
                               {
                                 "name": "[format('{0}-frontend', parameters('userAssignedManagedIdentityNamePrefix'))]",
                                 "location": "[parameters('userAssignedManagedIdentityLocation')]",
-                                "displayName": "Front-End Identity"
+                                "displayName": "Frontend Identity"
                               },
                               {
                                 "name": "[format('{0}-backend', parameters('userAssignedManagedIdentityNamePrefix'))]",
                                 "location": "[parameters('userAssignedManagedIdentityLocation')]",
-                                "displayName": "Back-End Identity"
+                                "displayName": "Backend Identity"
                               },
                               {
                                 "name": "[format('{0}-infrastructure', parameters('userAssignedManagedIdentityNamePrefix'))]",
@@ -275,14 +323,10 @@
                                 "count": "[length(variables('identities'))]"
                               },
                               "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
-                              "apiVersion": "2023-07-31-preview",
+                              "apiVersion": "2025-01-31-preview",
                               "name": "[variables('identities')[copyIndex()].name]",
                               "location": "[variables('identities')[copyIndex()].location]",
-                              "tags": {
-                                "environment": "PRODUCTION",
-                                "deployment": "Bicep",
-                                "displayName": "[variables('identities')[copyIndex()].displayName]"
-                              }
+                              "tags": "[union(variables('commonTags'), createObject('displayName', variables('identities')[copyIndex()].displayName, 'identityType', variables('identities')[copyIndex()].displayName))]"
                             }
                           },
                           "outputs": {
@@ -326,7 +370,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "2281650003010855594"
+                              "templateHash": "15579661268944913918"
                             },
                             "description": "This template will create a federated managed identity for the Azure resources.",
                             "author": "Alexandru-Razvan Olariu"
@@ -363,16 +407,28 @@
                             "managedIdentity": {
                               "existing": true,
                               "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
-                              "apiVersion": "2023-07-31-preview",
+                              "apiVersion": "2025-01-31-preview",
                               "name": "[parameters('infrastructureManagedIdentity').name]"
                             },
-                            "federatedIdentityForGitHub": {
+                            "productionFederatedIdentityForGitHub": {
                               "type": "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials",
-                              "apiVersion": "2023-07-31-preview",
-                              "name": "[format('{0}/{1}', parameters('infrastructureManagedIdentity').name, 'FederatedGithubCredential')]",
+                              "apiVersion": "2025-01-31-preview",
+                              "name": "[format('{0}/{1}', parameters('infrastructureManagedIdentity').name, 'FederatedGithubCredentialForProduction')]",
                               "properties": {
                                 "issuer": "https://token.actions.githubusercontent.com",
                                 "subject": "repo:arolariu/arolariu.ro:environment:production",
+                                "audiences": [
+                                  "api://AzureADTokenExchange"
+                                ]
+                              }
+                            },
+                            "developmentFederatedIdentityForGitHub": {
+                              "type": "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials",
+                              "apiVersion": "2025-01-31-preview",
+                              "name": "[format('{0}/{1}', parameters('infrastructureManagedIdentity').name, 'FederatedGithubCredentialForDevelopment')]",
+                              "properties": {
+                                "issuer": "https://token.actions.githubusercontent.com",
+                                "subject": "repo:arolariu/arolariu.ro:environment:development",
                                 "audiences": [
                                   "api://AzureADTokenExchange"
                                 ]
@@ -514,6 +570,12 @@
                 },
                 "mode": "Incremental",
                 "parameters": {
+                  "resourceLocation": {
+                    "value": "[parameters('resourceLocation')]"
+                  },
+                  "resourceDeploymentDate": {
+                    "value": "[parameters('resourceDeploymentDate')]"
+                  },
                   "resourceConventionPrefix": {
                     "value": "[variables('resourceConventionPrefix')]"
                   }
@@ -526,15 +588,26 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.36.1.42791",
-                      "templateHash": "18126061279651622750"
+                      "templateHash": "16416079630892410588"
                     }
                   },
                   "parameters": {
                     "resourceDeploymentDate": {
                       "type": "string",
-                      "defaultValue": "[utcNow()]",
                       "metadata": {
                         "description": "The date when the deployment is executed."
+                      }
+                    },
+                    "resourceLocation": {
+                      "type": "string",
+                      "allowedValues": [
+                        "swedencentral",
+                        "norwayeast",
+                        "westeurope",
+                        "northeurope"
+                      ],
+                      "metadata": {
+                        "description": "The location for the resources."
                       }
                     },
                     "resourceConventionPrefix": {
@@ -570,7 +643,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "17929952730701170397"
+                              "templateHash": "2619750685415825681"
                             },
                             "description": "This template will deploy an Azure Front Door resource.",
                             "author": "Alexandru-Razvan Olariu"
@@ -617,18 +690,7 @@
                               "location": "Global",
                               "properties": {
                                 "friendlyName": "[parameters('frontDoorName')]",
-                                "backendPools": [],
-                                "frontendEndpoints": [],
-                                "routingRules": [],
-                                "loadBalancingSettings": [],
-                                "healthProbeSettings": [],
-                                "backendPoolsSettings": [],
-                                "enabledState": "Enabled",
-                                "webApplicationFirewallPolicyLink": null,
-                                "webApplicationFirewallPolicy": null,
-                                "webApplicationFirewallPolicyCustom": null,
-                                "webApplicationFirewallPolicyScope": null,
-                                "webApplicationFirewallPolicyVersion": null
+                                "enabledState": "Enabled"
                               },
                               "tags": {
                                 "environment": "PRODUCTION",
@@ -796,6 +858,12 @@
                 },
                 "mode": "Incremental",
                 "parameters": {
+                  "resourceLocation": {
+                    "value": "[parameters('resourceLocation')]"
+                  },
+                  "resourceDeploymentDate": {
+                    "value": "[parameters('resourceDeploymentDate')]"
+                  },
                   "resourceConventionPrefix": {
                     "value": "[variables('resourceConventionPrefix')]"
                   },
@@ -811,7 +879,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.36.1.42791",
-                      "templateHash": "16281999065136912248"
+                      "templateHash": "4966533246889331707"
                     }
                   },
                   "definitions": {
@@ -850,9 +918,20 @@
                         "description": "The prefix to use for the names of the resources."
                       }
                     },
+                    "resourceLocation": {
+                      "type": "string",
+                      "allowedValues": [
+                        "swedencentral",
+                        "norwayeast",
+                        "westeurope",
+                        "northeurope"
+                      ],
+                      "metadata": {
+                        "description": "The location for the App Configuration resource."
+                      }
+                    },
                     "resourceDeploymentDate": {
                       "type": "string",
-                      "defaultValue": "[utcNow()]",
                       "metadata": {
                         "description": "The date when the deployment is executed."
                       }
@@ -878,6 +957,9 @@
                           },
                           "identities": {
                             "value": "[parameters('identities')]"
+                          },
+                          "resourceDeploymentDate": {
+                            "value": "[parameters('resourceDeploymentDate')]"
                           }
                         },
                         "template": {
@@ -888,7 +970,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "10843010777478493648"
+                              "templateHash": "8735998855904700792"
                             },
                             "description": "This template will create the necessary Azure Key Vault resources for arolariu.ro",
                             "author": "Alexandru-Razvan Olariu"
@@ -934,6 +1016,13 @@
                               "defaultValue": "[resourceGroup().location]",
                               "metadata": {
                                 "description": "The location for the Azure Key Vault resource."
+                              }
+                            },
+                            "resourceDeploymentDate": {
+                              "type": "string",
+                              "defaultValue": "[utcNow()]",
+                              "metadata": {
+                                "description": "The date when the deployment is executed."
                               }
                             }
                           },
@@ -988,19 +1077,31 @@
                                 }
                               }
                             ],
+                            "commonTags": {
+                              "environment": "PRODUCTION",
+                              "deploymentType": "Bicep",
+                              "deploymentDate": "[parameters('resourceDeploymentDate')]",
+                              "deploymentAuthor": "Alexandru-Razvan Olariu",
+                              "module": "configuration-keyvault",
+                              "costCenter": "infrastructure",
+                              "owner": "Alexandru-Razvan Olariu",
+                              "project": "arolariu.ro",
+                              "version": "2.0.0",
+                              "criticality": "high",
+                              "dataClassification": "confidential",
+                              "backup": "required",
+                              "resourceType": "Key Vault"
+                            },
                             "keyVaultSecretNames": [
                               "ConfigurationStore",
                               "jwt-secret",
-                              "DEV-AzureOptions-StorageAccountConnectionString",
-                              "PROD-AzureOptions-StorageAccountConnectionString",
-                              "DEV-AzureOptions-SqlConnectionString",
-                              "PROD-AzureOptions-SqlConnectionString",
-                              "DEV-AzureOptions-NoSqlConnectionString",
-                              "PROD-AzureOptions-NoSqlConnectionString",
-                              "DEV-AzureOptions-CognitiveServicesKey",
-                              "PROD-AzureOptions-CognitiveServicesKey",
-                              "DEV-AzureOptions-OpenAIKey",
-                              "PROD-AzureOptions-OpenAIKey"
+                              "AzureOptions-StorageAccountConnectionString",
+                              "AzureOptions-SqlConnectionString",
+                              "AzureOptions-NoSqlConnectionString",
+                              "AzureOptions-CognitiveServicesKey",
+                              "AzureOptions-OpenAIKey",
+                              "sql-admin-username",
+                              "sql-admin-password"
                             ]
                           },
                           "resources": {
@@ -1029,10 +1130,7 @@
                                 "tenantId": "[subscription().tenantId]",
                                 "vaultUri": "[format('https://{0}{1}', parameters('keyVaultName'), environment().suffixes.keyvaultDns)]"
                               },
-                              "tags": {
-                                "environment": "PRODUCTION",
-                                "deployment": "Bicep"
-                              }
+                              "tags": "[variables('commonTags')]"
                             },
                             "keyVaultItems": {
                               "copy": {
@@ -1081,6 +1179,9 @@
                         "parameters": {
                           "appConfigurationName": {
                             "value": "[variables('appConfigurationName')]"
+                          },
+                          "appConfigurationLocation": {
+                            "value": "[parameters('resourceLocation')]"
                           }
                         },
                         "template": {
@@ -1091,7 +1192,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "15734838030860289190"
+                              "templateHash": "8594051085787515651"
                             },
                             "description": "This template will deploy an Azure App Configuration resource running on the free SKU.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1105,7 +1206,6 @@
                             },
                             "appConfigurationLocation": {
                               "type": "string",
-                              "defaultValue": "[resourceGroup().location]",
                               "metadata": {
                                 "description": "The location for the App Configuration resource."
                               }
@@ -1114,7 +1214,7 @@
                           "resources": {
                             "appConfiguration": {
                               "type": "Microsoft.AppConfiguration/configurationStores",
-                              "apiVersion": "2023-09-01-preview",
+                              "apiVersion": "2024-06-15-preview",
                               "name": "[parameters('appConfigurationName')]",
                               "location": "[parameters('appConfigurationLocation')]",
                               "sku": {
@@ -1435,6 +1535,12 @@
                 },
                 "mode": "Incremental",
                 "parameters": {
+                  "resourceLocation": {
+                    "value": "[parameters('resourceLocation')]"
+                  },
+                  "resourceDeploymentDate": {
+                    "value": "[parameters('resourceDeploymentDate')]"
+                  },
                   "resourceConventionPrefix": {
                     "value": "[variables('resourceConventionPrefix')]"
                   }
@@ -1447,7 +1553,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.36.1.42791",
-                      "templateHash": "15434118989785767186"
+                      "templateHash": "9770320281321742383"
                     },
                     "description": "Storage module deployment file that provisions storage accounts, container registry, and databases with enterprise security standards.",
                     "author": "Alexandru-Razvan Olariu"
@@ -1455,7 +1561,6 @@
                   "parameters": {
                     "resourceDeploymentDate": {
                       "type": "string",
-                      "defaultValue": "[utcNow()]",
                       "metadata": {
                         "description": "The date when the deployment is executed."
                       }
@@ -1466,6 +1571,18 @@
                       "maxLength": 20,
                       "metadata": {
                         "description": "The prefix to use for the names of the resources."
+                      }
+                    },
+                    "resourceLocation": {
+                      "type": "string",
+                      "allowedValues": [
+                        "swedencentral",
+                        "norwayeast",
+                        "westeurope",
+                        "northeurope"
+                      ],
+                      "metadata": {
+                        "description": "The location for the resources."
                       }
                     }
                   },
@@ -1499,37 +1616,13 @@
                             "value": "[variables('storageAccountName')]"
                           },
                           "location": {
-                            "value": "[resourceGroup().location]"
-                          },
-                          "environment": {
-                            "value": "prod"
+                            "value": "[parameters('resourceLocation')]"
                           },
                           "tags": {
                             "value": "[variables('commonTags')]"
                           },
                           "managedIdentityId": {
                             "value": ""
-                          },
-                          "skuName": {
-                            "value": "Standard_LRS"
-                          },
-                          "accessTier": {
-                            "value": "Hot"
-                          },
-                          "allowBlobPublicAccess": {
-                            "value": false
-                          },
-                          "allowSharedKeyAccess": {
-                            "value": false
-                          },
-                          "supportsHttpsTrafficOnly": {
-                            "value": true
-                          },
-                          "minimumTlsVersion": {
-                            "value": "TLS1_2"
-                          },
-                          "publicNetworkAccess": {
-                            "value": "Enabled"
                           }
                         },
                         "template": {
@@ -1540,7 +1633,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "6819652038791116606"
+                              "templateHash": "15154740140793253311"
                             },
                             "description": "This template creates a secure storage account with enterprise-grade security standards.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1548,7 +1641,6 @@
                           "parameters": {
                             "location": {
                               "type": "string",
-                              "defaultValue": "[resourceGroup().location]",
                               "metadata": {
                                 "description": "The location for the storage account resource."
                               }
@@ -1559,18 +1651,6 @@
                               "maxLength": 24,
                               "metadata": {
                                 "description": "The storage account name."
-                              }
-                            },
-                            "environment": {
-                              "type": "string",
-                              "defaultValue": "prod",
-                              "allowedValues": [
-                                "dev",
-                                "staging",
-                                "prod"
-                              ],
-                              "metadata": {
-                                "description": "The environment for the deployment (dev, staging, prod)."
                               }
                             },
                             "tags": {
@@ -1586,78 +1666,10 @@
                               "metadata": {
                                 "description": "Managed identity resource ID for secure access."
                               }
-                            },
-                            "skuName": {
-                              "type": "string",
-                              "defaultValue": "Standard_LRS",
-                              "allowedValues": [
-                                "Standard_LRS",
-                                "Standard_GRS",
-                                "Standard_ZRS",
-                                "Premium_LRS"
-                              ],
-                              "metadata": {
-                                "description": "Storage account SKU."
-                              }
-                            },
-                            "accessTier": {
-                              "type": "string",
-                              "defaultValue": "Hot",
-                              "allowedValues": [
-                                "Hot",
-                                "Cool"
-                              ],
-                              "metadata": {
-                                "description": "Storage account access tier."
-                              }
-                            },
-                            "allowBlobPublicAccess": {
-                              "type": "bool",
-                              "defaultValue": false,
-                              "metadata": {
-                                "description": "Enable public blob access."
-                              }
-                            },
-                            "allowSharedKeyAccess": {
-                              "type": "bool",
-                              "defaultValue": false,
-                              "metadata": {
-                                "description": "Allow shared key access."
-                              }
-                            },
-                            "supportsHttpsTrafficOnly": {
-                              "type": "bool",
-                              "defaultValue": true,
-                              "metadata": {
-                                "description": "Enable HTTPS traffic only."
-                              }
-                            },
-                            "minimumTlsVersion": {
-                              "type": "string",
-                              "defaultValue": "TLS1_2",
-                              "allowedValues": [
-                                "TLS1_0",
-                                "TLS1_1",
-                                "TLS1_2"
-                              ],
-                              "metadata": {
-                                "description": "Minimum TLS version."
-                              }
-                            },
-                            "publicNetworkAccess": {
-                              "type": "string",
-                              "defaultValue": "[if(equals(parameters('environment'), 'prod'), 'Disabled', 'Enabled')]",
-                              "allowedValues": [
-                                "Enabled",
-                                "Disabled"
-                              ],
-                              "metadata": {
-                                "description": "Public network access setting."
-                              }
                             }
                           },
                           "variables": {
-                            "enhancedTags": "[union(parameters('tags'), createObject('resourceType', 'Storage Account', 'sku', parameters('skuName'), 'accessTier', parameters('accessTier')))]"
+                            "enhancedTags": "[union(parameters('tags'), createObject('resourceType', 'Storage Account'))]"
                           },
                           "resources": {
                             "storageAccount::blobServices": {
@@ -1666,23 +1678,64 @@
                               "name": "[format('{0}/{1}', parameters('storageAccountName'), 'default')]",
                               "properties": {
                                 "changeFeed": {
-                                  "enabled": "[if(equals(parameters('environment'), 'prod'), true(), false())]",
+                                  "enabled": true,
                                   "retentionInDays": 90
                                 },
                                 "restorePolicy": {
-                                  "enabled": "[if(equals(parameters('environment'), 'prod'), true(), false())]",
+                                  "enabled": true,
                                   "days": 30
                                 },
                                 "containerDeleteRetentionPolicy": {
                                   "enabled": true,
-                                  "days": "[if(equals(parameters('environment'), 'prod'), 30, 7)]"
+                                  "days": 7
                                 },
                                 "cors": {
-                                  "corsRules": "[if(equals(parameters('environment'), 'dev'), createArray(createObject('allowedOrigins', createArray('https://arolariu.ro', 'https://dev.arolariu.ro'), 'allowedMethods', createArray('GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'), 'allowedHeaders', createArray('*'), 'exposedHeaders', createArray('*'), 'maxAgeInSeconds', 3600), createObject('allowedOrigins', createArray('http://localhost:3000', 'http://localhost:3001'), 'allowedMethods', createArray('GET', 'POST', 'PUT', 'DELETE'), 'allowedHeaders', createArray('*'), 'exposedHeaders', createArray('*'), 'maxAgeInSeconds', 1800)), createArray(createObject('allowedOrigins', createArray('https://arolariu.ro'), 'allowedMethods', createArray('GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS'), 'allowedHeaders', createArray('*'), 'exposedHeaders', createArray('*'), 'maxAgeInSeconds', 3600)))]"
+                                  "corsRules": [
+                                    {
+                                      "allowedOrigins": [
+                                        "https://arolariu.ro",
+                                        "https://dev.arolariu.ro"
+                                      ],
+                                      "allowedMethods": [
+                                        "GET",
+                                        "POST",
+                                        "PUT",
+                                        "DELETE",
+                                        "HEAD",
+                                        "OPTIONS"
+                                      ],
+                                      "allowedHeaders": [
+                                        "*"
+                                      ],
+                                      "exposedHeaders": [
+                                        "*"
+                                      ],
+                                      "maxAgeInSeconds": 3600
+                                    },
+                                    {
+                                      "allowedOrigins": [
+                                        "http://localhost:3000",
+                                        "http://localhost:3001"
+                                      ],
+                                      "allowedMethods": [
+                                        "GET",
+                                        "POST",
+                                        "PUT",
+                                        "DELETE"
+                                      ],
+                                      "allowedHeaders": [
+                                        "*"
+                                      ],
+                                      "exposedHeaders": [
+                                        "*"
+                                      ],
+                                      "maxAgeInSeconds": 1800
+                                    }
+                                  ]
                                 },
                                 "deleteRetentionPolicy": {
                                   "enabled": true,
-                                  "days": "[if(equals(parameters('environment'), 'prod'), 30, 7)]",
+                                  "days": 7,
                                   "allowPermanentDelete": false
                                 },
                                 "isVersioningEnabled": true,
@@ -1706,7 +1759,7 @@
                               "properties": {
                                 "shareDeleteRetentionPolicy": {
                                   "enabled": true,
-                                  "days": "[if(equals(parameters('environment'), 'prod'), 30, 7)]",
+                                  "days": 7,
                                   "allowPermanentDelete": false
                                 },
                                 "protocolSettings": {
@@ -1746,25 +1799,23 @@
                               "name": "[parameters('storageAccountName')]",
                               "location": "[parameters('location')]",
                               "sku": {
-                                "name": "[parameters('skuName')]"
+                                "name": "Standard_LRS"
                               },
                               "kind": "StorageV2",
                               "identity": "[if(not(empty(parameters('managedIdentityId'))), createObject('type', 'UserAssigned', 'userAssignedIdentities', createObject(format('{0}', parameters('managedIdentityId')), createObject())), null())]",
                               "properties": {
                                 "dnsEndpointType": "Standard",
                                 "defaultToOAuthAuthentication": true,
-                                "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
+                                "publicNetworkAccess": "Enabled",
                                 "allowCrossTenantReplication": false,
-                                "minimumTlsVersion": "[parameters('minimumTlsVersion')]",
-                                "allowBlobPublicAccess": "[parameters('allowBlobPublicAccess')]",
-                                "allowSharedKeyAccess": "[parameters('allowSharedKeyAccess')]",
+                                "minimumTlsVersion": "TLS1_2",
+                                "allowBlobPublicAccess": true,
+                                "allowSharedKeyAccess": true,
                                 "networkAcls": {
                                   "bypass": "AzureServices, Logging, Metrics",
-                                  "defaultAction": "[if(equals(parameters('publicNetworkAccess'), 'Enabled'), 'Allow', 'Deny')]",
-                                  "ipRules": [],
-                                  "virtualNetworkRules": []
+                                  "defaultAction": "Allow"
                                 },
-                                "supportsHttpsTrafficOnly": "[parameters('supportsHttpsTrafficOnly')]",
+                                "supportsHttpsTrafficOnly": true,
                                 "encryption": {
                                   "keySource": "Microsoft.Storage",
                                   "requireInfrastructureEncryption": true,
@@ -1787,7 +1838,7 @@
                                     }
                                   }
                                 },
-                                "accessTier": "[parameters('accessTier')]"
+                                "accessTier": "Hot"
                               },
                               "tags": "[variables('enhancedTags')]"
                             },
@@ -1817,7 +1868,7 @@
                                               "daysAfterModificationGreaterThan": 90
                                             },
                                             "delete": {
-                                              "daysAfterModificationGreaterThan": "[if(equals(parameters('environment'), 'prod'), 2555, 365)]"
+                                              "daysAfterModificationGreaterThan": 365
                                             }
                                           },
                                           "snapshot": {
@@ -1884,7 +1935,7 @@
                             "value": "[variables('containerRegistryName')]"
                           },
                           "containerRegistryLocation": {
-                            "value": "[resourceGroup().location]"
+                            "value": "[parameters('resourceLocation')]"
                           }
                         },
                         "template": {
@@ -1895,7 +1946,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "17193257748060552053"
+                              "templateHash": "15957379082092363947"
                             },
                             "description": "This template deploys Azure Container Registry with enterprise-grade security and governance features.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1915,22 +1966,12 @@
                               "metadata": {
                                 "description": "The location for the Azure Container Registry resource."
                               }
-                            },
-                            "tags": {
-                              "type": "object",
-                              "defaultValue": {},
-                              "metadata": {
-                                "description": "Resource tags for governance and cost tracking."
-                              }
                             }
-                          },
-                          "variables": {
-                            "enhancedTags": "[union(parameters('tags'), createObject('resourceType', 'Container Registry'))]"
                           },
                           "resources": {
                             "containerRegistry": {
                               "type": "Microsoft.ContainerRegistry/registries",
-                              "apiVersion": "2023-11-01-preview",
+                              "apiVersion": "2025-04-01",
                               "name": "[parameters('containerRegistryName')]",
                               "location": "[parameters('containerRegistryLocation')]",
                               "sku": {
@@ -1953,9 +1994,6 @@
                                   },
                                   "azureADAuthenticationAsArmPolicy": {
                                     "status": "Enabled"
-                                  },
-                                  "softDeletePolicy": {
-                                    "status": "Disabled"
                                   }
                                 },
                                 "encryption": {
@@ -1965,10 +2003,13 @@
                                 "publicNetworkAccess": "Enabled",
                                 "networkRuleBypassOptions": "AzureServices",
                                 "zoneRedundancy": "Disabled",
-                                "anonymousPullEnabled": false,
-                                "metadataSearch": "Disabled"
+                                "anonymousPullEnabled": false
                               },
-                              "tags": "[variables('enhancedTags')]"
+                              "tags": {
+                                "environment": "PRODUCTION",
+                                "deploymentType": "Bicep",
+                                "resourceType": "Container Registry"
+                              }
                             }
                           },
                           "outputs": {
@@ -2006,7 +2047,10 @@
                             "value": "[variables('sqlServerName')]"
                           },
                           "sqlServerLocation": {
-                            "value": "[resourceGroup().location]"
+                            "value": "[parameters('resourceLocation')]"
+                          },
+                          "resourceDeploymentDate": {
+                            "value": "[parameters('resourceDeploymentDate')]"
                           },
                           "sqlServerAdministratorPassword": {
                             "value": "TempP@ssw0rd123!"
@@ -2023,21 +2067,28 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "10773387534651955678"
+                              "templateHash": "3347403411695393068"
                             },
-                            "description": "This template will create a new Azure SQL server resource.",
+                            "description": "This template will create a new Azure SQL server resource with standardized metadata.",
                             "author": "Alexandru-Razvan Olariu"
                           },
                           "parameters": {
                             "sqlServerName": {
                               "type": "string",
+                              "minLength": 1,
+                              "maxLength": 63,
                               "metadata": {
                                 "description": "The SQL Server name."
                               }
                             },
                             "sqlServerLocation": {
                               "type": "string",
-                              "defaultValue": "[resourceGroup().location]",
+                              "allowedValues": [
+                                "swedencentral",
+                                "norwayeast",
+                                "westeurope",
+                                "northeurope"
+                              ],
                               "metadata": {
                                 "description": "The location for the SQL Server resource."
                               }
@@ -2053,12 +2104,35 @@
                               "metadata": {
                                 "description": "The password for the local SQL Server administrator."
                               }
+                            },
+                            "resourceDeploymentDate": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The date when the deployment is executed."
+                              }
+                            }
+                          },
+                          "variables": {
+                            "commonTags": {
+                              "environment": "PRODUCTION",
+                              "deploymentType": "Bicep",
+                              "deploymentDate": "[parameters('resourceDeploymentDate')]",
+                              "deploymentAuthor": "Alexandru-Razvan Olariu",
+                              "module": "storage-sql",
+                              "costCenter": "infrastructure",
+                              "owner": "Alexandru-Razvan Olariu",
+                              "project": "arolariu.ro",
+                              "version": "2.0.0",
+                              "criticality": "high",
+                              "dataClassification": "internal",
+                              "backup": "required",
+                              "resourceType": "SQL Server"
                             }
                           },
                           "resources": {
                             "sqlServer::sqlServerAdvancedThreatProtection": {
                               "type": "Microsoft.Sql/servers/advancedThreatProtectionSettings",
-                              "apiVersion": "2023-08-01-preview",
+                              "apiVersion": "2024-05-01-preview",
                               "name": "[format('{0}/{1}', parameters('sqlServerName'), 'Default')]",
                               "properties": {
                                 "state": "Disabled"
@@ -2080,7 +2154,7 @@
                             },
                             "sqlServer::sqlServerAuditSettings": {
                               "type": "Microsoft.Sql/servers/auditingSettings",
-                              "apiVersion": "2023-08-01-preview",
+                              "apiVersion": "2024-05-01-preview",
                               "name": "[format('{0}/{1}', parameters('sqlServerName'), 'default')]",
                               "properties": {
                                 "state": "Disabled"
@@ -2091,7 +2165,7 @@
                             },
                             "sqlServer::sqlServerConnectionPolicies": {
                               "type": "Microsoft.Sql/servers/connectionPolicies",
-                              "apiVersion": "2023-08-01-preview",
+                              "apiVersion": "2024-05-01-preview",
                               "name": "[format('{0}/{1}', parameters('sqlServerName'), 'Default')]",
                               "properties": {
                                 "connectionType": "Default"
@@ -2102,7 +2176,7 @@
                             },
                             "sqlServer::sqlServerAzureAdOnlyAuth": {
                               "type": "Microsoft.Sql/servers/azureADOnlyAuthentications",
-                              "apiVersion": "2023-08-01-preview",
+                              "apiVersion": "2024-05-01-preview",
                               "name": "[format('{0}/{1}', parameters('sqlServerName'), 'Default')]",
                               "properties": {
                                 "azureADOnlyAuthentication": false
@@ -2113,7 +2187,7 @@
                             },
                             "sqlServer": {
                               "type": "Microsoft.Sql/servers",
-                              "apiVersion": "2023-08-01-preview",
+                              "apiVersion": "2024-05-01-preview",
                               "name": "[parameters('sqlServerName')]",
                               "location": "[parameters('sqlServerLocation')]",
                               "properties": {
@@ -2129,16 +2203,21 @@
                                   "tenantId": "[subscription().tenantId]"
                                 }
                               },
-                              "tags": {
-                                "environment": "PRODUCTION",
-                                "deployment": "Bicep"
-                              }
+                              "tags": "[variables('commonTags')]"
                             }
                           },
                           "outputs": {
                             "sqlServerName": {
                               "type": "string",
                               "value": "[parameters('sqlServerName')]"
+                            },
+                            "sqlServerResourceId": {
+                              "type": "string",
+                              "value": "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+                            },
+                            "sqlServerFqdn": {
+                              "type": "string",
+                              "value": "[reference('sqlServer').fullyQualifiedDomainName]"
                             }
                           }
                         }
@@ -2161,7 +2240,7 @@
                             "value": "[format('{0}-sqlserver-db', parameters('resourceConventionPrefix'))]"
                           },
                           "sqlDatabaseLocation": {
-                            "value": "[resourceGroup().location]"
+                            "value": "[parameters('resourceLocation')]"
                           }
                         },
                         "template": {
@@ -2172,7 +2251,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "13862238650200001669"
+                              "templateHash": "7318651117096934396"
                             },
                             "description": "This template will deploy a primary, DTU-based SQL database, and a secondary, serverless SQL database. The primary database will be created with a Standard SKU, while the secondary database will be created with a GeneralPurpose SKU. The secondary database will be created as a free database, and will be automatically paused after an hour of inactivity. The databases will be created in the same location as the resource group.",
                             "author": "Alexandru-Razvan Olariu"
@@ -2206,12 +2285,12 @@
                             "sqlServer": {
                               "existing": true,
                               "type": "Microsoft.Sql/servers",
-                              "apiVersion": "2023-08-01-preview",
+                              "apiVersion": "2024-05-01-preview",
                               "name": "[parameters('sqlServerName')]"
                             },
                             "sqlDatabasePrimary": {
                               "type": "Microsoft.Sql/servers/databases",
-                              "apiVersion": "2023-08-01-preview",
+                              "apiVersion": "2024-05-01-preview",
                               "name": "[format('{0}/{1}', parameters('sqlServerName'), variables('sqlDatabasePrimaryName'))]",
                               "location": "[parameters('sqlDatabaseLocation')]",
                               "sku": {
@@ -2236,7 +2315,7 @@
                             },
                             "sqlDatabaseSecondary": {
                               "type": "Microsoft.Sql/servers/databases",
-                              "apiVersion": "2023-08-01-preview",
+                              "apiVersion": "2024-05-01-preview",
                               "name": "[format('{0}/{1}', parameters('sqlServerName'), variables('sqlDatabaseSecondaryName'))]",
                               "location": "[parameters('sqlDatabaseLocation')]",
                               "sku": {
@@ -2286,7 +2365,7 @@
                             "value": "[variables('noSqlServerName')]"
                           },
                           "noSqlServerLocation": {
-                            "value": "[resourceGroup().location]"
+                            "value": "[parameters('resourceLocation')]"
                           }
                         },
                         "template": {
@@ -2297,7 +2376,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "565871917598823261"
+                              "templateHash": "8513039748533519112"
                             },
                             "description": "This template will create a new Azure NoSQL server resource.",
                             "author": "Alexandru-Razvan Olariu"
@@ -2311,7 +2390,6 @@
                             },
                             "noSqlServerLocation": {
                               "type": "string",
-                              "defaultValue": "[resourceGroup().location]",
                               "metadata": {
                                 "description": "The location for the NoSQL Server resource."
                               }
@@ -2320,7 +2398,7 @@
                           "resources": {
                             "noSqlServer": {
                               "type": "Microsoft.DocumentDB/databaseAccounts",
-                              "apiVersion": "2024-05-15",
+                              "apiVersion": "2025-05-01-preview",
                               "name": "[parameters('noSqlServerName')]",
                               "location": "[parameters('noSqlServerLocation')]",
                               "properties": {
@@ -2328,7 +2406,6 @@
                                 "enableAutomaticFailover": false,
                                 "enableMultipleWriteLocations": false,
                                 "isVirtualNetworkFilterEnabled": false,
-                                "virtualNetworkRules": [],
                                 "disableKeyBasedMetadataWriteAccess": false,
                                 "enableFreeTier": true,
                                 "enableAnalyticalStorage": false,
@@ -2355,16 +2432,12 @@
                                     "isZoneRedundant": false
                                   }
                                 ],
-                                "cors": [],
-                                "capabilities": [],
-                                "ipRules": [],
                                 "backupPolicy": {
                                   "type": "Continuous",
                                   "continuousModeProperties": {
                                     "tier": "Continuous7Days"
                                   }
                                 },
-                                "networkAclBypassResourceIds": [],
                                 "capacity": {
                                   "totalThroughputLimit": 1000
                                 }
@@ -2394,6 +2467,9 @@
                         },
                         "mode": "Incremental",
                         "parameters": {
+                          "noSqlServerLocation": {
+                            "value": "[parameters('resourceLocation')]"
+                          },
                           "noSqlServerName": {
                             "value": "[reference('noSqlServerDeployment').outputs.noSqlServerName.value]"
                           }
@@ -2406,7 +2482,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "6116769301150316958"
+                              "templateHash": "16334234556775031338"
                             },
                             "description": "This template will deploy the NoSQL server database resources.",
                             "author": "Alexandru-Razvan Olariu"
@@ -2420,7 +2496,6 @@
                             },
                             "noSqlServerLocation": {
                               "type": "string",
-                              "defaultValue": "[resourceGroup().location]",
                               "metadata": {
                                 "description": "The location for the NoSQL server resource."
                               }
@@ -2430,12 +2505,12 @@
                             "noSqlServer": {
                               "existing": true,
                               "type": "Microsoft.DocumentDB/databaseAccounts",
-                              "apiVersion": "2024-05-15",
+                              "apiVersion": "2025-05-01-preview",
                               "name": "[parameters('noSqlServerName')]"
                             },
                             "primaryNoSqlDatabase": {
                               "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
-                              "apiVersion": "2024-05-15",
+                              "apiVersion": "2025-05-01-preview",
                               "name": "[format('{0}/{1}', parameters('noSqlServerName'), 'primary')]",
                               "location": "[parameters('noSqlServerLocation')]",
                               "properties": {
@@ -2446,7 +2521,7 @@
                             },
                             "primaryNoSqlDatabaseSettings": {
                               "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/throughputSettings",
-                              "apiVersion": "2024-05-15",
+                              "apiVersion": "2025-05-01-preview",
                               "name": "[format('{0}/{1}/{2}', parameters('noSqlServerName'), 'primary', 'default')]",
                               "properties": {
                                 "resource": {
@@ -2462,7 +2537,7 @@
                             },
                             "primaryNoSqlDatabaseInvoiceContainer": {
                               "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
-                              "apiVersion": "2024-05-15",
+                              "apiVersion": "2025-05-01-preview",
                               "name": "[format('{0}/{1}/{2}', parameters('noSqlServerName'), 'primary', 'invoices')]",
                               "properties": {
                                 "resource": {
@@ -2503,7 +2578,7 @@
                             },
                             "primaryNoSqlDatabaseMerchantContainer": {
                               "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers",
-                              "apiVersion": "2024-05-15",
+                              "apiVersion": "2025-05-01-preview",
                               "name": "[format('{0}/{1}/{2}', parameters('noSqlServerName'), 'primary', 'merchants')]",
                               "properties": {
                                 "resource": {
@@ -2588,11 +2663,14 @@
                 },
                 "mode": "Incremental",
                 "parameters": {
+                  "resourceLocation": {
+                    "value": "[parameters('resourceLocation')]"
+                  },
+                  "resourceDeploymentDate": {
+                    "value": "[parameters('resourceDeploymentDate')]"
+                  },
                   "resourceConventionPrefix": {
                     "value": "[variables('resourceConventionPrefix')]"
-                  },
-                  "location": {
-                    "value": "[parameters('location')]"
                   }
                 },
                 "template": {
@@ -2603,7 +2681,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.36.1.42791",
-                      "templateHash": "3948138372140031016"
+                      "templateHash": "2100526197141824565"
                     }
                   },
                   "parameters": {
@@ -2622,9 +2700,8 @@
                         "description": "The prefix to use for the names of the resources."
                       }
                     },
-                    "location": {
+                    "resourceLocation": {
                       "type": "string",
-                      "defaultValue": "swedencentral",
                       "allowedValues": [
                         "swedencentral",
                         "norwayeast",
@@ -2647,11 +2724,14 @@
                         },
                         "mode": "Incremental",
                         "parameters": {
-                          "appServicePlanPrefix": {
-                            "value": "[parameters('resourceConventionPrefix')]"
-                          },
                           "appServicePlanLocation": {
-                            "value": "[parameters('location')]"
+                            "value": "[parameters('resourceLocation')]"
+                          },
+                          "appServicePlanDeploymentDate": {
+                            "value": "[parameters('resourceDeploymentDate')]"
+                          },
+                          "appServicePlanConventionPrefix": {
+                            "value": "[parameters('resourceConventionPrefix')]"
                           }
                         },
                         "template": {
@@ -2662,7 +2742,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "11158617203762852553"
+                              "templateHash": "8280563273114392261"
                             },
                             "description": "This template deploys two App Service Farms, in the same region, for production and development environments.",
                             "author": "Alexandru-Razvan Olariu"
@@ -2680,19 +2760,40 @@
                                 "description": "The location for the app service plans."
                               }
                             },
-                            "appServicePlanPrefix": {
+                            "appServicePlanConventionPrefix": {
                               "type": "string",
                               "minLength": 1,
                               "maxLength": 20,
                               "metadata": {
                                 "description": "The prefix for the app service plans."
                               }
+                            },
+                            "appServicePlanDeploymentDate": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The date when the deployment is executed."
+                              }
                             }
                           },
                           "variables": {
+                            "commonTags": {
+                              "environment": "PRODUCTION",
+                              "deploymentType": "Bicep",
+                              "deploymentDate": "[parameters('appServicePlanDeploymentDate')]",
+                              "deploymentAuthor": "Alexandru-Razvan Olariu",
+                              "module": "compute",
+                              "costCenter": "infrastructure",
+                              "owner": "Alexandru-Razvan Olariu",
+                              "project": "arolariu.ro",
+                              "version": "2.0.0",
+                              "criticality": "high",
+                              "dataClassification": "internal",
+                              "backup": "required",
+                              "resourceType": "App Service Plan"
+                            },
                             "appPlans": [
                               {
-                                "name": "[format('{0}-production', parameters('appServicePlanPrefix'))]",
+                                "name": "[format('{0}-production', parameters('appServicePlanConventionPrefix'))]",
                                 "location": "[parameters('appServicePlanLocation')]",
                                 "perSiteScaling": true,
                                 "sku": {
@@ -2701,7 +2802,7 @@
                                 }
                               },
                               {
-                                "name": "[format('{0}-development', parameters('appServicePlanPrefix'))]",
+                                "name": "[format('{0}-development', parameters('appServicePlanConventionPrefix'))]",
                                 "location": "[parameters('appServicePlanLocation')]",
                                 "perSiteScaling": false,
                                 "sku": {
@@ -2731,10 +2832,7 @@
                                 "zoneRedundant": false,
                                 "perSiteScaling": "[variables('appPlans')[copyIndex()].perSiteScaling]"
                               },
-                              "tags": {
-                                "environment": "[if(equals(variables('appPlans')[copyIndex()].name, format('{0}-production', parameters('appServicePlanPrefix'))), 'PRODUCTION', 'DEVELOPMENT')]",
-                                "deployment": "Bicep"
-                              }
+                              "tags": "[union(variables('commonTags'), createObject('tier', if(equals(variables('appPlans')[copyIndex()].name, format('{0}-production', parameters('appServicePlanConventionPrefix'))), 'production', 'development'), 'sku', variables('appPlans')[copyIndex()].sku.name, 'skuTier', variables('appPlans')[copyIndex()].sku.tier))]"
                             }
                           },
                           "outputs": {
@@ -2777,6 +2875,12 @@
                 },
                 "mode": "Incremental",
                 "parameters": {
+                  "resourceLocation": {
+                    "value": "[parameters('resourceLocation')]"
+                  },
+                  "resourceDeploymentDate": {
+                    "value": "[parameters('resourceDeploymentDate')]"
+                  },
                   "productionAppPlanId": {
                     "value": "[reference('computeDeployment').outputs.productionAppPlanId.value]"
                   },
@@ -2798,7 +2902,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.36.1.42791",
-                      "templateHash": "3505162394707901101"
+                      "templateHash": "679746977303323660"
                     }
                   },
                   "parameters": {
@@ -2807,6 +2911,18 @@
                       "defaultValue": "[utcNow()]",
                       "metadata": {
                         "description": "The date when the deployment is executed."
+                      }
+                    },
+                    "resourceLocation": {
+                      "type": "string",
+                      "allowedValues": [
+                        "swedencentral",
+                        "norwayeast",
+                        "westeurope",
+                        "northeurope"
+                      ],
+                      "metadata": {
+                        "description": "The location for the resources."
                       }
                     },
                     "productionAppPlanId": {
@@ -2839,6 +2955,9 @@
                         },
                         "mode": "Incremental",
                         "parameters": {
+                          "apiWebsiteLocation": {
+                            "value": "[parameters('resourceLocation')]"
+                          },
                           "apiWebsiteIdentityId": {
                             "value": "[parameters('managedIdentityBackendId')]"
                           },
@@ -2854,15 +2973,14 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "1720562316629008717"
+                              "templateHash": "352114670436146448"
                             },
                             "description": "This template will create the api.arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
                           },
                           "parameters": {
                             "apiWebsiteLocation": {
-                              "type": "string",
-                              "defaultValue": "[resourceGroup().location]"
+                              "type": "string"
                             },
                             "apiWebsitePlanId": {
                               "type": "string"
@@ -2874,7 +2992,7 @@
                           "resources": {
                             "apiWebsite": {
                               "type": "Microsoft.Web/sites",
-                              "apiVersion": "2023-12-01",
+                              "apiVersion": "2024-11-01",
                               "name": "api-arolariu-ro",
                               "location": "[parameters('apiWebsiteLocation')]",
                               "kind": "app,linux",
@@ -2890,11 +3008,6 @@
                                 "reserved": true,
                                 "isXenon": false,
                                 "hyperV": false,
-                                "dnsConfiguration": {},
-                                "vnetRouteAllEnabled": false,
-                                "vnetImagePullEnabled": false,
-                                "vnetContentShareEnabled": false,
-                                "vnetBackupRestoreEnabled": false,
                                 "siteConfig": {
                                   "alwaysOn": true,
                                   "numberOfWorkers": 1,
@@ -2945,11 +3058,17 @@
                         },
                         "mode": "Incremental",
                         "parameters": {
+                          "mainWebsiteLocation": {
+                            "value": "[parameters('resourceLocation')]"
+                          },
                           "productionAppPlanId": {
                             "value": "[parameters('productionAppPlanId')]"
                           },
                           "mainWebsiteIdentityId": {
                             "value": "[parameters('managedIdentityFrontendId')]"
+                          },
+                          "resourceDeploymentDate": {
+                            "value": "[parameters('resourceDeploymentDate')]"
                           }
                         },
                         "template": {
@@ -2960,27 +3079,50 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "15727091687223831821"
+                              "templateHash": "12982921681903707669"
                             },
                             "description": "This template will create the arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
                           },
                           "parameters": {
                             "mainWebsiteLocation": {
-                              "type": "string",
-                              "defaultValue": "[resourceGroup().location]"
+                              "type": "string"
                             },
                             "productionAppPlanId": {
                               "type": "string"
                             },
                             "mainWebsiteIdentityId": {
                               "type": "string"
+                            },
+                            "resourceDeploymentDate": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The date when the deployment is executed."
+                              }
+                            }
+                          },
+                          "variables": {
+                            "commonTags": {
+                              "environment": "PRODUCTION",
+                              "deploymentType": "Bicep",
+                              "deploymentDate": "[parameters('resourceDeploymentDate')]",
+                              "deploymentAuthor": "Alexandru-Razvan Olariu",
+                              "module": "sites-main",
+                              "costCenter": "infrastructure",
+                              "owner": "Alexandru-Razvan Olariu",
+                              "project": "arolariu.ro",
+                              "version": "2.0.0",
+                              "criticality": "high",
+                              "dataClassification": "public",
+                              "backup": "required",
+                              "resourceType": "Web App",
+                              "websiteType": "main-website"
                             }
                           },
                           "resources": {
                             "mainWebsite": {
                               "type": "Microsoft.Web/sites",
-                              "apiVersion": "2023-12-01",
+                              "apiVersion": "2024-11-01",
                               "name": "www-arolariu-ro",
                               "location": "[parameters('mainWebsiteLocation')]",
                               "kind": "app,linux,container",
@@ -2997,7 +3139,6 @@
                                 "isXenon": false,
                                 "hyperV": false,
                                 "hostNamesDisabled": false,
-                                "vnetBackupRestoreEnabled": false,
                                 "containerSize": 0,
                                 "httpsOnly": true,
                                 "redundancyMode": "None",
@@ -3054,10 +3195,7 @@
                                   "webSocketsEnabled": true
                                 }
                               },
-                              "tags": {
-                                "environment": "PRODUCTION",
-                                "deployment": "Bicep"
-                              }
+                              "tags": "[variables('commonTags')]"
                             }
                           },
                           "outputs": {
@@ -3079,6 +3217,9 @@
                         },
                         "mode": "Incremental",
                         "parameters": {
+                          "devWebsiteLocation": {
+                            "value": "[parameters('resourceLocation')]"
+                          },
                           "developmentAppPlanId": {
                             "value": "[parameters('developmentAppPlanId')]"
                           },
@@ -3094,15 +3235,14 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "7538937978411383028"
+                              "templateHash": "1458122774965435717"
                             },
                             "description": "This template will create the dev.arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
                           },
                           "parameters": {
                             "devWebsiteLocation": {
-                              "type": "string",
-                              "defaultValue": "[resourceGroup().location]"
+                              "type": "string"
                             },
                             "developmentAppPlanId": {
                               "type": "string"
@@ -3114,7 +3254,7 @@
                           "resources": {
                             "devWebsite": {
                               "type": "Microsoft.Web/sites",
-                              "apiVersion": "2023-12-01",
+                              "apiVersion": "2024-11-01",
                               "name": "dev-arolariu-ro",
                               "location": "[parameters('devWebsiteLocation')]",
                               "kind": "app,linux,container",
@@ -3131,7 +3271,6 @@
                                 "isXenon": false,
                                 "hyperV": false,
                                 "hostNamesDisabled": false,
-                                "vnetBackupRestoreEnabled": false,
                                 "containerSize": 0,
                                 "httpsOnly": true,
                                 "redundancyMode": "None",
@@ -3205,6 +3344,11 @@
                           "scope": "inner"
                         },
                         "mode": "Incremental",
+                        "parameters": {
+                          "staticWebAppLocation": {
+                            "value": "[parameters('resourceLocation')]"
+                          }
+                        },
                         "template": {
                           "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
                           "languageVersion": "2.0",
@@ -3213,21 +3357,20 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "14184716478790168393"
+                              "templateHash": "6467703119403351460"
                             },
                             "description": "This template will create the docs.arolariu.ro static web app site.",
                             "author": "Alexandru-Razvan Olariu"
                           },
                           "parameters": {
                             "staticWebAppLocation": {
-                              "type": "string",
-                              "defaultValue": "[resourceGroup().location]"
+                              "type": "string"
                             }
                           },
                           "resources": {
                             "docsStaticWebApp": {
                               "type": "Microsoft.Web/staticSites",
-                              "apiVersion": "2023-12-01",
+                              "apiVersion": "2024-11-01",
                               "name": "docs-arolariu-ro",
                               "location": "[parameters('staticWebAppLocation')]",
                               "sku": {
