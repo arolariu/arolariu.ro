@@ -4,9 +4,12 @@ metadata description = 'This template deploys two App Service Farms, in the same
 metadata author = 'Alexandru-Razvan Olariu'
 
 @description('The location for the app service plans.')
-param appServicePlanLocation string = resourceGroup().location
+@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+param appServicePlanLocation string
 
 @description('The prefix for the app service plans.')
+@minLength(1)
+@maxLength(20)
 param appServicePlanPrefix string
 
 var appPlans = [
@@ -30,7 +33,7 @@ var appPlans = [
   }
 ]
 
-resource appPlanFarm 'Microsoft.Web/serverfarms@2023-12-01' = [
+resource appPlanFarm 'Microsoft.Web/serverfarms@2024-11-01' = [
   for appPlan in appPlans: {
     name: appPlan.name
     location: appPlan.location

@@ -1,5 +1,5 @@
 targetScope = 'resourceGroup'
-extension microsoftGraph
+extension 'br:mcr.microsoft.com/bicep/extensions/microsoftgraph/v1.0:0.1.9-preview'
 
 metadata description = 'This template will create security groups for specific access to resources.'
 metadata author = 'Alexandru-Razvan Olariu'

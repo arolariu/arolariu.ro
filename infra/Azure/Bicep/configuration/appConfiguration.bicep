@@ -1,6 +1,6 @@
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will deploy an Azure App Configuration resource.'
+metadata description = 'This template will deploy an Azure App Configuration resource running on the free SKU.'
 metadata author = 'Alexandru-Razvan Olariu'
 
 @description('The name of the App Configuration resource.')
@@ -15,11 +15,12 @@ resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2023-0
   sku: { name: 'free' }
   properties: {
     createMode: 'Default'
-    disableLocalAuth: false
+    disableLocalAuth: true // We will explicilty connect via managed identities.
     enablePurgeProtection: false // the free SKU does not support purge protection
     softDeleteRetentionInDays: 0 // the free SKU does not support soft delete
+    publicNetworkAccess: 'Enabled' // Allow public access to the App Configuration
     dataPlaneProxy: {
-      authenticationMode: 'Local'
+      authenticationMode: 'Pass-through'
       privateLinkDelegation: 'Disabled'
     }
   }

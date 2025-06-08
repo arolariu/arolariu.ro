@@ -7,6 +7,10 @@ metadata author = 'Alexandru-Razvan Olariu'
 @description('The date when the deployment is executed.')
 param resourceDeploymentDate string = utcNow()
 
+@description('The location for the resources.')
+@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+param location string = 'swedencentral'
+
 var resourceConventionPrefix = substring(uniqueString(resourceDeploymentDate), 0, 6)
 
 module identitiesDeployment 'identity/deploymentFile.bicep' = {
@@ -40,19 +44,30 @@ module observabilityDeployment 'observability/deploymentFile.bicep' = {
 module storageDeployment 'storage/deploymentFile.bicep' = {
   scope: resourceGroup()
   name: 'storageDeployment-${resourceDeploymentDate}'
+  dependsOn: [identitiesDeployment] // Storage needs identities for RBAC
   params: { resourceConventionPrefix: resourceConventionPrefix }
 }
 
 module computeDeployment 'compute/deploymentFile.bicep' = {
   scope: resourceGroup()
   name: 'computeDeployment-${resourceDeploymentDate}'
-  params: { resourceConventionPrefix: resourceConventionPrefix }
+  dependsOn: [identitiesDeployment] // Compute needs identities for RBAC
+  params: {
+    resourceConventionPrefix: resourceConventionPrefix
+    location: location
+  }
 }
 
 module websiteDeployment 'sites/deploymentFile.bicep' = {
   scope: resourceGroup()
   name: 'websiteDeployment-${resourceDeploymentDate}'
-  dependsOn: [identitiesDeployment]
+  dependsOn: [
+    identitiesDeployment // Websites need managed identities
+    computeDeployment // Websites need app service plans
+    storageDeployment // Websites need storage
+    configurationDeployment // Websites need configuration
+    observabilityDeployment // Websites need monitoring
+  ]
   params: {
     productionAppPlanId: computeDeployment.outputs.productionAppPlanId
     developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId

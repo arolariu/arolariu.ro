@@ -1,121 +1,175 @@
-# Compute Resources
+# 💻 Compute Module
 
-This module deploys the compute infrastructure for the arolariu.ro platform, consisting of App Service Plans and Web Applications organized by environment.
+This module provisions Azure App Service Plans for hosting web applications in both production and development environments.
 
-## Overview
+## 📋 **Overview**
 
-The compute infrastructure is divided into two environments:
-- **Production Environment**: Hosts the main arolariu.ro website
-- **Development Environment**: Hosts the development website and API services
+The compute module creates two Linux-based App Service Plans:
 
-## Architecture Diagram
+- **Production Plan**: Higher-tier (B2) with per-site scaling enabled
+- **Development Plan**: Basic-tier (B1) for development workloads
+
+## 🏗️ **Resources Created**
+
+| Resource Type    | Name Pattern           | SKU        | Purpose                      |
+| ---------------- | ---------------------- | ---------- | ---------------------------- |
+| App Service Plan | `{prefix}-production`  | B2 (Basic) | Production web applications  |
+| App Service Plan | `{prefix}-development` | B1 (Basic) | Development web applications |
+
+## 📊 **Architecture**
 
 ```mermaid
-graph LR
-    subgraph "Production Environment"
-        ASP_PROD[App Service Plan - Production<br/>SKU: B2 Basic<br/>Linux]
-        WA_PROD[Web App<br/>arolariu.ro]
-    end
-
-    subgraph "Development Environment"
-        ASP_DEV[App Service Plan - Development<br/>SKU: B1 Basic<br/>Linux]
-        WA_DEV[Web App<br/>dev.arolariu.ro]
-        WA_API[Web App<br/>api.arolariu.ro]
+graph TB
+    subgraph "Compute Module"
+        ASP1[Production App Service Plan<br/>B2 - Per-site scaling]
+        ASP2[Development App Service Plan<br/>B1 - Standard scaling]
     end
 
     subgraph "Dependencies"
-        SA[Storage Account]
-        APPI[Application Insights]
-        MI[Managed Identity]
+        ID[Managed Identities]
     end
 
-    ASP_PROD --> WA_PROD
-    ASP_DEV --> WA_DEV
-    ASP_DEV --> WA_API
-    
-    WA_PROD --> SA
-    WA_PROD --> APPI
-    WA_PROD --> MI
-    
-    WA_DEV --> SA
-    WA_DEV --> APPI
-    WA_DEV --> MI
-    
-    WA_API --> SA
-    WA_API --> APPI
-    WA_API --> MI
+    ID --> ASP1
+    ID --> ASP2
 
-    WA_PROD -.->|HTTPS| USERS_PROD[Production Users]
-    WA_DEV -.->|HTTPS| USERS_DEV[Development Users]
-    WA_API -.->|HTTPS/API| CLIENTS[API Clients]
-
-    classDef prodPlan fill:#4a9,stroke:#333,stroke-width:2px
-    classDef devPlan fill:#bbf,stroke:#333,stroke-width:2px
-    classDef app fill:#9cf,stroke:#333,stroke-width:2px
-    classDef dep fill:#ddd,stroke:#333,stroke-width:2px
-    classDef external fill:#ffd,stroke:#333,stroke-width:2px
-
-    class ASP_PROD prodPlan
-    class ASP_DEV devPlan
-    class WA_PROD,WA_DEV,WA_API app
-    class SA,APPI,MI dep
-    class USERS_PROD,USERS_DEV,CLIENTS external
+    ASP1 --> WEB1[Production Web Apps]
+    ASP2 --> WEB2[Development Web Apps]
 ```
 
-## Components
+## 🔧 **Configuration**
 
-### App Service Plans
+### **Parameters**
 
-#### Production App Service Plan
-- **SKU**: B2 Basic (2 vCPUs, 3.5 GB RAM)
-- **OS**: Linux
-- **Features**: Per-site scaling enabled
-- **Purpose**: Hosts the production website with better performance and reliability
+| Parameter                  | Type   | Required | Description                                                       |
+| -------------------------- | ------ | -------- | ----------------------------------------------------------------- |
+| `resourceConventionPrefix` | string | ✅       | Prefix for resource naming (1-20 chars)                           |
+| `location`                 | string | ✅       | Azure region (swedencentral, norwayeast, westeurope, northeurope) |
 
-#### Development App Service Plan
-- **SKU**: B1 Basic (1 vCPU, 1.75 GB RAM)
-- **OS**: Linux
-- **Features**: Standard configuration
-- **Purpose**: Hosts development and API services with cost optimization
+### **Example Usage**
 
-### Web Applications
+```bicep
+module computeDeployment 'compute/deploymentFile.bicep' = {
+  name: 'computeDeployment'
+  params: {
+    resourceConventionPrefix: 'myapp'
+    location: 'swedencentral'
+  }
+}
+```
 
-#### arolariu.ro (Production)
-- **Environment**: Production
-- **App Service Plan**: Production
-- **Purpose**: Main public-facing website
-- **Access**: Global users via HTTPS
+## 📤 **Outputs**
 
-#### dev.arolariu.ro (Development)
-- **Environment**: Development
-- **App Service Plan**: Development
-- **Purpose**: Development and testing environment
-- **Access**: Development team and testers
+| Output                 | Type   | Description                                     |
+| ---------------------- | ------ | ----------------------------------------------- |
+| `productionAppPlanId`  | string | Resource ID of the production App Service Plan  |
+| `developmentAppPlanId` | string | Resource ID of the development App Service Plan |
 
-#### api.arolariu.ro (API)
-- **Environment**: Development
-- **App Service Plan**: Development
-- **Purpose**: RESTful API services for data operations
-- **Access**: API clients and internal services
+## 🔒 **Security Features**
 
-### Dependencies
+- **Linux-based plans** for better security and performance
+- **Zone redundancy** disabled for cost optimization
+- **Managed Identity integration** for secure authentication
+- **Resource tags** for governance and cost tracking
 
-Each web application integrates with:
+## 💰 **Cost Considerations**
 
-- **Storage Account**: For file storage, blob storage, and static assets
-- **Application Insights**: For monitoring, logging, and performance tracking
-- **Managed Identity**: For secure, passwordless authentication to Azure services
+| Plan        | SKU | vCPU | RAM     | Estimated Monthly Cost\* |
+| ----------- | --- | ---- | ------- | ------------------------ |
+| Production  | B2  | 2    | 3.5 GB  | ~€24                     |
+| Development | B1  | 1    | 1.75 GB | ~€12                     |
 
-## Security Considerations
+\*Estimates based on Sweden Central pricing (June 2025)
 
-- All web applications use Managed Identities for authentication
-- HTTPS-only traffic enforcement
-- Integration with Azure Key Vault through App Configuration
-- Network isolation capabilities through service endpoints
+## 🔧 **Customization Options**
 
-## Scaling Strategy
+### **Scaling Configuration**
 
-- Production environment uses B2 SKU with per-site scaling for better performance
-- Development environment uses B1 SKU for cost optimization
-- Both environments can be scaled up/down based on demand
-- Horizontal scaling (scale-out) available when needed
+The production plan supports **per-site scaling**, allowing individual web applications to scale independently:
+
+```bicep
+properties: {
+  perSiteScaling: true  // Production only
+  reserved: true        // Linux containers
+  zoneRedundant: false  // Cost optimization
+}
+```
+
+### **SKU Options**
+
+Current SKUs can be upgraded as needed:
+
+- **Basic (B1, B2)**: Current configuration
+- **Standard (S1, S2, S3)**: Auto-scaling, staging slots
+- **Premium (P1v2, P2v2, P3v2)**: Enhanced performance, VNet integration
+
+## 🛠️ **Maintenance**
+
+### **Monitoring**
+
+The App Service Plans integrate with:
+
+- **Application Insights** for performance monitoring
+- **Log Analytics** for centralized logging
+- **Azure Monitor** for alerting and metrics
+
+### **Scaling**
+
+Production plan supports manual and automatic scaling:
+
+```bash
+# Scale production plan manually
+az appservice plan update \
+  --name "myapp-production" \
+  --resource-group "myResourceGroup" \
+  --number-of-workers 3
+```
+
+## 🔄 **Dependencies**
+
+### **Required Dependencies**
+
+- **Managed Identities** (for RBAC authentication)
+
+### **Dependent Modules**
+
+- **Sites Module** (requires App Service Plan IDs)
+
+## 📊 **Deployment Flow**
+
+1. **Identity Module** creates managed identities
+2. **Compute Module** provisions App Service Plans
+3. **Sites Module** deploys web applications to the plans
+
+## 🚨 **Troubleshooting**
+
+### **Common Issues**
+
+| Issue                                | Cause                    | Solution                                                                |
+| ------------------------------------ | ------------------------ | ----------------------------------------------------------------------- |
+| Deployment fails with location error | Invalid Azure region     | Use allowed regions: swedencentral, norwayeast, westeurope, northeurope |
+| Resource naming conflicts            | Duplicate resource names | Ensure unique `resourceConventionPrefix`                                |
+| Permission errors                    | Insufficient RBAC        | Verify managed identity permissions                                     |
+
+### **Validation Commands**
+
+```bash
+# Validate the compute module
+az bicep build --file compute/deploymentFile.bicep
+
+# Check App Service Plan status
+az appservice plan show \
+  --name "myapp-production" \
+  --resource-group "myResourceGroup"
+```
+
+## 📚 **References**
+
+- [Azure App Service Plans](https://docs.microsoft.com/en-us/azure/app-service/overview-hosting-plans)
+- [App Service Linux](https://docs.microsoft.com/en-us/azure/app-service/overview#app-service-on-linux)
+- [Per-site Scaling](https://docs.microsoft.com/en-us/azure/app-service/manage-scale-per-app)
+
+---
+
+**Module Version**: 2.0.0  
+**Last Updated**: June 2025  
+**Maintainer**: Alexandru-Razvan Olariu
