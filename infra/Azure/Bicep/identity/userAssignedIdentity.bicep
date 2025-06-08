@@ -7,18 +7,39 @@ metadata author = 'Alexandru-Razvan Olariu'
 param userAssignedManagedIdentityNamePrefix string
 
 @description('The location of the user assigned managed identities')
-param userAssignedManagedIdentityLocation string = resourceGroup().location
+@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+param userAssignedManagedIdentityLocation string
+
+@description('The date when the deployment is executed.')
+param userAssignedManagedIdentityDeploymentDate string
+
+// Common tags for all resources
+var commonTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: userAssignedManagedIdentityDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'identity'
+  costCenter: 'infrastructure'
+  owner: 'Alexandru-Razvan Olariu'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+  criticality: 'high'
+  dataClassification: 'internal'
+  backup: 'required'
+  resourceType: 'Managed Identity'
+}
 
 var identities = [
   {
     name: '${userAssignedManagedIdentityNamePrefix}-frontend'
     location: userAssignedManagedIdentityLocation
-    displayName: 'Front-End Identity'
+    displayName: 'Frontend Identity'
   }
   {
     name: '${userAssignedManagedIdentityNamePrefix}-backend'
     location: userAssignedManagedIdentityLocation
-    displayName: 'Back-End Identity'
+    displayName: 'Backend Identity'
   }
   {
     name: '${userAssignedManagedIdentityNamePrefix}-infrastructure'
@@ -27,15 +48,14 @@ var identities = [
   }
 ]
 
-resource userAssignedManagedIdentities 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-preview' = [
+resource userAssignedManagedIdentities 'Microsoft.ManagedIdentity/userAssignedIdentities@2025-01-31-preview' = [
   for identity in identities: {
     name: identity.name
     location: identity.location
-    tags: {
-      environment: 'PRODUCTION'
-      deployment: 'Bicep'
+    tags: union(commonTags, {
       displayName: identity.displayName
-    }
+      identityType: identity.displayName
+    })
   }
 ]
 

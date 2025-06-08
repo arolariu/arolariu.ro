@@ -3,11 +3,11 @@ targetScope = 'resourceGroup'
 metadata description = 'This template will create the api.arolariu.ro app service site.'
 metadata author = 'Alexandru-Razvan Olariu'
 
-param apiWebsiteLocation string = resourceGroup().location
+param apiWebsiteLocation string
 param apiWebsitePlanId string
 param apiWebsiteIdentityId string
 
-resource apiWebsite 'Microsoft.Web/sites@2023-12-01' = {
+resource apiWebsite 'Microsoft.Web/sites@2024-11-01' = {
   name: 'api-arolariu-ro'
   location: apiWebsiteLocation
   kind: 'app,linux'
@@ -23,11 +23,6 @@ resource apiWebsite 'Microsoft.Web/sites@2023-12-01' = {
     reserved: true // reserved == linux plan
     isXenon: false
     hyperV: false
-    dnsConfiguration: {}
-    vnetRouteAllEnabled: false
-    vnetImagePullEnabled: false
-    vnetContentShareEnabled: false
-    vnetBackupRestoreEnabled: false
     siteConfig: {
       alwaysOn: true
       numberOfWorkers: 1

@@ -11,15 +11,7 @@ param containerRegistryName string
 @description('The location for the Azure Container Registry resource.')
 param containerRegistryLocation string = resourceGroup().location
 
-@description('Resource tags for governance and cost tracking.')
-param tags object = {}
-
-// Enhanced tags combining common tags with resource-specific tags
-var enhancedTags = union(tags, {
-  resourceType: 'Container Registry'
-})
-
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' = {
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2025-04-01' = {
   name: containerRegistryName
   location: containerRegistryLocation
   sku: { name: 'Basic' }
@@ -31,7 +23,6 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-11-01-pr
       retentionPolicy: { status: 'Disabled' }
       exportPolicy: { status: 'Enabled' }
       azureADAuthenticationAsArmPolicy: { status: 'Enabled' }
-      softDeletePolicy: { status: 'Disabled' }
     }
     encryption: { status: 'Disabled' }
     dataEndpointEnabled: false
@@ -39,9 +30,12 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-11-01-pr
     networkRuleBypassOptions: 'AzureServices'
     zoneRedundancy: 'Disabled'
     anonymousPullEnabled: false
-    metadataSearch: 'Disabled'
   }
-  tags: enhancedTags
+  tags: {
+    environment: 'PRODUCTION'
+    deploymentType: 'Bicep'
+    resourceType: 'Container Registry'
+  }
 }
 
 // Outputs

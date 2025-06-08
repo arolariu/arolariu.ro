@@ -3,11 +3,11 @@ targetScope = 'resourceGroup'
 metadata description = 'This template will create the dev.arolariu.ro app service site.'
 metadata author = 'Alexandru-Razvan Olariu'
 
-param devWebsiteLocation string = resourceGroup().location
+param devWebsiteLocation string
 param developmentAppPlanId string
 param devWebsiteIdentityId string
 
-resource devWebsite 'Microsoft.Web/sites@2023-12-01' = {
+resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
   name: 'dev-arolariu-ro'
   location: devWebsiteLocation
   kind: 'app,linux,container'
@@ -24,7 +24,6 @@ resource devWebsite 'Microsoft.Web/sites@2023-12-01' = {
     isXenon: false // Hyper-V sandbox; not used.
     hyperV: false // Hyper-V manager; not used.
     hostNamesDisabled: false
-    vnetBackupRestoreEnabled: false // VNet backup and restore is not enabled; not used.
     containerSize: 0
     httpsOnly: true
     redundancyMode: 'None' // No redundancy; we use AFD and elastic horizontal scaling.

@@ -36,18 +36,7 @@ resource frontDoor 'Microsoft.Network/frontDoors@2021-06-01' = {
   location: 'Global'
   properties: {
     friendlyName: frontDoorName
-    backendPools: []
-    frontendEndpoints: []
-    routingRules: []
-    loadBalancingSettings: []
-    healthProbeSettings: []
-    backendPoolsSettings: []
     enabledState: 'Enabled'
-    webApplicationFirewallPolicyLink: null
-    webApplicationFirewallPolicy: null
-    webApplicationFirewallPolicyCustom: null
-    webApplicationFirewallPolicyScope: null
-    webApplicationFirewallPolicyVersion: null
   }
   tags: {
     environment: 'PRODUCTION'

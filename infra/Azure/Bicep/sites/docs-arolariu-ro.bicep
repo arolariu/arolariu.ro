@@ -3,9 +3,9 @@ targetScope = 'resourceGroup'
 metadata description = 'This template will create the docs.arolariu.ro static web app site.'
 metadata author = 'Alexandru-Razvan Olariu'
 
-param staticWebAppLocation string = resourceGroup().location
+param staticWebAppLocation string
 
-resource docsStaticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
+resource docsStaticWebApp 'Microsoft.Web/staticSites@2024-11-01' = {
   name: 'docs-arolariu-ro'
   location: staticWebAppLocation
   sku: { name: 'Free', tier: 'Free' }

@@ -12,6 +12,26 @@ param keyVaultName string
 @description('The location for the Azure Key Vault resource.')
 param keyVaultLocation string = resourceGroup().location
 
+@description('The date when the deployment is executed.')
+param resourceDeploymentDate string = utcNow()
+
+// Common tags for all resources
+var commonTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: resourceDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'configuration-keyvault'
+  costCenter: 'infrastructure'
+  owner: 'Alexandru-Razvan Olariu'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+  criticality: 'high'
+  dataClassification: 'confidential'
+  backup: 'required'
+  resourceType: 'Key Vault'
+}
+
 var accessPolicies = [
   for identity in identities: {
     objectId: identity.id
@@ -79,30 +99,22 @@ resource keyVault 'Microsoft.KeyVault/vaults@2024-04-01-preview' = {
     tenantId: subscription().tenantId
     vaultUri: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}'
   }
-  tags: {
-    environment: 'PRODUCTION'
-    deployment: 'Bicep'
-  }
+  tags: commonTags
 }
 
 var keyVaultSecretNames = [
   'ConfigurationStore' // The configuration store connection string
   'jwt-secret' // The JWT secret for the authentication service
 
-  'DEV-AzureOptions-StorageAccountConnectionString'
-  'PROD-AzureOptions-StorageAccountConnectionString'
+  'AzureOptions-StorageAccountConnectionString'
+  'AzureOptions-SqlConnectionString'
+  'AzureOptions-NoSqlConnectionString'
+  'AzureOptions-CognitiveServicesKey'
+  'AzureOptions-OpenAIKey'
 
-  'DEV-AzureOptions-SqlConnectionString'
-  'PROD-AzureOptions-SqlConnectionString'
-
-  'DEV-AzureOptions-NoSqlConnectionString'
-  'PROD-AzureOptions-NoSqlConnectionString'
-
-  'DEV-AzureOptions-CognitiveServicesKey'
-  'PROD-AzureOptions-CognitiveServicesKey'
-
-  'DEV-AzureOptions-OpenAIKey'
-  'PROD-AzureOptions-OpenAIKey'
+  // SQL Server credentials (production only)
+  'sql-admin-username'
+  'sql-admin-password'
 ]
 
 resource keyVaultItems 'Microsoft.KeyVault/vaults/secrets@2024-04-01-preview' = [

@@ -10,14 +10,15 @@ param resourceConventionPrefix string
 
 @description('The location for the app service plans.')
 @allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
-param location string = 'swedencentral'
+param resourceLocation string
 
 module appServicePlansDeployment 'appServicePlans.bicep' = {
   scope: resourceGroup()
   name: 'appServicePlansDeployment-${resourceDeploymentDate}'
   params: {
-    appServicePlanPrefix: resourceConventionPrefix
-    appServicePlanLocation: location
+    appServicePlanLocation: resourceLocation
+    appServicePlanDeploymentDate: resourceDeploymentDate
+    appServicePlanConventionPrefix: resourceConventionPrefix
   }
 }
 

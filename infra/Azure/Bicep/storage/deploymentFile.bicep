@@ -4,12 +4,16 @@ metadata description = 'Storage module deployment file that provisions storage a
 metadata author = 'Alexandru-Razvan Olariu'
 
 @description('The date when the deployment is executed.')
-param resourceDeploymentDate string = utcNow()
+param resourceDeploymentDate string
 
 @description('The prefix to use for the names of the resources.')
 @minLength(1)
 @maxLength(20)
 param resourceConventionPrefix string
+
+@description('The location for the resources.')
+@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+param resourceLocation string
 
 // Common tags for all resources
 var commonTags = {
@@ -34,17 +38,9 @@ module storageAccountDeployment 'storageAccount.bicep' = {
   name: 'storageAccountDeployment-${resourceDeploymentDate}'
   params: {
     storageAccountName: storageAccountName
-    location: resourceGroup().location
-    environment: 'prod'
+    location: resourceLocation
     tags: commonTags
     managedIdentityId: ''
-    skuName: 'Standard_LRS'
-    accessTier: 'Hot'
-    allowBlobPublicAccess: false
-    allowSharedKeyAccess: false
-    supportsHttpsTrafficOnly: true
-    minimumTlsVersion: 'TLS1_2'
-    publicNetworkAccess: 'Enabled' // Can be restricted later based on networking setup
   }
 }
 
@@ -54,7 +50,7 @@ module containerRegistryDeployment 'containerRegistry.bicep' = {
   name: 'containerRegistryDeployment-${resourceDeploymentDate}'
   params: {
     containerRegistryName: containerRegistryName
-    containerRegistryLocation: resourceGroup().location
+    containerRegistryLocation: resourceLocation
   }
 }
 
@@ -64,9 +60,11 @@ module sqlServerDeployment 'sqlServer.bicep' = {
   name: 'sqlServerDeployment-${resourceDeploymentDate}'
   params: {
     sqlServerName: sqlServerName
-    sqlServerLocation: resourceGroup().location
-    sqlServerAdministratorPassword: 'TempP@ssw0rd123!' // This should be replaced with Key Vault reference
-    sqlServerAdministratorUserName: 'sqladmin' // This should be replaced with Key Vault reference
+    sqlServerLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    // Note: These credentials should be provided from Key Vault in production
+    sqlServerAdministratorPassword: 'TempP@ssw0rd123!'
+    sqlServerAdministratorUserName: 'sqladmin'
   }
 }
 
@@ -78,7 +76,7 @@ module sqlServerDatabaseDeployment 'sqlDatabases.bicep' = {
   params: {
     sqlServerName: sqlServerDeployment.outputs.sqlServerName
     sqlDatabaseNamePrefix: '${resourceConventionPrefix}-sqlserver-db'
-    sqlDatabaseLocation: resourceGroup().location
+    sqlDatabaseLocation: resourceLocation
   }
 }
 
@@ -88,7 +86,7 @@ module noSqlServerDeployment 'noSqlServer.bicep' = {
   name: 'noSqlServerDeployment-${resourceDeploymentDate}'
   params: {
     noSqlServerName: noSqlServerName
-    noSqlServerLocation: resourceGroup().location
+    noSqlServerLocation: resourceLocation
   }
 }
 
@@ -98,6 +96,7 @@ module noSqlServerDatabaseDeployment 'noSqlDatabases.bicep' = {
   name: 'noSqlServerDatabaseDeployment-${resourceDeploymentDate}'
   dependsOn: [noSqlServerDeployment]
   params: {
+    noSqlServerLocation: resourceLocation
     noSqlServerName: noSqlServerDeployment.outputs.noSqlServerName
   }
 }

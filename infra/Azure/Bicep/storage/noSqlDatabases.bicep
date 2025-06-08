@@ -7,14 +7,14 @@ metadata author = 'Alexandru-Razvan Olariu'
 param noSqlServerName string
 
 @description('The location for the NoSQL server resource.')
-param noSqlServerLocation string = resourceGroup().location
+param noSqlServerLocation string
 
-resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2024-05-15' existing = {
+resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' existing = {
   scope: resourceGroup()
   name: noSqlServerName
 }
 
-resource primaryNoSqlDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2024-05-15' = {
+resource primaryNoSqlDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2025-05-01-preview' = {
   parent: noSqlServer
   name: 'primary'
   location: noSqlServerLocation
@@ -25,7 +25,7 @@ resource primaryNoSqlDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabase
   }
 }
 
-resource primaryNoSqlDatabaseSettings 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/throughputSettings@2024-05-15' = {
+resource primaryNoSqlDatabaseSettings 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/throughputSettings@2025-05-01-preview' = {
   parent: primaryNoSqlDatabase
   name: 'default'
   properties: {
@@ -38,7 +38,7 @@ resource primaryNoSqlDatabaseSettings 'Microsoft.DocumentDB/databaseAccounts/sql
   }
 }
 
-resource primaryNoSqlDatabaseInvoiceContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-05-15' = {
+resource primaryNoSqlDatabaseInvoiceContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2025-05-01-preview' = {
   parent: primaryNoSqlDatabase
   name: 'invoices'
   properties: {
@@ -66,7 +66,7 @@ resource primaryNoSqlDatabaseInvoiceContainer 'Microsoft.DocumentDB/databaseAcco
   }
 }
 
-resource primaryNoSqlDatabaseMerchantContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-05-15' = {
+resource primaryNoSqlDatabaseMerchantContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2025-05-01-preview' = {
   parent: primaryNoSqlDatabase
   name: 'merchants'
   properties: {

@@ -7,9 +7,9 @@ metadata author = 'Alexandru-Razvan Olariu'
 param appConfigurationName string
 
 @description('The location for the App Configuration resource.')
-param appConfigurationLocation string = resourceGroup().location
+param appConfigurationLocation string
 
-resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2023-09-01-preview' = {
+resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2024-06-15-preview' = {
   name: appConfigurationName
   location: appConfigurationLocation
   sku: { name: 'free' }

@@ -4,16 +4,12 @@ metadata description = 'This template creates a secure storage account with ente
 metadata author = 'Alexandru-Razvan Olariu'
 
 @description('The location for the storage account resource.')
-param location string = resourceGroup().location
+param location string
 
 @description('The storage account name.')
 @minLength(3)
 @maxLength(24)
 param storageAccountName string
-
-@description('The environment for the deployment (dev, staging, prod).')
-@allowed(['dev', 'staging', 'prod'])
-param environment string = 'prod'
 
 @description('Resource tags for governance and cost tracking.')
 param tags object = {}
@@ -21,43 +17,16 @@ param tags object = {}
 @description('Managed identity resource ID for secure access.')
 param managedIdentityId string = ''
 
-@description('Storage account SKU.')
-@allowed(['Standard_LRS', 'Standard_GRS', 'Standard_ZRS', 'Premium_LRS'])
-param skuName string = 'Standard_LRS'
-
-@description('Storage account access tier.')
-@allowed(['Hot', 'Cool'])
-param accessTier string = 'Hot'
-
-@description('Enable public blob access.')
-param allowBlobPublicAccess bool = false
-
-@description('Allow shared key access.')
-param allowSharedKeyAccess bool = false
-
-@description('Enable HTTPS traffic only.')
-param supportsHttpsTrafficOnly bool = true
-
-@description('Minimum TLS version.')
-@allowed(['TLS1_0', 'TLS1_1', 'TLS1_2'])
-param minimumTlsVersion string = 'TLS1_2'
-
-@description('Public network access setting.')
-@allowed(['Enabled', 'Disabled'])
-param publicNetworkAccess string = environment == 'prod' ? 'Disabled' : 'Enabled'
-
 // Enhanced tags combining common tags with resource-specific tags
 var enhancedTags = union(tags, {
   resourceType: 'Storage Account'
-  sku: skuName
-  accessTier: accessTier
 })
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: storageAccountName
   location: location
   sku: {
-    name: skuName
+    name: 'Standard_LRS'
   }
   kind: 'StorageV2'
   identity: !empty(managedIdentityId)
@@ -71,18 +40,16 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   properties: {
     dnsEndpointType: 'Standard'
     defaultToOAuthAuthentication: true
-    publicNetworkAccess: publicNetworkAccess
+    publicNetworkAccess: 'Enabled'
     allowCrossTenantReplication: false
-    minimumTlsVersion: minimumTlsVersion
-    allowBlobPublicAccess: allowBlobPublicAccess
-    allowSharedKeyAccess: allowSharedKeyAccess
+    minimumTlsVersion: 'TLS1_2'
+    allowBlobPublicAccess: true
+    allowSharedKeyAccess: true
     networkAcls: {
       bypass: 'AzureServices, Logging, Metrics'
-      defaultAction: publicNetworkAccess == 'Enabled' ? 'Allow' : 'Deny'
-      ipRules: []
-      virtualNetworkRules: []
+      defaultAction: 'Allow'
     }
-    supportsHttpsTrafficOnly: supportsHttpsTrafficOnly
+    supportsHttpsTrafficOnly: true
     encryption: {
       keySource: 'Microsoft.Storage'
       requireInfrastructureEncryption: true
@@ -105,7 +72,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
         }
       }
     }
-    accessTier: accessTier
+    accessTier: 'Hot'
   }
   tags: enhancedTags
 
@@ -114,48 +81,38 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     name: 'default'
     properties: {
       changeFeed: {
-        enabled: environment == 'prod' ? true : false
+        enabled: true
         retentionInDays: 90
       }
       restorePolicy: {
-        enabled: environment == 'prod' ? true : false
+        enabled: true
         days: 30
       }
       containerDeleteRetentionPolicy: {
         enabled: true
-        days: environment == 'prod' ? 30 : 7
+        days: 7
       }
       cors: {
-        corsRules: environment == 'dev'
-          ? [
-              {
-                allowedOrigins: ['https://arolariu.ro', 'https://dev.arolariu.ro']
-                allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS']
-                allowedHeaders: ['*']
-                exposedHeaders: ['*']
-                maxAgeInSeconds: 3600
-              }
-              {
-                allowedOrigins: ['http://localhost:3000', 'http://localhost:3001']
-                allowedMethods: ['GET', 'POST', 'PUT', 'DELETE']
-                allowedHeaders: ['*']
-                exposedHeaders: ['*']
-                maxAgeInSeconds: 1800
-              }
-            ]
-          : [
-              {
-                allowedOrigins: ['https://arolariu.ro']
-                allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS']
-                allowedHeaders: ['*']
-                exposedHeaders: ['*']
-                maxAgeInSeconds: 3600
-              }
-            ]
+        corsRules: [
+          {
+            allowedOrigins: ['https://arolariu.ro', 'https://dev.arolariu.ro']
+            allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS']
+            allowedHeaders: ['*']
+            exposedHeaders: ['*']
+            maxAgeInSeconds: 3600
+          }
+          {
+            allowedOrigins: ['http://localhost:3000', 'http://localhost:3001']
+            allowedMethods: ['GET', 'POST', 'PUT', 'DELETE']
+            allowedHeaders: ['*']
+            exposedHeaders: ['*']
+            maxAgeInSeconds: 1800
+          }
+        ]
       }
       deleteRetentionPolicy: {
         enabled: true
-        days: environment == 'prod' ? 30 : 7
+        days: 7
         allowPermanentDelete: false
       }
       isVersioningEnabled: true
@@ -174,7 +131,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     properties: {
       shareDeleteRetentionPolicy: {
         enabled: true
-        days: environment == 'prod' ? 30 : 7
+        days: 7
         allowPermanentDelete: false
       }
       protocolSettings: {
@@ -225,7 +182,7 @@ resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2
                   daysAfterModificationGreaterThan: 90
                 }
                 delete: {
-                  daysAfterModificationGreaterThan: environment == 'prod' ? 2555 : 365 // 7 years for prod, 1 year for others
+                  daysAfterModificationGreaterThan: 365
                 }
               }
               snapshot: {

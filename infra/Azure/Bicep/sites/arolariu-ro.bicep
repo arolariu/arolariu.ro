@@ -3,11 +3,32 @@ targetScope = 'resourceGroup'
 metadata description = 'This template will create the arolariu.ro app service site.'
 metadata author = 'Alexandru-Razvan Olariu'
 
-param mainWebsiteLocation string = resourceGroup().location
+param mainWebsiteLocation string
 param productionAppPlanId string
 param mainWebsiteIdentityId string
 
-resource mainWebsite 'Microsoft.Web/sites@2023-12-01' = {
+@description('The date when the deployment is executed.')
+param resourceDeploymentDate string
+
+// Common tags for all resources
+var commonTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: resourceDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'sites-main'
+  costCenter: 'infrastructure'
+  owner: 'Alexandru-Razvan Olariu'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+  criticality: 'high'
+  dataClassification: 'public'
+  backup: 'required'
+  resourceType: 'Web App'
+  websiteType: 'main-website'
+}
+
+resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
   name: 'www-arolariu-ro'
   location: mainWebsiteLocation
   kind: 'app,linux,container'
@@ -24,7 +45,6 @@ resource mainWebsite 'Microsoft.Web/sites@2023-12-01' = {
     isXenon: false // Hyper-V sandbox; not used.
     hyperV: false // Hyper-V manager; not used.
     hostNamesDisabled: false
-    vnetBackupRestoreEnabled: false // VNet backup and restore is not enabled; not used.
     containerSize: 0
     httpsOnly: true
     redundancyMode: 'None' // No redundancy; we use AFD and elastic horizontal scaling.
@@ -81,10 +101,7 @@ resource mainWebsite 'Microsoft.Web/sites@2023-12-01' = {
       webSocketsEnabled: true // WebSockets (WSS) are enabled.
     }
   }
-  tags: {
-    environment: 'PRODUCTION'
-    deployment: 'Bicep'
-  }
+  tags: commonTags
 }
 
 output mainWebsiteUrl string = mainWebsite.properties.defaultHostName

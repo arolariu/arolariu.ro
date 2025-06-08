@@ -10,11 +10,31 @@ param appServicePlanLocation string
 @description('The prefix for the app service plans.')
 @minLength(1)
 @maxLength(20)
-param appServicePlanPrefix string
+param appServicePlanConventionPrefix string
+
+@description('The date when the deployment is executed.')
+param appServicePlanDeploymentDate string
+
+// Common tags for all resources
+var commonTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: appServicePlanDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'compute'
+  costCenter: 'infrastructure'
+  owner: 'Alexandru-Razvan Olariu'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+  criticality: 'high'
+  dataClassification: 'internal'
+  backup: 'required'
+  resourceType: 'App Service Plan'
+}
 
 var appPlans = [
   {
-    name: '${appServicePlanPrefix}-production'
+    name: '${appServicePlanConventionPrefix}-production'
     location: appServicePlanLocation
     perSiteScaling: true
     sku: {
@@ -23,7 +43,7 @@ var appPlans = [
     }
   }
   {
-    name: '${appServicePlanPrefix}-development'
+    name: '${appServicePlanConventionPrefix}-development'
     location: appServicePlanLocation
     perSiteScaling: false
     sku: {
@@ -47,10 +67,11 @@ resource appPlanFarm 'Microsoft.Web/serverfarms@2024-11-01' = [
       zoneRedundant: false
       perSiteScaling: appPlan.perSiteScaling
     }
-    tags: {
-      environment: appPlan.name == '${appServicePlanPrefix}-production' ? 'PRODUCTION' : 'DEVELOPMENT'
-      deployment: 'Bicep'
-    }
+    tags: union(commonTags, {
+      tier: appPlan.name == '${appServicePlanConventionPrefix}-production' ? 'production' : 'development'
+      sku: appPlan.sku.name
+      skuTier: appPlan.sku.tier
+    })
   }
 ]
 

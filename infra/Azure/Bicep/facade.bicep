@@ -9,26 +9,36 @@ param resourceDeploymentDate string = utcNow()
 
 @description('The location for the resources.')
 @allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
-param location string = 'swedencentral'
+param resourceLocation string
 
 var resourceConventionPrefix = substring(uniqueString(resourceDeploymentDate), 0, 6)
 
 module identitiesDeployment 'identity/deploymentFile.bicep' = {
   scope: resourceGroup()
   name: 'identitiesDeployment-${resourceDeploymentDate}'
-  params: { resourceConventionPrefix: resourceConventionPrefix }
+  params: {
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceConventionPrefix: resourceConventionPrefix
+  }
 }
 
 module networkDeployment 'network/deploymentFile.bicep' = {
   scope: resourceGroup()
   name: 'networkDeployment-${resourceDeploymentDate}'
-  params: { resourceConventionPrefix: resourceConventionPrefix }
+  params: {
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceConventionPrefix: resourceConventionPrefix
+  }
 }
 
 module configurationDeployment 'configuration/deploymentFile.bicep' = {
   scope: resourceGroup()
   name: 'configurationDeployment-${resourceDeploymentDate}'
   params: {
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
     resourceConventionPrefix: resourceConventionPrefix
     identities: identitiesDeployment.outputs.managedIdentitiesList
   }
@@ -45,7 +55,11 @@ module storageDeployment 'storage/deploymentFile.bicep' = {
   scope: resourceGroup()
   name: 'storageDeployment-${resourceDeploymentDate}'
   dependsOn: [identitiesDeployment] // Storage needs identities for RBAC
-  params: { resourceConventionPrefix: resourceConventionPrefix }
+  params: {
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceConventionPrefix: resourceConventionPrefix
+  }
 }
 
 module computeDeployment 'compute/deploymentFile.bicep' = {
@@ -53,8 +67,9 @@ module computeDeployment 'compute/deploymentFile.bicep' = {
   name: 'computeDeployment-${resourceDeploymentDate}'
   dependsOn: [identitiesDeployment] // Compute needs identities for RBAC
   params: {
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
     resourceConventionPrefix: resourceConventionPrefix
-    location: location
   }
 }
 
@@ -69,6 +84,8 @@ module websiteDeployment 'sites/deploymentFile.bicep' = {
     observabilityDeployment // Websites need monitoring
   ]
   params: {
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
     productionAppPlanId: computeDeployment.outputs.productionAppPlanId
     developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId
     managedIdentityFrontendId: identitiesDeployment.outputs.managedIdentitiesList[0].id

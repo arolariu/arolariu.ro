@@ -7,9 +7,9 @@ metadata author = 'Alexandru-Razvan Olariu'
 param noSqlServerName string
 
 @description('The location for the NoSQL Server resource.')
-param noSqlServerLocation string = resourceGroup().location
+param noSqlServerLocation string
 
-resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2024-05-15' = {
+resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' = {
   name: noSqlServerName
   location: noSqlServerLocation
   properties: {
@@ -17,7 +17,6 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2024-05-15' = {
     enableAutomaticFailover: false
     enableMultipleWriteLocations: false
     isVirtualNetworkFilterEnabled: false
-    virtualNetworkRules: []
     disableKeyBasedMetadataWriteAccess: false
     enableFreeTier: true
     enableAnalyticalStorage: false
@@ -42,14 +41,10 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2024-05-15' = {
         isZoneRedundant: false
       }
     ]
-    cors: []
-    capabilities: []
-    ipRules: []
     backupPolicy: {
       type: 'Continuous'
       continuousModeProperties: { tier: 'Continuous7Days' }
     }
-    networkAclBypassResourceIds: []
     capacity: { totalThroughputLimit: 1000 }
   }
   tags: {
