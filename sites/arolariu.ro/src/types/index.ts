@@ -1,6 +1,12 @@
 /** @format */
 
 import type {User} from "@clerk/nextjs/server";
+export type {
+  SecretEnvironmentVariablesType,
+  TypedDevelopmentEnvironmentVariablesType,
+  TypedEnvironment,
+  TypedProductionEnvironmentVariablesType,
+} from "./typedEnv";
 
 /**
  * The type of a node package.

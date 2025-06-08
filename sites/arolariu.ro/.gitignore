@@ -1,54 +1,29 @@
-# dependencies
+# Dependencies
 node_modules/
 
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# yarn
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
-
-# next.js
-/.next/
-/out/
-
-# misc
-.DS_Store
-*.pem
-licenses.json
-
-# local env files
-.env*.local
-
-# vercel
-.vercel
-
-# storybook
-/storybook-static
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-
-# service worker
-/public/sw.js
-/public/swe-*.js
-
-certificates
-
-*storybook.log
-
-# Code Coverage
+# Testing
 code-cov/
 
-# type safety for messages:
+# Yarn
+.yarn/*
+
+# Next.js
+/.next/
+/out/
+/certificates/
+
+# Generated Files
+licenses.json
 messages/*.d.json.ts
+
+# Environment Files (keep only .env.example)
+.env*
+!.env.example
+
+# Storybook
+/storybook-static
+*storybook.log
+
+# Service Worker
+/public/sw.js
+/public/swe-*.js

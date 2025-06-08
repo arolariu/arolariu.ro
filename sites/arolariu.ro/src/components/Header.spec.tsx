@@ -83,4 +83,3 @@ test.describe("Header Component Tests", () => {
     await expect(page).toHaveURL("/");
   });
 });
-
