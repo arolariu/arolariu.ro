@@ -63,6 +63,87 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' 
     }
     capacity: { totalThroughputLimit: 1000 }
   }
+
+  resource primaryNoSqlDatabase 'sqlDatabases@2025-05-01-preview' = {
+    name: 'primary'
+    location: noSqlServerLocation
+    properties: {
+      resource: {
+        id: 'primary'
+      }
+    }
+
+    resource databaseSettings 'throughputSettings@2025-05-01-preview' = {
+      name: 'default'
+      properties: {
+        resource: {
+          throughput: 100
+          autoscaleSettings: {
+            maxThroughput: 1000
+          }
+        }
+      }
+    }
+
+    resource invoicesContainer 'containers@2025-05-01-preview' = {
+      name: 'invoices'
+      properties: {
+        resource: {
+          id: 'invoices'
+          indexingPolicy: {
+            indexingMode: 'consistent'
+            automatic: true
+            includedPaths: [{ path: '/*' }]
+            excludedPaths: [{ path: '/_etag/?' }]
+          }
+          partitionKey: {
+            paths: ['/UserIdentifier']
+            kind: 'Hash'
+            version: 2
+          }
+          uniqueKeyPolicy: {
+            uniqueKeys: []
+          }
+          conflictResolutionPolicy: {
+            mode: 'LastWriterWins'
+            conflictResolutionPath: '_ts'
+          }
+        }
+      }
+    }
+
+    resource merchantsContainer 'containers@2025-05-01-preview' = {
+      name: 'merchants'
+      properties: {
+        resource: {
+          id: 'merchants'
+          indexingPolicy: {
+            indexingMode: 'consistent'
+            automatic: true
+            includedPaths: [{ path: '/*' }]
+            excludedPaths: [{ path: '/_etag/?' }]
+          }
+          partitionKey: {
+            paths: ['/ParentCompanyId']
+            kind: 'Hash'
+            version: 2
+          }
+          uniqueKeyPolicy: {
+            uniqueKeys: []
+          }
+          conflictResolutionPolicy: {
+            mode: 'LastWriterWins'
+            conflictResolutionPath: '_ts'
+          }
+        }
+      }
+    }
+
+    tags: union(commonTags, {
+      displayName: 'Primary NoSQL Database'
+    })
+  }
+
   tags: union(commonTags, {
     displayName: 'NoSQL Server'
   })

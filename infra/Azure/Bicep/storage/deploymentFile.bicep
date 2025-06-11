@@ -80,17 +80,6 @@ module noSqlServerDeployment 'noSqlServer.bicep' = {
   }
 }
 
-// Deploy Cosmos DB databases
-module noSqlServerDatabaseDeployment 'noSqlDatabases.bicep' = {
-  scope: resourceGroup()
-  name: 'noSqlServerDatabaseDeployment-${resourceDeploymentDate}'
-  dependsOn: [noSqlServerDeployment]
-  params: {
-    noSqlServerLocation: resourceLocation
-    noSqlServerName: noSqlServerDeployment.outputs.noSqlServerName
-  }
-}
-
 // Outputs for use by other modules
 output storageAccountName string = storageAccountDeployment.outputs.storageAccountName
 output storageAccountId string = storageAccountDeployment.outputs.storageAccountId
