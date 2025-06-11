@@ -9,6 +9,22 @@ param appConfigurationName string
 @description('The location for the App Configuration resource.')
 param appConfigurationLocation string
 
+@description('The date when the deployment is executed.')
+param appConfigurationDeploymentDate string
+
+// Common tags for all resources
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: appConfigurationDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'configuration-keyvault'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
+
 resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2024-06-15-preview' = {
   name: appConfigurationName
   location: appConfigurationLocation
@@ -24,10 +40,10 @@ resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2024-0
       privateLinkDelegation: 'Disabled'
     }
   }
-  tags: {
-    environment: 'PRODUCTION'
-    deployment: 'Bicep'
-  }
+  tags: union(commonTags, {
+    displayName: 'App Configuration'
+    resourceType: 'Configuration Store'
+  })
 }
 
 output appConfigurationResourceId string = appConfiguration.id

@@ -3,18 +3,32 @@ targetScope = 'resourceGroup'
 metadata description = 'This template will create the dev.arolariu.ro app service site.'
 metadata author = 'Alexandru-Razvan Olariu'
 
-param devWebsiteLocation string
-param developmentAppPlanId string
-param devWebsiteIdentityId string
+param developmentWebsiteLocation string
+param developmentWebsiteAppPlanId string
+param developmentWebsiteIdentityId string
+param developmentWebsiteDeploymentDate string
+
+// Import common tags
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'DEVELOPMENT'
+  deploymentType: 'Bicep'
+  deploymentDate: developmentWebsiteDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'sites'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
 
 resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
   name: 'dev-arolariu-ro'
-  location: devWebsiteLocation
+  location: developmentWebsiteLocation
   kind: 'app,linux,container'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${devWebsiteIdentityId}': {}
+      '${developmentWebsiteIdentityId}': {}
     }
   }
   properties: {
@@ -30,7 +44,7 @@ resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
     publicNetworkAccess: 'Enabled'
     storageAccountRequired: false
     enabled: true
-    serverFarmId: developmentAppPlanId
+    serverFarmId: developmentWebsiteAppPlanId
     siteConfig: {
       acrUseManagedIdentityCreds: false // Azure Container Registry managed identity is not used.
       publishingUsername: '$dev-arolariu' // Publishing username (GitHub / ACR username)
@@ -73,10 +87,9 @@ resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
       webSocketsEnabled: true // WebSockets (WSS) are enabled.
     }
   }
-  tags: {
-    environment: 'DEVELOPMENT'
-    deployment: 'Bicep'
-  }
+  tags: union(commonTags, {
+    displayName: 'Development Website'
+  })
 }
 
 output devWebsiteUrl string = devWebsite.properties.defaultHostName

@@ -15,5 +15,8 @@ var azureFrontDoorName = '${resourceConventionPrefix}-afd'
 module azureFrontDoorDeployment 'azureFrontDoor.bicep' = {
   scope: resourceGroup()
   name: 'azureFrontDoorDeployment-${resourceDeploymentDate}'
-  params: { frontDoorName: azureFrontDoorName }
+  params: {
+    frontDoorName: azureFrontDoorName
+    frontDoorDeploymentDate: resourceDeploymentDate
+  }
 }

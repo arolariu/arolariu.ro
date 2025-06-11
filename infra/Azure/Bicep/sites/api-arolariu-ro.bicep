@@ -3,9 +3,23 @@ targetScope = 'resourceGroup'
 metadata description = 'This template will create the api.arolariu.ro app service site.'
 metadata author = 'Alexandru-Razvan Olariu'
 
-param apiWebsiteLocation string
 param apiWebsitePlanId string
+param apiWebsiteLocation string
 param apiWebsiteIdentityId string
+param apiWebsiteDeploymentDate string
+
+// Import common tags
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: apiWebsiteDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'sites'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
 
 resource apiWebsite 'Microsoft.Web/sites@2024-11-01' = {
   name: 'api-arolariu-ro'
@@ -54,8 +68,7 @@ resource apiWebsite 'Microsoft.Web/sites@2024-11-01' = {
     storageAccountRequired: false
     keyVaultReferenceIdentity: apiWebsiteIdentityId
   }
-  tags: {
-    environment: 'PRODUCTION'
-    deployment: 'Bicep'
-  }
+  tags: union(commonTags, {
+    displayName: 'API Website'
+  })
 }

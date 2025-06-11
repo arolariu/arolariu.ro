@@ -21,8 +21,9 @@ module apiWebsiteDeployment 'api-arolariu-ro.bicep' = {
   name: 'apiWebsiteDeployment-${resourceDeploymentDate}'
   params: {
     apiWebsiteLocation: resourceLocation
-    apiWebsiteIdentityId: managedIdentityBackendId
     apiWebsitePlanId: productionAppPlanId
+    apiWebsiteIdentityId: managedIdentityBackendId
+    apiWebsiteDeploymentDate: resourceDeploymentDate
   }
 }
 
@@ -30,10 +31,10 @@ module mainWebsiteDeployment 'arolariu-ro.bicep' = {
   scope: resourceGroup()
   name: 'mainWebsiteDeployment-${resourceDeploymentDate}'
   params: {
-    mainWebsiteLocation: resourceLocation
-    productionAppPlanId: productionAppPlanId
-    mainWebsiteIdentityId: managedIdentityFrontendId
-    resourceDeploymentDate: resourceDeploymentDate
+    productionWebsiteLocation: resourceLocation
+    productionWebsiteAppPlanId: productionAppPlanId
+    productionWebsiteIdentityId: managedIdentityFrontendId
+    productionWebsiteDeploymentDate: resourceDeploymentDate
   }
 }
 
@@ -41,9 +42,10 @@ module devWebsiteDeployment 'dev-arolariu-ro.bicep' = {
   scope: resourceGroup()
   name: 'devWebsiteDeployment-${resourceDeploymentDate}'
   params: {
-    devWebsiteLocation: resourceLocation
-    developmentAppPlanId: developmentAppPlanId
-    devWebsiteIdentityId: managedIdentityFrontendId
+    developmentWebsiteLocation: resourceLocation
+    developmentWebsiteAppPlanId: developmentAppPlanId
+    developmentWebsiteIdentityId: managedIdentityFrontendId
+    developmentWebsiteDeploymentDate: resourceDeploymentDate
   }
 }
 
@@ -52,5 +54,6 @@ module docsWebsiteDeployment 'docs-arolariu-ro.bicep' = {
   name: 'docsWebsiteDeployment-${resourceDeploymentDate}'
   params: {
     staticWebAppLocation: resourceLocation
+    staticWebAppDeploymentDate: resourceDeploymentDate
   }
 }

@@ -9,7 +9,23 @@ metadata author = 'Alexandru-Razvan Olariu'
 param containerRegistryName string
 
 @description('The location for the Azure Container Registry resource.')
-param containerRegistryLocation string = resourceGroup().location
+param containerRegistryLocation string
+
+@description('The date when the deployment is executed.')
+param containerRegistryDeploymentDate string
+
+// Common tags for all resources
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: containerRegistryDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'storage-container-registry'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
 
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2025-04-01' = {
   name: containerRegistryName
@@ -31,11 +47,9 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2025-04-01' =
     zoneRedundancy: 'Disabled'
     anonymousPullEnabled: false
   }
-  tags: {
-    environment: 'PRODUCTION'
-    deploymentType: 'Bicep'
-    resourceType: 'Container Registry'
-  }
+  tags: union(commonTags, {
+    displayName: 'Container Registry'
+  })
 }
 
 // Outputs

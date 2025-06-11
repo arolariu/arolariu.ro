@@ -11,7 +11,7 @@ param sqlServerName string
 param sqlDatabaseNamePrefix string
 
 @description('The location for the SQL Database resources.')
-param sqlDatabaseLocation string = resourceGroup().location
+param sqlDatabaseLocation string
 
 var sqlDatabasePrimaryName = '${sqlDatabaseNamePrefix}-primary'
 var sqlDatabaseSecondaryName = '${sqlDatabaseNamePrefix}-secondary'

@@ -13,23 +13,19 @@ param keyVaultName string
 param keyVaultLocation string = resourceGroup().location
 
 @description('The date when the deployment is executed.')
-param resourceDeploymentDate string = utcNow()
+param keyVaultDeploymentDate string = utcNow()
 
 // Common tags for all resources
-var commonTags = {
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
   environment: 'PRODUCTION'
   deploymentType: 'Bicep'
-  deploymentDate: resourceDeploymentDate
+  deploymentDate: keyVaultDeploymentDate
   deploymentAuthor: 'Alexandru-Razvan Olariu'
   module: 'configuration-keyvault'
   costCenter: 'infrastructure'
-  owner: 'Alexandru-Razvan Olariu'
   project: 'arolariu.ro'
   version: '2.0.0'
-  criticality: 'high'
-  dataClassification: 'confidential'
-  backup: 'required'
-  resourceType: 'Key Vault'
 }
 
 var accessPolicies = [
@@ -99,7 +95,10 @@ resource keyVault 'Microsoft.KeyVault/vaults@2024-04-01-preview' = {
     tenantId: subscription().tenantId
     vaultUri: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}'
   }
-  tags: commonTags
+  tags: union(commonTags, {
+    displayName: 'Key Vault'
+    resourceType: 'Key Vault'
+  })
 }
 
 var keyVaultSecretNames = [

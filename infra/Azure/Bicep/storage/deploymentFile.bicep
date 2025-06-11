@@ -15,17 +15,6 @@ param resourceConventionPrefix string
 @allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
 param resourceLocation string
 
-// Common tags for all resources
-var commonTags = {
-  environment: 'PRODUCTION'
-  deploymentType: 'Bicep'
-  deploymentDate: resourceDeploymentDate
-  module: 'storage'
-  costCenter: 'infrastructure'
-  owner: 'Alexandru-Razvan Olariu'
-  project: 'arolariu.ro'
-}
-
 // Generate names using the existing convention
 var storageAccountName = '${replace(resourceConventionPrefix, '-', '')}sa'
 var containerRegistryName = '${resourceConventionPrefix}-acr'
@@ -38,9 +27,9 @@ module storageAccountDeployment 'storageAccount.bicep' = {
   name: 'storageAccountDeployment-${resourceDeploymentDate}'
   params: {
     storageAccountName: storageAccountName
-    location: resourceLocation
-    tags: commonTags
-    managedIdentityId: ''
+    storageAccountLocation: resourceLocation
+    storageAccountDeploymentDate: resourceDeploymentDate
+    managedIdentityId: 'TODO'
   }
 }
 
@@ -49,8 +38,9 @@ module containerRegistryDeployment 'containerRegistry.bicep' = {
   scope: resourceGroup()
   name: 'containerRegistryDeployment-${resourceDeploymentDate}'
   params: {
-    containerRegistryName: containerRegistryName
     containerRegistryLocation: resourceLocation
+    containerRegistryName: containerRegistryName
+    containerRegistryDeploymentDate: resourceDeploymentDate
   }
 }
 
@@ -61,7 +51,7 @@ module sqlServerDeployment 'sqlServer.bicep' = {
   params: {
     sqlServerName: sqlServerName
     sqlServerLocation: resourceLocation
-    resourceDeploymentDate: resourceDeploymentDate
+    sqlServerDeploymentDate: resourceDeploymentDate
     // Note: These credentials should be provided from Key Vault in production
     sqlServerAdministratorPassword: 'TempP@ssw0rd123!'
     sqlServerAdministratorUserName: 'sqladmin'
@@ -87,6 +77,7 @@ module noSqlServerDeployment 'noSqlServer.bicep' = {
   params: {
     noSqlServerName: noSqlServerName
     noSqlServerLocation: resourceLocation
+    noSqlServerDeploymentDate: resourceDeploymentDate
   }
 }
 

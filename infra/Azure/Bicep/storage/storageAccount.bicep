@@ -3,40 +3,46 @@ targetScope = 'resourceGroup'
 metadata description = 'This template creates a secure storage account with enterprise-grade security standards.'
 metadata author = 'Alexandru-Razvan Olariu'
 
-@description('The location for the storage account resource.')
-param location string
-
 @description('The storage account name.')
 @minLength(3)
 @maxLength(24)
 param storageAccountName string
 
-@description('Resource tags for governance and cost tracking.')
-param tags object = {}
+@description('The location for the storage account resource.')
+param storageAccountLocation string
+
+@description('The date when the deployment is executed.')
+param storageAccountDeploymentDate string
 
 @description('Managed identity resource ID for secure access.')
-param managedIdentityId string = ''
+param managedIdentityId string
 
-// Enhanced tags combining common tags with resource-specific tags
-var enhancedTags = union(tags, {
-  resourceType: 'Storage Account'
-})
+// Common tags for all resources
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: storageAccountDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'storage-account'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: storageAccountName
-  location: location
+  location: storageAccountLocation
   sku: {
     name: 'Standard_LRS'
   }
   kind: 'StorageV2'
-  identity: !empty(managedIdentityId)
-    ? {
-        type: 'UserAssigned'
-        userAssignedIdentities: {
-          '${managedIdentityId}': {}
-        }
-      }
-    : null
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityId}': {}
+    }
+  }
   properties: {
     dnsEndpointType: 'Standard'
     defaultToOAuthAuthentication: true
@@ -74,7 +80,9 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     }
     accessTier: 'Hot'
   }
-  tags: enhancedTags
+  tags: union(commonTags, {
+    displayName: 'Secure Storage Account'
+  })
 
   // Blob service configuration with security enhancements
   resource blobServices 'blobServices@2023-05-01' = {

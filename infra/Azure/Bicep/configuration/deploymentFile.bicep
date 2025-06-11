@@ -20,9 +20,10 @@ module keyVaultDeployment 'keyVault.bicep' = {
   scope: resourceGroup()
   name: 'keyVaultDeployment-${resourceDeploymentDate}'
   params: {
-    keyVaultName: keyVaultName
     identities: identities
-    resourceDeploymentDate: resourceDeploymentDate
+    keyVaultName: keyVaultName
+    keyVaultLocation: resourceLocation
+    keyVaultDeploymentDate: resourceDeploymentDate
   }
 }
 
@@ -32,5 +33,6 @@ module appConfigurationDeployment 'appConfiguration.bicep' = {
   params: {
     appConfigurationName: appConfigurationName
     appConfigurationLocation: resourceLocation
+    appConfigurationDeploymentDate: resourceDeploymentDate
   }
 }

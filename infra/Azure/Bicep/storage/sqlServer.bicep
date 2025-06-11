@@ -21,23 +21,19 @@ param sqlServerAdministratorUserName string
 param sqlServerAdministratorPassword string
 
 @description('The date when the deployment is executed.')
-param resourceDeploymentDate string
+param sqlServerDeploymentDate string
 
 // Common tags for all resources
-var commonTags = {
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
   environment: 'PRODUCTION'
   deploymentType: 'Bicep'
-  deploymentDate: resourceDeploymentDate
+  deploymentDate: sqlServerDeploymentDate
   deploymentAuthor: 'Alexandru-Razvan Olariu'
   module: 'storage-sql'
   costCenter: 'infrastructure'
-  owner: 'Alexandru-Razvan Olariu'
   project: 'arolariu.ro'
   version: '2.0.0'
-  criticality: 'high'
-  dataClassification: 'internal'
-  backup: 'required'
-  resourceType: 'SQL Server'
 }
 
 resource sqlServer 'Microsoft.Sql/servers@2024-05-01-preview' = {
@@ -56,7 +52,9 @@ resource sqlServer 'Microsoft.Sql/servers@2024-05-01-preview' = {
       tenantId: subscription().tenantId
     }
   }
-  tags: commonTags
+  tags: union(commonTags, {
+    displayName: 'SQL Server'
+  })
 
   resource sqlServerAdvancedThreatProtection 'advancedThreatProtectionSettings@2024-05-01-preview' = {
     name: 'Default'

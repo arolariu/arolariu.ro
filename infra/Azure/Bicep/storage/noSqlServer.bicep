@@ -9,6 +9,22 @@ param noSqlServerName string
 @description('The location for the NoSQL Server resource.')
 param noSqlServerLocation string
 
+@description('The date when the deployment is executed.')
+param noSqlServerDeploymentDate string
+
+// Common tags for all resources
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: noSqlServerDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'storage-nosql'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
+
 resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' = {
   name: noSqlServerName
   location: noSqlServerLocation
@@ -47,10 +63,9 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' 
     }
     capacity: { totalThroughputLimit: 1000 }
   }
-  tags: {
-    environment: 'PRODUCTION'
-    deployment: 'Bicep'
-  }
+  tags: union(commonTags, {
+    displayName: 'NoSQL Server'
+  })
 }
 
 output noSqlServerName string = noSqlServer.name

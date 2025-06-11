@@ -3,39 +3,32 @@ targetScope = 'resourceGroup'
 metadata description = 'This template will create the arolariu.ro app service site.'
 metadata author = 'Alexandru-Razvan Olariu'
 
-param mainWebsiteLocation string
-param productionAppPlanId string
-param mainWebsiteIdentityId string
-
-@description('The date when the deployment is executed.')
-param resourceDeploymentDate string
+param productionWebsiteLocation string
+param productionWebsiteAppPlanId string
+param productionWebsiteIdentityId string
+param productionWebsiteDeploymentDate string
 
 // Common tags for all resources
-var commonTags = {
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
   environment: 'PRODUCTION'
   deploymentType: 'Bicep'
-  deploymentDate: resourceDeploymentDate
+  deploymentDate: productionWebsiteDeploymentDate
   deploymentAuthor: 'Alexandru-Razvan Olariu'
   module: 'sites-main'
   costCenter: 'infrastructure'
-  owner: 'Alexandru-Razvan Olariu'
   project: 'arolariu.ro'
   version: '2.0.0'
-  criticality: 'high'
-  dataClassification: 'public'
-  backup: 'required'
-  resourceType: 'Web App'
-  websiteType: 'main-website'
 }
 
 resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
   name: 'www-arolariu-ro'
-  location: mainWebsiteLocation
+  location: productionWebsiteLocation
   kind: 'app,linux,container'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${mainWebsiteIdentityId}': {}
+      '${productionWebsiteIdentityId}': {}
     }
   }
   properties: {
@@ -51,7 +44,7 @@ resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
     publicNetworkAccess: 'Enabled'
     storageAccountRequired: false
     enabled: true
-    serverFarmId: productionAppPlanId
+    serverFarmId: productionWebsiteAppPlanId
     siteConfig: {
       acrUseManagedIdentityCreds: false // Azure Container Registry managed identity is not used.
       publishingUsername: '$arolariu' // Publishing username (GitHub / ACR username)
@@ -101,7 +94,9 @@ resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
       webSocketsEnabled: true // WebSockets (WSS) are enabled.
     }
   }
-  tags: commonTags
+  tags: union(commonTags, {
+    displayName: 'Main Website'
+  })
 }
 
 output mainWebsiteUrl string = mainWebsite.properties.defaultHostName

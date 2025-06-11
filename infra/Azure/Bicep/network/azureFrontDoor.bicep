@@ -6,6 +6,22 @@ metadata author = 'Alexandru-Razvan Olariu'
 @description('The name of the Front Door resource.')
 param frontDoorName string
 
+@description('The date when the Front Door deployment is executed.')
+param frontDoorDeploymentDate string
+
+// Common tags for all resources
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: frontDoorDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'network'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
+
 var frontDoorCdnOrigins = [
   {
     name: 'apex-domain'
@@ -38,10 +54,10 @@ resource frontDoor 'Microsoft.Network/frontDoors@2021-06-01' = {
     friendlyName: frontDoorName
     enabledState: 'Enabled'
   }
-  tags: {
-    environment: 'PRODUCTION'
-    deployment: 'Bicep'
-  }
+  tags: union(commonTags, {
+    displayName: 'Front Door'
+    resourceType: 'Front Door'
+  })
 }
 
 resource frontDoorProfile 'Microsoft.Cdn/profiles@2024-05-01-preview' = {

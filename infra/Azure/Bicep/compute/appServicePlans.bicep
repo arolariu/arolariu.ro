@@ -15,21 +15,16 @@ param appServicePlanConventionPrefix string
 @description('The date when the deployment is executed.')
 param appServicePlanDeploymentDate string
 
-// Common tags for all resources
-var commonTags = {
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
   environment: 'PRODUCTION'
   deploymentType: 'Bicep'
   deploymentDate: appServicePlanDeploymentDate
   deploymentAuthor: 'Alexandru-Razvan Olariu'
   module: 'compute'
   costCenter: 'infrastructure'
-  owner: 'Alexandru-Razvan Olariu'
   project: 'arolariu.ro'
   version: '2.0.0'
-  criticality: 'high'
-  dataClassification: 'internal'
-  backup: 'required'
-  resourceType: 'App Service Plan'
 }
 
 var appPlans = [
