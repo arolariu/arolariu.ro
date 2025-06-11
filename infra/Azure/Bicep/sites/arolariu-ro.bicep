@@ -75,17 +75,31 @@ resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
       ipSecurityRestrictions: [
         {
           ipAddress: 'AzureFrontDoor.Backend'
-          tag: 'ServiceTag'
-          name: 'AzureFrontDoor'
           action: 'Allow'
+          tag: 'ServiceTag'
           priority: 100
+          name: 'AzureFrontDoor'
+        }
+        {
+          ipAddress: 'AzureCloud'
+          action: 'Allow'
+          tag: 'ServiceTag'
+          priority: 200
+          name: 'AzureCloud'
+        }
+        {
+          ipAddress: 'AzureActiveDirectory'
+          action: 'Allow'
+          tag: 'ServiceTag'
+          priority: 300
+          name: 'AzureActiveDirectory'
         }
         {
           ipAddress: 'Any'
-          tag: 'Default'
-          name: 'Default'
           action: 'Deny'
           priority: 2147483647
+          name: 'Deny all'
+          description: 'Deny all access'
         }
       ]
       ipSecurityRestrictionsDefaultAction: 'Deny'

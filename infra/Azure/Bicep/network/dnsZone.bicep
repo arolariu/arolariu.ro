@@ -29,7 +29,7 @@ resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' = {
   resource apexRecord 'CNAME@2023-07-01-preview' = {
     name: '@'
     properties: {
-      TTL: 300
+      TTL: 3600
       CNAMERecord: {
         cname: frontDoorProductionFqdn
       }
@@ -40,7 +40,7 @@ resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' = {
   resource wwwRecord 'CNAME@2023-07-01-preview' = {
     name: 'www'
     properties: {
-      TTL: 300
+      TTL: 3600
       CNAMERecord: {
         cname: frontDoorProductionFqdn
       }
@@ -51,7 +51,7 @@ resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' = {
   resource apiRecord 'CNAME@2023-07-01-preview' = {
     name: 'api'
     properties: {
-      TTL: 300
+      TTL: 3600
       CNAMERecord: {
         cname: apiWebsiteHostname
       }
@@ -62,7 +62,7 @@ resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' = {
   resource devRecord 'CNAME@2023-07-01-preview' = {
     name: 'dev'
     properties: {
-      TTL: 300
+      TTL: 3600
       CNAMERecord: {
         cname: devWebsiteHostname
       }
@@ -73,7 +73,7 @@ resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' = {
   resource docsRecord 'CNAME@2023-07-01-preview' = {
     name: 'docs'
     properties: {
-      TTL: 300
+      TTL: 3600
       CNAMERecord: {
         cname: docsWebsiteHostname
       }
@@ -84,7 +84,7 @@ resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' = {
   resource accountsRecord 'CNAME@2023-07-01-preview' = {
     name: 'accounts'
     properties: {
-      TTL: 300
+      TTL: 3600
       CNAMERecord: {
         cname: 'accounts.clerk.services'
       }

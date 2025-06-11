@@ -4,9 +4,23 @@ metadata description = 'This template will deploy an application insights resour
 
 metadata author = 'Alexandru-Razvan Olariu'
 
-param applicationInsightsLocation string = resourceGroup().location
-param applicationInsightsWorkspaceId string
 param applicationInsightsName string
+param applicationInsightsLocation string
+param applicationInsightsWorkspaceId string
+param applicationInsightsDeploymentDate string
+
+// Import common tags
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: applicationInsightsDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'observability'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: applicationInsightsName
@@ -23,8 +37,7 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
     publicNetworkAccessForQuery: 'Enabled'
     SamplingPercentage: 30
   }
-  tags: {
-    environment: 'PRODUCTION'
-    deployment: 'Bicep'
-  }
+  tags: union(commonTags, {
+    displayName: 'Application Insights'
+  })
 }

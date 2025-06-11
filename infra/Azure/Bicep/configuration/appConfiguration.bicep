@@ -30,10 +30,10 @@ resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2024-0
   location: appConfigurationLocation
   sku: { name: 'free' }
   properties: {
-    createMode: 'Default'
+    encryption: {}
     disableLocalAuth: true // We will explicilty connect via managed identities.
-    enablePurgeProtection: false // the free SKU does not support purge protection
     softDeleteRetentionInDays: 0 // the free SKU does not support soft delete
+    enablePurgeProtection: false // the free SKU does not support purge protection
     publicNetworkAccess: 'Enabled' // Allow public access to the App Configuration
     dataPlaneProxy: {
       authenticationMode: 'Pass-through'

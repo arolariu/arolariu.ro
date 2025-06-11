@@ -43,14 +43,16 @@ module configurationDeployment 'configuration/deploymentFile.bicep' = {
   }
 }
 
-// module observabilityDeployment 'observability/deploymentFile.bicep' = {
-//   scope: resourceGroup()
-//   name: 'observabilityDeployment-${resourceDeploymentDate}'
-//   dependsOn: [identitiesDeployment, configurationDeployment]
-//   params: {
-//     resourceConventionPrefix: resourceConventionPrefix
-//   }
-// }
+module observabilityDeployment 'observability/deploymentFile.bicep' = {
+  scope: resourceGroup()
+  name: 'observabilityDeployment-${resourceDeploymentDate}'
+  dependsOn: [identitiesDeployment, configurationDeployment]
+  params: {
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceConventionPrefix: resourceConventionPrefix
+  }
+}
 
 module storageDeployment 'storage/deploymentFile.bicep' = {
   scope: resourceGroup()

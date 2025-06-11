@@ -31,19 +31,47 @@ var appPlans = [
   {
     name: '${appServicePlanConventionPrefix}-production'
     location: appServicePlanLocation
-    perSiteScaling: true
     sku: {
       name: 'B2'
       tier: 'Basic'
+      size: 'B2'
+      familiy: 'B'
+      capacity: 1
+    }
+    properties: {
+      perSiteScaling: false
+      elasticScaleEnabled: false
+      maximumElasticWorkerCount: 1
+      isSpot: false
+      reserved: true
+      isXenon: false
+      hyperV: false
+      targetWorkerCount: 0
+      targetWorkerSizeId: 0
+      zoneRedundant: false
     }
   }
   {
     name: '${appServicePlanConventionPrefix}-development'
     location: appServicePlanLocation
-    perSiteScaling: false
     sku: {
       name: 'B1'
       tier: 'Basic'
+      size: 'B1'
+      family: 'B'
+      capacity: 1
+    }
+    properties: {
+      perSiteScaling: false
+      elasticScaleEnabled: false
+      maximumElasticWorkerCount: 1
+      isSpot: false
+      reserved: true
+      isXenon: false
+      hyperV: false
+      targetWorkerCount: 0
+      targetWorkerSizeId: 0
+      zoneRedundant: false
     }
   }
 ]
@@ -52,16 +80,9 @@ resource appPlanFarm 'Microsoft.Web/serverfarms@2024-11-01' = [
   for appPlan in appPlans: {
     name: appPlan.name
     location: appPlan.location
-    sku: {
-      name: appPlan.sku.name
-      tier: appPlan.sku.tier
-    }
-    kind: 'linux' // Linux will be used for the app service plan.
-    properties: {
-      reserved: true // reserved means that the app service plan is running on Linux underneath.
-      zoneRedundant: false
-      perSiteScaling: appPlan.perSiteScaling
-    }
+    sku: appPlan.sku
+    kind: 'linux'
+    properties: appPlan.properties
     tags: union(commonTags, {
       tier: appPlan.name == '${appServicePlanConventionPrefix}-production' ? 'production' : 'development'
       sku: appPlan.sku.name

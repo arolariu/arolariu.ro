@@ -75,10 +75,11 @@ resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
       ipSecurityRestrictions: [
         {
           ipAddress: 'Any'
-          tag: 'Default'
-          name: 'Default'
           action: 'Allow'
           priority: 2147483647
+          tag: 'Default'
+          name: 'Allow All'
+          description: 'Allow all access.'
         }
       ]
       ipSecurityRestrictionsDefaultAction: 'Allow'
