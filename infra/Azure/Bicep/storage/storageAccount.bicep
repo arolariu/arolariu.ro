@@ -14,9 +14,6 @@ param storageAccountLocation string
 @description('The date when the deployment is executed.')
 param storageAccountDeploymentDate string
 
-@description('Managed identity resource ID for secure access.')
-param managedIdentityId string
-
 // Common tags for all resources
 import { resourceTags } from '../types/common.type.bicep'
 var commonTags resourceTags = {
@@ -37,12 +34,6 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     name: 'Standard_LRS'
   }
   kind: 'StorageV2'
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${managedIdentityId}': {}
-    }
-  }
   properties: {
     dnsEndpointType: 'Standard'
     defaultToOAuthAuthentication: true

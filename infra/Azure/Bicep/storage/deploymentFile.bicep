@@ -29,7 +29,6 @@ module storageAccountDeployment 'storageAccount.bicep' = {
     storageAccountName: storageAccountName
     storageAccountLocation: resourceLocation
     storageAccountDeploymentDate: resourceDeploymentDate
-    managedIdentityId: 'TODO'
   }
 }
 

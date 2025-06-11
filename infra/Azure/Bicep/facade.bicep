@@ -23,17 +23,12 @@ module identitiesDeployment 'identity/deploymentFile.bicep' = {
   }
 }
 
-module networkDeployment 'network/deploymentFile.bicep' = {
+module rbacDeployment 'rbac/deploymentFile.bicep' = {
   scope: resourceGroup()
-  name: 'networkDeployment-${resourceDeploymentDate}'
+  name: 'rbacDeployment-${resourceDeploymentDate}'
   params: {
-    resourceLocation: resourceLocation
+    managedIdentities: identitiesDeployment.outputs.managedIdentitiesList
     resourceDeploymentDate: resourceDeploymentDate
-    resourceConventionPrefix: resourceConventionPrefix
-    mainWebsiteHostname: websiteDeployment.outputs.mainWebsiteUrl
-    apiWebsiteHostname: websiteDeployment.outputs.apiWebsiteUrl
-    devWebsiteHostname: websiteDeployment.outputs.devWebsiteUrl
-    docsWebsiteHostname: websiteDeployment.outputs.docsWebsiteUrl
   }
 }
 
@@ -48,17 +43,19 @@ module configurationDeployment 'configuration/deploymentFile.bicep' = {
   }
 }
 
-module observabilityDeployment 'observability/deploymentFile.bicep' = {
-  scope: resourceGroup()
-  name: 'observabilityDeployment-${resourceDeploymentDate}'
-  dependsOn: [identitiesDeployment, configurationDeployment]
-  params: { resourceConventionPrefix: resourceConventionPrefix }
-}
+// module observabilityDeployment 'observability/deploymentFile.bicep' = {
+//   scope: resourceGroup()
+//   name: 'observabilityDeployment-${resourceDeploymentDate}'
+//   dependsOn: [identitiesDeployment, configurationDeployment]
+//   params: {
+//     resourceConventionPrefix: resourceConventionPrefix
+//   }
+// }
 
 module storageDeployment 'storage/deploymentFile.bicep' = {
   scope: resourceGroup()
   name: 'storageDeployment-${resourceDeploymentDate}'
-  dependsOn: [identitiesDeployment] // Storage needs identities for RBAC
+  dependsOn: [identitiesDeployment, rbacDeployment]
   params: {
     resourceLocation: resourceLocation
     resourceDeploymentDate: resourceDeploymentDate
@@ -69,7 +66,7 @@ module storageDeployment 'storage/deploymentFile.bicep' = {
 module computeDeployment 'compute/deploymentFile.bicep' = {
   scope: resourceGroup()
   name: 'computeDeployment-${resourceDeploymentDate}'
-  dependsOn: [identitiesDeployment] // Compute needs identities for RBAC
+  dependsOn: [identitiesDeployment]
   params: {
     resourceLocation: resourceLocation
     resourceDeploymentDate: resourceDeploymentDate
@@ -81,11 +78,8 @@ module websiteDeployment 'sites/deploymentFile.bicep' = {
   scope: resourceGroup()
   name: 'websiteDeployment-${resourceDeploymentDate}'
   dependsOn: [
-    identitiesDeployment // Websites need managed identities
-    computeDeployment // Websites need app service plans
     storageDeployment // Websites need storage
     configurationDeployment // Websites need configuration
-    observabilityDeployment // Websites need monitoring
   ]
   params: {
     resourceLocation: resourceLocation
@@ -94,5 +88,19 @@ module websiteDeployment 'sites/deploymentFile.bicep' = {
     developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId
     managedIdentityFrontendId: identitiesDeployment.outputs.managedIdentitiesList[0].id
     managedIdentityBackendId: identitiesDeployment.outputs.managedIdentitiesList[1].id
+  }
+}
+
+module networkDeployment 'network/deploymentFile.bicep' = {
+  scope: resourceGroup()
+  name: 'networkDeployment-${resourceDeploymentDate}'
+  params: {
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceConventionPrefix: resourceConventionPrefix
+    mainWebsiteHostname: websiteDeployment.outputs.mainWebsiteUrl
+    apiWebsiteHostname: websiteDeployment.outputs.apiWebsiteUrl
+    devWebsiteHostname: websiteDeployment.outputs.devWebsiteUrl
+    docsWebsiteHostname: websiteDeployment.outputs.docsWebsiteUrl
   }
 }
