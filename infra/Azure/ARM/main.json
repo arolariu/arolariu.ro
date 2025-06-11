@@ -6,7 +6,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "11435912240147530887"
+      "templateHash": "5508651736884543159"
     },
     "description": "This bicep file is the main entry point for any zero-touch deployment.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>"
@@ -86,7 +86,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.36.1.42791",
-              "templateHash": "10687551384421951494"
+              "templateHash": "11769583392478376038"
             },
             "description": "This file acts a facade that will be called by the main bicep file. This file contains all module deployments (compute, storage, identity, etc.). This file is responsible for deploying all the modules.",
             "author": "Alexandru-Razvan Olariu"
@@ -623,36 +623,21 @@
                 }
               }
             },
-            "networkDeployment": {
+            "rbacDeployment": {
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2022-09-01",
-              "name": "[format('networkDeployment-{0}', parameters('resourceDeploymentDate'))]",
+              "name": "[format('rbacDeployment-{0}', parameters('resourceDeploymentDate'))]",
               "properties": {
                 "expressionEvaluationOptions": {
                   "scope": "inner"
                 },
                 "mode": "Incremental",
                 "parameters": {
-                  "resourceLocation": {
-                    "value": "[parameters('resourceLocation')]"
+                  "managedIdentities": {
+                    "value": "[reference('identitiesDeployment').outputs.managedIdentitiesList.value]"
                   },
                   "resourceDeploymentDate": {
                     "value": "[parameters('resourceDeploymentDate')]"
-                  },
-                  "resourceConventionPrefix": {
-                    "value": "[variables('resourceConventionPrefix')]"
-                  },
-                  "mainWebsiteHostname": {
-                    "value": "[reference('websiteDeployment').outputs.mainWebsiteUrl.value]"
-                  },
-                  "apiWebsiteHostname": {
-                    "value": "[reference('websiteDeployment').outputs.apiWebsiteUrl.value]"
-                  },
-                  "devWebsiteHostname": {
-                    "value": "[reference('websiteDeployment').outputs.devWebsiteUrl.value]"
-                  },
-                  "docsWebsiteHostname": {
-                    "value": "[reference('websiteDeployment').outputs.docsWebsiteUrl.value]"
                   }
                 },
                 "template": {
@@ -663,631 +648,128 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.36.1.42791",
-                      "templateHash": "3947059976855339784"
+                      "templateHash": "17599193807198243210"
+                    },
+                    "description": "RBAC module deployment file that manages resource group level role assignments for managed identities",
+                    "author": "Alexandru-Razvan Olariu"
+                  },
+                  "definitions": {
+                    "identity": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "displayName": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        }
+                      },
+                      "metadata": {
+                        "type": "identity",
+                        "name": "identity",
+                        "__bicep_imported_from!": {
+                          "sourceTemplate": "../types/identity.type.bicep"
+                        }
+                      }
                     }
                   },
                   "parameters": {
+                    "managedIdentities": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/identity"
+                      },
+                      "metadata": {
+                        "description": "Array of managed identities that need RBAC assignments"
+                      }
+                    },
                     "resourceDeploymentDate": {
                       "type": "string",
                       "metadata": {
                         "description": "The date when the deployment is executed."
                       }
-                    },
-                    "resourceLocation": {
-                      "type": "string",
-                      "allowedValues": [
-                        "swedencentral",
-                        "norwayeast",
-                        "westeurope",
-                        "northeurope"
-                      ],
-                      "metadata": {
-                        "description": "The location for the resources."
-                      }
-                    },
-                    "resourceConventionPrefix": {
-                      "type": "string",
-                      "metadata": {
-                        "description": "The prefix to use for the names of the resources."
-                      }
-                    },
-                    "mainWebsiteHostname": {
-                      "type": "string",
-                      "metadata": {
-                        "description": "The hostname of the main production website."
-                      }
-                    },
-                    "apiWebsiteHostname": {
-                      "type": "string",
-                      "metadata": {
-                        "description": "The hostname of the API website."
-                      }
-                    },
-                    "devWebsiteHostname": {
-                      "type": "string",
-                      "metadata": {
-                        "description": "The hostname of the development website."
-                      }
-                    },
-                    "docsWebsiteHostname": {
-                      "type": "string",
-                      "metadata": {
-                        "description": "The hostname of the documentation website."
-                      }
                     }
                   },
                   "variables": {
-                    "azureFrontDoorName": "[format('{0}-afd', parameters('resourceConventionPrefix'))]",
-                    "dnsZoneName": "arolariu.ro"
+                    "roleDefinitions": {
+                      "storageBlobDataReader": "b7e6dc6d-f1e8-4753-8033-0f276bb0955b",
+                      "storageBlobDataContributor": "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
+                      "storageAccountContributor": "17d1049b-9a84-46fb-8f53-869881c3d3ab",
+                      "sqlDbContributor": "9b7fa17d-e63e-47b0-bb0a-15c516ac86ec",
+                      "cosmosDbDataContributor": "00000000-0000-0000-0000-000000000002",
+                      "contributor": "b24988ac-6180-42a0-ab88-20f7382dd24c"
+                    }
                   },
                   "resources": {
-                    "azureFrontDoorDeployment": {
-                      "type": "Microsoft.Resources/deployments",
-                      "apiVersion": "2022-09-01",
-                      "name": "[format('azureFrontDoorDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                    "frontendStorageRoleAssignment": {
+                      "type": "Microsoft.Authorization/roleAssignments",
+                      "apiVersion": "2022-04-01",
+                      "name": "[guid(resourceGroup().id, parameters('managedIdentities')[0].id, variables('roleDefinitions').storageBlobDataReader)]",
                       "properties": {
-                        "expressionEvaluationOptions": {
-                          "scope": "inner"
-                        },
-                        "mode": "Incremental",
-                        "parameters": {
-                          "frontDoorName": {
-                            "value": "[variables('azureFrontDoorName')]"
-                          },
-                          "frontDoorDeploymentDate": {
-                            "value": "[parameters('resourceDeploymentDate')]"
-                          },
-                          "mainWebsiteHostname": {
-                            "value": "[parameters('mainWebsiteHostname')]"
-                          }
-                        },
-                        "template": {
-                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-                          "languageVersion": "2.0",
-                          "contentVersion": "1.0.0.0",
-                          "metadata": {
-                            "_generator": {
-                              "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "10090874689421948519"
-                            },
-                            "description": "This template will deploy an Azure Front Door resource with production-ready configuration.",
-                            "author": "Alexandru-Razvan Olariu"
-                          },
-                          "definitions": {
-                            "resourceTags": {
-                              "type": "object",
-                              "properties": {
-                                "environment": {
-                                  "type": "string",
-                                  "allowedValues": [
-                                    "DEVELOPMENT",
-                                    "PRODUCTION"
-                                  ],
-                                  "metadata": {
-                                    "description": "Environment tag"
-                                  }
-                                },
-                                "deploymentType": {
-                                  "type": "string",
-                                  "allowedValues": [
-                                    "ARM",
-                                    "Bicep",
-                                    "Terraform"
-                                  ],
-                                  "metadata": {
-                                    "description": "Deployment method"
-                                  }
-                                },
-                                "deploymentDate": {
-                                  "type": "string",
-                                  "metadata": {
-                                    "description": "Deployment date in YYYY-MM-DD format"
-                                  }
-                                },
-                                "deploymentAuthor": {
-                                  "type": "string",
-                                  "metadata": {
-                                    "description": "Deployment author"
-                                  }
-                                },
-                                "module": {
-                                  "type": "string",
-                                  "metadata": {
-                                    "description": "Module or service name"
-                                  }
-                                },
-                                "costCenter": {
-                                  "type": "string",
-                                  "metadata": {
-                                    "description": "Cost center for billing"
-                                  }
-                                },
-                                "project": {
-                                  "type": "string",
-                                  "metadata": {
-                                    "description": "Project name or identifier"
-                                  }
-                                },
-                                "version": {
-                                  "type": "string",
-                                  "metadata": {
-                                    "description": "Version of the deployment"
-                                  }
-                                }
-                              },
-                              "metadata": {
-                                "description": "Resource tagging configuration",
-                                "__bicep_imported_from!": {
-                                  "sourceTemplate": "../types/common.type.bicep"
-                                }
-                              }
-                            }
-                          },
-                          "parameters": {
-                            "frontDoorName": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The name of the Front Door resource."
-                              }
-                            },
-                            "frontDoorDeploymentDate": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The date when the Front Door deployment is executed."
-                              }
-                            },
-                            "mainWebsiteHostname": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The hostname of the main production website."
-                              }
-                            }
-                          },
-                          "variables": {
-                            "commonTags": {
-                              "environment": "PRODUCTION",
-                              "deploymentType": "Bicep",
-                              "deploymentDate": "[parameters('frontDoorDeploymentDate')]",
-                              "deploymentAuthor": "Alexandru-Razvan Olariu",
-                              "module": "network",
-                              "costCenter": "infrastructure",
-                              "project": "arolariu.ro",
-                              "version": "2.0.0"
-                            }
-                          },
-                          "resources": {
-                            "frontDoorProfile::productionOriginGroup::productionOrigin": {
-                              "type": "Microsoft.Cdn/profiles/originGroups/origins",
-                              "apiVersion": "2025-04-15",
-                              "name": "[format('{0}/{1}/{2}', parameters('frontDoorName'), 'production', 'production-origin')]",
-                              "properties": {
-                                "hostName": "[parameters('mainWebsiteHostname')]",
-                                "httpPort": 80,
-                                "httpsPort": 443,
-                                "originHostHeader": "[parameters('mainWebsiteHostname')]",
-                                "priority": 1,
-                                "weight": 1000,
-                                "enabledState": "Enabled",
-                                "enforceCertificateNameCheck": false
-                              },
-                              "dependsOn": [
-                                "frontDoorProfile::productionOriginGroup"
-                              ]
-                            },
-                            "frontDoorProfile::productionEndpoint::productionRoute": {
-                              "type": "Microsoft.Cdn/profiles/afdEndpoints/routes",
-                              "apiVersion": "2025-04-15",
-                              "name": "[format('{0}/{1}/{2}', parameters('frontDoorName'), 'production', 'production-route')]",
-                              "properties": {
-                                "customDomains": [
-                                  {
-                                    "id": "[resourceId('Microsoft.Cdn/profiles/customDomains', parameters('frontDoorName'), 'apex-arolariu-ro')]"
-                                  },
-                                  {
-                                    "id": "[resourceId('Microsoft.Cdn/profiles/customDomains', parameters('frontDoorName'), 'www-arolariu-ro')]"
-                                  }
-                                ],
-                                "originGroup": {
-                                  "id": "[resourceId('Microsoft.Cdn/profiles/originGroups', parameters('frontDoorName'), 'production')]"
-                                },
-                                "supportedProtocols": [
-                                  "Https"
-                                ],
-                                "patternsToMatch": [
-                                  "/*"
-                                ],
-                                "httpsRedirect": "Enabled",
-                                "linkToDefaultDomain": "Enabled",
-                                "forwardingProtocol": "HttpsOnly",
-                                "cacheConfiguration": {
-                                  "queryStringCachingBehavior": "IgnoreQueryString"
-                                },
-                                "enabledState": "Enabled"
-                              },
-                              "dependsOn": [
-                                "frontDoorProfile::apexCustomDomain",
-                                "frontDoorProfile::productionEndpoint",
-                                "frontDoorProfile::productionOriginGroup",
-                                "frontDoorProfile::productionOriginGroup::productionOrigin",
-                                "frontDoorProfile::wwwCustomDomain"
-                              ]
-                            },
-                            "frontDoorProfile::apexCustomDomain": {
-                              "type": "Microsoft.Cdn/profiles/customDomains",
-                              "apiVersion": "2025-04-15",
-                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'apex-arolariu-ro')]",
-                              "properties": {
-                                "hostName": "arolariu.ro",
-                                "tlsSettings": {
-                                  "certificateType": "ManagedCertificate",
-                                  "minimumTlsVersion": "TLS12"
-                                }
-                              },
-                              "dependsOn": [
-                                "frontDoorProfile"
-                              ]
-                            },
-                            "frontDoorProfile::wwwCustomDomain": {
-                              "type": "Microsoft.Cdn/profiles/customDomains",
-                              "apiVersion": "2025-04-15",
-                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'www-arolariu-ro')]",
-                              "properties": {
-                                "hostName": "www.arolariu.ro",
-                                "tlsSettings": {
-                                  "certificateType": "ManagedCertificate",
-                                  "minimumTlsVersion": "TLS12"
-                                }
-                              },
-                              "dependsOn": [
-                                "frontDoorProfile"
-                              ]
-                            },
-                            "frontDoorProfile::productionOriginGroup": {
-                              "type": "Microsoft.Cdn/profiles/originGroups",
-                              "apiVersion": "2025-04-15",
-                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'production')]",
-                              "properties": {
-                                "sessionAffinityState": "Enabled",
-                                "loadBalancingSettings": {
-                                  "sampleSize": 4,
-                                  "successfulSamplesRequired": 3,
-                                  "additionalLatencyInMilliseconds": 50
-                                },
-                                "healthProbeSettings": {
-                                  "probePath": "/",
-                                  "probeRequestType": "HEAD",
-                                  "probeProtocol": "Https",
-                                  "probeIntervalInSeconds": 100
-                                }
-                              },
-                              "dependsOn": [
-                                "frontDoorProfile"
-                              ]
-                            },
-                            "frontDoorProfile::productionEndpoint": {
-                              "type": "Microsoft.Cdn/profiles/afdEndpoints",
-                              "apiVersion": "2025-04-15",
-                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'production')]",
-                              "location": "Global",
-                              "properties": {
-                                "enabledState": "Enabled"
-                              },
-                              "tags": "[union(variables('commonTags'), createObject('displayName', 'Production Endpoint'))]",
-                              "dependsOn": [
-                                "frontDoorProfile"
-                              ]
-                            },
-                            "frontDoorProfile::securityPolicy": {
-                              "type": "Microsoft.Cdn/profiles/securityPolicies",
-                              "apiVersion": "2025-04-15",
-                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'production-security-policy')]",
-                              "properties": {
-                                "parameters": {
-                                  "type": "WebApplicationFirewall",
-                                  "wafPolicy": {
-                                    "id": "[resourceId('Microsoft.Network/FrontDoorWebApplicationFirewallPolicies', format('{0}waf', parameters('frontDoorName')))]"
-                                  },
-                                  "associations": [
-                                    {
-                                      "domains": [
-                                        {
-                                          "id": "[resourceId('Microsoft.Cdn/profiles/customDomains', parameters('frontDoorName'), 'apex-arolariu-ro')]"
-                                        },
-                                        {
-                                          "id": "[resourceId('Microsoft.Cdn/profiles/customDomains', parameters('frontDoorName'), 'www-arolariu-ro')]"
-                                        }
-                                      ],
-                                      "patternsToMatch": [
-                                        "/*"
-                                      ]
-                                    }
-                                  ]
-                                }
-                              },
-                              "dependsOn": [
-                                "frontDoorProfile",
-                                "frontDoorProfile::apexCustomDomain",
-                                "frontDoorProfile::wwwCustomDomain",
-                                "wafPolicy"
-                              ]
-                            },
-                            "frontDoorProfile::cdnEndpoint": {
-                              "type": "Microsoft.Cdn/profiles/afdEndpoints",
-                              "apiVersion": "2025-04-15",
-                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'cdn')]",
-                              "location": "Global",
-                              "properties": {
-                                "enabledState": "Enabled"
-                              },
-                              "tags": "[union(variables('commonTags'), createObject('displayName', 'CDN Endpoint'))]",
-                              "dependsOn": [
-                                "frontDoorProfile"
-                              ]
-                            },
-                            "wafPolicy": {
-                              "type": "Microsoft.Network/FrontDoorWebApplicationFirewallPolicies",
-                              "apiVersion": "2025-03-01",
-                              "name": "[format('{0}waf', parameters('frontDoorName'))]",
-                              "location": "Global",
-                              "sku": {
-                                "name": "Standard_AzureFrontDoor"
-                              },
-                              "properties": {
-                                "policySettings": {
-                                  "enabledState": "Enabled",
-                                  "mode": "Prevention",
-                                  "requestBodyCheck": "Enabled"
-                                },
-                                "managedRules": {
-                                  "managedRuleSets": [
-                                    {
-                                      "ruleSetType": "Microsoft_DefaultRuleSet",
-                                      "ruleSetVersion": "2.1",
-                                      "ruleGroupOverrides": []
-                                    },
-                                    {
-                                      "ruleSetType": "Microsoft_BotManagerRuleSet",
-                                      "ruleSetVersion": "1.0",
-                                      "ruleGroupOverrides": []
-                                    }
-                                  ]
-                                }
-                              },
-                              "tags": "[union(variables('commonTags'), createObject('displayName', 'WAF Policy', 'resourceType', 'WAF Policy'))]"
-                            },
-                            "frontDoorProfile": {
-                              "type": "Microsoft.Cdn/profiles",
-                              "apiVersion": "2025-04-15",
-                              "name": "[parameters('frontDoorName')]",
-                              "location": "Global",
-                              "sku": {
-                                "name": "Standard_AzureFrontDoor"
-                              },
-                              "properties": {
-                                "originResponseTimeoutSeconds": 16
-                              },
-                              "tags": "[union(variables('commonTags'), createObject('displayName', 'Azure Front Door Profile', 'resourceType', 'CDN Profile'))]"
-                            }
-                          },
-                          "outputs": {
-                            "frontDoorProductionFqdn": {
-                              "type": "string",
-                              "value": "[reference('frontDoorProfile::productionEndpoint').hostName]"
-                            },
-                            "frontDoorCdnFqdn": {
-                              "type": "string",
-                              "value": "[reference('frontDoorProfile::cdnEndpoint').hostName]"
-                            },
-                            "frontDoorProfileId": {
-                              "type": "string",
-                              "value": "[resourceId('Microsoft.Cdn/profiles', parameters('frontDoorName'))]"
-                            }
-                          }
-                        }
+                        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitions').storageBlobDataReader)]",
+                        "principalId": "[parameters('managedIdentities')[0].id]",
+                        "principalType": "ServicePrincipal",
+                        "description": "Frontend identity access to storage blob data (read-only)"
                       }
                     },
-                    "dnsZoneDeployment": {
-                      "type": "Microsoft.Resources/deployments",
-                      "apiVersion": "2022-09-01",
-                      "name": "[format('dnsZoneDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                    "backendStorageRoleAssignment": {
+                      "type": "Microsoft.Authorization/roleAssignments",
+                      "apiVersion": "2022-04-01",
+                      "name": "[guid(resourceGroup().id, parameters('managedIdentities')[1].id, variables('roleDefinitions').storageBlobDataContributor)]",
                       "properties": {
-                        "expressionEvaluationOptions": {
-                          "scope": "inner"
-                        },
-                        "mode": "Incremental",
-                        "parameters": {
-                          "dnsZoneName": {
-                            "value": "[variables('dnsZoneName')]"
-                          },
-                          "frontDoorProductionFqdn": {
-                            "value": "[reference('azureFrontDoorDeployment').outputs.frontDoorProductionFqdn.value]"
-                          },
-                          "apiWebsiteHostname": {
-                            "value": "[parameters('apiWebsiteHostname')]"
-                          },
-                          "devWebsiteHostname": {
-                            "value": "[parameters('devWebsiteHostname')]"
-                          },
-                          "docsWebsiteHostname": {
-                            "value": "[parameters('docsWebsiteHostname')]"
-                          }
-                        },
-                        "template": {
-                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-                          "languageVersion": "2.0",
-                          "contentVersion": "1.0.0.0",
-                          "metadata": {
-                            "_generator": {
-                              "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "1184455348531016080"
-                            },
-                            "description": "This template will create the necessary Azure DNS Zone resources for arolariu.ro with dynamic DNS records",
-                            "author": "Alexandru-Razvan Olariu"
-                          },
-                          "parameters": {
-                            "dnsZoneName": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The name of the Azure DNS Zone resource."
-                              }
-                            },
-                            "frontDoorProductionFqdn": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The FQDN of the Azure Front Door production endpoint."
-                              }
-                            },
-                            "apiWebsiteHostname": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The hostname of the API website."
-                              }
-                            },
-                            "devWebsiteHostname": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The hostname of the development website."
-                              }
-                            },
-                            "docsWebsiteHostname": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "The hostname of the documentation website."
-                              }
-                            }
-                          },
-                          "resources": {
-                            "dnsZone::apexRecord": {
-                              "type": "Microsoft.Network/dnsZones/CNAME",
-                              "apiVersion": "2023-07-01-preview",
-                              "name": "[format('{0}/{1}', parameters('dnsZoneName'), '@')]",
-                              "properties": {
-                                "TTL": 300,
-                                "CNAMERecord": {
-                                  "cname": "[parameters('frontDoorProductionFqdn')]"
-                                }
-                              },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
-                            },
-                            "dnsZone::wwwRecord": {
-                              "type": "Microsoft.Network/dnsZones/CNAME",
-                              "apiVersion": "2023-07-01-preview",
-                              "name": "[format('{0}/{1}', parameters('dnsZoneName'), 'www')]",
-                              "properties": {
-                                "TTL": 300,
-                                "CNAMERecord": {
-                                  "cname": "[parameters('frontDoorProductionFqdn')]"
-                                }
-                              },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
-                            },
-                            "dnsZone::apiRecord": {
-                              "type": "Microsoft.Network/dnsZones/CNAME",
-                              "apiVersion": "2023-07-01-preview",
-                              "name": "[format('{0}/{1}', parameters('dnsZoneName'), 'api')]",
-                              "properties": {
-                                "TTL": 300,
-                                "CNAMERecord": {
-                                  "cname": "[parameters('apiWebsiteHostname')]"
-                                }
-                              },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
-                            },
-                            "dnsZone::devRecord": {
-                              "type": "Microsoft.Network/dnsZones/CNAME",
-                              "apiVersion": "2023-07-01-preview",
-                              "name": "[format('{0}/{1}', parameters('dnsZoneName'), 'dev')]",
-                              "properties": {
-                                "TTL": 300,
-                                "CNAMERecord": {
-                                  "cname": "[parameters('devWebsiteHostname')]"
-                                }
-                              },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
-                            },
-                            "dnsZone::docsRecord": {
-                              "type": "Microsoft.Network/dnsZones/CNAME",
-                              "apiVersion": "2023-07-01-preview",
-                              "name": "[format('{0}/{1}', parameters('dnsZoneName'), 'docs')]",
-                              "properties": {
-                                "TTL": 300,
-                                "CNAMERecord": {
-                                  "cname": "[parameters('docsWebsiteHostname')]"
-                                }
-                              },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
-                            },
-                            "dnsZone::accountsRecord": {
-                              "type": "Microsoft.Network/dnsZones/CNAME",
-                              "apiVersion": "2023-07-01-preview",
-                              "name": "[format('{0}/{1}', parameters('dnsZoneName'), 'accounts')]",
-                              "properties": {
-                                "TTL": 300,
-                                "CNAMERecord": {
-                                  "cname": "accounts.clerk.services"
-                                }
-                              },
-                              "dependsOn": [
-                                "dnsZone"
-                              ]
-                            },
-                            "dnsZone": {
-                              "type": "Microsoft.Network/dnsZones",
-                              "apiVersion": "2023-07-01-preview",
-                              "name": "[parameters('dnsZoneName')]",
-                              "location": "Global",
-                              "properties": {
-                                "zoneType": "Public"
-                              }
-                            }
-                          },
-                          "outputs": {
-                            "dnsZoneNameServers": {
-                              "type": "array",
-                              "value": "[reference('dnsZone').nameServers]"
-                            },
-                            "dnsZoneName": {
-                              "type": "string",
-                              "value": "[parameters('dnsZoneName')]"
-                            }
-                          }
-                        }
-                      },
-                      "dependsOn": [
-                        "azureFrontDoorDeployment"
-                      ]
+                        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitions').storageBlobDataContributor)]",
+                        "principalId": "[parameters('managedIdentities')[1].id]",
+                        "principalType": "ServicePrincipal",
+                        "description": "Backend identity access to storage blob data (read/write)"
+                      }
+                    },
+                    "backendSqlRoleAssignment": {
+                      "type": "Microsoft.Authorization/roleAssignments",
+                      "apiVersion": "2022-04-01",
+                      "name": "[guid(resourceGroup().id, parameters('managedIdentities')[1].id, variables('roleDefinitions').sqlDbContributor)]",
+                      "properties": {
+                        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitions').sqlDbContributor)]",
+                        "principalId": "[parameters('managedIdentities')[1].id]",
+                        "principalType": "ServicePrincipal",
+                        "description": "Backend identity access to SQL databases"
+                      }
+                    },
+                    "infrastructureStorageRoleAssignment": {
+                      "type": "Microsoft.Authorization/roleAssignments",
+                      "apiVersion": "2022-04-01",
+                      "name": "[guid(resourceGroup().id, parameters('managedIdentities')[2].id, variables('roleDefinitions').storageAccountContributor)]",
+                      "properties": {
+                        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitions').storageAccountContributor)]",
+                        "principalId": "[parameters('managedIdentities')[2].id]",
+                        "principalType": "ServicePrincipal",
+                        "description": "Infrastructure identity access to storage account management"
+                      }
                     }
                   },
                   "outputs": {
-                    "frontDoorProductionFqdn": {
-                      "type": "string",
-                      "value": "[reference('azureFrontDoorDeployment').outputs.frontDoorProductionFqdn.value]"
-                    },
-                    "frontDoorCdnFqdn": {
-                      "type": "string",
-                      "value": "[reference('azureFrontDoorDeployment').outputs.frontDoorCdnFqdn.value]"
-                    },
-                    "frontDoorProfileId": {
-                      "type": "string",
-                      "value": "[reference('azureFrontDoorDeployment').outputs.frontDoorProfileId.value]"
+                    "roleAssignments": {
+                      "type": "object",
+                      "value": {
+                        "frontend": {
+                          "storageReader": "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, parameters('managedIdentities')[0].id, variables('roleDefinitions').storageBlobDataReader))]"
+                        },
+                        "backend": {
+                          "storageContributor": "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, parameters('managedIdentities')[1].id, variables('roleDefinitions').storageBlobDataContributor))]",
+                          "sqlContributor": "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, parameters('managedIdentities')[1].id, variables('roleDefinitions').sqlDbContributor))]"
+                        },
+                        "infrastructure": {
+                          "storageAccountContributor": "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, parameters('managedIdentities')[2].id, variables('roleDefinitions').storageAccountContributor))]"
+                        }
+                      }
                     }
                   }
                 }
               },
               "dependsOn": [
-                "websiteDeployment"
+                "identitiesDeployment"
               ]
             },
             "configurationDeployment": {
@@ -1849,278 +1331,6 @@
                 "identitiesDeployment"
               ]
             },
-            "observabilityDeployment": {
-              "type": "Microsoft.Resources/deployments",
-              "apiVersion": "2022-09-01",
-              "name": "[format('observabilityDeployment-{0}', parameters('resourceDeploymentDate'))]",
-              "properties": {
-                "expressionEvaluationOptions": {
-                  "scope": "inner"
-                },
-                "mode": "Incremental",
-                "parameters": {
-                  "resourceConventionPrefix": {
-                    "value": "[variables('resourceConventionPrefix')]"
-                  }
-                },
-                "template": {
-                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-                  "languageVersion": "2.0",
-                  "contentVersion": "1.0.0.0",
-                  "metadata": {
-                    "_generator": {
-                      "name": "bicep",
-                      "version": "0.36.1.42791",
-                      "templateHash": "15013558334839937154"
-                    }
-                  },
-                  "parameters": {
-                    "resourceDeploymentDate": {
-                      "type": "string",
-                      "defaultValue": "[utcNow()]",
-                      "metadata": {
-                        "description": "The date when the deployment is executed."
-                      }
-                    },
-                    "resourceConventionPrefix": {
-                      "type": "string",
-                      "metadata": {
-                        "description": "The prefix to use for the names of the resources."
-                      }
-                    }
-                  },
-                  "resources": {
-                    "logAnalyticsWorkspaceDeployment": {
-                      "type": "Microsoft.Resources/deployments",
-                      "apiVersion": "2022-09-01",
-                      "name": "[format('logAnalyticsWorkspaceDeployment-{0}', parameters('resourceDeploymentDate'))]",
-                      "properties": {
-                        "expressionEvaluationOptions": {
-                          "scope": "inner"
-                        },
-                        "mode": "Incremental",
-                        "parameters": {
-                          "logAnalyticsWorkspaceName": {
-                            "value": "[format('{0}-workspace', parameters('resourceConventionPrefix'))]"
-                          }
-                        },
-                        "template": {
-                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-                          "languageVersion": "2.0",
-                          "contentVersion": "1.0.0.0",
-                          "metadata": {
-                            "_generator": {
-                              "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "2490397949733724664"
-                            },
-                            "description": "This template will deploy a log analytics workspace that is used for Open Telemetry (OTel) data collection.",
-                            "author": "Alexandru-Razvan Olariu"
-                          },
-                          "parameters": {
-                            "logAnalyticsWorkspaceLocation": {
-                              "type": "string",
-                              "defaultValue": "[resourceGroup().location]"
-                            },
-                            "logAnalyticsWorkspaceName": {
-                              "type": "string"
-                            }
-                          },
-                          "resources": {
-                            "logAnalyticsWorkspace": {
-                              "type": "Microsoft.OperationalInsights/workspaces",
-                              "apiVersion": "2023-09-01",
-                              "name": "[parameters('logAnalyticsWorkspaceName')]",
-                              "location": "[parameters('logAnalyticsWorkspaceLocation')]",
-                              "properties": {
-                                "sku": {
-                                  "name": "PerGB2018"
-                                },
-                                "retentionInDays": 90,
-                                "publicNetworkAccessForIngestion": "Enabled",
-                                "publicNetworkAccessForQuery": "Enabled",
-                                "workspaceCapping": {
-                                  "dailyQuotaGb": 3
-                                },
-                                "features": {
-                                  "enableLogAccessUsingOnlyResourcePermissions": true
-                                }
-                              },
-                              "tags": {
-                                "environment": "PRODUCTION",
-                                "deployment": "Bicep"
-                              }
-                            }
-                          },
-                          "outputs": {
-                            "logAnalyticsWorkspaceId": {
-                              "type": "string",
-                              "value": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('logAnalyticsWorkspaceName'))]"
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "applicationInsightsDeployment": {
-                      "type": "Microsoft.Resources/deployments",
-                      "apiVersion": "2022-09-01",
-                      "name": "[format('applicationInsightsDeployment-{0}', parameters('resourceDeploymentDate'))]",
-                      "properties": {
-                        "expressionEvaluationOptions": {
-                          "scope": "inner"
-                        },
-                        "mode": "Incremental",
-                        "parameters": {
-                          "applicationInsightsName": {
-                            "value": "[format('{0}-insights', parameters('resourceConventionPrefix'))]"
-                          },
-                          "applicationInsightsWorkspaceId": {
-                            "value": "[reference('logAnalyticsWorkspaceDeployment').outputs.logAnalyticsWorkspaceId.value]"
-                          }
-                        },
-                        "template": {
-                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-                          "languageVersion": "2.0",
-                          "contentVersion": "1.0.0.0",
-                          "metadata": {
-                            "_generator": {
-                              "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "8232838617594245775"
-                            },
-                            "description": "This template will deploy an application insights resource that is connected to the api.arolariu.ro platform (back-end) and the arolariu.ro platform (front-end).",
-                            "author": "Alexandru-Razvan Olariu"
-                          },
-                          "parameters": {
-                            "applicationInsightsLocation": {
-                              "type": "string",
-                              "defaultValue": "[resourceGroup().location]"
-                            },
-                            "applicationInsightsWorkspaceId": {
-                              "type": "string"
-                            },
-                            "applicationInsightsName": {
-                              "type": "string"
-                            }
-                          },
-                          "resources": {
-                            "applicationInsights": {
-                              "type": "Microsoft.Insights/components",
-                              "apiVersion": "2020-02-02",
-                              "name": "[parameters('applicationInsightsName')]",
-                              "location": "[parameters('applicationInsightsLocation')]",
-                              "kind": "web",
-                              "properties": {
-                                "Application_Type": "web",
-                                "Flow_Type": "Bluefield",
-                                "Request_Source": "rest",
-                                "RetentionInDays": 90,
-                                "WorkspaceResourceId": "[parameters('applicationInsightsWorkspaceId')]",
-                                "IngestionMode": "LogAnalytics",
-                                "publicNetworkAccessForIngestion": "Enabled",
-                                "publicNetworkAccessForQuery": "Enabled",
-                                "SamplingPercentage": 30
-                              },
-                              "tags": {
-                                "environment": "PRODUCTION",
-                                "deployment": "Bicep"
-                              }
-                            }
-                          }
-                        }
-                      },
-                      "dependsOn": [
-                        "logAnalyticsWorkspaceDeployment"
-                      ]
-                    },
-                    "managedGrafanaDeployment": {
-                      "type": "Microsoft.Resources/deployments",
-                      "apiVersion": "2022-09-01",
-                      "name": "[format('managedGrafanaDeployment-{0}', parameters('resourceDeploymentDate'))]",
-                      "properties": {
-                        "expressionEvaluationOptions": {
-                          "scope": "inner"
-                        },
-                        "mode": "Incremental",
-                        "parameters": {
-                          "managedGrafanaName": {
-                            "value": "[format('{0}-grafana', parameters('resourceConventionPrefix'))]"
-                          }
-                        },
-                        "template": {
-                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-                          "languageVersion": "2.0",
-                          "contentVersion": "1.0.0.0",
-                          "metadata": {
-                            "_generator": {
-                              "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "1068091617314220526"
-                            },
-                            "description": "This template will deploy an Azure Managed Grafana instance.",
-                            "author": "Alexandru-Razvan Olariu"
-                          },
-                          "parameters": {
-                            "managedGrafanaLocation": {
-                              "type": "string",
-                              "defaultValue": "[resourceGroup().location]"
-                            },
-                            "managedGrafanaName": {
-                              "type": "string"
-                            }
-                          },
-                          "resources": {
-                            "managedGrafanaInstance": {
-                              "type": "Microsoft.Dashboard/grafana",
-                              "apiVersion": "2023-09-01",
-                              "name": "[parameters('managedGrafanaName')]",
-                              "location": "[parameters('managedGrafanaLocation')]",
-                              "sku": {
-                                "name": "Essential"
-                              },
-                              "properties": {
-                                "grafanaMajorVersion": "10",
-                                "zoneRedundancy": "Disabled",
-                                "publicNetworkAccess": "Enabled",
-                                "apiKey": "Enabled",
-                                "autoGeneratedDomainNameLabelScope": "TenantReuse",
-                                "deterministicOutboundIP": "Disabled",
-                                "grafanaConfigurations": {
-                                  "smtp": {
-                                    "enabled": false
-                                  }
-                                },
-                                "grafanaIntegrations": {
-                                  "azureMonitorWorkspaceIntegrations": []
-                                }
-                              },
-                              "tags": {
-                                "environment": "PRODUCTION",
-                                "deployment": "Bicep"
-                              }
-                            }
-                          },
-                          "outputs": {
-                            "managedGrafanaInstanceName": {
-                              "type": "string",
-                              "value": "[parameters('managedGrafanaName')]"
-                            }
-                          }
-                        }
-                      },
-                      "dependsOn": [
-                        "applicationInsightsDeployment",
-                        "logAnalyticsWorkspaceDeployment"
-                      ]
-                    }
-                  }
-                }
-              },
-              "dependsOn": [
-                "configurationDeployment",
-                "identitiesDeployment"
-              ]
-            },
             "storageDeployment": {
               "type": "Microsoft.Resources/deployments",
               "apiVersion": "2022-09-01",
@@ -2149,7 +1359,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.36.1.42791",
-                      "templateHash": "9215737059924349454"
+                      "templateHash": "14324076198692632312"
                     },
                     "description": "Storage module deployment file that provisions storage accounts, container registry, and databases with enterprise security standards.",
                     "author": "Alexandru-Razvan Olariu"
@@ -2207,9 +1417,6 @@
                           },
                           "storageAccountDeploymentDate": {
                             "value": "[parameters('resourceDeploymentDate')]"
-                          },
-                          "managedIdentityId": {
-                            "value": "TODO"
                           }
                         },
                         "template": {
@@ -2220,7 +1427,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "2047992427957029785"
+                              "templateHash": "4259919624577404654"
                             },
                             "description": "This template creates a secure storage account with enterprise-grade security standards.",
                             "author": "Alexandru-Razvan Olariu"
@@ -2314,12 +1521,6 @@
                               "type": "string",
                               "metadata": {
                                 "description": "The date when the deployment is executed."
-                              }
-                            },
-                            "managedIdentityId": {
-                              "type": "string",
-                              "metadata": {
-                                "description": "Managed identity resource ID for secure access."
                               }
                             }
                           },
@@ -2466,12 +1667,6 @@
                                 "name": "Standard_LRS"
                               },
                               "kind": "StorageV2",
-                              "identity": {
-                                "type": "UserAssigned",
-                                "userAssignedIdentities": {
-                                  "[format('{0}', parameters('managedIdentityId'))]": {}
-                                }
-                              },
                               "properties": {
                                 "dnsEndpointType": "Standard",
                                 "defaultToOAuthAuthentication": true,
@@ -3557,7 +2752,8 @@
                 }
               },
               "dependsOn": [
-                "identitiesDeployment"
+                "identitiesDeployment",
+                "rbacDeployment"
               ]
             },
             "computeDeployment": {
@@ -4719,8 +3915,674 @@
                 "computeDeployment",
                 "configurationDeployment",
                 "identitiesDeployment",
-                "observabilityDeployment",
                 "storageDeployment"
+              ]
+            },
+            "networkDeployment": {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('networkDeployment-{0}', parameters('resourceDeploymentDate'))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "resourceLocation": {
+                    "value": "[parameters('resourceLocation')]"
+                  },
+                  "resourceDeploymentDate": {
+                    "value": "[parameters('resourceDeploymentDate')]"
+                  },
+                  "resourceConventionPrefix": {
+                    "value": "[variables('resourceConventionPrefix')]"
+                  },
+                  "mainWebsiteHostname": {
+                    "value": "[reference('websiteDeployment').outputs.mainWebsiteUrl.value]"
+                  },
+                  "apiWebsiteHostname": {
+                    "value": "[reference('websiteDeployment').outputs.apiWebsiteUrl.value]"
+                  },
+                  "devWebsiteHostname": {
+                    "value": "[reference('websiteDeployment').outputs.devWebsiteUrl.value]"
+                  },
+                  "docsWebsiteHostname": {
+                    "value": "[reference('websiteDeployment').outputs.docsWebsiteUrl.value]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "languageVersion": "2.0",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.36.1.42791",
+                      "templateHash": "3947059976855339784"
+                    }
+                  },
+                  "parameters": {
+                    "resourceDeploymentDate": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The date when the deployment is executed."
+                      }
+                    },
+                    "resourceLocation": {
+                      "type": "string",
+                      "allowedValues": [
+                        "swedencentral",
+                        "norwayeast",
+                        "westeurope",
+                        "northeurope"
+                      ],
+                      "metadata": {
+                        "description": "The location for the resources."
+                      }
+                    },
+                    "resourceConventionPrefix": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The prefix to use for the names of the resources."
+                      }
+                    },
+                    "mainWebsiteHostname": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The hostname of the main production website."
+                      }
+                    },
+                    "apiWebsiteHostname": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The hostname of the API website."
+                      }
+                    },
+                    "devWebsiteHostname": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The hostname of the development website."
+                      }
+                    },
+                    "docsWebsiteHostname": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The hostname of the documentation website."
+                      }
+                    }
+                  },
+                  "variables": {
+                    "azureFrontDoorName": "[format('{0}-afd', parameters('resourceConventionPrefix'))]",
+                    "dnsZoneName": "arolariu.ro"
+                  },
+                  "resources": {
+                    "azureFrontDoorDeployment": {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('azureFrontDoorDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "frontDoorName": {
+                            "value": "[variables('azureFrontDoorName')]"
+                          },
+                          "frontDoorDeploymentDate": {
+                            "value": "[parameters('resourceDeploymentDate')]"
+                          },
+                          "mainWebsiteHostname": {
+                            "value": "[parameters('mainWebsiteHostname')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.0",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.36.1.42791",
+                              "templateHash": "10090874689421948519"
+                            },
+                            "description": "This template will deploy an Azure Front Door resource with production-ready configuration.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "definitions": {
+                            "resourceTags": {
+                              "type": "object",
+                              "properties": {
+                                "environment": {
+                                  "type": "string",
+                                  "allowedValues": [
+                                    "DEVELOPMENT",
+                                    "PRODUCTION"
+                                  ],
+                                  "metadata": {
+                                    "description": "Environment tag"
+                                  }
+                                },
+                                "deploymentType": {
+                                  "type": "string",
+                                  "allowedValues": [
+                                    "ARM",
+                                    "Bicep",
+                                    "Terraform"
+                                  ],
+                                  "metadata": {
+                                    "description": "Deployment method"
+                                  }
+                                },
+                                "deploymentDate": {
+                                  "type": "string",
+                                  "metadata": {
+                                    "description": "Deployment date in YYYY-MM-DD format"
+                                  }
+                                },
+                                "deploymentAuthor": {
+                                  "type": "string",
+                                  "metadata": {
+                                    "description": "Deployment author"
+                                  }
+                                },
+                                "module": {
+                                  "type": "string",
+                                  "metadata": {
+                                    "description": "Module or service name"
+                                  }
+                                },
+                                "costCenter": {
+                                  "type": "string",
+                                  "metadata": {
+                                    "description": "Cost center for billing"
+                                  }
+                                },
+                                "project": {
+                                  "type": "string",
+                                  "metadata": {
+                                    "description": "Project name or identifier"
+                                  }
+                                },
+                                "version": {
+                                  "type": "string",
+                                  "metadata": {
+                                    "description": "Version of the deployment"
+                                  }
+                                }
+                              },
+                              "metadata": {
+                                "description": "Resource tagging configuration",
+                                "__bicep_imported_from!": {
+                                  "sourceTemplate": "../types/common.type.bicep"
+                                }
+                              }
+                            }
+                          },
+                          "parameters": {
+                            "frontDoorName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The name of the Front Door resource."
+                              }
+                            },
+                            "frontDoorDeploymentDate": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The date when the Front Door deployment is executed."
+                              }
+                            },
+                            "mainWebsiteHostname": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The hostname of the main production website."
+                              }
+                            }
+                          },
+                          "variables": {
+                            "commonTags": {
+                              "environment": "PRODUCTION",
+                              "deploymentType": "Bicep",
+                              "deploymentDate": "[parameters('frontDoorDeploymentDate')]",
+                              "deploymentAuthor": "Alexandru-Razvan Olariu",
+                              "module": "network",
+                              "costCenter": "infrastructure",
+                              "project": "arolariu.ro",
+                              "version": "2.0.0"
+                            }
+                          },
+                          "resources": {
+                            "frontDoorProfile::productionOriginGroup::productionOrigin": {
+                              "type": "Microsoft.Cdn/profiles/originGroups/origins",
+                              "apiVersion": "2025-04-15",
+                              "name": "[format('{0}/{1}/{2}', parameters('frontDoorName'), 'production', 'production-origin')]",
+                              "properties": {
+                                "hostName": "[parameters('mainWebsiteHostname')]",
+                                "httpPort": 80,
+                                "httpsPort": 443,
+                                "originHostHeader": "[parameters('mainWebsiteHostname')]",
+                                "priority": 1,
+                                "weight": 1000,
+                                "enabledState": "Enabled",
+                                "enforceCertificateNameCheck": false
+                              },
+                              "dependsOn": [
+                                "frontDoorProfile::productionOriginGroup"
+                              ]
+                            },
+                            "frontDoorProfile::productionEndpoint::productionRoute": {
+                              "type": "Microsoft.Cdn/profiles/afdEndpoints/routes",
+                              "apiVersion": "2025-04-15",
+                              "name": "[format('{0}/{1}/{2}', parameters('frontDoorName'), 'production', 'production-route')]",
+                              "properties": {
+                                "customDomains": [
+                                  {
+                                    "id": "[resourceId('Microsoft.Cdn/profiles/customDomains', parameters('frontDoorName'), 'apex-arolariu-ro')]"
+                                  },
+                                  {
+                                    "id": "[resourceId('Microsoft.Cdn/profiles/customDomains', parameters('frontDoorName'), 'www-arolariu-ro')]"
+                                  }
+                                ],
+                                "originGroup": {
+                                  "id": "[resourceId('Microsoft.Cdn/profiles/originGroups', parameters('frontDoorName'), 'production')]"
+                                },
+                                "supportedProtocols": [
+                                  "Https"
+                                ],
+                                "patternsToMatch": [
+                                  "/*"
+                                ],
+                                "httpsRedirect": "Enabled",
+                                "linkToDefaultDomain": "Enabled",
+                                "forwardingProtocol": "HttpsOnly",
+                                "cacheConfiguration": {
+                                  "queryStringCachingBehavior": "IgnoreQueryString"
+                                },
+                                "enabledState": "Enabled"
+                              },
+                              "dependsOn": [
+                                "frontDoorProfile::apexCustomDomain",
+                                "frontDoorProfile::productionEndpoint",
+                                "frontDoorProfile::productionOriginGroup",
+                                "frontDoorProfile::productionOriginGroup::productionOrigin",
+                                "frontDoorProfile::wwwCustomDomain"
+                              ]
+                            },
+                            "frontDoorProfile::apexCustomDomain": {
+                              "type": "Microsoft.Cdn/profiles/customDomains",
+                              "apiVersion": "2025-04-15",
+                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'apex-arolariu-ro')]",
+                              "properties": {
+                                "hostName": "arolariu.ro",
+                                "tlsSettings": {
+                                  "certificateType": "ManagedCertificate",
+                                  "minimumTlsVersion": "TLS12"
+                                }
+                              },
+                              "dependsOn": [
+                                "frontDoorProfile"
+                              ]
+                            },
+                            "frontDoorProfile::wwwCustomDomain": {
+                              "type": "Microsoft.Cdn/profiles/customDomains",
+                              "apiVersion": "2025-04-15",
+                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'www-arolariu-ro')]",
+                              "properties": {
+                                "hostName": "www.arolariu.ro",
+                                "tlsSettings": {
+                                  "certificateType": "ManagedCertificate",
+                                  "minimumTlsVersion": "TLS12"
+                                }
+                              },
+                              "dependsOn": [
+                                "frontDoorProfile"
+                              ]
+                            },
+                            "frontDoorProfile::productionOriginGroup": {
+                              "type": "Microsoft.Cdn/profiles/originGroups",
+                              "apiVersion": "2025-04-15",
+                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'production')]",
+                              "properties": {
+                                "sessionAffinityState": "Enabled",
+                                "loadBalancingSettings": {
+                                  "sampleSize": 4,
+                                  "successfulSamplesRequired": 3,
+                                  "additionalLatencyInMilliseconds": 50
+                                },
+                                "healthProbeSettings": {
+                                  "probePath": "/",
+                                  "probeRequestType": "HEAD",
+                                  "probeProtocol": "Https",
+                                  "probeIntervalInSeconds": 100
+                                }
+                              },
+                              "dependsOn": [
+                                "frontDoorProfile"
+                              ]
+                            },
+                            "frontDoorProfile::productionEndpoint": {
+                              "type": "Microsoft.Cdn/profiles/afdEndpoints",
+                              "apiVersion": "2025-04-15",
+                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'production')]",
+                              "location": "Global",
+                              "properties": {
+                                "enabledState": "Enabled"
+                              },
+                              "tags": "[union(variables('commonTags'), createObject('displayName', 'Production Endpoint'))]",
+                              "dependsOn": [
+                                "frontDoorProfile"
+                              ]
+                            },
+                            "frontDoorProfile::securityPolicy": {
+                              "type": "Microsoft.Cdn/profiles/securityPolicies",
+                              "apiVersion": "2025-04-15",
+                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'production-security-policy')]",
+                              "properties": {
+                                "parameters": {
+                                  "type": "WebApplicationFirewall",
+                                  "wafPolicy": {
+                                    "id": "[resourceId('Microsoft.Network/FrontDoorWebApplicationFirewallPolicies', format('{0}waf', parameters('frontDoorName')))]"
+                                  },
+                                  "associations": [
+                                    {
+                                      "domains": [
+                                        {
+                                          "id": "[resourceId('Microsoft.Cdn/profiles/customDomains', parameters('frontDoorName'), 'apex-arolariu-ro')]"
+                                        },
+                                        {
+                                          "id": "[resourceId('Microsoft.Cdn/profiles/customDomains', parameters('frontDoorName'), 'www-arolariu-ro')]"
+                                        }
+                                      ],
+                                      "patternsToMatch": [
+                                        "/*"
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              "dependsOn": [
+                                "frontDoorProfile",
+                                "frontDoorProfile::apexCustomDomain",
+                                "frontDoorProfile::wwwCustomDomain",
+                                "wafPolicy"
+                              ]
+                            },
+                            "frontDoorProfile::cdnEndpoint": {
+                              "type": "Microsoft.Cdn/profiles/afdEndpoints",
+                              "apiVersion": "2025-04-15",
+                              "name": "[format('{0}/{1}', parameters('frontDoorName'), 'cdn')]",
+                              "location": "Global",
+                              "properties": {
+                                "enabledState": "Enabled"
+                              },
+                              "tags": "[union(variables('commonTags'), createObject('displayName', 'CDN Endpoint'))]",
+                              "dependsOn": [
+                                "frontDoorProfile"
+                              ]
+                            },
+                            "wafPolicy": {
+                              "type": "Microsoft.Network/FrontDoorWebApplicationFirewallPolicies",
+                              "apiVersion": "2025-03-01",
+                              "name": "[format('{0}waf', parameters('frontDoorName'))]",
+                              "location": "Global",
+                              "sku": {
+                                "name": "Standard_AzureFrontDoor"
+                              },
+                              "properties": {
+                                "policySettings": {
+                                  "enabledState": "Enabled",
+                                  "mode": "Prevention",
+                                  "requestBodyCheck": "Enabled"
+                                },
+                                "managedRules": {
+                                  "managedRuleSets": [
+                                    {
+                                      "ruleSetType": "Microsoft_DefaultRuleSet",
+                                      "ruleSetVersion": "2.1",
+                                      "ruleGroupOverrides": []
+                                    },
+                                    {
+                                      "ruleSetType": "Microsoft_BotManagerRuleSet",
+                                      "ruleSetVersion": "1.0",
+                                      "ruleGroupOverrides": []
+                                    }
+                                  ]
+                                }
+                              },
+                              "tags": "[union(variables('commonTags'), createObject('displayName', 'WAF Policy', 'resourceType', 'WAF Policy'))]"
+                            },
+                            "frontDoorProfile": {
+                              "type": "Microsoft.Cdn/profiles",
+                              "apiVersion": "2025-04-15",
+                              "name": "[parameters('frontDoorName')]",
+                              "location": "Global",
+                              "sku": {
+                                "name": "Standard_AzureFrontDoor"
+                              },
+                              "properties": {
+                                "originResponseTimeoutSeconds": 16
+                              },
+                              "tags": "[union(variables('commonTags'), createObject('displayName', 'Azure Front Door Profile', 'resourceType', 'CDN Profile'))]"
+                            }
+                          },
+                          "outputs": {
+                            "frontDoorProductionFqdn": {
+                              "type": "string",
+                              "value": "[reference('frontDoorProfile::productionEndpoint').hostName]"
+                            },
+                            "frontDoorCdnFqdn": {
+                              "type": "string",
+                              "value": "[reference('frontDoorProfile::cdnEndpoint').hostName]"
+                            },
+                            "frontDoorProfileId": {
+                              "type": "string",
+                              "value": "[resourceId('Microsoft.Cdn/profiles', parameters('frontDoorName'))]"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "dnsZoneDeployment": {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('dnsZoneDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "dnsZoneName": {
+                            "value": "[variables('dnsZoneName')]"
+                          },
+                          "frontDoorProductionFqdn": {
+                            "value": "[reference('azureFrontDoorDeployment').outputs.frontDoorProductionFqdn.value]"
+                          },
+                          "apiWebsiteHostname": {
+                            "value": "[parameters('apiWebsiteHostname')]"
+                          },
+                          "devWebsiteHostname": {
+                            "value": "[parameters('devWebsiteHostname')]"
+                          },
+                          "docsWebsiteHostname": {
+                            "value": "[parameters('docsWebsiteHostname')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.0",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.36.1.42791",
+                              "templateHash": "1184455348531016080"
+                            },
+                            "description": "This template will create the necessary Azure DNS Zone resources for arolariu.ro with dynamic DNS records",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "parameters": {
+                            "dnsZoneName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The name of the Azure DNS Zone resource."
+                              }
+                            },
+                            "frontDoorProductionFqdn": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The FQDN of the Azure Front Door production endpoint."
+                              }
+                            },
+                            "apiWebsiteHostname": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The hostname of the API website."
+                              }
+                            },
+                            "devWebsiteHostname": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The hostname of the development website."
+                              }
+                            },
+                            "docsWebsiteHostname": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The hostname of the documentation website."
+                              }
+                            }
+                          },
+                          "resources": {
+                            "dnsZone::apexRecord": {
+                              "type": "Microsoft.Network/dnsZones/CNAME",
+                              "apiVersion": "2023-07-01-preview",
+                              "name": "[format('{0}/{1}', parameters('dnsZoneName'), '@')]",
+                              "properties": {
+                                "TTL": 300,
+                                "CNAMERecord": {
+                                  "cname": "[parameters('frontDoorProductionFqdn')]"
+                                }
+                              },
+                              "dependsOn": [
+                                "dnsZone"
+                              ]
+                            },
+                            "dnsZone::wwwRecord": {
+                              "type": "Microsoft.Network/dnsZones/CNAME",
+                              "apiVersion": "2023-07-01-preview",
+                              "name": "[format('{0}/{1}', parameters('dnsZoneName'), 'www')]",
+                              "properties": {
+                                "TTL": 300,
+                                "CNAMERecord": {
+                                  "cname": "[parameters('frontDoorProductionFqdn')]"
+                                }
+                              },
+                              "dependsOn": [
+                                "dnsZone"
+                              ]
+                            },
+                            "dnsZone::apiRecord": {
+                              "type": "Microsoft.Network/dnsZones/CNAME",
+                              "apiVersion": "2023-07-01-preview",
+                              "name": "[format('{0}/{1}', parameters('dnsZoneName'), 'api')]",
+                              "properties": {
+                                "TTL": 300,
+                                "CNAMERecord": {
+                                  "cname": "[parameters('apiWebsiteHostname')]"
+                                }
+                              },
+                              "dependsOn": [
+                                "dnsZone"
+                              ]
+                            },
+                            "dnsZone::devRecord": {
+                              "type": "Microsoft.Network/dnsZones/CNAME",
+                              "apiVersion": "2023-07-01-preview",
+                              "name": "[format('{0}/{1}', parameters('dnsZoneName'), 'dev')]",
+                              "properties": {
+                                "TTL": 300,
+                                "CNAMERecord": {
+                                  "cname": "[parameters('devWebsiteHostname')]"
+                                }
+                              },
+                              "dependsOn": [
+                                "dnsZone"
+                              ]
+                            },
+                            "dnsZone::docsRecord": {
+                              "type": "Microsoft.Network/dnsZones/CNAME",
+                              "apiVersion": "2023-07-01-preview",
+                              "name": "[format('{0}/{1}', parameters('dnsZoneName'), 'docs')]",
+                              "properties": {
+                                "TTL": 300,
+                                "CNAMERecord": {
+                                  "cname": "[parameters('docsWebsiteHostname')]"
+                                }
+                              },
+                              "dependsOn": [
+                                "dnsZone"
+                              ]
+                            },
+                            "dnsZone::accountsRecord": {
+                              "type": "Microsoft.Network/dnsZones/CNAME",
+                              "apiVersion": "2023-07-01-preview",
+                              "name": "[format('{0}/{1}', parameters('dnsZoneName'), 'accounts')]",
+                              "properties": {
+                                "TTL": 300,
+                                "CNAMERecord": {
+                                  "cname": "accounts.clerk.services"
+                                }
+                              },
+                              "dependsOn": [
+                                "dnsZone"
+                              ]
+                            },
+                            "dnsZone": {
+                              "type": "Microsoft.Network/dnsZones",
+                              "apiVersion": "2023-07-01-preview",
+                              "name": "[parameters('dnsZoneName')]",
+                              "location": "Global",
+                              "properties": {
+                                "zoneType": "Public"
+                              }
+                            }
+                          },
+                          "outputs": {
+                            "dnsZoneNameServers": {
+                              "type": "array",
+                              "value": "[reference('dnsZone').nameServers]"
+                            },
+                            "dnsZoneName": {
+                              "type": "string",
+                              "value": "[parameters('dnsZoneName')]"
+                            }
+                          }
+                        }
+                      },
+                      "dependsOn": [
+                        "azureFrontDoorDeployment"
+                      ]
+                    }
+                  },
+                  "outputs": {
+                    "frontDoorProductionFqdn": {
+                      "type": "string",
+                      "value": "[reference('azureFrontDoorDeployment').outputs.frontDoorProductionFqdn.value]"
+                    },
+                    "frontDoorCdnFqdn": {
+                      "type": "string",
+                      "value": "[reference('azureFrontDoorDeployment').outputs.frontDoorCdnFqdn.value]"
+                    },
+                    "frontDoorProfileId": {
+                      "type": "string",
+                      "value": "[reference('azureFrontDoorDeployment').outputs.frontDoorProfileId.value]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "websiteDeployment"
               ]
             }
           }
