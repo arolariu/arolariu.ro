@@ -33,6 +33,7 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' 
     enableAutomaticFailover: false
     enableMultipleWriteLocations: false
     isVirtualNetworkFilterEnabled: false
+    virtualNetworkRules: []
     disableKeyBasedMetadataWriteAccess: false
     enableFreeTier: true
     enableAnalyticalStorage: false

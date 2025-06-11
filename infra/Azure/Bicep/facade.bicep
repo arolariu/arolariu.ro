@@ -26,10 +26,7 @@ module identitiesDeployment 'identity/deploymentFile.bicep' = {
 module rbacDeployment 'rbac/deploymentFile.bicep' = {
   scope: resourceGroup()
   name: 'rbacDeployment-${resourceDeploymentDate}'
-  params: {
-    managedIdentities: identitiesDeployment.outputs.managedIdentitiesList
-    resourceDeploymentDate: resourceDeploymentDate
-  }
+  params: { managedIdentities: identitiesDeployment.outputs.managedIdentitiesList }
 }
 
 module configurationDeployment 'configuration/deploymentFile.bicep' = {

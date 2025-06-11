@@ -31,6 +31,15 @@ resource docsStaticWebApp 'Microsoft.Web/staticSites@2024-11-01' = {
     provider: 'GitHub'
     enterpriseGradeCdnStatus: 'Disabled'
   }
+
+  // Custom domain for docs.arolariu.ro with managed certificate
+  resource docsCustomDomain 'customDomains@2024-11-01' = {
+    name: 'docs.arolariu.ro'
+    properties: {
+      validationMethod: 'cname-delegation'
+    }
+  }
+
   tags: union(commonTags, {
     displayName: 'Docs Static Web App'
     resourceType: 'Static Web App'

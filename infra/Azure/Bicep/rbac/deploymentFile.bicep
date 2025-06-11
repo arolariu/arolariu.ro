@@ -8,9 +8,6 @@ import { identity } from '../types/identity.type.bicep'
 @description('Array of managed identities that need RBAC assignments')
 param managedIdentities identity[]
 
-@description('The date when the deployment is executed.')
-param resourceDeploymentDate string
-
 // Built-in role definition IDs for Azure RBAC
 var roleDefinitions = {
   // Storage roles

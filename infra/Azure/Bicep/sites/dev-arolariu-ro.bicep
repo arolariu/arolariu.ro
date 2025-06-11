@@ -83,7 +83,7 @@ resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
         }
       ]
       ipSecurityRestrictionsDefaultAction: 'Allow'
-      minTlsVersion: '1.1' // Minimum TLS version accepted by the server.
+      minTlsVersion: '1.2' // Minimum TLS version accepted by the server.
       nodeVersion: '22' // Minimum specified Node.js version.
       webSocketsEnabled: true // WebSockets (WSS) are enabled.
     }
@@ -91,6 +91,45 @@ resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
   tags: union(commonTags, {
     displayName: 'Development Website'
   })
+}
+
+// Custom domain binding for dev.arolariu.ro
+resource devCustomDomain 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {
+  name: 'dev.arolariu.ro'
+  parent: devWebsite
+  properties: {
+    hostNameType: 'Verified'
+    sslState: 'Disabled' // Initially disabled, will be enabled after certificate creation
+    customHostNameDnsRecordType: 'CName'
+  }
+}
+
+// App Service Managed Certificate for dev.arolariu.ro
+resource devManagedCertificate 'Microsoft.Web/certificates@2024-11-01' = {
+  name: 'cert-dev-arolariu-ro'
+  location: developmentWebsiteLocation
+  properties: {
+    serverFarmId: developmentWebsiteAppPlanId
+    canonicalName: 'dev.arolariu.ro'
+    domainValidationMethod: 'cname-delegation'
+  }
+  dependsOn: [devCustomDomain]
+  tags: union(commonTags, {
+    displayName: 'Development Managed Certificate'
+    resourceType: 'SSL Certificate'
+  })
+}
+
+// Update custom domain with SSL binding
+resource devCustomDomainWithSsl 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {
+  name: 'dev.arolariu.ro-ssl'
+  parent: devWebsite
+  properties: {
+    hostNameType: 'Verified'
+    sslState: 'SniEnabled'
+    customHostNameDnsRecordType: 'CName'
+    thumbprint: devManagedCertificate.properties.thumbprint
+  }
 }
 
 output devWebsiteUrl string = devWebsite.properties.defaultHostName

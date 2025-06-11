@@ -52,9 +52,6 @@ resource sqlServer 'Microsoft.Sql/servers@2024-05-01-preview' = {
       tenantId: subscription().tenantId
     }
   }
-  tags: union(commonTags, {
-    displayName: 'SQL Server'
-  })
 
   resource sqlServerAdvancedThreatProtection 'advancedThreatProtectionSettings@2024-05-01-preview' = {
     name: 'Default'
@@ -80,6 +77,10 @@ resource sqlServer 'Microsoft.Sql/servers@2024-05-01-preview' = {
     name: 'Default'
     properties: { azureADOnlyAuthentication: false }
   }
+
+  tags: union(commonTags, {
+    displayName: 'SQL Server'
+  })
 }
 
 // Outputs for use by other modules

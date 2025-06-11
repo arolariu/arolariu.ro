@@ -54,6 +54,7 @@ resource apiWebsite 'Microsoft.Web/sites@2024-11-01' = {
       loadBalancing: 'LeastRequests'
       preWarmedInstanceCount: 0
       ftpsState: 'Disabled'
+      minTlsVersion: '1.2' // Minimum TLS version for secure connections
     }
     scmSiteAlsoStopped: false
     clientAffinityEnabled: false
@@ -71,6 +72,45 @@ resource apiWebsite 'Microsoft.Web/sites@2024-11-01' = {
   tags: union(commonTags, {
     displayName: 'API Website'
   })
+}
+
+// Custom domain binding for api.arolariu.ro
+resource apiCustomDomain 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {
+  name: 'api.arolariu.ro'
+  parent: apiWebsite
+  properties: {
+    hostNameType: 'Verified'
+    sslState: 'Disabled' // Initially disabled, will be enabled after certificate creation
+    customHostNameDnsRecordType: 'CName'
+  }
+}
+
+// App Service Managed Certificate for api.arolariu.ro
+resource apiManagedCertificate 'Microsoft.Web/certificates@2024-11-01' = {
+  name: 'cert-api-arolariu-ro'
+  location: apiWebsiteLocation
+  properties: {
+    serverFarmId: apiWebsitePlanId
+    canonicalName: 'api.arolariu.ro'
+    domainValidationMethod: 'cname-delegation'
+  }
+  dependsOn: [apiCustomDomain]
+  tags: union(commonTags, {
+    displayName: 'API Managed Certificate'
+    resourceType: 'SSL Certificate'
+  })
+}
+
+// Update custom domain with SSL binding
+resource apiCustomDomainWithSsl 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {
+  name: 'api.arolariu.ro-ssl'
+  parent: apiWebsite
+  properties: {
+    hostNameType: 'Verified'
+    sslState: 'SniEnabled'
+    customHostNameDnsRecordType: 'CName'
+    thumbprint: apiManagedCertificate.properties.thumbprint
+  }
 }
 
 output apiWebsiteUrl string = apiWebsite.properties.defaultHostName

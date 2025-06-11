@@ -103,7 +103,7 @@ resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
         }
       ]
       ipSecurityRestrictionsDefaultAction: 'Deny'
-      minTlsVersion: '1.3' // Minimum TLS version accepted by the server.
+      minTlsVersion: '1.2' // Minimum TLS version accepted by the server.
       nodeVersion: '22' // Minimum specified Node.js version.
       webSocketsEnabled: true // WebSockets (WSS) are enabled.
     }

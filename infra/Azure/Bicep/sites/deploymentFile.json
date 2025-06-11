@@ -1,0 +1,961 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "languageVersion": "2.0",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.36.1.42791",
+      "templateHash": "1088834314498449776"
+    }
+  },
+  "parameters": {
+    "resourceDeploymentDate": {
+      "type": "string",
+      "defaultValue": "[utcNow()]",
+      "metadata": {
+        "description": "The date when the deployment is executed."
+      }
+    },
+    "resourceLocation": {
+      "type": "string",
+      "allowedValues": [
+        "swedencentral",
+        "norwayeast",
+        "westeurope",
+        "northeurope"
+      ],
+      "metadata": {
+        "description": "The location for the resources."
+      }
+    },
+    "productionAppPlanId": {
+      "type": "string",
+      "metadata": {
+        "description": "The ID of the production app service plan."
+      }
+    },
+    "developmentAppPlanId": {
+      "type": "string",
+      "metadata": {
+        "description": "The ID of the development app service plan."
+      }
+    },
+    "managedIdentityBackendId": {
+      "type": "string"
+    },
+    "managedIdentityFrontendId": {
+      "type": "string"
+    }
+  },
+  "resources": {
+    "apiWebsiteDeployment": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('apiWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "apiWebsiteLocation": {
+            "value": "[parameters('resourceLocation')]"
+          },
+          "apiWebsitePlanId": {
+            "value": "[parameters('productionAppPlanId')]"
+          },
+          "apiWebsiteIdentityId": {
+            "value": "[parameters('managedIdentityBackendId')]"
+          },
+          "apiWebsiteDeploymentDate": {
+            "value": "[parameters('resourceDeploymentDate')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "languageVersion": "2.0",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "9519047085032556694"
+            },
+            "description": "This template will create the api.arolariu.ro app service site.",
+            "author": "Alexandru-Razvan Olariu"
+          },
+          "definitions": {
+            "resourceTags": {
+              "type": "object",
+              "properties": {
+                "environment": {
+                  "type": "string",
+                  "allowedValues": [
+                    "DEVELOPMENT",
+                    "PRODUCTION"
+                  ],
+                  "metadata": {
+                    "description": "Environment tag"
+                  }
+                },
+                "deploymentType": {
+                  "type": "string",
+                  "allowedValues": [
+                    "ARM",
+                    "Bicep",
+                    "Terraform"
+                  ],
+                  "metadata": {
+                    "description": "Deployment method"
+                  }
+                },
+                "deploymentDate": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Deployment date in YYYY-MM-DD format"
+                  }
+                },
+                "deploymentAuthor": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Deployment author"
+                  }
+                },
+                "module": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Module or service name"
+                  }
+                },
+                "costCenter": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Cost center for billing"
+                  }
+                },
+                "project": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Project name or identifier"
+                  }
+                },
+                "version": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Version of the deployment"
+                  }
+                }
+              },
+              "metadata": {
+                "description": "Resource tagging configuration",
+                "__bicep_imported_from!": {
+                  "sourceTemplate": "../types/common.type.bicep"
+                }
+              }
+            }
+          },
+          "parameters": {
+            "apiWebsitePlanId": {
+              "type": "string"
+            },
+            "apiWebsiteLocation": {
+              "type": "string"
+            },
+            "apiWebsiteIdentityId": {
+              "type": "string"
+            },
+            "apiWebsiteDeploymentDate": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "commonTags": {
+              "environment": "PRODUCTION",
+              "deploymentType": "Bicep",
+              "deploymentDate": "[parameters('apiWebsiteDeploymentDate')]",
+              "deploymentAuthor": "Alexandru-Razvan Olariu",
+              "module": "sites",
+              "costCenter": "infrastructure",
+              "project": "arolariu.ro",
+              "version": "2.0.0"
+            }
+          },
+          "resources": {
+            "apiWebsite": {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2024-11-01",
+              "name": "api-arolariu-ro",
+              "location": "[parameters('apiWebsiteLocation')]",
+              "kind": "app,linux",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', parameters('apiWebsiteIdentityId'))]": {}
+                }
+              },
+              "properties": {
+                "enabled": true,
+                "serverFarmId": "[parameters('apiWebsitePlanId')]",
+                "reserved": true,
+                "isXenon": false,
+                "hyperV": false,
+                "siteConfig": {
+                  "alwaysOn": true,
+                  "numberOfWorkers": 1,
+                  "http20Enabled": true,
+                  "functionAppScaleLimit": 0,
+                  "minimumElasticInstanceCount": 0,
+                  "linuxFxVersion": "DOTNETCORE|8.0",
+                  "requestTracingEnabled": true,
+                  "remoteDebuggingEnabled": false,
+                  "httpLoggingEnabled": true,
+                  "logsDirectorySizeLimit": 35,
+                  "detailedErrorLoggingEnabled": false,
+                  "use32BitWorkerProcess": false,
+                  "webSocketsEnabled": true,
+                  "loadBalancing": "LeastRequests",
+                  "preWarmedInstanceCount": 0,
+                  "ftpsState": "Disabled",
+                  "minTlsVersion": "1.2"
+                },
+                "scmSiteAlsoStopped": false,
+                "clientAffinityEnabled": false,
+                "clientCertEnabled": false,
+                "clientCertMode": "Required",
+                "hostNamesDisabled": false,
+                "containerSize": 0,
+                "dailyMemoryTimeQuota": 0,
+                "httpsOnly": true,
+                "redundancyMode": "None",
+                "publicNetworkAccess": "Enabled",
+                "storageAccountRequired": false,
+                "keyVaultReferenceIdentity": "[parameters('apiWebsiteIdentityId')]"
+              },
+              "tags": "[union(variables('commonTags'), createObject('displayName', 'API Website'))]"
+            },
+            "apiCustomDomain": {
+              "type": "Microsoft.Web/sites/hostNameBindings",
+              "apiVersion": "2024-11-01",
+              "name": "[format('{0}/{1}', 'api-arolariu-ro', 'api.arolariu.ro')]",
+              "properties": {
+                "hostNameType": "Verified",
+                "sslState": "Disabled",
+                "customHostNameDnsRecordType": "CName"
+              },
+              "dependsOn": [
+                "apiWebsite"
+              ]
+            },
+            "apiManagedCertificate": {
+              "type": "Microsoft.Web/certificates",
+              "apiVersion": "2024-11-01",
+              "name": "cert-api-arolariu-ro",
+              "location": "[parameters('apiWebsiteLocation')]",
+              "properties": {
+                "serverFarmId": "[parameters('apiWebsitePlanId')]",
+                "canonicalName": "api.arolariu.ro",
+                "domainValidationMethod": "cname-delegation"
+              },
+              "tags": "[union(variables('commonTags'), createObject('displayName', 'API Managed Certificate', 'resourceType', 'SSL Certificate'))]",
+              "dependsOn": [
+                "apiCustomDomain"
+              ]
+            },
+            "apiCustomDomainWithSsl": {
+              "type": "Microsoft.Web/sites/hostNameBindings",
+              "apiVersion": "2024-11-01",
+              "name": "[format('{0}/{1}', 'api-arolariu-ro', 'api.arolariu.ro-ssl')]",
+              "properties": {
+                "hostNameType": "Verified",
+                "sslState": "SniEnabled",
+                "customHostNameDnsRecordType": "CName",
+                "thumbprint": "[reference('apiManagedCertificate').thumbprint]"
+              },
+              "dependsOn": [
+                "apiManagedCertificate",
+                "apiWebsite"
+              ]
+            }
+          },
+          "outputs": {
+            "apiWebsiteUrl": {
+              "type": "string",
+              "value": "[reference('apiWebsite').defaultHostName]"
+            }
+          }
+        }
+      }
+    },
+    "mainWebsiteDeployment": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('mainWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "productionWebsiteLocation": {
+            "value": "[parameters('resourceLocation')]"
+          },
+          "productionWebsiteAppPlanId": {
+            "value": "[parameters('productionAppPlanId')]"
+          },
+          "productionWebsiteIdentityId": {
+            "value": "[parameters('managedIdentityFrontendId')]"
+          },
+          "productionWebsiteDeploymentDate": {
+            "value": "[parameters('resourceDeploymentDate')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "languageVersion": "2.0",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "2295420296476724723"
+            },
+            "description": "This template will create the arolariu.ro app service site.",
+            "author": "Alexandru-Razvan Olariu"
+          },
+          "definitions": {
+            "resourceTags": {
+              "type": "object",
+              "properties": {
+                "environment": {
+                  "type": "string",
+                  "allowedValues": [
+                    "DEVELOPMENT",
+                    "PRODUCTION"
+                  ],
+                  "metadata": {
+                    "description": "Environment tag"
+                  }
+                },
+                "deploymentType": {
+                  "type": "string",
+                  "allowedValues": [
+                    "ARM",
+                    "Bicep",
+                    "Terraform"
+                  ],
+                  "metadata": {
+                    "description": "Deployment method"
+                  }
+                },
+                "deploymentDate": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Deployment date in YYYY-MM-DD format"
+                  }
+                },
+                "deploymentAuthor": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Deployment author"
+                  }
+                },
+                "module": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Module or service name"
+                  }
+                },
+                "costCenter": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Cost center for billing"
+                  }
+                },
+                "project": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Project name or identifier"
+                  }
+                },
+                "version": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Version of the deployment"
+                  }
+                }
+              },
+              "metadata": {
+                "description": "Resource tagging configuration",
+                "__bicep_imported_from!": {
+                  "sourceTemplate": "../types/common.type.bicep"
+                }
+              }
+            }
+          },
+          "parameters": {
+            "productionWebsiteLocation": {
+              "type": "string"
+            },
+            "productionWebsiteAppPlanId": {
+              "type": "string"
+            },
+            "productionWebsiteIdentityId": {
+              "type": "string"
+            },
+            "productionWebsiteDeploymentDate": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "commonTags": {
+              "environment": "PRODUCTION",
+              "deploymentType": "Bicep",
+              "deploymentDate": "[parameters('productionWebsiteDeploymentDate')]",
+              "deploymentAuthor": "Alexandru-Razvan Olariu",
+              "module": "sites-main",
+              "costCenter": "infrastructure",
+              "project": "arolariu.ro",
+              "version": "2.0.0"
+            }
+          },
+          "resources": {
+            "mainWebsite": {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2024-11-01",
+              "name": "www-arolariu-ro",
+              "location": "[parameters('productionWebsiteLocation')]",
+              "kind": "app,linux,container",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', parameters('productionWebsiteIdentityId'))]": {}
+                }
+              },
+              "properties": {
+                "clientAffinityEnabled": true,
+                "clientCertEnabled": false,
+                "reserved": true,
+                "isXenon": false,
+                "hyperV": false,
+                "hostNamesDisabled": false,
+                "containerSize": 0,
+                "httpsOnly": true,
+                "redundancyMode": "None",
+                "publicNetworkAccess": "Enabled",
+                "storageAccountRequired": false,
+                "enabled": true,
+                "serverFarmId": "[parameters('productionWebsiteAppPlanId')]",
+                "siteConfig": {
+                  "acrUseManagedIdentityCreds": false,
+                  "publishingUsername": "$arolariu",
+                  "autoHealEnabled": false,
+                  "numberOfWorkers": 1,
+                  "functionAppScaleLimit": 0,
+                  "minimumElasticInstanceCount": 1,
+                  "alwaysOn": true,
+                  "cors": {
+                    "allowedOrigins": [
+                      "https://clerk.arolariu.ro",
+                      "https://api.arolariu.ro",
+                      "https://cdn.arolariu.ro"
+                    ]
+                  },
+                  "localMySqlEnabled": false,
+                  "ftpsState": "Disabled",
+                  "healthCheckPath": "/",
+                  "http20Enabled": true,
+                  "httpLoggingEnabled": true,
+                  "logsDirectorySizeLimit": 50,
+                  "detailedErrorLoggingEnabled": false,
+                  "scmType": "GithubAction",
+                  "scmIpSecurityRestrictionsDefaultAction": "Allow",
+                  "scmIpSecurityRestrictionsUseMain": false,
+                  "use32BitWorkerProcess": false,
+                  "loadBalancing": "LeastRequests",
+                  "ipSecurityRestrictions": [
+                    {
+                      "ipAddress": "AzureFrontDoor.Backend",
+                      "action": "Allow",
+                      "tag": "ServiceTag",
+                      "priority": 100,
+                      "name": "AzureFrontDoor"
+                    },
+                    {
+                      "ipAddress": "AzureCloud",
+                      "action": "Allow",
+                      "tag": "ServiceTag",
+                      "priority": 200,
+                      "name": "AzureCloud"
+                    },
+                    {
+                      "ipAddress": "AzureActiveDirectory",
+                      "action": "Allow",
+                      "tag": "ServiceTag",
+                      "priority": 300,
+                      "name": "AzureActiveDirectory"
+                    },
+                    {
+                      "ipAddress": "Any",
+                      "action": "Deny",
+                      "priority": 2147483647,
+                      "name": "Deny all",
+                      "description": "Deny all access"
+                    }
+                  ],
+                  "ipSecurityRestrictionsDefaultAction": "Deny",
+                  "minTlsVersion": "1.2",
+                  "nodeVersion": "22",
+                  "webSocketsEnabled": true
+                }
+              },
+              "tags": "[union(variables('commonTags'), createObject('displayName', 'Main Website'))]"
+            }
+          },
+          "outputs": {
+            "mainWebsiteUrl": {
+              "type": "string",
+              "value": "[reference('mainWebsite').defaultHostName]"
+            }
+          }
+        }
+      }
+    },
+    "devWebsiteDeployment": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('devWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "developmentWebsiteLocation": {
+            "value": "[parameters('resourceLocation')]"
+          },
+          "developmentWebsiteAppPlanId": {
+            "value": "[parameters('developmentAppPlanId')]"
+          },
+          "developmentWebsiteIdentityId": {
+            "value": "[parameters('managedIdentityFrontendId')]"
+          },
+          "developmentWebsiteDeploymentDate": {
+            "value": "[parameters('resourceDeploymentDate')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "languageVersion": "2.0",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "1836037688180631029"
+            },
+            "description": "This template will create the dev.arolariu.ro app service site.",
+            "author": "Alexandru-Razvan Olariu"
+          },
+          "definitions": {
+            "resourceTags": {
+              "type": "object",
+              "properties": {
+                "environment": {
+                  "type": "string",
+                  "allowedValues": [
+                    "DEVELOPMENT",
+                    "PRODUCTION"
+                  ],
+                  "metadata": {
+                    "description": "Environment tag"
+                  }
+                },
+                "deploymentType": {
+                  "type": "string",
+                  "allowedValues": [
+                    "ARM",
+                    "Bicep",
+                    "Terraform"
+                  ],
+                  "metadata": {
+                    "description": "Deployment method"
+                  }
+                },
+                "deploymentDate": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Deployment date in YYYY-MM-DD format"
+                  }
+                },
+                "deploymentAuthor": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Deployment author"
+                  }
+                },
+                "module": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Module or service name"
+                  }
+                },
+                "costCenter": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Cost center for billing"
+                  }
+                },
+                "project": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Project name or identifier"
+                  }
+                },
+                "version": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Version of the deployment"
+                  }
+                }
+              },
+              "metadata": {
+                "description": "Resource tagging configuration",
+                "__bicep_imported_from!": {
+                  "sourceTemplate": "../types/common.type.bicep"
+                }
+              }
+            }
+          },
+          "parameters": {
+            "developmentWebsiteLocation": {
+              "type": "string"
+            },
+            "developmentWebsiteAppPlanId": {
+              "type": "string"
+            },
+            "developmentWebsiteIdentityId": {
+              "type": "string"
+            },
+            "developmentWebsiteDeploymentDate": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "commonTags": {
+              "environment": "DEVELOPMENT",
+              "deploymentType": "Bicep",
+              "deploymentDate": "[parameters('developmentWebsiteDeploymentDate')]",
+              "deploymentAuthor": "Alexandru-Razvan Olariu",
+              "module": "sites",
+              "costCenter": "infrastructure",
+              "project": "arolariu.ro",
+              "version": "2.0.0"
+            }
+          },
+          "resources": {
+            "devWebsite": {
+              "type": "Microsoft.Web/sites",
+              "apiVersion": "2024-11-01",
+              "name": "dev-arolariu-ro",
+              "location": "[parameters('developmentWebsiteLocation')]",
+              "kind": "app,linux,container",
+              "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                  "[format('{0}', parameters('developmentWebsiteIdentityId'))]": {}
+                }
+              },
+              "properties": {
+                "clientAffinityEnabled": true,
+                "clientCertEnabled": false,
+                "reserved": true,
+                "isXenon": false,
+                "hyperV": false,
+                "hostNamesDisabled": false,
+                "containerSize": 0,
+                "httpsOnly": true,
+                "redundancyMode": "None",
+                "publicNetworkAccess": "Enabled",
+                "storageAccountRequired": false,
+                "enabled": true,
+                "serverFarmId": "[parameters('developmentWebsiteAppPlanId')]",
+                "siteConfig": {
+                  "acrUseManagedIdentityCreds": false,
+                  "publishingUsername": "$dev-arolariu",
+                  "autoHealEnabled": false,
+                  "numberOfWorkers": 1,
+                  "functionAppScaleLimit": 0,
+                  "minimumElasticInstanceCount": 0,
+                  "alwaysOn": true,
+                  "cors": {
+                    "allowedOrigins": [
+                      "https://clerk.arolariu.ro",
+                      "https://api.arolariu.ro",
+                      "https://cdn.arolariu.ro"
+                    ]
+                  },
+                  "localMySqlEnabled": false,
+                  "ftpsState": "Disabled",
+                  "healthCheckPath": "/",
+                  "http20Enabled": true,
+                  "httpLoggingEnabled": true,
+                  "logsDirectorySizeLimit": 50,
+                  "detailedErrorLoggingEnabled": false,
+                  "scmType": "GithubAction",
+                  "scmIpSecurityRestrictionsDefaultAction": "Allow",
+                  "scmIpSecurityRestrictionsUseMain": false,
+                  "use32BitWorkerProcess": false,
+                  "loadBalancing": "LeastRequests",
+                  "ipSecurityRestrictions": [
+                    {
+                      "ipAddress": "Any",
+                      "action": "Allow",
+                      "priority": 2147483647,
+                      "tag": "Default",
+                      "name": "Allow All",
+                      "description": "Allow all access."
+                    }
+                  ],
+                  "ipSecurityRestrictionsDefaultAction": "Allow",
+                  "minTlsVersion": "1.2",
+                  "nodeVersion": "22",
+                  "webSocketsEnabled": true
+                }
+              },
+              "tags": "[union(variables('commonTags'), createObject('displayName', 'Development Website'))]"
+            },
+            "devCustomDomain": {
+              "type": "Microsoft.Web/sites/hostNameBindings",
+              "apiVersion": "2024-11-01",
+              "name": "[format('{0}/{1}', 'dev-arolariu-ro', 'dev.arolariu.ro')]",
+              "properties": {
+                "hostNameType": "Verified",
+                "sslState": "Disabled",
+                "customHostNameDnsRecordType": "CName"
+              },
+              "dependsOn": [
+                "devWebsite"
+              ]
+            },
+            "devManagedCertificate": {
+              "type": "Microsoft.Web/certificates",
+              "apiVersion": "2024-11-01",
+              "name": "cert-dev-arolariu-ro",
+              "location": "[parameters('developmentWebsiteLocation')]",
+              "properties": {
+                "serverFarmId": "[parameters('developmentWebsiteAppPlanId')]",
+                "canonicalName": "dev.arolariu.ro",
+                "domainValidationMethod": "cname-delegation"
+              },
+              "tags": "[union(variables('commonTags'), createObject('displayName', 'Development Managed Certificate', 'resourceType', 'SSL Certificate'))]",
+              "dependsOn": [
+                "devCustomDomain"
+              ]
+            },
+            "devCustomDomainWithSsl": {
+              "type": "Microsoft.Web/sites/hostNameBindings",
+              "apiVersion": "2024-11-01",
+              "name": "[format('{0}/{1}', 'dev-arolariu-ro', 'dev.arolariu.ro-ssl')]",
+              "properties": {
+                "hostNameType": "Verified",
+                "sslState": "SniEnabled",
+                "customHostNameDnsRecordType": "CName",
+                "thumbprint": "[reference('devManagedCertificate').thumbprint]"
+              },
+              "dependsOn": [
+                "devManagedCertificate",
+                "devWebsite"
+              ]
+            }
+          },
+          "outputs": {
+            "devWebsiteUrl": {
+              "type": "string",
+              "value": "[reference('devWebsite').defaultHostName]"
+            }
+          }
+        }
+      }
+    },
+    "docsWebsiteDeployment": {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[format('docsWebsiteDeployment-{0}', parameters('resourceDeploymentDate'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "staticWebAppLocation": {
+            "value": "[parameters('resourceLocation')]"
+          },
+          "staticWebAppDeploymentDate": {
+            "value": "[parameters('resourceDeploymentDate')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "languageVersion": "2.0",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.36.1.42791",
+              "templateHash": "1433624174076554317"
+            },
+            "description": "This template will create the docs.arolariu.ro static web app site.",
+            "author": "Alexandru-Razvan Olariu"
+          },
+          "definitions": {
+            "resourceTags": {
+              "type": "object",
+              "properties": {
+                "environment": {
+                  "type": "string",
+                  "allowedValues": [
+                    "DEVELOPMENT",
+                    "PRODUCTION"
+                  ],
+                  "metadata": {
+                    "description": "Environment tag"
+                  }
+                },
+                "deploymentType": {
+                  "type": "string",
+                  "allowedValues": [
+                    "ARM",
+                    "Bicep",
+                    "Terraform"
+                  ],
+                  "metadata": {
+                    "description": "Deployment method"
+                  }
+                },
+                "deploymentDate": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Deployment date in YYYY-MM-DD format"
+                  }
+                },
+                "deploymentAuthor": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Deployment author"
+                  }
+                },
+                "module": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Module or service name"
+                  }
+                },
+                "costCenter": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Cost center for billing"
+                  }
+                },
+                "project": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Project name or identifier"
+                  }
+                },
+                "version": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Version of the deployment"
+                  }
+                }
+              },
+              "metadata": {
+                "description": "Resource tagging configuration",
+                "__bicep_imported_from!": {
+                  "sourceTemplate": "../types/common.type.bicep"
+                }
+              }
+            }
+          },
+          "parameters": {
+            "staticWebAppLocation": {
+              "type": "string"
+            },
+            "staticWebAppDeploymentDate": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "commonTags": {
+              "environment": "PRODUCTION",
+              "deploymentType": "Bicep",
+              "deploymentDate": "[parameters('staticWebAppDeploymentDate')]",
+              "deploymentAuthor": "Alexandru-Razvan Olariu",
+              "module": "sites",
+              "costCenter": "infrastructure",
+              "project": "arolariu.ro",
+              "version": "2.0.0"
+            }
+          },
+          "resources": {
+            "docsStaticWebApp": {
+              "type": "Microsoft.Web/staticSites",
+              "apiVersion": "2024-11-01",
+              "name": "docs-arolariu-ro",
+              "location": "[parameters('staticWebAppLocation')]",
+              "sku": {
+                "name": "Free",
+                "tier": "Free"
+              },
+              "properties": {
+                "repositoryUrl": "https://github.com/arolariu/arolariu.ro",
+                "branch": "main",
+                "stagingEnvironmentPolicy": "Disabled",
+                "allowConfigFileUpdates": true,
+                "provider": "GitHub",
+                "enterpriseGradeCdnStatus": "Disabled"
+              },
+              "tags": "[union(variables('commonTags'), createObject('displayName', 'Docs Static Web App', 'resourceType', 'Static Web App'))]"
+            },
+            "docsCustomDomain": {
+              "type": "Microsoft.Web/staticSites/customDomains",
+              "apiVersion": "2024-11-01",
+              "name": "[format('{0}/{1}', 'docs-arolariu-ro', 'docs.arolariu.ro')]",
+              "properties": {
+                "validationMethod": "cname-delegation"
+              },
+              "dependsOn": [
+                "docsStaticWebApp"
+              ]
+            }
+          },
+          "outputs": {
+            "docsWebsiteUrl": {
+              "type": "string",
+              "value": "[reference('docsStaticWebApp').defaultHostname]"
+            }
+          }
+        }
+      }
+    }
+  },
+  "outputs": {
+    "mainWebsiteUrl": {
+      "type": "string",
+      "value": "[reference('mainWebsiteDeployment').outputs.mainWebsiteUrl.value]"
+    },
+    "apiWebsiteUrl": {
+      "type": "string",
+      "value": "[reference('apiWebsiteDeployment').outputs.apiWebsiteUrl.value]"
+    },
+    "devWebsiteUrl": {
+      "type": "string",
+      "value": "[reference('devWebsiteDeployment').outputs.devWebsiteUrl.value]"
+    },
+    "docsWebsiteUrl": {
+      "type": "string",
+      "value": "[reference('docsWebsiteDeployment').outputs.docsWebsiteUrl.value]"
+    }
+  }
+}
