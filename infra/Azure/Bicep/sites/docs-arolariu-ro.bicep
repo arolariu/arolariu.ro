@@ -36,3 +36,5 @@ resource docsStaticWebApp 'Microsoft.Web/staticSites@2024-11-01' = {
     resourceType: 'Static Web App'
   })
 }
+
+output docsWebsiteUrl string = docsStaticWebApp.properties.defaultHostname

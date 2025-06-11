@@ -57,3 +57,9 @@ module docsWebsiteDeployment 'docs-arolariu-ro.bicep' = {
     staticWebAppDeploymentDate: resourceDeploymentDate
   }
 }
+
+// Output all website URLs for DNS configuration
+output mainWebsiteUrl string = mainWebsiteDeployment.outputs.mainWebsiteUrl
+output apiWebsiteUrl string = apiWebsiteDeployment.outputs.apiWebsiteUrl
+output devWebsiteUrl string = devWebsiteDeployment.outputs.devWebsiteUrl
+output docsWebsiteUrl string = docsWebsiteDeployment.outputs.docsWebsiteUrl

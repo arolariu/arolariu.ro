@@ -72,3 +72,5 @@ resource apiWebsite 'Microsoft.Web/sites@2024-11-01' = {
     displayName: 'API Website'
   })
 }
+
+output apiWebsiteUrl string = apiWebsite.properties.defaultHostName

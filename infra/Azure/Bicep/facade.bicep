@@ -30,6 +30,10 @@ module networkDeployment 'network/deploymentFile.bicep' = {
     resourceLocation: resourceLocation
     resourceDeploymentDate: resourceDeploymentDate
     resourceConventionPrefix: resourceConventionPrefix
+    mainWebsiteHostname: websiteDeployment.outputs.mainWebsiteUrl
+    apiWebsiteHostname: websiteDeployment.outputs.apiWebsiteUrl
+    devWebsiteHostname: websiteDeployment.outputs.devWebsiteUrl
+    docsWebsiteHostname: websiteDeployment.outputs.docsWebsiteUrl
   }
 }
 
