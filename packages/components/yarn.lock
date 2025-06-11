@@ -72,8 +72,8 @@ __metadata:
     "@storybook/addon-storysource": "npm:8.6.14"
     "@storybook/addon-themes": "npm:8.6.14"
     "@tailwindcss/postcss": "npm:4.1.7"
-    "@types/node": "npm:22.15.30"
-    "@types/react": "npm:19.1.6"
+    "@types/node": "npm:24.0.0"
+    "@types/react": "npm:19.1.7"
     "@types/react-dom": "npm:19.1.6"
     class-variance-authority: "npm:0.7.1"
     clsx: "npm:2.1.1"
@@ -81,10 +81,10 @@ __metadata:
     cssnano: "npm:7.0.7"
     embla-carousel-react: "npm:8.6.0"
     input-otp: "npm:1.4.2"
-    lucide-react: "npm:0.511.0"
-    motion: "npm:12.15.0"
+    lucide-react: "npm:0.514.0"
+    motion: "npm:12.17.0"
     next-themes: "npm:0.4.6"
-    playwright: "npm:1.52.0"
+    playwright: "npm:1.53.0"
     postcss: "npm:8.5.4"
     react: "npm:19.1.0"
     react-day-picker: "npm:9.7.0"
@@ -99,13 +99,13 @@ __metadata:
     storybook-addon-rslib: "npm:1.0.1"
     storybook-builder-rsbuild: "npm:1.0.1"
     storybook-react-rsbuild: "npm:1.0.1"
-    tailwind-merge: "npm:3.3.0"
+    tailwind-merge: "npm:3.3.1"
     tailwindcss: "npm:4.1.7"
     tailwindcss-animate: "npm:1.0.7"
     tsx: "npm:4.19.4"
     typescript: "npm:5.8.3"
     vaul: "npm:1.1.2"
-    zod: "npm:3.25.55"
+    zod: "npm:3.25.61"
   peerDependencies:
     motion: ^12
     react: ^18.2 || ^19
@@ -3437,12 +3437,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:22.15.30":
-  version: 22.15.30
-  resolution: "@types/node@npm:22.15.30"
+"@types/node@npm:24.0.0":
+  version: 24.0.0
+  resolution: "@types/node@npm:24.0.0"
   dependencies:
-    undici-types: "npm:~6.21.0"
-  checksum: 10c0/ca330ac0e7fd502686d6df115fcc606aba46fd334220f749bbba2f639accdadcb23f7900603ceccdc8240be736739cad5c0b87c0fa92c9255a4dff245f07d664
+    undici-types: "npm:~7.8.0"
+  checksum: 10c0/075f3129aa88932a0b4c3c9c28486f93a8d295151138b1fdd590cbbb59ec92d59b66201f99a0f061a7c8955a09d06ecc3fa070ed3c438a521a9890d1a3460958
   languageName: node
   linkType: hard
 
@@ -3464,12 +3464,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:19.1.6":
-  version: 19.1.6
-  resolution: "@types/react@npm:19.1.6"
+"@types/react@npm:19.1.7":
+  version: 19.1.7
+  resolution: "@types/react@npm:19.1.7"
   dependencies:
     csstype: "npm:^3.0.2"
-  checksum: 10c0/8b10b198e28997b3c57559750f8bcf5ae7b33c554b16b6f4fe2ece1d4de6a2fc8cb53e7effe08ec9cb939d2f479eb97c5e08aac2cf83b10a90164fe451cc8ea2
+  checksum: 10c0/3bb8fb865debad4328b0d623e1c669f2ee90e9302638a64e65a0a1c61efca4f4ef91f58b55ff94075358c190d80bb8472a5823c6901d8cdc9009dd436a1dcab1
   languageName: node
   linkType: hard
 
@@ -5055,11 +5055,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"framer-motion@npm:^12.15.0":
-  version: 12.15.0
-  resolution: "framer-motion@npm:12.15.0"
+"framer-motion@npm:^12.17.0":
+  version: 12.17.0
+  resolution: "framer-motion@npm:12.17.0"
   dependencies:
-    motion-dom: "npm:^12.15.0"
+    motion-dom: "npm:^12.17.0"
     motion-utils: "npm:^12.12.1"
     tslib: "npm:^2.4.0"
   peerDependencies:
@@ -5073,7 +5073,7 @@ __metadata:
       optional: true
     react-dom:
       optional: true
-  checksum: 10c0/b4e54a06d2ceb8ebccd0c79c4ab080ae5dab5fcaee6af0c6a2070dc922054a2403290914f0179b4a250c309654e3fc1f9f173d98e0bc4a78a1f42576013f586c
+  checksum: 10c0/3262ab125650d71cd13eb9f4838da70550ea383d68a2fbd2664b05bac88b7420fe7db25911fbd30cbc237327d98a4567df34e675c8261dde559a9375e580103c
   languageName: node
   linkType: hard
 
@@ -5951,12 +5951,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lucide-react@npm:0.511.0":
-  version: 0.511.0
-  resolution: "lucide-react@npm:0.511.0"
+"lucide-react@npm:0.514.0":
+  version: 0.514.0
+  resolution: "lucide-react@npm:0.514.0"
   peerDependencies:
     react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-  checksum: 10c0/bf09dd73cf2233abea90506ad31a91739555d761062722acbe045cb73e274f035b196472de0971a8a8f0645b2b54e3f21b8c1980fe87c909ca93171a9c28428a
+  checksum: 10c0/83d781e5036b53a1b0f3be05d43c80675c8d65ff59901f7db1868ba36d3fa159cb459f4c3974781a4105062a1aa7df8a57ac70192a455b95afec7281ad751ffb
   languageName: node
   linkType: hard
 
@@ -6259,12 +6259,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"motion-dom@npm:^12.15.0":
-  version: 12.15.0
-  resolution: "motion-dom@npm:12.15.0"
+"motion-dom@npm:^12.17.0":
+  version: 12.17.0
+  resolution: "motion-dom@npm:12.17.0"
   dependencies:
     motion-utils: "npm:^12.12.1"
-  checksum: 10c0/b6cc4c158f5e37d4da6d33044642fa5dbdb6b331b5a1c4d4d738770c12cb56a700c839af64c81de2a69bea7832693da5705612f6e15f5b04fac55d0339eb84d2
+  checksum: 10c0/1ec428e113f334193dcd52293c94bca21fcca97f3825521d1dafe41f6b999e8dda5013b48de2c09e2f32204f80d1d7281079ba3a142c71b8d6923a0ddb056513
   languageName: node
   linkType: hard
 
@@ -6275,11 +6275,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"motion@npm:12.15.0":
-  version: 12.15.0
-  resolution: "motion@npm:12.15.0"
+"motion@npm:12.17.0":
+  version: 12.17.0
+  resolution: "motion@npm:12.17.0"
   dependencies:
-    framer-motion: "npm:^12.15.0"
+    framer-motion: "npm:^12.17.0"
     tslib: "npm:^2.4.0"
   peerDependencies:
     "@emotion/is-prop-valid": "*"
@@ -6292,7 +6292,7 @@ __metadata:
       optional: true
     react-dom:
       optional: true
-  checksum: 10c0/1d2c782c5869c407b558e2d634ae27d1623b459e53676524a1108daa5c2b4ac33d55d3157dcd97c7421ed204ee89765d13f9f06b7b10531d90474017dca3adc6
+  checksum: 10c0/ed897054fd0226f3c6494f6f0ae3d4f11c7cff9a05c36bab557cfe338886fa8854468eb35c5789ba414b7960e2820f982327936df4656b760b443b7a91b31edc
   languageName: node
   linkType: hard
 
@@ -6662,27 +6662,27 @@ __metadata:
   languageName: node
   linkType: hard
 
-"playwright-core@npm:1.52.0":
-  version: 1.52.0
-  resolution: "playwright-core@npm:1.52.0"
+"playwright-core@npm:1.53.0":
+  version: 1.53.0
+  resolution: "playwright-core@npm:1.53.0"
   bin:
     playwright-core: cli.js
-  checksum: 10c0/640945507e6ca2144e9f596b2a6ecac042c2fd3683ff99e6271e9a7b38f3602d415f282609d569456f66680aab8b3c5bb1b257d8fb63a7fc0ed648261110421f
+  checksum: 10c0/fda0cf76115b15b1ca5cbc69e14185904e5c85e9e7cddb0a48121e69d681c638ac497e8a103985976cae260aa02e9c03ea27d6cd0b5f3d3ca914d4c7fd96f930
   languageName: node
   linkType: hard
 
-"playwright@npm:1.52.0":
-  version: 1.52.0
-  resolution: "playwright@npm:1.52.0"
+"playwright@npm:1.53.0":
+  version: 1.53.0
+  resolution: "playwright@npm:1.53.0"
   dependencies:
     fsevents: "npm:2.3.2"
-    playwright-core: "npm:1.52.0"
+    playwright-core: "npm:1.53.0"
   dependenciesMeta:
     fsevents:
       optional: true
   bin:
     playwright: cli.js
-  checksum: 10c0/2c6edf1e15e59bbaf77f3fa0fe0ac975793c17cff835d9c8b8bc6395a3b6f1c01898b3058ab37891b2e4d424bcc8f1b4844fe70d943e0143d239d7451408c579
+  checksum: 10c0/8d995114808b92f2005bd12ff5e494cdc3fa2d484f4d85a3e54be1fb99e88ae3e34b24792d83bb987462c73e553a0fa37a2a70264afbf67894b51c1498cf5a11
   languageName: node
   linkType: hard
 
@@ -8014,10 +8014,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tailwind-merge@npm:3.3.0":
-  version: 3.3.0
-  resolution: "tailwind-merge@npm:3.3.0"
-  checksum: 10c0/a50cd141100486f98541dfab3705712af5860556689b7496dc6b0284374f02d12d5471f0f40035f6bb8b1c749c422060a1f3e5f8900057d8a7786b111c8472e6
+"tailwind-merge@npm:3.3.1":
+  version: 3.3.1
+  resolution: "tailwind-merge@npm:3.3.1"
+  checksum: 10c0/b84c6a78d4669fa12bf5ab8f0cdc4400a3ce0a7c006511af4af4be70bb664a27466dbe13ee9e3b31f50ddf6c51d380e8192ce0ec9effce23ca729d71a9f63818
   languageName: node
   linkType: hard
 
@@ -8252,10 +8252,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"undici-types@npm:~6.21.0":
-  version: 6.21.0
-  resolution: "undici-types@npm:6.21.0"
-  checksum: 10c0/c01ed51829b10aa72fc3ce64b747f8e74ae9b60eafa19a7b46ef624403508a54c526ffab06a14a26b3120d055e1104d7abe7c9017e83ced038ea5cf52f8d5e04
+"undici-types@npm:~7.8.0":
+  version: 7.8.0
+  resolution: "undici-types@npm:7.8.0"
+  checksum: 10c0/9d9d246d1dc32f318d46116efe3cfca5a72d4f16828febc1918d94e58f6ffcf39c158aa28bf5b4fc52f410446bc7858f35151367bd7a49f21746cab6497b709b
   languageName: node
   linkType: hard
 
@@ -8621,10 +8621,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:3.25.55":
-  version: 3.25.55
-  resolution: "zod@npm:3.25.55"
-  checksum: 10c0/6c6bed4b233e1bd9074e90a1742e98195f9a1112d2ea5b0b7df7227258f024e35fb142c35c662598a3ab19a20163ad9668ac9dfbec8cfaaa31cddea76b27579e
+"zod@npm:3.25.61":
+  version: 3.25.61
+  resolution: "zod@npm:3.25.61"
+  checksum: 10c0/45386e88c52b5946dbe22c95fe45f3e7c1c90c4fba8cd7b8ce4e6cf0a79c987026990cbb082c54bb2926be35ed49947f351f05b35d6507aa17c23c088a5f4667
   languageName: node
   linkType: hard
 
