@@ -31,20 +31,6 @@ dist/
 │   └── ...
 ```
 
-### CSS Source Maps
-
-```
-dist/
-├── esm/
-│   ├── button.css
-│   ├── button.css.map     ✅ CSS source map
-│   └── ...
-├── cjs/
-│   ├── button.css
-│   ├── button.css.map     ✅ CSS source map
-│   └── ...
-```
-
 ### Benefits
 
 - **Accurate stack traces** pointing to original TypeScript source
