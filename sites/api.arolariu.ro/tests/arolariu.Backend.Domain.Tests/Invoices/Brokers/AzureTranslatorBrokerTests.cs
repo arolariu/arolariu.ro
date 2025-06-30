@@ -1,10 +1,4 @@
 namespace arolariu.Backend.Domain.Tests.Invoices.Brokers;
-using System.Net;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
@@ -12,9 +6,8 @@ using arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
 using Microsoft.Extensions.Options;
 
 using Moq;
-using Moq.Protected;
 
-using Xunit;
+using System.Net.Http;
 
 public class AzureTranslatorBrokerTests
 {
