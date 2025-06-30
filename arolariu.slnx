@@ -1,6 +1,5 @@
 <Solution>
   <Folder Name="/sites/" />
-  <Folder Name="/sites/about.arolariu.ro/" />
   <Folder Name="/sites/api.arolariu.ro/" />
   <Folder Name="/sites/api.arolariu.ro/src/">
     <Project Path="sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj" />
@@ -18,7 +17,6 @@
       <BuildDependency Project="sites/api.arolariu.ro/src/Invoices/arolariu.Backend.Domain.Invoices.csproj" />
     </Project>
   </Folder>
-  <Folder Name="/sites/docs.arolariu.ro/" />
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
   </Folder>
