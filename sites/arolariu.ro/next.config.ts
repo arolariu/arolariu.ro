@@ -116,6 +116,7 @@ const nextConfig: NextConfig = {
 
   experimental: {
     allowDevelopmentBuild: isDevBuild ? true : undefined,
+    devtoolSegmentExplorer: isDevBuild ? true : undefined,
     serverSourceMaps: isDevBuild,
     turbopackSourceMaps: isDevBuild,
     turbopackMinify: !isDevBuild,
@@ -180,5 +181,6 @@ const withTranslation = createNextIntlPlugin({
 });
 
 console.log(">>> ⚙️ Image patterns: \n\t", nextConfig.images?.remotePatterns?.map((pattern) => pattern?.hostname).join(", \n\t"));
+
 const finalConfig = withBundleAnalyzer(withTranslation(nextConfig));
 export default finalConfig;

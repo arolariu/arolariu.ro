@@ -7,9 +7,25 @@ metadata author = 'Alexandru-Razvan Olariu'
 param noSqlServerName string
 
 @description('The location for the NoSQL Server resource.')
-param noSqlServerLocation string = resourceGroup().location
+param noSqlServerLocation string
 
-resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2024-05-15' = {
+@description('The date when the deployment is executed.')
+param noSqlServerDeploymentDate string
+
+// Common tags for all resources
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: noSqlServerDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'storage-nosql'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
+
+resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' = {
   name: noSqlServerName
   location: noSqlServerLocation
   properties: {
@@ -42,20 +58,96 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2024-05-15' = {
         isZoneRedundant: false
       }
     ]
-    cors: []
-    capabilities: []
-    ipRules: []
     backupPolicy: {
       type: 'Continuous'
       continuousModeProperties: { tier: 'Continuous7Days' }
     }
-    networkAclBypassResourceIds: []
     capacity: { totalThroughputLimit: 1000 }
   }
-  tags: {
-    environment: 'PRODUCTION'
-    deployment: 'Bicep'
+
+  resource primaryNoSqlDatabase 'sqlDatabases@2025-05-01-preview' = {
+    name: 'primary'
+    location: noSqlServerLocation
+    properties: {
+      resource: {
+        id: 'primary'
+      }
+    }
+
+    resource databaseSettings 'throughputSettings@2025-05-01-preview' = {
+      name: 'default'
+      properties: {
+        resource: {
+          throughput: 100
+          autoscaleSettings: {
+            maxThroughput: 1000
+          }
+        }
+      }
+    }
+
+    resource invoicesContainer 'containers@2025-05-01-preview' = {
+      name: 'invoices'
+      properties: {
+        resource: {
+          id: 'invoices'
+          indexingPolicy: {
+            indexingMode: 'consistent'
+            automatic: true
+            includedPaths: [{ path: '/*' }]
+            excludedPaths: [{ path: '/_etag/?' }]
+          }
+          partitionKey: {
+            paths: ['/UserIdentifier']
+            kind: 'Hash'
+            version: 2
+          }
+          uniqueKeyPolicy: {
+            uniqueKeys: []
+          }
+          conflictResolutionPolicy: {
+            mode: 'LastWriterWins'
+            conflictResolutionPath: '_ts'
+          }
+        }
+      }
+    }
+
+    resource merchantsContainer 'containers@2025-05-01-preview' = {
+      name: 'merchants'
+      properties: {
+        resource: {
+          id: 'merchants'
+          indexingPolicy: {
+            indexingMode: 'consistent'
+            automatic: true
+            includedPaths: [{ path: '/*' }]
+            excludedPaths: [{ path: '/_etag/?' }]
+          }
+          partitionKey: {
+            paths: ['/ParentCompanyId']
+            kind: 'Hash'
+            version: 2
+          }
+          uniqueKeyPolicy: {
+            uniqueKeys: []
+          }
+          conflictResolutionPolicy: {
+            mode: 'LastWriterWins'
+            conflictResolutionPath: '_ts'
+          }
+        }
+      }
+    }
+
+    tags: union(commonTags, {
+      displayName: 'Primary NoSQL Database'
+    })
   }
+
+  tags: union(commonTags, {
+    displayName: 'NoSQL Server'
+  })
 }
 
 output noSqlServerName string = noSqlServer.name

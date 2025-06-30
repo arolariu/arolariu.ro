@@ -10,108 +10,62 @@ param identities identity[]
 param keyVaultName string
 
 @description('The location for the Azure Key Vault resource.')
-param keyVaultLocation string = resourceGroup().location
+param keyVaultLocation string
 
-var accessPolicies = [
-  for identity in identities: {
-    objectId: identity.id
-    tenantId: subscription().tenantId
-    permissions: {
-      certificates: [
-        'GET'
-        'LIST'
-        'UPDATE'
-        'CREATE'
-        'IMPORT'
-        'DELETE'
-        'RECOVER'
-        'BACKUP'
-        'RESTORE'
-        'MANAGECONTACTS'
-        'MANAGEISSUERS'
-        'GETISSUERS'
-        'LISTISSUERS'
-        'SETISSUERS'
-        'DELETEISSUERS'
-      ]
-      keys: [
-        'GET'
-        'LIST'
-        'UPDATE'
-        'CREATE'
-        'IMPORT'
-        'DELETE'
-        'RECOVER'
-        'BACKUP'
-        'RESTORE'
-        'ROTATE'
-      ]
-      secrets: [
-        'GET'
-        'LIST'
-        'SET'
-        'DELETE'
-        'RECOVER'
-        'BACKUP'
-        'RESTORE'
-      ]
-    }
-  }
+@description('The date when the deployment is executed.')
+param keyVaultDeploymentDate string
+
+// Common tags for all resources
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: keyVaultDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'configuration-keyvault'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
+
+var keyVaultSecretNames = [
+  'app-config-store'
+  'api-jwt-secret'
+
+  // SQL Server credentials (production only)
+  'sql-admin-username'
+  'sql-admin-password'
 ]
 
 resource keyVault 'Microsoft.KeyVault/vaults@2024-04-01-preview' = {
   name: keyVaultName
   location: keyVaultLocation
   properties: {
-    accessPolicies: accessPolicies
-    createMode: 'default'
     enabledForDeployment: false
     enabledForDiskEncryption: false
     enabledForTemplateDeployment: true
     enablePurgeProtection: true
-    enableRbacAuthorization: false
+    enableRbacAuthorization: true
     enableSoftDelete: true
     networkAcls: {}
-    provisioningState: 'Succeeded'
     publicNetworkAccess: 'enabled'
     sku: { family: 'A', name: 'standard' }
     softDeleteRetentionInDays: 90
     tenantId: subscription().tenantId
     vaultUri: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}'
   }
-  tags: {
-    environment: 'PRODUCTION'
-    deployment: 'Bicep'
-  }
+  tags: union(commonTags, {
+    displayName: 'Key Vault'
+    resourceType: 'Key Vault'
+  })
+
+  resource keyVaultItems 'secrets@2024-12-01-preview' = [
+    for secretName in keyVaultSecretNames: {
+      name: secretName
+      properties: { attributes: { enabled: true } }
+    }
+  ]
 }
-
-var keyVaultSecretNames = [
-  'ConfigurationStore' // The configuration store connection string
-  'jwt-secret' // The JWT secret for the authentication service
-
-  'DEV-AzureOptions-StorageAccountConnectionString'
-  'PROD-AzureOptions-StorageAccountConnectionString'
-
-  'DEV-AzureOptions-SqlConnectionString'
-  'PROD-AzureOptions-SqlConnectionString'
-
-  'DEV-AzureOptions-NoSqlConnectionString'
-  'PROD-AzureOptions-NoSqlConnectionString'
-
-  'DEV-AzureOptions-CognitiveServicesKey'
-  'PROD-AzureOptions-CognitiveServicesKey'
-
-  'DEV-AzureOptions-OpenAIKey'
-  'PROD-AzureOptions-OpenAIKey'
-]
-
-resource keyVaultItems 'Microsoft.KeyVault/vaults/secrets@2024-04-01-preview' = [
-  for secretName in keyVaultSecretNames: {
-    parent: keyVault
-    name: secretName
-    properties: { attributes: { enabled: true } }
-  }
-]
 
 output mainKeyVaultUri string = keyVault.properties.vaultUri
 output mainKeyVaultResourceId string = keyVault.id

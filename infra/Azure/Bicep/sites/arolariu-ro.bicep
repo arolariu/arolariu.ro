@@ -3,18 +3,32 @@ targetScope = 'resourceGroup'
 metadata description = 'This template will create the arolariu.ro app service site.'
 metadata author = 'Alexandru-Razvan Olariu'
 
-param mainWebsiteLocation string = resourceGroup().location
-param productionAppPlanId string
-param mainWebsiteIdentityId string
+param productionWebsiteLocation string
+param productionWebsiteAppPlanId string
+param productionWebsiteIdentityId string
+param productionWebsiteDeploymentDate string
 
-resource mainWebsite 'Microsoft.Web/sites@2023-12-01' = {
+// Common tags for all resources
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: productionWebsiteDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'sites-main'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
+
+resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
   name: 'www-arolariu-ro'
-  location: mainWebsiteLocation
+  location: productionWebsiteLocation
   kind: 'app,linux,container'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
-      '${mainWebsiteIdentityId}': {}
+      '${productionWebsiteIdentityId}': {}
     }
   }
   properties: {
@@ -24,14 +38,13 @@ resource mainWebsite 'Microsoft.Web/sites@2023-12-01' = {
     isXenon: false // Hyper-V sandbox; not used.
     hyperV: false // Hyper-V manager; not used.
     hostNamesDisabled: false
-    vnetBackupRestoreEnabled: false // VNet backup and restore is not enabled; not used.
     containerSize: 0
     httpsOnly: true
     redundancyMode: 'None' // No redundancy; we use AFD and elastic horizontal scaling.
     publicNetworkAccess: 'Enabled'
     storageAccountRequired: false
     enabled: true
-    serverFarmId: productionAppPlanId
+    serverFarmId: productionWebsiteAppPlanId
     siteConfig: {
       acrUseManagedIdentityCreds: false // Azure Container Registry managed identity is not used.
       publishingUsername: '$arolariu' // Publishing username (GitHub / ACR username)
@@ -62,29 +75,42 @@ resource mainWebsite 'Microsoft.Web/sites@2023-12-01' = {
       ipSecurityRestrictions: [
         {
           ipAddress: 'AzureFrontDoor.Backend'
-          tag: 'ServiceTag'
-          name: 'AzureFrontDoor'
           action: 'Allow'
+          tag: 'ServiceTag'
           priority: 100
+          name: 'AzureFrontDoor'
+        }
+        {
+          ipAddress: 'AzureCloud'
+          action: 'Allow'
+          tag: 'ServiceTag'
+          priority: 200
+          name: 'AzureCloud'
+        }
+        {
+          ipAddress: 'AzureActiveDirectory'
+          action: 'Allow'
+          tag: 'ServiceTag'
+          priority: 300
+          name: 'AzureActiveDirectory'
         }
         {
           ipAddress: 'Any'
-          tag: 'Default'
-          name: 'Default'
           action: 'Deny'
           priority: 2147483647
+          name: 'Deny all'
+          description: 'Deny all access'
         }
       ]
       ipSecurityRestrictionsDefaultAction: 'Deny'
-      minTlsVersion: '1.3' // Minimum TLS version accepted by the server.
+      minTlsVersion: '1.2' // Minimum TLS version accepted by the server.
       nodeVersion: '22' // Minimum specified Node.js version.
       webSocketsEnabled: true // WebSockets (WSS) are enabled.
     }
   }
-  tags: {
-    environment: 'PRODUCTION'
-    deployment: 'Bicep'
-  }
+  tags: union(commonTags, {
+    displayName: 'Main Website'
+  })
 }
 
 output mainWebsiteUrl string = mainWebsite.properties.defaultHostName

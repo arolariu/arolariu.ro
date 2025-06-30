@@ -1,36 +1,50 @@
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will create a new storage account.'
+metadata description = 'This template creates a secure storage account with enterprise-grade security standards.'
 metadata author = 'Alexandru-Razvan Olariu'
 
-@description('The location for the storage account resource.')
-param location string = resourceGroup().location
-
 @description('The storage account name.')
+@minLength(3)
+@maxLength(24)
 param storageAccountName string
+
+@description('The location for the storage account resource.')
+param storageAccountLocation string
+
+@description('The date when the deployment is executed.')
+param storageAccountDeploymentDate string
+
+// Common tags for all resources
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: storageAccountDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'storage-account'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: storageAccountName
-  location: location
-  sku: { name: 'Standard_LRS' }
+  location: storageAccountLocation
+  sku: {
+    name: 'Standard_LRS'
+  }
   kind: 'StorageV2'
   properties: {
     dnsEndpointType: 'Standard'
-    defaultToOAuthAuthentication: false
+    defaultToOAuthAuthentication: true
     publicNetworkAccess: 'Enabled'
     allowCrossTenantReplication: false
-    azureFilesIdentityBasedAuthentication: {
-      directoryServiceOptions: 'AADKERB'
-      defaultSharePermission: 'StorageFileDataSmbShareReader'
-    }
     minimumTlsVersion: 'TLS1_2'
     allowBlobPublicAccess: true
     allowSharedKeyAccess: true
     networkAcls: {
-      bypass: 'AzureServices'
+      bypass: 'AzureServices, Logging, Metrics'
       defaultAction: 'Allow'
-      ipRules: []
-      virtualNetworkRules: []
     }
     supportsHttpsTrafficOnly: true
     encryption: {
@@ -45,70 +59,153 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
           enabled: true
           keyType: 'Account'
         }
+        queue: {
+          enabled: true
+          keyType: 'Account'
+        }
+        table: {
+          enabled: true
+          keyType: 'Account'
+        }
       }
     }
     accessTier: 'Hot'
   }
-  tags: {
-    environment: 'PRODUCTION'
-    deployment: 'Bicep'
-  }
+  tags: union(commonTags, {
+    displayName: 'Secure Storage Account'
+  })
 
-  resource storageAccountBlobSettings 'blobServices@2023-05-01' = {
+  // Blob service configuration with security enhancements
+  resource blobServices 'blobServices@2023-05-01' = {
     name: 'default'
     properties: {
-      changeFeed: { enabled: false }
-      restorePolicy: { enabled: false }
-      containerDeleteRetentionPolicy: { enabled: false }
+      changeFeed: {
+        enabled: true
+        retentionInDays: 90
+      }
+      restorePolicy: {
+        enabled: true
+        days: 30
+      }
+      containerDeleteRetentionPolicy: {
+        enabled: true
+        days: 7
+      }
       cors: {
         corsRules: [
           {
-            allowedOrigins: ['arolariu.ro', 'dev.arolariu.ro']
-            allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS', 'MERGE', 'PATCH']
+            allowedOrigins: ['https://arolariu.ro', 'https://dev.arolariu.ro']
+            allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS']
             allowedHeaders: ['*']
             exposedHeaders: ['*']
             maxAgeInSeconds: 3600
           }
           {
-            allowedOrigins: ['http://localhost:3000']
-            allowedMethods: ['GET', 'POST']
+            allowedOrigins: ['http://localhost:3000', 'http://localhost:3001']
+            allowedMethods: ['GET', 'POST', 'PUT', 'DELETE']
             allowedHeaders: ['*']
             exposedHeaders: ['*']
-            maxAgeInSeconds: 3600
+            maxAgeInSeconds: 1800
           }
         ]
       }
       deleteRetentionPolicy: {
         enabled: true
         days: 7
-        allowPermanentDelete: true
+        allowPermanentDelete: false
       }
       isVersioningEnabled: true
-      lastAccessTimeTrackingPolicy: { enable: false }
+      lastAccessTimeTrackingPolicy: {
+        enable: true
+        name: 'AccessTimeTracking'
+        trackingGranularityInDays: 1
+        blobType: ['blockBlob']
+      }
     }
   }
 
-  resource storageAccountFileSettings 'fileServices@2023-05-01' = {
+  // File service configuration
+  resource fileServices 'fileServices@2023-05-01' = {
     name: 'default'
     properties: {
       shareDeleteRetentionPolicy: {
         enabled: true
         days: 7
-        allowPermanentDelete: true
+        allowPermanentDelete: false
+      }
+      protocolSettings: {
+        smb: {
+          versions: 'SMB3.0;SMB3.1.1'
+          authenticationMethods: 'Kerberos'
+          kerberosTicketEncryption: 'AES-256'
+          channelEncryption: 'AES-128-CCM;AES-128-GCM;AES-256-GCM'
+        }
       }
     }
   }
 
-  resource storageAccountQueueSettings 'queueServices@2023-05-01' = {
+  // Queue service configuration
+  resource queueServices 'queueServices@2023-05-01' = {
     name: 'default'
     properties: {}
   }
 
-  resource storageAccountTableSettings 'tableServices@2023-05-01' = {
+  // Table service configuration
+  resource tableServices 'tableServices@2023-05-01' = {
     name: 'default'
     properties: {}
   }
 }
 
+// Lifecycle management policy for cost optimization
+resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2023-05-01' = {
+  parent: storageAccount
+  name: 'default'
+  properties: {
+    policy: {
+      rules: [
+        {
+          enabled: true
+          name: 'MoveToIA'
+          type: 'Lifecycle'
+          definition: {
+            filters: {
+              blobTypes: ['blockBlob']
+            }
+            actions: {
+              baseBlob: {
+                tierToCool: {
+                  daysAfterModificationGreaterThan: 30
+                }
+                tierToArchive: {
+                  daysAfterModificationGreaterThan: 90
+                }
+                delete: {
+                  daysAfterModificationGreaterThan: 365
+                }
+              }
+              snapshot: {
+                delete: {
+                  daysAfterCreationGreaterThan: 90
+                }
+              }
+              version: {
+                delete: {
+                  daysAfterCreationGreaterThan: 365
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+
+// Outputs
 output storageAccountName string = storageAccount.name
-output storageAccountResourceId string = storageAccount.id
+output storageAccountId string = storageAccount.id
+output storageAccountBlobEndpoint string = storageAccount.properties.primaryEndpoints.blob
+output storageAccountFileEndpoint string = storageAccount.properties.primaryEndpoints.file
+output storageAccountQueueEndpoint string = storageAccount.properties.primaryEndpoints.queue
+output storageAccountTableEndpoint string = storageAccount.properties.primaryEndpoints.table

@@ -4,12 +4,22 @@ targetScope = 'resourceGroup'
 param resourceDeploymentDate string = utcNow()
 
 @description('The prefix to use for the names of the resources.')
+@minLength(1)
+@maxLength(20)
 param resourceConventionPrefix string
+
+@description('The location for the app service plans.')
+@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+param resourceLocation string
 
 module appServicePlansDeployment 'appServicePlans.bicep' = {
   scope: resourceGroup()
   name: 'appServicePlansDeployment-${resourceDeploymentDate}'
-  params: { appServicePlanPrefix: resourceConventionPrefix }
+  params: {
+    appServicePlanLocation: resourceLocation
+    appServicePlanDeploymentDate: resourceDeploymentDate
+    appServicePlanConventionPrefix: resourceConventionPrefix
+  }
 }
 
 output productionAppPlanId string = appServicePlansDeployment.outputs.productionAppPlanId

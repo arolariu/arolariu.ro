@@ -34,13 +34,8 @@ on:
         type: choice
 
 env:
-  SITE_NAME: ${{ inputs.environment == 'production' && 'arolariu.ro' || 'dev.arolariu.ro' }}
-  SITE_URL: ${{ inputs.environment == 'production' && 'https://arolariu.ro' || 'https://dev.arolariu.ro' }}
-  SITE_ENV: ${{ inputs.environment || 'development'}}
-  API_NAME: "api.arolariu.ro"
-  API_URL: "https://api.arolariu.ro"
   COMMIT_SHA: ${{ github.sha }}
-  USE_CDN: ${{ inputs.environment == 'production' && 'true' || 'false' }}
+  PRODUCTION: ${{ inputs.environment == 'production' && 'true' || 'false' }}
   AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
   AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
 
@@ -56,33 +51,23 @@ jobs:
         with:
           fetch-depth: 0 # Fetch all history for all branches and tags
 
+      - name: 🔒 Performing auth against Azure Public Cloud...
+        uses: Azure/login@v2.3.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: 📦 Installing Node.js...
         uses: actions/setup-node@v4.4.0
         with:
           node-version: latest
 
-      - name: 🚧 Adding environment variables...
-        run: |
-          touch .env
-          echo "TIMESTAMP=$(date -u  +"%Y-%m-%dT%H:%M:%S"Z)" >> .env
-          json='${{ toJson(env) }}'
-          for key in $(echo $json | jq -r 'keys[]'); do
-            value=$(echo $json | jq -r '.'$key)
-            echo "$key=$value" >> .env
-          done
-
-      - name: 🚧 Adding environment secrets...
-        run: |
-          echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" >> .env
-          echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env
-          echo "API_JWT=${{ secrets.API_JWT }}" >> .env
-          echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env
-          echo "CONFIG_STORE=${{ secrets.CONFIG_STORE }}" >> .env
-
       - name: 📦 Installing dependencies...
         run: |
           corepack enable
           yarn install --immutable
+          yarn setup:azure
           yarn playwright install --with-deps
           yarn generate
 
@@ -190,23 +175,17 @@ jobs:
           password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
           login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
-      - name: 🚧 Adding environment variables...
-        run: |
-          touch .env
-          echo "TIMESTAMP=$(date -u  +"%Y-%m-%dT%H:%M:%S"Z)" >> .env
-          json='${{ toJson(env) }}'
-          for key in $(echo $json | jq -r 'keys[]'); do
-            value=$(echo $json | jq -r '.'$key)
-            echo "$key=$value" >> .env
-          done
+      - name: 📦 Installing Node.js...
+        uses: actions/setup-node@v4.4.0
+        with:
+          node-version: latest
 
-      - name: 🚧 Adding environment secrets...
+      - name: 📦 Installing dependencies...
         run: |
-          echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}" >> .env
-          echo "CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env
-          echo "API_JWT=${{ secrets.API_JWT }}" >> .env
-          echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env
-          echo "CONFIG_STORE=${{ secrets.CONFIG_STORE }}" >> .env
+          corepack enable
+          yarn install --immutable
+          yarn setup:azure
+          yarn generate
 
       - name: 🏗️ Building the docker container...
         env:

@@ -1,5 +1,61 @@
 {
   "experimentalFeaturesEnabled": {
-    "extensibility": true
+    "symbolicNameCodegen": true
+  },
+  "analyzers": {
+    "core": {
+      "enabled": true,
+      "verbose": true,
+      "rules": {
+        "no-hardcoded-env-urls": {
+          "level": "error"
+        },
+        "no-unused-params": {
+          "level": "warning"
+        },
+        "secure-parameter-default": {
+          "level": "error"
+        },
+        "simplify-interpolation": {
+          "level": "info"
+        },
+        "prefer-interpolation": {
+          "level": "warning"
+        },
+        "no-unnecessary-dependson": {
+          "level": "warning"
+        },
+        "no-hardcoded-location": {
+          "level": "warning"
+        },
+        "no-loc-expr-outside-params": {
+          "level": "warning"
+        },
+        "max-params": {
+          "level": "warning",
+          "maxNumberOfParameters": 20
+        },
+        "max-variables": {
+          "level": "warning",
+          "maxNumberOfVariables": 30
+        },
+        "max-outputs": {
+          "level": "warning",
+          "maxNumberOfOutputs": 15
+        },
+        "adminusername-should-not-be-literal": {
+          "level": "error"
+        }
+      }
+    }
+  },
+  "formatting": {
+    "indentKind": "Space",
+    "indentSize": 2,
+    "insertFinalNewline": true,
+    "keepMultipleBlankLines": false
+  },
+  "cloud": {
+    "currentProfile": "AzureCloud"
   }
 }

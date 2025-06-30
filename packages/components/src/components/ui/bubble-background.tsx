@@ -43,12 +43,12 @@ const BubbleBackground = React.forwardRef<
       },
       ...props
     },
-    ref
+    ref,
   ) => {
     const containerRef = React.useRef<HTMLDivElement>(null);
     React.useImperativeHandle(
       ref,
-      () => containerRef.current as HTMLDivElement
+      () => containerRef.current as HTMLDivElement,
     );
 
     const mouseX = useMotionValue(0);
@@ -80,7 +80,7 @@ const BubbleBackground = React.forwardRef<
         ref={containerRef}
         className={cn(
           "relative size-full overflow-hidden bg-gradient-to-br from-violet-900 to-blue-900",
-          className
+          className,
         )}
         {...props}
       >
@@ -179,7 +179,7 @@ const BubbleBackground = React.forwardRef<
         {children}
       </div>
     );
-  }
+  },
 );
 
 BubbleBackground.displayName = "BubbleBackground";

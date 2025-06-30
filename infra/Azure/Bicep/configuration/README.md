@@ -5,6 +5,7 @@ This module deploys the configuration management infrastructure for the arolariu
 ## Overview
 
 The configuration infrastructure implements a secure, centralized configuration management system that:
+
 - Separates sensitive secrets (Key Vault) from application configuration (App Configuration)
 - Provides configuration snapshots for consistent deployments
 - Enables secure access through Managed Identities
@@ -44,18 +45,18 @@ graph TB
     WA_PROD ==>|Serves Configuration| SNAPSHOT
     WA_DEV ==>|Serves Configuration| SNAPSHOT
     WA_API ==>|Serves Configuration| SNAPSHOT
-    
+
     SNAPSHOT --> AC
     AC --> KVR
     AC --> CONFIG
-    
+
     KVR -.->|Retrieves Secrets| KV
     CONFIG -.->|Standard Values| SNAPSHOT
     KVR -.->|Resolved Secrets| SNAPSHOT
-    
+
     KV --> SECRETS
     KV --> AP
-    
+
     MI_INFRA --> AP
     MI_FRONTEND --> AP
     MI_BACKEND --> AP
@@ -80,6 +81,7 @@ graph TB
 The Key Vault serves as the secure secrets store for all sensitive configuration values.
 
 #### Specifications
+
 - **SKU**: Standard
 - **Soft Delete**: Enabled (90 days retention)
 - **Purge Protection**: Enabled
@@ -88,25 +90,30 @@ The Key Vault serves as the secure secrets store for all sensitive configuration
 #### Stored Secrets
 
 ##### Authentication Secrets
+
 - **jwt-secret**: JWT token signing key for authentication services
 
 ##### Storage Connection Strings
+
 - **DEV-AzureOptions-StorageAccountConnectionString**: Development storage account
 - **PROD-AzureOptions-StorageAccountConnectionString**: Production storage account
 
 ##### Database Connection Strings
+
 - **DEV-AzureOptions-SqlConnectionString**: Development SQL database
 - **PROD-AzureOptions-SqlConnectionString**: Production SQL database
 - **DEV-AzureOptions-NoSqlConnectionString**: Development NoSQL database
 - **PROD-AzureOptions-NoSqlConnectionString**: Production NoSQL database
 
 ##### External Service Keys
+
 - **DEV-AzureOptions-CognitiveServicesKey**: Development Cognitive Services
 - **PROD-AzureOptions-CognitiveServicesKey**: Production Cognitive Services
 - **DEV-AzureOptions-OpenAIKey**: Development OpenAI API
 - **PROD-AzureOptions-OpenAIKey**: Production OpenAI API
 
 ##### Configuration Store
+
 - **ConfigurationStore**: App Configuration connection string
 
 ### Azure App Configuration
@@ -114,6 +121,7 @@ The Key Vault serves as the secure secrets store for all sensitive configuration
 The App Configuration service provides centralized configuration management with versioning and feature flags.
 
 #### Specifications
+
 - **SKU**: Free (1000 requests/day, 10MB storage)
 - **Authentication**: Local authentication enabled
 - **Features**: Configuration snapshots, Key Vault references
@@ -121,13 +129,17 @@ The App Configuration service provides centralized configuration management with
 #### Configuration Types
 
 ##### Key Vault References
+
 References to secrets stored in Key Vault, automatically resolved at runtime:
+
 - Connection strings
 - API keys
 - Authentication secrets
 
 ##### Standard Configuration
+
 Non-sensitive application settings:
+
 - Feature flags
 - Application settings
 - Environment-specific configurations
@@ -136,6 +148,7 @@ Non-sensitive application settings:
 ### Configuration Snapshots
 
 Configuration snapshots provide:
+
 - **Immutable configuration sets**: Point-in-time configuration state
 - **Consistent deployments**: All services receive the same configuration
 - **Rollback capability**: Easy reversion to previous configurations
@@ -146,16 +159,19 @@ Configuration snapshots provide:
 Three managed identities provide secure, passwordless access:
 
 #### Infrastructure Identity
+
 - **Purpose**: Deployment and infrastructure management
 - **Access**: Full permissions on Key Vault (all operations)
 - **Usage**: CI/CD pipelines, infrastructure provisioning
 
 #### Frontend Identity
+
 - **Purpose**: Frontend application access
 - **Access**: Read-only for secrets and certificates
 - **Usage**: Web applications (arolariu.ro, dev.arolariu.ro)
 
 #### Backend Identity
+
 - **Purpose**: Backend services and APIs
 - **Access**: Read/write for secrets, read-only for certificates
 - **Usage**: API services (api.arolariu.ro)
@@ -163,12 +179,14 @@ Three managed identities provide secure, passwordless access:
 ## Security Model
 
 ### Access Control
+
 1. **No direct Key Vault access**: Applications only access App Configuration
 2. **Managed Identity authentication**: No passwords or keys in code
 3. **Least privilege**: Each identity has minimal required permissions
 4. **Network restrictions**: Can be configured for private endpoint access
 
 ### Secret Rotation
+
 - Secrets can be rotated in Key Vault without application changes
 - App Configuration automatically picks up new secret versions
 - Zero-downtime secret rotation capability

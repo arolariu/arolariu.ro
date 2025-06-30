@@ -29,13 +29,13 @@ const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProps>(
       transition = { duration: 0.6, ease: "easeOut" },
       ...props
     },
-    ref
+    ref,
   ) => {
     const [ripples, setRipples] = React.useState<Ripple[]>([]);
     const buttonRef = React.useRef<HTMLButtonElement>(null);
     React.useImperativeHandle(
       ref,
-      () => buttonRef.current as HTMLButtonElement
+      () => buttonRef.current as HTMLButtonElement,
     );
 
     const createRipple = React.useCallback(
@@ -59,7 +59,7 @@ const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProps>(
           setRipples((prev) => prev.filter((r) => r.id !== newRipple.id));
         }, 600);
       },
-      []
+      [],
     );
 
     const handleClick = React.useCallback(
@@ -69,7 +69,7 @@ const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProps>(
           onClick(event);
         }
       },
-      [createRipple, onClick]
+      [createRipple, onClick],
     );
 
     return (
@@ -80,7 +80,7 @@ const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProps>(
         whileHover={{ scale: 1.05 }}
         className={cn(
           "relative h-10 px-4 py-2 text-sm font-medium text-primary-foreground overflow-hidden bg-primary cursor-pointer rounded-lg focus:outline-none",
-          className
+          className,
         )}
         {...props}
       >
@@ -93,7 +93,7 @@ const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProps>(
             transition={transition}
             className={cn(
               "absolute bg-primary-foreground rounded-full size-5 pointer-events-none",
-              rippleClassName
+              rippleClassName,
             )}
             style={{
               top: ripple.y - 10,
@@ -103,7 +103,7 @@ const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProps>(
         ))}
       </motion.button>
     );
-  }
+  },
 );
 
 RippleButton.displayName = "RippleButton";

@@ -4,50 +4,90 @@ metadata description = 'This template deploys two App Service Farms, in the same
 metadata author = 'Alexandru-Razvan Olariu'
 
 @description('The location for the app service plans.')
-param appServicePlanLocation string = resourceGroup().location
+@allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
+param appServicePlanLocation string
 
 @description('The prefix for the app service plans.')
-param appServicePlanPrefix string
+@minLength(1)
+@maxLength(20)
+param appServicePlanConventionPrefix string
+
+@description('The date when the deployment is executed.')
+param appServicePlanDeploymentDate string
+
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: appServicePlanDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'compute'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
 
 var appPlans = [
   {
-    name: '${appServicePlanPrefix}-production'
+    name: '${appServicePlanConventionPrefix}-production'
     location: appServicePlanLocation
-    perSiteScaling: true
     sku: {
       name: 'B2'
       tier: 'Basic'
+      size: 'B2'
+      familiy: 'B'
+      capacity: 1
+    }
+    properties: {
+      perSiteScaling: false
+      elasticScaleEnabled: false
+      maximumElasticWorkerCount: 1
+      isSpot: false
+      reserved: true
+      isXenon: false
+      hyperV: false
+      targetWorkerCount: 0
+      targetWorkerSizeId: 0
+      zoneRedundant: false
     }
   }
   {
-    name: '${appServicePlanPrefix}-development'
+    name: '${appServicePlanConventionPrefix}-development'
     location: appServicePlanLocation
-    perSiteScaling: false
     sku: {
       name: 'B1'
       tier: 'Basic'
+      size: 'B1'
+      family: 'B'
+      capacity: 1
+    }
+    properties: {
+      perSiteScaling: false
+      elasticScaleEnabled: false
+      maximumElasticWorkerCount: 1
+      isSpot: false
+      reserved: true
+      isXenon: false
+      hyperV: false
+      targetWorkerCount: 0
+      targetWorkerSizeId: 0
+      zoneRedundant: false
     }
   }
 ]
 
-resource appPlanFarm 'Microsoft.Web/serverfarms@2023-12-01' = [
+resource appPlanFarm 'Microsoft.Web/serverfarms@2024-11-01' = [
   for appPlan in appPlans: {
     name: appPlan.name
     location: appPlan.location
-    sku: {
-      name: appPlan.sku.name
-      tier: appPlan.sku.tier
-    }
-    kind: 'linux' // Linux will be used for the app service plan.
-    properties: {
-      reserved: true // reserved means that the app service plan is running on Linux underneath.
-      zoneRedundant: false
-      perSiteScaling: appPlan.perSiteScaling
-    }
-    tags: {
-      environment: appPlan.name == '${appServicePlanPrefix}-production' ? 'PRODUCTION' : 'DEVELOPMENT'
-      deployment: 'Bicep'
-    }
+    sku: appPlan.sku
+    kind: 'linux'
+    properties: appPlan.properties
+    tags: union(commonTags, {
+      tier: appPlan.name == '${appServicePlanConventionPrefix}-production' ? 'production' : 'development'
+      sku: appPlan.sku.name
+      skuTier: appPlan.sku.tier
+    })
   }
 ]
 

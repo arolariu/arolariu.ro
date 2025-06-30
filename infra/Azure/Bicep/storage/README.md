@@ -1,329 +1,595 @@
-# Storage Resources
+# 💾 Storage Module
 
-This module deploys the storage infrastructure for the arolariu.ro platform, including Azure Storage Account, SQL Database, and Cosmos DB for comprehensive data management.
+This module provisions a comprehensive data storage infrastructure for the arolariu.ro platform, including Azure Storage Account, Container Registry, SQL Database, and Cosmos DB for enterprise-grade data management with enhanced security standards.
 
-## Overview
+## 📋 **Overview**
 
-The storage infrastructure implements a multi-tier data architecture:
-- **Storage Account**: For unstructured data, files, and message queuing
-- **SQL Database**: For structured relational data and analytics
-- **Cosmos DB**: For NoSQL document storage and global distribution
+The storage module creates a multi-tier data architecture that:
 
-## Architecture Diagram
+- **Provides structured storage** through Azure SQL Database
+- **Enables document storage** with Azure Cosmos DB
+- **Offers file and blob storage** via Azure Storage Account
+- **Supports container workflows** with Azure Container Registry
+- **Implements enterprise security** with encryption and access controls
+- **Ensures high availability** with automated backups and replication
+
+## 🏗️ **Resources Created**
+
+| Resource Type      | Name Pattern                   | Purpose                             |
+| ------------------ | ------------------------------ | ----------------------------------- |
+| Storage Account    | `{prefix-clean}sa`             | Blob, table, queue, file storage    |
+| Container Registry | `{prefix}-acr`                 | Docker container image storage      |
+| SQL Server         | `{prefix}-sqlserver`           | Relational database server          |
+| SQL Databases      | `{prefix}-sqlserver-db-{type}` | Application and analytics databases |
+| Cosmos DB Account  | `{prefix}-nosqlserver`         | NoSQL document database server      |
+| Cosmos Databases   | Various collections            | Document and event storage          |
+
+## 📊 **Architecture**
 
 ```mermaid
 graph TB
-    subgraph "Consumers"
-        API_CONSUMER[api.arolariu.ro<br/>Data Consumer]
+    subgraph "Application Layer"
+        WEB_MAIN[arolariu.ro<br/>Main Website]
+        WEB_API[api.arolariu.ro<br/>API Service]
+        WEB_DEV[dev.arolariu.ro<br/>Development Site]
     end
 
-    subgraph "Data Storage Layer"
-        subgraph "NoSQL Server"
-            NOSQL[Azure Cosmos DB]
-            DB_NOSQL[Primary Database<br/>Document Storage]
-        end
+    subgraph "Storage Infrastructure"
+        subgraph "Blob & File Storage"
+            SA[Storage Account<br/>Standard_LRS<br/>Hot Tier]
 
-        subgraph "SQL Server"
-            SQL[Azure SQL Server]
-            subgraph "Databases"
-                DB_PRIMARY[Primary Database<br/>Main Application Data]
-                DB_SECONDARY[Secondary Database<br/>Analytics & Reporting]
-            end
-        end
-
-        subgraph "Storage Account"
-            SA[Storage Account<br/>General Purpose v2]
             subgraph "Storage Services"
-                BLOB[Blob Storage<br/>Static Assets & Files]
-                TABLE[Table Storage<br/>Structured NoSQL Data]
-                QUEUE[Queue Storage<br/>Message Queue]
-                FILE[File Share<br/>Shared Files]
+                BLOB[Blob Storage<br/>Static Assets, Files]
+                TABLE[Table Storage<br/>NoSQL Key-Value]
+                QUEUE[Queue Storage<br/>Message Queuing]
+                FILE[File Storage<br/>Shared Files]
+            end
+        end
+
+        subgraph "Container Storage"
+            ACR[Container Registry<br/>Docker Images<br/>Premium SKU]
+        end
+
+        subgraph "Structured Data"
+            SQL_SERVER[SQL Server<br/>Serverless Compute<br/>Azure AD Auth]
+
+            subgraph "SQL Databases"
+                DB_MAIN[Primary Database<br/>Application Data]
+                DB_ANALYTICS[Analytics Database<br/>Reporting Data]
+            end
+        end
+
+        subgraph "Document Storage"
+            COSMOS_ACCOUNT[Cosmos DB Account<br/>SQL API<br/>Serverless Mode]
+
+            subgraph "Cosmos Databases"
+                DB_DOCUMENTS[Documents Database<br/>CMS Content]
+                DB_EVENTS[Events Database<br/>Audit & Telemetry]
             end
         end
     end
 
-    subgraph "Producers"
-        API_PRODUCER[api.arolariu.ro<br/>Data Producer]
-        WA_PROD[arolariu.ro<br/>Data Producer]
-        WA_DEV[dev.arolariu.ro<br/>Data Producer]
+    subgraph "Security & Access"
+        RBAC[Role-Based Access<br/>Azure AD Integration]
+        ENCRYPTION[Encryption<br/>At Rest & In Transit]
+        NETWORK[Network Security<br/>Private Endpoints]
     end
 
-    API_CONSUMER --> NOSQL
-    API_CONSUMER --> SQL
-    API_CONSUMER --> SA
-    
-    NOSQL --> DB_NOSQL
-    
-    SQL --> DB_PRIMARY
-    SQL --> DB_SECONDARY
-    
+    WEB_MAIN --> SA
+    WEB_MAIN --> SQL_SERVER
+    WEB_MAIN --> COSMOS_ACCOUNT
+
+    WEB_API --> SA
+    WEB_API --> SQL_SERVER
+    WEB_API --> COSMOS_ACCOUNT
+    WEB_API --> ACR
+
+    WEB_DEV --> SA
+    WEB_DEV --> SQL_SERVER
+    WEB_DEV --> COSMOS_ACCOUNT
+
     SA --> BLOB
     SA --> TABLE
     SA --> QUEUE
     SA --> FILE
-    
-    API_PRODUCER --> NOSQL
-    API_PRODUCER --> SQL
-    API_PRODUCER --> SA
-    
-    WA_PROD --> NOSQL
-    WA_PROD --> SQL
-    WA_PROD --> SA
-    
-    WA_DEV --> NOSQL
-    WA_DEV --> SQL
-    WA_DEV --> SA
 
-    classDef consumer fill:#bbf,stroke:#333,stroke-width:2px
-    classDef nosql fill:#ff9,stroke:#333,stroke-width:2px
-    classDef sql fill:#f9f,stroke:#333,stroke-width:2px
-    classDef storage fill:#bfb,stroke:#333,stroke-width:2px
-    classDef service fill:#9f9,stroke:#333,stroke-width:2px
-    classDef producer fill:#fbb,stroke:#333,stroke-width:2px
+    SQL_SERVER --> DB_MAIN
+    SQL_SERVER --> DB_ANALYTICS
 
-    class API_CONSUMER consumer
-    class NOSQL,DB_NOSQL nosql
-    class SQL,DB_PRIMARY,DB_SECONDARY sql
-    class SA storage
-    class BLOB,TABLE,QUEUE,FILE service
-    class API_PRODUCER,WA_PROD,WA_DEV producer
+    COSMOS_ACCOUNT --> DB_DOCUMENTS
+    COSMOS_ACCOUNT --> DB_EVENTS
+
+    RBAC --> SA
+    RBAC --> SQL_SERVER
+    RBAC --> COSMOS_ACCOUNT
+    RBAC --> ACR
+
+    ENCRYPTION --> SA
+    ENCRYPTION --> SQL_SERVER
+    ENCRYPTION --> COSMOS_ACCOUNT
+    ENCRYPTION --> ACR
+
+    NETWORK --> SA
+    NETWORK --> SQL_SERVER
+    NETWORK --> COSMOS_ACCOUNT
+    NETWORK --> ACR
+
+    classDef app fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef storage fill:#e3f2fd,stroke:#0277bd,stroke-width:2px
+    classDef container fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef sql fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef nosql fill:#fce4ec,stroke:#ad1457,stroke-width:2px
+    classDef security fill:#e0f2f1,stroke:#00695c,stroke-width:2px
+
+    class WEB_MAIN,WEB_API,WEB_DEV app
+    class SA,BLOB,TABLE,QUEUE,FILE storage
+    class ACR container
+    class SQL_SERVER,DB_MAIN,DB_ANALYTICS sql
+    class COSMOS_ACCOUNT,DB_DOCUMENTS,DB_EVENTS nosql
+    class RBAC,ENCRYPTION,NETWORK security
 ```
 
-## Components
+## 🔧 **Configuration**
 
-### Azure Storage Account
+### **Parameters**
 
-The Storage Account provides multiple storage services for different use cases.
+| Parameter                   | Type   | Required | Description                                    |
+| --------------------------- | ------ | -------- | ---------------------------------------------- |
+| `resourceConventionPrefix`  | string | ✅       | Prefix for resource naming (1-20 chars)        |
+| `storageDeploymentLocation` | string | ✅       | Azure region (swedencentral, norwayeast, etc.) |
+| `resourceDeploymentDate`    | string | ❌       | Deployment timestamp (defaults to utcNow())    |
 
-#### Specifications
-- **Type**: General Purpose v2
-- **Replication**: LRS (Locally Redundant Storage)
-- **Performance**: Standard
-- **Access Tier**: Hot
+### **Example Usage**
 
-#### Storage Services
+```bicep
+module storageDeployment 'storage/deploymentFile.bicep' = {
+  name: 'storageDeployment'
+  params: {
+    resourceConventionPrefix: 'arolariu'
+    storageDeploymentLocation: 'swedencentral'
+  }
+}
+```
 
-##### Blob Storage
-- **Purpose**: Store unstructured data like images, documents, and static assets
-- **Containers**:
-  - `static-assets`: CSS, JavaScript, images for websites
-  - `user-uploads`: User-generated content
-  - `backups`: Application and database backups
-  - `logs`: Archived application logs
-- **Access**: Public read for static assets, private for user data
+## 📤 **Outputs**
 
-##### Table Storage
-- **Purpose**: NoSQL key-value store for structured data
-- **Tables**:
-  - `Sessions`: User session data
-  - `Cache`: Application cache entries
-  - `Metrics`: Custom application metrics
-- **Use Cases**: High-speed lookups, session management
+| Output                       | Type   | Description                         |
+| ---------------------------- | ------ | ----------------------------------- |
+| `storageAccountName`         | string | Name of the created storage account |
+| `storageAccountId`           | string | Resource ID of the storage account  |
+| `storageAccountBlobEndpoint` | string | Blob storage endpoint URL           |
+| `sqlServerName`              | string | Name of the SQL Server instance     |
+| `cosmosAccountName`          | string | Name of the Cosmos DB account       |
 
-##### Queue Storage
-- **Purpose**: Message queuing for asynchronous processing
-- **Queues**:
-  - `email-queue`: Email notifications
-  - `processing-queue`: Background job processing
-  - `import-queue`: Data import tasks
-- **Features**: At-least-once delivery, 7-day retention
+## 💾 **Storage Components**
 
-##### File Share
-- **Purpose**: Shared file storage for applications
-- **Shares**:
-  - `app-config`: Shared configuration files
-  - `certificates`: SSL certificates and keys
-  - `reports`: Generated reports
-- **Access**: SMB 3.0 protocol, Azure File Sync capable
+### **Azure Storage Account**
 
-### Azure SQL Database
+**Configuration:**
 
-The SQL Database provides relational data storage with high availability and performance.
+- **SKU**: Standard_LRS (Locally Redundant Storage)
+- **Performance**: Standard tier
+- **Access Tier**: Hot (optimized for frequent access)
+- **Replication**: LRS for cost optimization
+- **Security**: HTTPS only, TLS 1.2 minimum
 
-#### SQL Server Specifications
-- **Edition**: Standard
-- **Compute**: Serverless (auto-pause enabled)
-- **Location**: Same region as other resources
-- **Backup**: Automated with point-in-time restore
+**Security Features:**
 
-#### Databases
+- **Public access**: Disabled for blob containers
+- **Shared key access**: Disabled (Azure AD only)
+- **Network access**: Public (can be restricted)
+- **Encryption**: Microsoft-managed keys
 
-##### Primary Database
-- **Purpose**: Main transactional database for application data
-- **Schema**:
-  - User management tables
-  - Content management system
-  - Order and transaction data
-  - Application metadata
-- **Performance**: 2-4 vCores, 5-10 GB
-- **Features**: Automatic tuning, threat detection
+**Storage Services:**
 
-##### Secondary Database
-- **Purpose**: Analytics and reporting workload isolation
-- **Schema**:
-  - Data warehouse facts and dimensions
-  - Aggregated reporting tables
-  - Historical data archives
-  - ETL staging tables
-- **Performance**: 2 vCores, 10-20 GB
-- **Features**: Columnstore indexes, read-only replicas
+#### **Blob Storage**
 
-### Azure Cosmos DB
+- **Static websites**: CSS, JavaScript, images
+- **User uploads**: Profile pictures, documents
+- **Application data**: Logs, backups, exports
+- **CDN integration**: Azure Front Door for global delivery
 
-Cosmos DB provides globally distributed NoSQL document storage.
+#### **Table Storage**
 
-#### Specifications
-- **API**: Core (SQL) API
-- **Consistency**: Session consistency
-- **Throughput**: Serverless mode
-- **Regions**: Single region (with option to expand)
+- **Session data**: User sessions and temporary data
+- **Application cache**: Frequently accessed data
+- **Metrics storage**: Custom application metrics
+- **Configuration**: Feature flags and settings
 
-#### Primary Database
-- **Purpose**: Document storage for semi-structured data
-- **Collections**:
-  - `products`: Product catalog with flexible schema
-  - `profiles`: User profiles and preferences
-  - `content`: CMS content with metadata
-  - `events`: Event sourcing and audit logs
-- **Partitioning**: 
-  - Products: by category
-  - Profiles: by userId
-  - Content: by contentType
-  - Events: by timestamp
-- **Indexing**: Automatic with custom policies
+#### **Queue Storage**
 
-## Data Flow Patterns
+- **Email processing**: Asynchronous email delivery
+- **Background jobs**: Long-running task processing
+- **Event handling**: Decoupled event processing
+- **Integration**: Webhook processing
 
-### Consumer Pattern (api.arolariu.ro as Consumer)
-1. **Read Operations**:
-   - Query SQL for structured data
-   - Retrieve documents from Cosmos DB
-   - Download blobs from Storage Account
-   - Dequeue messages for processing
+#### **File Storage**
 
-2. **Aggregation**:
-   - Combine data from multiple sources
-   - Transform and enrich data
-   - Cache results in Table Storage
+- **Shared configuration**: Application config files
+- **Certificates**: SSL certificates and keys
+- **Reports**: Generated reports and documents
+- **Backup storage**: File-based backup archives
 
-### Producer Pattern (All Web Applications)
+### **Azure Container Registry**
 
-#### api.arolariu.ro (Primary Producer)
-- **Creates**: User data, transactions, system events
-- **Updates**: Product information, user profiles
-- **Uploads**: Files and media content
-- **Queues**: Background processing tasks
+**Configuration:**
 
-#### arolariu.ro (Content Producer)
-- **Creates**: User-generated content, comments
-- **Updates**: User preferences, session data
-- **Uploads**: Media files, profile pictures
-- **Logs**: User activity and analytics
+- **SKU**: Premium (supports private endpoints, geo-replication)
+- **Admin user**: Disabled (managed identity authentication)
+- **Public access**: Enabled (with network restrictions)
+- **Content trust**: Available for image signing
 
-#### dev.arolariu.ro (Development Producer)
-- **Creates**: Test data, development content
-- **Updates**: Configuration and test scenarios
-- **Uploads**: Development assets
-- **Logs**: Debug information
+**Features:**
 
-## Access Patterns
+- **Multi-architecture images**: Support for ARM64 and x86
+- **Vulnerability scanning**: Automatic security scanning
+- **Geo-replication**: Available for global distribution
+- **Webhook integration**: CI/CD pipeline triggers
 
-### Storage Account Access
-- **Blob Storage**: 
-  - Read: All applications
-  - Write: Authenticated users only
-  - Delete: API service only
-- **Queue Storage**:
-  - Enqueue: All producers
-  - Dequeue: API consumer only
-- **Table Storage**:
-  - Read/Write: All applications
-  - Batch operations: API only
+**Container Images:**
 
-### SQL Database Access
-- **Primary Database**:
-  - Full CRUD: API service
-  - Read-only: Websites (for specific tables)
-- **Secondary Database**:
-  - Write: ETL processes only
-  - Read: All applications
+- **Frontend applications**: React/Next.js production builds
+- **Backend APIs**: .NET Core application containers
+- **Supporting services**: Redis, utility containers
+- **Development tools**: Custom development containers
 
-### Cosmos DB Access
-- **Document Operations**:
-  - Create/Update: All producers
-  - Delete: API service only
-  - Query: All applications
-- **Bulk Operations**: API service only
+### **Azure SQL Database**
 
-## Security Considerations
+**SQL Server Configuration:**
 
-1. **Connection Security**:
-   - All connections use SSL/TLS
-   - Connection strings stored in Key Vault
-   - Managed Identity authentication where supported
+- **Edition**: Standard Edition
+- **Compute model**: Serverless (auto-pause enabled)
+- **Authentication**: Azure AD integration
+- **TLS**: Minimum version 1.2
+- **Firewall**: Azure services allowed
 
-2. **Access Control**:
-   - Storage Account: Azure AD and SAS tokens
-   - SQL Database: Azure AD authentication
-   - Cosmos DB: Resource tokens for granular access
+### **Access Control**
 
-3. **Data Protection**:
-   - Encryption at rest (all services)
-   - Encryption in transit
-   - Soft delete enabled where applicable
+**Storage Account:**
 
-4. **Network Security**:
-   - Private endpoints for production
-   - Firewall rules for IP restrictions
-   - Virtual network service endpoints
+- **Authentication**: Azure AD and managed identities
+- **Authorization**: RBAC and fine-grained permissions
+- **Network**: Private endpoints for production
+- **SAS tokens**: Time-limited for specific operations
 
-## Performance Optimization
+**SQL Database:**
 
-1. **Caching Strategy**:
-   - Table Storage for hot data
-   - Redis Cache for session data (future)
-   - CDN for static blob content
+- **Authentication**: Azure AD (primary), SQL Auth (fallback)
+- **Authorization**: Database-level and schema-level permissions
+- **Network**: Firewall rules and VNet integration
+- **Always Encrypted**: Sensitive data protection
 
-2. **Indexing**:
-   - SQL: Covering indexes for common queries
-   - Cosmos DB: Custom indexing policies
-   - Blob: Metadata indexing for search
+**Cosmos DB:**
 
-3. **Partitioning**:
-   - Cosmos DB: Logical partitioning by entity type
-   - Table Storage: Partition by date/category
-   - SQL: Table partitioning for large tables
+- **Authentication**: Azure AD and resource tokens
+- **Authorization**: Database and collection-level permissions
+- **Network**: Private endpoints and IP filtering
+- **Encryption**: Automatic encryption at rest
 
-## Monitoring and Maintenance
+### **Encryption Standards**
 
-1. **Metrics**:
-   - Storage capacity and transactions
-   - SQL DTU usage and query performance
-   - Cosmos DB RU consumption
+- **At rest**: All data encrypted with Microsoft-managed keys
+- **In transit**: TLS 1.2+ for all connections
+- **Application-level**: Additional encryption for sensitive fields
+- **Key management**: Integration with Azure Key Vault
 
-2. **Alerts**:
-   - Storage quota warnings
-   - SQL performance degradation
-   - Cosmos DB throttling
+## 📊 **Data Patterns & Use Cases**
 
-3. **Backup Strategy**:
-   - Storage Account: Blob snapshots
-   - SQL: Automated backups with geo-redundancy
-   - Cosmos DB: Continuous backup mode
+### **Storage Account Usage Patterns**
 
-## Cost Optimization
+```csharp
+// Example: Blob storage usage
+public class FileService
+{
+    private readonly BlobServiceClient _blobClient;
 
-1. **Storage Account**:
-   - Lifecycle policies for blob aging
-   - Cool tier for archived content
-   - Reserved capacity for predictable workloads
+    public async Task<string> UploadFileAsync(Stream fileStream, string fileName, string containerName)
+    {
+        var containerClient = _blobClient.GetBlobContainerClient(containerName);
+        var blobClient = containerClient.GetBlobClient(fileName);
 
-2. **SQL Database**:
-   - Serverless tier with auto-pause
-   - Elastic pools for multi-database scenarios
-   - Query optimization to reduce DTU usage
+        await blobClient.UploadAsync(fileStream, overwrite: true);
+        return blobClient.Uri.ToString();
+    }
 
-3. **Cosmos DB**:
-   - Serverless for variable workloads
-   - TTL policies for automatic cleanup
-   - Optimize partition strategy to reduce cross-partition queries
+    public async Task<Stream> DownloadFileAsync(string fileName, string containerName)
+    {
+        var containerClient = _blobClient.GetBlobContainerClient(containerName);
+        var blobClient = containerClient.GetBlobClient(fileName);
+
+        var response = await blobClient.DownloadStreamingAsync();
+        return response.Value.Content;
+    }
+}
+```
+
+### **SQL Database Patterns**
+
+```sql
+-- Example: Efficient queries with indexing
+CREATE NONCLUSTERED INDEX IX_Products_Category_Price
+ON Products (CategoryId, Price)
+INCLUDE (Name, Description);
+
+-- Partition function for large tables
+CREATE PARTITION FUNCTION DateRangePartition (datetime2)
+AS RANGE RIGHT FOR VALUES
+('2024-01-01', '2024-02-01', '2024-03-01');
+```
+
+### **Cosmos DB Document Patterns**
+
+```javascript
+// Example: Product document structure
+{
+  "id": "product-12345",
+  "type": "product",
+  "category": "electronics", // Partition key
+  "name": "Smartphone XYZ",
+  "price": 599.99,
+  "inventory": {
+    "quantity": 100,
+    "warehouse": "EU-Central"
+  },
+  "metadata": {
+    "createdAt": "2024-01-15T10:30:00Z",
+    "lastModified": "2024-01-20T14:45:00Z",
+    "version": 2
+  },
+  "searchTags": ["phone", "mobile", "electronics"],
+  "_ts": 1705837800 // Cosmos DB timestamp
+}
+```
+
+## 💰 **Cost Considerations**
+
+| Component          | Configuration          | Monthly Cost Estimate\* |
+| ------------------ | ---------------------- | ----------------------- |
+| Storage Account    | Standard_LRS, Hot tier | €5-15                   |
+| Container Registry | Premium SKU            | €15-25                  |
+| SQL Database       | Serverless, 2-4 vCores | €20-40                  |
+| Cosmos DB          | Serverless mode        | €10-30                  |
+| **Data Transfer**  | Egress costs           | €2-10                   |
+| **Total**          |                        | **€52-120**             |
+
+\*Estimates based on moderate usage. Costs scale with data volume and operations.
+
+### **Cost Optimization Strategies**
+
+**Storage Account:**
+
+- **Lifecycle policies**: Automatically move old data to cool/archive tiers
+- **Reserved capacity**: Pre-purchase storage for predictable workloads
+- **Compression**: Enable compression for blob storage
+
+**SQL Database:**
+
+- **Serverless tier**: Automatic scaling and pause for development
+- **Query optimization**: Regular performance tuning
+- **Backup retention**: Optimize backup retention periods
+
+**Cosmos DB:**
+
+- **Partition design**: Efficient partitioning reduces cross-partition queries
+- **TTL policies**: Automatic document expiration
+- **Indexing**: Custom indexing policies to reduce RU consumption
+
+**Container Registry:**
+
+- **Image cleanup**: Regular cleanup of unused images
+- **Efficient tagging**: Proper image tagging strategy
+- **Multi-stage builds**: Optimize Docker image sizes
+
+## 🔧 **Development & Integration**
+
+### **Connection String Management**
+
+```bicep
+// Store connection strings in Key Vault
+resource storageConnectionSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'storage-connection-string'
+  properties: {
+    value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=core.windows.net'
+  }
+}
+```
+
+### **Application Configuration**
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=${sqlServerName}.database.windows.net;Authentication=Active Directory Default;Database=${databaseName};",
+    "CosmosConnection": "AccountEndpoint=https://${cosmosAccountName}.documents.azure.com:443/;",
+    "StorageConnection": "DefaultEndpointsProtocol=https;AccountName=${storageAccountName};"
+  },
+  "Storage": {
+    "ContainerNames": {
+      "StaticAssets": "static-assets",
+      "UserUploads": "user-uploads",
+      "Backups": "backups"
+    }
+  }
+}
+```
+
+### **Managed Identity Integration**
+
+```csharp
+// Example: Accessing storage with managed identity
+public class StorageService
+{
+    private readonly BlobServiceClient _blobClient;
+
+    public StorageService()
+    {
+        var credential = new DefaultAzureCredential();
+        _blobClient = new BlobServiceClient(
+            new Uri("https://arolariusa.blob.core.windows.net/"),
+            credential
+        );
+    }
+}
+```
+
+## 🛠️ **Maintenance & Operations**
+
+### **Backup Strategies**
+
+**Storage Account:**
+
+- **Blob snapshots**: Point-in-time recovery for critical data
+- **Cross-region replication**: Geo-redundant storage for critical data
+- **Export jobs**: Regular exports to archive storage
+
+**SQL Database:**
+
+- **Automated backups**: 7-day retention with point-in-time restore
+- **Long-term retention**: Monthly/yearly backups for compliance
+- **Geo-restore**: Cross-region backup availability
+
+**Cosmos DB:**
+
+- **Continuous backup**: Point-in-time restore capability
+- **Periodic backup**: Regular snapshots for disaster recovery
+- **Cross-region backup**: Multi-region backup availability
+
+### **Monitoring & Alerting**
+
+```bash
+# Monitor storage account metrics
+az monitor metrics list \
+  --resource "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Storage/storageAccounts/arolariusa" \
+  --metric "UsedCapacity,Transactions,Ingress,Egress"
+
+# Check SQL database performance
+az sql db show-usage \
+  --name "arolariu-sqlserver-db-main" \
+  --server "arolariu-sqlserver" \
+  --resource-group "arolariu-rg"
+
+# Monitor Cosmos DB RU consumption
+az cosmosdb sql database throughput show \
+  --account-name "arolariu-nosqlserver" \
+  --name "documents" \
+  --resource-group "arolariu-rg"
+```
+
+### **Performance Optimization**
+
+**Storage Account:**
+
+- **Hot tier**: Frequently accessed data
+- **CDN integration**: Static content delivery
+- **Parallel uploads**: Multi-part upload for large files
+
+**SQL Database:**
+
+- **Index optimization**: Regular index maintenance
+- **Query store**: Query performance monitoring
+- **Auto-tuning**: Automatic performance improvements
+
+**Cosmos DB:**
+
+- **Partition key design**: Optimal data distribution
+- **Query optimization**: Efficient document queries
+- **Indexing policies**: Custom indexing for performance
+
+## 🔄 **Dependencies**
+
+### **Required Dependencies**
+
+- **Identity Module**: Managed identities for secure access
+- **Configuration Module**: Key Vault for connection strings
+
+### **Optional Dependencies**
+
+- **Network Module**: Private endpoints and VNet integration
+- **Observability Module**: Monitoring and diagnostics
+
+## 📊 **Deployment Flow**
+
+1. **Storage Account**: Deploy first (foundation for other services)
+2. **Container Registry**: Deploy for container image storage
+3. **SQL Server**: Deploy database server infrastructure
+4. **SQL Databases**: Create application databases
+5. **Cosmos DB Account**: Deploy NoSQL infrastructure
+6. **Cosmos Databases**: Create document collections
+7. **Security Configuration**: Apply access policies and RBAC
+8. **Integration**: Configure application connections
+
+## 🚨 **Troubleshooting**
+
+### **Common Issues**
+
+| Issue                       | Symptoms                     | Solution                                     |
+| --------------------------- | ---------------------------- | -------------------------------------------- |
+| **Storage access denied**   | 403 Forbidden errors         | Check RBAC assignments and network access    |
+| **SQL connection timeout**  | Database connection failures | Verify firewall rules and connection strings |
+| **Cosmos DB throttling**    | 429 Too Many Requests        | Optimize queries and partition key design    |
+| **Container registry auth** | Docker push/pull failures    | Verify managed identity and registry access  |
+| **High storage costs**      | Unexpected billing           | Review lifecycle policies and data retention |
+
+### **Validation Commands**
+
+```bash
+# Test storage account access
+az storage blob list \
+  --account-name "arolariusa" \
+  --container-name "static-assets" \
+  --auth-mode login
+
+# Test SQL connectivity
+sqlcmd -S "arolariu-sqlserver.database.windows.net" \
+  -d "arolariu-sqlserver-db-main" \
+  -G \
+  -Q "SELECT @@VERSION"
+
+# Test Cosmos DB access
+az cosmosdb sql database list \
+  --account-name "arolariu-nosqlserver" \
+  --resource-group "arolariu-rg"
+
+# Test container registry
+az acr repository list \
+  --name "arolariu-acr"
+```
+
+### **Performance Diagnostics**
+
+```sql
+-- SQL Database: Check expensive queries
+SELECT TOP 10
+    st.text,
+    qs.execution_count,
+    qs.total_worker_time / qs.execution_count AS avg_cpu_time,
+    qs.total_elapsed_time / qs.execution_count AS avg_elapsed_time
+FROM sys.dm_exec_query_stats qs
+CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) st
+ORDER BY avg_cpu_time DESC;
+```
+
+```bash
+# Storage: Monitor transaction metrics
+az monitor metrics list \
+  --resource "/subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Storage/storageAccounts/arolariusa" \
+  --metric "Transactions" \
+  --dimension "ResponseType" \
+  --start-time "2024-01-01T00:00:00Z"
+```
+
+## 📚 **References**
+
+- [Azure Storage Documentation](https://docs.microsoft.com/en-us/azure/storage/)
+- [Azure SQL Database](https://docs.microsoft.com/en-us/azure/azure-sql/database/)
+- [Azure Cosmos DB](https://docs.microsoft.com/en-us/azure/cosmos-db/)
+- [Azure Container Registry](https://docs.microsoft.com/en-us/azure/container-registry/)
+- [Storage Security Guide](https://docs.microsoft.com/en-us/azure/storage/common/storage-security-guide)
+- [SQL Database Security](https://docs.microsoft.com/en-us/azure/azure-sql/database/security-overview)
+
+---
+
+**Module Version**: 2.0.0  
+**Last Updated**: June 2025  
+**Maintainer**: Alexandru-Razvan Olariu

@@ -11,17 +11,17 @@ param sqlServerName string
 param sqlDatabaseNamePrefix string
 
 @description('The location for the SQL Database resources.')
-param sqlDatabaseLocation string = resourceGroup().location
+param sqlDatabaseLocation string
 
 var sqlDatabasePrimaryName = '${sqlDatabaseNamePrefix}-primary'
 var sqlDatabaseSecondaryName = '${sqlDatabaseNamePrefix}-secondary'
 
-resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' existing = {
+resource sqlServer 'Microsoft.Sql/servers@2024-05-01-preview' existing = {
   scope: resourceGroup()
   name: sqlServerName
 }
 
-resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
+resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2024-05-01-preview' = {
   parent: sqlServer
   name: sqlDatabasePrimaryName
   location: sqlDatabaseLocation
@@ -46,7 +46,7 @@ resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2023-08-01-preview'
   }
 }
 
-resource sqlDatabaseSecondary 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
+resource sqlDatabaseSecondary 'Microsoft.Sql/servers/databases@2024-05-01-preview' = {
   parent: sqlServer
   name: sqlDatabaseSecondaryName
   location: sqlDatabaseLocation
