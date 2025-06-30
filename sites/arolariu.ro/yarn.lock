@@ -3245,12 +3245,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/bundle-analyzer@npm:15.4.0-canary.100":
-  version: 15.4.0-canary.100
-  resolution: "@next/bundle-analyzer@npm:15.4.0-canary.100"
+"@next/bundle-analyzer@npm:15.4.0-canary.103":
+  version: 15.4.0-canary.103
+  resolution: "@next/bundle-analyzer@npm:15.4.0-canary.103"
   dependencies:
     webpack-bundle-analyzer: "npm:4.10.1"
-  checksum: 10c0/c2e566d3e9d4ac79873c218c25ddcee6e6ce10c88763ee4b8ecb961eb97082c27e62a8ec0113792c82fe800f75b6f7013aaff93905021444cc4beb0ee825804b
+  checksum: 10c0/0d240e5acaaf49e5ed9901fb4457a5efacf31b189d2da9e351beb6a139568302dc2664a733022b51c2aaee2c9ed534639486460fea3c27dd5af362887fa792cc
   languageName: node
   linkType: hard
 
@@ -3261,19 +3261,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/env@npm:15.4.0-canary.100":
-  version: 15.4.0-canary.100
-  resolution: "@next/env@npm:15.4.0-canary.100"
-  checksum: 10c0/93654875b5f903d952ca8c4476195e23b779791ae1b9011cc4b74620f6a301fb73039de3795e22c98dd9fe550b5e70ae880363811870c3ffdeba0fcea21e6696
+"@next/env@npm:15.4.0-canary.103":
+  version: 15.4.0-canary.103
+  resolution: "@next/env@npm:15.4.0-canary.103"
+  checksum: 10c0/2b8bc81f77a98515baaf3f2922e93035db3828be701d1ce1d12401bf10b7e6773580ae503964d498c070138c86887ccc085f93d3ebee17550cacd84c30312381
   languageName: node
   linkType: hard
 
-"@next/eslint-plugin-next@npm:15.4.0-canary.100":
-  version: 15.4.0-canary.100
-  resolution: "@next/eslint-plugin-next@npm:15.4.0-canary.100"
+"@next/eslint-plugin-next@npm:15.4.0-canary.103":
+  version: 15.4.0-canary.103
+  resolution: "@next/eslint-plugin-next@npm:15.4.0-canary.103"
   dependencies:
     fast-glob: "npm:3.3.1"
-  checksum: 10c0/06b36672a81714fb303bcbd1566efadc0a4ae586d64b8de9341f2ecb4f126fe31c9db162e2b620cc031df53f62ac7e656a205d1cd6568f039788e139ac522d6b
+  checksum: 10c0/2666ca93c93366ccb41b8309715e1a825a0fcea2f177bba752eaa0291c19763e24582e49ab23403f02398f872ee873f82691b7fc930f33cf219bc053aacecf96
   languageName: node
   linkType: hard
 
@@ -3284,9 +3284,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/swc-darwin-arm64@npm:15.4.0-canary.100":
-  version: 15.4.0-canary.100
-  resolution: "@next/swc-darwin-arm64@npm:15.4.0-canary.100"
+"@next/swc-darwin-arm64@npm:15.4.0-canary.103":
+  version: 15.4.0-canary.103
+  resolution: "@next/swc-darwin-arm64@npm:15.4.0-canary.103"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
@@ -3298,9 +3298,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/swc-darwin-x64@npm:15.4.0-canary.100":
-  version: 15.4.0-canary.100
-  resolution: "@next/swc-darwin-x64@npm:15.4.0-canary.100"
+"@next/swc-darwin-x64@npm:15.4.0-canary.103":
+  version: 15.4.0-canary.103
+  resolution: "@next/swc-darwin-x64@npm:15.4.0-canary.103"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
@@ -3312,9 +3312,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/swc-linux-arm64-gnu@npm:15.4.0-canary.100":
-  version: 15.4.0-canary.100
-  resolution: "@next/swc-linux-arm64-gnu@npm:15.4.0-canary.100"
+"@next/swc-linux-arm64-gnu@npm:15.4.0-canary.103":
+  version: 15.4.0-canary.103
+  resolution: "@next/swc-linux-arm64-gnu@npm:15.4.0-canary.103"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
@@ -3326,9 +3326,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/swc-linux-arm64-musl@npm:15.4.0-canary.100":
-  version: 15.4.0-canary.100
-  resolution: "@next/swc-linux-arm64-musl@npm:15.4.0-canary.100"
+"@next/swc-linux-arm64-musl@npm:15.4.0-canary.103":
+  version: 15.4.0-canary.103
+  resolution: "@next/swc-linux-arm64-musl@npm:15.4.0-canary.103"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
@@ -3340,9 +3340,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/swc-linux-x64-gnu@npm:15.4.0-canary.100":
-  version: 15.4.0-canary.100
-  resolution: "@next/swc-linux-x64-gnu@npm:15.4.0-canary.100"
+"@next/swc-linux-x64-gnu@npm:15.4.0-canary.103":
+  version: 15.4.0-canary.103
+  resolution: "@next/swc-linux-x64-gnu@npm:15.4.0-canary.103"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
@@ -3354,9 +3354,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/swc-linux-x64-musl@npm:15.4.0-canary.100":
-  version: 15.4.0-canary.100
-  resolution: "@next/swc-linux-x64-musl@npm:15.4.0-canary.100"
+"@next/swc-linux-x64-musl@npm:15.4.0-canary.103":
+  version: 15.4.0-canary.103
+  resolution: "@next/swc-linux-x64-musl@npm:15.4.0-canary.103"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
@@ -3368,9 +3368,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/swc-win32-arm64-msvc@npm:15.4.0-canary.100":
-  version: 15.4.0-canary.100
-  resolution: "@next/swc-win32-arm64-msvc@npm:15.4.0-canary.100"
+"@next/swc-win32-arm64-msvc@npm:15.4.0-canary.103":
+  version: 15.4.0-canary.103
+  resolution: "@next/swc-win32-arm64-msvc@npm:15.4.0-canary.103"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
@@ -3382,9 +3382,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/swc-win32-x64-msvc@npm:15.4.0-canary.100":
-  version: 15.4.0-canary.100
-  resolution: "@next/swc-win32-x64-msvc@npm:15.4.0-canary.100"
+"@next/swc-win32-x64-msvc@npm:15.4.0-canary.103":
+  version: 15.4.0-canary.103
+  resolution: "@next/swc-win32-x64-msvc@npm:15.4.0-canary.103"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
@@ -7477,8 +7477,8 @@ __metadata:
     "@eslint/compat": "npm:1.3.1"
     "@eslint/js": "npm:9.29.0"
     "@faker-js/faker": "npm:9.8.0"
-    "@next/bundle-analyzer": "npm:15.4.0-canary.100"
-    "@next/eslint-plugin-next": "npm:15.4.0-canary.100"
+    "@next/bundle-analyzer": "npm:15.4.0-canary.103"
+    "@next/eslint-plugin-next": "npm:15.4.0-canary.103"
     "@playwright/test": "npm:1.53.1"
     "@react-email/components": "npm:0.1.1"
     "@react-pdf/renderer": "npm:4.1.6"
@@ -7531,7 +7531,7 @@ __metadata:
     jiti: "npm:2.4.2"
     motion: "npm:12.19.2"
     msw: "npm:2.10.2"
-    next: "npm:15.4.0-canary.100"
+    next: "npm:15.4.0-canary.103"
     next-intl: "npm:4.3.1"
     next-themes: "npm:0.4.6"
     postcss: "npm:8.5.6"
@@ -14803,19 +14803,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"next@npm:15.4.0-canary.100":
-  version: 15.4.0-canary.100
-  resolution: "next@npm:15.4.0-canary.100"
+"next@npm:15.4.0-canary.103":
+  version: 15.4.0-canary.103
+  resolution: "next@npm:15.4.0-canary.103"
   dependencies:
-    "@next/env": "npm:15.4.0-canary.100"
-    "@next/swc-darwin-arm64": "npm:15.4.0-canary.100"
-    "@next/swc-darwin-x64": "npm:15.4.0-canary.100"
-    "@next/swc-linux-arm64-gnu": "npm:15.4.0-canary.100"
-    "@next/swc-linux-arm64-musl": "npm:15.4.0-canary.100"
-    "@next/swc-linux-x64-gnu": "npm:15.4.0-canary.100"
-    "@next/swc-linux-x64-musl": "npm:15.4.0-canary.100"
-    "@next/swc-win32-arm64-msvc": "npm:15.4.0-canary.100"
-    "@next/swc-win32-x64-msvc": "npm:15.4.0-canary.100"
+    "@next/env": "npm:15.4.0-canary.103"
+    "@next/swc-darwin-arm64": "npm:15.4.0-canary.103"
+    "@next/swc-darwin-x64": "npm:15.4.0-canary.103"
+    "@next/swc-linux-arm64-gnu": "npm:15.4.0-canary.103"
+    "@next/swc-linux-arm64-musl": "npm:15.4.0-canary.103"
+    "@next/swc-linux-x64-gnu": "npm:15.4.0-canary.103"
+    "@next/swc-linux-x64-musl": "npm:15.4.0-canary.103"
+    "@next/swc-win32-arm64-msvc": "npm:15.4.0-canary.103"
+    "@next/swc-win32-x64-msvc": "npm:15.4.0-canary.103"
     "@swc/helpers": "npm:0.5.15"
     caniuse-lite: "npm:^1.0.30001579"
     postcss: "npm:8.4.31"
@@ -14858,7 +14858,7 @@ __metadata:
       optional: true
   bin:
     next: dist/bin/next
-  checksum: 10c0/7fa5975b536985001cad4922d4a99c4a8f5d3a4f04d3bc9a3181f982fff0d370b7495e2dd6d02b08fc36e5466d7b8f81241dd78e04add1e6755c4319e0d8c05f
+  checksum: 10c0/4c04134660073cf52bf89c981735e94cc285fae6ba5871a21e1f8c03c9895468906baaf8a98ce537cdd2faf58ecdd109cbe3220d516a21e1ffee96d97be8435d
   languageName: node
   linkType: hard
 
