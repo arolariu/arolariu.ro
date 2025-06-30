@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Common.DDD.Contracts;
 
 using System;
@@ -12,7 +12,7 @@ using System.Text.Json.Serialization;
 /// The merchant information is extracted from the invoice image using the OCR service.
 /// This record is used to store the merchant information in the database.
 /// </summary>
-[ExcludeFromCodeCoverage]	
+[ExcludeFromCodeCoverage]
 public sealed class Merchant : NamedEntity<Guid>
 {
 	/// <inheritdoc/>
