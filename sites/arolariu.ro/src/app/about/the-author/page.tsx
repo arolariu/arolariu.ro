@@ -30,8 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /**
  * Renders the Author's page which contains detailed information about Alexandru-Razvan Olariu.
- * This is a Server-Side Rendered (SSR) Next.js page component that displays various sections about the author:
- * @returns The rendered AuthorPage component
+ * @returns The rendered AuthorPage component, SSR'ed.
  */
 export default async function AuthorPage(): Promise<React.JSX.Element> {
   return (
