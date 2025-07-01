@@ -1,14 +1,25 @@
 /** @format */
 
 import {fetchUser} from "@/lib/actions/user/fetchUser";
-import type {Metadata} from "next";
+import {createMetadata} from "@/metadata";
+import {getLocale, getTranslations} from "next-intl/server";
 import {redirect} from "next/navigation";
+import type {Metadata} from "next/types";
 import RenderAuthScreen from "./island";
 
-export const metadata: Metadata = {
-  title: "Auth",
-  description: "The authentication page for the `arolariu.ro` platform.",
-};
+/**
+ * Generates metadata for the authentication page.
+ * @returns The metadata for the authentication page.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Authentication.__metadata__");
+  const locale = await getLocale();
+  return createMetadata({
+    locale,
+    title: t("title"),
+    description: t("description"),
+  });
+}
 
 /**
  * The main authentication page.

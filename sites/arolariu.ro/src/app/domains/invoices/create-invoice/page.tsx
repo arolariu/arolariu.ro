@@ -1,15 +1,24 @@
 /** @format */
 
 import {fetchUser} from "@/lib/actions/user/fetchUser";
-import type {Metadata} from "next";
-import {getTranslations} from "next-intl/server";
+import {createMetadata} from "@/metadata";
+import {getLocale, getTranslations} from "next-intl/server";
+import type {Metadata} from "next/types";
 import RenderCreateInvoiceScreen from "./island";
 
-export const metadata: Metadata = {
-  title: "Invoice Management System - Create Invoice",
-  description:
-    "The invoice management system provides users with detailed insights into their spending habits, according to their uploaded receipts.",
-};
+/**
+ * Generates metadata for the create invoice page.
+ * @returns The metadata for the create invoice page.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Domains.services.invoices.service.create-page.__metadata__");
+  const locale = await getLocale();
+  return createMetadata({
+    locale,
+    title: t("title"),
+    description: t("description"),
+  });
+}
 
 /**
  * The create invoice page, where users can create a new invoice.

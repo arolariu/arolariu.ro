@@ -1,7 +1,9 @@
 /** @format */
 
 import {ScrollToTop} from "@/hooks/useScrollToTop";
-import type {Metadata} from "next";
+import {createMetadata} from "@/metadata";
+import {getLocale, getTranslations} from "next-intl/server";
+import type {Metadata} from "next/types";
 import Biography from "./_components/Biography";
 import Certifications from "./_components/Certifications";
 import Competencies from "./_components/Competencies";
@@ -12,24 +14,23 @@ import Hero from "./_components/Hero";
 import Perspectives from "./_components/Perspectives";
 import Terminal from "./_secrets/Terminal";
 
-export const metadata: Metadata = {
-  title: "Alexandru-Razvan Olariu",
-  description: "Learn more about the author, Alexandru-Razvan Olariu",
-};
+/**
+ * Generates metadata for the Author page.
+ * @returns The metadata for the Author page.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("About.Author.__metadata__");
+  const locale = await getLocale();
+  return createMetadata({
+    locale,
+    title: t("title"),
+    description: t("description"),
+  });
+}
 
 /**
  * Renders the Author's page which contains detailed information about Alexandru-Razvan Olariu.
  * This is a Server-Side Rendered (SSR) Next.js page component that displays various sections about the author:
- * - Hero section
- * - Biography
- * - Competencies/Skills
- * - Professional Experience
- * - Education
- * - Certifications
- * - Personal Perspectives
- * - Contact Information
- * The page also includes a hidden Terminal component for easter egg functionality
- * and a ScrollToTop utility for better navigation.
  * @returns The rendered AuthorPage component
  */
 export default async function AuthorPage(): Promise<React.JSX.Element> {
