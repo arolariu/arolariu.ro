@@ -103,3 +103,14 @@ module networkDeployment 'network/deploymentFile.bicep' = {
     docsWebsiteHostname: websiteDeployment.outputs.docsWebsiteUrl
   }
 }
+
+module aiDeployment 'ai/deploymentFile.bicep' = {
+  scope: resourceGroup()
+  name: 'aiDeployment-${resourceDeploymentDate}'
+  params: {
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceConventionPrefix: resourceConventionPrefix
+    backendManagedIdentityId: identitiesDeployment.outputs.managedIdentitiesList[1].id
+  }
+}
