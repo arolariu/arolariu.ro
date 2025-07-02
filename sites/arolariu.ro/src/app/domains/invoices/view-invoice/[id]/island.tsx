@@ -21,8 +21,6 @@ import RecipesTab from "./_components/tabs/RecipesTab";
  * @returns The JSX for the view invoice page.
  */
 export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
-  console.log(invoiceIdentifier);
-  // Reference for printing
   const printRef = useRef<HTMLDivElement>(null);
 
   // Invoice data (mocked for this example)
