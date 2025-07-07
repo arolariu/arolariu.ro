@@ -13,28 +13,8 @@ on:
     branches: ["main"]
     paths: ["sites/api.arolariu/**"]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: "The environment to deploy to. (e.g. 'development', 'production')"
-        options:
-          - "development"
-          - "production"
-        default: "development"
-        required: true
-        type: choice
-      container_name:
-        description: "The name of the container to build and deploy. (e.g. 'backend/dev.arolariu', 'backend/arolariu')"
-        options:
-          - "backend/dev.arolariu"
-          - "backend/arolariu"
-        default: "backend/dev.arolariu"
-        required: true
-        type: choice
 
 env:
-  SITE_NAME: ${{ inputs.environment == 'production' && 'arolariu.ro' || 'dev.arolariu.ro' }}
-  SITE_URL: ${{ inputs.environment == 'production' && 'https://arolariu.ro' || 'https://dev.arolariu.ro' }}
-  SITE_ENV: ${{ inputs.environment || 'development'}}
   API_NAME: "api.arolariu.ro"
   API_URL: "https://api.arolariu.ro"
   COMMIT_SHA: ${{ github.sha }}
@@ -46,7 +26,7 @@ jobs:
   test:
     name: 🧪 Test phase (1/3)
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment || 'development'}}
+    environment: "production"
     timeout-minutes: 10
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
@@ -61,7 +41,7 @@ jobs:
     name: 🛠️ Build phase (2/3)
     needs: test
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment || 'development'}}
+    environment: "production"
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4.2.2
@@ -90,7 +70,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     environment:
-      name: ${{ inputs.environment || 'development'}}
+      name: "production"
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
@@ -111,7 +91,6 @@ jobs:
         uses: azure/webapps-deploy@v3.0.1
         with:
           app-name: "api-arolariu"
-          slot-name: "production"
           package: .
           clean: true
           restart: true
