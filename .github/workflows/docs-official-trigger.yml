@@ -18,10 +18,10 @@ jobs:
       url: "https://docs.arolariu.ro"
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.2
 
       - name: 📦 Installing the .NET runtime...
-        uses: actions/setup-dotnet@v4.0.1
+        uses: actions/setup-dotnet@v4.3.1
         with:
           dotnet-version: "9.x"
 
