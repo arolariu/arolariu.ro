@@ -22,6 +22,7 @@ var roleDefinitions = {
   acrPull: '7f951dda-4ed3-4680-a7ca-43fe172d538d' // Azure Container Registry Pull
   acrPush: '8311e382-0749-4cb8-b61a-304f252e45ec' // Azure Container Registry Push
   acrContributor: '2efddaa5-3f1f-4df3-97df-af3f13818f4c' // Azure Container Registry Contributor
+  websiteContributor: 'de139f84-1756-47ae-9be6-808fbbe84772'
 }
 
 // Storage Blob Reader role assignment for infrastructure managed identity
@@ -132,5 +133,19 @@ resource infrastructureAcrContributorRoleAssignment 'Microsoft.Authorization/rol
     principalId: infrastructureIdentity.principalId
     principalType: 'ServicePrincipal'
     description: 'Infrastructure managed identity access to Azure Container Registry management'
+  }
+}
+
+// Azure Website Contributor role assignment for infrastructure managed identity
+resource infrastructureWebsiteContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, infrastructureIdentity.principalId, roleDefinitions.websiteContributor)
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      roleDefinitions.websiteContributor
+    )
+    principalId: infrastructureIdentity.principalId
+    principalType: 'ServicePrincipal'
+    description: 'Infrastructure managed identity access to Azure Website management'
   }
 }
