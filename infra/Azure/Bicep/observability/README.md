@@ -99,7 +99,8 @@ graph TB
 | Parameter                  | Type   | Required | Description                                   |
 | -------------------------- | ------ | -------- | --------------------------------------------- |
 | `resourceConventionPrefix` | string | ✅       | Prefix for resource naming (e.g., "arolariu") |
-| `resourceDeploymentDate`   | string | ❌       | Deployment timestamp (defaults to utcNow())   |
+| `resourceLocation`         | string | ✅       | Azure region for deployment                   |
+| `resourceDeploymentDate`   | string | ✅       | Deployment timestamp                          |
 
 ### **Example Usage**
 
@@ -108,16 +109,21 @@ module observabilityDeployment 'observability/deploymentFile.bicep' = {
   name: 'observabilityDeployment'
   params: {
     resourceConventionPrefix: 'arolariu'
+    resourceLocation: 'swedencentral'
+    resourceDeploymentDate: utcNow()
   }
 }
 ```
 
 ## 📤 **Outputs**
 
-| Output                       | Type   | Description                            |
-| ---------------------------- | ------ | -------------------------------------- |
-| `logAnalyticsWorkspaceId`    | string | Resource ID of Log Analytics workspace |
-| `managedGrafanaInstanceName` | string | Name of the Managed Grafana instance   |
+| Output                          | Type   | Description                              |
+| ------------------------------- | ------ | ---------------------------------------- |
+| `logAnalyticsWorkspaceId`       | string | Resource ID of Log Analytics workspace   |
+| `appInsightsConnectionString`   | string | Application Insights connection string   |
+| `appInsightsInstrumentationKey` | string | Application Insights instrumentation key |
+
+> **Note**: Managed Grafana module is currently disabled in deployment but can be enabled by uncommenting the module in `deploymentFile.bicep`.
 
 ## 📈 **Component Details**
 
@@ -498,5 +504,5 @@ Usage
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: June 2025  
+**Last Updated**: July 2025
 **Maintainer**: Alexandru-Razvan Olariu

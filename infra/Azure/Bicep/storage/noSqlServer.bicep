@@ -19,7 +19,7 @@ var commonTags resourceTags = {
   deploymentType: 'Bicep'
   deploymentDate: noSqlServerDeploymentDate
   deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'storage-nosql'
+  module: 'storage'
   costCenter: 'infrastructure'
   project: 'arolariu.ro'
   version: '2.0.0'
@@ -74,18 +74,6 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' 
       }
     }
 
-    resource databaseSettings 'throughputSettings@2025-05-01-preview' = {
-      name: 'default'
-      properties: {
-        resource: {
-          throughput: 100
-          autoscaleSettings: {
-            maxThroughput: 1000
-          }
-        }
-      }
-    }
-
     resource invoicesContainer 'containers@2025-05-01-preview' = {
       name: 'invoices'
       properties: {
@@ -104,10 +92,6 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' 
           }
           uniqueKeyPolicy: {
             uniqueKeys: []
-          }
-          conflictResolutionPolicy: {
-            mode: 'LastWriterWins'
-            conflictResolutionPath: '_ts'
           }
         }
       }
@@ -131,10 +115,6 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' 
           }
           uniqueKeyPolicy: {
             uniqueKeys: []
-          }
-          conflictResolutionPolicy: {
-            mode: 'LastWriterWins'
-            conflictResolutionPath: '_ts'
           }
         }
       }

@@ -13,8 +13,8 @@ param openAiDeploymentDate string
 @description('The prefix to use for the names of the resources.')
 param openAiConventionPrefix string
 
-@description('The backend managed identity to which we will grant access to the AI services.')
-param backendManagedIdentityId string
+@description('The backend managed identity principal id to which we will grant access to the AI services.')
+param backendManagedIdentityPrincipalId string
 
 import { resourceTags } from '../types/common.type.bicep'
 var commonTags resourceTags = {
@@ -45,11 +45,11 @@ resource openAi 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' = {
 }
 
 resource openAiRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(openAi.id, backendManagedIdentityId, 'Cognitive Services User')
+  name: guid(openAi.id, backendManagedIdentityPrincipalId, 'Cognitive Services User')
   scope: openAi
   properties: {
     roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
-    principalId: backendManagedIdentityId
+    principalId: backendManagedIdentityPrincipalId
     principalType: 'ServicePrincipal'
   }
 }

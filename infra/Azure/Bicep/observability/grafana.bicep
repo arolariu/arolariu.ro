@@ -3,15 +3,34 @@ targetScope = 'resourceGroup'
 metadata description = 'This template will deploy an Azure Managed Grafana instance.'
 metadata author = 'Alexandru-Razvan Olariu'
 
-param managedGrafanaLocation string = resourceGroup().location
+@description('The location where the Managed Grafana instance will be deployed.')
+param managedGrafanaLocation string
+
+@description('The name of the Managed Grafana instance to be created.')
 param managedGrafanaName string
 
-resource managedGrafanaInstance 'Microsoft.Dashboard/grafana@2023-09-01' = {
+@description('The date when the Managed Grafana instance is being deployed.')
+param managedGrafanaDeploymentDate string
+
+// Import common tags
+import { resourceTags } from '../types/common.type.bicep'
+var commonTags resourceTags = {
+  environment: 'PRODUCTION'
+  deploymentType: 'Bicep'
+  deploymentDate: managedGrafanaDeploymentDate
+  deploymentAuthor: 'Alexandru-Razvan Olariu'
+  module: 'observability'
+  costCenter: 'infrastructure'
+  project: 'arolariu.ro'
+  version: '2.0.0'
+}
+
+resource managedGrafanaInstance 'Microsoft.Dashboard/grafana@2024-11-01-preview' = {
   name: managedGrafanaName
   location: managedGrafanaLocation
   sku: { name: 'Essential' }
   properties: {
-    grafanaMajorVersion: '10'
+    grafanaMajorVersion: '11'
     zoneRedundancy: 'Disabled'
     publicNetworkAccess: 'Enabled'
     apiKey: 'Enabled'
@@ -20,10 +39,10 @@ resource managedGrafanaInstance 'Microsoft.Dashboard/grafana@2023-09-01' = {
     grafanaConfigurations: { smtp: { enabled: false } }
     grafanaIntegrations: { azureMonitorWorkspaceIntegrations: [] }
   }
-  tags: {
-    environment: 'PRODUCTION'
-    deployment: 'Bicep'
-  }
+
+  tags: union(commonTags, {
+    displayName: 'Managed Grafana Instance'
+  })
 }
 
 output managedGrafanaInstanceName string = managedGrafanaInstance.name

@@ -103,7 +103,6 @@ infra/Azure/Bicep/
 ├── 📁 compute/                      # App Service Plans
 ├── 📁 configuration/                # App Configuration
 ├── 📁 identity/                     # Managed Identities & Key Vault
-├── 📁 naming/                       # Centralized naming convention
 ├── 📁 network/                      # Azure Front Door & DNS
 ├── 📁 observability/                # Monitoring & logging
 ├── 📁 sites/                        # Web applications
@@ -142,7 +141,7 @@ The `bicepconfig.json` file provides:
 
 ### **Naming Convention**
 
-All resources follow a standardized naming pattern:
+All resources follow a standardized naming pattern, enforced via the `resourceConventionPrefix` parameter in each module:
 
 ```
 {applicationName}-{locationCode}-{resourceType}-{tier}
@@ -192,7 +191,6 @@ Examples:
 - ✅ Document all parameters with `@description`
 - ✅ Follow the established naming convention
 - ✅ Add explicit dependencies where needed
-- ✅ Use the centralized naming module
 
 ## 📖 **Documentation**
 
@@ -201,7 +199,6 @@ Each module contains detailed documentation:
 - [📁 compute/](./compute/README.md) - App Service Plans documentation
 - [📁 configuration/](./configuration/README.md) - App Configuration documentation
 - [📁 identity/](./identity/README.md) - Identity & security documentation
-- [📁 naming/](./naming/README.md) - Naming convention documentation
 - [📁 network/](./network/README.md) - Networking documentation
 - [📁 observability/](./observability/README.md) - Monitoring documentation
 - [📁 sites/](./sites/README.md) - Web applications documentation

@@ -1,27 +1,114 @@
 # 🔐 Identity Module
 
-This module provisions all identity and access management resources for the arolariu.ro platform, including user-assigned managed identities, federated identity credentials, and security groups.
+This module provisions managed identities, federated credentials, and security groups for secure, passwordless access and RBAC in the arolariu.ro platform.
 
-## 📋 **Overview**
+## 📋 Overview
 
-The identity module creates a comprehensive identity management system that:
+- User-assigned managed identities for frontend, backend, and infrastructure
+- Federated identity credentials for GitHub Actions (OIDC)
+- Security groups for JIT access (manual membership)
 
-- **Provides passwordless authentication** through managed identities
-- **Enables secure CI/CD** with federated identity credentials
-- **Implements RBAC** with security groups
-- **Separates concerns** with role-specific identities
-- **Supports zero-trust architecture** principles
+## 🏗️ Resources Created
 
-## 🏗️ **Resources Created**
+| Resource Type                  | Name Pattern                | Purpose                           |
+| ------------------------------ | --------------------------- | --------------------------------- |
+| User Assigned Managed Identity | `{prefix}-frontend`         | Frontend applications access      |
+| User Assigned Managed Identity | `{prefix}-backend`          | Backend services access           |
+| User Assigned Managed Identity | `{prefix}-infrastructure`   | Infrastructure management access  |
+| Federated Identity Credential  | `FederatedGithubCredential` | GitHub Actions authentication     |
+| Security Group                 | `arolariu-JIT-Users`        | JIT user access (manual)          |
+| Security Group                 | `arolariu-JIT-Apps`         | Managed identities group (manual) |
 
-| Resource Type                  | Name Pattern                | Purpose                          |
-| ------------------------------ | --------------------------- | -------------------------------- |
-| User Assigned Managed Identity | `{prefix}-frontend`         | Frontend applications access     |
-| User Assigned Managed Identity | `{prefix}-backend`          | Backend services access          |
-| User Assigned Managed Identity | `{prefix}-infrastructure`   | Infrastructure management access |
-| Federated Identity Credential  | `FederatedGithubCredential` | GitHub Actions authentication    |
-| Security Group                 | `arolariu-JIT-Users`        | Just-in-time user access         |
-| Security Group                 | `arolariu-JIT-Apps`         | Managed identities group         |
+## 📊 Architecture
+
+```mermaid
+graph TB
+    subgraph "Apps"
+        MAIN[Main Website]
+        API[API Service]
+        DEV[Dev Site]
+    end
+    subgraph "Identities"
+        FE[Frontend]
+        BE[Backend]
+        INFRA[Infrastructure]
+    end
+    subgraph "Federation"
+        GITHUB[GitHub Actions]
+        FED[Federated Credential]
+    end
+    subgraph "Groups"
+        USERS[arolariu-JIT-Users]
+        APPS[arolariu-JIT-Apps]
+    end
+    MAIN --> FE
+    DEV --> FE
+    API --> BE
+    GITHUB --> FED
+    FED --> INFRA
+    FE --> USERS
+    BE --> APPS
+    INFRA --> APPS
+```
+
+## 🔧 Parameters
+
+| Parameter                  | Type   | Required | Description                            |
+| -------------------------- | ------ | -------- | -------------------------------------- |
+| `resourceConventionPrefix` | string | ✅       | Prefix for resource names (1-20 chars) |
+| `resourceLocation`         | string | ✅       | Azure region for deployment            |
+| `resourceDeploymentDate`   | string | ✅       | Deployment timestamp                   |
+
+## 📤 Outputs
+
+| Output                  | Type       | Description                             |
+| ----------------------- | ---------- | --------------------------------------- |
+| `managedIdentitiesList` | identity[] | Array of all created managed identities |
+
+## 👥 Security Groups
+
+- **arolariu-JIT-Users**: Manual membership for JIT user access
+- **arolariu-JIT-Apps**: Manual membership for managed identities
+
+> **Note:** Membership in both groups is managed manually. No automatic assignment is performed by the module.
+
+## 🛡️ Security & RBAC
+
+- All identities are passwordless (Azure AD)
+- RBAC is used for resource access
+- Federated credentials enable secure CI/CD from GitHub Actions
+
+## 🚀 Example Usage
+
+```bicep
+module identitiesDeployment 'identity/deploymentFile.bicep' = {
+  name: 'identitiesDeployment'
+  params: {
+    resourceConventionPrefix: 'arolariu'
+    resourceLocation: 'swedencentral'
+    resourceDeploymentDate: utcNow()
+  }
+}
+```
+
+## 🚨 Troubleshooting
+
+| Issue                        | Solution                                |
+| ---------------------------- | --------------------------------------- |
+| Group membership not updated | Add/remove members manually in Azure AD |
+| Federated credential failed  | Check OIDC subject and permissions      |
+
+## 📚 References
+
+- [Azure Managed Identities](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/)
+- [Workload Identity Federation](https://docs.microsoft.com/en-us/azure/active-directory/workload-identities/workload-identity-federation)
+- [Microsoft Graph Groups](https://docs.microsoft.com/en-us/graph/api/resources/group)
+
+---
+
+**Module Version**: 2.0.0  
+**Last Updated**: July 2025  
+**Maintainer**: Alexandru-Razvan Olariu
 
 ## 📊 **Architecture**
 
@@ -105,25 +192,6 @@ graph TB
 
 ## 🔧 **Configuration**
 
-### **Parameters**
-
-| Parameter                               | Type   | Required | Description                                        |
-| --------------------------------------- | ------ | -------- | -------------------------------------------------- |
-| `userAssignedManagedIdentityNamePrefix` | string | ✅       | Prefix for managed identity names (1-20 chars)     |
-| `userAssignedManagedIdentityLocation`   | string | ❌       | Azure region (defaults to resource group location) |
-| `resourceDeploymentDate`                | string | ❌       | Deployment timestamp (defaults to utcNow())        |
-
-### **Example Usage**
-
-```bicep
-module identitiesDeployment 'identity/deploymentFile.bicep' = {
-  name: 'identitiesDeployment'
-  params: {
-    resourceConventionPrefix: 'arolariu'
-  }
-}
-```
-
 ## 📤 **Outputs**
 
 | Output                  | Type       | Description                             |
@@ -136,7 +204,8 @@ module identitiesDeployment 'identity/deploymentFile.bicep' = {
 type identity = {
   name: string         // Resource name
   displayName: string  // Human-readable name
-  id: string          // Full Azure resource ID
+  resourceId: string   // Full Azure resource ID
+  principalId: string  // Azure Principal ID (GUID)
 }
 ```
 
@@ -197,22 +266,24 @@ type identity = {
 
 ### **GitHub Actions Integration**
 
-The module creates a federated identity credential that enables passwordless authentication from GitHub Actions:
+Federated identity credentials for both development and production environments are created for the infrastructure managed identity using a single template (`federatedCredentials.bicep`).
 
-**Configuration:**
+**How it works:**
 
-- **Issuer**: `https://token.actions.githubusercontent.com`
-- **Subject**: `repo:arolariu/arolariu.ro:environment:production`
-- **Audience**: `api://AzureADTokenExchange`
+- Both credentials are created in a loop with `@batchSize(1)` to ensure sequential creation (avoiding Azure API limitations).
+- Each credential uses:
+  - **Issuer**: `https://token.actions.githubusercontent.com`
+  - **Subject**: `repo:arolariu/arolariu.ro:environment:development` or `repo:arolariu/arolariu.ro:environment:production`
+  - **Audience**: `api://AzureADTokenExchange`
 
 **Benefits:**
 
-- **No secrets in GitHub**: No need to store Azure credentials
-- **Automatic token exchange**: OIDC tokens exchanged for Azure tokens
-- **Enhanced security**: Tokens are short-lived and scoped
-- **Audit trail**: All access is logged and traceable
+- No secrets in GitHub: No need to store Azure credentials
+- Automatic token exchange: OIDC tokens exchanged for Azure tokens
+- Enhanced security: Tokens are short-lived and scoped
+- Audit trail: All access is logged and traceable
 
-### **Usage in GitHub Actions**
+**Usage in GitHub Actions:**
 
 ```yaml
 # .github/workflows/deploy.yml
@@ -228,35 +299,35 @@ The module creates a federated identity credential that enables passwordless aut
 
 ### **arolariu-JIT-Users**
 
-**Purpose:** Just-in-time access for human users
+**Purpose:** Provides just-in-time (JIT) access for human users who require temporary or emergency access to production resources.
 
 **Configuration:**
 
-- **Mail Enabled**: Yes (for notifications)
+- **Mail Enabled**: No (mail is disabled for both security groups to enhance security and reduce complexity)
 - **Security Enabled**: Yes
-- **Members**: Added manually when JIT access is needed
+- **Members**: Managed manually as needed (no automatic assignment)
 
 **Use Cases:**
 
 - Emergency access to production resources
-- Temporary elevated permissions
-- Audit and compliance requirements
+- Temporary elevated permissions for troubleshooting or audits
+- Compliance and audit requirements
 
 ### **arolariu-JIT-Apps**
 
-**Purpose:** Group membership for all managed identities
+**Purpose:** Intended for grouping managed identities (User Assigned Managed Identities - UAMIs) to streamline RBAC and bulk permission assignments.
 
 **Configuration:**
 
-- **Mail Enabled**: No
+- **Mail Enabled**: No (mail is disabled for both security groups to enhance security and reduce complexity)
 - **Security Enabled**: Yes
-- **Members**: All three managed identities (automatic)
+- **Members**: Managed manually as needed (no automatic assignment)
 
 **Use Cases:**
 
-- Bulk permission assignments
-- Centralized access control
-- Simplified RBAC management
+- Bulk permission assignments to application/service identities
+- Centralized access control for managed identities
+- Simplified RBAC management and auditing
 
 ## 💰 **Cost Considerations**
 
@@ -311,7 +382,7 @@ resource keyVaultReaderAssignment 'Microsoft.Authorization/roleAssignments@2022-
 **Creation:**
 
 1. Identities created during initial deployment
-2. Automatic assignment to security groups
+2. Security group membership is managed manually as needed
 3. RBAC permissions applied via dependent modules
 
 **Management:**
@@ -435,5 +506,5 @@ az keyvault secret list \
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: June 2025  
+**Last Updated**: July 2025
 **Maintainer**: Alexandru-Razvan Olariu

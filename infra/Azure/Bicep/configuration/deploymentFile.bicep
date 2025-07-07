@@ -13,8 +13,8 @@ param resourceLocation string
 @description('The date when the deployment is executed.')
 param resourceDeploymentDate string
 
-var keyVaultName = '${resourceConventionPrefix}-kv'
-var appConfigurationName = '${resourceConventionPrefix}-appconfig'
+var keyVaultName = '${replace(resourceConventionPrefix, '-', '')}kv'
+var appConfigurationName = '${replace(resourceConventionPrefix, '-', '')}appconfig'
 
 module keyVaultDeployment 'keyVault.bicep' = {
   scope: resourceGroup()

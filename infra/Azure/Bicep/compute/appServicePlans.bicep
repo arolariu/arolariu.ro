@@ -35,7 +35,6 @@ var appPlans = [
       name: 'B2'
       tier: 'Basic'
       size: 'B2'
-      familiy: 'B'
       capacity: 1
     }
     properties: {
@@ -58,7 +57,6 @@ var appPlans = [
       name: 'B1'
       tier: 'Basic'
       size: 'B1'
-      family: 'B'
       capacity: 1
     }
     properties: {

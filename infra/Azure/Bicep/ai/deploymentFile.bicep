@@ -13,8 +13,8 @@ param resourceLocation string
 @description('The prefix to use for the names of the resources.')
 param resourceConventionPrefix string
 
-@description('The backend managed identity id to which we will grant access to the AI services.')
-param backendManagedIdentityId string
+@description('The backend managed identity principal id to which we will grant access to the AI services.')
+param backendManagedIdentityPrincipalId string
 
 var aiConventionPrefix = '${resourceConventionPrefix}-ai'
 
@@ -25,24 +25,11 @@ module openAiDeployment 'openai.bicep' = {
     openAiLocation: resourceLocation
     openAiConventionPrefix: aiConventionPrefix
     openAiDeploymentDate: resourceDeploymentDate
-    backendManagedIdentityId: backendManagedIdentityId
-  }
-}
-
-module computerVisionDeployment 'computervision.bicep' = {
-  scope: resourceGroup()
-  name: 'computerVisionDeployment-${resourceDeploymentDate}'
-  params: {
-    computerVisionLocation: resourceLocation
-    computerVisionConventionPrefix: aiConventionPrefix
-    computerVisionDeploymentDate: resourceDeploymentDate
-    backendManagedIdentityId: backendManagedIdentityId
+    backendManagedIdentityPrincipalId: backendManagedIdentityPrincipalId
   }
 }
 
 output aiResources object = {
   openAiId: openAiDeployment.outputs.openAiId
   openAiEndpoint: openAiDeployment.outputs.openAiEndpoint
-  computerVisionId: computerVisionDeployment.outputs.computerVisionId
-  computerVisionEndpoint: computerVisionDeployment.outputs.computerVisionEndpoint
 }
