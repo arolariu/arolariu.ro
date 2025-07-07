@@ -90,7 +90,7 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3.0.1
         with:
-          app-name: "api-arolariu"
+          app-name: "api-arolariu-ro"
           package: .
           clean: true
           restart: true
