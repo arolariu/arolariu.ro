@@ -17,10 +17,10 @@ type Props = {
 /**
  * Component to render a media preview for an invoice scan.
  * It handles both PDF and image scans, displaying them appropriately.
- * @param scan - The invoice scan to preview.
- * @param index - The index of the scan in the list.
- * @param onRotate - Optional callback to rotate the scan.
- * @param onDelete - Callback to delete the scan.
+ * @param scan The invoice scan to preview.
+ * @param index The index of the scan in the list.
+ * @param onRotate Optional callback to rotate the scan.
+ * @param onDelete Callback to delete the scan.
  * @returns The JSX for the media preview.
  */
 export const MediaPreview = memo(function MediaPreview({scan, index, onRotate, onDelete}: Readonly<Props>) {
@@ -48,6 +48,7 @@ export const MediaPreview = memo(function MediaPreview({scan, index, onRotate, o
               className='h-full w-full rounded-lg'
               style={{border: "none", overflow: "hidden"}}
               title={`PDF Document ${index + 1}`}
+              sandbox='allow-scripts'
             />
           ) : (
             <div className='flex h-full w-full items-center justify-center bg-gray-50'>
@@ -113,6 +114,7 @@ export const MediaPreview = memo(function MediaPreview({scan, index, onRotate, o
                 src={url}
                 className='h-full w-full'
                 title={`PDF Document ${index + 1} - ${scan.name}`}
+                sandbox='allow-scripts'
               />
             ) : (
               <div className='relative h-full w-full overflow-hidden'>
@@ -126,11 +128,11 @@ export const MediaPreview = memo(function MediaPreview({scan, index, onRotate, o
             )}
           </DialogContent>
         </Dialog>
-        {!isPdfFile && onRotate && (
+        {!isPdfFile && Boolean(onRotate) && (
           <Button
             size='icon'
             variant='secondary'
-            onClick={() => onRotate(index)}>
+            onClick={() => onRotate!(index)}>
             <TbRotateClockwise
               className='h-4 w-4'
               aria-hidden='true'

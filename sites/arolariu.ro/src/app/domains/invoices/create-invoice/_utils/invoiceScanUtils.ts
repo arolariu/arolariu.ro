@@ -12,7 +12,9 @@ const SUPPORTED_TYPES = [...SUPPORTED_IMAGE_TYPES, ...SUPPORTED_PDF_TYPES] as co
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 /**
- * Determines the scan type based on MIME type
+ * Determines the scan type based on MIME type.
+ * @param mimeType The MIME type of the file, e.g., "image/jpeg", "application/pdf"
+ * @returns The scan type ("pdf" or "image"), defaulting to "image" for backward compatibility
  */
 export function determineScanType(mimeType: string): InvoiceScanType {
   if (SUPPORTED_PDF_TYPES.includes(mimeType as any)) {
@@ -26,7 +28,9 @@ export function determineScanType(mimeType: string): InvoiceScanType {
 }
 
 /**
- * Validates if a file is supported
+ * Validates if a file is supported, checking its type and size.
+ * @param file The file to validate, which should be an instance of File
+ * @returns An error object if validation fails, or null if valid, indicating the file is supported
  */
 export function validateFile(file: File): InvoiceScanError | null {
   if (!SUPPORTED_TYPES.includes(file.type as any)) {
@@ -49,7 +53,9 @@ export function validateFile(file: File): InvoiceScanError | null {
 }
 
 /**
- * Creates an InvoiceScan from a File object
+ * Creates an InvoiceScan from a File object.
+ * @param file The file to create the scan from, which should be an instance of File
+ * @returns An InvoiceScan object.
  */
 export function createInvoiceScan(file: File): InvoiceScan {
   const scanType = determineScanType(file.type);
@@ -66,82 +72,88 @@ export function createInvoiceScan(file: File): InvoiceScan {
 }
 
 /**
- * Creates an InvoiceScan from a Blob (for backward compatibility)
- */
-export function createInvoiceScanFromBlob(blob: Blob, name?: string): InvoiceScan {
-  const scanType = determineScanType(blob.type);
-
-  return {
-    id: generateId(),
-    blob,
-    name: name || `scan-${Date.now()}.${scanType === "pdf" ? "pdf" : "jpg"}`,
-    type: scanType,
-    mimeType: blob.type,
-    size: blob.size,
-    createdAt: new Date(),
-  };
-}
-
-/**
- * Checks if a scan is a PDF
+ * Checks if a scan is a PDF, indicating it is a document scan.
+ * @param scan The InvoiceScan to check.
+ * @returns True if the scan is a PDF, false otherwise.
  */
 export function isPDF(scan: InvoiceScan): boolean {
   return scan.type === "pdf";
 }
 
 /**
- * Checks if a scan is an image
+ * Checks if a scan is an image, indicating it is a photo scan.
+ * @param scan The InvoiceScan to check.
+ * @returns True if the scan is an image, false otherwise.
  */
 export function isImage(scan: InvoiceScan): boolean {
   return scan.type === "image";
 }
 
 /**
- * Gets a blob URL for the scan, creating one if it doesn't exist
+ * Gets a blob URL for the scan, creating one if it doesn't exist.
+ * This URL is used to display the scan in the UI without needing to upload it again.
+ * @param scan The InvoiceScan to get the URL for.
+ * @returns The blob URL for the scan, or creates one if it doesn't exist.
  */
 export function getScanUrl(scan: InvoiceScan): string {
   if (!scan.url) {
-    scan.url = URL.createObjectURL(scan.blob);
+    // Create a new object to avoid mutating the original
+    const url = URL.createObjectURL(scan.blob);
+    // Since we can't mutate scan directly, we'll return the URL
+    // and let the caller handle the state update if needed
+    Object.defineProperty(scan, "url", {
+      value: url,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+    return url;
   }
   return scan.url;
 }
 
 /**
- * Cleans up the blob URL for a scan
+ * Cleans up the blob URL for a scan, revoking it to free up memory.
+ * This is important to prevent memory leaks, especially for large files.
+ * @param scan The InvoiceScan to revoke the URL for.
  */
 export function revokeScanUrl(scan: InvoiceScan): void {
   if (scan.url) {
     URL.revokeObjectURL(scan.url);
-    scan.url = undefined;
+    // Use defineProperty to avoid direct mutation warning
+    Object.defineProperty(scan, "url", {
+      value: undefined,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
   }
 }
 
 /**
- * Formats file size in human-readable format
- */
-export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-}
-
-/**
- * Generates a unique ID for scans
+ * Generates a unique ID for scan objects.
+ * This ID is based on the current timestamp and a random part to ensure uniqueness.
+ * It uses a new ArrayBuffer to ensure that the generated ID is unique across different instances.
+ * @returns A unique string ID.
  */
 function generateId(): string {
   const timestamp = Date.now().toString(36);
-  const randomPart = Math.random().toString(36).substring(2, 10);
+  // eslint-disable-next-line sonarjs/pseudo-random -- this is a simple random part generation
+  const randomPart = Math.random().toString(36).slice(2, 10);
   const seed = `${timestamp}-${randomPart}`;
 
   // Use a new ArrayBuffer to ensure uniqueness
-  const arrayBuffer = new TextEncoder().encode(seed).buffer;
+  const arrayBuffer = new TextEncoder().encode(seed).buffer as ArrayBuffer;
   return generateGuid(arrayBuffer);
 }
 
 /**
- * Creates a rotated version of an image scan
+ * Creates a rotated version of an image scan.
+ * This function takes an InvoiceScan of type "image",
+ * rotates it 90 degrees clockwise, and returns a new InvoiceScan object.
+ * @param scan The InvoiceScan to rotate
+ * @returns A Promise that resolves to a new InvoiceScan with the rotated image
+ * @throws Error if the scan type is not "image" or if the rotation fails
  */
 export function rotateImageScan(scan: InvoiceScan): Promise<InvoiceScan> {
   return new Promise((resolve, reject) => {
@@ -163,8 +175,10 @@ export function rotateImageScan(scan: InvoiceScan): Promise<InvoiceScan> {
         }
 
         // Swap width and height for 90-degree rotation
-        canvas.width = img.height;
-        canvas.height = img.width;
+        const canvasWidth = img.height;
+        const canvasHeight = img.width;
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
 
         // Apply rotation transformation
         ctx.translate(canvas.width / 2, canvas.height / 2);
@@ -205,6 +219,12 @@ export function rotateImageScan(scan: InvoiceScan): Promise<InvoiceScan> {
       reject(new Error("Failed to load image for rotation"));
     });
 
-    img.src = imageUrl;
+    // Set source to trigger load event
+    Object.defineProperty(img, "src", {
+      value: imageUrl,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
   });
 }

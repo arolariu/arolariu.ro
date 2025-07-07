@@ -11,70 +11,96 @@ import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
 import type {InvoiceScan} from "../_types/InvoiceScan";
 import {createInvoiceScan, revokeScanUrl, rotateImageScan, validateFile} from "../_utils/invoiceScanUtils";
 
+/**
+ * This hook provides actions for managing invoice scans.
+ * It includes functions to handle client-side uploads, server-side uploads,
+ * rotating scans, deleting scans, and resetting the state.
+ * @returns An object containing functions to manage invoice scans:
+ * - `resetState`: Resets the state of scans and upload status.
+ * - `handleImageClientSideUpload`: Handles client-side file uploads.
+ * - `handleImageServerSideUpload`: Handles server-side uploads of scans.
+ * - `handleRotateScan`: Rotates an image scan 90 degrees clockwise.
+ * - `handleDeleteScan`: Deletes a scan and provides an undo option.
+ * @throws Error if an unexpected error occurs during upload or rotation.
+ */
 export function useInvoiceActions() {
   const {userInformation} = useUserInformation();
   const {scans, setScans, setUploadStatus} = useInvoiceCreator();
 
   const resetState = useCallback(() => {
-    // Clean up all blob URLs before resetting
-    scans.forEach(revokeScanUrl);
+    // Use functional approach with side effects
+    for (const scan of scans) revokeScanUrl(scan);
     setScans([]);
     setUploadStatus("UNKNOWN");
   }, [scans, setScans, setUploadStatus]);
 
   const handleImageClientSideUpload = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
+      const processFiles = (files: FileList) => {
+        const fileArray = [...files];
+
+        // Process files using functional approach
+        const validScans: InvoiceScan[] = [];
+        const errors: string[] = [];
+
+        for (const file of fileArray) {
+          const validationError = validateFile(file);
+          if (validationError) {
+            errors.push(validationError.message);
+          } else {
+            const scan = createInvoiceScan(file);
+            validScans.push(scan);
+          }
+        }
+
+        return {validScans, errors};
+      };
+
+      const showSuccessToast = (count: number) => {
+        toast("Upload successful", {
+          description: `${count} file(s) uploaded successfully.`,
+          duration: 5000,
+          style: {
+            backgroundColor: "green",
+            color: "white",
+          },
+          icon: <span className='text-white'>✔️</span>,
+        });
+      };
+
+      const showErrorToasts = (errors: string[]) => {
+        for (const error of errors) {
+          toast("Upload error", {
+            description: error,
+            duration: 5000,
+            style: {
+              backgroundColor: "red",
+              color: "white",
+            },
+            icon: <span className='text-white'>❌</span>,
+          });
+        }
+      };
+
       try {
         event.preventDefault();
         setUploadStatus("PENDING__CLIENTSIDE");
         const {files} = event.target;
 
         if (files && files.length > 0) {
-          const newScans: InvoiceScan[] = [];
-          const errors: string[] = [];
-
-          // Process each file
-          Array.from(files).forEach((file) => {
-            const validationError = validateFile(file);
-            if (validationError) {
-              errors.push(validationError.message);
-            } else {
-              const scan = createInvoiceScan(file);
-              newScans.push(scan);
-            }
-          });
+          const {validScans, errors} = processFiles(files);
 
           // Update state with new scans
-          if (newScans.length > 0) {
-            setScans((prevScans) => [...prevScans, ...newScans]);
+          if (validScans.length > 0) {
+            setScans((prevScans) => [...prevScans, ...validScans]);
             setUploadStatus("SUCCESS__CLIENTSIDE");
-
-            toast("Upload successful", {
-              description: `${newScans.length} file(s) uploaded successfully.`,
-              duration: 5000,
-              style: {
-                backgroundColor: "green",
-                color: "white",
-              },
-              icon: <span className='text-white'>✔️</span>,
-            });
+            showSuccessToast(validScans.length);
           }
 
           // Show errors if any
           if (errors.length > 0) {
-            errors.forEach((error) => {
-              toast("Upload error", {
-                description: error,
-                duration: 5000,
-                style: {
-                  backgroundColor: "red",
-                  color: "white",
-                },
-                icon: <span className='text-white'>❌</span>,
-              });
-            });
-
-            if (newScans.length === 0) {
+            showErrorToasts(errors);
+            if (validScans.length === 0) {
               setUploadStatus("FAILURE__CLIENTSIDE");
             }
           }
@@ -103,20 +129,22 @@ export function useInvoiceActions() {
         setUploadStatus("PENDING__SERVERSIDE");
         const scansCopy = [...scans];
 
-        // Process each scan
-        for (const scan of scansCopy) {
-          const blobInformation = await extractBase64FromBlob(scan.blob);
-          const {status} = await uploadInvoice({blobInformation, userInformation});
+        // Process scans sequentially using Promise.all with map
+        await Promise.all(
+          scansCopy.map(async (scan) => {
+            const blobInformation = await extractBase64FromBlob(scan.blob);
+            const {status} = await uploadInvoice({blobInformation, userInformation});
 
-          if (status === "SUCCESS") {
-            setScans((currentScans) => {
-              const updatedScans = currentScans.filter((currentScan) => currentScan.id !== scan.id);
-              // Clean up the blob URL for the uploaded scan
-              revokeScanUrl(scan);
-              return updatedScans;
-            });
-          }
-        }
+            if (status === "SUCCESS") {
+              setScans((currentScans) => {
+                const updatedScans = currentScans.filter((currentScan) => currentScan.id !== scan.id);
+                // Clean up the blob URL for the uploaded scan
+                revokeScanUrl(scan);
+                return updatedScans;
+              });
+            }
+          }),
+        );
 
         setUploadStatus("SUCCESS__SERVERSIDE");
       } catch (error: unknown) {
@@ -190,12 +218,10 @@ export function useInvoiceActions() {
               if (insertIndex === -1) {
                 // Add to end if no later scan found
                 return [...currentScans, scanCopy];
-              } else {
-                // Insert at the found position
-                const newScans = [...currentScans];
-                newScans.splice(insertIndex, 0, scanCopy);
-                return newScans;
               }
+
+              // Insert at the found position using functional approach
+              return [...currentScans.slice(0, insertIndex), scanCopy, ...currentScans.slice(insertIndex)];
             });
           },
         },

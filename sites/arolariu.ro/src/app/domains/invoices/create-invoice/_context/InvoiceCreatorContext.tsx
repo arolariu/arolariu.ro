@@ -15,6 +15,11 @@ interface InvoiceCreatorContextType {
 
 const InvoiceCreatorContext = createContext<InvoiceCreatorContextType | undefined>(undefined);
 
+/**
+ * This component provides the context for the invoice creator.
+ * It manages the state of invoice scans and upload status.
+ * @returns The InvoiceCreatorContext provider component.
+ */
 export function InvoiceCreatorProvider({children}: Readonly<{children: React.ReactNode}>) {
   const [scans, setScans] = useState<InvoiceScan[]>([]);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>("UNKNOWN");

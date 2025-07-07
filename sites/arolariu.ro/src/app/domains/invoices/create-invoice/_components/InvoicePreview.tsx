@@ -22,7 +22,7 @@ export default function InvoicePreview() {
   // Helper function to handle rotation by index (for compatibility with child components)
   const handleRotate = (index: number) => {
     if (index < 0 || index >= scans.length) return;
-    const scan = scans[index];
+    const scan = scans.at(index);
     if (scan) {
       handleRotateScan(scan.id);
     }
@@ -31,7 +31,7 @@ export default function InvoicePreview() {
   // Helper function to handle deletion by index (for compatibility with child components)
   const handleDelete = (index: number) => {
     if (index < 0 || index >= scans.length) return;
-    const scan = scans[index];
+    const scan = scans.at(index);
     if (scan) {
       handleDeleteScan(scan.id);
     }

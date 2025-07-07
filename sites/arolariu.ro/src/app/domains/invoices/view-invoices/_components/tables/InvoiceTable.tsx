@@ -49,30 +49,46 @@ type Props = {
  */
 export default function InvoicesTable(props: Readonly<Props>): React.JSX.Element {
   const {mode, currentPage, pageSize, setCurrentPage, setPageSize, totalPages, paginatedInvoices: invoices} = props;
-
-  const handleNextPage = useCallback(() => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  }, [currentPage, totalPages]);
-
-  const handlePrevPage = useCallback(() => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  }, [currentPage]);
-
-  const handlePageSizeChange = useCallback((size: number) => {
-    setPageSize(size);
-    setCurrentPage(1);
-  }, []);
-
   const setSelectedInvoices = useZustandStore((state) => state.setSelectedInvoices);
-  useEffect(() => {
-    return () => {
-      setSelectedInvoices([]);
-    };
-  }, []);
+
+  const handleNextPage = useCallback(
+    () => {
+      if (currentPage < totalPages) {
+        setCurrentPage(currentPage + 1);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- set is a stable function.
+    [currentPage, totalPages],
+  );
+
+  const handlePrevPage = useCallback(
+    () => {
+      if (currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- set is a stable function.
+    [currentPage],
+  );
+
+  const handlePageSizeChange = useCallback(
+    (size: number) => {
+      setPageSize(size);
+      setCurrentPage(1);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- set is a stable function.
+    [],
+  );
+
+  useEffect(
+    () => {
+      return () => {
+        setSelectedInvoices([]);
+      };
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- set is a stable function.
+    [],
+  );
 
   switch (mode) {
     case "table":

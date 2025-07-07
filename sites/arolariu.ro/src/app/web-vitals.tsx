@@ -185,7 +185,6 @@ export default function WebVitals(): React.JSX.Element {
       try {
         const longTaskObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
-          // eslint-disable-next-line functional/no-loop-statements -- Using for..of for better readability
           for (const entry of entries) {
             saveToIndexedDB({
               name: `long-task-${entry.name}-${entry.entryType}`,
