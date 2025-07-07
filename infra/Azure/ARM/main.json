@@ -6,7 +6,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "14202484878069459154"
+      "templateHash": "3948075534342715462"
     },
     "description": "This bicep file is the main entry point for any zero-touch deployment.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>"
@@ -86,7 +86,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.36.1.42791",
-              "templateHash": "11545453319444194903"
+              "templateHash": "16814237219406303295"
             },
             "description": "This file acts a facade that will be called by the main bicep file. This file contains all module deployments (compute, storage, identity, etc.). This file is responsible for deploying all the modules.",
             "author": "Alexandru-Razvan Olariu"
@@ -612,7 +612,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.36.1.42791",
-                      "templateHash": "13661343992649576531"
+                      "templateHash": "16166525840037237090"
                     },
                     "description": "RBAC module deployment file that manages resource group level role assignments for managed identities",
                     "author": "Alexandru-Razvan Olariu"
@@ -968,7 +968,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "8012198584313983578"
+                              "templateHash": "7936975750483813583"
                             },
                             "description": "RBAC role assignments for the infrastructure managed identity.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1017,7 +1017,8 @@
                               "keyVaultSecretsReader": "4633458b-17de-408a-b874-0445c86b69e6",
                               "acrPull": "7f951dda-4ed3-4680-a7ca-43fe172d538d",
                               "acrPush": "8311e382-0749-4cb8-b61a-304f252e45ec",
-                              "acrContributor": "2efddaa5-3f1f-4df3-97df-af3f13818f4c"
+                              "acrContributor": "2efddaa5-3f1f-4df3-97df-af3f13818f4c",
+                              "websiteContributor": "de139f84-1756-47ae-9be6-808fbbe84772"
                             }
                           },
                           "resources": {
@@ -1118,6 +1119,17 @@
                                 "principalId": "[parameters('infrastructureIdentity').principalId]",
                                 "principalType": "ServicePrincipal",
                                 "description": "Infrastructure managed identity access to Azure Container Registry management"
+                              }
+                            },
+                            "infrastructureWebsiteContributorRoleAssignment": {
+                              "type": "Microsoft.Authorization/roleAssignments",
+                              "apiVersion": "2022-04-01",
+                              "name": "[guid(resourceGroup().id, parameters('infrastructureIdentity').principalId, variables('roleDefinitions').websiteContributor)]",
+                              "properties": {
+                                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitions').websiteContributor)]",
+                                "principalId": "[parameters('infrastructureIdentity').principalId]",
+                                "principalType": "ServicePrincipal",
+                                "description": "Infrastructure managed identity access to Azure Website management"
                               }
                             }
                           }
