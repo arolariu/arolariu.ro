@@ -6,7 +6,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "3948075534342715462"
+      "templateHash": "8850483358103990348"
     },
     "description": "This bicep file is the main entry point for any zero-touch deployment.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>"
@@ -86,7 +86,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.36.1.42791",
-              "templateHash": "16814237219406303295"
+              "templateHash": "17116188626519572566"
             },
             "description": "This file acts a facade that will be called by the main bicep file. This file contains all module deployments (compute, storage, identity, etc.). This file is responsible for deploying all the modules.",
             "author": "Alexandru-Razvan Olariu"
@@ -1174,7 +1174,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.36.1.42791",
-                      "templateHash": "5920354135273647318"
+                      "templateHash": "16748279876410481668"
                     }
                   },
                   "definitions": {
@@ -1503,7 +1503,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "3474176158973795163"
+                              "templateHash": "6214355212438931331"
                             },
                             "description": "This template will deploy an Azure App Configuration resource running on the free SKU.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1599,6 +1599,255 @@
                             }
                           },
                           "variables": {
+                            "$fxv#0": {
+                              "items": [
+                                {
+                                  "key": "Options:Site:Environment",
+                                  "value": "",
+                                  "label": "DEVELOPMENT",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Site:Environment",
+                                  "value": "",
+                                  "label": "PRODUCTION",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Site:Name",
+                                  "value": "",
+                                  "label": "DEVELOPMENT",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Site:Name",
+                                  "value": "",
+                                  "label": "PRODUCTION",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Site:Url",
+                                  "value": "",
+                                  "label": "DEVELOPMENT",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Site:Url",
+                                  "value": "",
+                                  "label": "PRODUCTION",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Api:Environment",
+                                  "value": "",
+                                  "label": "PRODUCTION",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Api:Environment",
+                                  "value": "",
+                                  "label": "DEVELOPMENT",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Api:Name",
+                                  "value": "",
+                                  "label": "PRODUCTION",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Api:Name",
+                                  "value": "",
+                                  "label": "DEVELOPMENT",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Api:Url",
+                                  "value": "",
+                                  "label": "PRODUCTION",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Api:Url",
+                                  "value": "",
+                                  "label": "DEVELOPMENT",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Auth:Audience",
+                                  "value": "",
+                                  "label": "PRODUCTION",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Auth:Audience",
+                                  "value": "",
+                                  "label": "DEVELOPMENT",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Auth:Subject",
+                                  "value": "",
+                                  "label": "PRODUCTION",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Auth:Subject",
+                                  "value": "",
+                                  "label": "DEVELOPMENT",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Auth:Issuer",
+                                  "value": "",
+                                  "label": "PRODUCTION",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Auth:Issuer",
+                                  "value": "",
+                                  "label": "DEVELOPMENT",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Auth:Secret",
+                                  "value": "",
+                                  "label": "PRODUCTION",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Auth:Secret",
+                                  "value": "",
+                                  "label": "DEVELOPMENT",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Auth:ClerkPublishableKey",
+                                  "value": "",
+                                  "label": "DEVELOPMENT",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Auth:ClerkPublishableKey",
+                                  "value": "",
+                                  "label": "PRODUCTION",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Auth:ClerkSecretKey",
+                                  "value": "",
+                                  "label": "PRODUCTION",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Auth:ClerkSecretKey",
+                                  "value": "",
+                                  "label": "DEVELOPMENT",
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Azure:TenantId",
+                                  "value": "",
+                                  "label": null,
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Azure:SubscriptionId",
+                                  "value": "",
+                                  "label": null,
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Azure:FrontendIdentityClientId",
+                                  "value": "",
+                                  "label": null,
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Azure:BackendIdentityClientId",
+                                  "value": "",
+                                  "label": null,
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Azure:InfrastructureIdentityClientId",
+                                  "value": "",
+                                  "label": null,
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Endpoints:CognitiveServices",
+                                  "value": "",
+                                  "label": null,
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Endpoints:KeyVault",
+                                  "value": "",
+                                  "label": null,
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Endpoints:OpenAI",
+                                  "value": "",
+                                  "label": null,
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Endpoints:StorageAccount",
+                                  "value": "",
+                                  "label": null,
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Endpoints:ApplicationInsights",
+                                  "value": "",
+                                  "label": null,
+                                  "content_type": "",
+                                  "tags": {}
+                                },
+                                {
+                                  "key": "Options:Common:ApplicationAuthor",
+                                  "value": "",
+                                  "label": null,
+                                  "content_type": "",
+                                  "tags": {}
+                                }
+                              ]
+                            },
                             "commonTags": {
                               "environment": "PRODUCTION",
                               "deploymentType": "Bicep",
@@ -1608,7 +1857,8 @@
                               "costCenter": "infrastructure",
                               "project": "arolariu.ro",
                               "version": "2.0.0"
-                            }
+                            },
+                            "configs": "[variables('$fxv#0')]"
                           },
                           "resources": {
                             "appConfiguration": {
@@ -1631,6 +1881,24 @@
                                 }
                               },
                               "tags": "[union(variables('commonTags'), createObject('displayName', 'App Configuration', 'resourceType', 'Configuration Store'))]"
+                            },
+                            "appConfigurationKeyValues": {
+                              "copy": {
+                                "name": "appConfigurationKeyValues",
+                                "count": "[length(variables('configs').items)]"
+                              },
+                              "type": "Microsoft.AppConfiguration/configurationStores/keyValues",
+                              "apiVersion": "2024-06-15-preview",
+                              "name": "[format('{0}/{1}', parameters('appConfigurationName'), variables('configs').items[copyIndex()].key)]",
+                              "properties": {
+                                "value": "[variables('configs').items[copyIndex()].value]",
+                                "tags": {
+                                  "label": "[variables('configs').items[copyIndex()].label]"
+                                }
+                              },
+                              "dependsOn": [
+                                "appConfiguration"
+                              ]
                             }
                           },
                           "outputs": {
