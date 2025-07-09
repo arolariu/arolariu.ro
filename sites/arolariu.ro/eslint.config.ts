@@ -87,10 +87,11 @@ const eslintConfig = tseslint.config({
     ...eslintPluginPromise.configs["flat/recommended"].rules,
 
     "functional/no-return-void": "off", // this rule is too strict; some functions return void.
-    "functional/immutable-data": "warn", // this rule is too strict; we use mutable data - warn.
+    "functional/immutable-data": "off", // this rule is too strict; we use mutable data.
     "functional/no-mixed-types": "off", // this rule is too strict; mixed types are allowed.
     "functional/no-promise-reject": "off", // this rule is too strict; we need to reject promises.
     "functional/no-try-statements": "off", // this rule is too strict.
+    "functional/no-loop-statements": "off", // this rule is too strict;
     "functional/no-throw-statements": "off", // this rule is too strict; useContext needs to throw.
     "functional/functional-parameters": "off", // this rule is too strict.
     "functional/prefer-immutable-types": "off", // this rule is too strict.

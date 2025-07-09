@@ -101,7 +101,6 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
   const openDialog = useCallback((dialog: DialogType, mode: DialogMode = "view", payload: DialogPayload = null) => {
     if (currentDialog.current.type === null) {
       // Update both ref and state atomically
-      // eslint-disable-next-line functional/immutable-data
       currentDialog.current = {type: dialog, mode, payload};
       setDialogState(currentDialog.current);
     }
@@ -116,7 +115,6 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
    * This function does not take any arguments.
    */
   const closeDialog = useCallback(() => {
-    // eslint-disable-next-line functional/immutable-data
     currentDialog.current = {type: null, mode: null, payload: null};
     setDialogState(currentDialog.current);
   }, []);

@@ -40,7 +40,6 @@ export default async function uploadInvoice({blobInformation, userInformation}: 
 
     const photoMetadata = {dateOfUploadToServer: new Date().toISOString()} as Record<string, string>;
 
-    // eslint-disable-next-line functional/no-loop-statements -- readability
     for (const metadataKey in storageResponse.blobMetadata) {
       const metadataValue = storageResponse.blobMetadata[metadataKey] as string;
       photoMetadata[metadataKey] = metadataValue;

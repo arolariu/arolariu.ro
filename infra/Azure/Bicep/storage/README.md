@@ -1,28 +1,163 @@
 # 💾 Storage Module
 
-This module provisions a comprehensive data storage infrastructure for the arolariu.ro platform, including Azure Storage Account, Container Registry, SQL Database, and Cosmos DB for enterprise-grade data management with enhanced security standards.
+This module provisions a secure, enterprise-grade Azure Storage Account for the arolariu.ro platform, with advanced security, lifecycle, and data management features.
 
-## 📋 **Overview**
+## 📋 Overview
 
-The storage module creates a multi-tier data architecture that:
+This module provides:
 
-- **Provides structured storage** through Azure SQL Database
-- **Enables document storage** with Azure Cosmos DB
-- **Offers file and blob storage** via Azure Storage Account
-- **Supports container workflows** with Azure Container Registry
-- **Implements enterprise security** with encryption and access controls
-- **Ensures high availability** with automated backups and replication
+- **Blob, file, queue, and table storage** with advanced security
+- **Lifecycle management** for cost optimization
+- **Comprehensive encryption** (at rest, in transit, infrastructure)
+- **Fine-grained retention and recovery** (change feed, versioning, delete retention)
+- **CORS and access control** for production and development
 
-## 🏗️ **Resources Created**
+## 🏗️ Resources Created
 
-| Resource Type      | Name Pattern                   | Purpose                             |
-| ------------------ | ------------------------------ | ----------------------------------- |
-| Storage Account    | `{prefix-clean}sa`             | Blob, table, queue, file storage    |
-| Container Registry | `{prefix}-acr`                 | Docker container image storage      |
-| SQL Server         | `{prefix}-sqlserver`           | Relational database server          |
-| SQL Databases      | `{prefix}-sqlserver-db-{type}` | Application and analytics databases |
-| Cosmos DB Account  | `{prefix}-nosqlserver`         | NoSQL document database server      |
-| Cosmos Databases   | Various collections            | Document and event storage          |
+| Resource Type    | Name Pattern | Purpose                        |
+| ---------------- | ------------ | ------------------------------ |
+| Storage Account  | Customizable | Blob, file, queue, table store |
+| ManagementPolicy | default      | Lifecycle/cost optimization    |
+
+## 📊 Architecture
+
+```mermaid
+graph TB
+    subgraph "App Layer"
+        WEB[Web/API/Dev]
+    end
+    subgraph "Storage Account"
+        BLOB[Blob]
+        FILE[File]
+        QUEUE[Queue]
+        TABLE[Table]
+    end
+    subgraph "Security"
+        ENCRYPTION[Encryption]
+        RETENTION[Retention]
+        LIFECYCLE[Lifecycle]
+    end
+    WEB --> BLOB
+    WEB --> FILE
+    WEB --> QUEUE
+    WEB --> TABLE
+    BLOB --> ENCRYPTION
+    FILE --> ENCRYPTION
+    QUEUE --> ENCRYPTION
+    TABLE --> ENCRYPTION
+    BLOB --> RETENTION
+    BLOB --> LIFECYCLE
+```
+
+## 🔧 Configuration
+
+### Parameters
+
+| Parameter                      | Type   | Required | Description                               |
+| ------------------------------ | ------ | -------- | ----------------------------------------- |
+| `storageAccountName`           | string | ✅       | Storage account name (3-24 chars, unique) |
+| `storageAccountLocation`       | string | ✅       | Azure region                              |
+| `storageAccountDeploymentDate` | string | ✅       | Deployment timestamp                      |
+
+### Example Usage
+
+```bicep
+module storage 'storage/storageAccount.bicep' = {
+  name: 'storageDeployment'
+  params: {
+    storageAccountName: 'arolariusa'
+    storageAccountLocation: 'westeurope'
+    storageAccountDeploymentDate: '2025-07-03'
+  }
+}
+```
+
+## 📤 Outputs
+
+| Output                        | Type   | Description                        |
+| ----------------------------- | ------ | ---------------------------------- |
+| `storageAccountName`          | string | Name of the storage account        |
+| `storageAccountId`            | string | Resource ID of the storage account |
+| `storageAccountBlobEndpoint`  | string | Blob endpoint URL                  |
+| `storageAccountFileEndpoint`  | string | File endpoint URL                  |
+| `storageAccountQueueEndpoint` | string | Queue endpoint URL                 |
+| `storageAccountTableEndpoint` | string | Table endpoint URL                 |
+
+## 💾 Storage Account Features
+
+**General:**
+
+- SKU: Standard_LRS (Locally Redundant)
+- Kind: StorageV2
+- Access Tier: Hot
+- Public Network Access: Enabled (can restrict)
+- Allow Cross-Tenant Replication: Disabled
+- Minimum TLS: 1.2
+- HTTPS Only: Yes
+- Tags: Environment, deployment, cost center, etc.
+
+**Security & Encryption:**
+
+- Encryption at rest: Microsoft-managed keys
+- Infrastructure encryption: Enabled
+- Network ACLs: AzureServices, Logging, Metrics bypassed; default allow
+
+**Blob Service:**
+
+- Change feed: Enabled (90 days)
+- Restore policy: Enabled (30 days)
+- Container delete retention: 7 days
+- Blob delete retention: 90 days (no permanent delete)
+- CORS: Configured for prod/dev
+- Versioning: Enabled
+- Last access time tracking: Enabled (1 day)
+
+**File Service:**
+
+- Share delete retention: 7 days (no permanent delete)
+- SMB: 3.0/3.1.1, Kerberos, AES encryption
+
+**Queue/Table Service:**
+
+- Enabled
+
+**Lifecycle Management:**
+
+- Move blobs to cool after 30 days, archive after 90 days, delete after 365 days
+- Delete snapshots after 90 days, versions after 365 days
+
+## 🛡️ Security Practices
+
+- All endpoints require HTTPS
+- Infrastructure encryption is enabled
+- Public access is enabled at the account level but can be restricted at the container level
+- Shared key access is enabled (can be restricted)
+
+## 🛠️ Maintenance & Operations
+
+- Automated lifecycle policies for cost optimization
+- Retention and restore policies for data recovery
+- CORS rules for both production and local development
+
+## 🚨 Troubleshooting
+
+| Issue                 | Symptoms           | Solution                                |
+| --------------------- | ------------------ | --------------------------------------- |
+| Storage access denied | 403 errors         | Check RBAC and network access           |
+| Blob not found        | 404 errors         | Check container and blob name           |
+| CORS errors           | Browser errors     | Check CORS rules in blobServices        |
+| High storage costs    | Unexpected billing | Review lifecycle and retention policies |
+
+## 📚 References
+
+- [Azure Storage Documentation](https://docs.microsoft.com/en-us/azure/storage/)
+- [Storage Security Guide](https://docs.microsoft.com/en-us/azure/storage/common/storage-security-guide)
+
+---
+
+**Module Version**: 2.0.0  
+**Last Updated**: July 2025  
+**Maintainer**: Alexandru-Razvan Olariu
 
 ## 📊 **Architecture**
 

@@ -3,7 +3,7 @@
 "use client";
 
 import type {Invoice, Merchant} from "@/types/invoices";
-import {motion} from "motion/react";
+import {motion, type Variants} from "motion/react";
 import ImageCard from "../cards/ImageCard";
 import MerchantCard from "../cards/MerchantCard";
 import SharingCard from "../cards/SharingCard";
@@ -36,9 +36,9 @@ export default function SidebarSection({invoice, merchant}: Readonly<Props>) {
     visible: {
       y: 0,
       opacity: 1,
-      transition: {type: "spring", stiffness: 300, damping: 24},
+      transition: {type: "spring" as const, stiffness: 300, damping: 24},
     },
-  };
+  } satisfies Variants;
 
   return (
     <motion.div

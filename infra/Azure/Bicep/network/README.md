@@ -109,7 +109,9 @@ graph TB
 | Parameter                  | Type   | Required | Description                                   |
 | -------------------------- | ------ | -------- | --------------------------------------------- |
 | `resourceConventionPrefix` | string | ✅       | Prefix for resource naming (e.g., "arolariu") |
-| `resourceDeploymentDate`   | string | ❌       | Deployment timestamp (defaults to utcNow())   |
+| `resourceLocation`         | string | ✅       | Azure region for deployment                   |
+| `resourceDeploymentDate`   | string | ✅       | Deployment timestamp                          |
+| `mainWebsiteHostname`      | string | ✅       | Hostname of the main production website       |
 
 ### **Example Usage**
 
@@ -118,19 +120,21 @@ module networkDeployment 'network/deploymentFile.bicep' = {
   name: 'networkDeployment'
   params: {
     resourceConventionPrefix: 'arolariu'
+    resourceLocation: 'swedencentral'
+    resourceDeploymentDate: utcNow()
+    mainWebsiteHostname: websiteDeployment.outputs.mainWebsiteUrl
   }
 }
 ```
 
 ## 📤 **Outputs**
 
-Currently, the module focuses on resource creation without explicit outputs. Future versions may include:
-
-| Output (Planned)       | Type   | Description                     |
-| ---------------------- | ------ | ------------------------------- |
-| `frontDoorEndpointUrl` | string | Primary Front Door endpoint URL |
-| `cdnEndpointUrl`       | string | CDN endpoint URL                |
-| `dnsZoneNameServers`   | array  | DNS zone name servers           |
+| Output                    | Type   | Description                         |
+| ------------------------- | ------ | ----------------------------------- |
+| `frontDoorProductionFqdn` | string | Front Door production endpoint FQDN |
+| `frontDoorCdnFqdn`        | string | Front Door CDN endpoint FQDN        |
+| `frontDoorProfileId`      | string | Front Door profile resource ID      |
+| `dnsZoneName`             | string | DNS zone name (arolariu.ro)         |
 
 ## 🌍 **Front Door Configuration**
 
@@ -432,5 +436,5 @@ az monitor metrics list \
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: June 2025  
+**Last Updated**: July 2025
 **Maintainer**: Alexandru-Razvan Olariu

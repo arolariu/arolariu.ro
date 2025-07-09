@@ -21,7 +21,7 @@ var commonTags resourceTags = {
   deploymentType: 'Bicep'
   deploymentDate: storageAccountDeploymentDate
   deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'storage-account'
+  module: 'storage'
   costCenter: 'infrastructure'
   project: 'arolariu.ro'
   version: '2.0.0'
@@ -111,7 +111,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
       }
       deleteRetentionPolicy: {
         enabled: true
-        days: 7
+        days: 90
         allowPermanentDelete: false
       }
       isVersioningEnabled: true

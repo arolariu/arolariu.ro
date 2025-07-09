@@ -2,15 +2,25 @@
 
 import {FakeInvoiceBigList} from "@/data/mocks/invoices";
 import {fetchUser} from "@/lib/actions/user/fetchUser";
+import {createMetadata} from "@/metadata";
 import {RichText} from "@/presentation/Text";
-import type {Metadata} from "next";
-import {getTranslations} from "next-intl/server";
+import {getLocale, getTranslations} from "next-intl/server";
+import type {Metadata} from "next/types";
 import RenderViewInvoicesScreen from "./island";
 
-export const metadata: Metadata = {
-  title: "Invoice Management System - List Invoices",
-  description: "List all invoices from the invoice management system.",
-};
+/**
+ * Generates the metadata for the view invoices page.
+ * @returns The metadata for the view invoices page.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Domains.services.invoices.service.view-invoices.__metadata__");
+  const locale = await getLocale();
+  return createMetadata({
+    locale,
+    title: t("title"),
+    description: t("description"),
+  });
+}
 
 /**
  * The view invoices page, SSR'ed.

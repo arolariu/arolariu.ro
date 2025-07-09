@@ -7,6 +7,7 @@ import {useWindowSize} from "@/hooks";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
+import {memo} from "react";
 import {DesktopNavigation, MobileNavigation} from "./Navigation";
 
 const AuthButton = dynamic(() => import("./Buttons/AuthButton"), {ssr: false});
@@ -16,7 +17,7 @@ const ThemeButton = dynamic(() => import("./Buttons/ThemeButton"), {ssr: false})
  * The header component.
  * @returns The header component.
  */
-export default function Header(): React.JSX.Element {
+function Header(): React.JSX.Element {
   const {isMobile, isDesktop} = useWindowSize();
 
   return (
@@ -50,3 +51,6 @@ export default function Header(): React.JSX.Element {
     </header>
   );
 }
+
+// This component is memoized to prevent unnecessary re-renders
+export default memo(Header);

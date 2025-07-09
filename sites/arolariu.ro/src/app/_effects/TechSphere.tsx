@@ -2,7 +2,7 @@
 
 "use client";
 
-import {useCallback, useEffect, useRef} from "react";
+import {useEffect, useRef} from "react";
 import {
   BufferAttribute,
   BufferGeometry,
@@ -24,114 +24,83 @@ import {
  * @returns The TechSphere component, which is a 3D sphere with particles.
  */
 export default function TechSphere(): React.JSX.Element {
-  // Scene setup
-  const scene = new Scene();
-  const camera = new PerspectiveCamera(75, 1, 0.1, 1000);
-  camera.position.z = 5;
-
-  // Create sphere
-  const geometry = new IcosahedronGeometry(3, 3);
-  const material = new MeshBasicMaterial({
-    color: 0x8b_5c_f6, // purple-500
-    wireframe: true,
-    transparent: true,
-    opacity: 0.8,
-    fog: true,
-    depthTest: true, // enable depth testing for better rendering
-    depthWrite: true, // enable depth writing for better rendering
-    side: DoubleSide, // render both sides of the geometry
-  });
-  const sphere = new Mesh(geometry, material);
-
-  // Create particles
-  const particlesGeometry = new BufferGeometry();
-  const particlesCount = 1000;
-  const posArray = Float32Array.from(
-    {length: particlesCount * 3},
-    () =>
-      // eslint-disable-next-line sonarjs/pseudo-random
-      (Math.random() - 0.5) * 5,
-  );
-
-  particlesGeometry.setAttribute("position", new BufferAttribute(posArray, 3));
-  const particlesMaterial = new PointsMaterial({
-    size: 0.05,
-    color: 0x63_66_f1, // blue-500
-    transparent: true,
-    alphaTest: 0.5, // add alpha test for better rendering
-  });
-  const particlesMesh = new Points(particlesGeometry, particlesMaterial);
-
-  // Container reference element.
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  // Responsive size handler
-  const updateSize = useCallback((renderer: WebGLRenderer) => {
-    if (!containerRef.current) return;
-    const containerWidth = containerRef.current.clientWidth;
-    const width = Math.min(600, containerWidth);
-    const height = width;
-    renderer.setSize(width, height);
-  }, []);
-
-  // Animation loop handler
-  const animate = useCallback(
-    (renderer: WebGLRenderer) => {
-      const rotationSpeed = {x: 0.003, y: 0.005};
-      requestAnimationFrame(() => animate(renderer));
-
-      // eslint-disable-next-line functional/immutable-data -- readability
-      sphere.rotation.x += rotationSpeed.x;
-      // eslint-disable-next-line functional/immutable-data -- readability
-      sphere.rotation.y += rotationSpeed.y;
-
-      // eslint-disable-next-line functional/immutable-data -- readability
-      particlesMesh.rotation.x += 0.001;
-      // eslint-disable-next-line functional/immutable-data -- readability
-      particlesMesh.rotation.y += 0.001;
-      // eslint-disable-next-line functional/immutable-data -- readability
-      particlesMesh.rotation.z += 0.001;
-
-      renderer.render(scene, camera);
-    },
-    [scene, camera],
-  );
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const renderer = new WebGLRenderer({
-      antialias: true,
-      alpha: true,
+    // Scene setup
+    const scene = new Scene();
+    const camera = new PerspectiveCamera(75, 1, 0.1, 1000);
+    camera.position.z = 5;
+
+    const renderer = new WebGLRenderer({antialias: true, alpha: true});
+
+    // Sphere
+    const sphereGeometry = new IcosahedronGeometry(3, 3);
+    const sphereMaterial = new MeshBasicMaterial({
+      color: 0x8b_5c_f6, // purple-500
+      wireframe: true,
+      transparent: true,
+      opacity: 0.8,
+      fog: true,
+      depthTest: true, // enable depth testing for better rendering
+      depthWrite: true, // enable depth writing for better rendering
+      side: DoubleSide, // render both sides of the geometry
     });
-
-    updateSize(renderer);
-
-    containerRef.current.append(renderer.domElement);
+    const sphere = new Mesh(sphereGeometry, sphereMaterial);
     scene.add(sphere);
+
+    // Particles
+    const particlesGeometry = new BufferGeometry();
+    const particlesCnt = 1000;
+    const posArray = new Float32Array(particlesCnt * 3);
+    // eslint-disable-next-line functional/no-let -- using let for performance in this case
+    for (let i = 0; i < particlesCnt * 3; i++) {
+      // eslint-disable-next-line sonarjs/pseudo-random -- using Math.random for simplicity
+      posArray[i] = (Math.random() - 0.5) * 5;
+    }
+    particlesGeometry.setAttribute("position", new BufferAttribute(posArray, 3));
+    const particlesMaterial = new PointsMaterial({
+      size: 0.05,
+      color: 0x63_66_f1, // blue-500
+      transparent: true,
+      alphaTest: 0.5, // add alpha test for better rendering
+    });
+    const particlesMesh = new Points(particlesGeometry, particlesMaterial);
     scene.add(particlesMesh);
 
-    animate(renderer);
-
-    // Handle resize
+    // Sizing and Resize Handling
     const handleResize = () => {
-      updateSize(renderer);
+      if (!containerRef.current) return;
+      const size = Math.min(600, containerRef.current.clientWidth);
+      renderer.setSize(size, size);
+      camera.aspect = 1;
       camera.updateProjectionMatrix();
     };
 
+    handleResize();
+    containerRef.current.append(renderer.domElement);
     globalThis.addEventListener("resize", handleResize);
+
+    // Animation Loop
+    const animate = () => {
+      requestAnimationFrame(animate);
+      sphere.rotation.y += 0.005;
+      particlesMesh.rotation.y += 0.001;
+      renderer.render(scene, camera);
+    };
+
+    animate();
 
     // Cleanup
     return () => {
       globalThis.removeEventListener("resize", handleResize);
-
       if (containerRef.current?.contains(renderer.domElement)) {
         renderer.domElement.remove();
       }
-
-      // Dispose resources
-      geometry.dispose();
-      material.dispose();
+      sphereGeometry.dispose();
+      sphereMaterial.dispose();
       particlesGeometry.dispose();
       particlesMaterial.dispose();
       renderer.dispose();

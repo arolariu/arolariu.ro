@@ -10,6 +10,8 @@
   "jsxSingleQuote": true,
   "parser": "typescript",
   "plugins": [
+    "@prettier/plugin-oxc",
+    "@prettier/plugin-hermes",
     "prettier-plugin-organize-imports",
     "prettier-plugin-tailwindcss"
   ],
@@ -20,5 +22,6 @@
   "singleQuote": false,
   "tabWidth": 2,
   "trailingComma": "all",
-  "useTabs": false
+  "useTabs": false,
+  "tailwindConfig": "./tailwind.config.ts"
 }

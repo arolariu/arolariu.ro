@@ -1,12 +1,23 @@
 /** @format */
 
-import {Metadata} from "next";
+import {createMetadata} from "@/metadata";
+import {getLocale, getTranslations} from "next-intl/server";
+import type {Metadata} from "next/types";
 import RenderAboutScreen from "./island";
 
-export const metadata: Metadata = {
-  title: "About Us",
-  description: "Learn more about the author and the platform.",
-};
+/**
+ * Generates metadata for the About page.
+ * @returns The metadata for the About page.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("About.__metadata__");
+  const locale = await getLocale();
+  return createMetadata({
+    locale,
+    title: t("title"),
+    description: t("description"),
+  });
+}
 
 /**
  * This is the about page.

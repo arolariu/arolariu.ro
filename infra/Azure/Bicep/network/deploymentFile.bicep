@@ -13,15 +13,6 @@ param resourceConventionPrefix string
 @description('The hostname of the main production website.')
 param mainWebsiteHostname string
 
-@description('The hostname of the API website.')
-param apiWebsiteHostname string
-
-@description('The hostname of the development website.')
-param devWebsiteHostname string
-
-@description('The hostname of the documentation website.')
-param docsWebsiteHostname string
-
 var azureFrontDoorName = '${resourceConventionPrefix}-afd'
 var dnsZoneName = 'arolariu.ro'
 
@@ -40,10 +31,12 @@ module dnsZoneDeployment 'dnsZone.bicep' = {
   name: 'dnsZoneDeployment-${resourceDeploymentDate}'
   params: {
     dnsZoneName: dnsZoneName
+    dnsZoneDeploymentDate: resourceDeploymentDate
+    frontDoorName: azureFrontDoorName
     frontDoorProductionFqdn: azureFrontDoorDeployment.outputs.frontDoorProductionFqdn
-    apiWebsiteHostname: apiWebsiteHostname
-    devWebsiteHostname: devWebsiteHostname
-    docsWebsiteHostname: docsWebsiteHostname
+    frontDoorApexCustomDomainValidationToken: azureFrontDoorDeployment.outputs.frontDoorApexToken
+    frontDoorWwwCustomDomainValidationToken: azureFrontDoorDeployment.outputs.frontDoorWwwToken
+    frontDoorCdnCustomDomainValidationToken: azureFrontDoorDeployment.outputs.frontDoorCdnToken
   }
 }
 
@@ -51,3 +44,6 @@ module dnsZoneDeployment 'dnsZone.bicep' = {
 output frontDoorProductionFqdn string = azureFrontDoorDeployment.outputs.frontDoorProductionFqdn
 output frontDoorCdnFqdn string = azureFrontDoorDeployment.outputs.frontDoorCdnFqdn
 output frontDoorProfileId string = azureFrontDoorDeployment.outputs.frontDoorProfileId
+
+// Output the DNS Zone name for reference
+output dnsZoneName string = dnsZoneDeployment.outputs.dnsZoneName

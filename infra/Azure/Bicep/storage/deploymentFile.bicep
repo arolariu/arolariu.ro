@@ -7,7 +7,7 @@ metadata author = 'Alexandru-Razvan Olariu'
 param resourceDeploymentDate string
 
 @description('The prefix to use for the names of the resources.')
-@minLength(1)
+@minLength(3)
 @maxLength(20)
 param resourceConventionPrefix string
 
@@ -16,8 +16,8 @@ param resourceConventionPrefix string
 param resourceLocation string
 
 // Generate names using the existing convention
-var storageAccountName = '${replace(resourceConventionPrefix, '-', '')}sa'
-var containerRegistryName = '${resourceConventionPrefix}-acr'
+var storageAccountName = '${replace(resourceConventionPrefix, '-', '')}sacc'
+var containerRegistryName = '${replace(resourceConventionPrefix, '-', '')}acrprod'
 var sqlServerName = '${resourceConventionPrefix}-sqlserver'
 var noSqlServerName = '${resourceConventionPrefix}-nosqlserver'
 
@@ -54,18 +54,8 @@ module sqlServerDeployment 'sqlServer.bicep' = {
     // Note: These credentials should be provided from Key Vault in production
     sqlServerAdministratorPassword: 'TempP@ssw0rd123!'
     sqlServerAdministratorUserName: 'sqladmin'
-  }
-}
-
-// Deploy SQL databases
-module sqlServerDatabaseDeployment 'sqlDatabases.bicep' = {
-  name: 'sqlServerDatabaseDeployment-${resourceDeploymentDate}'
-  scope: resourceGroup()
-  dependsOn: [sqlServerDeployment]
-  params: {
-    sqlServerName: sqlServerDeployment.outputs.sqlServerName
+    // SQL Database parameters:
     sqlDatabaseNamePrefix: '${resourceConventionPrefix}-sqlserver-db'
-    sqlDatabaseLocation: resourceLocation
   }
 }
 

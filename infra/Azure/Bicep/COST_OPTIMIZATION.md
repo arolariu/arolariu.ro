@@ -12,7 +12,19 @@ A comprehensive guide for optimizing Azure infrastructure costs while maintainin
 - [🔄 Automation & Scheduling](#-automation--scheduling)
 - [📅 Regular Review Process](#-regular-review-process)
 
-## 💡 **Cost Overview**
+## �️ **Cost Flow Overview**
+
+```mermaid
+flowchart TD
+    A[Resource Deployment] --> B[Resource Usage]
+    B --> C[Azure Billing Meter]
+    C --> D[Cost Analysis]
+    D --> E[Cost Alerts & Budgets]
+    E --> F[Optimization Actions]
+    F --> B
+```
+
+## �💡 **Cost Overview**
 
 ### **Estimated Monthly Costs (Sweden Central)**
 
@@ -35,7 +47,7 @@ _Estimates based on June 2025 pricing in Sweden Central region_
 - ✅ **Compute Hours**: 24/7 operation for production workloads
 - ✅ **Monitoring Data**: Log retention and analytics costs
 
-## 📊 **Resource Cost Breakdown**
+## 🧩 **Resource Cost Breakdown**
 
 ### **High-Impact Cost Components**
 
@@ -58,7 +70,7 @@ pie title Monthly Cost Distribution
 | Storage    | €2           | 3%         | Low                    |
 | Other      | €0           | 0%         | Low                    |
 
-## ⚙️ **Right-Sizing Guidelines**
+## 🏗️ **Right-Sizing Guidelines**
 
 ### **Performance Metrics Thresholds**
 
@@ -69,7 +81,25 @@ pie title Monthly Cost Distribution
 | Response Time | <500ms       | Consider downgrade | Upgrade immediately      |
 | Error Rate    | <1%          | Monitor            | Investigate and scale    |
 
-## 📅 **Regular Review Process**
+## � **Regular Review Process**
+
+### **Review Process Flow**
+
+```mermaid
+flowchart TD
+    A[Monthly Cost Review]
+    A --> B{Analyze Utilization}
+    B -->|Underutilized| C[Downsize or Remove]
+    B -->|Overutilized| D[Scale or Upgrade]
+    B -->|Optimal| E[Monitor]
+    C --> F[Update Cost Alerts]
+    D --> F
+    E --> F
+    F --> G[Document Actions]
+    G --> H[Quarterly Optimization]
+    H --> I[Benchmark & Reserved Instances]
+    I --> J[Repeat]
+```
 
 ### **Monthly Cost Review Checklist**
 
@@ -147,6 +177,8 @@ pie title Monthly Cost Distribution
 
 ---
 
-**Last Updated**: June 2025
-**Version**: 2.0.0  
+---
+
+**Last Updated**: July 2025
+**Version**: 2.1.0  
 **Maintainer**: Alexandru-Razvan Olariu

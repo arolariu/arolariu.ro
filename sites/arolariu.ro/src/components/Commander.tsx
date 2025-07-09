@@ -15,7 +15,7 @@ import {
 } from "@arolariu/components/command";
 import {useTheme} from "next-themes";
 import {useRouter} from "next/navigation";
-import {useCallback, useEffect, useState} from "react";
+import {memo, useCallback, useEffect, useState} from "react";
 import {
   TbAccessible,
   TbBrandGithub,
@@ -35,7 +35,7 @@ import {
  * It allows users to quickly navigate and perform actions within the application.
  * @returns The rendered command palette component.
  */
-export default function Commander(): React.JSX.Element {
+function Commander(): React.JSX.Element {
   const router = useRouter();
   const {setTheme} = useTheme();
   const {setFont} = useFontContext();
@@ -44,8 +44,6 @@ export default function Commander(): React.JSX.Element {
   const handleRainbowEffect = useCallback(() => {
     const headings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
 
-    /* eslint-disable functional/immutable-data */
-    // eslint-disable-next-line functional/no-loop-statements -- readability
     for (const heading of headings) {
       const originalColor = globalThis.getComputedStyle(heading).color;
       (heading as HTMLElement).style.background = "linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet)";
@@ -59,7 +57,6 @@ export default function Commander(): React.JSX.Element {
         (heading as HTMLElement).style.color = originalColor;
       }, 10_000);
     }
-    /* eslint-enable functional/immutable-data */
   }, []);
 
   const handleDiscoEffect = useCallback(() => {
@@ -74,12 +71,10 @@ export default function Commander(): React.JSX.Element {
 
     // Apply disco effect
     const discoInterval = setInterval(() => {
-      // eslint-disable-next-line unicorn/no-array-for-each -- readability
-      elements.forEach((element, index) => {
+      for (const [index, element] of elements.entries()) {
         const colorIndex = index % colors.length;
-        // eslint-disable-next-line security/detect-object-injection -- safe array
-        element.style.background = colors[colorIndex] ?? "#FF5733"; // eslint-disable-line functional/immutable-data -- readability
-      });
+        element.style.background = colors.at(colorIndex) ?? "#FF5733";
+      }
     }, 500);
 
     // Reset after 10 seconds
@@ -87,7 +82,6 @@ export default function Commander(): React.JSX.Element {
       clearInterval(discoInterval);
       // eslint-disable-next-line unicorn/no-array-for-each -- readability
       elements.forEach((el, index) => {
-        // eslint-disable-next-line functional/immutable-data -- readability
         el.style.background = originalBackgrounds.at(index) ?? "#FF5733";
       });
     }, 10_000);
@@ -96,7 +90,6 @@ export default function Commander(): React.JSX.Element {
   const handleMatrixEffect = useCallback(() => {
     const canvas = document.createElement("canvas");
 
-    /* eslint-disable functional/immutable-data */
     canvas.width = globalThis.innerWidth;
     canvas.height = globalThis.innerHeight;
     canvas.style.position = "fixed";
@@ -104,7 +97,6 @@ export default function Commander(): React.JSX.Element {
     canvas.style.left = "0";
     canvas.style.zIndex = "9999";
     canvas.style.pointerEvents = "none";
-    /* eslint-enable functional/immutable-data */
 
     document.body.append(canvas);
 
@@ -121,14 +113,11 @@ export default function Commander(): React.JSX.Element {
     const draw = () => {
       if (!ctx) return;
 
-      // eslint-disable-next-line functional/immutable-data -- readability
       ctx.fillStyle = "rgba(0, 0, 0, 0.04)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // eslint-disable-next-line functional/immutable-data -- readability
       ctx.fillStyle = "#0F0";
 
-      // eslint-disable-next-line functional/immutable-data -- readability
       ctx.font = fontSize + "px monospace";
 
       // Create a new array by mapping over the drop positions
@@ -152,7 +141,7 @@ export default function Commander(): React.JSX.Element {
       });
 
       // Replace the drops array instead of modifying it
-      // eslint-disable-next-line functional/immutable-data -- readability
+
       drops.splice(0, drops.length, ...newDrops);
     };
 
@@ -307,3 +296,5 @@ export default function Commander(): React.JSX.Element {
     </CommandDialog>
   );
 }
+
+export default memo(Commander);

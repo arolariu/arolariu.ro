@@ -4,7 +4,7 @@
 
 import {FakeInvoice, FakeMerchant} from "@/data/mocks/invoices";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
-import {AnimatePresence, motion} from "motion/react";
+import {AnimatePresence, motion, type Variants} from "motion/react";
 import {useRef} from "react";
 import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
 import DialogContainer from "../../_contexts/DialogContainer";
@@ -21,8 +21,7 @@ import RecipesTab from "./_components/tabs/RecipesTab";
  * @returns The JSX for the view invoice page.
  */
 export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
-  console.log(invoiceIdentifier);
-  // Reference for printing
+  console.log(">>> invoiceIdentifier", invoiceIdentifier);
   const printRef = useRef<HTMLDivElement>(null);
 
   // Invoice data (mocked for this example)
@@ -40,7 +39,7 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
         staggerChildren: 0.1,
       },
     },
-  };
+  } satisfies Variants;
 
   const itemVariants = {
     hidden: {y: 20, opacity: 0},
@@ -49,7 +48,7 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
       opacity: 1,
       transition: {type: "spring", stiffness: 300, damping: 24},
     },
-  };
+  } satisfies Variants;
 
   return (
     <DialogProvider>

@@ -62,7 +62,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2024-04-01-preview' = {
   resource keyVaultItems 'secrets@2024-12-01-preview' = [
     for secretName in keyVaultSecretNames: {
       name: secretName
-      properties: { attributes: { enabled: true } }
+      properties: { attributes: { enabled: true }, value: '' }
     }
   ]
 }

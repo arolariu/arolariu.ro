@@ -1,6 +1,14 @@
 {
   "About": {
+    "__metadata__": {
+      "description": "Aflați mai multe despre autor și platformă.",
+      "title": "Despre noi"
+    },
     "Author": {
+      "__metadata__": {
+        "description": "Aflați mai multe despre autor, Alexandru-Razvan Olariu.",
+        "title": "Alexandru-Razvan Olariu"
+      },
       "Biography": {
         "FifthPoint": "Alexandru este deschis colaborării în proiecte care implică oricare dintre domeniile Internet of Things, Software Engineering și Network Engineering. El are o experiență dovedită în furnizarea de soluții de înaltă calitate la probleme complexe și este mereu în căutarea de noi provocări.",
         "FirstPoint": "Alexandru are {age} ani și este inginer software și arhitect de soluții. În prezent lucrează la Microsoft ca inginer software în cadrul organizației E+D MSAI FAST, construind soluții care sunt utilizate de milioane de utilizatori din întreaga lume.",
@@ -221,23 +229,33 @@
       "subtitle": "Alexandru-Razvan Olariu este autorul platformei pe care o navigați în prezent.",
       "title": "Faceți cunoștință cu autorul."
     },
-    "title": "Despre noi",
-    "subtitle": " Povestea arolariu.ro a început în 2022, când autorul - Alexandru-Răzvan Olariu, a vrut să înțeleagă cum funcționează site-urile. Întreaga platformă și integrările subiacente au fost dezvoltate exclusiv de autor, din ceea ce a învățat de-a lungul anilor. Alexandru lucrează în prezent ca inginer software la Microsoft. Pentru a afla mai multe despre el, consultați secțiunea din dreapta a acestei pagini. Platforma este construită folosind cele mai noi tehnologii de ultimă oră. Pentru a afla mai multe despre el, consultați secțiunea din stânga a acestei pagini.",
     "cards": {
-      "platform": {
-        "title": "Ce este arolariu.ro?",
-        "subtitle": "Platforma arolariu.ro este o colecție de aplicații care sunt găzduite sub domeniul arolariu.ro. Platforma a fost construită cu scopul de a oferi o experiență unificată pentru toate aplicațiile și proiectele OSS la care lucrează autorul (Alexandru-Răzvan Olariu). Pentru a afla mai multe despre tehnologiile care sunt folosite în acest proces și modul în care acestea interacționează între ele, dați click pe butonul de mai jos.",
-        "cta": "Aflați mai multe despre platformă ..."
-      },
       "author": {
-        "title": "Cine este arolariu?",
+        "cta": "Aflați mai multe despre autor ...",
         "subtitle": "arolariu este pseudonimul/nickname-ul autorului: Alexandru-Răzvan Olariu. Alexandru este un inginer software cu vechime, arhitect de soluții și învățător pe tot parcursul vieții. Pentru a afla mai multe despre Alexandru, faceți clic pe butonul de mai jos.",
-        "cta": "Aflați mai multe despre autor ..."
+        "title": "Cine este arolariu?"
+      },
+      "platform": {
+        "cta": "Aflați mai multe despre platformă ...",
+        "subtitle": "Platforma arolariu.ro este o colecție de aplicații care sunt găzduite sub domeniul arolariu.ro. Platforma a fost construită cu scopul de a oferi o experiență unificată pentru toate aplicațiile și proiectele OSS la care lucrează autorul (Alexandru-Răzvan Olariu). Pentru a afla mai multe despre tehnologiile care sunt folosite în acest proces și modul în care acestea interacționează între ele, dați click pe butonul de mai jos.",
+        "title": "Ce este arolariu.ro?"
       }
     },
-    "footer": "Vă mulțumesc!"
+    "footer": "Vă mulțumesc!",
+    "Platform": {
+      "__metadata__": {
+        "description": "Aflați mai multe despre platformă, Arolariu.ro.",
+        "title": "Platforma"
+      }
+    },
+    "subtitle": " Povestea arolariu.ro a început în 2022, când autorul - Alexandru-Răzvan Olariu, a vrut să înțeleagă cum funcționează site-urile. Întreaga platformă și integrările subiacente au fost dezvoltate exclusiv de autor, din ceea ce a învățat de-a lungul anilor. Alexandru lucrează în prezent ca inginer software la Microsoft. Pentru a afla mai multe despre el, consultați secțiunea din dreapta a acestei pagini. Platforma este construită folosind cele mai noi tehnologii de ultimă oră. Pentru a afla mai multe despre el, consultați secțiunea din stânga a acestei pagini.",
+    "title": "Despre noi"
   },
   "Acknowledgements": {
+    "__metadata__": {
+      "description": "Pagina de mulțumire pentru pachetele terțe utilizate în acest proiect și colaboratori.",
+      "title": "Mulțumiri"
+    },
     "lastUpdate": "Ultima actualizare pe:",
     "packages": {
       "subtitle": "Acest site web nu ar fi putut fi posibil fără următoarele pachete terțe. \nAș dori să le mulțumesc autorilor acestor pachete pentru munca grea și dăruirea lor pentru comunitatea open-source.",
@@ -246,6 +264,10 @@
     "title": "Mulțumiri"
   },
   "Authentication": {
+    "__metadata__": {
+      "description": "Pagina de autorizare pentru platforma Arolariu.ro.",
+      "title": "Autorizare"
+    },
     "Button": {
       "login": "Conectare",
       "logout": "Deconectare"
@@ -257,6 +279,10 @@
     }
   },
   "Domains": {
+    "__metadata__": {
+      "description": "Serviciile de spațiu din domeniu sunt servicii care sunt oferite vizitatorilor și membrilor spațiului de domeniu `arolariu.ro`",
+      "title": "Servicii spațiului de domeniu"
+    },
     "services": {
       "callToAction": "Vizitați acest serviciu de domeniu",
       "invoices": {
@@ -266,6 +292,10 @@
         },
         "service": {
           "create-page": {
+            "__metadata__": {
+              "description": "Sistemul de gestionare a facturilor oferă utilizatorilor informații detaliate despre obiceiurile lor de cheltuieli, în funcție de chitanțele încărcate.",
+              "title": "Creați factură"
+            },
             "disclaimer": "Pentru a vă salva bonul fiscal, vă rugăm să creați un cont sau să vă conectați.",
             "subtitle__after": "Examinați ce s-a încărcat. \nDacă este corect, treceți la pasul următor.",
             "subtitle__before": "Fotografiați sau scanați cu atenție chitanța de hârtie. \nAtașați imaginea digitală de pe dispozitivul dvs., aici.",
@@ -301,6 +331,10 @@
             "title": "Transformă-ți chitanțele în cunoștințe digitale puternice."
           },
           "view-invoices": {
+            "__metadata__": {
+              "description": "Enumerați toate facturile din sistemul de gestionare a facturilor.",
+              "title": "Enumerați facturile"
+            },
             "subtitle": "Acesta este inventarul dvs. de bonuri digitale. <br></br> Aici puteți găsi bonurile pe care le-ați încărcat până acum. <br></br> Făcând clic pe o chitanță, veți fi redirecționat către pagina chitanței specifice.",
             "title": "Bine ați venit, {name}!"
           }
@@ -309,6 +343,18 @@
     },
     "subtitle": "Platforma <code>arolariu.ro</code> oferă o gamă largă de servicii sub umbrela sa. <br></br> Majoritatea serviciilor necesită să aveți un cont creat pe această platformă, astfel încât datele dumneavoastră să poată fi sincronizate în siguranță între toate serviciile domeniului. <br></br> <br></br> Aici puteți vedea o prezentare a tuturor serviciilor de domeniu disponibile pentru explorare.",
     "title": "Servicii disponibile"
+  },
+  "errors": {
+    "404": {
+      "additionalInfo": "Informații suplimentare:",
+      "buttons": {
+        "returnButton": "Reveniți la pagina de pornire.",
+        "submitErrorButton": "Trimiteți eroare falsă."
+      },
+      "falsePositive": "Dacă credeți că această pagină ar trebui să existe și vă confruntați cu o eroare, vă rugăm să raportați acest lucru administratorului site-ului.",
+      "subtitle": "Se pare că pagina pe care ați ajuns nu este prezentă pe site. Dacă această pagină ar trebui să existe, vă rugăm să raportați acest lucru administratorului site-ului.",
+      "title": "404 - Pagina nu a fost găsită."
+    }
   },
   "EULA": {
     "accept": "Accept acest acord",
@@ -330,18 +376,18 @@
       "subtitle": "Acest site folosește cookie-uri pentru a vă îmbunătăți experiența.",
       "title": "Politica de cookie-uri"
     },
-    "title": "Acord de licență pentru utilizatorul final",
     "privacyPolicy": {
-      "title": "Politica de confidențialitate",
+      "cta": "Vizualizați politica",
       "subtitle": "Politica noastră de confidențialitate explică modul în care colectăm, folosim și protejăm informațiile dvs. personale atunci când utilizați serviciile noastre.",
-      "cta": "Vizualizați politica"
+      "title": "Politica de confidențialitate"
     },
+    "subtitle": "Vă rugăm să examinați termenii și condițiile noastre înainte de a utiliza site-ul.",
     "termsOfService": {
-      "title": "Termeni de serviciu",
+      "cta": "Vizualizați termenii",
       "subtitle": "Termenii noștri de serviciu conturează regulile și liniile directoare pentru utilizarea platformei noastre, inclusiv responsabilitățile utilizatorului și obligațiile noastre.",
-      "cta": "Vizualizați termenii"
+      "title": "Termeni de serviciu"
     },
-    "subtitle": "Vă rugăm să examinați termenii și condițiile noastre înainte de a utiliza site-ul."
+    "title": "Acord de licență pentru utilizatorul final"
   },
   "Footer": {
     "builtOn": "Construit pe ",
@@ -368,50 +414,54 @@
   "Home": {
     "appreciation": "MULȚUMESC PENTRU TIMPUL PETRECUT PE SITE.",
     "cta": "Începeți să explorați",
-    "subtitle": "Această platformă a fost construită de Alexandru-Răzvan Olariu ca loc de joacă pentru noile tehnologii. Platforma este construită folosind tehnologii de ultimă oră, de nivel enterprise. <br> </br> <br> </br> Sunteți binevenit să explorați toate aplicațiile și serviciile care sunt găzduite pe acest spațiu de domeniu.",
-    "title": "Bine ai venit pe arolariu.ro",
     "featuresTab": {
-      "title": "Caracteristici cheie",
-      "description": "Platforma `arolariu.ro` este construita folosind cele mai noi tehnologii stabile.",
-      "learnMoreBtn": "Interesant? \nFaceți clic aici pentru a afla mai multe ...",
-      "nextJs": {
-        "title": "Next.JS 15",
-        "description": "Platforma este construită folosind NextJS - cel mai popular cadru React pentru producție.  Este proiectat pentru aplicații React de nivel de producție. NextJS este cel mai popular cadru React pentru un motiv: este rapid, fiabil și ușor de utilizat."
-      },
       "azure": {
-        "title": "Microsoft Azure",
-        "description": "Cloud-ul Microsoft Azure este utilizat pentru a găzdui platforma și toate serviciile sale. Acest lucru asigură faptul că platforma este întotdeauna disponibilă și că poate fi extinsă la cerere."
+        "description": "Cloud-ul Microsoft Azure este utilizat pentru a găzdui platforma și toate serviciile sale. Acest lucru asigură faptul că platforma este întotdeauna disponibilă și că poate fi extinsă la cerere.",
+        "title": "Microsoft Azure"
       },
       "csharp": {
-        "title": ".NET 8 LTS",
-        "description": "Platforma este construită folosind .NET 8 LTS - cea mai recentă versiune stabilă a .NET. Acest lucru asigură faptul că platforma este rapidă, fiabilă și ușor de utilizat. Platforma este construită folosind C# și F#."
+        "description": "Platforma este construită folosind .NET 8 LTS - cea mai recentă versiune stabilă a .NET. Acest lucru asigură faptul că platforma este rapidă, fiabilă și ușor de utilizat. Platforma este construită folosind C# și F#.",
+        "title": ".NET 8 LTS"
       },
-      "svelte": {
-        "title": "Svelte",
-        "description": "Folosim Svelte pentru componente UI reactive, rapide, reactive. \nPlatforma `cv.arolariu.ro` este construită doar folosind Svelte și SvelteKit (v5)"
+      "description": "Platforma `arolariu.ro` este construita folosind cele mai noi tehnologii stabile.",
+      "githubActions": {
+        "description": "Experiența DevOps este alimentată de acțiuni Github. \n(CI/CD, testare etc.)",
+        "title": "GitHub Actions"
+      },
+      "learnMoreBtn": "Interesant? \nFaceți clic aici pentru a afla mai multe ...",
+      "nextJs": {
+        "description": "Platforma este construită folosind NextJS - cel mai popular cadru React pentru producție.  Este proiectat pentru aplicații React de nivel de producție. NextJS este cel mai popular cadru React pentru un motiv: este rapid, fiabil și ușor de utilizat.",
+        "title": "Next.JS 15"
       },
       "otel": {
-        "title": "Open Telemetry",
-        "description": "Observabilitate completă cu metrici, urme și jurnale integrate. Totul este instrumentat utilizând OpenTelemetry. Acest lucru permite o experiență de telemetrie unificată pe toată linia. (3PO: metrici, jurnale, urme)"
+        "description": "Observabilitate completă cu metrici, urme și jurnale integrate. Totul este instrumentat utilizând OpenTelemetry. Acest lucru permite o experiență de telemetrie unificată pe toată linia. (3PO: metrici, jurnale, urme)",
+        "title": "Open Telemetry"
       },
-      "githubActions": {
-        "title": "GitHub Actions",
-        "description": "Experiența DevOps este alimentată de acțiuni Github. \n(CI/CD, testare etc.)"
-      }
+      "svelte": {
+        "description": "Folosim Svelte pentru componente UI reactive, rapide, reactive. \nPlatforma `cv.arolariu.ro` este construită doar folosind Svelte și SvelteKit (v5)",
+        "title": "Svelte"
+      },
+      "title": "Caracteristici cheie"
     },
+    "subtitle": "Această platformă a fost construită de Alexandru-Răzvan Olariu ca loc de joacă pentru noile tehnologii. Platforma este construită folosind tehnologii de ultimă oră, de nivel enterprise. <br> </br> <br> </br> Sunteți binevenit să explorați toate aplicațiile și serviciile care sunt găzduite pe acest spațiu de domeniu.",
     "technologyTab": {
-      "title": "Construit pentru viitor.",
+      "badgeTitle": "Arhitectură modernă",
       "description": "Această platformă utilizează cele mai recente tehnologii web, combinând Next.js pentru frontend cu .NET pentru servicii backend robuste, toate implementate pe Microsoft Azure.",
+      "learnMoreBtn": "Explorați arhitectura",
       "points": {
         "point1": "Arhitectură fără server pentru o scalare și performanță optimă",
         "point2": "TypeScript full-stack pentru siguranța tipurilor în întreaga aplicație",
         "point3": "Telemetrie și monitorizare cuprinzătoare cu OpenTelemetry"
       },
-      "learnMoreBtn": "Explorați arhitectura",
-      "badgeTitle": "Arhitectură modernă"
-    }
+      "title": "Construit pentru viitor."
+    },
+    "title": "Bine ai venit pe arolariu.ro"
   },
   "privacyPolicy": {
+    "__metadata__": {
+      "description": "Pagina politicii de confidențialitate pentru platforma `arolariu.ro`.",
+      "title": "Politica de Confidențialitate"
+    },
     "contactInformation": {
       "content": "Dacă aveți întrebări despre Politica noastră de confidențialitate, vă rugăm să ne contactați la admin@arolariu.ro",
       "title": "Informații de contact"
@@ -498,6 +548,10 @@
     "title": "Politica de confidentialitate"
   },
   "termsOfService": {
+    "__metadata__": {
+      "description": "Termenii de serviciu pentru arolariu.ro",
+      "title": "Termeni de Serviciu"
+    },
     "contactInformation": {
       "content": "Dacă aveți întrebări cu privire la Termenii noștri de utilizare, vă rugăm să ne contactați la admin@arolariu.ro.",
       "title": "Contact"
@@ -606,17 +660,5 @@
       }
     },
     "title": "Termenii serviciului"
-  },
-  "errors": {
-    "404": {
-      "title": "404 - Pagina nu a fost găsită.",
-      "subtitle": "Se pare că pagina pe care ați ajuns nu este prezentă pe site. Dacă această pagină ar trebui să existe, vă rugăm să raportați acest lucru administratorului site-ului.",
-      "additionalInfo": "Informații suplimentare:",
-      "falsePositive": "Dacă credeți că această pagină ar trebui să existe și vă confruntați cu o eroare, vă rugăm să raportați acest lucru administratorului site-ului.",
-      "buttons": {
-        "returnButton": "Reveniți la pagina de pornire.",
-        "submitErrorButton": "Trimiteți eroare falsă."
-      }
-    }
   }
 }

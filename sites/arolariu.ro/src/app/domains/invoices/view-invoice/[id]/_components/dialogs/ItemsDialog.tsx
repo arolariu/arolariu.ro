@@ -75,31 +75,36 @@ export default function ItemsDialog(): React.JSX.Element {
 
     setEditableItems((prev) => {
       const updatedItems = [...prev];
-      const currentItem = {...updatedItems[index]!};
+      const currentItem = updatedItems.at(index);
 
-      // Use specific property assignments rather than dynamic keys
-      /* eslint-disable functional/immutable-data */
-      switch (name) {
-        case "rawName":
-          currentItem.rawName = value;
-          break;
-        case "quantity":
-          currentItem.quantity = Number.parseFloat(value);
-          break;
-        case "quantityUnit":
-          currentItem.quantityUnit = value;
-          break;
-        case "price":
-          currentItem.price = Number.parseFloat(value);
-          break;
-        default:
-          // Ignore unrecognized properties
-          return prev;
+      if (!currentItem) {
+        return prev;
       }
-      /* eslint-enable functional/immutable-data */
 
-      updatedItems[index] = currentItem;
-      return updatedItems;
+      // Use specific property assignments with functional approach
+      const getUpdatedItem = (): Product => {
+        switch (name) {
+          case "rawName":
+            return {...currentItem, rawName: value};
+          case "quantity":
+            return {...currentItem, quantity: Number.parseFloat(value)};
+          case "quantityUnit":
+            return {...currentItem, quantityUnit: value};
+          case "price":
+            return {...currentItem, price: Number.parseFloat(value)};
+          default:
+            return currentItem;
+        }
+      };
+
+      const updatedItem = getUpdatedItem();
+
+      if (updatedItem === currentItem) {
+        // No changes made
+        return prev;
+      }
+
+      return [...updatedItems.slice(0, index), updatedItem, ...updatedItems.slice(index + 1)];
     });
   };
 

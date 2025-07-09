@@ -50,7 +50,6 @@ export default function Terminal(): React.JSX.Element {
     setCurrentCommand("");
     setTimeout(() => {
       if (terminalRef.current) {
-        // eslint-disable-next-line functional/immutable-data
         terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
       }
     }, 100);

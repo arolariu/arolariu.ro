@@ -144,7 +144,7 @@ export function PieChart({
           outerRadius={80}
           dataKey={categories[0]!}
           nameKey={index}
-          label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+          label={({name, percent}) => `${name}: ${(percent! * 100).toFixed(0)}%`}
           animationDuration={showAnimation ? 500 : 0}>
           {data.map((entry, index) => (
             <Cell

@@ -21,7 +21,7 @@ var commonTags resourceTags = {
   deploymentType: 'Bicep'
   deploymentDate: containerRegistryDeploymentDate
   deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'storage-container-registry'
+  module: 'storage'
   costCenter: 'infrastructure'
   project: 'arolariu.ro'
   version: '2.0.0'

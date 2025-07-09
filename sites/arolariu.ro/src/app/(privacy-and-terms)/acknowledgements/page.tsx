@@ -2,14 +2,25 @@
 
 import licenses from "@/../licenses.json";
 import {TIMESTAMP} from "@/lib/utils.generic";
+import {createMetadata} from "@/metadata";
 import type {NodePackagesJSON} from "@/types";
-import type {Metadata} from "next";
+import {getLocale, getTranslations} from "next-intl/server";
+import type {Metadata} from "next/types";
 import RenderAcknowledgementsScreen from "./island";
 
-export const metadata: Metadata = {
-  title: "Acknowledgements",
-  description: "Acknowledgements page for the third-party packages used in this project and collaborators.",
-};
+/**
+ * Generates metadata for the Acknowledgements page.
+ * @returns The metadata object for the Acknowledgements page.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Acknowledgements.__metadata__");
+  const locale = await getLocale();
+  return createMetadata({
+    locale,
+    title: t("title"),
+    description: t("description"),
+  });
+}
 
 /**
  * Acknowledgements page for the third-party packages used in this project.

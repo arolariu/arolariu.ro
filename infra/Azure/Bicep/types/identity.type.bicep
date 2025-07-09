@@ -3,5 +3,6 @@
 type identity = {
   name: string
   displayName: string
-  id: string
+  resourceId: string // Azure Resource ID
+  principalId: string // Azure Principal ID (GUID)
 }

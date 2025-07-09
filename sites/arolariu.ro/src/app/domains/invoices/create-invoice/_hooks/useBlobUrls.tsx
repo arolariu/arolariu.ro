@@ -32,11 +32,9 @@ export default function useBlobUrls() {
     const currentCache = urlCache.current;
 
     return () => {
-      // eslint-disable-next-line functional/no-loop-statements -- not needed
       for (const url of currentCache.values()) {
         URL.revokeObjectURL(url);
       }
-      // eslint-disable-next-line functional/immutable-data -- we are clearing the cache
       currentCache.clear();
     };
   }, []);
@@ -51,7 +49,6 @@ export default function useBlobUrls() {
 
     // Create and cache new URL
     const url = URL.createObjectURL(blob);
-    // eslint-disable-next-line functional/immutable-data -- we are mutating the cache
     urlCache.current.set(blob, url);
     return url;
   }, []);
@@ -61,7 +58,7 @@ export default function useBlobUrls() {
     const url = urlCache.current.get(blob);
     if (url) {
       URL.revokeObjectURL(url);
-      // eslint-disable-next-line functional/immutable-data -- we are clearing the cache
+
       urlCache.current.delete(blob);
     }
   }, []);

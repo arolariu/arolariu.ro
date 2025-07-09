@@ -140,3 +140,42 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: [...normalIcons, ...appleTouchIcons] satisfies Icon[],
 };
+
+type PartialMetadata = Readonly<
+  Partial<
+    Omit<Metadata, "openGraph" | "twitter"> & {
+      openGraph?: Partial<Omit<OpenGraph, "title" | "description">>;
+      twitter?: Partial<Omit<Twitter, "title" | "description">>;
+      locale?: string;
+    }
+  >
+>;
+
+export const createMetadata = (partialMetadata: PartialMetadata): Readonly<Metadata> => {
+  const {title, description, openGraph, twitter, locale, ...rest} = partialMetadata;
+
+  const localeMap: Readonly<Record<string, string>> = {
+    en: "en_US",
+    ro: "ro_RO",
+  };
+
+  return {
+    ...metadata,
+    ...rest,
+    ...(title && {title}),
+    ...(description && {description}),
+    openGraph: {
+      ...metadata.openGraph,
+      ...openGraph,
+      ...(title && {title}),
+      ...(description && {description}),
+      ...(locale && {locale, alternateLocale: localeMap[locale] ?? "en_US"}),
+    },
+    twitter: {
+      ...metadata.twitter,
+      ...twitter,
+      ...(title && {title}),
+      ...(description && {description}),
+    },
+  } satisfies Metadata;
+};

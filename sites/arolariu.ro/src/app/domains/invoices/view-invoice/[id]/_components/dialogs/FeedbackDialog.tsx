@@ -96,7 +96,7 @@ export default function FeedbackDialog(): React.JSX.Element {
         close();
       }
     },
-    [rating, close],
+    [feedback, invoice.id, rating, selectedFeatures, close],
   );
 
   const toggleFeature = (feature: string) => {

@@ -40,10 +40,25 @@ resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2024-0
       privateLinkDelegation: 'Disabled'
     }
   }
+
   tags: union(commonTags, {
     displayName: 'App Configuration'
     resourceType: 'Configuration Store'
   })
 }
+
+var configs = loadJsonContent('appConfiguration.json')
+resource appConfigurationKeyValues 'Microsoft.AppConfiguration/configurationStores/keyValues@2024-06-15-preview' = [
+  for config in configs.items: {
+    parent: appConfiguration
+    name: config.key
+    properties: {
+      value: config.value
+      tags: {
+        label: config.label
+      }
+    }
+  }
+]
 
 output appConfigurationResourceId string = appConfiguration.id

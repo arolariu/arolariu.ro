@@ -93,7 +93,7 @@ export default function MerchantDialog(): React.JSX.Element {
           </Table>
         </div>
 
-        <div className='flex w-1/2 flex-col items-center justify-center justify-items-center gap-2'>
+        <div className='flex flex-col items-center justify-center justify-items-center gap-2'>
           <Button
             type='button'
             className='w-full'>

@@ -1,13 +1,23 @@
 /** @format */
 
-import type {Metadata} from "next";
-import {getTranslations} from "next-intl/server";
+import {createMetadata} from "@/metadata";
+import {getLocale, getTranslations} from "next-intl/server";
+import type {Metadata} from "next/types";
 import RenderPrivacyPolicyScreen from "./island";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description: "The privacy policy page for the `arolariu.ro` platform.",
-};
+/**
+ * Generates metadata for the Privacy Policy page.
+ * @returns The metadata for the Privacy Policy page.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("privacyPolicy.__metadata__");
+  const locale = await getLocale();
+  return createMetadata({
+    locale,
+    title: t("title"),
+    description: t("description"),
+  });
+}
 
 /**
  * The privacy policy page, which outlines the privacy policy for the `arolariu.ro` platform.

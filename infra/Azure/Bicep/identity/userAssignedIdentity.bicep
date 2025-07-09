@@ -60,6 +60,7 @@ output userAssignedManagedIdentities identity[] = [
   for identity in range(0, length(identities)): {
     name: identities[identity].name
     displayName: identities[identity].displayName
-    id: userAssignedManagedIdentities[identity].id
+    resourceId: userAssignedManagedIdentities[identity].id
+    principalId: userAssignedManagedIdentities[identity].properties.principalId
   }
 ]

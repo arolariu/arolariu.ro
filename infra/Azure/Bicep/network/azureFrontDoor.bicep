@@ -25,34 +25,28 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-// WAF Policy for Security (must be created first)
-resource wafPolicy 'Microsoft.Network/FrontDoorWebApplicationFirewallPolicies@2025-03-01' = {
-  name: '${frontDoorName}waf'
+resource frontDoorWebApplicationFirewall 'Microsoft.Network/frontdoorwebapplicationfirewallpolicies@2024-02-01' = {
+  name: 'productionWAF'
   location: 'Global'
-  sku: { name: 'Standard_AzureFrontDoor' }
+  sku: {
+    name: 'Standard_AzureFrontDoor'
+  }
   properties: {
     policySettings: {
       enabledState: 'Enabled'
-      mode: 'Prevention'
+      mode: 'Detection'
       requestBodyCheck: 'Enabled'
     }
+    customRules: {
+      rules: []
+    }
     managedRules: {
-      managedRuleSets: [
-        {
-          ruleSetType: 'Microsoft_DefaultRuleSet'
-          ruleSetVersion: '2.1'
-          ruleGroupOverrides: []
-        }
-        {
-          ruleSetType: 'Microsoft_BotManagerRuleSet'
-          ruleSetVersion: '1.0'
-          ruleGroupOverrides: []
-        }
-      ]
+      managedRuleSets: []
     }
   }
+
   tags: union(commonTags, {
-    displayName: 'WAF Policy'
+    displayName: 'WAF Policy for Azure Front Door'
     resourceType: 'WAF Policy'
   })
 }
@@ -69,6 +63,31 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
     displayName: 'Azure Front Door Profile'
     resourceType: 'CDN Profile'
   })
+
+  // WAF Policy Attachment
+  resource wafPolicy 'securityPolicies@2025-04-15' = {
+    name: 'productionWAF'
+    properties: {
+      parameters: {
+        wafPolicy: {
+          id: frontDoorWebApplicationFirewall.id
+        }
+        type: 'WebApplicationFirewall'
+        associations: [
+          {
+            domains: [
+              {
+                id: productionEndpoint.id
+              }
+            ]
+            patternsToMatch: [
+              '/*'
+            ]
+          }
+        ]
+      }
+    }
+  }
 
   // Custom Domain for APEX
   resource apexCustomDomain 'customDomains@2025-04-15' = {
@@ -87,6 +106,18 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
     name: 'www-arolariu-ro'
     properties: {
       hostName: 'www.arolariu.ro'
+      tlsSettings: {
+        certificateType: 'ManagedCertificate'
+        minimumTlsVersion: 'TLS12'
+      }
+    }
+  }
+
+  // Custom Domain for CDN
+  resource cdnCustomDomain 'customDomains@2025-04-15' = {
+    name: 'cdn-arolariu-ro'
+    properties: {
+      hostName: 'cdn.arolariu.ro'
       tlsSettings: {
         certificateType: 'ManagedCertificate'
         minimumTlsVersion: 'TLS12'
@@ -170,28 +201,6 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
     }
   }
 
-  // Security Policy for Production
-  resource securityPolicy 'securityPolicies@2025-04-15' = {
-    name: 'production-security-policy'
-    properties: {
-      parameters: {
-        type: 'WebApplicationFirewall'
-        wafPolicy: {
-          id: wafPolicy.id
-        }
-        associations: [
-          {
-            domains: [
-              { id: apexCustomDomain.id }
-              { id: wwwCustomDomain.id }
-            ]
-            patternsToMatch: ['/*']
-          }
-        ]
-      }
-    }
-  }
-
   // CDN Endpoint
   resource cdnEndpoint 'afdEndpoints@2025-04-15' = {
     name: 'cdn'
@@ -208,3 +217,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
 output frontDoorProductionFqdn string = frontDoorProfile::productionEndpoint.properties.hostName
 output frontDoorCdnFqdn string = frontDoorProfile::cdnEndpoint.properties.hostName
 output frontDoorProfileId string = frontDoorProfile.id
+
+output frontDoorApexToken string = frontDoorProfile::apexCustomDomain.properties.validationProperties.validationToken
+output frontDoorWwwToken string = frontDoorProfile::wwwCustomDomain.properties.validationProperties.validationToken
+output frontDoorCdnToken string = frontDoorProfile::cdnCustomDomain.properties.validationProperties.validationToken

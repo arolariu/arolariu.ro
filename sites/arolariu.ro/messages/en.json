@@ -1,21 +1,14 @@
 {
   "About": {
-    "title": "About Us",
-    "subtitle": " The arolariu.ro story began in 2022, when the author - Alexandru-Razvan Olariu, wanted to understand how websites work. The whole platform and underlying integrations have been developed solely by the author, from what he has learnt along the years. Alexandru currently works as a software engineer at Microsoft. To learn more about him, check the right section of this page. The platform is built using the latest state-of-the-art technologies. To learn more about it, check the left section of this page.",
-    "cards": {
-      "platform": {
-        "title": "What is arolariu.ro?",
-        "subtitle": "The arolariu.ro platform is a collection of applications that are hosted under the arolariu.ro domain. The platform was built with the purpose of providing a unified experience for all of the applications and OSS projects that the author (Alexandru-Razvan Olariu) is working on. To learn more about the technologies that are used in the process and how they interact with each other, click the button below.",
-        "cta": "Learn more about the platform..."
-      },
-      "author": {
-        "title": "Who is arolariu?",
-        "subtitle": "arolariu is the alias/nickname of the author: Alexandru-Razvan Olariu. Alexandru is a well-tenured software engineer, solution architect and lifelong learner. To learn more about Alexandru, click the button below.",
-        "cta": "Learn more about the author..."
-      }
+    "__metadata__": {
+      "description": "Learn more about the author and the platform.",
+      "title": "About Us"
     },
-    "footer": "Thank you!",
     "Author": {
+      "__metadata__": {
+        "description": "Learn more about the author, Alexandru-Razvan Olariu.",
+        "title": "Alexandru-Razvan Olariu"
+      },
       "Biography": {
         "FifthPoint": "Alexandru is open for collaboration in projects that involve any of the Internet of Things, Software Engineering and Network Engineering fields. He has a proven track record of providing high-quality solutions to complex problems and is always looking for new challenges.",
         "FirstPoint": "Alexandru is a {age} years old software engineer and solution architect. He currently works at Microsoft as a software engineer in the E+D MSAI FAST organization, building solutions that are used by millions of users worldwide.",
@@ -235,9 +228,34 @@
       },
       "subtitle": "Alexandru-Razvan Olariu is the author of the platform that you are currently browsing.",
       "title": "Meet the author."
-    }
+    },
+    "cards": {
+      "author": {
+        "cta": "Learn more about the author...",
+        "subtitle": "arolariu is the alias/nickname of the author: Alexandru-Razvan Olariu. Alexandru is a well-tenured software engineer, solution architect and lifelong learner. To learn more about Alexandru, click the button below.",
+        "title": "Who is arolariu?"
+      },
+      "platform": {
+        "cta": "Learn more about the platform...",
+        "subtitle": "The arolariu.ro platform is a collection of applications that are hosted under the arolariu.ro domain. The platform was built with the purpose of providing a unified experience for all of the applications and OSS projects that the author (Alexandru-Razvan Olariu) is working on. To learn more about the technologies that are used in the process and how they interact with each other, click the button below.",
+        "title": "What is arolariu.ro?"
+      }
+    },
+    "footer": "Thank you!",
+    "Platform": {
+      "__metadata__": {
+        "description": "Learn more about the platform, arolariu.ro.",
+        "title": "The platform"
+      }
+    },
+    "subtitle": " The arolariu.ro story began in 2022, when the author - Alexandru-Razvan Olariu, wanted to understand how websites work. The whole platform and underlying integrations have been developed solely by the author, from what he has learnt along the years. Alexandru currently works as a software engineer at Microsoft. To learn more about him, check the right section of this page. The platform is built using the latest state-of-the-art technologies. To learn more about it, check the left section of this page.",
+    "title": "About Us"
   },
   "Acknowledgements": {
+    "__metadata__": {
+      "description": "Acknowledgements page for the third-party packages used in this project and collaborators.",
+      "title": "Acknowledgements"
+    },
     "lastUpdate": "Last updated on: {date}",
     "packages": {
       "subtitle": "This website could not have been possible without the following third-party packages. I would like to thank the authors of these packages for their hard work and dedication to the open-source community.",
@@ -246,6 +264,10 @@
     "title": "Acknowledgements"
   },
   "Authentication": {
+    "__metadata__": {
+      "description": "The auth page for the arolariu.ro platform.",
+      "title": "Auth"
+    },
     "Button": {
       "login": "Login",
       "logout": "Logout"
@@ -257,6 +279,10 @@
     }
   },
   "Domains": {
+    "__metadata__": {
+      "description": "Domain Space Services are services that are offered to visitors and members of the `arolariu.ro` domain space",
+      "title": "Domain Space Services"
+    },
     "services": {
       "callToAction": "Visit this domain service",
       "invoices": {
@@ -266,6 +292,10 @@
         },
         "service": {
           "create-page": {
+            "__metadata__": {
+              "description": "The invoice management system provides users with detailed insights into their spending habits, according to their uploaded receipts.",
+              "title": "Invoice Management System - Create Invoice"
+            },
             "disclaimer": "In order to save your invoice, please create an account or sign in.",
             "subtitle__after": "Review the uploaded receipt photo. If it is correct, proceed to the next step.",
             "subtitle__before": "Carefully photograph or scan your paper receipt. Attach the digital image from your device, here.",
@@ -301,6 +331,10 @@
             "title": "Turn your paper receipts into powerful digital knowledge."
           },
           "view-invoices": {
+            "__metadata__": {
+              "description": "List all invoices from the invoice management system.",
+              "title": "Invoice Management System - List Invoices"
+            },
             "subtitle": "This is your digital receipts inventory. <br></br> Here you can find the receipts that you've uploaded so far. <br></br> By clicking on a receipt, you will be redirected to that specific receipt's page.",
             "title": "Welcome, {name}!"
           }
@@ -309,6 +343,18 @@
     },
     "subtitle": "The <code>arolariu.ro</code> platform offers a wide range of services under it&apos;s umbrella. <br></br> Most of the services require that you have an account created on this platform, so that your data can be safely synchronized between all of the domain services. <br></br> <br></br> Here you can see a showcase of all domain services that are available for exploration.",
     "title": "Domain Space Services"
+  },
+  "errors": {
+    "404": {
+      "additionalInfo": "Additional Information:",
+      "buttons": {
+        "returnButton": "Go back to the home page.",
+        "submitErrorButton": "Submit false error."
+      },
+      "falsePositive": "If you think that this page should exist and you're facing an error, please report this to the site administrator.",
+      "subtitle": "It seems that the page that you've landed on is not present on the website. If this page should exist, please report this to the site administrator.",
+      "title": "404 - Page not found."
+    }
   },
   "EULA": {
     "accept": "Accept EULA",
@@ -331,17 +377,17 @@
       "title": "Cookies Preference"
     },
     "privacyPolicy": {
-      "title": "Privacy Policy",
+      "cta": "View Policy",
       "subtitle": "Our Privacy Policy explains how we collect, use, and protect your personal information when you use our services.",
-      "cta": "View Policy"
+      "title": "Privacy Policy"
     },
+    "subtitle": "Please review our terms and conditions before using the website.",
     "termsOfService": {
-      "title": "Terms of Service",
+      "cta": "View Terms",
       "subtitle": "Our Terms of Service outline the rules and guidelines for using our platform, including user responsibilities and our obligations.",
-      "cta": "View Terms"
+      "title": "Terms of Service"
     },
-    "title": "End User License Agreement (EULA)",
-    "subtitle": "Please review our terms and conditions before using the website."
+    "title": "End User License Agreement (EULA)"
   },
   "Footer": {
     "builtOn": "Built on ",
@@ -368,50 +414,54 @@
   "Home": {
     "appreciation": "THANK YOU FOR THE TIME SPENT ON THE WEBSITE.",
     "cta": "Start Exploring",
-    "subtitle": "This platform was built by Alexandru-Razvan Olariu as a playground for new technologies. The platform is built using state-of-the-art, enterprise-grade technologies. <br> </br> <br> </br> You are welcome to explore all of the applications and services that are hosted on this domain space.",
-    "title": "Welcome to arolariu.ro",
     "featuresTab": {
-      "title": "Key Features",
-      "description": "The `arolariu.ro` platform is built using the latest stable technologies.",
-      "learnMoreBtn": "Interesting? Click here to learn more...",
-      "nextJs": {
-        "title": "Next.JS 15",
-        "description": "The platform is built using NextJS - the most popular React framework for production.  It is designed for production-grade React applications. NextJS is the most popular React framework for a reason: it is fast, reliable, and easy to use."
-      },
       "azure": {
-        "title": "Microsoft Azure",
-        "description": "The Microsoft Azure cloud is used to host the platform and all of its services. This ensures that the platform is always available and that it can scale on demand."
+        "description": "The Microsoft Azure cloud is used to host the platform and all of its services. This ensures that the platform is always available and that it can scale on demand.",
+        "title": "Microsoft Azure"
       },
       "csharp": {
-        "title": ".NET 8 LTS",
-        "description": "The platform is built using .NET 8 LTS - the latest stable version of .NET. This ensures that the platform is fast, reliable, and easy to use. The platform is built using C# and F#."
+        "description": "The platform is built using .NET 8 LTS - the latest stable version of .NET. This ensures that the platform is fast, reliable, and easy to use. The platform is built using C# and F#.",
+        "title": ".NET 8 LTS"
       },
-      "svelte": {
-        "title": "Svelte",
-        "description": "Utilizing Svelte for lightning-fast, reactive UI components. The `cv.arolariu.ro` platform is built exclusively using Svelte and SvelteKit (v5)"
+      "description": "The `arolariu.ro` platform is built using the latest stable technologies.",
+      "githubActions": {
+        "description": "The DevOps experience is powered by GitHub Actions. (CI/CD, Testing, etc.)",
+        "title": "GitHub Actions"
+      },
+      "learnMoreBtn": "Interesting? Click here to learn more...",
+      "nextJs": {
+        "description": "The platform is built using NextJS - the most popular React framework for production.  It is designed for production-grade React applications. NextJS is the most popular React framework for a reason: it is fast, reliable, and easy to use.",
+        "title": "Next.JS 15"
       },
       "otel": {
-        "title": "Open Telemetry",
-        "description": "Complete observability with integrated metrics, traces, and logs. Everything is instrumented using OpenTelemetry. This allows for a unified telemetry experience across the board. (3PO: metrics, logs, traces)"
+        "description": "Complete observability with integrated metrics, traces, and logs. Everything is instrumented using OpenTelemetry. This allows for a unified telemetry experience across the board. (3PO: metrics, logs, traces)",
+        "title": "Open Telemetry"
       },
-      "githubActions": {
-        "title": "GitHub Actions",
-        "description": "The DevOps experience is powered by GitHub Actions. (CI/CD, Testing, etc.)"
-      }
+      "svelte": {
+        "description": "Utilizing Svelte for lightning-fast, reactive UI components. The `cv.arolariu.ro` platform is built exclusively using Svelte and SvelteKit (v5)",
+        "title": "Svelte"
+      },
+      "title": "Key Features"
     },
+    "subtitle": "This platform was built by Alexandru-Razvan Olariu as a playground for new technologies. The platform is built using state-of-the-art, enterprise-grade technologies. <br> </br> <br> </br> You are welcome to explore all of the applications and services that are hosted on this domain space.",
     "technologyTab": {
-      "title": "Built for the Future.",
+      "badgeTitle": "Modern Architecture",
       "description": "This platform leverages the latest in web technology, combining Next.js for the frontend with .NET for robust backend services, all deployed on Microsoft Azure.",
+      "learnMoreBtn": "Explore the Architecture",
       "points": {
         "point1": "Serverless architecture for optimal scaling and performance",
         "point2": "Full-stack TypeScript for type safety across the entire application",
         "point3": "Comprehensive telemetry and monitoring with OpenTelemetry"
       },
-      "learnMoreBtn": "Explore the Architecture",
-      "badgeTitle": "Modern Architecture"
-    }
+      "title": "Built for the Future."
+    },
+    "title": "Welcome to arolariu.ro"
   },
   "privacyPolicy": {
+    "__metadata__": {
+      "description": "The privacy policy page for the `arolariu.ro` platform.",
+      "title": "Privacy Policy"
+    },
     "contactInformation": {
       "content": "If you have any questions about our Privacy Policy, please contact us at admin@arolariu.ro",
       "title": "Contact Information"
@@ -498,6 +548,10 @@
     "title": "Privacy Policy"
   },
   "termsOfService": {
+    "__metadata__": {
+      "description": "The terms of service for arolariu.ro",
+      "title": "Terms of Service"
+    },
     "contactInformation": {
       "content": "If you have any questions about our Terms of Service, please contact us at admin@arolariu.ro",
       "title": "Contact Information"
@@ -606,17 +660,5 @@
       }
     },
     "title": "Terms of Service"
-  },
-  "errors": {
-    "404": {
-      "title": "404 - Page not found.",
-      "subtitle": "It seems that the page that you've landed on is not present on the website. If this page should exist, please report this to the site administrator.",
-      "additionalInfo": "Additional Information:",
-      "falsePositive": "If you think that this page should exist and you're facing an error, please report this to the site administrator.",
-      "buttons": {
-        "returnButton": "Go back to the home page.",
-        "submitErrorButton": "Submit false error."
-      }
-    }
   }
 }

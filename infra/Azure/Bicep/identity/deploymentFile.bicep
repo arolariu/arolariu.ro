@@ -22,16 +22,15 @@ module managedIdentities 'userAssignedIdentity.bicep' = {
   }
 }
 
-module federatedIdentities 'federatedIdentity.bicep' = {
+module federatedCredentials 'federatedCredentials.bicep' = {
   scope: resourceGroup()
-  name: 'federatedIdentitiesDeployment-${resourceDeploymentDate}'
+  name: 'federatedCredentialsDeployment-${resourceDeploymentDate}'
   params: { infrastructureManagedIdentity: managedIdentities.outputs.userAssignedManagedIdentities[2] }
 }
 
 module securityGroups 'securityGroups.bicep' = {
   scope: resourceGroup()
   name: 'securityGroupsDeployment-${resourceDeploymentDate}'
-  params: { identities: managedIdentities.outputs.userAssignedManagedIdentities }
 }
 
 import { identity } from '../types/identity.type.bicep'
