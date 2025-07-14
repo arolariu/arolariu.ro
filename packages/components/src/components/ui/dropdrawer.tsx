@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, Transition } from "motion/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import * as React from "react";
 
@@ -267,7 +267,7 @@ function DropDrawerContent({
   const transition = {
     duration: 0.3,
     ease: [0.25, 0.1, 0.25, 1.0], // cubic-bezier easing
-  };
+  } satisfies Transition;
 
   if (isMobile) {
     return (
