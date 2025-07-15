@@ -15,6 +15,7 @@ var roleDefinitions = {
   storageQueueReader: '19e7f393-937e-4f77-808e-94535e297925'
   storageTableReader: '76199698-9eea-4c19-bc75-cec21354c6b6'
   appConfigReader: '516239f1-63e1-4d78-a4de-a74fb236a071'
+  acrPull: '7f951dda-4ed3-4680-a7ca-43fe172d538d' // Azure Container Registry Pull
 }
 
 // Storage Blob Reader role assignment for frontend managed identity
@@ -67,5 +68,16 @@ resource frontendAppConfigReaderRoleAssignment 'Microsoft.Authorization/roleAssi
     principalId: frontendIdentity.principalId
     principalType: 'ServicePrincipal'
     description: 'Frontend managed identity access to App Configuration data (read-only)'
+  }
+}
+
+// Azure Container Registry Pull role assignment for frontend managed identity
+resource frontendAcrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, frontendIdentity.principalId, roleDefinitions.acrPull)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleDefinitions.acrPull)
+    principalId: frontendIdentity.principalId
+    principalType: 'ServicePrincipal'
+    description: 'Frontend managed identity access to Azure Container Registry (pull only)'
   }
 }

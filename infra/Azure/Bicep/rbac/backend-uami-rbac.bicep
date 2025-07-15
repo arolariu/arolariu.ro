@@ -19,6 +19,7 @@ var roleDefinitions = {
   openAiContributor: 'a001fd3d-188f-4b5d-821b-7da978bf7442'
   keyVaultContributor: 'f25e0fa2-a7c8-4377-a976-54943a77a395'
   keyVaultSecretsContributor: 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7'
+  acrPull: '7f951dda-4ed3-4680-a7ca-43fe172d538d' // Azure Container Registry Pull
 }
 
 // Storage Blob Contributor role assignment for backend managed identity
@@ -130,5 +131,16 @@ resource backendKeyVaultSecretsContributorRoleAssignment 'Microsoft.Authorizatio
     principalId: backendIdentity.principalId
     principalType: 'ServicePrincipal'
     description: 'Backend managed identity access to Key Vault secrets management'
+  }
+}
+
+// Azure Container Registry Pull role assignment for backend managed identity
+resource backendAcrPullRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, backendIdentity.principalId, roleDefinitions.acrPull)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleDefinitions.acrPull)
+    principalId: backendIdentity.principalId
+    principalType: 'ServicePrincipal'
+    description: 'Backend managed identity access to Azure Container Registry (pull)'
   }
 }
