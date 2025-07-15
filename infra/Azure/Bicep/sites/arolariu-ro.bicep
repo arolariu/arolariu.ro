@@ -48,7 +48,7 @@ resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
     enabled: true
     serverFarmId: productionWebsiteAppPlanId
     siteConfig: {
-      acrUseManagedIdentityCreds: false // Azure Container Registry managed identity is not used.
+      acrUseManagedIdentityCreds: true // Azure Container Registry managed identity is used.
       publishingUsername: '$arolariu' // Publishing username (GitHub / ACR username)
       autoHealEnabled: false
       numberOfWorkers: 1 // Number of instances (initially).
