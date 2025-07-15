@@ -29,14 +29,17 @@ const APPCONFIG_MAPPING = {
   "Other:UseCdn": "USE_CDN",
 } satisfies Record<string, AllEnvironmentVariablesKeys>;
 
-const appConfigStore = "https://qolp6bappconfig.azconfig.io";
 const isProduction = process.env["PRODUCTION"] === "true";
 const isAzure = process.env["INFRA"] === "azure";
 const isVerbose = process.env["VERBOSE"] === "true";
 const isCI = !!(process.env["CI"] ?? process.env["GITHUB_ACTIONS"]);
 
 async function fetchFromAzure(): Promise<TypedConfigurationType> {
-  const credentials = new DefaultAzureCredential();
+  const appConfigStore = "https://qolp6bappconfig.azconfig.io";
+  const credentials = new DefaultAzureCredential({
+    tenantId: process.env["AZURE_TENANT_ID"],
+    managedIdentityClientId: process.env["AZURE_CLIENT_ID"],
+  });
   const client = new AppConfigurationClient(appConfigStore, credentials);
 
   const config = {} as TypedConfigurationType;
