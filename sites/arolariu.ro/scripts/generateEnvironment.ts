@@ -1,7 +1,7 @@
 /** @format */
 
 import {AppConfigurationClient} from "@azure/app-configuration";
-import {DefaultAzureCredential, ManagedIdentityCredential} from "@azure/identity";
+import {DefaultAzureCredential} from "@azure/identity";
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
@@ -36,11 +36,7 @@ const isCI = !!(process.env["CI"] ?? process.env["GITHUB_ACTIONS"]);
 
 async function fetchFromAzure(): Promise<TypedConfigurationType> {
   const appConfigStore = "https://qolp6bappconfig.azconfig.io";
-  const credentials = isCI
-    ? new ManagedIdentityCredential({
-        clientId: process.env["AZURE_CLIENT_ID"],
-      })
-    : new DefaultAzureCredential();
+  const credentials = new DefaultAzureCredential();
   const client = new AppConfigurationClient(appConfigStore, credentials);
 
   const config = {} as TypedConfigurationType;
