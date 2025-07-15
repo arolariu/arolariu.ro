@@ -21,9 +21,9 @@ const cspHeader = `
 const isCdnEnabled = process.env["USE_CDN"] === "true";
 console.log(">>> CDN enabled:", isCdnEnabled ? "✅" : "❌");
 
-const isDebugBuild = process.env.NODE_ENV === "development";
+const isDebugBuild = process.env["NODE_ENV"] === "development";
 console.log(">>> isDebugBuild", isDebugBuild ? "✅" : "❌");
-console.log(">>> NODE_ENV", process.env.NODE_ENV);
+console.log(">>> NODE_ENV", process.env["NODE_ENV"]);
 
 const nextConfig: NextConfig = {
   basePath: "",
