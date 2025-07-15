@@ -55,7 +55,7 @@ async function fetchFromAzure(): Promise<TypedConfigurationType> {
         config[envVar] = setting.value;
       }
     } catch (error) {
-      console.log(`💥 Error: Failed to fetch ${key} with label ${label}: ${error}`);
+      console.log(`💥 Error: Failed to fetch ${key} with label ${label}: ${JSON.stringify(error, null, 2)}`);
     }
   }
 
