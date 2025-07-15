@@ -21,15 +21,15 @@ const cspHeader = `
 const isCdnEnabled = process.env["USE_CDN"] === "true";
 console.log(">>> CDN enabled:", isCdnEnabled ? "✅" : "❌");
 
-const isDevBuild = process.env.NODE_ENV === "development";
-console.log(">>> isDevBuild", isDevBuild ? "✅" : "❌");
+const isDebugBuild = process.env.NODE_ENV === "development";
+console.log(">>> isDebugBuild", isDebugBuild ? "✅" : "❌");
 console.log(">>> NODE_ENV", process.env.NODE_ENV);
 
 const nextConfig: NextConfig = {
   basePath: "",
 
   compiler: {
-    removeConsole: isDevBuild ? false : {exclude: ["error", "warn"]},
+    removeConsole: isDebugBuild ? false : {exclude: ["error", "warn"]},
     reactRemoveProperties: {
       properties: ["^data-testid$"],
     },
@@ -45,7 +45,7 @@ const nextConfig: NextConfig = {
       new URL("https://arolariustorage.blob.core.windows.net"), // External assets.
       new URL("https://**.googleusercontent.com"), // External assets.
       new URL("https://**.githubusercontent.com"), // External assets.
-      ...(isDevBuild
+      ...(isDebugBuild
         ? ([
             {
               protocol: "https",
@@ -77,7 +77,7 @@ const nextConfig: NextConfig = {
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains; preload",
           },
-          isDevBuild
+          isDebugBuild
             ? {
                 key: "Content-Security-Policy-Report-Only",
                 value: cspHeader.replace(/\n/gu, "").trim(),
@@ -115,16 +115,16 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   experimental: {
-    allowDevelopmentBuild: isDevBuild ? true : undefined,
-    devtoolSegmentExplorer: isDevBuild ? true : undefined,
-    serverSourceMaps: isDevBuild,
-    turbopackSourceMaps: isDevBuild,
-    turbopackMinify: !isDevBuild,
-    turbopackTreeShaking: !isDevBuild,
-    webpackMemoryOptimizations: !isDevBuild,
-    disableOptimizedLoading: isDevBuild,
-    optimizeServerReact: !isDevBuild,
-    serverMinification: !isDevBuild,
+    allowDevelopmentBuild: isDebugBuild ? true : undefined,
+    devtoolSegmentExplorer: isDebugBuild ? true : undefined,
+    serverSourceMaps: isDebugBuild,
+    turbopackSourceMaps: isDebugBuild,
+    turbopackMinify: !isDebugBuild,
+    turbopackTreeShaking: !isDebugBuild,
+    webpackMemoryOptimizations: !isDebugBuild,
+    disableOptimizedLoading: isDebugBuild,
+    optimizeServerReact: !isDebugBuild,
+    serverMinification: !isDebugBuild,
     typedEnv: true,
     optimizePackageImports: ["@arolariu/components"],
     serverActions: {
@@ -132,13 +132,15 @@ const nextConfig: NextConfig = {
     },
   },
 
-  productionBrowserSourceMaps: isDevBuild,
-  reactProductionProfiling: isDevBuild,
+  browserDebugInfoInTerminal: isDebugBuild,
+  devtoolSegmentExplorer: isDebugBuild,
+  productionBrowserSourceMaps: isDebugBuild,
+  reactProductionProfiling: isDebugBuild,
   transpilePackages: ["@arolariu/components"],
 
   webpack: (config) => {
     // Remove minifcation, chunking and optimization for dev builds
-    if (isDevBuild) {
+    if (isDebugBuild) {
       console.log(">>> ⚙️ Removing minification, chunking and optimization for dev builds");
       config.devtool = "source-map";
       config.optimization.chunkIds = "named";
