@@ -112,7 +112,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
               <TabsTrigger
                 value='en'
                 onClick={() => handleLocale("en")}
-                className='flex items-center gap-2'>
+                className='flex cursor-pointer items-center gap-2'>
                 <TbGlobe className='h-4 w-4' />
                 English (EN)
               </TabsTrigger>
@@ -123,7 +123,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
               <TabsTrigger
                 value='ro'
                 onClick={() => handleLocale("ro")}
-                className='flex items-center gap-2'>
+                className='flex cursor-pointer items-center gap-2'>
                 <TbGlobe className='h-4 w-4' />
                 Română (RO)
               </TabsTrigger>
@@ -158,7 +158,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                       <Button
                         variant='outline'
                         title={t("termsOfService.cta")}
-                        className='w-full'>
+                        className='w-full cursor-pointer'>
                         {t("termsOfService.cta")}
                       </Button>
                     </DialogTrigger>
@@ -190,7 +190,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                       <Button
                         variant='outline'
                         title={t("privacyPolicy.cta")}
-                        className='w-full'>
+                        className='w-full cursor-pointer'>
                         {t("privacyPolicy.cta")}
                       </Button>
                     </DialogTrigger>
@@ -297,7 +297,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
             className='w-full'>
             <Button
               onClick={handleAccept}
-              className='bg-primary hover:bg-primary/90 w-full'
+              className='bg-primary hover:bg-primary/90 w-full cursor-pointer'
               size='lg'>
               <TbCheck className='mr-2 h-4 w-4' /> {t("accept")}
             </Button>

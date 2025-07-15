@@ -105,16 +105,17 @@ test.describe("Footer Component Tests", () => {
     });
 
     test("should display build information including date and commit SHA", async ({page}) => {
-      const buildInfoParagraph = page.locator("footer div.mx-auto > p.text-slate-300");
-      await expect(buildInfoParagraph.first()).toBeVisible();
-      await expect(buildInfoParagraph.first()).toContainText(/Built on/i);
+      // The build info is in a div.text-slate-300 inside the footer
+      const buildInfoDiv = page.locator("footer div.text-slate-300");
+      await expect(buildInfoDiv.first()).toBeVisible();
+      await expect(buildInfoDiv.first()).toContainText(/Built on/i);
 
-      const buildDateCode = buildInfoParagraph.locator("code[data-tip]");
-      await expect(buildDateCode.first()).toBeVisible();
-      await expect(buildDateCode.first()).toHaveText(/\d{4}-\d{2}-\d{2}/);
-      await expect(buildDateCode.first()).toHaveAttribute("data-tip", /\w{3} \w{3} \d{2} \d{4} \d{2}:\d{2}:\d{2} GMT[+-]\d{4} \(.*\)/i);
+      // TooltipTrigger wraps the build date (as plain text), TooltipContent has the UTC string in a <code>
+      // The date (YYYY-MM-DD) is visible as text
+      await expect(buildInfoDiv.first()).toContainText(/\d{4}-\d{2}-\d{2}/);
 
-      const commitShaSpan = buildInfoParagraph.locator("span:has-text('Commit SHA:')");
+      // The commit SHA is in a <span> with 'Commit SHA:' and a <code> child
+      const commitShaSpan = buildInfoDiv.locator("span:has-text('Commit SHA:')");
       await expect(commitShaSpan.first()).toBeVisible();
       const commitShaCode = commitShaSpan.locator("code");
       await expect(commitShaCode.first()).toBeVisible();
