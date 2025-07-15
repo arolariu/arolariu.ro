@@ -29,7 +29,7 @@ const APPCONFIG_MAPPING = {
   "Other:UseCdn": "USE_CDN",
 } satisfies Record<string, AllEnvironmentVariablesKeys>;
 
-const appConfigStore = "https://arolariu-app-config.azconfig.io";
+const appConfigStore = "https://qolp6bappconfig.azconfig.io";
 const isProduction = process.env["PRODUCTION"] === "true";
 const isAzure = process.env["INFRA"] === "azure";
 const isVerbose = process.env["VERBOSE"] === "true";
