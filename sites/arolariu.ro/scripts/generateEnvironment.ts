@@ -36,7 +36,11 @@ const isCI = !!(process.env["CI"] ?? process.env["GITHUB_ACTIONS"]);
 
 async function fetchFromAzure(): Promise<TypedConfigurationType> {
   const appConfigStore = "https://qolp6bappconfig.azconfig.io";
-  const credentials = isCI ? new ManagedIdentityCredential() : new DefaultAzureCredential();
+  const credentials = isCI
+    ? new ManagedIdentityCredential({
+        clientId: process.env["AZURE_CLIENT_ID"],
+      })
+    : new DefaultAzureCredential();
   const client = new AppConfigurationClient(appConfigStore, credentials);
 
   const config = {} as TypedConfigurationType;
