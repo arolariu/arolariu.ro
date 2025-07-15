@@ -29,22 +29,22 @@ const APPCONFIG_MAPPING = {
   "Other:UseCdn": "USE_CDN",
 } satisfies Record<string, AllEnvironmentVariablesKeys>;
 
-const appConfigStore = "https://arolariu-app-config.azconfig.io";
 const isProduction = process.env["PRODUCTION"] === "true";
 const isAzure = process.env["INFRA"] === "azure";
 const isVerbose = process.env["VERBOSE"] === "true";
 const isCI = !!(process.env["CI"] ?? process.env["GITHUB_ACTIONS"]);
 
 async function fetchFromAzure(): Promise<TypedConfigurationType> {
+  const appConfigStore = "https://qolp6bappconfig.azconfig.io";
   const credentials = new DefaultAzureCredential();
   const client = new AppConfigurationClient(appConfigStore, credentials);
 
   const config = {} as TypedConfigurationType;
-  const label = isProduction ? "production" : "development";
+  const label = isProduction ? "Production" : "Development";
 
   for (const [key, envVar] of Object.entries(APPCONFIG_MAPPING)) {
     try {
-      const setting = await client.getConfigurationSetting({key, label});
+      const setting = await client.getConfigurationSetting({key: key, label: label});
       if (!setting.value) continue;
 
       if (isKeyVaultRef(setting.value)) {
@@ -55,7 +55,7 @@ async function fetchFromAzure(): Promise<TypedConfigurationType> {
         config[envVar] = setting.value;
       }
     } catch (error) {
-      console.log(`💥 Error: Failed to fetch ${key} with label ${label}: ${error}`);
+      console.log(`💥 Error: Failed to fetch ${key} with label ${label}: ${JSON.stringify(error, null, 2)}`);
     }
   }
 

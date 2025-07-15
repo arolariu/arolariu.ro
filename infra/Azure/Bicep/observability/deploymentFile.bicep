@@ -31,9 +31,18 @@ module applicationInsightsDeployment 'application-insights.bicep' = {
   }
 }
 
-// module managedGrafanaDeployment 'grafana.bicep' = {
-//   scope: resourceGroup()
-//   name: 'managedGrafanaDeployment-${resourceDeploymentDate}'
-//   dependsOn: [applicationInsightsDeployment, logAnalyticsWorkspaceDeployment]
-//   params: { managedGrafanaName: '${resourceConventionPrefix}-grafana' }
-// }
+module managedGrafanaDeployment 'grafana.bicep' = {
+  scope: resourceGroup()
+  name: 'managedGrafanaDeployment-${resourceDeploymentDate}'
+  dependsOn: [applicationInsightsDeployment, logAnalyticsWorkspaceDeployment]
+  params: {
+    managedGrafanaName: '${resourceConventionPrefix}-grafana'
+    managedGrafanaLocation: resourceLocation
+    managedGrafanaDeploymentDate: resourceDeploymentDate
+  }
+}
+
+output logAnalyticsWorkspaceId string = logAnalyticsWorkspaceDeployment.outputs.logAnalyticsWorkspaceId
+
+output appInsightsConnectionString string = applicationInsightsDeployment.outputs.applicationInsightsConnectionString
+output appInsightsInstrumentationKey string = applicationInsightsDeployment.outputs.applicationInsightsInstrumentationKey

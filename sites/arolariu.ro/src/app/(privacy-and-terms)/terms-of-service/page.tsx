@@ -1,13 +1,23 @@
 /** @format */
 
-import type {Metadata} from "next";
-import {getTranslations} from "next-intl/server";
+import {createMetadata} from "@/metadata";
+import {getLocale, getTranslations} from "next-intl/server";
+import type {Metadata} from "next/types";
 import RenderTermsOfServiceScreen from "./island";
 
-export const metadata: Metadata = {
-  title: "Terms of Service",
-  description: "The terms of service for arolariu.ro",
-};
+/**
+ * Generates metadata for the Terms of Service page.
+ * @returns The metadata for the Terms of Service page.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("termsOfService.__metadata__");
+  const locale = await getLocale();
+  return createMetadata({
+    locale,
+    title: t("title"),
+    description: t("description"),
+  });
+}
 
 /**
  * The terms of service page, which outlines the terms of service for arolariu.ro.

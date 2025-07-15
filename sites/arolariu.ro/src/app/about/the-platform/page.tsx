@@ -1,10 +1,27 @@
 /** @format */
 
 import {ScrollToTop} from "@/hooks/useScrollToTop";
+import {createMetadata} from "@/metadata";
+import {getLocale, getTranslations} from "next-intl/server";
+import type {Metadata} from "next/types";
 import Hero from "./_components/Hero";
 import Statistics from "./_components/Statistics";
 import TechStack from "./_components/TechStack";
 import Timeline from "./_components/Timeline";
+
+/**
+ * Generates metadata for the Platform page.
+ * @returns The metadata for the Platform page.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("About.Platform.__metadata__");
+  const locale = await getLocale();
+  return createMetadata({
+    locale,
+    title: t("title"),
+    description: t("description"),
+  });
+}
 
 /**
  * This is the platform page.

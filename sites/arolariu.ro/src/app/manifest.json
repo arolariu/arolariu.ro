@@ -52,11 +52,6 @@
       "short_name": "IMS",
       "description": "The Invoices Management System (IMS) is a platform that allows you to manage your invoices, in a secure and efficient way.",
       "url": "/domains/invoices"
-    },
-    {
-      "name": "Chat Rooms",
-      "description": "The Chat Rooms service allows you to chat with other people, in real-time, using enterprise-grade technologies.",
-      "url": "/domains/live"
     }
   ],
   "id": "pwa.arolariu.ro",

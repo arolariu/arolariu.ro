@@ -11,7 +11,7 @@ param resourceDeploymentDate string = utcNow()
 @allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])
 param resourceLocation string
 
-var resourceConventionPrefix = substring(uniqueString(resourceDeploymentDate), 0, 6)
+var resourceConventionPrefix = 'q${substring(uniqueString(resourceDeploymentDate), 0, 5)}'
 
 module identitiesDeployment 'identity/deploymentFile.bicep' = {
   scope: resourceGroup()
@@ -83,10 +83,12 @@ module websiteDeployment 'sites/deploymentFile.bicep' = {
   params: {
     resourceLocation: resourceLocation
     resourceDeploymentDate: resourceDeploymentDate
+    appInsightsConnectionString: observabilityDeployment.outputs.appInsightsConnectionString
+    appInsightsInstrumentationKey: observabilityDeployment.outputs.appInsightsInstrumentationKey
     productionAppPlanId: computeDeployment.outputs.productionAppPlanId
     developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId
-    managedIdentityFrontendId: identitiesDeployment.outputs.managedIdentitiesList[0].id
-    managedIdentityBackendId: identitiesDeployment.outputs.managedIdentitiesList[1].id
+    managedIdentityFrontendId: identitiesDeployment.outputs.managedIdentitiesList[0].resourceId
+    managedIdentityBackendId: identitiesDeployment.outputs.managedIdentitiesList[1].resourceId
   }
 }
 
@@ -98,8 +100,33 @@ module networkDeployment 'network/deploymentFile.bicep' = {
     resourceDeploymentDate: resourceDeploymentDate
     resourceConventionPrefix: resourceConventionPrefix
     mainWebsiteHostname: websiteDeployment.outputs.mainWebsiteUrl
-    apiWebsiteHostname: websiteDeployment.outputs.apiWebsiteUrl
-    devWebsiteHostname: websiteDeployment.outputs.devWebsiteUrl
-    docsWebsiteHostname: websiteDeployment.outputs.docsWebsiteUrl
+  }
+}
+
+module aiDeployment 'ai/deploymentFile.bicep' = {
+  scope: resourceGroup()
+  name: 'aiDeployment-${resourceDeploymentDate}'
+  params: {
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceConventionPrefix: resourceConventionPrefix
+    backendManagedIdentityPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
+  }
+}
+
+module bindingsDeployment 'bindings/deploymentFile.bicep' = {
+  scope: resourceGroup()
+  name: 'bindingsDeployment-${resourceDeploymentDate}'
+  params: {
+    resourceLocation: resourceLocation
+    resourceDeploymentDate: resourceDeploymentDate
+    resourceConventionPrefix: resourceConventionPrefix
+    dnsZoneName: networkDeployment.outputs.dnsZoneName
+    devWebsiteAppServicePlanId: computeDeployment.outputs.developmentAppPlanId
+    prodWebsiteAppServicePlanId: computeDeployment.outputs.productionAppPlanId
+    apiWebsiteHostname: websiteDeployment.outputs.apiWebsiteName
+    devWebsiteHostname: websiteDeployment.outputs.devWebsiteName
+    docsWebsiteHostname: websiteDeployment.outputs.docsWebsiteName
+    prodWebsiteHostname: websiteDeployment.outputs.mainWebsiteName
   }
 }

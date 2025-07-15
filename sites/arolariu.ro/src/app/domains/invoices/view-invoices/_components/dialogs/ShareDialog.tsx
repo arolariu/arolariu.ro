@@ -60,10 +60,8 @@ export default function ShareDialog(): React.JSX.Element {
       // Create a canvas to draw the QR code
       const canvas = document.createElement("canvas");
 
-      /* eslint-disable functional/immutable-data */
       canvas.width = 128;
       canvas.height = 128;
-      /* eslint-enable functional/immutable-data */
 
       // Get canvas context
       const ctx = canvas.getContext("2d");
@@ -79,7 +77,7 @@ export default function ShareDialog(): React.JSX.Element {
       await new Promise((resolve, reject) => {
         img.addEventListener("load", resolve);
         img.addEventListener("error", reject);
-        // eslint-disable-next-line functional/immutable-data -- readability
+
         img.src = url;
       });
 

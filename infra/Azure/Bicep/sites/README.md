@@ -93,33 +93,47 @@ graph TB
 
 ### **Parameters**
 
-| Parameter                   | Type   | Required | Description                                 |
-| --------------------------- | ------ | -------- | ------------------------------------------- |
-| `productionAppPlanId`       | string | ✅       | Resource ID of production App Service Plan  |
-| `developmentAppPlanId`      | string | ✅       | Resource ID of development App Service Plan |
-| `managedIdentityFrontendId` | string | ✅       | Resource ID of frontend managed identity    |
-| `managedIdentityBackendId`  | string | ✅       | Resource ID of backend managed identity     |
+| Parameter                       | Type   | Required | Description                                 |
+| ------------------------------- | ------ | -------- | ------------------------------------------- |
+| `resourceLocation`              | string | ✅       | Azure region for deployment                 |
+| `resourceDeploymentDate`        | string | ✅       | Deployment timestamp                        |
+| `productionAppPlanId`           | string | ✅       | Resource ID of production App Service Plan  |
+| `developmentAppPlanId`          | string | ✅       | Resource ID of development App Service Plan |
+| `appInsightsConnectionString`   | string | ✅       | Application Insights connection string      |
+| `appInsightsInstrumentationKey` | string | ✅       | Application Insights instrumentation key    |
+| `managedIdentityFrontendId`     | string | ✅       | Resource ID of frontend managed identity    |
+| `managedIdentityBackendId`      | string | ✅       | Resource ID of backend managed identity     |
 
 ### **Example Usage**
 
 ```bicep
-module websiteDeployment 'sites/deploymentFile.bicep' = {
-  name: 'websiteDeployment'
+module sitesDeployment 'sites/deploymentFile.bicep' = {
+  name: 'sitesDeployment'
   params: {
-    productionAppPlanId: '/subscriptions/.../providers/Microsoft.Web/serverfarms/prod-plan'
-    developmentAppPlanId: '/subscriptions/.../providers/Microsoft.Web/serverfarms/dev-plan'
-    managedIdentityFrontendId: '/subscriptions/.../providers/Microsoft.ManagedIdentity/userAssignedIdentities/frontend-id'
-    managedIdentityBackendId: '/subscriptions/.../providers/Microsoft.ManagedIdentity/userAssignedIdentities/backend-id'
+    resourceLocation: 'swedencentral'
+    resourceDeploymentDate: utcNow()
+    productionAppPlanId: computeDeployment.outputs.productionAppPlanId
+    developmentAppPlanId: computeDeployment.outputs.developmentAppPlanId
+    appInsightsConnectionString: observabilityDeployment.outputs.appInsightsConnectionString
+    appInsightsInstrumentationKey: observabilityDeployment.outputs.appInsightsInstrumentationKey
+    managedIdentityFrontendId: identitiesDeployment.outputs.managedIdentitiesList[0].resourceId
+    managedIdentityBackendId: identitiesDeployment.outputs.managedIdentitiesList[1].resourceId
   }
 }
 ```
 
 ## 📤 **Outputs**
 
-| Output           | Type   | Description                              |
-| ---------------- | ------ | ---------------------------------------- |
-| `mainWebsiteUrl` | string | Default hostname of the main website     |
-| `devWebsiteUrl`  | string | Default hostname of the development site |
+| Output            | Type   | Description                              |
+| ----------------- | ------ | ---------------------------------------- |
+| `mainWebsiteUrl`  | string | Default hostname of the main website     |
+| `apiWebsiteUrl`   | string | Default hostname of the API service      |
+| `devWebsiteUrl`   | string | Default hostname of the development site |
+| `docsWebsiteUrl`  | string | Default hostname of the documentation    |
+| `mainWebsiteName` | string | Name of the main website resource        |
+| `apiWebsiteName`  | string | Name of the API website resource         |
+| `devWebsiteName`  | string | Name of the dev website resource         |
+| `docsWebsiteName` | string | Name of the docs website resource        |
 
 ## 🌐 **Application Details**
 
@@ -390,5 +404,5 @@ az webapp update \
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: June 2025  
+**Last Updated**: July 2025
 **Maintainer**: Alexandru-Razvan Olariu

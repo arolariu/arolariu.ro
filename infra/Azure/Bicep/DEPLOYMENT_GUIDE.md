@@ -1,5 +1,18 @@
 # 🚀 Deployment Guide
 
+## 🗺️ **Deployment Process Overview**
+
+```mermaid
+flowchart TD
+    A[Pre-Deployment Setup] --> B[Validate Templates]
+    B --> C[Choose Deployment Method]
+    C --> D[Deploy Infrastructure]
+    D --> E[Validate Deployment]
+    E --> F[Post-Deployment Configuration]
+    F --> G[Monitoring Setup]
+    G --> H[Ongoing Maintenance]
+```
+
 A comprehensive guide for deploying the Azure Bicep infrastructure, from prerequisites to post-deployment validation.
 
 ## 📋 **Table of Contents**
@@ -347,6 +360,30 @@ az monitor diagnostic-settings create \
 
 ## 🚨 **Troubleshooting**
 
+### **Troubleshooting & Rollback Flow**
+
+```mermaid
+flowchart TD
+    A[Deployment Issue Detected] --> B{Type of Issue}
+    B -->|Resource Provider| C[Register Provider]
+    B -->|Permissions| D[Check RBAC]
+    B -->|Name Conflict| E[Use Unique Names]
+    B -->|Location| F[Check Allowed Regions]
+    B -->|Validation| G[Run Lint & Fix]
+    B -->|Other| H[Check Logs]
+    C --> I[Retry Deployment]
+    D --> I
+    E --> I
+    F --> I
+    G --> I
+    H --> I
+    I --> J{Resolved?}
+    J -->|Yes| K[Continue]
+    J -->|No| L[Rollback]
+    L --> M[Delete Resource Group]
+    M --> N[Redeploy Previous Version]
+```
+
 ### **Common Deployment Issues**
 
 | Issue                                | Symptoms                                                              | Solution                                                                |
@@ -430,6 +467,8 @@ az deployment sub create \
 
 ---
 
-**Last Updated**: December 2024  
-**Version**: 2.0.0  
+---
+
+**Last Updated**: July 2025  
+**Version**: 2.1.0  
 **Maintainer**: Alexandru-Razvan Olariu

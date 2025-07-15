@@ -23,6 +23,12 @@ param sqlServerAdministratorPassword string
 @description('The date when the deployment is executed.')
 param sqlServerDeploymentDate string
 
+@description('The prefix for the SQL Database names.')
+param sqlDatabaseNamePrefix string
+
+var sqlDatabasePrimaryName = '${sqlDatabaseNamePrefix}-primary'
+var sqlDatabaseSecondaryName = '${sqlDatabaseNamePrefix}-secondary'
+
 // Common tags for all resources
 import { resourceTags } from '../types/common.type.bicep'
 var commonTags resourceTags = {
@@ -30,7 +36,7 @@ var commonTags resourceTags = {
   deploymentType: 'Bicep'
   deploymentDate: sqlServerDeploymentDate
   deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'storage-sql'
+  module: 'storage'
   costCenter: 'infrastructure'
   project: 'arolariu.ro'
   version: '2.0.0'
@@ -80,6 +86,59 @@ resource sqlServer 'Microsoft.Sql/servers@2024-05-01-preview' = {
 
   tags: union(commonTags, {
     displayName: 'SQL Server'
+  })
+}
+
+resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2024-05-01-preview' = {
+  parent: sqlServer
+  name: sqlDatabasePrimaryName
+  location: sqlServerLocation
+  sku: {
+    name: 'Standard'
+    tier: 'Standard'
+    capacity: 10
+  }
+  properties: {
+    catalogCollation: 'SQL_Latin1_General_CP1_CI_AS'
+    collation: 'SQL_Latin1_General_CP1_CI_AS'
+    maxSizeBytes: 268435456000 // 256 GB
+    zoneRedundant: false
+    readScale: 'Disabled'
+    requestedBackupStorageRedundancy: 'Local'
+    isLedgerOn: false
+    availabilityZone: 'NoPreference'
+  }
+  tags: union(commonTags, {
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
+  })
+}
+
+resource sqlDatabaseSecondary 'Microsoft.Sql/servers/databases@2024-05-01-preview' = {
+  parent: sqlServer
+  name: sqlDatabaseSecondaryName
+  location: sqlServerLocation
+  dependsOn: [sqlDatabasePrimary]
+  sku: {
+    name: 'GP_S_Gen5_2'
+    tier: 'GeneralPurpose'
+  }
+  properties: {
+    catalogCollation: 'SQL_Latin1_General_CP1_CI_AS'
+    collation: 'SQL_Latin1_General_CP1_CI_AS'
+    maxSizeBytes: 34359738368 // 32 GB
+    zoneRedundant: false
+    readScale: 'Disabled'
+    requestedBackupStorageRedundancy: 'Local'
+    isLedgerOn: false
+    availabilityZone: 'NoPreference'
+    autoPauseDelay: 60 // 1 hour
+    useFreeLimit: true // the secondary database will be created as a free database
+    freeLimitExhaustionBehavior: 'AutoPause'
+  }
+  tags: union(commonTags, {
+    environment: 'PRODUCTION'
+    deployment: 'Bicep'
   })
 }
 

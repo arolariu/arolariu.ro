@@ -208,9 +208,74 @@ Three managed identities provide secure, passwordless access:
 4. **Configuration Versioning**: Use snapshots for deployment consistency
 5. **Minimal Permissions**: Grant only required permissions to each identity
 
+## 🔧 Parameters
+
+| Parameter                  | Type       | Required | Description                            |
+| -------------------------- | ---------- | -------- | -------------------------------------- |
+| `resourceConventionPrefix` | string     | ✅       | Prefix for resource names              |
+| `resourceLocation`         | string     | ✅       | Azure region for deployment            |
+| `resourceDeploymentDate`   | string     | ✅       | Deployment timestamp                   |
+| `identities`               | identity[] | ✅       | Array of managed identities for access |
+
+## 📤 Outputs
+
+This module does not produce outputs as it configures foundational services.
+
+## 🛠️ Usage Example
+
+```bicep
+module configurationDeployment 'configuration/deploymentFile.bicep' = {
+  name: 'configurationDeployment'
+  params: {
+    resourceConventionPrefix: 'arolariu'
+    resourceLocation: 'swedencentral'
+    resourceDeploymentDate: utcNow()
+    identities: identitiesDeployment.outputs.managedIdentitiesList
+  }
+}
+```
+
+## 🔄 Dependencies
+
+### **Required Dependencies**
+
+- **Identity Module**: Must deploy managed identities before configuration access policies
+
+### **Dependent Modules**
+
+- **All application modules**: Rely on configuration services for settings and secrets
+
+## 📊 Deployment Flow
+
+1. **Identity Module** creates managed identities
+2. **Configuration Module** deploys Key Vault and App Configuration
+3. **All other modules** access configuration through managed identities
+
+## 🚨 Troubleshooting
+
+| Issue                       | Symptoms                     | Solution                                      |
+| --------------------------- | ---------------------------- | --------------------------------------------- |
+| **Key Vault access denied** | Configuration load failures  | Check managed identity access policies        |
+| **App Config not found**    | Service discovery failures   | Verify App Configuration deployment           |
+| **Secret not found**        | Application startup failures | Check secret exists in Key Vault              |
+| **Permission errors**       | RBAC assignment failures     | Verify identity permissions and principal IDs |
+
 ## Deployment Considerations
 
 - Key Vault must be deployed before App Configuration
 - Managed Identities must be created before access policy assignment
 - Configuration values should be loaded after infrastructure deployment
 - Consider using deployment slots for zero-downtime configuration updates
+
+## 📚 References
+
+- [Azure Key Vault Documentation](https://docs.microsoft.com/en-us/azure/key-vault/)
+- [Azure App Configuration Documentation](https://docs.microsoft.com/en-us/azure/azure-app-configuration/)
+- [Key Vault References in App Configuration](https://docs.microsoft.com/en-us/azure/azure-app-configuration/use-key-vault-references)
+- [Managed Identity Authentication](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/)
+
+---
+
+**Module Version**: 2.0.0  
+**Last Updated**: July 2025  
+**Maintainer**: Alexandru-Razvan Olariu

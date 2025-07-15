@@ -1,12 +1,23 @@
 /** @format */
 
-import type {Metadata} from "next";
+import {createMetadata} from "@/metadata";
+import {getLocale, getTranslations} from "next-intl/server";
+import type {Metadata} from "next/types";
 import RenderDomainsScreen from "./island";
 
-export const metadata: Metadata = {
-  title: "Domain Space Services",
-  description: "Domain Space Services are services that are offered to visitors and members of the `arolariu.ro` domain space",
-};
+/**
+ * Generates metadata for the domains homepage.
+ * @returns The metadata for the domains homepage.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Domains.__metadata__");
+  const locale = await getLocale();
+  return createMetadata({
+    locale,
+    title: t("title"),
+    description: t("description"),
+  });
+}
 
 /**
  * The domains homepage.

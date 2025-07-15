@@ -42,6 +42,8 @@ type FontType = "normal" | "dyslexic";
  */
 interface FontContextValueType {
   font: NextFontWithVariable;
+  fontType: FontType;
+  fontClassName: string;
   setFont: (fontType: FontType) => void;
 }
 
@@ -99,6 +101,44 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
     return () => globalThis.removeEventListener("storage", handleStorageChange);
   }, []);
 
+  // 🛡️ Enhanced font application with safety checks
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    const currentFont = fontType === "dyslexic" ? dyslexicFont : defaultFont;
+    const fontClassName = currentFont.className;
+
+    // 🛡️ Safety Check 1: Skip if font class is already applied
+    if (document.documentElement.classList.contains(fontClassName)) {
+      return;
+    }
+
+    // 🛡️ Safety Check 2: Remove only conflicting font classes safely
+    const existingClasses = document.documentElement.className.split(" ").filter((className) => {
+      // Keep all classes except font classes that aren't system ones
+      return (
+        !className.includes("font-")
+        || className.includes("font-sans")
+        || className.includes("font-serif")
+        || className.includes("font-mono")
+      );
+    });
+
+    // 🛡️ Safety Check 3: Apply new font class only if it's different
+    const newClassName = [...existingClasses, fontClassName].join(" ").trim();
+
+    if (document.documentElement.className !== newClassName) {
+      document.documentElement.className = newClassName;
+    }
+
+    // Cleanup function to remove the specific font class
+    return () => {
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.remove(fontClassName);
+      }
+    };
+  }, [fontType]);
+
   /**
    * Memoized value for the FontContext.
    * This value is created using useMemo to avoid unnecessary re-renders.
@@ -107,10 +147,15 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
    * This ensures that the context consumers always receive the latest font value.
    */
   const value = useMemo(
-    () => ({
-      font: fontType === "dyslexic" ? dyslexicFont : defaultFont,
-      setFont: handleFontChange,
-    }),
+    () => {
+      const currentFont = fontType === "dyslexic" ? dyslexicFont : defaultFont;
+      return {
+        font: currentFont,
+        fontType,
+        fontClassName: currentFont.className,
+        setFont: handleFontChange,
+      };
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- handleFontChange is stable and does not change.
     [fontType],
   );

@@ -7,6 +7,8 @@ param productionWebsiteLocation string
 param productionWebsiteAppPlanId string
 param productionWebsiteIdentityId string
 param productionWebsiteDeploymentDate string
+param appInsightsInstrumentationKey string
+param appInsightsConnectionString string
 
 // Common tags for all resources
 import { resourceTags } from '../types/common.type.bicep'
@@ -15,7 +17,7 @@ var commonTags resourceTags = {
   deploymentType: 'Bicep'
   deploymentDate: productionWebsiteDeploymentDate
   deploymentAuthor: 'Alexandru-Razvan Olariu'
-  module: 'sites-main'
+  module: 'sites'
   costCenter: 'infrastructure'
   project: 'arolariu.ro'
   version: '2.0.0'
@@ -46,11 +48,12 @@ resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
     enabled: true
     serverFarmId: productionWebsiteAppPlanId
     siteConfig: {
-      acrUseManagedIdentityCreds: false // Azure Container Registry managed identity is not used.
+      acrUseManagedIdentityCreds: true // Azure Container Registry managed identity is used.
       publishingUsername: '$arolariu' // Publishing username (GitHub / ACR username)
       autoHealEnabled: false
       numberOfWorkers: 1 // Number of instances (initially).
       functionAppScaleLimit: 0
+      linuxFxVersion: 'NODE|22-lts' // Node.js version 22 is used.
       minimumElasticInstanceCount: 1 // Minimum number of instances for horizontal scaling.
       alwaysOn: true // The app is (should be!) always on.
       cors: {
@@ -106,6 +109,24 @@ resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
       minTlsVersion: '1.2' // Minimum TLS version accepted by the server.
       nodeVersion: '22' // Minimum specified Node.js version.
       webSocketsEnabled: true // WebSockets (WSS) are enabled.
+      appSettings: [
+        {
+          name: 'NODE_ENV'
+          value: 'Production' // Environment setting for Node.js
+        }
+        {
+          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+          value: appInsightsInstrumentationKey
+        }
+        {
+          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+          value: appInsightsConnectionString
+        }
+        {
+          name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
+          value: '~3'
+        }
+      ]
     }
   }
   tags: union(commonTags, {
@@ -114,3 +135,4 @@ resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
 }
 
 output mainWebsiteUrl string = mainWebsite.properties.defaultHostName
+output mainWebsiteName string = mainWebsite.name

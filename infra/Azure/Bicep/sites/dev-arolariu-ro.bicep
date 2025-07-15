@@ -46,11 +46,12 @@ resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
     enabled: true
     serverFarmId: developmentWebsiteAppPlanId
     siteConfig: {
-      acrUseManagedIdentityCreds: false // Azure Container Registry managed identity is not used.
+      acrUseManagedIdentityCreds: true // Azure Container Registry managed identity is used.
       publishingUsername: '$dev-arolariu' // Publishing username (GitHub / ACR username)
       autoHealEnabled: false
       numberOfWorkers: 1 // Number of instances (initially).
       functionAppScaleLimit: 0
+      linuxFxVersion: 'NODE|22-lts' // Node.js version 22 is used.
       minimumElasticInstanceCount: 0 // Minimum number of instances for horizontal scaling.
       alwaysOn: true // The app is (should be!) always on.
       cors: {
@@ -93,43 +94,5 @@ resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
   })
 }
 
-// Custom domain binding for dev.arolariu.ro
-resource devCustomDomain 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {
-  name: 'dev.arolariu.ro'
-  parent: devWebsite
-  properties: {
-    hostNameType: 'Verified'
-    sslState: 'Disabled' // Initially disabled, will be enabled after certificate creation
-    customHostNameDnsRecordType: 'CName'
-  }
-}
-
-// App Service Managed Certificate for dev.arolariu.ro
-resource devManagedCertificate 'Microsoft.Web/certificates@2024-11-01' = {
-  name: 'cert-dev-arolariu-ro'
-  location: developmentWebsiteLocation
-  properties: {
-    serverFarmId: developmentWebsiteAppPlanId
-    canonicalName: 'dev.arolariu.ro'
-    domainValidationMethod: 'cname-delegation'
-  }
-  dependsOn: [devCustomDomain]
-  tags: union(commonTags, {
-    displayName: 'Development Managed Certificate'
-    resourceType: 'SSL Certificate'
-  })
-}
-
-// Update custom domain with SSL binding
-resource devCustomDomainWithSsl 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {
-  name: 'dev.arolariu.ro-ssl'
-  parent: devWebsite
-  properties: {
-    hostNameType: 'Verified'
-    sslState: 'SniEnabled'
-    customHostNameDnsRecordType: 'CName'
-    thumbprint: devManagedCertificate.properties.thumbprint
-  }
-}
-
 output devWebsiteUrl string = devWebsite.properties.defaultHostName
+output devWebsiteName string = devWebsite.name

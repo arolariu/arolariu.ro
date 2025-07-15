@@ -2,16 +2,15 @@
 
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import {getCookie} from "@/lib/actions/cookies";
 import {getLocale} from "next-intl/server";
 import {Suspense, type ReactNode} from "react";
-import Loading from "./loading";
-import HtmlWrapper from "./wrapper";
-
-import {getCookie} from "@/lib/actions/cookies";
-import "@arolariu/components/styles.css";
 import Eula from "./EULA";
-import "./globals.css";
+import Loading from "./loading";
 import ContextProviders from "./providers";
+
+import "@arolariu/components/styles.css";
+import "./globals.css";
 
 export {metadata} from "@/metadata";
 
@@ -24,12 +23,17 @@ export default async function RootLayout({children}: Readonly<{children: ReactNo
   const eulaCookie = await getCookie("eula-accepted");
 
   return (
-    <ContextProviders locale={locale}>
-      <HtmlWrapper locale={locale}>
-        <Header />
-        <Suspense fallback={<Loading />}>{eulaCookie ? children : <Eula locale={locale} />}</Suspense>
-        <Footer />
-      </HtmlWrapper>
-    </ContextProviders>
+    <html
+      suppressHydrationWarning
+      lang={locale}
+      dir='ltr'>
+      <body className='bg-white text-black dark:bg-black dark:text-white'>
+        <ContextProviders locale={locale}>
+          <Header />
+          <Suspense fallback={<Loading />}>{eulaCookie ? children : <Eula locale={locale} />}</Suspense>
+          <Footer />
+        </ContextProviders>
+      </body>
+    </html>
   );
 }

@@ -14,11 +14,10 @@ The types module defines reusable type definitions that:
 
 ## 🏗️ **Type Definitions**
 
-| Type File             | Exported Types      | Purpose                             |
-| --------------------- | ------------------- | ----------------------------------- |
-| `identity.type.bicep` | `identity`          | Managed identity resource structure |
-| `common.type.bicep`   | `appServicePlanSku` | App Service Plan SKU configurations |
-|                       | `resourceTags`      | Standardized resource tagging       |
+| Type File             | Exported Types | Purpose                             |
+| --------------------- | -------------- | ----------------------------------- |
+| `identity.type.bicep` | `identity`     | Managed identity resource structure |
+| `common.type.bicep`   | `resourceTags` | Standardized resource tagging       |
 
 ## 📊 **Architecture**
 
@@ -66,7 +65,8 @@ Defines the structure for managed identity resources used across modules.
 type identity = {
   name: string
   displayName: string
-  id: string
+  resourceId: string // Azure Resource ID
+  principalId: string // Azure Principal ID (GUID)
 }
 ```
 
@@ -74,7 +74,8 @@ type identity = {
 
 - `name`: Resource name of the managed identity
 - `displayName`: Human-readable display name
-- `id`: Full Azure resource ID
+- `resourceId`: Full Azure resource ID
+- `principalId`: Azure Principal ID (GUID) for RBAC assignments
 
 **Usage Example:**
 

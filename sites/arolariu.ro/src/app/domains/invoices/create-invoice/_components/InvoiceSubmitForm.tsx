@@ -1,21 +1,14 @@
 /** @format */
 
-import type {UploadStatus} from "@/types";
-
-type Props = {
-  images?: Blob[] | null;
-  uploadStatus?: UploadStatus;
-  resetState?: () => void;
-  handleImageClientSideUpload?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  handleImageServerSideUpload?: (event: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => Promise<void>;
-};
+import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
+import {useInvoiceActions} from "../_hooks/useInvoiceActions";
 
 /**
  * This function renders the client-side upload form.
  * @returns The JSX for the client-side upload form.
  */
-function ClientSideUpload(props: Readonly<Props>) {
-  const {handleImageClientSideUpload} = props;
+function ClientSideUpload() {
+  const {handleImageClientSideUpload} = useInvoiceActions();
   return (
     <form className='my-5'>
       <input
@@ -40,10 +33,28 @@ function ClientSideUpload(props: Readonly<Props>) {
  * This function renders the server-side upload form.
  * @returns The JSX for the server-side upload form.
  */
-function ServerSideUpload(props: Readonly<Props>) {
-  const {uploadStatus, handleImageServerSideUpload, resetState} = props;
+function ServerSideUpload() {
+  const {uploadStatus} = useInvoiceCreator();
+  const {handleImageServerSideUpload, resetState, handleImageClientSideUpload} = useInvoiceActions();
   return (
     <form className='flex flex-col flex-nowrap'>
+      <div className='mx-auto my-5'>
+        <label
+          htmlFor='file-upload-more'
+          className='btn btn-accent'>
+          Add more files
+        </label>
+        <input
+          multiple
+          id='file-upload-more'
+          type='file'
+          name='file-upload-more'
+          className='hidden'
+          title='Upload more receipts to the platform.'
+          accept='image/jpeg, image/jpg, image/png, application/pdf'
+          onChange={handleImageClientSideUpload}
+        />
+      </div>
       <button
         className='btn btn-primary mx-auto mt-4'
         type='button'
@@ -56,7 +67,7 @@ function ServerSideUpload(props: Readonly<Props>) {
         type='button'
         disabled={uploadStatus === "PENDING__SERVERSIDE"}
         onClick={resetState}>
-        Clear the image
+        Clear all images
       </button>
     </form>
   );
@@ -66,16 +77,8 @@ function ServerSideUpload(props: Readonly<Props>) {
  * This function renders the invoice submit form.
  * @returns The JSX for the invoice submit form.
  */
-export default function InvoiceSubmitForm(props: Readonly<Props>) {
-  const {images, uploadStatus, resetState, handleImageClientSideUpload, handleImageServerSideUpload} = props;
-  const imagesLength = images?.length;
-
-  if (imagesLength === 0) return <ClientSideUpload handleImageClientSideUpload={handleImageClientSideUpload} />;
-  return (
-    <ServerSideUpload
-      uploadStatus={uploadStatus}
-      handleImageServerSideUpload={handleImageServerSideUpload}
-      resetState={resetState}
-    />
-  );
+export default function InvoiceSubmitForm() {
+  const {scans} = useInvoiceCreator();
+  const scansLength = scans.length;
+  return scansLength === 0 ? <ClientSideUpload /> : <ServerSideUpload />;
 }
