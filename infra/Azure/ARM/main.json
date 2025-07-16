@@ -5,8 +5,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.36.1.42791",
-      "templateHash": "3908707617641112645"
+      "version": "0.36.177.2456",
+      "templateHash": "994897860899200859"
     },
     "description": "This bicep file is the main entry point for any zero-touch deployment.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>"
@@ -85,8 +85,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.36.1.42791",
-              "templateHash": "8291578052282017989"
+              "version": "0.36.177.2456",
+              "templateHash": "8891418279154594637"
             },
             "description": "This file acts a facade that will be called by the main bicep file. This file contains all module deployments (compute, storage, identity, etc.). This file is responsible for deploying all the modules.",
             "author": "Alexandru-Razvan Olariu"
@@ -143,8 +143,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.36.1.42791",
-                      "templateHash": "16140128950572589964"
+                      "version": "0.36.177.2456",
+                      "templateHash": "18308365377243378321"
                     }
                   },
                   "definitions": {
@@ -230,8 +230,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "14778604061698189154"
+                              "version": "0.36.177.2456",
+                              "templateHash": "8247547319148038502"
                             },
                             "description": "This template will create three user assigned managed identities: Front-End, Back-End, Infrastructure",
                             "author": "Alexandru-Razvan Olariu"
@@ -439,8 +439,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "7909649868365867295"
+                              "version": "0.36.177.2456",
+                              "templateHash": "8049164508845632584"
                             },
                             "description": "This template will create both development and production federated managed identities for Azure resources.",
                             "author": "Alexandru-Razvan Olariu"
@@ -536,8 +536,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "6270980026464034562"
+                              "version": "0.36.177.2456",
+                              "templateHash": "14496079089526366507"
                             },
                             "description": "This template will create security groups for specific access to resources.",
                             "author": "Alexandru-Razvan Olariu"
@@ -611,8 +611,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.36.1.42791",
-                      "templateHash": "8220020095629558948"
+                      "version": "0.36.177.2456",
+                      "templateHash": "17058205793933139800"
                     },
                     "description": "RBAC module deployment file that manages resource group level role assignments for managed identities",
                     "author": "Alexandru-Razvan Olariu"
@@ -683,8 +683,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "12665123712928413263"
+                              "version": "0.36.177.2456",
+                              "templateHash": "6734568639287720058"
                             },
                             "description": "RBAC role assignments for the frontend managed identity.",
                             "author": "Alexandru-Razvan Olariu"
@@ -825,8 +825,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "14715340625412171747"
+                              "version": "0.36.177.2456",
+                              "templateHash": "8051477207139889399"
                             },
                             "description": "RBAC role assignments for the backend managed identity.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1015,8 +1015,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "7936975750483813583"
+                              "version": "0.36.177.2456",
+                              "templateHash": "809736282743688790"
                             },
                             "description": "RBAC role assignments for the infrastructure managed identity.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1221,8 +1221,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.36.1.42791",
-                      "templateHash": "16748279876410481668"
+                      "version": "0.36.177.2456",
+                      "templateHash": "15716670207541621049"
                     }
                   },
                   "definitions": {
@@ -1318,8 +1318,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "1670033049747318868"
+                              "version": "0.36.177.2456",
+                              "templateHash": "12684656596374702675"
                             },
                             "description": "This template will create the necessary Azure Key Vault resources for arolariu.ro",
                             "author": "Alexandru-Razvan Olariu"
@@ -1550,8 +1550,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "6214355212438931331"
+                              "version": "0.36.177.2456",
+                              "templateHash": "3282481245678586131"
                             },
                             "description": "This template will deploy an Azure App Configuration resource running on the free SKU.",
                             "author": "Alexandru-Razvan Olariu"
@@ -1992,8 +1992,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.36.1.42791",
-                      "templateHash": "2025237103408419776"
+                      "version": "0.36.177.2456",
+                      "templateHash": "15907109333819929174"
                     }
                   },
                   "parameters": {
@@ -2050,8 +2050,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "1427207388924242904"
+                              "version": "0.36.177.2456",
+                              "templateHash": "14228668722300387768"
                             },
                             "description": "This template will deploy a log analytics workspace that is used for Open Telemetry (OTel) data collection.",
                             "author": "Alexandru-Razvan Olariu"
@@ -2211,8 +2211,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "421209488574668634"
+                              "version": "0.36.177.2456",
+                              "templateHash": "4279824368926559464"
                             },
                             "description": "This template will deploy an application insights resource that is connected to the api.arolariu.ro platform (back-end) and the arolariu.ro platform (front-end).",
                             "author": "Alexandru-Razvan Olariu"
@@ -2377,8 +2377,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "7128157432900345185"
+                              "version": "0.36.177.2456",
+                              "templateHash": "17358831235695413300"
                             },
                             "description": "This template will deploy an Azure Managed Grafana instance.",
                             "author": "Alexandru-Razvan Olariu"
@@ -2575,8 +2575,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.36.1.42791",
-                      "templateHash": "8337380004183699871"
+                      "version": "0.36.177.2456",
+                      "templateHash": "17075791510588229128"
                     },
                     "description": "Storage module deployment file that provisions storage accounts, container registry, and databases with enterprise security standards.",
                     "author": "Alexandru-Razvan Olariu"
@@ -2643,8 +2643,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "10471344283634196439"
+                              "version": "0.36.177.2456",
+                              "templateHash": "11258310870150924712"
                             },
                             "description": "This template creates a secure storage account with enterprise-grade security standards.",
                             "author": "Alexandru-Razvan Olariu"
@@ -3029,8 +3029,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "16453502393125846602"
+                              "version": "0.36.177.2456",
+                              "templateHash": "10951003361371143469"
                             },
                             "description": "This template deploys Azure Container Registry with enterprise-grade security and governance features.",
                             "author": "Alexandru-Razvan Olariu"
@@ -3236,8 +3236,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "3563707032661726225"
+                              "version": "0.36.177.2456",
+                              "templateHash": "9927282549048661427"
                             },
                             "description": "This template will create a new Azure SQL server resource with standardized metadata.",
                             "author": "Alexandru-Razvan Olariu"
@@ -3546,8 +3546,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "3356978295713412315"
+                              "version": "0.36.177.2456",
+                              "templateHash": "1940420445171436569"
                             },
                             "description": "This template will create a new Azure NoSQL server resource.",
                             "author": "Alexandru-Razvan Olariu"
@@ -3860,8 +3860,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.36.1.42791",
-                      "templateHash": "14232693853999173010"
+                      "version": "0.36.177.2456",
+                      "templateHash": "9582495357821659400"
                     }
                   },
                   "parameters": {
@@ -3921,8 +3921,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "5722274541305934919"
+                              "version": "0.36.177.2456",
+                              "templateHash": "3012160425698022822"
                             },
                             "description": "This template deploys two App Service Farms, in the same region, for production and development environments.",
                             "author": "Alexandru-Razvan Olariu"
@@ -4171,8 +4171,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.36.1.42791",
-                      "templateHash": "12859056991687698803"
+                      "version": "0.36.177.2456",
+                      "templateHash": "14269839925778785052"
                     }
                   },
                   "parameters": {
@@ -4263,8 +4263,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "11195326663366742443"
+                              "version": "0.36.177.2456",
+                              "templateHash": "6482371214280687362"
                             },
                             "description": "This template will create the api.arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -4496,8 +4496,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "7930600483369378218"
+                              "version": "0.36.177.2456",
+                              "templateHash": "11827677960834936777"
                             },
                             "description": "This template will create the arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -4759,8 +4759,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "14893754711754948165"
+                              "version": "0.36.177.2456",
+                              "templateHash": "84874533782887157"
                             },
                             "description": "This template will create the dev.arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -4969,8 +4969,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "1734247106254286710"
+                              "version": "0.36.177.2456",
+                              "templateHash": "14892614981804772943"
                             },
                             "description": "This template will create the docs.arolariu.ro static web app site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -5175,8 +5175,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.36.1.42791",
-                      "templateHash": "10612609302387163257"
+                      "version": "0.36.177.2456",
+                      "templateHash": "5336457050056975599"
                     }
                   },
                   "parameters": {
@@ -5243,8 +5243,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "17959643213433893670"
+                              "version": "0.36.177.2456",
+                              "templateHash": "13835087674377231327"
                             },
                             "description": "This template will deploy an Azure Front Door resource with production-ready configuration.",
                             "author": "Alexandru-Razvan Olariu"
@@ -5636,8 +5636,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "6828826794179374836"
+                              "version": "0.36.177.2456",
+                              "templateHash": "9661873207814069365"
                             },
                             "description": "This template will create the necessary Azure DNS Zone resources for arolariu.ro with dynamic DNS records",
                             "author": "Alexandru-Razvan Olariu"
@@ -6094,8 +6094,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.36.1.42791",
-                      "templateHash": "11152491840756580258"
+                      "version": "0.36.177.2456",
+                      "templateHash": "17460149458918907498"
                     },
                     "description": "This file acts as a deployment file for all the AI resources.",
                     "author": "Alexandru-Razvan Olariu"
@@ -6166,8 +6166,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "5766124034634170686"
+                              "version": "0.36.177.2456",
+                              "templateHash": "2315217585636898217"
                             },
                             "description": "This file contains the bicep code for deploying the Azure OpenAI service.",
                             "author": "Alexandru-Razvan Olariu"
@@ -6361,8 +6361,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "12073217000054353315"
+                              "version": "0.36.177.2456",
+                              "templateHash": "17847051999068030223"
                             },
                             "description": "This template deploys an Azure AI Foundry instance.",
                             "author": "Alexandru-Razvan Olariu"
@@ -6604,8 +6604,8 @@
                   "metadata": {
                     "_generator": {
                       "name": "bicep",
-                      "version": "0.36.1.42791",
-                      "templateHash": "11757224462600723302"
+                      "version": "0.36.177.2456",
+                      "templateHash": "13911785660342212175"
                     },
                     "description": "This file acts as a deployment file for binding resources",
                     "author": "Alexandru-Razvan Olariu"
@@ -6712,8 +6712,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "17311639268757799794"
+                              "version": "0.36.177.2456",
+                              "templateHash": "10049319415576464152"
                             },
                             "description": "Custom domain binding and managed certificate for dev.arolariu.ro",
                             "author": "Alexandru-Razvan Olariu"
@@ -6930,8 +6930,8 @@
                                   "metadata": {
                                     "_generator": {
                                       "name": "bicep",
-                                      "version": "0.36.1.42791",
-                                      "templateHash": "7786298197872401090"
+                                      "version": "0.36.177.2456",
+                                      "templateHash": "9289939703928299290"
                                     },
                                     "description": "Custom domain binding and managed certificate for dev.arolariu.ro",
                                     "author": "Alexandru-Razvan Olariu"
@@ -7010,8 +7010,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "16370012161478740269"
+                              "version": "0.36.177.2456",
+                              "templateHash": "10223558238948483255"
                             },
                             "description": "Custom domain binding and managed certificate for api.arolariu.ro",
                             "author": "Alexandru-Razvan Olariu"
@@ -7228,8 +7228,8 @@
                                   "metadata": {
                                     "_generator": {
                                       "name": "bicep",
-                                      "version": "0.36.1.42791",
-                                      "templateHash": "6908388708857265006"
+                                      "version": "0.36.177.2456",
+                                      "templateHash": "12850227586763120191"
                                     },
                                     "description": "Custom domain binding and managed certificate for api.arolariu.ro",
                                     "author": "Alexandru-Razvan Olariu"
@@ -7299,8 +7299,8 @@
                           "metadata": {
                             "_generator": {
                               "name": "bicep",
-                              "version": "0.36.1.42791",
-                              "templateHash": "16141544776923580779"
+                              "version": "0.36.177.2456",
+                              "templateHash": "12343299701940317789"
                             },
                             "description": "Custom domain binding and managed certificate for docs.arolariu.ro",
                             "author": "Alexandru-Razvan Olariu"
