@@ -72,7 +72,7 @@ resource apiWebsite 'Microsoft.Web/sites@2024-11-01' = {
         }
         {
           name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
-          value: '~2'
+          value: '~3'
         }
         {
           name: 'APPLICATIONINSIGHTS_ENABLESQLQUERYCOLLECTION'
