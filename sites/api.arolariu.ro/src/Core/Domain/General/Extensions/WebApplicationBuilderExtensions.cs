@@ -97,8 +97,14 @@ internal static class WebApplicationBuilderExtensions
 				options.Retry.NetworkTimeout = TimeSpan.FromSeconds(300);
 			});
 
-			var appConfigEndpoint = configuration["ConfigurationStore"];
-			config.Connect(new Uri(appConfigEndpoint!), new DefaultAzureCredential());
+#if DEBUG
+			config.Select("*", labelFilter: "Development");
+#else
+			config.Select("*", labelFilter: "Production")
+#endif
+
+			var appConfigEndpoint = new Uri(configuration["ConfigurationStore"]!);
+			config.Connect(appConfigEndpoint, new DefaultAzureCredential());
 		});
 
 

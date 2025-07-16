@@ -16,7 +16,7 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 [ExcludeFromCodeCoverage]
 public static partial class InvoiceEndpoints
 {
-	private const string SemanticVersioning = "1.0.0-alphaRC1";
+	private const string SemanticVersioning = "2.0.0";
 	private const string EndpointNameTag = "Invoices Management System v" + SemanticVersioning;
 
 	/// <summary>
