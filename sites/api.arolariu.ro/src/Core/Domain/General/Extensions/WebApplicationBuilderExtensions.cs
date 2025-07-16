@@ -100,7 +100,7 @@ internal static class WebApplicationBuilderExtensions
 #if DEBUG
 			config.Select("*", labelFilter: "Development");
 #else
-			config.Select("*", labelFilter: "Production")
+			config.Select("*", labelFilter: "Production");
 #endif
 
 			var appConfigEndpoint = new Uri(configuration["ConfigurationStore"]!);
