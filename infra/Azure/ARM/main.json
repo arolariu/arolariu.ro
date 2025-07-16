@@ -6,7 +6,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.36.1.42791",
-      "templateHash": "8850483358103990348"
+      "templateHash": "3908707617641112645"
     },
     "description": "This bicep file is the main entry point for any zero-touch deployment.",
     "author": "Alexandru-Razvan Olariu <admin@arolariu.ro>"
@@ -86,7 +86,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.36.1.42791",
-              "templateHash": "17116188626519572566"
+              "templateHash": "8291578052282017989"
             },
             "description": "This file acts a facade that will be called by the main bicep file. This file contains all module deployments (compute, storage, identity, etc.). This file is responsible for deploying all the modules.",
             "author": "Alexandru-Razvan Olariu"
@@ -612,7 +612,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.36.1.42791",
-                      "templateHash": "16166525840037237090"
+                      "templateHash": "8220020095629558948"
                     },
                     "description": "RBAC module deployment file that manages resource group level role assignments for managed identities",
                     "author": "Alexandru-Razvan Olariu"
@@ -684,7 +684,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "3883623476873467314"
+                              "templateHash": "12665123712928413263"
                             },
                             "description": "RBAC role assignments for the frontend managed identity.",
                             "author": "Alexandru-Razvan Olariu"
@@ -728,7 +728,9 @@
                               "storageBlobReader": "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1",
                               "storageQueueReader": "19e7f393-937e-4f77-808e-94535e297925",
                               "storageTableReader": "76199698-9eea-4c19-bc75-cec21354c6b6",
-                              "appConfigReader": "516239f1-63e1-4d78-a4de-a74fb236a071"
+                              "appConfigReader": "516239f1-63e1-4d78-a4de-a74fb236a071",
+                              "acrPull": "7f951dda-4ed3-4680-a7ca-43fe172d538d",
+                              "acrRead": "b93aa761-3e63-49ed-ac28-beffa264f7ac"
                             }
                           },
                           "resources": {
@@ -775,6 +777,28 @@
                                 "principalType": "ServicePrincipal",
                                 "description": "Frontend managed identity access to App Configuration data (read-only)"
                               }
+                            },
+                            "frontendAcrPullRoleAssignment": {
+                              "type": "Microsoft.Authorization/roleAssignments",
+                              "apiVersion": "2022-04-01",
+                              "name": "[guid(resourceGroup().id, parameters('frontendIdentity').principalId, variables('roleDefinitions').acrPull)]",
+                              "properties": {
+                                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitions').acrPull)]",
+                                "principalId": "[parameters('frontendIdentity').principalId]",
+                                "principalType": "ServicePrincipal",
+                                "description": "Frontend managed identity access to Azure Container Registry (pull only)"
+                              }
+                            },
+                            "frontendAcrReadRoleAssignment": {
+                              "type": "Microsoft.Authorization/roleAssignments",
+                              "apiVersion": "2022-04-01",
+                              "name": "[guid(resourceGroup().id, parameters('frontendIdentity').principalId, variables('roleDefinitions').acrRead)]",
+                              "properties": {
+                                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitions').acrRead)]",
+                                "principalId": "[parameters('frontendIdentity').principalId]",
+                                "principalType": "ServicePrincipal",
+                                "description": "Frontend managed identity access to Azure Container Registry (read-only)"
+                              }
                             }
                           }
                         }
@@ -802,7 +826,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "4065317330951314592"
+                              "templateHash": "14715340625412171747"
                             },
                             "description": "RBAC role assignments for the backend managed identity.",
                             "author": "Alexandru-Razvan Olariu"
@@ -850,7 +874,9 @@
                               "appConfigContributor": "fe86443c-f201-4fc4-9d2a-ac61149fbda0",
                               "openAiContributor": "a001fd3d-188f-4b5d-821b-7da978bf7442",
                               "keyVaultContributor": "f25e0fa2-a7c8-4377-a976-54943a77a395",
-                              "keyVaultSecretsContributor": "b86a8fe4-44ce-4948-aee5-eccb2c155cd7"
+                              "keyVaultSecretsContributor": "b86a8fe4-44ce-4948-aee5-eccb2c155cd7",
+                              "acrPull": "7f951dda-4ed3-4680-a7ca-43fe172d538d",
+                              "acrRead": "b93aa761-3e63-49ed-ac28-beffa264f7ac"
                             }
                           },
                           "resources": {
@@ -940,6 +966,28 @@
                                 "principalId": "[parameters('backendIdentity').principalId]",
                                 "principalType": "ServicePrincipal",
                                 "description": "Backend managed identity access to Key Vault secrets management"
+                              }
+                            },
+                            "backendAcrPullRoleAssignment": {
+                              "type": "Microsoft.Authorization/roleAssignments",
+                              "apiVersion": "2022-04-01",
+                              "name": "[guid(resourceGroup().id, parameters('backendIdentity').principalId, variables('roleDefinitions').acrPull)]",
+                              "properties": {
+                                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitions').acrPull)]",
+                                "principalId": "[parameters('backendIdentity').principalId]",
+                                "principalType": "ServicePrincipal",
+                                "description": "Backend managed identity access to Azure Container Registry (pull)"
+                              }
+                            },
+                            "backendAcrReadRoleAssignment": {
+                              "type": "Microsoft.Authorization/roleAssignments",
+                              "apiVersion": "2022-04-01",
+                              "name": "[guid(resourceGroup().id, parameters('backendIdentity').principalId, variables('roleDefinitions').acrRead)]",
+                              "properties": {
+                                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('roleDefinitions').acrRead)]",
+                                "principalId": "[parameters('backendIdentity').principalId]",
+                                "principalType": "ServicePrincipal",
+                                "description": "Backend managed identity access to Azure Container Registry (read)"
                               }
                             }
                           }
@@ -4124,7 +4172,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.36.1.42791",
-                      "templateHash": "16726574790249516284"
+                      "templateHash": "12859056991687698803"
                     }
                   },
                   "parameters": {
@@ -4216,7 +4264,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "3728004422972721481"
+                              "templateHash": "11195326663366742443"
                             },
                             "description": "This template will create the api.arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -4375,7 +4423,7 @@
                                     },
                                     {
                                       "name": "ApplicationInsightsAgent_EXTENSION_VERSION",
-                                      "value": "~2"
+                                      "value": "~3"
                                     },
                                     {
                                       "name": "APPLICATIONINSIGHTS_ENABLESQLQUERYCOLLECTION",
@@ -4449,7 +4497,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "18317745973337405004"
+                              "templateHash": "7930600483369378218"
                             },
                             "description": "This template will create the arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -4584,7 +4632,7 @@
                                 "enabled": true,
                                 "serverFarmId": "[parameters('productionWebsiteAppPlanId')]",
                                 "siteConfig": {
-                                  "acrUseManagedIdentityCreds": false,
+                                  "acrUseManagedIdentityCreds": true,
                                   "publishingUsername": "$arolariu",
                                   "autoHealEnabled": false,
                                   "numberOfWorkers": 1,
@@ -4712,7 +4760,7 @@
                             "_generator": {
                               "name": "bicep",
                               "version": "0.36.1.42791",
-                              "templateHash": "14426492962285851905"
+                              "templateHash": "14893754711754948165"
                             },
                             "description": "This template will create the dev.arolariu.ro app service site.",
                             "author": "Alexandru-Razvan Olariu"
@@ -4841,7 +4889,7 @@
                                 "enabled": true,
                                 "serverFarmId": "[parameters('developmentWebsiteAppPlanId')]",
                                 "siteConfig": {
-                                  "acrUseManagedIdentityCreds": false,
+                                  "acrUseManagedIdentityCreds": true,
                                   "publishingUsername": "$dev-arolariu",
                                   "autoHealEnabled": false,
                                   "numberOfWorkers": 1,
@@ -6047,7 +6095,7 @@
                     "_generator": {
                       "name": "bicep",
                       "version": "0.36.1.42791",
-                      "templateHash": "15923843344574745688"
+                      "templateHash": "11152491840756580258"
                     },
                     "description": "This file acts as a deployment file for all the AI resources.",
                     "author": "Alexandru-Razvan Olariu"
@@ -6285,6 +6333,208 @@
                           }
                         }
                       }
+                    },
+                    "aiFoundryDeployment": {
+                      "type": "Microsoft.Resources/deployments",
+                      "apiVersion": "2022-09-01",
+                      "name": "[format('aiFoundryDeployment-{0}', parameters('resourceDeploymentDate'))]",
+                      "properties": {
+                        "expressionEvaluationOptions": {
+                          "scope": "inner"
+                        },
+                        "mode": "Incremental",
+                        "parameters": {
+                          "aiFoundryLocation": {
+                            "value": "[parameters('resourceLocation')]"
+                          },
+                          "aiFoundryName": {
+                            "value": "[format('{0}-foundry', variables('aiConventionPrefix'))]"
+                          },
+                          "aiFoundryDeploymentDate": {
+                            "value": "[parameters('resourceDeploymentDate')]"
+                          }
+                        },
+                        "template": {
+                          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                          "languageVersion": "2.0",
+                          "contentVersion": "1.0.0.0",
+                          "metadata": {
+                            "_generator": {
+                              "name": "bicep",
+                              "version": "0.36.1.42791",
+                              "templateHash": "12073217000054353315"
+                            },
+                            "description": "This template deploys an Azure AI Foundry instance.",
+                            "author": "Alexandru-Razvan Olariu"
+                          },
+                          "definitions": {
+                            "resourceTags": {
+                              "type": "object",
+                              "properties": {
+                                "environment": {
+                                  "type": "string",
+                                  "allowedValues": [
+                                    "DEVELOPMENT",
+                                    "PRODUCTION"
+                                  ],
+                                  "metadata": {
+                                    "description": "Environment tag"
+                                  }
+                                },
+                                "deploymentType": {
+                                  "type": "string",
+                                  "allowedValues": [
+                                    "ARM",
+                                    "Bicep",
+                                    "Terraform"
+                                  ],
+                                  "metadata": {
+                                    "description": "Deployment method"
+                                  }
+                                },
+                                "deploymentDate": {
+                                  "type": "string",
+                                  "metadata": {
+                                    "description": "Deployment date in YYYY-MM-DD format"
+                                  }
+                                },
+                                "deploymentAuthor": {
+                                  "type": "string",
+                                  "metadata": {
+                                    "description": "Deployment author"
+                                  }
+                                },
+                                "module": {
+                                  "type": "string",
+                                  "metadata": {
+                                    "description": "Module or service name"
+                                  }
+                                },
+                                "costCenter": {
+                                  "type": "string",
+                                  "metadata": {
+                                    "description": "Cost center for billing"
+                                  }
+                                },
+                                "project": {
+                                  "type": "string",
+                                  "metadata": {
+                                    "description": "Project name or identifier"
+                                  }
+                                },
+                                "version": {
+                                  "type": "string",
+                                  "metadata": {
+                                    "description": "Version of the deployment"
+                                  }
+                                }
+                              },
+                              "metadata": {
+                                "description": "Resource tagging configuration",
+                                "__bicep_imported_from!": {
+                                  "sourceTemplate": "../types/common.type.bicep"
+                                }
+                              }
+                            }
+                          },
+                          "parameters": {
+                            "aiFoundryLocation": {
+                              "type": "string",
+                              "allowedValues": [
+                                "swedencentral",
+                                "norwayeast",
+                                "westeurope",
+                                "northeurope"
+                              ],
+                              "metadata": {
+                                "description": "The location for the AI Foundry instance."
+                              }
+                            },
+                            "aiFoundryDeploymentDate": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The date when the deployment is executed."
+                              }
+                            },
+                            "aiFoundryName": {
+                              "type": "string",
+                              "metadata": {
+                                "description": "The name of the AI Foundry instance."
+                              }
+                            }
+                          },
+                          "variables": {
+                            "commonTags": {
+                              "environment": "PRODUCTION",
+                              "deploymentType": "Bicep",
+                              "deploymentDate": "[parameters('aiFoundryDeploymentDate')]",
+                              "deploymentAuthor": "Alexandru-Razvan Olariu",
+                              "module": "ai",
+                              "costCenter": "infrastructure",
+                              "project": "arolariu.ro",
+                              "version": "2.0.0"
+                            }
+                          },
+                          "resources": {
+                            "aiFoundry::aiProject": {
+                              "type": "Microsoft.CognitiveServices/accounts/projects",
+                              "apiVersion": "2025-06-01",
+                              "name": "[format('{0}/{1}', parameters('aiFoundryName'), 'arolariu.ro')]",
+                              "properties": {
+                                "description": "AI project for arolariu.ro",
+                                "displayName": "arolariu.ro AI Project"
+                              },
+                              "dependsOn": [
+                                "aiFoundry"
+                              ]
+                            },
+                            "aiFoundry": {
+                              "type": "Microsoft.CognitiveServices/accounts",
+                              "apiVersion": "2025-06-01",
+                              "name": "[parameters('aiFoundryName')]",
+                              "location": "[parameters('aiFoundryLocation')]",
+                              "sku": {
+                                "name": "S0"
+                              },
+                              "kind": "AIServices",
+                              "properties": {
+                                "apiProperties": {},
+                                "customSubDomainName": "[parameters('aiFoundryName')]",
+                                "networkAcls": {
+                                  "defaultAction": "Allow",
+                                  "virtualNetworkRules": [],
+                                  "ipRules": []
+                                },
+                                "allowProjectManagement": true,
+                                "publicNetworkAccess": "Enabled",
+                                "defaultProject": "arolariu.ro",
+                                "associatedProjects": [
+                                  "arolariu.ro"
+                                ]
+                              },
+                              "tags": "[union(variables('commonTags'), createObject('sku', 'Standard'))]"
+                            }
+                          },
+                          "outputs": {
+                            "aiFoundryId": {
+                              "type": "string",
+                              "value": "[resourceId('Microsoft.CognitiveServices/accounts', parameters('aiFoundryName'))]"
+                            },
+                            "aiFoundryEndpoint": {
+                              "type": "string",
+                              "value": "[reference('aiFoundry').endpoint]"
+                            },
+                            "aiProjectId": {
+                              "type": "string",
+                              "value": "[resourceId('Microsoft.CognitiveServices/accounts/projects', parameters('aiFoundryName'), 'arolariu.ro')]"
+                            },
+                            "aiProjectEndpoint": {
+                              "type": "string",
+                              "value": "[reference('aiFoundry::aiProject').endpoints.default]"
+                            }
+                          }
+                        }
+                      }
                     }
                   },
                   "outputs": {
@@ -6292,7 +6542,11 @@
                       "type": "object",
                       "value": {
                         "openAiId": "[reference('openAiDeployment').outputs.openAiId.value]",
-                        "openAiEndpoint": "[reference('openAiDeployment').outputs.openAiEndpoint.value]"
+                        "openAiEndpoint": "[reference('openAiDeployment').outputs.openAiEndpoint.value]",
+                        "aiFoundryId": "[reference('aiFoundryDeployment').outputs.aiFoundryId.value]",
+                        "aiFoundryEndpoint": "[reference('aiFoundryDeployment').outputs.aiFoundryEndpoint.value]",
+                        "aiProjectId": "[reference('aiFoundryDeployment').outputs.aiProjectId.value]",
+                        "aiProjectEndpoint": "[reference('aiFoundryDeployment').outputs.aiProjectEndpoint.value]"
                       }
                     }
                   }
