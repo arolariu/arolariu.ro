@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Core.Auth.Endpoints;
+namespace arolariu.Backend.Core.Auth.Endpoints;
+
 using arolariu.Backend.Core.Auth.Models;
 
 using Microsoft.AspNetCore.Builder;

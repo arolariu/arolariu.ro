@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
+namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration;
+
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;

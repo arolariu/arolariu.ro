@@ -1,14 +1,15 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
+namespace arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
+
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 using arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 using Microsoft.Extensions.Logging;
-
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 

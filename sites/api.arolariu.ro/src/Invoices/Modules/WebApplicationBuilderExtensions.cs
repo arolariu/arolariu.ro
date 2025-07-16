@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Modules;
+namespace arolariu.Backend.Domain.Invoices.Modules;
+
 using System;
 using System.Diagnostics.CodeAnalysis;
 

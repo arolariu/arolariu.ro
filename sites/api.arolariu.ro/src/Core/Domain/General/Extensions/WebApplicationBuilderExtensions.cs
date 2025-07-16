@@ -1,4 +1,8 @@
-﻿namespace arolariu.Backend.Core.Domain.General.Extensions;
+namespace arolariu.Backend.Core.Domain.General.Extensions;
+
+using System;
+using System.Diagnostics.CodeAnalysis;
+
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Common.Services.KeyVault;
 using arolariu.Backend.Common.Telemetry;
@@ -11,12 +15,10 @@ using arolariu.Backend.Core.Domain.General.Services.Swagger;
 using Azure.Core;
 using Azure.Extensions.AspNetCore.Configuration.Secrets;
 using Azure.Identity;
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
-using System;
-using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
 /// Extension methods for the <see cref="WebApplicationBuilder"/> builder.
@@ -95,8 +97,8 @@ internal static class WebApplicationBuilderExtensions
 				options.Retry.NetworkTimeout = TimeSpan.FromSeconds(300);
 			});
 
-			var connectionString = configuration["ConfigurationStore"];
-			config.Connect(connectionString);
+			var appConfigEndpoint = configuration["ConfigurationStore"];
+			config.Connect(new Uri(appConfigEndpoint!), new DefaultAzureCredential());
 		});
 
 

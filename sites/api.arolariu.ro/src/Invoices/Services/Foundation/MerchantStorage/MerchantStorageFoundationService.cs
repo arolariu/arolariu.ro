@@ -1,8 +1,9 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
+namespace arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 

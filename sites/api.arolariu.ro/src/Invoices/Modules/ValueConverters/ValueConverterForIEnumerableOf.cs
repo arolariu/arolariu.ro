@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
+namespace arolariu.Backend.Domain.Invoices.Modules.ValueConverters;
+
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;

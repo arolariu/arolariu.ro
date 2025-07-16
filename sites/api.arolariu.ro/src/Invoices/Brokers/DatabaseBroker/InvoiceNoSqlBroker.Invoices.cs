@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,7 +40,7 @@ public partial class InvoiceNoSqlBroker
 		var invoice = response.Resource;
 		return invoice;
 	}
-	
+
 	/// <inheritdoc/>
 	public async ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier)
 	{
@@ -68,7 +69,7 @@ public partial class InvoiceNoSqlBroker
 
 		// We do not have a partition key, so we perform a greedy search.
 		var query = new QueryDefinition("SELECT * FROM c");
-		
+
 		var invoices = new List<Invoice>();
 		var iterator = container.GetItemQueryIterator<Invoice>(query);
 		while (iterator.HasMoreResults)
@@ -76,7 +77,7 @@ public partial class InvoiceNoSqlBroker
 			var response = await iterator.ReadNextAsync().ConfigureAwait(false);
 			invoices.AddRange(response.ToList());
 		}
-		
+
 		return invoices;
 	}
 
@@ -116,7 +117,7 @@ public partial class InvoiceNoSqlBroker
 		var partitionKey = new PartitionKey(currentInvoice.UserIdentifier.ToString());
 
 		var response = await container.ReplaceItemAsync(updatedInvoice, invoiceKey, partitionKey).ConfigureAwait(false);
-		
+
 		var invoice = response.Resource;
 		return invoice;
 	}

@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
+namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker;
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;

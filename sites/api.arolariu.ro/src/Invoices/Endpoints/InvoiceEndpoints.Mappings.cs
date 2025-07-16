@@ -1,4 +1,8 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Endpoints;
+namespace arolariu.Backend.Domain.Invoices.Endpoints;
+
+using System;
+using System.Collections.Generic;
+
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
@@ -7,9 +11,6 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-
-using System;
-using System.Collections.Generic;
 
 public static partial class InvoiceEndpoints
 {

@@ -1,8 +1,7 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -192,7 +191,7 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
 		// Map the invoice entity to the invoices container.
 		SetModelReferencesForInvoiceModel(modelBuilder);
-		
+
 		// Map the merchant entity to the merchant container.
 		SetModelReferencesForMerchantModel(modelBuilder);
 	}

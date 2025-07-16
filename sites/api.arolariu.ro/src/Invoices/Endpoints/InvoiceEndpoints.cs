@@ -1,12 +1,12 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Endpoints;
-
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
+namespace arolariu.Backend.Domain.Invoices.Endpoints;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Security.Claims;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 

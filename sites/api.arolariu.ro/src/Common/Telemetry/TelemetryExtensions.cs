@@ -1,10 +1,11 @@
-﻿namespace arolariu.Backend.Common.Telemetry;
+namespace arolariu.Backend.Common.Telemetry;
+
+using System;
+
 using arolariu.Backend.Common.Options;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-
-using System;
 
 /// <summary>
 /// Extensions for telemetry.

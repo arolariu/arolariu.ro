@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Common.Validators;
+namespace arolariu.Backend.Common.Validators;
+
 using System;
 using System.Diagnostics.CodeAnalysis;
 

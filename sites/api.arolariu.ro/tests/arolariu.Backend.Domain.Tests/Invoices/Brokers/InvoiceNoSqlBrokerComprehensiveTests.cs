@@ -22,196 +22,196 @@ using Xunit;
 /// </summary>
 public partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlBrokerTestsBase
 {
-    private readonly InvoiceNoSqlBroker invoiceNoSqlBroker;
-    private readonly DbContextOptions<InvoiceNoSqlBroker> dbContextOptions;
+	private readonly InvoiceNoSqlBroker invoiceNoSqlBroker;
+	private readonly DbContextOptions<InvoiceNoSqlBroker> dbContextOptions;
 
-    public InvoiceNoSqlBrokerComprehensiveTests()
-    {
-        dbContextOptions = new DbContextOptionsBuilder<InvoiceNoSqlBroker>()
-            .UseCosmos(
-                accountEndpoint: "https://localhost:8081/",
-                accountKey: "testKey",
-                databaseName: "TestDb")
-            .Options;
+	public InvoiceNoSqlBrokerComprehensiveTests()
+	{
+		dbContextOptions = new DbContextOptionsBuilder<InvoiceNoSqlBroker>()
+			.UseCosmos(
+				accountEndpoint: "https://localhost:8081/",
+				accountKey: "testKey",
+				databaseName: "TestDb")
+			.Options;
 
-        invoiceNoSqlBroker = new InvoiceNoSqlBroker(mockCosmosClient.Object, dbContextOptions);
-    }
+		invoiceNoSqlBroker = new InvoiceNoSqlBroker(mockCosmosClient.Object, dbContextOptions);
+	}
 
-    #region CreateInvoiceAsync Tests
+	#region CreateInvoiceAsync Tests
 
-    [Theory]
-    [MemberData(nameof(GetInvoiceTestData))]
-    public async Task ShouldCreateInvoice_WhenInvoiceIsValid(Invoice expectedInvoice)
-    {
-        // Given
-        var itemResponseMock = new Mock<ItemResponse<Invoice>>();
-        itemResponseMock.Setup(response => response.Resource).Returns(expectedInvoice);
+	[Theory]
+	[MemberData(nameof(GetInvoiceTestData))]
+	public async Task ShouldCreateInvoice_WhenInvoiceIsValid(Invoice expectedInvoice)
+	{
+		// Given
+		var itemResponseMock = new Mock<ItemResponse<Invoice>>();
+		itemResponseMock.Setup(response => response.Resource).Returns(expectedInvoice);
 
-        mockInvoicesContainer.Setup(container => container.CreateItemAsync(
-                It.IsAny<Invoice>(),
-                It.IsAny<PartitionKey?>(),
-                It.IsAny<ItemRequestOptions>(),
-                It.IsAny<System.Threading.CancellationToken>()
-            ))
-            .ReturnsAsync(itemResponseMock.Object);
+		mockInvoicesContainer.Setup(container => container.CreateItemAsync(
+				It.IsAny<Invoice>(),
+				It.IsAny<PartitionKey?>(),
+				It.IsAny<ItemRequestOptions>(),
+				It.IsAny<System.Threading.CancellationToken>()
+			))
+			.ReturnsAsync(itemResponseMock.Object);
 
-        // When
-        var actualInvoice = await invoiceNoSqlBroker.CreateInvoiceAsync(expectedInvoice);
+		// When
+		var actualInvoice = await invoiceNoSqlBroker.CreateInvoiceAsync(expectedInvoice);
 
-        // Then
-        Assert.NotNull(actualInvoice);
-        Assert.Equal(expectedInvoice.id, actualInvoice.id);
-        Assert.Equal(expectedInvoice.UserIdentifier, actualInvoice.UserIdentifier);
-        Assert.Equal(expectedInvoice.Name, actualInvoice.Name);
-        
-        mockInvoicesContainer.Verify(container => container.CreateItemAsync(
-                expectedInvoice,
-                It.IsAny<PartitionKey?>(),
-                It.IsAny<ItemRequestOptions>(),
-                It.IsAny<System.Threading.CancellationToken>()
-            ), Times.Once);
-    }
+		// Then
+		Assert.NotNull(actualInvoice);
+		Assert.Equal(expectedInvoice.id, actualInvoice.id);
+		Assert.Equal(expectedInvoice.UserIdentifier, actualInvoice.UserIdentifier);
+		Assert.Equal(expectedInvoice.Name, actualInvoice.Name);
 
-    [Fact]
-    public async Task ShouldThrowCosmosException_WhenCreateFails()
-    {
-        // Given
-        var invoice = InvoiceBuilder.CreateRandomInvoice();
-        var cosmosException = new CosmosException("Creation failed", System.Net.HttpStatusCode.BadRequest, 400, "", 0);
+		mockInvoicesContainer.Verify(container => container.CreateItemAsync(
+				expectedInvoice,
+				It.IsAny<PartitionKey?>(),
+				It.IsAny<ItemRequestOptions>(),
+				It.IsAny<System.Threading.CancellationToken>()
+			), Times.Once);
+	}
 
-        mockInvoicesContainer.Setup(container => container.CreateItemAsync(
-                It.IsAny<Invoice>(),
-                It.IsAny<PartitionKey?>(),
-                It.IsAny<ItemRequestOptions>(),
-                It.IsAny<System.Threading.CancellationToken>()
-            ))
-            .ThrowsAsync(cosmosException);
+	[Fact]
+	public async Task ShouldThrowCosmosException_WhenCreateFails()
+	{
+		// Given
+		var invoice = InvoiceBuilder.CreateRandomInvoice();
+		var cosmosException = new CosmosException("Creation failed", System.Net.HttpStatusCode.BadRequest, 400, "", 0);
 
-        // When & Then
-        var exception = await Assert.ThrowsAsync<CosmosException>(() => 
-            invoiceNoSqlBroker.CreateInvoiceAsync(invoice).AsTask());
-        
-        Assert.Equal("Creation failed", exception.Message);
-    }
+		mockInvoicesContainer.Setup(container => container.CreateItemAsync(
+				It.IsAny<Invoice>(),
+				It.IsAny<PartitionKey?>(),
+				It.IsAny<ItemRequestOptions>(),
+				It.IsAny<System.Threading.CancellationToken>()
+			))
+			.ThrowsAsync(cosmosException);
 
-    #endregion
+		// When & Then
+		var exception = await Assert.ThrowsAsync<CosmosException>(() =>
+			invoiceNoSqlBroker.CreateInvoiceAsync(invoice).AsTask());
 
-    #region ReadInvoiceAsync Tests
+		Assert.Equal("Creation failed", exception.Message);
+	}
 
-    [Theory]
-    [MemberData(nameof(GetInvoiceTestData))]
-    public async Task ShouldReadInvoiceWithUserIdentifier_WhenInvoiceExists(Invoice expectedInvoice)
-    {
-        // Given
-        var itemResponseMock = new Mock<ItemResponse<Invoice>>();
-        itemResponseMock.Setup(response => response.Resource).Returns(expectedInvoice);
+	#endregion
 
-        mockInvoicesContainer.Setup(container => container.ReadItemAsync<Invoice>(
-                expectedInvoice.id.ToString(),
-                new PartitionKey(expectedInvoice.UserIdentifier.ToString()),
-                It.IsAny<ItemRequestOptions>(),
-                It.IsAny<System.Threading.CancellationToken>()
-            ))
-            .ReturnsAsync(itemResponseMock.Object);
+	#region ReadInvoiceAsync Tests
 
-        // When
-        var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id, expectedInvoice.UserIdentifier);
+	[Theory]
+	[MemberData(nameof(GetInvoiceTestData))]
+	public async Task ShouldReadInvoiceWithUserIdentifier_WhenInvoiceExists(Invoice expectedInvoice)
+	{
+		// Given
+		var itemResponseMock = new Mock<ItemResponse<Invoice>>();
+		itemResponseMock.Setup(response => response.Resource).Returns(expectedInvoice);
 
-        // Then
-        Assert.NotNull(actualInvoice);
-        Assert.Equal(expectedInvoice.id, actualInvoice.id);
-        Assert.Equal(expectedInvoice.UserIdentifier, actualInvoice.UserIdentifier);
-        
-        mockInvoicesContainer.Verify(container => container.ReadItemAsync<Invoice>(
-                expectedInvoice.id.ToString(),
-                new PartitionKey(expectedInvoice.UserIdentifier.ToString()),
-                It.IsAny<ItemRequestOptions>(),
-                It.IsAny<System.Threading.CancellationToken>()
-            ), Times.Once);
-    }
+		mockInvoicesContainer.Setup(container => container.ReadItemAsync<Invoice>(
+				expectedInvoice.id.ToString(),
+				new PartitionKey(expectedInvoice.UserIdentifier.ToString()),
+				It.IsAny<ItemRequestOptions>(),
+				It.IsAny<System.Threading.CancellationToken>()
+			))
+			.ReturnsAsync(itemResponseMock.Object);
 
-    [Theory]
-    [MemberData(nameof(GetInvoiceTestData))]
-    public async Task ShouldReadInvoiceWithoutUserIdentifier_WhenInvoiceExists(Invoice expectedInvoice)
-    {
-        // Given
-        var feedResponseMock = new Mock<FeedResponse<Invoice>>();
-        feedResponseMock.Setup(response => response.GetEnumerator())
-            .Returns(new List<Invoice> { expectedInvoice }.GetEnumerator());
+		// When
+		var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id, expectedInvoice.UserIdentifier);
 
-        var mockFeedIterator = new Mock<FeedIterator<Invoice>>();
-        mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(true);
-        mockFeedIterator.Setup(iterator => iterator.ReadNextAsync(It.IsAny<System.Threading.CancellationToken>()))
-            .ReturnsAsync(feedResponseMock.Object)
-            .Callback(() => mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(false));
+		// Then
+		Assert.NotNull(actualInvoice);
+		Assert.Equal(expectedInvoice.id, actualInvoice.id);
+		Assert.Equal(expectedInvoice.UserIdentifier, actualInvoice.UserIdentifier);
 
-        mockInvoicesContainer.Setup(container => container.GetItemQueryIterator<Invoice>(
-                It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c WHERE c.id = @invoiceIdentifier"),
-                It.IsAny<string>(),
-                It.IsAny<QueryRequestOptions>()
-            ))
-            .Returns(mockFeedIterator.Object);
+		mockInvoicesContainer.Verify(container => container.ReadItemAsync<Invoice>(
+				expectedInvoice.id.ToString(),
+				new PartitionKey(expectedInvoice.UserIdentifier.ToString()),
+				It.IsAny<ItemRequestOptions>(),
+				It.IsAny<System.Threading.CancellationToken>()
+			), Times.Once);
+	}
 
-        // When
-        var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id);
+	[Theory]
+	[MemberData(nameof(GetInvoiceTestData))]
+	public async Task ShouldReadInvoiceWithoutUserIdentifier_WhenInvoiceExists(Invoice expectedInvoice)
+	{
+		// Given
+		var feedResponseMock = new Mock<FeedResponse<Invoice>>();
+		feedResponseMock.Setup(response => response.GetEnumerator())
+			.Returns(new List<Invoice> { expectedInvoice }.GetEnumerator());
 
-        // Then
-        Assert.NotNull(actualInvoice);
-        Assert.Equal(expectedInvoice.id, actualInvoice.id);
-        
-        mockInvoicesContainer.Verify(container => container.GetItemQueryIterator<Invoice>(
-                It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c WHERE c.id = @invoiceIdentifier"),
-                It.IsAny<string>(),
-                It.IsAny<QueryRequestOptions>()
-            ), Times.Once);
-    }
+		var mockFeedIterator = new Mock<FeedIterator<Invoice>>();
+		mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(true);
+		mockFeedIterator.Setup(iterator => iterator.ReadNextAsync(It.IsAny<System.Threading.CancellationToken>()))
+			.ReturnsAsync(feedResponseMock.Object)
+			.Callback(() => mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(false));
 
-    #endregion
+		mockInvoicesContainer.Setup(container => container.GetItemQueryIterator<Invoice>(
+				It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c WHERE c.id = @invoiceIdentifier"),
+				It.IsAny<string>(),
+				It.IsAny<QueryRequestOptions>()
+			))
+			.Returns(mockFeedIterator.Object);
 
-    #region ReadInvoicesAsync Tests
+		// When
+		var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id);
 
-    [Fact]
-    public async Task ShouldReadAllInvoices_WhenInvoicesExist()
-    {
-        // Given
-        var expectedInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(3);
-        var feedResponseMock = new Mock<FeedResponse<Invoice>>();
-        feedResponseMock.Setup(response => response.GetEnumerator())
-            .Returns(expectedInvoices.GetEnumerator());
+		// Then
+		Assert.NotNull(actualInvoice);
+		Assert.Equal(expectedInvoice.id, actualInvoice.id);
 
-        var mockFeedIterator = new Mock<FeedIterator<Invoice>>();
-        mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(true);
-        mockFeedIterator.Setup(iterator => iterator.ReadNextAsync(It.IsAny<System.Threading.CancellationToken>()))
-            .ReturnsAsync(feedResponseMock.Object)
-            .Callback(() => mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(false));
+		mockInvoicesContainer.Verify(container => container.GetItemQueryIterator<Invoice>(
+				It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c WHERE c.id = @invoiceIdentifier"),
+				It.IsAny<string>(),
+				It.IsAny<QueryRequestOptions>()
+			), Times.Once);
+	}
 
-        mockInvoicesContainer.Setup(container => container.GetItemQueryIterator<Invoice>(
-                It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c"),
-                It.IsAny<string>(),
-                It.IsAny<QueryRequestOptions>()
-            ))
-            .Returns(mockFeedIterator.Object);
+	#endregion
 
-        // When
-        var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync();
+	#region ReadInvoicesAsync Tests
 
-        // Then
-        Assert.NotNull(actualInvoices);
-        Assert.Equal(expectedInvoices.Count, actualInvoices.Count());
-        
-        mockInvoicesContainer.Verify(container => container.GetItemQueryIterator<Invoice>(
-                It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c"),
-                It.IsAny<string>(),
-                It.IsAny<QueryRequestOptions>()
-            ), Times.Once);
-    }
+	[Fact]
+	public async Task ShouldReadAllInvoices_WhenInvoicesExist()
+	{
+		// Given
+		var expectedInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(3);
+		var feedResponseMock = new Mock<FeedResponse<Invoice>>();
+		feedResponseMock.Setup(response => response.GetEnumerator())
+			.Returns(expectedInvoices.GetEnumerator());
 
-    #endregion
+		var mockFeedIterator = new Mock<FeedIterator<Invoice>>();
+		mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(true);
+		mockFeedIterator.Setup(iterator => iterator.ReadNextAsync(It.IsAny<System.Threading.CancellationToken>()))
+			.ReturnsAsync(feedResponseMock.Object)
+			.Callback(() => mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(false));
 
-    #region Test Data
+		mockInvoicesContainer.Setup(container => container.GetItemQueryIterator<Invoice>(
+				It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c"),
+				It.IsAny<string>(),
+				It.IsAny<QueryRequestOptions>()
+			))
+			.Returns(mockFeedIterator.Object);
 
-    public static TheoryData<Invoice> GetInvoiceTestData() =>
-        InvoiceBuilder.GetInvoiceTheoryData();
+		// When
+		var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync();
 
-    #endregion
+		// Then
+		Assert.NotNull(actualInvoices);
+		Assert.Equal(expectedInvoices.Count, actualInvoices.Count());
+
+		mockInvoicesContainer.Verify(container => container.GetItemQueryIterator<Invoice>(
+				It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c"),
+				It.IsAny<string>(),
+				It.IsAny<QueryRequestOptions>()
+			), Times.Once);
+	}
+
+	#endregion
+
+	#region Test Data
+
+	public static TheoryData<Invoice> GetInvoiceTestData() =>
+		InvoiceBuilder.GetInvoiceTheoryData();
+
+	#endregion
 }

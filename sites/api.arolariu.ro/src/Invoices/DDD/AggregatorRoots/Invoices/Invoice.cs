@@ -1,13 +1,13 @@
-﻿namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Common.DDD.Contracts;
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+
+using arolariu.Backend.Common.DDD.Contracts;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 
 /// <summary>
 /// The Invoice model as "represented" in the Application Domain.

@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>

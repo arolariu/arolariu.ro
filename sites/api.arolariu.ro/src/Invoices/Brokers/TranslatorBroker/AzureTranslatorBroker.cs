@@ -1,4 +1,10 @@
 namespace arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
+
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Net.Http;
+using System.Threading.Tasks;
+
 using arolariu.Backend.Common.Options;
 
 using Azure;
@@ -6,11 +12,6 @@ using Azure.AI.Translation.Text;
 using Azure.Core.Pipeline;
 
 using Microsoft.Extensions.Options;
-
-using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Net.Http;
-using System.Threading.Tasks;
 
 /// <summary>
 /// This class represents the Azure translator broker.

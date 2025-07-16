@@ -1,9 +1,10 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
+namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
+
+using System;
+
 using arolariu.Backend.Common.Validators;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
-
-using System;
 
 public partial class InvoiceStorageFoundationService
 {

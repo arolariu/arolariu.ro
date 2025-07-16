@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Common.Telemetry.Logging;
+namespace arolariu.Backend.Common.Telemetry.Logging;
+
 using Microsoft.Extensions.Logging;
 
 /// <summary>

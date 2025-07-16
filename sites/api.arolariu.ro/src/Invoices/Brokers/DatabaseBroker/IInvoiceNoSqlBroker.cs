@@ -1,10 +1,11 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+namespace arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker;
 
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 /// <summary>
 /// The invoice NoSQL broker interface.

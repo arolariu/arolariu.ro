@@ -1,4 +1,9 @@
-﻿namespace arolariu.Backend.Common.Services.KeyVault;
+namespace arolariu.Backend.Common.Services.KeyVault;
+
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
+
 using arolariu.Backend.Common.Options;
 
 using Azure;
@@ -6,10 +11,6 @@ using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 
 using Microsoft.Extensions.Options;
-
-using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
 
 /// <summary>
 /// Service that handles the Azure Key Vault integration.

@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>

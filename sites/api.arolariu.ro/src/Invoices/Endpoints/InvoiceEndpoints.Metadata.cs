@@ -1,5 +1,11 @@
 namespace arolariu.Backend.Domain.Invoices.Endpoints;
 
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Security.Claims;
+using System.Threading.Tasks;
+
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
@@ -11,14 +17,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 using Swashbuckle.AspNetCore.Annotations;
-
-
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Security.Claims;
-using System.Threading.Tasks;
 
 public static partial class InvoiceEndpoints
 {
@@ -418,7 +416,7 @@ public static partial class InvoiceEndpoints
 		Merchant merchant,
 		ClaimsPrincipal principal);
 	#endregion
-	
+
 	#region CRUD operations for the Merchant Standard Endpoints
 	/// <summary>
 	/// Creates a new merchant.

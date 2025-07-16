@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Common.DDD.Contracts;
+namespace arolariu.Backend.Common.DDD.Contracts;
 
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;

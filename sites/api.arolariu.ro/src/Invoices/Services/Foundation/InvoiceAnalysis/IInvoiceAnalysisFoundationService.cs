@@ -1,8 +1,9 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DTOs;
+namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 
 using System.Threading.Tasks;
+
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DTOs;
 
 /// <summary>
 /// The invoice analysis foundation service interface represents the foundation analysis service for the invoice domain.

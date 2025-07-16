@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
+namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
+
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;

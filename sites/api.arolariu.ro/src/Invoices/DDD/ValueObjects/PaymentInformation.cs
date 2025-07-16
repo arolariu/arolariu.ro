@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+
 using System;
 using System.Diagnostics.CodeAnalysis;
 
@@ -67,10 +68,10 @@ public enum PaymentType
 	/// <summary>
 	/// The payment type is via voucher(s).
 	/// </summary>
-	VOUCHER=500,
+	VOUCHER = 500,
 
 	/// <summary>
 	/// The payment type is other.
 	/// </summary>
-	Other=9999,
+	Other = 9999,
 }

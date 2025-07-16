@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+namespace arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -98,7 +99,7 @@ public partial class InvoiceNoSqlBroker
 		var partitionKey = new PartitionKey(merchant?.ParentCompanyId.ToString());
 
 		var response = await container.ReplaceItemAsync(updatedMerchant, merchantIdentifier.ToString(), partitionKey).ConfigureAwait(false);
-		
+
 		var newMerchant = response.Resource;
 		return newMerchant;
 	}

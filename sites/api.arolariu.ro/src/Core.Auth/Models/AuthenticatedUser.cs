@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Core.Auth.Models;
+namespace arolariu.Backend.Core.Auth.Models;
 
 using System;
 

@@ -1,4 +1,5 @@
 namespace arolariu.Backend.Domain.Invoices.Endpoints;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1004,7 +1005,7 @@ public static partial class InvoiceEndpoints
 
 			else
 			{
-				if(IsPrincipalSuperUser(principal))
+				if (IsPrincipalSuperUser(principal))
 				{
 					var invoice = await invoiceProcessingService
 						.ReadInvoice(id)
@@ -1176,7 +1177,7 @@ public static partial class InvoiceEndpoints
 
 			else
 			{
-				if(IsPrincipalSuperUser(principal))
+				if (IsPrincipalSuperUser(principal))
 				{
 					await invoiceProcessingService
 						.CreateMerchant(merchant)
@@ -1248,7 +1249,7 @@ public static partial class InvoiceEndpoints
 
 			else
 			{
-				if(IsPrincipalSuperUser(principal))
+				if (IsPrincipalSuperUser(principal))
 				{
 					var merchants = await invoiceProcessingService
 							.ReadMerchants(parentCompanyId)
@@ -1481,7 +1482,7 @@ public static partial class InvoiceEndpoints
 
 			else
 			{
-				if(IsPrincipalSuperUser(principal))
+				if (IsPrincipalSuperUser(principal))
 				{
 					var merchant = await invoiceProcessingService
 						.ReadMerchant(id, parentCompanyId)
@@ -1553,7 +1554,7 @@ public static partial class InvoiceEndpoints
 				var listOfInvoiceIdentifiers = merchant.ReferencedInvoices;
 				var listOfConcreteInvoices = new List<Invoice>();
 
-				foreach(var identifier in listOfInvoiceIdentifiers)
+				foreach (var identifier in listOfInvoiceIdentifiers)
 				{
 					var possibleInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
 					listOfConcreteInvoices.Add(possibleInvoice);
@@ -1635,10 +1636,10 @@ public static partial class InvoiceEndpoints
 			if (potentialUserIdentifer != Guid.Empty)
 			{
 				var merchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
-				if(merchant is null) return Results.NotFound();
+				if (merchant is null) return Results.NotFound();
 
 				var listOfValidInvoices = new List<Invoice>();
-				foreach(var identifier in invoiceIdentifiers)
+				foreach (var identifier in invoiceIdentifiers)
 				{
 					var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
 					if (potentialInvoice is not null) listOfValidInvoices.Add(potentialInvoice);
@@ -1655,7 +1656,7 @@ public static partial class InvoiceEndpoints
 
 			else
 			{
-				if(IsPrincipalSuperUser(principal))
+				if (IsPrincipalSuperUser(principal))
 				{
 					var merchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
 					if (merchant is null) return Results.NotFound();
@@ -1734,7 +1735,7 @@ public static partial class InvoiceEndpoints
 				if (merchant is null) return Results.NotFound();
 				var listOfInvoicesToBeRemoved = new List<Invoice>();
 
-				foreach(var identifier in invoiceIdentifiers)
+				foreach (var identifier in invoiceIdentifiers)
 				{
 					var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
 					if (potentialInvoice is not null) listOfInvoicesToBeRemoved.Add(potentialInvoice);
@@ -1751,7 +1752,7 @@ public static partial class InvoiceEndpoints
 
 			else
 			{
-				if(IsPrincipalSuperUser(principal))
+				if (IsPrincipalSuperUser(principal))
 				{
 					var merchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
 					if (merchant is null) return Results.NotFound();

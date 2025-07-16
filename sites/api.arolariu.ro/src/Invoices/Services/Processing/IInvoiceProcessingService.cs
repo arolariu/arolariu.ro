@@ -1,11 +1,13 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Processing;
-using arolariu.Backend.Domain.Invoices.DTOs;
-using System.Threading.Tasks;
+namespace arolariu.Backend.Domain.Invoices.Services.Processing;
+
 using System;
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DTOs;
 
 /// <summary>
 /// This interface represents the invoice processing service.

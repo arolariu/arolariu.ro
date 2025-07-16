@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Common.Options;
+namespace arolariu.Backend.Common.Options;
 
 /// <summary>
 /// Common options for the application.
