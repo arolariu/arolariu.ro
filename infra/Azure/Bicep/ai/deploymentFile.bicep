@@ -29,7 +29,21 @@ module openAiDeployment 'openai.bicep' = {
   }
 }
 
+module aiFoundryDeployment 'aiFoundry.bicep' = {
+  scope: resourceGroup()
+  name: 'aiFoundryDeployment-${resourceDeploymentDate}'
+  params: {
+    aiFoundryLocation: resourceLocation
+    aiFoundryName: '${aiConventionPrefix}-foundry'
+    aiFoundryDeploymentDate: resourceDeploymentDate
+  }
+}
+
 output aiResources object = {
   openAiId: openAiDeployment.outputs.openAiId
   openAiEndpoint: openAiDeployment.outputs.openAiEndpoint
+  aiFoundryId: aiFoundryDeployment.outputs.aiFoundryId
+  aiFoundryEndpoint: aiFoundryDeployment.outputs.aiFoundryEndpoint
+  aiProjectId: aiFoundryDeployment.outputs.aiProjectId
+  aiProjectEndpoint: aiFoundryDeployment.outputs.aiProjectEndpoint
 }

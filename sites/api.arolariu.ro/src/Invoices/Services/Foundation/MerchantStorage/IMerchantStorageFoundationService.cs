@@ -1,8 +1,10 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+namespace arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
+
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System;
+
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 /// <summary>
 /// Contract for the merchant storage foundation service.

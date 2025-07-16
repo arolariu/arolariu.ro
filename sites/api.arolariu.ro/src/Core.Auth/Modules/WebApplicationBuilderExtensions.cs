@@ -1,14 +1,15 @@
-﻿namespace arolariu.Backend.Core.Auth.Modules;
+namespace arolariu.Backend.Core.Auth.Modules;
+
 using System;
 using System.Text;
 
+using arolariu.Backend.Common.Options;
 using arolariu.Backend.Core.Auth.Brokers;
 using arolariu.Backend.Core.Auth.Models;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -57,9 +58,6 @@ public static class WebApplicationBuilderExtensions
 			options => options.SignIn.RequireConfirmedEmail = true)
 				.AddEntityFrameworkStores<AuthDbContext>();
 
-		// Configure the SMTP email sender.
-		services.AddTransient<IEmailSender, AuthEmailSender>();
-
 		// Configure cookie settings.
 		services.ConfigureApplicationCookie(options =>
 		{
@@ -81,7 +79,7 @@ public static class WebApplicationBuilderExtensions
 			authOptions.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 		}).AddJwtBearer(jwtOptions =>
 		{
-			var authConfig = builder.Configuration.GetSection("AuthOptions");
+			var authConfig = builder.Configuration.GetSection(nameof(AuthOptions));
 			jwtOptions.TokenValidationParameters = new()
 			{
 				ValidIssuer = authConfig["Issuer"],

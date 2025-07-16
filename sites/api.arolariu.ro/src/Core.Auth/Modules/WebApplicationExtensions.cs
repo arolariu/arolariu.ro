@@ -1,10 +1,10 @@
-﻿namespace arolariu.Backend.Core.Auth.Modules;
+namespace arolariu.Backend.Core.Auth.Modules;
+
+using System;
 
 using arolariu.Backend.Core.Auth.Endpoints;
 
 using Microsoft.AspNetCore.Builder;
-
-using System;
 
 /// <summary>
 /// Extension methods for <see cref="WebApplication"/>.

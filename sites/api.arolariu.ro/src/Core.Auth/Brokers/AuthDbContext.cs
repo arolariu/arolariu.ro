@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Core.Auth.Brokers;
+namespace arolariu.Backend.Core.Auth.Brokers;
 
 using System;
 

@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Modules;
+namespace arolariu.Backend.Domain.Invoices.Modules;
+
 using arolariu.Backend.Domain.Invoices.Endpoints;
 
 using Microsoft.AspNetCore.Builder;

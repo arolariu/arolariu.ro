@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
+namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 using System;
 using System.Collections.Generic;

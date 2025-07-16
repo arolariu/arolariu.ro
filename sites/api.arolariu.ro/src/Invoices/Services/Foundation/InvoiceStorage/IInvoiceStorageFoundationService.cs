@@ -1,9 +1,10 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
 
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 /// <summary>
 /// The invoice storage foundation service interface represents the foundation storage service for the invoice domain.

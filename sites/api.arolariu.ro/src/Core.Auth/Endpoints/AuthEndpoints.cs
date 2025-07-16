@@ -1,7 +1,8 @@
-﻿namespace arolariu.Backend.Core.Auth.Endpoints;
-using Microsoft.AspNetCore.Routing;
+namespace arolariu.Backend.Core.Auth.Endpoints;
 
 using System.Diagnostics.CodeAnalysis;
+
+using Microsoft.AspNetCore.Routing;
 
 /// <summary>
 /// The auth endpoints.

@@ -1,4 +1,7 @@
-﻿namespace arolariu.Backend.Core.Domain.General.Extensions;
+namespace arolariu.Backend.Core.Domain.General.Extensions;
+
+using System;
+using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Core.Auth.Modules;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
@@ -7,9 +10,6 @@ using HealthChecks.UI.Client;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-
-using System;
-using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
 /// Extension methods for the <see cref="WebApplication"/> web application.

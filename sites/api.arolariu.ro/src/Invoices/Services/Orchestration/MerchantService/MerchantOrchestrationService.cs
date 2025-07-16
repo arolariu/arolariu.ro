@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
+namespace arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 
 using System;
 using System.Collections.Generic;

@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.DTOs;
+namespace arolariu.Backend.Domain.Invoices.DTOs;
+
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;

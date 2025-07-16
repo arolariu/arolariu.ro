@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices;
+namespace arolariu.Backend.Domain.Invoices;
+
 using Microsoft.Extensions.Logging;
 
 /// <summary>

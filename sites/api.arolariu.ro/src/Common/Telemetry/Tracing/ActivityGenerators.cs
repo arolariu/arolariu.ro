@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Common.Telemetry.Tracing;
+namespace arolariu.Backend.Common.Telemetry.Tracing;
+
 using System.Diagnostics;
 
 // TODO: This class should be automatically generated from the dlls.

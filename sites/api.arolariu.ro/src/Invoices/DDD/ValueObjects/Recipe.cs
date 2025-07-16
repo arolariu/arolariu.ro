@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;

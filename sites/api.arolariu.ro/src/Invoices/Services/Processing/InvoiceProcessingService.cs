@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Processing;
+namespace arolariu.Backend.Domain.Invoices.Services.Processing;
 
 using System;
 using System.Collections.Generic;
@@ -142,7 +142,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoices));
-		var invoices = 
+		var invoices =
 			await invoiceOrchestrationService.ReadAllInvoiceObjects().ConfigureAwait(false);
 
 		return invoices;
@@ -153,7 +153,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoices));
-		var invoices = 
+		var invoices =
 			await invoiceOrchestrationService.ReadAllInvoiceObjects(userIdentifier).ConfigureAwait(false);
 
 		return invoices;
@@ -343,7 +343,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 		using var activity = InvoicePackageTracing.StartActivity(nameof(GetProducts));
 		var invoice = await invoiceOrchestrationService.ReadInvoiceObject(invoiceIdentifier)
 															.ConfigureAwait(false);
-		
+
 		var products = invoice.Items;
 		return products;
 	}).ConfigureAwait(false);
@@ -355,7 +355,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 		using var activity = InvoicePackageTracing.StartActivity(nameof(GetProducts));
 		var invoice = await invoiceOrchestrationService.ReadInvoiceObject(invoiceIdentifier, userIdentifier)
 															.ConfigureAwait(false);
-		
+
 		var products = invoice.Items;
 		return products;
 	}).ConfigureAwait(false);

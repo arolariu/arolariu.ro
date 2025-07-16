@@ -1,11 +1,12 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
+namespace arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
 
 public partial class MerchantOrchestrationService
 {

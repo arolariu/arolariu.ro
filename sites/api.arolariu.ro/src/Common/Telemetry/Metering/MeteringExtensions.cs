@@ -1,4 +1,7 @@
-﻿namespace arolariu.Backend.Common.Telemetry.Metering;
+namespace arolariu.Backend.Common.Telemetry.Metering;
+
+using System;
+
 using arolariu.Backend.Common.Options;
 
 using Azure.Identity;
@@ -8,8 +11,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
 using OpenTelemetry.Metrics;
-
-using System;
 
 /// <summary>
 /// Extensions for metering.

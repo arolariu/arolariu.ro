@@ -1,4 +1,7 @@
-﻿namespace arolariu.Backend.Common.Telemetry.Logging;
+namespace arolariu.Backend.Common.Telemetry.Logging;
+
+using System;
+
 using arolariu.Backend.Common.Options;
 
 using Azure.Identity;
@@ -8,8 +11,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Logging;
 
 using OpenTelemetry.Logs;
-
-using System;
 
 /// <summary>
 /// Extensions for logging.

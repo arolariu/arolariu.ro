@@ -38,30 +38,30 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Azure.AppConfiguration.AspNetCore" Version="8.2.0" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.52.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.6" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.6" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.7" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.7" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.AzureAppConfiguration" Version="8.2.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.6" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.7" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.7" />
 	</ItemGroup>
 
 	<!-- Entity Framework -->
 	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.6" />
-		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.6" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.6" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.6" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Analyzers" Version="9.0.6" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" Version="9.0.6" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="9.0.6" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.6" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="9.0.6" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.6" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.6">
+		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.7" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.7" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.7" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Analyzers" Version="9.0.7" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" Version="9.0.7" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="9.0.7" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.7" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="9.0.7" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.7" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.7">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.6">
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.7">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -85,20 +85,19 @@
 
 	<!-- Swagger & OpenAPI packages -->
 	<ItemGroup>
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.1" />
-		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.1" />
-		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="9.0.1" />
-		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="9.0.1" />
-		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.1" />
-		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.3" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="9.0.3" />
+		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="9.0.3" />
+		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.3" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.7" />
 	</ItemGroup>
 
 	<!-- Other packages -->
 	<ItemGroup>
-		<PackageReference Include="Azure.Core" Version="1.46.2" />
-		<PackageReference Include="Azure.Identity" Version="1.14.1" />
+		<PackageReference Include="Azure.Core" Version="1.47.1" />
+		<PackageReference Include="Azure.Identity" Version="1.14.2" />
 		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.8.0" />
-		<PackageReference Include="MailKit" Version="4.12.1" />
 	</ItemGroup>
 
 	<ItemGroup>

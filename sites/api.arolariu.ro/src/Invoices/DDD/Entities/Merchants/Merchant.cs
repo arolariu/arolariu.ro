@@ -1,11 +1,11 @@
 namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Common.DDD.Contracts;
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+
+using arolariu.Backend.Common.DDD.Contracts;
 
 /// <summary>
 /// The invoice merchant record class represents the merchant information from the invoice.

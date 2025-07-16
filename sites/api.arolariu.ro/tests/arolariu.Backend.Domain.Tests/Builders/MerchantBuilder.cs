@@ -1,9 +1,9 @@
 namespace arolariu.Backend.Domain.Tests.Builders;
 
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-
 using System;
 using System.Collections.Generic;
+
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 using Xunit;
 

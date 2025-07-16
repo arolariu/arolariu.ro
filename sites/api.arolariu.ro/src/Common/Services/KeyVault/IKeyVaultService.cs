@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Common.Services.KeyVault;
+namespace arolariu.Backend.Common.Services.KeyVault;
+
 using System.Threading.Tasks;
 
 /// <summary>

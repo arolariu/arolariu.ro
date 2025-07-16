@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
+namespace arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
 
 using System;
 using System.Diagnostics.CodeAnalysis;

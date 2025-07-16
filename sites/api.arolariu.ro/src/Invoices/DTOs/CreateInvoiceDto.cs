@@ -1,10 +1,11 @@
-﻿namespace arolariu.Backend.Domain.Invoices.DTOs;
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+namespace arolariu.Backend.Domain.Invoices.DTOs;
 
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 /// <summary>
 /// The Invoice DTO class represents the invoice data transfer object.

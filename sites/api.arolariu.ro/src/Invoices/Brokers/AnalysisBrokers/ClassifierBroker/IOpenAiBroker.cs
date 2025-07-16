@@ -1,7 +1,9 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
+namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
+
+using System.Threading.Tasks;
+
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DTOs;
-using System.Threading.Tasks;
 
 /// <summary>
 /// The invoice analysis broker interface.

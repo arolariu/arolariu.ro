@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Modules;
+namespace arolariu.Backend.Domain.Invoices.Modules;
+
 using System;
 using System.Diagnostics.CodeAnalysis;
 
@@ -14,6 +15,8 @@ using arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService;
 using arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
+
+using Azure.Identity;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Azure.Cosmos;
@@ -51,9 +54,10 @@ public static class WebApplicationBuilderExtensions
 		// Add Cosmos Client and Entity Framework Core --- data layer services.
 		builder.Services.AddSingleton<CosmosClient>(options =>
 		{
-			var connectionString = builder.Configuration[$"{nameof(AzureOptions)}:NoSqlConnectionString"]!;
+			var endpoint = builder.Configuration[$"{nameof(AzureOptions)}:NoSqlConnectionString"]!;
+			var credentials = new DefaultAzureCredential();
 
-			var cosmosClient = new CosmosClient(connectionString);
+			var cosmosClient = new CosmosClient(endpoint, credentials);
 			return cosmosClient;
 		});
 

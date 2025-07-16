@@ -1,13 +1,14 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
+namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage;
+
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 
 using Microsoft.EntityFrameworkCore;
-
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 public partial class InvoiceStorageFoundationService
 {

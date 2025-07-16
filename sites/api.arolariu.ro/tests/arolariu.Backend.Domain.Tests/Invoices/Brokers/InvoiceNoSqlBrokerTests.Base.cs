@@ -1,4 +1,5 @@
 namespace arolariu.Backend.Domain.Tests.Invoices.Brokers;
+
 using Microsoft.Azure.Cosmos;
 
 using Moq;

@@ -1,4 +1,5 @@
-﻿namespace arolariu.Backend.Common.DDD.Contracts;
+namespace arolariu.Backend.Common.DDD.Contracts;
+
 using System;
 
 /// <summary>

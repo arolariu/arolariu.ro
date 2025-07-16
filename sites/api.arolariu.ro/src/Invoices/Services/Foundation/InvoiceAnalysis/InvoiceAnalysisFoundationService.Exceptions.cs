@@ -1,11 +1,11 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
-
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
-using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
+namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
+
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation;
 
 public partial class InvoiceAnalysisFoundationService
 {

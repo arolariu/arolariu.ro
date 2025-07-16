@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
+namespace arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker;
 
 using System.Threading.Tasks;
 

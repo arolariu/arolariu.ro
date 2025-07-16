@@ -1,10 +1,11 @@
-﻿namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
-using Microsoft.OpenApi.Models;
-
-using Swashbuckle.AspNetCore.SwaggerGen;
+namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+
+using Microsoft.OpenApi.Models;
+
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 /// <summary>
 /// The swagger filter service represents the service that filters the swagger document.

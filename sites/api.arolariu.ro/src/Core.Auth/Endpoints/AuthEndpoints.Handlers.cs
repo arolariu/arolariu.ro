@@ -1,4 +1,4 @@
-﻿namespace arolariu.Backend.Core.Auth.Endpoints;
+namespace arolariu.Backend.Core.Auth.Endpoints;
 
 using System.Threading.Tasks;
 

@@ -1,13 +1,14 @@
-﻿namespace arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
+namespace arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage;
+
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation;
 
 using Microsoft.EntityFrameworkCore;
-
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 public partial class MerchantStorageFoundationService
 {
