@@ -40,7 +40,7 @@ async function fetchFromAzure(): Promise<TypedConfigurationType> {
   const client = new AppConfigurationClient(appConfigStore, credentials);
 
   const config = {} as TypedConfigurationType;
-  const label = isProduction ? "Production" : "Development";
+  const label = isProduction ? "PRODUCTION" : "DEVELOPMENT";
 
   for (const [key, envVar] of Object.entries(APPCONFIG_MAPPING)) {
     try {
