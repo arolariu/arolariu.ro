@@ -1,8 +1,5 @@
 targetScope = 'resourceGroup'
 
-import { identity } from '../types/identity.type.bicep'
-param identities identity[]
-
 @description('The prefix to use for the names of the resources.')
 param resourceConventionPrefix string
 
@@ -20,7 +17,6 @@ module keyVaultDeployment 'keyVault.bicep' = {
   scope: resourceGroup()
   name: 'keyVaultDeployment-${resourceDeploymentDate}'
   params: {
-    identities: identities
     keyVaultName: keyVaultName
     keyVaultLocation: resourceLocation
     keyVaultDeploymentDate: resourceDeploymentDate

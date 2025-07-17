@@ -12,6 +12,7 @@ param backendIdentity identity
 var roleDefinitions = {
   // Contributor roles:
   storageBlobContributor: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+  storageBlobDataOwner: 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
   storageQueueContributor: '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
   storageTableContributor: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
   sqlDbContributor: '9b7fa17d-e63e-47b0-bb0a-15c516ac86ec'
@@ -34,6 +35,20 @@ resource backendStorageBlobContributorRoleAssignment 'Microsoft.Authorization/ro
     principalId: backendIdentity.principalId
     principalType: 'ServicePrincipal'
     description: 'Backend managed identity access to storage blob data (read-write)'
+  }
+}
+
+// Storage Blob Data Owner role assignment for backend managed identity
+resource backendStorageBlobDataOwnerRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, backendIdentity.principalId, roleDefinitions.storageBlobDataOwner)
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      roleDefinitions.storageBlobDataOwner
+    )
+    principalId: backendIdentity.principalId
+    principalType: 'ServicePrincipal'
+    description: 'Backend managed identity full access to storage blob data'
   }
 }
 

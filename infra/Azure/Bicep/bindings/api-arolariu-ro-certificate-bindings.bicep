@@ -9,9 +9,7 @@ param apiWebsiteHostname string
 @description('The api website certificate thumbprint for SSL binding.')
 param apiWebsiteThumbprint string
 
-resource apiWebsite 'Microsoft.Web/sites@2024-11-01' existing = {
-  name: apiWebsiteHostname
-}
+resource apiWebsite 'Microsoft.Web/sites@2024-11-01' existing = { name: apiWebsiteHostname }
 
 // Update custom domain with SSL binding
 resource apiCustomDomainWithSsl 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {

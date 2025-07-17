@@ -45,5 +45,4 @@ output aiResources object = {
   aiFoundryId: aiFoundryDeployment.outputs.aiFoundryId
   aiFoundryEndpoint: aiFoundryDeployment.outputs.aiFoundryEndpoint
   aiProjectId: aiFoundryDeployment.outputs.aiProjectId
-  aiProjectEndpoint: aiFoundryDeployment.outputs.aiProjectEndpoint
 }

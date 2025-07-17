@@ -26,7 +26,7 @@ var commonTags resourceTags = {
 resource apiWebsite 'Microsoft.Web/sites@2024-11-01' = {
   name: 'api-arolariu-ro'
   location: apiWebsiteLocation
-  kind: 'app,linux'
+  kind: 'app,linux,container'
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
@@ -37,26 +37,33 @@ resource apiWebsite 'Microsoft.Web/sites@2024-11-01' = {
     enabled: true
     serverFarmId: apiWebsitePlanId
     reserved: true // reserved == linux plan
-    isXenon: false
     hyperV: false
     siteConfig: {
+      healthCheckPath: '/'
+      acrUseManagedIdentityCreds: true
       alwaysOn: true
       numberOfWorkers: 1
       http20Enabled: true
-      functionAppScaleLimit: 0
-      minimumElasticInstanceCount: 0
-      linuxFxVersion: 'DOTNETCORE|8.0'
+      linuxFxVersion: 'DOTNETCORE|9.0'
       requestTracingEnabled: true
-      remoteDebuggingEnabled: false
       httpLoggingEnabled: true
-      logsDirectorySizeLimit: 35 // 35 MB
+      logsDirectorySizeLimit: 50 // 50 MB
       detailedErrorLoggingEnabled: false
-      use32BitWorkerProcess: false
       webSocketsEnabled: true
       loadBalancing: 'LeastRequests'
-      preWarmedInstanceCount: 0
       ftpsState: 'Disabled'
       minTlsVersion: '1.2' // Minimum TLS version for secure connections
+      ipSecurityRestrictions: [
+        {
+          ipAddress: 'Any'
+          action: 'Allow'
+          priority: 2147483647
+          tag: 'Default'
+          name: 'Allow All'
+          description: 'Allow all access.'
+        }
+      ]
+      ipSecurityRestrictionsDefaultAction: 'Deny'
       appSettings: [
         {
           name: 'ASPNETCORE_ENVIRONMENT'
@@ -80,18 +87,13 @@ resource apiWebsite 'Microsoft.Web/sites@2024-11-01' = {
         }
       ]
     }
-    scmSiteAlsoStopped: false
+    scmSiteAlsoStopped: true
     clientAffinityEnabled: false
-    clientCertEnabled: false
-    clientCertMode: 'Required'
     hostNamesDisabled: false
     containerSize: 0
-    dailyMemoryTimeQuota: 0
     httpsOnly: true
     redundancyMode: 'None'
     publicNetworkAccess: 'Enabled'
-    storageAccountRequired: false
-    keyVaultReferenceIdentity: apiWebsiteIdentityId
   }
 
   tags: union(commonTags, {

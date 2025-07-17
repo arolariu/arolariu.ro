@@ -17,6 +17,7 @@ var roleDefinitions = {
   appConfigReader: '516239f1-63e1-4d78-a4de-a74fb236a071'
   keyVaultReader: '21090545-7ca7-4776-b22c-e363652d74d2'
   keyVaultSecretsReader: '4633458b-17de-408a-b874-0445c86b69e6'
+  acrRead: 'b93aa761-3e63-49ed-ac28-beffa264f7ac' // Azure Container Registry Read
 
   // Contributor roles:
   acrPull: '7f951dda-4ed3-4680-a7ca-43fe172d538d' // Azure Container Registry Pull
@@ -100,6 +101,17 @@ resource infrastructureKeyVaultSecretsReaderRoleAssignment 'Microsoft.Authorizat
     principalId: infrastructureIdentity.principalId
     principalType: 'ServicePrincipal'
     description: 'Infrastructure managed identity access to Key Vault secrets (read-only)'
+  }
+}
+
+// Azure Container Registry Read role assignment for infrastructure managed identity
+resource infrastructureAcrReadRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, infrastructureIdentity.principalId, roleDefinitions.acrRead)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleDefinitions.acrRead)
+    principalId: infrastructureIdentity.principalId
+    principalType: 'ServicePrincipal'
+    description: 'Infrastructure managed identity access to Azure Container Registry (read-only)'
   }
 }
 

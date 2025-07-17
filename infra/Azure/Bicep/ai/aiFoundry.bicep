@@ -28,9 +28,8 @@ var commonTags resourceTags = {
 resource aiFoundry 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
   name: aiFoundryName
   location: aiFoundryLocation
-  sku: {
-    name: 'S0'
-  }
+  identity: { type: 'SystemAssigned' }
+  sku: { name: 'S0' }
   kind: 'AIServices'
   properties: {
     apiProperties: {}
@@ -51,6 +50,8 @@ resource aiFoundry 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
 
   resource aiProject 'projects@2025-06-01' = {
     name: 'arolariu.ro'
+    location: aiFoundryLocation
+    identity: { type: 'SystemAssigned' }
     properties: {
       description: 'AI project for arolariu.ro'
       displayName: 'arolariu.ro AI Project'
@@ -62,4 +63,3 @@ resource aiFoundry 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
 output aiFoundryId string = aiFoundry.id
 output aiFoundryEndpoint string = aiFoundry.properties.endpoint
 output aiProjectId string = aiFoundry::aiProject.id
-output aiProjectEndpoint string = aiFoundry::aiProject.properties.endpoints.default

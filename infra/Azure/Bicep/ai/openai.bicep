@@ -31,9 +31,7 @@ var commonTags resourceTags = {
 resource openAi 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' = {
   name: '${openAiConventionPrefix}-openai'
   location: openAiLocation
-  sku: {
-    name: 'S0'
-  }
+  sku: { name: 'S0' }
   kind: 'OpenAI'
   properties: {
     customSubDomainName: '${openAiConventionPrefix}-openai'

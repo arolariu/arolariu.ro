@@ -30,9 +30,7 @@ var commonTags resourceTags = {
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: storageAccountName
   location: storageAccountLocation
-  sku: {
-    name: 'Standard_LRS'
-  }
+  sku: { name: 'Standard_LRS' }
   kind: 'StorageV2'
   properties: {
     dnsEndpointType: 'Standard'
@@ -95,14 +93,27 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
         corsRules: [
           {
             allowedOrigins: ['https://arolariu.ro', 'https://dev.arolariu.ro']
-            allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS']
+            allowedMethods: ['GET', 'HEAD', 'OPTIONS']
             allowedHeaders: ['*']
             exposedHeaders: ['*']
             maxAgeInSeconds: 3600
           }
           {
-            allowedOrigins: ['http://localhost:3000', 'http://localhost:3001']
-            allowedMethods: ['GET', 'POST', 'PUT', 'DELETE']
+            allowedOrigins: ['https://api.arolariu.ro']
+            allowedMethods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+            allowedHeaders: ['*']
+            exposedHeaders: ['*']
+            maxAgeInSeconds: 3600
+          }
+          {
+            allowedOrigins: [
+              'http://localhost:3000'
+              'http://localhost:3001'
+              'http://localhost:5000'
+              'http://localhost:5001'
+              'http://localhost:8080'
+            ]
+            allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'HEAD', 'OPTIONS']
             allowedHeaders: ['*']
             exposedHeaders: ['*']
             maxAgeInSeconds: 1800

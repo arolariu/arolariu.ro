@@ -25,20 +25,16 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2024-06-15-preview' = {
+resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2025-02-01-preview' = {
   name: appConfigurationName
   location: appConfigurationLocation
   sku: { name: 'free' }
   properties: {
-    encryption: {}
     disableLocalAuth: true // We will explicilty connect via managed identities.
     softDeleteRetentionInDays: 0 // the free SKU does not support soft delete
     enablePurgeProtection: false // the free SKU does not support purge protection
     publicNetworkAccess: 'Enabled' // Allow public access to the App Configuration
-    dataPlaneProxy: {
-      authenticationMode: 'Pass-through'
-      privateLinkDelegation: 'Disabled'
-    }
+    dataPlaneProxy: { authenticationMode: 'Pass-through' }
   }
 
   tags: union(commonTags, {
@@ -48,16 +44,11 @@ resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2024-0
 }
 
 var configs = loadJsonContent('appConfiguration.json')
-resource appConfigurationKeyValues 'Microsoft.AppConfiguration/configurationStores/keyValues@2024-06-15-preview' = [
+resource appConfigurationKeyValues 'Microsoft.AppConfiguration/configurationStores/keyValues@2025-02-01-preview' = [
   for config in configs.items: {
     parent: appConfiguration
-    name: config.key
-    properties: {
-      value: config.value
-      tags: {
-        label: config.label
-      }
-    }
+    name: '${config.key}$${config.label}'
+    properties: { value: config.value }
   }
 ]
 

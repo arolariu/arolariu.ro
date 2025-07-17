@@ -36,7 +36,6 @@ module configurationDeployment 'configuration/deploymentFile.bicep' = {
     resourceLocation: resourceLocation
     resourceDeploymentDate: resourceDeploymentDate
     resourceConventionPrefix: resourceConventionPrefix
-    identities: identitiesDeployment.outputs.managedIdentitiesList
   }
 }
 
