@@ -55,7 +55,12 @@ public static class WebApplicationBuilderExtensions
 		builder.Services.AddSingleton<CosmosClient>(options =>
 		{
 			var endpoint = builder.Configuration[$"{nameof(AzureOptions)}:NoSqlConnectionString"]!;
+#if DEBUG
 			var credentials = new DefaultAzureCredential();
+#else
+			var credentials = new ManagedIdentityCredential(
+				clientId: builder.Configuration["AZURE_CLIENT_ID"]);
+#endif
 
 			var cosmosClient = new CosmosClient(endpoint, credentials);
 			return cosmosClient;

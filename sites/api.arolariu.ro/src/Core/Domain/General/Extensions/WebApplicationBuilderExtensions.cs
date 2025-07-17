@@ -52,7 +52,13 @@ internal static class WebApplicationBuilderExtensions
 	{
 		var services = builder.Services;
 		var configuration = builder.Configuration;
+
+#if DEBUG
 		var credentials = new DefaultAzureCredential();
+#else
+				var credentials = new ManagedIdentityCredential(
+					clientId: builder.Configuration["AZURE_CLIENT_ID"]);
+#endif
 
 		#region Setting up the service configuration.
 		configuration.AddEnvironmentVariables();

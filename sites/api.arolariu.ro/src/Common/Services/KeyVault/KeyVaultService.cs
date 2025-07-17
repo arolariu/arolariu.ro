@@ -27,7 +27,14 @@ public sealed class KeyVaultService(IOptionsMonitor<AzureOptions> options) : IKe
 	[SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Old-style implementation")]
 	private SecretClient _secretClient { get; init; } = new SecretClient(
 			new Uri(options.CurrentValue.KeyVaultEndpoint),
-			new DefaultAzureCredential());
+			credential:
+#if DEBUG
+		new DefaultAzureCredential()
+#else
+		new ManagedIdentityCredential(
+				clientId: builder.Configuration["AZURE_CLIENT_ID"]);
+#endif
+				);
 
 
 	/// <inheritdoc/>

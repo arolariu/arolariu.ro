@@ -38,7 +38,12 @@ public static class TracingExtensions
 			{
 				var instrumentationKey = builder.Configuration[$"{nameof(CommonOptions)}:ApplicationInsightsEndpoint"];
 				monitorOptions.ConnectionString = instrumentationKey;
+#if DEBUG
 				monitorOptions.Credential = new DefaultAzureCredential();
+#else
+				monitorOptions.Credential = new ManagedIdentityCredential(
+					clientId: builder.Configuration["AZURE_CLIENT_ID"]);
+#endif
 			});
 		});
 	}
