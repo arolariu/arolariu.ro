@@ -123,6 +123,7 @@ module bindingsDeployment 'bindings/deploymentFile.bicep' = {
     dnsZoneName: networkDeployment.outputs.dnsZoneName
     devWebsiteAppServicePlanId: computeDeployment.outputs.developmentAppPlanId
     prodWebsiteAppServicePlanId: computeDeployment.outputs.productionAppPlanId
+    cvWebsiteHostname: websiteDeployment.outputs.cvWebsiteName
     apiWebsiteHostname: websiteDeployment.outputs.apiWebsiteName
     devWebsiteHostname: websiteDeployment.outputs.devWebsiteName
     docsWebsiteHostname: websiteDeployment.outputs.docsWebsiteName
