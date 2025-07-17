@@ -35,7 +35,7 @@ const isVerbose = process.env["VERBOSE"] === "true";
 const isCI = !!(process.env["CI"] ?? process.env["GITHUB_ACTIONS"]);
 
 async function fetchFromAzure(): Promise<TypedConfigurationType> {
-  const appConfigStore = "https://qolp6bappconfig.azconfig.io";
+  const appConfigStore = "https://qtcy47appconfig.azconfig.io";
   const credentials = new DefaultAzureCredential();
   const client = new AppConfigurationClient(appConfigStore, credentials);
 
