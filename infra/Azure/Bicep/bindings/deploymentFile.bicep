@@ -31,6 +31,9 @@ param devWebsiteHostname string
 @description('The hostname of the documentation website.')
 param docsWebsiteHostname string
 
+@description('The hostname of the cv website.')
+param cvWebsiteHostname string
+
 @description('The hostname of the production website.')
 param prodWebsiteHostname string
 
@@ -64,5 +67,14 @@ module docsWebsiteBindings 'docs-arolariu-ro-bindings.bicep' = {
   params: {
     dnsZoneName: dnsZoneName
     docsWebsiteHostname: docsWebsiteHostname
+  }
+}
+
+module cvWebsiteBindings 'cv-arolariu-ro-bindings.bicep' = {
+  scope: resourceGroup()
+  name: 'cvWebsiteBindings-${resourceDeploymentDate}'
+  params: {
+    dnsZoneName: dnsZoneName
+    cvWebsiteHostname: cvWebsiteHostname
   }
 }

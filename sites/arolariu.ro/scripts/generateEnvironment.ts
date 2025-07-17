@@ -16,15 +16,15 @@ type AllEnvironmentVariablesKeys = keyof (TypedProductionEnvironment | TypedDeve
 type TypedConfigurationType = Record<AllEnvironmentVariablesKeys | (string & {}), string>;
 
 const APPCONFIG_MAPPING = {
-  "Site:Environment": "SITE_ENV",
-  "Site:Name": "SITE_NAME",
-  "Site:Url": "SITE_URL",
-  "Api:Environment": "API_ENV",
-  "Api:Name": "API_NAME",
-  "Api:Url": "API_URL",
-  "AuthOptions:ClerkPublishableKey": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
-  "AuthOptions:ClerkSecretKey": "CLERK_SECRET_KEY",
-  "AuthOptions:Secret": "API_JWT",
+  "Common:Site:Environment": "SITE_ENV",
+  "Common:Site:Name": "SITE_NAME",
+  "Common:Site:Url": "SITE_URL",
+  "Common:Api:Environment": "API_ENV",
+  "Common:Api:Name": "API_NAME",
+  "Common:Api:Url": "API_URL",
+  "Common:Auth:Secret": "API_JWT",
+  "Other:ClerkPublishableKey": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+  "Other:ClerkSecretKey": "CLERK_SECRET_KEY",
   "Other:ResendKey": "RESEND_API_KEY",
   "Other:UseCdn": "USE_CDN",
 } satisfies Record<string, AllEnvironmentVariablesKeys>;
@@ -35,12 +35,12 @@ const isVerbose = process.env["VERBOSE"] === "true";
 const isCI = !!(process.env["CI"] ?? process.env["GITHUB_ACTIONS"]);
 
 async function fetchFromAzure(): Promise<TypedConfigurationType> {
-  const appConfigStore = "https://qolp6bappconfig.azconfig.io";
+  const appConfigStore = "https://qtcy47appconfig.azconfig.io";
   const credentials = new DefaultAzureCredential();
   const client = new AppConfigurationClient(appConfigStore, credentials);
 
   const config = {} as TypedConfigurationType;
-  const label = isProduction ? "Production" : "Development";
+  const label = isProduction ? "PRODUCTION" : "DEVELOPMENT";
 
   for (const [key, envVar] of Object.entries(APPCONFIG_MAPPING)) {
     try {

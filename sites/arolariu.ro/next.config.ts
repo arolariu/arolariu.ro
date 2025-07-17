@@ -117,7 +117,6 @@ const nextConfig: NextConfig = {
   experimental: {
     allowDevelopmentBuild: isDebugBuild ? true : undefined,
     devtoolSegmentExplorer: isDebugBuild ? true : undefined,
-    devtoolNewPanelUI: isDebugBuild ? true : undefined,
     serverSourceMaps: isDebugBuild,
     turbopackSourceMaps: isDebugBuild,
     turbopackMinify: !isDebugBuild,

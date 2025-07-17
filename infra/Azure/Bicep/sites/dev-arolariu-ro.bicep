@@ -35,7 +35,6 @@ resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
     clientAffinityEnabled: true // Enable sticky sessions via affinity cookies.
     clientCertEnabled: false // Client certificates are not required.
     reserved: true // Reserved means Linux machine.
-    isXenon: false // Hyper-V sandbox; not used.
     hyperV: false // Hyper-V manager; not used.
     hostNamesDisabled: false
     containerSize: 0
@@ -44,15 +43,14 @@ resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
     publicNetworkAccess: 'Enabled'
     storageAccountRequired: false
     enabled: true
+    scmSiteAlsoStopped: true
     serverFarmId: developmentWebsiteAppPlanId
     siteConfig: {
       acrUseManagedIdentityCreds: true // Azure Container Registry managed identity is used.
-      publishingUsername: '$dev-arolariu' // Publishing username (GitHub / ACR username)
       autoHealEnabled: false
       numberOfWorkers: 1 // Number of instances (initially).
       functionAppScaleLimit: 0
       linuxFxVersion: 'NODE|22-lts' // Node.js version 22 is used.
-      minimumElasticInstanceCount: 0 // Minimum number of instances for horizontal scaling.
       alwaysOn: true // The app is (should be!) always on.
       cors: {
         allowedOrigins: [
@@ -71,7 +69,6 @@ resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
       scmType: 'GithubAction'
       scmIpSecurityRestrictionsDefaultAction: 'Allow'
       scmIpSecurityRestrictionsUseMain: false
-      use32BitWorkerProcess: false // 32-bit worker process is not used; we use 64-bit.
       loadBalancing: 'LeastRequests' // Load balancing algorithm.
       ipSecurityRestrictions: [
         {
@@ -84,7 +81,7 @@ resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
         }
       ]
       ipSecurityRestrictionsDefaultAction: 'Allow'
-      minTlsVersion: '1.2' // Minimum TLS version accepted by the server.
+      minTlsVersion: '1.3' // Minimum TLS version accepted by the server.
       nodeVersion: '22' // Minimum specified Node.js version.
       webSocketsEnabled: true // WebSockets (WSS) are enabled.
     }

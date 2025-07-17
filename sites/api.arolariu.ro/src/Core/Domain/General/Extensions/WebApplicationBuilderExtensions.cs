@@ -52,22 +52,14 @@ internal static class WebApplicationBuilderExtensions
 	{
 		var services = builder.Services;
 		var configuration = builder.Configuration;
+		var credentials = new DefaultAzureCredential();
 
 		#region Setting up the service configuration.
 		configuration.AddEnvironmentVariables();
 		configuration.AddJsonFile("appsettings.json");
 		configuration.AddAzureKeyVault(
 			vaultUri: new Uri(configuration["AzureOptions:KeyVaultEndpoint"]!),
-			credential: new DefaultAzureCredential(new DefaultAzureCredentialOptions()
-			{
-				Retry =
-					{
-						MaxRetries = 10,
-						Mode = RetryMode.Exponential,
-						Delay = TimeSpan.FromSeconds(30),
-						NetworkTimeout = TimeSpan.FromSeconds(300)
-					}
-			}),
+			credential: credentials,
 			options: new AzureKeyVaultConfigurationOptions()
 			{
 				ReloadInterval = TimeSpan.FromMinutes(30)
@@ -76,16 +68,7 @@ internal static class WebApplicationBuilderExtensions
 		{
 			config.ConfigureKeyVault(kv =>
 			{
-				kv.SetCredential(new DefaultAzureCredential(new DefaultAzureCredentialOptions()
-				{
-					Retry =
-					{
-						MaxRetries = 10,
-						Mode = RetryMode.Exponential,
-						Delay = TimeSpan.FromSeconds(30),
-						NetworkTimeout = TimeSpan.FromSeconds(300)
-					}
-				}));
+				kv.SetCredential(credentials);
 				kv.SetSecretRefreshInterval(TimeSpan.FromMinutes(30));
 			});
 
@@ -98,13 +81,13 @@ internal static class WebApplicationBuilderExtensions
 			});
 
 #if DEBUG
-			config.Select("*", labelFilter: "Development");
+			config.Select("*", labelFilter: "DEVELOPMENT");
 #else
-			config.Select("*", labelFilter: "Production")
+			config.Select("*", labelFilter: "PRODUCTION");
 #endif
 
-			var appConfigEndpoint = new Uri(configuration["ConfigurationStore"]!);
-			config.Connect(appConfigEndpoint, new DefaultAzureCredential());
+			var appConfigEndpoint = new Uri(configuration["AzureOptions:ConfigurationEndpoint"]!);
+			config.Connect(appConfigEndpoint, credentials);
 		});
 
 

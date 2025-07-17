@@ -1,247 +1,324 @@
 {
   "items": [
     {
-      "key": "Options:Site:Environment",
+      "key": "Common:Azure:TenantId",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Site:Environment",
+      "key": "Common:Azure:TenantId",
       "value": "",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Site:Name",
+      "key": "Common:Azure:SubscriptionId",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Site:Name",
+      "key": "Common:Azure:SubscriptionId",
       "value": "",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Site:Url",
+      "key": "Common:ApplicationAuthor",
+      "value": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:ApplicationAuthor",
+      "value": "Alexandru-Razvan Olariu <admin@arolariu.ro>",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Site:Environment",
+      "value": "Development",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Site:Environment",
+      "value": "Production",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Site:Name",
+      "value": "dev.arolariu.ro",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Site:Name",
+      "value": "arolariu.ro",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Site:Url",
+      "value": "https://dev.arolariu.ro",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Site:Url",
+      "value": "https://arolariu.ro",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Api:Environment",
+      "value": "Development",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Api:Environment",
+      "value": "Production",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Api:Name",
+      "value": "api.arolariu.ro",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Api:Name",
+      "value": "api.arolariu.ro",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Api:Url",
+      "value": "https://api.arolariu.ro",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Api:Url",
+      "value": "https://api.arolariu.ro",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Auth:Audience",
+      "value": "https://api.arolariu.ro",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Auth:Audience",
+      "value": "https://api.arolariu.ro",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Auth:Issuer",
+      "value": "https://auth.arolariu.ro",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Auth:Issuer",
+      "value": "https://auth.arolariu.ro",
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Common:Auth:Secret",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Site:Url",
+      "key": "Common:Auth:Secret",
       "value": "",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Api:Environment",
-      "value": "",
-      "label": "PRODUCTION",
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Options:Api:Environment",
+      "key": "Other:ClerkPublishableKey",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Api:Name",
+      "key": "Other:ClerkPublishableKey",
       "value": "",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Api:Name",
+      "key": "Other:ClerkSecretKey",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Api:Url",
+      "key": "Other:ClerkSecretKey",
       "value": "",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Api:Url",
+      "key": "Other:ResendKey",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Auth:Audience",
+      "key": "Other:ResendKey",
       "value": "",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Auth:Audience",
+      "key": "Endpoints:NoSqlServer",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Auth:Subject",
+      "key": "Endpoints:NoSqlServer",
       "value": "",
       "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Auth:Subject",
+      "key": "Endpoints:SqlServer",
       "value": "",
       "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Auth:Issuer",
+      "key": "Endpoints:SqlServer",
       "value": "",
       "label": "PRODUCTION",
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Options:Auth:Issuer",
-      "value": "",
-      "label": "DEVELOPMENT",
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Options:Auth:Secret",
-      "value": "",
-      "label": "PRODUCTION",
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Options:Auth:Secret",
-      "value": "",
-      "label": "DEVELOPMENT",
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Options:Auth:ClerkPublishableKey",
-      "value": "",
-      "label": "DEVELOPMENT",
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Options:Auth:ClerkPublishableKey",
-      "value": "",
-      "label": "PRODUCTION",
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Options:Auth:ClerkSecretKey",
-      "value": "",
-      "label": "PRODUCTION",
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Options:Auth:ClerkSecretKey",
-      "value": "",
-      "label": "DEVELOPMENT",
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Options:Azure:TenantId",
-      "value": "",
-      "label": null,
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Options:Azure:SubscriptionId",
-      "value": "",
-      "label": null,
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Options:Azure:FrontendIdentityClientId",
-      "value": "",
-      "label": null,
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Options:Azure:BackendIdentityClientId",
-      "value": "",
-      "label": null,
-      "content_type": "",
-      "tags": {}
-    },
-    {
-      "key": "Options:Azure:InfrastructureIdentityClientId",
-      "value": "",
-      "label": null,
       "content_type": "",
       "tags": {}
     },
     {
       "key": "Endpoints:CognitiveServices",
       "value": "",
-      "label": null,
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Endpoints:CognitiveServices",
+      "value": "",
+      "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
       "key": "Endpoints:KeyVault",
       "value": "",
-      "label": null,
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Endpoints:KeyVault",
+      "value": "",
+      "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
       "key": "Endpoints:OpenAI",
       "value": "",
-      "label": null,
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Endpoints:OpenAI",
+      "value": "",
+      "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
       "key": "Endpoints:StorageAccount",
       "value": "",
-      "label": null,
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Endpoints:StorageAccount",
+      "value": "",
+      "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     },
     {
       "key": "Endpoints:ApplicationInsights",
       "value": "",
-      "label": null,
+      "label": "DEVELOPMENT",
       "content_type": "",
       "tags": {}
     },
     {
-      "key": "Options:Common:ApplicationAuthor",
+      "key": "Endpoints:ApplicationInsights",
       "value": "",
-      "label": null,
+      "label": "PRODUCTION",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Endpoints:Grafana",
+      "value": "",
+      "label": "DEVELOPMENT",
+      "content_type": "",
+      "tags": {}
+    },
+    {
+      "key": "Endpoints:Grafana",
+      "value": "",
+      "label": "PRODUCTION",
       "content_type": "",
       "tags": {}
     }

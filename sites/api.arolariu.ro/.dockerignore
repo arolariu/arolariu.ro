@@ -1,0 +1,91 @@
+# .NET build artifacts
+**/bin
+**/obj
+**/out
+
+# Visual Studio / Visual Studio Code
+**/.vs
+**/.vscode
+**/*.user
+**/*.suo
+**/*.sln.docstates
+
+# ReSharper
+**/_ReSharper*/
+**/[Tt]est[Rr]esult*
+**/[Bb]uild[Ll]og.*
+
+# NuGet
+**/packages/*
+!**/packages/repositories.config
+
+# MSTest test Results
+**/[Tt]est[Rr]esult*/
+**/[Bb]uild[Ll]og.*
+
+# Files built by Visual Studio
+**/*_i.c
+**/*_p.c
+**/*_h.h
+**/*.ilk
+**/*.meta
+**/*.obj
+**/*.iobj
+**/*.pch
+**/*.pdb
+**/*.ipdb
+**/*.pgc
+**/*.pgd
+**/*.rsp
+**/*.sbr
+**/*.tlb
+**/*.tli
+**/*.tlh
+**/*.tmp
+**/*.tmp_proj
+**/*_wpftmp.csproj
+**/*.log
+**/*.tlog
+**/*.vspscc
+**/*.vssscc
+.builds
+**/*.pidb
+**/*.svclog
+**/*.scc
+
+# Docker
+**/.dockerignore
+**/Dockerfile*
+**/docker-compose*
+
+# Git
+**/.git
+**/.gitignore
+**/.gitattributes
+
+# Misc
+**/node_modules
+**/npm-debug.log
+**/yarn-error.log
+**/.env
+**/.DS_Store
+**/Thumbs.db
+
+# Test results
+**/TestResults/
+**/coverage/
+**/code-cov/
+
+# Documentation
+**/README.md
+**/LICENSE
+**/CHANGELOG.md
+
+# IDE artifacts
+**/*.swp
+**/*.swo
+**/*~
+
+# OS artifacts
+.DS_Store
+Thumbs.db

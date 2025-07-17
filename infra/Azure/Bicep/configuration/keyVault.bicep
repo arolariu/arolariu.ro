@@ -3,9 +3,6 @@ targetScope = 'resourceGroup'
 metadata description = 'This template will create the necessary Azure Key Vault resources for arolariu.ro'
 metadata author = 'Alexandru-Razvan Olariu'
 
-import { identity } from '../types/identity.type.bicep'
-param identities identity[]
-
 @description('The name of the Azure Key Vault resource.')
 param keyVaultName string
 
@@ -28,15 +25,6 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-var keyVaultSecretNames = [
-  'app-config-store'
-  'api-jwt-secret'
-
-  // SQL Server credentials (production only)
-  'sql-admin-username'
-  'sql-admin-password'
-]
-
 resource keyVault 'Microsoft.KeyVault/vaults@2024-04-01-preview' = {
   name: keyVaultName
   location: keyVaultLocation
@@ -58,14 +46,19 @@ resource keyVault 'Microsoft.KeyVault/vaults@2024-04-01-preview' = {
     displayName: 'Key Vault'
     resourceType: 'Key Vault'
   })
-
-  resource keyVaultItems 'secrets@2024-12-01-preview' = [
-    for secretName in keyVaultSecretNames: {
-      name: secretName
-      properties: { attributes: { enabled: true }, value: '' }
-    }
-  ]
 }
+
+var secrets = loadJsonContent('keyVault.json')
+resource keyVaultSecrets 'Microsoft.KeyVault/vaults/secrets@2024-04-01-preview' = [
+  for secret in secrets.items: {
+    parent: keyVault
+    name: secret.name
+    properties: {
+      value: secret.value
+      attributes: { enabled: true }
+    }
+  }
+]
 
 output mainKeyVaultUri string = keyVault.properties.vaultUri
 output mainKeyVaultResourceId string = keyVault.id

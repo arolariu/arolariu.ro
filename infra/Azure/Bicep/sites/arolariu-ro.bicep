@@ -37,7 +37,6 @@ resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
     clientAffinityEnabled: true // Enable sticky sessions via affinity cookies.
     clientCertEnabled: false // Client certificates are not required.
     reserved: true // Reserved means Linux machine.
-    isXenon: false // Hyper-V sandbox; not used.
     hyperV: false // Hyper-V manager; not used.
     hostNamesDisabled: false
     containerSize: 0
@@ -47,12 +46,11 @@ resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
     storageAccountRequired: false
     enabled: true
     serverFarmId: productionWebsiteAppPlanId
+    scmSiteAlsoStopped: true
     siteConfig: {
       acrUseManagedIdentityCreds: true // Azure Container Registry managed identity is used.
-      publishingUsername: '$arolariu' // Publishing username (GitHub / ACR username)
       autoHealEnabled: false
       numberOfWorkers: 1 // Number of instances (initially).
-      functionAppScaleLimit: 0
       linuxFxVersion: 'NODE|22-lts' // Node.js version 22 is used.
       minimumElasticInstanceCount: 1 // Minimum number of instances for horizontal scaling.
       alwaysOn: true // The app is (should be!) always on.
@@ -73,7 +71,6 @@ resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
       scmType: 'GithubAction'
       scmIpSecurityRestrictionsDefaultAction: 'Allow'
       scmIpSecurityRestrictionsUseMain: false
-      use32BitWorkerProcess: false // 32-bit worker process is not used; we use 64-bit.
       loadBalancing: 'LeastRequests' // Load balancing algorithm.
       ipSecurityRestrictions: [
         {

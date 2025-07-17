@@ -62,9 +62,13 @@ module devWebsiteDeployment 'dev-arolariu-ro.bicep' = {
 module docsWebsiteDeployment 'docs-arolariu-ro.bicep' = {
   scope: resourceGroup()
   name: 'docsWebsiteDeployment-${resourceDeploymentDate}'
-  params: {
-    staticWebAppDeploymentDate: resourceDeploymentDate
-  }
+  params: { staticWebAppDeploymentDate: resourceDeploymentDate }
+}
+
+module cvWebsiteDeployment 'cv-arolariu-ro.bicep' = {
+  scope: resourceGroup()
+  name: 'cvWebsiteDeployment-${resourceDeploymentDate}'
+  params: { staticWebAppDeploymentDate: resourceDeploymentDate }
 }
 
 // Output all website URLs for DNS configuration
@@ -72,9 +76,11 @@ output mainWebsiteUrl string = mainWebsiteDeployment.outputs.mainWebsiteUrl
 output apiWebsiteUrl string = apiWebsiteDeployment.outputs.apiWebsiteUrl
 output devWebsiteUrl string = devWebsiteDeployment.outputs.devWebsiteUrl
 output docsWebsiteUrl string = docsWebsiteDeployment.outputs.docsWebsiteUrl
+output cvWebsiteUrl string = cvWebsiteDeployment.outputs.cvWebsiteUrl
 
 // Output all website names for bindings
 output mainWebsiteName string = mainWebsiteDeployment.outputs.mainWebsiteName
 output apiWebsiteName string = apiWebsiteDeployment.outputs.apiWebsiteName
 output devWebsiteName string = devWebsiteDeployment.outputs.devWebsiteName
 output docsWebsiteName string = docsWebsiteDeployment.outputs.docsWebsiteName
+output cvWebsiteName string = cvWebsiteDeployment.outputs.cvWebsiteName

@@ -34,7 +34,7 @@ resource frontDoorWebApplicationFirewall 'Microsoft.Network/frontdoorwebapplicat
   properties: {
     policySettings: {
       enabledState: 'Enabled'
-      mode: 'Detection'
+      mode: 'Prevention'
       requestBodyCheck: 'Enabled'
     }
     customRules: {
@@ -69,16 +69,12 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
     name: 'productionWAF'
     properties: {
       parameters: {
-        wafPolicy: {
-          id: frontDoorWebApplicationFirewall.id
-        }
+        wafPolicy: { id: frontDoorWebApplicationFirewall.id }
         type: 'WebApplicationFirewall'
         associations: [
           {
             domains: [
-              {
-                id: productionEndpoint.id
-              }
+              { id: productionEndpoint.id }
             ]
             patternsToMatch: [
               '/*'
@@ -175,16 +171,10 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
       name: 'production-route'
       properties: {
         customDomains: [
-          {
-            id: apexCustomDomain.id
-          }
-          {
-            id: wwwCustomDomain.id
-          }
+          { id: apexCustomDomain.id }
+          { id: wwwCustomDomain.id }
         ]
-        originGroup: {
-          id: productionOriginGroup.id
-        }
+        originGroup: { id: productionOriginGroup.id }
         supportedProtocols: ['Https']
         patternsToMatch: ['/*']
         httpsRedirect: 'Enabled'
@@ -205,9 +195,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
   resource cdnEndpoint 'afdEndpoints@2025-04-15' = {
     name: 'cdn'
     location: 'Global'
-    properties: {
-      enabledState: 'Enabled'
-    }
+    properties: { enabledState: 'Enabled' }
     tags: union(commonTags, {
       displayName: 'CDN Endpoint'
     })

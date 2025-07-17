@@ -1,0 +1,92 @@
+{
+  "items": [
+    {
+      "name": "DEVELOPMENT-JWT-SECRET",
+      "value": "<your-jwt-secret>"
+    },
+    {
+      "name": "PRODUCTION-JWT-SECRET",
+      "value": "<your-jwt-secret>"
+    },
+    {
+      "name": "DEVELOPMENT-ClerkPublishableKey",
+      "value": "<your-clerk-publishable-key>"
+    },
+    {
+      "name": "PRODUCTION-ClerkPublishableKey",
+      "value": "<your-clerk-publishable-key>"
+    },
+    {
+      "name": "DEVELOPMENT-ClerkSecretKey",
+      "value": "<your-clerk-secret-key>"
+    },
+    {
+      "name": "PRODUCTION-ClerkSecretKey",
+      "value": "<your-clerk-secret-key>"
+    },
+    {
+      "name": "DEVELOPMENT-ResendKey",
+      "value": "<your-resend-key>"
+    },
+    {
+      "name": "PRODUCTION-ResendKey",
+      "value": "<your-resend-key>"
+    },
+    {
+      "name": "DEVELOPMENT-NoSqlServerEndpoint",
+      "value": "<your-nosql-server-endpoint>"
+    },
+    {
+      "name": "PRODUCTION-NoSqlServerEndpoint",
+      "value": "<your-nosql-server-endpoint>"
+    },
+    {
+      "name": "DEVELOPMENT-SQLServerEndpoint",
+      "value": "<your-sql-server-endpoint>"
+    },
+    {
+      "name": "PRODUCTION-SQLServerEndpoint",
+      "value": "<your-sql-server-endpoint>"
+    },
+    {
+      "name": "DEVELOPMENT-CacheEndpoint",
+      "value": "<your-cache-endpoint>"
+    },
+    {
+      "name": "PRODUCTION-CacheEndpoint",
+      "value": "<your-cache-endpoint>"
+    },
+    {
+      "name": "DEVELOPMENT-CognitiveServicesEndpoint",
+      "value": "<your-cognitive-services-endpoint>"
+    },
+    {
+      "name": "PRODUCTION-CognitiveServicesEndpoint",
+      "value": "<your-cognitive-services-endpoint>"
+    },
+    {
+      "name": "DEVELOPMENT-OpenAIEndpoint",
+      "value": "<your-openai-endpoint>"
+    },
+    {
+      "name": "PRODUCTION-OpenAIEndpoint",
+      "value": "<your-openai-endpoint>"
+    },
+    {
+      "name": "DEVELOPMENT-StorageEndpoint",
+      "value": "<your-storage-account-endpoint>"
+    },
+    {
+      "name": "PRODUCTION-StorageEndpoint",
+      "value": "<your-storage-account-endpoint>"
+    },
+    {
+      "name": "DEVELOPMENT-ApplicationInsightsEndpoint",
+      "value": "<your-application-insights-endpoint>"
+    },
+    {
+      "name": "PRODUCTION-ApplicationInsightsEndpoint",
+      "value": "<your-application-insights-endpoint>"
+    }
+  ]
+}

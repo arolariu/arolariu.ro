@@ -9,13 +9,8 @@ param dnsZoneName string
 @description('The name of the App Service to bind the custom domain to.')
 param docsWebsiteHostname string
 
-resource docsWebsite 'Microsoft.Web/staticSites@2024-11-01' existing = {
-  name: docsWebsiteHostname
-}
-
-resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' existing = {
-  name: dnsZoneName
-}
+resource docsWebsite 'Microsoft.Web/staticSites@2024-11-01' existing = { name: docsWebsiteHostname }
+resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' existing = { name: dnsZoneName }
 
 // CNAME record for docs.arolariu.ro
 resource docsCnameRecord 'Microsoft.Network/dnsZones/CNAME@2023-07-01-preview' = {

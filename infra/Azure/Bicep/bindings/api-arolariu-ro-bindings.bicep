@@ -31,13 +31,8 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource apiWebsite 'Microsoft.Web/sites@2024-11-01' existing = {
-  name: apiWebsiteHostname
-}
-
-resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' existing = {
-  name: dnsZoneName
-}
+resource apiWebsite 'Microsoft.Web/sites@2024-11-01' existing = { name: apiWebsiteHostname }
+resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' existing = { name: dnsZoneName }
 
 // Add CNAME record for domain binding
 resource apiCnameRecord 'Microsoft.Network/dnsZones/CNAME@2023-07-01-preview' = {

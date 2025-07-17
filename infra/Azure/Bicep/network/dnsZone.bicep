@@ -36,10 +36,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource frontDoor 'Microsoft.Cdn/profiles@2025-04-15' existing = {
-  name: frontDoorName
-}
-
+resource frontDoor 'Microsoft.Cdn/profiles@2025-04-15' existing = { name: frontDoorName }
 resource frontDoorProductionEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2025-04-15' existing = {
   parent: frontDoor
   name: 'production'
@@ -48,9 +45,7 @@ resource frontDoorProductionEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2025-0
 resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' = {
   name: dnsZoneName
   location: 'Global'
-  properties: {
-    zoneType: 'Public'
-  }
+  properties: { zoneType: 'Public' }
 
   // DNSSEC configuration for the DNS zone
   resource dnssecResource 'dnssecConfigs@2023-07-01-preview' = { name: 'default' }
