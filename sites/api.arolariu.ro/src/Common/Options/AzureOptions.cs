@@ -12,16 +12,16 @@ public sealed class AzureOptions
 	public string TenantId { get; set; } = string.Empty;
 	#endregion
 
-	#region Azure Key Vault configuration
-	/// <summary>
-	/// The name of the Azure Key Vault.
-	/// </summary>
-	public string KeyVaultName { get; set; } = string.Empty;
-
+	#region Azure configuration
 	/// <summary>
 	/// The URI of the Azure Key Vault.
 	/// </summary>
 	public string KeyVaultEndpoint { get; set; } = string.Empty;
+
+	/// <summary>
+	/// The URI of the Azure App Configuration..
+	/// </summary>
+	public string ConfigurationEndpoint { get; set; } = string.Empty;
 	#endregion
 
 	#region Azure Storage configuration

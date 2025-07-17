@@ -81,12 +81,12 @@ internal static class WebApplicationBuilderExtensions
 			});
 
 #if DEBUG
-			config.Select("*", labelFilter: "Development");
+			config.Select("*", labelFilter: "DEVELOPMENT");
 #else
-			config.Select("*", labelFilter: "Production");
+			config.Select("*", labelFilter: "PRODUCTION");
 #endif
 
-			var appConfigEndpoint = new Uri(configuration["ConfigurationStore"]!);
+			var appConfigEndpoint = new Uri(configuration["AzureOptions:ConfigurationEndpoint"]!);
 			config.Connect(appConfigEndpoint, credentials);
 		});
 
