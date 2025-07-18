@@ -32,7 +32,7 @@ public sealed class KeyVaultService(IOptionsMonitor<AzureOptions> options) : IKe
 		new DefaultAzureCredential());
 #else
 		new ManagedIdentityCredential(
-				clientId: builder.Configuration["AZURE_CLIENT_ID"]);
+				clientId: Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")));
 #endif
 
 
