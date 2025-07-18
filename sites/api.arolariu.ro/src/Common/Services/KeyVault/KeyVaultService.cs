@@ -29,12 +29,11 @@ public sealed class KeyVaultService(IOptionsMonitor<AzureOptions> options) : IKe
 			new Uri(options.CurrentValue.KeyVaultEndpoint),
 			credential:
 #if DEBUG
-		new DefaultAzureCredential()
+		new DefaultAzureCredential());
 #else
 		new ManagedIdentityCredential(
 				clientId: builder.Configuration["AZURE_CLIENT_ID"]);
 #endif
-				);
 
 
 	/// <inheritdoc/>
