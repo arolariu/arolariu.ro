@@ -8,6 +8,13 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 ## 🎉 Latest Releases
 
+### [0.0.40](https://www.npmjs.com/package/@arolariu/components/v/0.0.40) - 2025-07-24
+
+**🔧 Dependencies & Infrastructure**
+
+- ⬆️ **Upgraded Radix UI** packages to latest versions for better performance
+- ⬆️ **Updated rslib/rsbuild** core packages to latest versions
+
 ### [0.0.39](https://www.npmjs.com/package/@arolariu/components/v/0.0.39) - 2025-06-25
 
 **🔧 Dependencies & Infrastructure**
