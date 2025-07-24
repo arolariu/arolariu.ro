@@ -32,12 +32,14 @@ public sealed class KeyVaultService : IKeyVaultService
 		ApplicationOptions options = optionsManager.GetApplicationOptions();
 
 		var keyVaultEndpoint = options.SecretsEndpoint;
-		var credentials = new DefaultAzureCredential(new DefaultAzureCredentialOptions
-		{
+		var credentials = new DefaultAzureCredential(
 #if !DEBUG
+		new DefaultAzureCredentialOptions
+		{
 			ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+		}
 #endif
-		});
+		);
 
 		_secretClient = new SecretClient(
 			vaultUri: new Uri(keyVaultEndpoint),

@@ -46,10 +46,10 @@ internal static class WebApplicationBuilderExtensions
 #if !DEBUG
 			new DefaultAzureCredentialOptions
 			{
-				ManagedIdentityClientId = builder.Configuration["AZURE_CLIENT_ID"]
-			};
+				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+			}
 #endif
-			);
+		);
 
 		var secretsStoreEndpoint = new Uri(configuration["ApplicationOptions:SecretsEndpoint"]!);
 		var configStoreEndpoint = new Uri(configuration["ApplicationOptions:ConfigurationEndpoint"]!);

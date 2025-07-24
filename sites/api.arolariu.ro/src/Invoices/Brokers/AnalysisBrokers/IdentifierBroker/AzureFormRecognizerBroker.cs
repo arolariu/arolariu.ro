@@ -39,10 +39,10 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
 #if !DEBUG
 			new DefaultAzureCredentialOptions
 			{
-				ManagedIdentityClientId = builder.Configuration["AZURE_CLIENT_ID"]
-			};
+				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+			}
 #endif
-);
+		);
 
 		client = new DocumentAnalysisClient(
 			endpoint: new Uri(documentIntelligenceEndpoint),

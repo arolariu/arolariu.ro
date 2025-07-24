@@ -35,10 +35,10 @@ public class AzureTranslatorBroker : ITranslatorBroker
 #if !DEBUG
 			new DefaultAzureCredentialOptions
 			{
-				ManagedIdentityClientId = builder.Configuration["AZURE_CLIENT_ID"]
-			};
+				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+			}
 #endif
-);
+		);
 
 		textTranslationClient = new TextTranslationClient(
 			credential: credentials,
@@ -63,10 +63,10 @@ public class AzureTranslatorBroker : ITranslatorBroker
 #if !DEBUG
 			new DefaultAzureCredentialOptions
 			{
-				ManagedIdentityClientId = builder.Configuration["AZURE_CLIENT_ID"]
-			};
+				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+			}
 #endif
-);
+		);
 
 		textTranslationClient = new TextTranslationClient(
 			credential: credentials,

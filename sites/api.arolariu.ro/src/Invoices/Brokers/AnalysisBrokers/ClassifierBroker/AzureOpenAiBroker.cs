@@ -36,10 +36,10 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
 #if !DEBUG
 			new DefaultAzureCredentialOptions
 			{
-				ManagedIdentityClientId = builder.Configuration["AZURE_CLIENT_ID"]
-			};
+				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+			}
 #endif
-	);
+		);
 
 		openAIClient = new AzureOpenAIClient(
 			endpoint: new Uri(openAiEndpoint),

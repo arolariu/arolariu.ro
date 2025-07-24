@@ -65,10 +65,10 @@ public static class WebApplicationBuilderExtensions
 #if !DEBUG
 			new DefaultAzureCredentialOptions
 			{
-				ManagedIdentityClientId = builder.Configuration["AZURE_CLIENT_ID"]
-			};
+				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+			}
 #endif
-	);
+			);
 
 			var cosmosClient = new CosmosClient(connectionString, credentials);
 			return cosmosClient;

@@ -48,12 +48,12 @@ public static class TracingExtensions
 				monitorOptions.ConnectionString = instrumentationKey;
 				monitorOptions.Credential = new DefaultAzureCredential(
 #if !DEBUG
-					new DefaultAzureCredentialOptions
+				new DefaultAzureCredentialOptions
 				{
 					ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
 				}
 #endif
-								);
+				);
 			});
 		});
 	}
