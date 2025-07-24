@@ -37,7 +37,7 @@ public abstract class ApplicationOptions
 	public string StorageAccountName { get; set; } = string.Empty;
 
 	/// <summary>
-	/// The endppint of the storage account:
+	/// The endpoint of the storage account:
 	/// -> Cloud: Azure Storage account
 	/// -> Local: Emulated blob storage
 	/// </summary>
