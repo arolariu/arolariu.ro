@@ -10,8 +10,7 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
-
-using Microsoft.Extensions.Options;
+using Azure.Identity;
 
 /// <summary>
 /// The <see cref="AzureFormRecognizerBroker"/> class.
@@ -28,13 +27,26 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
 	/// <summary>
 	/// Constructor.
 	/// </summary>
-	/// <param name="options"></param>
-	public AzureFormRecognizerBroker(IOptionsMonitor<AzureOptions> options)
+	/// <param name="optionsManager"></param>
+	public AzureFormRecognizerBroker(IOptionsManager optionsManager)
 	{
-		ArgumentNullException.ThrowIfNull(options);
+		ArgumentNullException.ThrowIfNull(optionsManager);
+		ApplicationOptions options = optionsManager.GetApplicationOptions();
+
+		var documentIntelligenceEndpoint = options.CognitiveServicesEndpoint;
+		var documentIntelligenceKey = options.CognitiveServicesKey;
+		var credentials = new DefaultAzureCredential(
+#if !DEBUG
+			new DefaultAzureCredentialOptions
+			{
+				ManagedIdentityClientId = builder.Configuration["AZURE_CLIENT_ID"]
+			};
+#endif
+);
+
 		client = new DocumentAnalysisClient(
-			new Uri(options.CurrentValue.CognitiveServicesEndpoint),
-			new AzureKeyCredential(options.CurrentValue.CognitiveServicesKey));
+			endpoint: new Uri(documentIntelligenceEndpoint),
+			credential: credentials);
 	}
 
 

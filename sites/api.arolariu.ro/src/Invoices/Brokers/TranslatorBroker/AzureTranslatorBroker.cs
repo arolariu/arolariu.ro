@@ -10,8 +10,7 @@ using arolariu.Backend.Common.Options;
 using Azure;
 using Azure.AI.Translation.Text;
 using Azure.Core.Pipeline;
-
-using Microsoft.Extensions.Options;
+using Azure.Identity;
 
 /// <summary>
 /// This class represents the Azure translator broker.
@@ -24,16 +23,25 @@ public class AzureTranslatorBroker : ITranslatorBroker
 	/// <summary>
 	/// Constructor.
 	/// </summary>
-	/// <param name="options"></param>
-	public AzureTranslatorBroker(IOptionsMonitor<AzureOptions> options)
+	/// <param name="optionsManager"></param>
+	public AzureTranslatorBroker(IOptionsManager optionsManager)
 	{
-		ArgumentNullException.ThrowIfNull(options);
+		ArgumentNullException.ThrowIfNull(optionsManager);
+		ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-		var cognitiveServicesEndpoint = options.CurrentValue.CognitiveServicesEndpoint;
-		var cognitiveServicesApiKey = options.CurrentValue.CognitiveServicesKey;
+		var cognitiveServicesEndpoint = options.CognitiveServicesEndpoint;
+		var cognitiveServicesApiKey = options.CognitiveServicesKey;
+		var credentials = new DefaultAzureCredential(
+#if !DEBUG
+			new DefaultAzureCredentialOptions
+			{
+				ManagedIdentityClientId = builder.Configuration["AZURE_CLIENT_ID"]
+			};
+#endif
+);
 
 		textTranslationClient = new TextTranslationClient(
-			credential: new AzureKeyCredential(cognitiveServicesApiKey),
+			credential: credentials,
 			endpoint: new Uri(cognitiveServicesEndpoint));
 	}
 
@@ -41,18 +49,27 @@ public class AzureTranslatorBroker : ITranslatorBroker
 	/// Another constructor that allows passing a custom HttpClient.
 	/// This is useful for testing purposes.
 	/// </summary>
-	/// <param name="options"></param>
+	/// <param name="optionsManager"></param>
 	/// <param name="httpClient"></param>
-	public AzureTranslatorBroker(IOptionsMonitor<AzureOptions> options, HttpClient httpClient)
+	public AzureTranslatorBroker(IOptionsManager optionsManager, HttpClient httpClient)
 	{
-		ArgumentNullException.ThrowIfNull(options);
+		ArgumentNullException.ThrowIfNull(optionsManager);
 		ArgumentNullException.ThrowIfNull(httpClient);
+		ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-		var cognitiveServicesEndpoint = options.CurrentValue.CognitiveServicesEndpoint;
-		var cognitiveServicesApiKey = options.CurrentValue.CognitiveServicesKey;
+		var cognitiveServicesEndpoint = options.CognitiveServicesEndpoint;
+		var cognitiveServicesApiKey = options.CognitiveServicesKey;
+		var credentials = new DefaultAzureCredential(
+#if !DEBUG
+			new DefaultAzureCredentialOptions
+			{
+				ManagedIdentityClientId = builder.Configuration["AZURE_CLIENT_ID"]
+			};
+#endif
+);
 
 		textTranslationClient = new TextTranslationClient(
-			credential: new AzureKeyCredential(cognitiveServicesApiKey),
+			credential: credentials,
 			endpoint: new Uri(cognitiveServicesEndpoint),
 			options: new TextTranslationClientOptions
 			{

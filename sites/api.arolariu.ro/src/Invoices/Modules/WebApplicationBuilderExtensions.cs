@@ -50,47 +50,61 @@ public static class WebApplicationBuilderExtensions
 	public static void AddInvoicesDomainConfiguration(this WebApplicationBuilder builder)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
+		var services = builder.Services;
+		var configuration = builder.Configuration;
 
 		// Add Cosmos Client and Entity Framework Core --- data layer services.
-		builder.Services.AddSingleton<CosmosClient>(options =>
+		services.AddSingleton<CosmosClient>(options =>
 		{
-			var endpoint = builder.Configuration[$"{nameof(AzureOptions)}:NoSqlConnectionString"]!;
-#if DEBUG
-			var credentials = new DefaultAzureCredential();
-#else
-			var credentials = new ManagedIdentityCredential(
-				clientId: builder.Configuration["AZURE_CLIENT_ID"]);
+			using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
+			string connectionString = new string(optionsManager
+										.GetRequiredService<IOptionsManager>()
+										.GetApplicationOptions()
+										.NoSqlConnectionString);
+			var credentials = new DefaultAzureCredential(
+#if !DEBUG
+			new DefaultAzureCredentialOptions
+			{
+				ManagedIdentityClientId = builder.Configuration["AZURE_CLIENT_ID"]
+			};
 #endif
+	);
 
-			var cosmosClient = new CosmosClient(endpoint, credentials);
+			var cosmosClient = new CosmosClient(connectionString, credentials);
 			return cosmosClient;
 		});
 
-		builder.Services.AddDbContext<InvoiceNoSqlBroker>(options =>
+		services.AddDbContext<InvoiceNoSqlBroker>(options =>
 		{
-			options.UseCosmos(
-				connectionString: builder.Configuration[$"{nameof(AzureOptions)}:NoSqlConnectionString"]!,
-				databaseName: "arolariu");
+			using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
+			string connectionString = new string(optionsManager
+										.GetRequiredService<IOptionsManager>()
+										.GetApplicationOptions()
+										.NoSqlConnectionString);
 
+			options.UseCosmos(connectionString, "arolariu", noSqlOptions =>
+			{
+
+			});
 			options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 		});
 
 		// Broker services:
-		builder.Services.AddScoped<IOpenAiBroker, AzureOpenAiBroker>();
-		builder.Services.AddScoped<IFormRecognizerBroker, AzureFormRecognizerBroker>();
-		builder.Services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
-		builder.Services.AddScoped<ITranslatorBroker, AzureTranslatorBroker>();
+		services.AddScoped<IOpenAiBroker, AzureOpenAiBroker>();
+		services.AddScoped<IFormRecognizerBroker, AzureFormRecognizerBroker>();
+		services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
+		services.AddScoped<ITranslatorBroker, AzureTranslatorBroker>();
 
 		// Foundation services:
-		builder.Services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
-		builder.Services.AddScoped<IInvoiceAnalysisFoundationService, InvoiceAnalysisFoundationService>();
-		builder.Services.AddScoped<IMerchantStorageFoundationService, MerchantStorageFoundationService>();
+		services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
+		services.AddScoped<IInvoiceAnalysisFoundationService, InvoiceAnalysisFoundationService>();
+		services.AddScoped<IMerchantStorageFoundationService, MerchantStorageFoundationService>();
 
 		// Orchestration services:
-		builder.Services.AddScoped<IInvoiceOrchestrationService, InvoiceOrchestrationService>();
-		builder.Services.AddScoped<IMerchantOrchestrationService, MerchantOrchestrationService>();
+		services.AddScoped<IInvoiceOrchestrationService, InvoiceOrchestrationService>();
+		services.AddScoped<IMerchantOrchestrationService, MerchantOrchestrationService>();
 
 		// Processing services:
-		builder.Services.AddScoped<IInvoiceProcessingService, InvoiceProcessingService>();
+		services.AddScoped<IInvoiceProcessingService, InvoiceProcessingService>();
 	}
 }

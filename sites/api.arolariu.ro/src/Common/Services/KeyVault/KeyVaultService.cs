@@ -7,34 +7,52 @@ using System.Threading.Tasks;
 using arolariu.Backend.Common.Options;
 
 using Azure;
+using Azure.Core;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 
-using Microsoft.Extensions.Options;
-
 /// <summary>
-/// Service that handles the Azure Key Vault integration.
-/// A singleton instance of this class is registered in the service collection.
+/// A service that provides access to Azure Key Vault secrets.
 /// </summary>
-/// <remarks>
-/// Constructor.
-/// </remarks>
-/// <param name="options">The configuration instance used to retrieve the Azure Key Vault URI.</param>
-/// <exception cref="ArgumentNullException">Thrown when the configuration is null.</exception>
 [ExcludeFromCodeCoverage] // Infrastructure code is not tested currently.
-public sealed class KeyVaultService(IOptionsMonitor<AzureOptions> options) : IKeyVaultService
+public sealed class KeyVaultService : IKeyVaultService
 {
 	[SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "Old-style implementation")]
-	private SecretClient _secretClient { get; init; } = new SecretClient(
-			new Uri(options.CurrentValue.KeyVaultEndpoint),
-			credential:
-#if DEBUG
-		new DefaultAzureCredential());
-#else
-		new ManagedIdentityCredential(
-				clientId: Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")));
-#endif
+	private SecretClient _secretClient { get; init; }
 
+	/// <summary>
+	/// Initializes a new instance of the <see cref="KeyVaultService"/> class with the specified options manager.
+	/// </summary>
+	/// <remarks>This constructor sets up a connection to Azure Key Vault using the specified application options.
+	/// It configures the <see cref="SecretClient"/> with a retry policy that uses exponential backoff.</remarks>
+	/// <param name="optionsManager">The options manager used to retrieve application configuration settings. Cannot be <see langword="null"/>.</param>
+	public KeyVaultService(IOptionsManager optionsManager)
+	{
+		ArgumentNullException.ThrowIfNull(optionsManager);
+		ApplicationOptions options = optionsManager.GetApplicationOptions();
+
+		var keyVaultEndpoint = options.SecretsEndpoint;
+		var credentials = new DefaultAzureCredential(new DefaultAzureCredentialOptions
+		{
+#if !DEBUG
+			ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+#endif
+		});
+
+		_secretClient = new SecretClient(
+			vaultUri: new Uri(keyVaultEndpoint),
+			credential: credentials,
+			options: new SecretClientOptions
+			{
+				Retry =
+				{
+					MaxRetries = 10,
+					Delay = TimeSpan.FromSeconds(30),
+					MaxDelay = TimeSpan.FromSeconds(300),
+					Mode = RetryMode.Exponential
+				}
+			});
+	}
 
 	/// <inheritdoc/>
 	/// <param name="secretName">The name of the secret to fetch from Azure Key Vault.</param>
