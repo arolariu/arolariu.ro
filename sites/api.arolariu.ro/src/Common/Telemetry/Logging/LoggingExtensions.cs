@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Common.Telemetry.Logging;
 
 using System;
+using System.Diagnostics;
 
 using arolariu.Backend.Common.Options;
 
@@ -8,6 +9,7 @@ using Azure.Identity;
 using Azure.Monitor.OpenTelemetry.Exporter;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using OpenTelemetry.Logs;
@@ -24,20 +26,34 @@ public static class LoggingExtensions
 	public static void AddOTelLogging(this WebApplicationBuilder builder)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
+
 		builder.Logging.AddOpenTelemetry(otelOptions =>
 		{
 			otelOptions.IncludeFormattedMessage = true;
 			otelOptions.IncludeScopes = true;
 
-#if DEBUG // Add console exporter only in Development
-			otelOptions.AddConsoleExporter();
-#endif
+			if (Debugger.IsAttached)
+			{
+				otelOptions.AddConsoleExporter();
+			}
 
 			otelOptions.AddAzureMonitorLogExporter(monitorOptions =>
 			{
-				var instrumentationKey = builder.Configuration[$"{nameof(CommonOptions)}:ApplicationInsightsEndpoint"];
+				using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
+				string instrumentationKey = new string(optionsManager
+											.GetRequiredService<IOptionsManager>()
+											.GetApplicationOptions()
+											.ApplicationInsightsEndpoint);
+
 				monitorOptions.ConnectionString = instrumentationKey;
-				monitorOptions.Credential = new DefaultAzureCredential();
+				monitorOptions.Credential = new DefaultAzureCredential(
+#if !DEBUG
+				new DefaultAzureCredentialOptions
+				{
+					ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+				}
+#endif
+				);
 			});
 		});
 	}

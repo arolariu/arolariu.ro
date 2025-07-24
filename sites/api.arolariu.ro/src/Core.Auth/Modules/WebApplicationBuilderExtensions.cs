@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Core.Auth.Modules;
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 using arolariu.Backend.Common.Options;
@@ -26,13 +27,20 @@ public static class WebApplicationBuilderExtensions
 	public static void AddAuthServices(this WebApplicationBuilder builder)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
-
 		var configuration = builder.Configuration;
 		var services = builder.Services;
 
 		services.AddDbContext<AuthDbContext>(options =>
 		{
-			options.UseSqlServer(configuration["AzureOptions:SqlConnectionString"]);
+			string connectionString = configuration["AzureOptions:SqlConnectionString"]!;
+
+			options.UseSqlServer(connectionString, sqlServerOptions =>
+			{
+				sqlServerOptions.EnableRetryOnFailure(
+					maxRetryCount: 5,
+					maxRetryDelay: TimeSpan.FromSeconds(30),
+					errorNumbersToAdd: null);
+			});
 			options.UseLazyLoadingProxies();
 		});
 
@@ -79,12 +87,19 @@ public static class WebApplicationBuilderExtensions
 			authOptions.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 		}).AddJwtBearer(jwtOptions =>
 		{
-			var authConfig = builder.Configuration.GetSection(nameof(AuthOptions));
+			using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
+			var authOptions = new Dictionary<string, string>
+			{
+				{ "Secret", optionsManager.GetRequiredService<IOptionsManager>().GetApplicationOptions().JwtSecret },
+				{ "Issuer", optionsManager.GetRequiredService<IOptionsManager>().GetApplicationOptions().JwtIssuer },
+				{ "Audience", optionsManager.GetRequiredService<IOptionsManager>().GetApplicationOptions().JwtAudience },
+			};
+
 			jwtOptions.TokenValidationParameters = new()
 			{
-				ValidIssuer = authConfig["Issuer"],
-				ValidAudience = authConfig["Audience"],
-				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authConfig["Secret"]!)),
+				ValidIssuer = authOptions["Issuer"],
+				ValidAudience = authOptions["Audience"],
+				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authOptions["Secret"])),
 				ValidateIssuer = true,
 				ValidateAudience = true,
 				ValidateLifetime = true,

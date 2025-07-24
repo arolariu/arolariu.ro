@@ -17,12 +17,19 @@ public static class TelemetryExtensions
 	/// </summary>
 	/// <param name="builder"></param>
 	public static void AddTelemetry(this WebApplicationBuilder builder)
+
 	{
 		ArgumentNullException.ThrowIfNull(builder);
-		builder.Services.AddApplicationInsightsTelemetry(options =>
+
+		builder.Services.AddApplicationInsightsTelemetry(telemetryOptions =>
 		{
-			var instrumentationKey = builder.Configuration[$"{nameof(CommonOptions)}:ApplicationInsightsEndpoint"];
-			options.ConnectionString = instrumentationKey;
+			using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
+			string instrumentationKey = new string(optionsManager
+										.GetRequiredService<IOptionsManager>()
+										.GetApplicationOptions()
+										.ApplicationInsightsEndpoint);
+
+			telemetryOptions.ConnectionString = instrumentationKey;
 		});
 	}
 }

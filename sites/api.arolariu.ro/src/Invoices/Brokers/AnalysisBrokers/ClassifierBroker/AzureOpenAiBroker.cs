@@ -8,10 +8,8 @@ using arolariu.Backend.Common.Options;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
-using Azure;
 using Azure.AI.OpenAI;
-
-using Microsoft.Extensions.Options;
+using Azure.Identity;
 
 /// <summary>
 /// The Azure OpenAI broker service.
@@ -26,17 +24,26 @@ public sealed partial class AzureOpenAiBroker : IOpenAiBroker
 	/// <summary>
 	/// Constructor.
 	/// </summary>
-	/// <param name="options"></param>
-	public AzureOpenAiBroker(IOptionsMonitor<AzureOptions> options)
+	/// <param name="optionsManager"></param>
+	public AzureOpenAiBroker(IOptionsManager optionsManager)
 	{
-		ArgumentNullException.ThrowIfNull(options);
+		ArgumentNullException.ThrowIfNull(optionsManager);
+		ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-		var openAiEndpoint = options.CurrentValue.OpenAIEndpoint;
-		var openAiApiKey = options.CurrentValue.OpenAIKey;
+		var openAiEndpoint = options.OpenAIEndpoint;
+		var openAiApiKey = options.OpenAIKey;
+		var credentials = new DefaultAzureCredential(
+#if !DEBUG
+			new DefaultAzureCredentialOptions
+			{
+				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+			}
+#endif
+		);
 
 		openAIClient = new AzureOpenAIClient(
 			endpoint: new Uri(openAiEndpoint),
-			credential: new AzureKeyCredential(openAiApiKey));
+			credential: credentials);
 	}
 
 	/// <inheritdoc/>

@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Core.Domain.General.Extensions;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.Options;
@@ -30,6 +31,109 @@ using Microsoft.Extensions.DependencyInjection;
 internal static class WebApplicationBuilderExtensions
 {
 	/// <summary>
+	/// Configures the application to use Azure Key Vault and Azure App Configuration.
+	/// </summary>
+	/// <remarks>This method sets up the Azure Key Vault and Azure App Configuration for the application, using the
+	/// specified endpoints and credentials. It configures the retry policy and refresh intervals for both services. The
+	/// configuration is adjusted based on the build environment (development or production).</remarks>
+	/// <param name="builder">The <see cref="WebApplicationBuilder"/> used to configure the application.</param>
+	private static void AddAzureConfiguration(this WebApplicationBuilder builder)
+	{
+		var services = builder.Services;
+		var configuration = builder.Configuration;
+
+		var credentials = new DefaultAzureCredential(
+#if !DEBUG
+			new DefaultAzureCredentialOptions
+			{
+				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+			}
+#endif
+		);
+
+		var secretsStoreEndpoint = new Uri(configuration["ApplicationOptions:SecretsEndpoint"]!);
+		var configStoreEndpoint = new Uri(configuration["ApplicationOptions:ConfigurationEndpoint"]!);
+
+		var keyVaultConfigurationProvider = new ConfigurationBuilder()
+			.AddAzureKeyVault(
+				vaultUri: secretsStoreEndpoint,
+				credential: credentials,
+				options: new AzureKeyVaultConfigurationOptions() { ReloadInterval = TimeSpan.FromMinutes(30) })
+			.Build();
+
+
+		var configStoreConfigurationProvider = new ConfigurationBuilder()
+			.AddAzureAppConfiguration(config =>
+			{
+				config.ConfigureKeyVault(kv =>
+				{
+					kv.SetCredential(credentials);
+					kv.SetSecretRefreshInterval(TimeSpan.FromMinutes(30));
+				});
+
+				config.ConfigureClientOptions(options =>
+				{
+					options.Retry.MaxRetries = 10;
+					options.Retry.Mode = RetryMode.Exponential;
+					options.Retry.Delay = TimeSpan.FromSeconds(30);
+					options.Retry.NetworkTimeout = TimeSpan.FromSeconds(300);
+				});
+
+#if DEBUG
+				config.Select("*", labelFilter: "DEVELOPMENT");
+#else
+				config.Select("*", labelFilter: "PRODUCTION");
+#endif
+
+				config.Connect(configStoreEndpoint, credentials);
+			})
+			.Build();
+
+		services.AddSingleton<IOptionsManager, CloudOptionsManager>();
+		services.AddSingleton<IKeyVaultService, KeyVaultService>();
+
+		services.Configure<AzureOptions>(options =>
+		{
+			options.SecretsEndpoint = secretsStoreEndpoint.ToString();
+			options.ConfigurationEndpoint = configStoreEndpoint.ToString();
+
+			var configMappings = new Dictionary<string, string>
+			{
+				{ nameof(options.JwtSecret), "Common:Auth:Secret" },
+				{ nameof(options.JwtIssuer), "Common:Auth:Issuer" },
+				{ nameof(options.TenantId), "Common:Azure:TenantId" },
+				{ nameof(options.OpenAIEndpoint), "Endpoints:OpenAI" },
+				{ nameof(options.JwtAudience), "Common:Auth:Audience" },
+				{ nameof(options.SqlConnectionString), "Endpoints:SqlServer" },
+				{ nameof(options.NoSqlConnectionString), "Endpoints:NoSqlServer" },
+				{ nameof(options.StorageAccountEndpoint), "Endpoints:StorageAccount" },
+				{ nameof(options.ApplicationInsightsEndpoint), "Endpoints:ApplicationInsights" },
+				{ nameof(options.CognitiveServicesEndpoint), "Endpoints:CognitiveServices" },
+			};
+
+			foreach (var mapping in configMappings)
+			{
+				if (configStoreConfigurationProvider[mapping.Value] is string value)
+				{
+					options.GetType().GetProperty(mapping.Key)?.SetValue(options, value);
+				}
+			}
+		});
+	}
+
+	[SuppressMessage("Style", "IDE0051:Remove unused private members", Justification = "Pending Implementation")]
+	private static void AddLocalConfiguration(this WebApplicationBuilder builder)
+	{
+		var services = builder.Services;
+		var configuration = builder.Configuration;
+
+
+		services.AddSingleton<IOptionsManager, LocalOptionsManager>();
+		services.Configure<LocalOptions>(configuration.GetSection(nameof(LocalOptions)));
+	}
+
+
+	/// <summary>
 	/// Adds general domain configurations to the WebApplicationBuilder instance.
 	/// </summary>
 	/// <param name="builder">The WebApplicationBuilder instance.</param>
@@ -52,49 +156,19 @@ internal static class WebApplicationBuilderExtensions
 	{
 		var services = builder.Services;
 		var configuration = builder.Configuration;
-		var credentials = new DefaultAzureCredential();
+		var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+		Console.WriteLine(">>> Environment: " + environment);
 
 		#region Setting up the service configuration.
 		configuration.AddEnvironmentVariables();
-		configuration.AddJsonFile("appsettings.json");
-		configuration.AddAzureKeyVault(
-			vaultUri: new Uri(configuration["AzureOptions:KeyVaultEndpoint"]!),
-			credential: credentials,
-			options: new AzureKeyVaultConfigurationOptions()
-			{
-				ReloadInterval = TimeSpan.FromMinutes(30)
-			});
-		configuration.AddAzureAppConfiguration(config =>
+		configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+		configuration.AddJsonFile($"appsettings.{environment}.json", optional: false, reloadOnChange: true);
+
+		// TODO: add logic to differentiate between local and cloud environments.
+		if (true == true)
 		{
-			config.ConfigureKeyVault(kv =>
-			{
-				kv.SetCredential(credentials);
-				kv.SetSecretRefreshInterval(TimeSpan.FromMinutes(30));
-			});
-
-			config.ConfigureClientOptions(options =>
-			{
-				options.Retry.MaxRetries = 10;
-				options.Retry.Mode = RetryMode.Exponential;
-				options.Retry.Delay = TimeSpan.FromSeconds(30);
-				options.Retry.NetworkTimeout = TimeSpan.FromSeconds(300);
-			});
-
-#if DEBUG
-			config.Select("*", labelFilter: "DEVELOPMENT");
-#else
-			config.Select("*", labelFilter: "PRODUCTION");
-#endif
-
-			var appConfigEndpoint = new Uri(configuration["AzureOptions:ConfigurationEndpoint"]!);
-			config.Connect(appConfigEndpoint, credentials);
-		});
-
-
-		services.Configure<AuthOptions>(configuration.GetSection(nameof(AuthOptions)));
-		services.Configure<AzureOptions>(configuration.GetSection(nameof(AzureOptions)));
-		services.Configure<CommonOptions>(configuration.GetSection(nameof(CommonOptions)));
-		services.AddSingleton<IKeyVaultService, KeyVaultService>();
+			AddAzureConfiguration(builder);
+		}
 		#endregion
 
 		services.AddHttpClient();
@@ -113,16 +187,12 @@ internal static class WebApplicationBuilderExtensions
 		services.AddLocalization();
 		services.AddEndpointsApiExplorer();
 		services.AddSwaggerGen(SwaggerConfigurationService.GetSwaggerGenOptions());
+		services.AddHealthChecks();
 
 		builder.AddTelemetry();
 		builder.AddOTelLogging();
 		builder.AddOTelMetering();
 		builder.AddOTelTracing();
-
-		services.AddHealthChecks();
-
-		#region AuthN & AuthZ configuration.
 		builder.AddAuthServices();
-		#endregion
 	}
 }

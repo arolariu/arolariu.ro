@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Common.Telemetry.Metering;
 
 using System;
+using System.Diagnostics;
 
 using arolariu.Backend.Common.Options;
 
@@ -24,20 +25,34 @@ public static class MeteringExtensions
 	public static void AddOTelMetering(this WebApplicationBuilder builder)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
+
 		builder.Services.AddOpenTelemetry().WithMetrics(metricsOptions =>
 		{
 			metricsOptions.AddAspNetCoreInstrumentation();
 			metricsOptions.AddHttpClientInstrumentation();
 
-#if DEBUG
-			metricsOptions.AddConsoleExporter();
-#endif
+			if (Debugger.IsAttached)
+			{
+				metricsOptions.AddConsoleExporter();
+			}
 
 			metricsOptions.AddAzureMonitorMetricExporter(monitorOptions =>
 			{
-				var instrumentationKey = builder.Configuration[$"{nameof(CommonOptions)}:ApplicationInsightsEndpoint"];
+				using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
+				string instrumentationKey = new string(optionsManager
+											.GetRequiredService<IOptionsManager>()
+											.GetApplicationOptions()
+											.ApplicationInsightsEndpoint);
+
 				monitorOptions.ConnectionString = instrumentationKey;
-				monitorOptions.Credential = new DefaultAzureCredential();
+				monitorOptions.Credential = new DefaultAzureCredential(
+#if !DEBUG
+				new DefaultAzureCredentialOptions
+				{
+					ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+				}
+#endif
+				);
 			});
 		});
 	}
