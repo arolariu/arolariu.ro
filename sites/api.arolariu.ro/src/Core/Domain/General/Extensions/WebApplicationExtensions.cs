@@ -78,8 +78,6 @@ internal static class WebApplicationExtensions
 	/// through the Auth module, enabling secure access to protected resources.
 	/// </para>
 	/// </remarks>
-	/// <param name="app">The web application instance to configure.</param>
-	/// <returns>The configured web application instance to support method chaining.</returns>
 	/// <exception cref="ArgumentNullException">
 	/// Thrown when the <paramref name="app"/> parameter is null.
 	/// </exception>

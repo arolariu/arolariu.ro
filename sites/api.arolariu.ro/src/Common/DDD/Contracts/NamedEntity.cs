@@ -108,7 +108,7 @@ public abstract class NamedEntity<T> : BaseEntity<T>
 	/// product.Name = "Wireless Bluetooth Headphones";
 	///
 	/// // Names should be business-friendly
-	/// category.Name = "Home & Garden"; // Good
+	/// category.Name = "Home and Garden"; // Good
 	/// category.Name = "CAT_HG_001";    // Avoid technical codes in names
 	/// </code>
 	/// </example>

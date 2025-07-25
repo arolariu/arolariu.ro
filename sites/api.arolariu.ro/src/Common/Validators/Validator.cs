@@ -51,9 +51,6 @@ public static class Validator
 	/// <exception cref="ArgumentNullException">
 	/// Thrown when <paramref name="predicate"/> is null.
 	/// </exception>
-	/// <exception cref="TException">
-	/// Thrown when the object is null or the predicate returns false.
-	/// </exception>
 	private static void ValidateObjectAndThrow<TObject,
 		[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TException>(
 		TObject? @object,
@@ -88,9 +85,6 @@ public static class Validator
 	/// <exception cref="ArgumentNullException">
 	/// Thrown when <paramref name="predicate"/> is null.
 	/// </exception>
-	/// <exception cref="TException">
-	/// Thrown when validation fails (object is null or predicate returns false).
-	/// </exception>
 	/// <example>
 	/// <code>
 	/// // Parameter validation
@@ -108,7 +102,7 @@ public static class Validator
 	/// // Range validation
 	/// Validator.ValidateAndThrow&lt;int, ArgumentOutOfRangeException&gt;(
 	///     age,
-	///     a => a >= 0 && a <= 120,
+	///     a => a >= 0 and a less than 120,
 	///     "Age must be between 0 and 120");
 	/// </code>
 	/// </example>
