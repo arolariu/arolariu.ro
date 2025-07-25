@@ -8,6 +8,8 @@ using arolariu.Backend.Common.Options;
 using arolariu.Backend.Core.Auth.Brokers;
 using arolariu.Backend.Core.Auth.Models;
 
+using Azure.Identity;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -16,14 +18,42 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 
 /// <summary>
-/// Extension methods for the <see cref="WebApplicationBuilder"/> builder.
+/// Provides extension methods for configuring comprehensive authentication and authorization services.
+/// This class sets up ASP.NET Core Identity with JWT Bearer token authentication and Entity Framework integration.
 /// </summary>
+/// <remarks>
+/// This module configures a complete authentication system including:
+/// - Entity Framework database context with retry policies
+/// - ASP.NET Core Identity with secure password requirements
+/// - JWT Bearer token authentication with configurable validation
+/// - Cookie-based authentication for web scenarios
+/// - Authorization policies and role-based access control
+/// </remarks>
+/// <example>
+/// <code>
+/// // Usage in Program.cs
+/// var builder = WebApplication.CreateBuilder(args);
+/// builder.AddAuthServices();
+/// </code>
+/// </example>
 public static class WebApplicationBuilderExtensions
 {
 	/// <summary>
-	/// Configure authentication and authorization services.
+	/// Configures comprehensive authentication and authorization services including Identity, JWT, and database integration.
+	/// This method establishes a complete authentication infrastructure with security best practices.
 	/// </summary>
-	/// <param name="builder"></param>
+	/// <param name="builder">The <see cref="WebApplicationBuilder"/> to configure with authentication services.</param>
+	/// <remarks>
+	/// This method configures:
+	/// - Entity Framework database context with SQL Server and retry policies
+	/// - ASP.NET Core Identity with strict password and lockout requirements
+	/// - JWT Bearer authentication with token validation parameters
+	/// - Secure cookie configuration for web-based authentication
+	/// - Authorization services for role and policy-based access control
+	/// </remarks>
+	/// <exception cref="ArgumentNullException">
+	/// Thrown when <paramref name="builder"/> is null.
+	/// </exception>
 	public static void AddAuthServices(this WebApplicationBuilder builder)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
@@ -32,7 +62,11 @@ public static class WebApplicationBuilderExtensions
 
 		services.AddDbContext<AuthDbContext>(options =>
 		{
-			string connectionString = configuration["AzureOptions:SqlConnectionString"]!;
+			using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
+			string connectionString = new string(optionsManager
+										.GetRequiredService<IOptionsManager>()
+										.GetApplicationOptions()
+										.SqlConnectionString);
 
 			options.UseSqlServer(connectionString, sqlServerOptions =>
 			{
@@ -64,7 +98,7 @@ public static class WebApplicationBuilderExtensions
 		});
 		services.AddIdentityApiEndpoints<AuthenticatedUser>(
 			options => options.SignIn.RequireConfirmedEmail = true)
-				.AddEntityFrameworkStores<AuthDbContext>();
+			.AddEntityFrameworkStores<AuthDbContext>();
 
 		// Configure cookie settings.
 		services.ConfigureApplicationCookie(options =>

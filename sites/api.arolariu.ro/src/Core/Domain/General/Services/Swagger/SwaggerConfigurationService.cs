@@ -17,19 +17,66 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
 /// <summary>
-/// Swagger service options and configuration.
-/// This class is used to configure the swagger service, and to provide the options for the swagger UI.
-/// The swagger UI is available at the following URL: https://api.arolariu.ro/index.html
-/// Swagger JSON is available at the following URL: https://api.arolariu.ro/swagger/v1/swagger.json
+/// Provides centralized configuration for Swagger/OpenAPI documentation generation and UI presentation.
+/// This service configures the API documentation system used by the arolariu.ro public API,
+/// including custom schemas, authentication requirements, and presentation options.
 /// </summary>
-[ExcludeFromCodeCoverage] // Infrastructure code is not tested currently.
+/// <remarks>
+/// <para>
+/// This service is responsible for configuring three main aspects of Swagger integration:
+/// - Swagger generation options for OpenAPI specification creation
+/// - Swagger UI options for the interactive documentation interface
+/// - Swagger middleware options for serving the documentation
+/// </para>
+/// <para>
+/// The generated documentation is available at the following endpoints:
+/// - Swagger UI: https://api.arolariu.ro/ (root path)
+/// - OpenAPI JSON: https://api.arolariu.ro/swagger/v1/swagger.json
+/// - Terms of Service: https://api.arolariu.ro/terms
+/// </para>
+/// <para>
+/// The configuration includes:
+/// - JWT Bearer token authentication scheme
+/// - Custom type mappings for common response types
+/// - XML documentation comments integration
+/// - Enhanced UI features and customization
+/// </para>
+/// </remarks>
+[ExcludeFromCodeCoverage] // Infrastructure code is not tested as it primarily consists of configuration logic.
 internal static class SwaggerConfigurationService
 {
 	/// <summary>
-	/// Get the swagger UI options.
-	/// This method is used to configure the swagger UI.
+	/// Configures the Swagger UI presentation options and behavior.
+	/// This method customizes the interactive documentation interface for enhanced developer experience.
 	/// </summary>
-	/// <returns>An instance of <see cref="SwaggerUIOptions"/>.</returns>
+	/// <returns>
+	/// A configured <see cref="SwaggerUIOptions"/> instance with customized settings for the API documentation interface.
+	/// </returns>
+	/// <remarks>
+	/// <para>
+	/// The returned configuration includes the following customizations:
+	/// </para>
+	/// <para>
+	/// <strong>Navigation and Routing:</strong>
+	/// - Sets the route prefix to empty string, making Swagger UI available at the root path
+	/// - Configures the document title as "AROLARIU.RO Public API"
+	/// </para>
+	/// <para>
+	/// <strong>Authentication and Persistence:</strong>
+	/// - Enables authorization persistence across browser sessions
+	/// - Maintains user authentication state during documentation exploration
+	/// </para>
+	/// <para>
+	/// <strong>Display and Interaction Features:</strong>
+	/// - Shows operation IDs for easier API reference
+	/// - Displays request duration for performance monitoring
+	/// - Enables syntax highlighting for better code readability
+	/// - Configures model rendering to show examples by default
+	/// - Sets appropriate expansion depth for nested models (2 levels)
+	/// - Enables filtering capabilities for large API surfaces
+	/// - Shows OpenAPI extensions and common extensions
+	/// </para>
+	/// </remarks>
 	internal static SwaggerUIOptions GetSwaggerUIOptions()
 	{
 		var options = new SwaggerUIOptions()
@@ -43,6 +90,7 @@ internal static class SwaggerConfigurationService
 				DisplayRequestDuration = true,
 			},
 		};
+
 		options.ConfigObject.AdditionalItems.Add("syntaxHighlight", "true");
 		options.ConfigObject.DefaultModelRendering = ModelRendering.Example;
 		options.ConfigObject.DisplayRequestDuration = true;
@@ -52,13 +100,22 @@ internal static class SwaggerConfigurationService
 		options.ConfigObject.DefaultModelExpandDepth = 2;
 		options.ConfigObject.Filter = "true";
 		options.SwaggerEndpoint("/swagger/v1/swagger.json", "AROLARIU.RO Public API");
+
 		return options;
 	}
 
 	/// <summary>
-	/// Get the swagger options.
+	/// Provides basic Swagger middleware configuration options.
+	/// This method returns default options for the Swagger JSON endpoint serving.
 	/// </summary>
-	/// <returns>An instance of <see cref="SwaggerOptions"/>.</returns>
+	/// <returns>
+	/// A <see cref="SwaggerOptions"/> instance with default configuration for serving OpenAPI specifications.
+	/// </returns>
+	/// <remarks>
+	/// This method currently returns default options without customization.
+	/// It serves as a placeholder for future middleware-specific configuration needs,
+	/// such as custom serialization settings or route templates.
+	/// </remarks>
 	internal static SwaggerOptions GetSwaggerOptions()
 	{
 		SwaggerOptions options = new SwaggerOptions();
@@ -66,12 +123,49 @@ internal static class SwaggerConfigurationService
 	}
 
 	/// <summary>
-	/// Get the swagger generator options.
-	/// This method is used to configure the swagger generator.
-	/// The swagger generator is used to generate the swagger JSON file.
-	/// The swagger JSON file is then used by the swagger UI to display the API documentation.
+	/// Configures comprehensive Swagger generation options for OpenAPI specification creation.
+	/// This method defines the complete API documentation structure, including metadata, security schemes,
+	/// custom type mappings, and XML documentation integration.
 	/// </summary>
-	/// <returns>An instance of <see cref="Action{SwaggerGenOptions}"/>.</returns>
+	/// <returns>
+	/// An <see cref="Action{SwaggerGenOptions}"/> delegate that configures Swagger generation with
+	/// custom schemas, authentication, and documentation settings.
+	/// </returns>
+	/// <remarks>
+	/// <para>
+	/// This method configures extensive Swagger generation options:
+	/// </para>
+	/// <para>
+	/// <strong>API Metadata:</strong>
+	/// - Sets comprehensive API information including title, version, and detailed description
+	/// - Includes contact information and terms of service URL
+	/// - Provides licensing information under MIT License
+	/// </para>
+	/// <para>
+	/// <strong>Security Configuration:</strong>
+	/// - Defines JWT Bearer token authentication scheme
+	/// - Configures security requirements for protected endpoints
+	/// - Includes detailed authentication instructions for API consumers
+	/// </para>
+	/// <para>
+	/// <strong>Custom Type Mappings:</strong>
+	/// - Maps <see cref="IResult"/> to standardized response schema with success, message, and data properties
+	/// - Maps <see cref="ProblemDetails"/> to RFC 7807 problem details schema
+	/// - Maps <see cref="IEnumerable{T}"/> of key-value pairs to array schema for metadata responses
+	/// </para>
+	/// <para>
+	/// <strong>Documentation Enhancement:</strong>
+	/// - Enables Swashbuckle annotations for enhanced API documentation
+	/// - Uses inline definitions for enums to improve schema readability
+	/// - Integrates XML documentation comments from compiled assembly
+	/// - Applies custom document filters for additional processing
+	/// </para>
+	/// <para>
+	/// The generated OpenAPI specification follows OpenAPI 3.0 standards and includes
+	/// comprehensive schema definitions for all API operations, enabling automatic
+	/// client code generation and interactive testing.
+	/// </para>
+	/// </remarks>
 	internal static Action<SwaggerGenOptions> GetSwaggerGenOptions()
 	{
 		var options = new Action<SwaggerGenOptions>(options =>
@@ -81,6 +175,7 @@ internal static class SwaggerConfigurationService
 			const string licenseInformation = "<hr/>\r\n\r\n <em>Copyright © 2024 ALEXANDRU-RAZVAN OLARIU</em>\r\n\r\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\r\n\r\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\r\n\r\nTHE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.";
 
 			const string swaggerDocDescription = welcomeInformaiton + generalInformation + licenseInformation;
+
 #pragma warning disable S1075 // URIs should not be hardcoded
 			options.SwaggerDoc("v1", new OpenApiInfo()
 			{
@@ -95,9 +190,11 @@ internal static class SwaggerConfigurationService
 				TermsOfService = new Uri("https://api.arolariu.ro/terms"),
 			});
 #pragma warning restore S1075 // URIs should not be hardcoded
+
 			options.EnableAnnotations();
 			options.UseInlineDefinitionsForEnums();
 			options.DocumentFilter<SwaggerFilterService>();
+
 			options.MapType<IResult>(() => new OpenApiSchema()
 			{
 				Type = "object",
@@ -120,6 +217,7 @@ internal static class SwaggerConfigurationService
 					},
 				},
 			});
+
 			options.MapType<ProblemDetails>(() => new OpenApiSchema()
 			{
 				Type = "object",
@@ -196,7 +294,7 @@ internal static class SwaggerConfigurationService
 			{
 				Scheme = "Bearer",
 				Description = "Most of the endpoints that are currently present on the `api.arolariu.ro` platform may require auth.\n" +
-				"Please enter your JWT Bearer Token in the below field, in order to persist it across this request(s) session.",
+							  "Please enter your JWT Bearer Token in the below field, in order to persist it across this request(s) session.",
 				Name = "JWT Authorization",
 				In = ParameterLocation.Header,
 				Type = SecuritySchemeType.Http,
