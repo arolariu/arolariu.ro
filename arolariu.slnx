@@ -1,6 +1,9 @@
 <Solution>
   <Folder Name="/root/">
     <File Path=".editorconfig" />
+    <File Path="sites/api.arolariu.ro/.dockerignore" />
+    <File Path="sites/api.arolariu.ro/Controllers_Breakpoints.xml" />
+    <File Path="sites/api.arolariu.ro/Dockerfile" />
   </Folder>
   <Folder Name="/sites/" />
   <Folder Name="/sites/api.arolariu.ro/" />
