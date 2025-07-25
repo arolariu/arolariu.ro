@@ -10,7 +10,7 @@ export default function AnalyzedInvoice({username, invoice}: Readonly<{username:
   return (
     <Html>
       <Head>
-        <title>arolariu.ro | Invoice #{invoice?.id}</title>
+        <title>{`arolariu.ro | Invoice #${invoice?.id}`}</title>
         <Font
           fontFamily='Caudex'
           fallbackFontFamily='Verdana'

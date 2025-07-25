@@ -6,7 +6,7 @@ export default function DeletedInvoice({username, invoiceId}: Readonly<{username
   return (
     <Html>
       <Head>
-        <title>arolariu.ro | Invoice #{invoiceId ?? "N/A"}</title>
+        <title>{`arolariu.ro | Invoice #${invoiceId ?? "N/A"}`}</title>
         <Font
           fontFamily='Caudex'
           fallbackFontFamily='Verdana'
