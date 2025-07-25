@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Options;
 
-using Azure;
 using Azure.AI.Translation.Text;
 using Azure.Core.Pipeline;
 using Azure.Identity;

@@ -22,21 +22,65 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Extension methods for the <see cref="WebApplicationBuilder"/> builder.
-/// This extension class acts as a IoC / DI container.
-/// This class is used by the <see cref="Program"/> class.
-/// This class represents the `Composition Root` of the application.
+/// Provides extension methods for configuring the <see cref="WebApplicationBuilder"/> with general domain services and infrastructure.
+/// This class serves as the Composition Root for dependency injection, centralizing the configuration of cross-cutting concerns
+/// and foundational services required by the application.
 /// </summary>
-[ExcludeFromCodeCoverage] // Infrastructure code is not tested currently.
+/// <remarks>
+/// <para>
+/// This class follows the Composition Root pattern, where all dependency injection configuration is centralized
+/// in one location. It configures:
+/// - Configuration sources (Azure Key Vault, App Configuration, local files)
+/// - Cross-cutting concerns (CORS, localization, HTTP clients)
+/// - Infrastructure services (health checks, telemetry, authentication)
+/// - Third-party integrations (Swagger documentation, Azure services)
+/// </para>
+/// <para>
+/// The configuration is environment-aware, automatically adjusting between development and production settings
+/// based on the ASPNETCORE_ENVIRONMENT variable.
+/// </para>
+/// </remarks>
+[ExcludeFromCodeCoverage] // Infrastructure code is not tested as it primarily consists of configuration logic.
 internal static class WebApplicationBuilderExtensions
 {
 	/// <summary>
-	/// Configures the application to use Azure Key Vault and Azure App Configuration.
+	/// Configures the application to use Azure Key Vault for secrets management and Azure App Configuration for centralized configuration.
+	/// This method establishes secure connections to Azure services and sets up configuration providers with appropriate retry policies.
 	/// </summary>
-	/// <remarks>This method sets up the Azure Key Vault and Azure App Configuration for the application, using the
-	/// specified endpoints and credentials. It configures the retry policy and refresh intervals for both services. The
-	/// configuration is adjusted based on the build environment (development or production).</remarks>
-	/// <param name="builder">The <see cref="WebApplicationBuilder"/> used to configure the application.</param>
+	/// <param name="builder">The <see cref="WebApplicationBuilder"/> instance to configure with Azure services.</param>
+	/// <remarks>
+	/// <para>
+	/// This method configures two primary Azure services:
+	/// - Azure Key Vault: For secure storage and retrieval of application secrets
+	/// - Azure App Configuration: For centralized application configuration management
+	/// </para>
+	/// <para>
+	/// Authentication is handled using DefaultAzureCredential, which supports multiple authentication methods:
+	/// - Managed Identity (in production environments)
+	/// - Azure CLI credentials (in development)
+	/// - Environment variables and other fallback methods
+	/// </para>
+	/// <para>
+	/// Configuration behavior varies by environment:
+	/// - DEBUG builds: Uses "DEVELOPMENT" label filter for App Configuration
+	/// - RELEASE builds: Uses "PRODUCTION" label filter and explicit Managed Identity client ID
+	/// </para>
+	/// <para>
+	/// Retry policies are configured with exponential backoff:
+	/// - Maximum 10 retries with 30-second base delay
+	/// - 5-minute network timeout for resilience against transient failures
+	/// </para>
+	/// <para>
+	/// Both services are configured with 30-minute refresh intervals to balance between
+	/// configuration freshness and service load.
+	/// </para>
+	/// </remarks>
+	/// <exception cref="ArgumentNullException">
+	/// Thrown when required configuration keys (SecretsEndpoint, ConfigurationEndpoint) are missing.
+	/// </exception>
+	/// <exception cref="UriFormatException">
+	/// Thrown when the provided endpoint URLs are not valid URIs.
+	/// </exception>
 	private static void AddAzureConfiguration(this WebApplicationBuilder builder)
 	{
 		var services = builder.Services;
@@ -44,10 +88,10 @@ internal static class WebApplicationBuilderExtensions
 
 		var credentials = new DefaultAzureCredential(
 #if !DEBUG
-			new DefaultAzureCredentialOptions
-			{
-				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
-			}
+            new DefaultAzureCredentialOptions
+            {
+                ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
+            }
 #endif
 		);
 
@@ -60,7 +104,6 @@ internal static class WebApplicationBuilderExtensions
 				credential: credentials,
 				options: new AzureKeyVaultConfigurationOptions() { ReloadInterval = TimeSpan.FromMinutes(30) })
 			.Build();
-
 
 		var configStoreConfigurationProvider = new ConfigurationBuilder()
 			.AddAzureAppConfiguration(config =>
@@ -82,7 +125,7 @@ internal static class WebApplicationBuilderExtensions
 #if DEBUG
 				config.Select("*", labelFilter: "DEVELOPMENT");
 #else
-				config.Select("*", labelFilter: "PRODUCTION");
+                config.Select("*", labelFilter: "PRODUCTION");
 #endif
 
 				config.Connect(configStoreEndpoint, credentials);
@@ -121,37 +164,92 @@ internal static class WebApplicationBuilderExtensions
 		});
 	}
 
-	[SuppressMessage("Style", "IDE0051:Remove unused private members", Justification = "Pending Implementation")]
+	/// <summary>
+	/// Configures the application to use local configuration sources instead of Azure services.
+	/// This method is intended for local development scenarios where Azure services are not available or desired.
+	/// </summary>
+	/// <param name="builder">The <see cref="WebApplicationBuilder"/> instance to configure with local configuration sources.</param>
+	/// <remarks>
+	/// <para>
+	/// This method sets up local configuration management using:
+	/// - LocalOptionsManager: Manages configuration from local files and environment variables
+	/// - LocalOptions: Configuration section binding for local development settings
+	/// </para>
+	/// <para>
+	/// This configuration approach is typically used during:
+	/// - Local development and testing
+	/// - CI/CD pipeline builds where Azure connectivity is not required
+	/// - Offline development scenarios
+	/// </para>
+	/// <para>
+	/// Note: This method is currently marked as unused but reserved for future implementation
+	/// of environment-specific configuration logic.
+	/// </para>
+	/// </remarks>
+	[SuppressMessage("Style", "IDE0051:Remove unused private members", Justification = "Reserved for future local development configuration implementation")]
 	private static void AddLocalConfiguration(this WebApplicationBuilder builder)
 	{
 		var services = builder.Services;
 		var configuration = builder.Configuration;
 
-
 		services.AddSingleton<IOptionsManager, LocalOptionsManager>();
 		services.Configure<LocalOptions>(configuration.GetSection(nameof(LocalOptions)));
 	}
 
-
 	/// <summary>
-	/// Adds general domain configurations to the WebApplicationBuilder instance.
+	/// Configures the <see cref="WebApplicationBuilder"/> with general domain services and cross-cutting infrastructure concerns.
+	/// This method serves as the primary composition root for the application's foundational services.
 	/// </summary>
-	/// <param name="builder">The WebApplicationBuilder instance.</param>
-	/// <returns>The modified IServiceCollection instance.</returns>
+	/// <param name="builder">The <see cref="WebApplicationBuilder"/> instance to configure with general domain services.</param>
 	/// <remarks>
-	/// This method configures various services and settings related to the general domain.
-	/// It adds authorization, API explorer endpoints, Swagger documentation generation, HTTP client, HTTP context accessor,
-	/// localization support, key vault service, connection strings, cross-origin resource sharing (CORS), health checks,
-	/// and Azure services integration.
+	/// <para>
+	/// This method configures the following service categories in order:
+	/// </para>
+	/// <para>
+	/// <strong>Configuration Sources:</strong>
+	/// - Environment variables for runtime configuration overrides
+	/// - appsettings.json for base application settings
+	/// - Environment-specific appsettings files (Development/Production)
+	/// - Azure Key Vault and App Configuration for secure and centralized configuration
+	/// </para>
+	/// <para>
+	/// <strong>HTTP and Communication Services:</strong>
+	/// - HttpClient for outbound HTTP communications
+	/// - HttpContextAccessor for accessing HTTP context in non-controller classes
+	/// - CORS policy "AllowAllOrigins" for cross-origin requests (development-focused)
+	/// </para>
+	/// <para>
+	/// <strong>API Documentation and Discovery:</strong>
+	/// - API Explorer endpoints for service discovery
+	/// - Swagger/OpenAPI documentation generation with custom configuration
+	/// </para>
+	/// <para>
+	/// <strong>Localization and Internationalization:</strong>
+	/// - Localization services for multi-language support
+	/// </para>
+	/// <para>
+	/// <strong>Monitoring and Health:</strong>
+	/// - Health checks for service availability monitoring
+	/// - OpenTelemetry integration for distributed tracing, logging, and metrics
+	/// </para>
+	/// <para>
+	/// <strong>Authentication and Authorization:</strong>
+	/// - Authentication services through Auth module integration
+	/// </para>
 	/// </remarks>
 	/// <example>
 	/// <code>
-	/// // Configure general domain configurations
-	/// services.AddGeneralDomainConfiguration(builder);
+	/// // Usage in Program.cs
+	/// WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+	/// builder.AddGeneralDomainConfiguration();
+	///
+	/// WebApplication app = builder.Build();
+	/// // Configure application pipeline...
+	/// app.Run();
 	/// </code>
 	/// </example>
 	/// <seealso cref="WebApplicationBuilder"/>
-	/// <seealso cref="IServiceCollection"/>
+	/// <seealso cref="WebApplicationExtensions.AddGeneralApplicationConfiguration"/>
 	public static void AddGeneralDomainConfiguration(this WebApplicationBuilder builder)
 	{
 		var services = builder.Services;
