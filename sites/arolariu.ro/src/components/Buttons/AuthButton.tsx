@@ -3,7 +3,9 @@
 "use client";
 
 import {SignedIn, SignedOut, SignInButton, UserButton, useUser} from "@clerk/nextjs";
-import {memo, useMemo} from "react";
+import {memo} from "react";
+
+const LoadingButton = () => <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />;
 
 /**
  * AuthButton component is a button that allows the user to sign in or out.
@@ -12,11 +14,7 @@ import {memo, useMemo} from "react";
  */
 function AuthButton(): React.JSX.Element {
   const {isSignedIn, isLoaded} = useUser();
-
-  // Memoize the loading state to prevent recreating on each render
-  const loadingButton = useMemo(() => <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />, []);
-
-  if (!isLoaded) return loadingButton;
+  if (!isLoaded) return <LoadingButton />;
 
   if (isSignedIn) {
     return (

@@ -1,7 +1,6 @@
 import React from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { Calendar } from "../dist";
-import { addDays } from "date-fns";
 
 const meta: Meta<typeof Calendar> = {
   title: "Design System/Calendar",
@@ -58,7 +57,7 @@ See the [shadcn/ui Calendar documentation](https://ui.shadcn.com/docs/components
       control: "number",
       description: "The number of months to display simultaneously.",
       table: {
-        defaultValue: { summary: 1 },
+        defaultValue: { summary: "1" },
       },
     },
     disabled: {
@@ -83,15 +82,17 @@ export const Basic: Story = {
       },
     },
   },
-  render: () => {
+  render: function BasicCalendarStory() {
     const [date, setDate] = React.useState<Date | undefined>(new Date());
-
     return (
       <Calendar
         mode="single"
         selected={date}
         onSelect={setDate}
         className="rounded-md border"
+        classNames={{}}
+        formatters={{}}
+        components={{}}
       />
     );
   },
@@ -107,15 +108,18 @@ export const RangeSelection: Story = {
       },
     },
   },
-  render: () => {
+  render: function RangeSelectionCalendarStory() {
     const [range, setRange] = React.useState<{
       from: Date;
       to?: Date;
     }>({
       from: new Date(),
-      to: addDays(new Date(), 7),
+      to: (() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 7);
+        return d;
+      })(),
     });
-
     return (
       <Calendar
         mode="range"
@@ -123,6 +127,9 @@ export const RangeSelection: Story = {
         onSelect={setRange}
         className="rounded-md border"
         numberOfMonths={2}
+        classNames={{}}
+        formatters={{}}
+        components={{}}
       />
     );
   },
@@ -138,9 +145,8 @@ export const MultiMonth: Story = {
       },
     },
   },
-  render: () => {
+  render: function MultiMonthCalendarStory() {
     const [date, setDate] = React.useState<Date | undefined>(new Date());
-
     return (
       <Calendar
         mode="single"
@@ -148,6 +154,9 @@ export const MultiMonth: Story = {
         onSelect={setDate}
         className="rounded-md border"
         numberOfMonths={2}
+        classNames={{}}
+        formatters={{}}
+        components={{}}
       />
     );
   },
@@ -163,15 +172,25 @@ export const DisabledDates: Story = {
       },
     },
   },
-  render: () => {
+  render: function DisabledDatesCalendarStory() {
     const [date, setDate] = React.useState<Date | undefined>(new Date());
     const disabledDays = [
       new Date(),
       new Date(new Date().setDate(new Date().getDate() + 2)),
       new Date(new Date().setDate(new Date().getDate() + 5)),
-      { from: addDays(new Date(), 10), to: addDays(new Date(), 15) },
+      {
+        from: (() => {
+          const d = new Date();
+          d.setDate(d.getDate() + 10);
+          return d;
+        })(),
+        to: (() => {
+          const d = new Date();
+          d.setDate(d.getDate() + 15);
+          return d;
+        })(),
+      },
     ];
-
     return (
       <Calendar
         mode="single"
@@ -179,6 +198,9 @@ export const DisabledDates: Story = {
         onSelect={setDate}
         disabled={disabledDays}
         className="rounded-md border"
+        classNames={{}}
+        formatters={{}}
+        components={{}}
       />
     );
   },
@@ -194,9 +216,8 @@ export const WithFooter: Story = {
       },
     },
   },
-  render: () => {
+  render: function WithFooterCalendarStory() {
     const [date, setDate] = React.useState<Date | undefined>(new Date());
-
     return (
       <div className="space-y-4">
         <Calendar
@@ -204,6 +225,9 @@ export const WithFooter: Story = {
           selected={date}
           onSelect={setDate}
           className="rounded-md border"
+          classNames={{}}
+          formatters={{}}
+          components={{}}
         />
         <div className="text-sm text-center">
           {date ? (
@@ -227,13 +251,15 @@ export const MinMaxDates: Story = {
       },
     },
   },
-  render: () => {
+  render: function MinMaxDatesCalendarStory() {
     const [date, setDate] = React.useState<Date | undefined>(new Date());
-
     // Allow selection of dates from today to 30 days in the future
     const today = new Date();
-    const thirtyDaysFromNow = addDays(today, 30);
-
+    const thirtyDaysFromNow = (() => {
+      const d = new Date(today);
+      d.setDate(d.getDate() + 30);
+      return d;
+    })();
     return (
       <div className="space-y-4">
         <Calendar
@@ -242,6 +268,9 @@ export const MinMaxDates: Story = {
           onSelect={setDate}
           disabled={{ before: today, after: thirtyDaysFromNow }}
           className="rounded-md border"
+          classNames={{}}
+          formatters={{}}
+          components={{}}
         />
         <div className="text-sm">
           <p>Only dates from today to 30 days from now can be selected.</p>
@@ -261,9 +290,8 @@ export const CustomStyles: Story = {
       },
     },
   },
-  render: () => {
+  render: function CustomStylesCalendarStory() {
     const [date, setDate] = React.useState<Date | undefined>(new Date());
-
     return (
       <Calendar
         mode="single"
@@ -277,6 +305,8 @@ export const CustomStyles: Story = {
             "bg-blue-600 text-white hover:bg-blue-600 hover:text-white focus:bg-blue-600 focus:text-white dark:bg-blue-500 dark:text-white",
           today: "bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-50",
         }}
+        formatters={{}}
+        components={{}}
       />
     );
   },
