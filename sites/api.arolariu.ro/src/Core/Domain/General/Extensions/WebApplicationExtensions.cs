@@ -106,7 +106,7 @@ internal static class WebApplicationExtensions
 		app.UseSwagger(SwaggerConfigurationService.GetSwaggerOptions());
 		app.UseSwaggerUI(SwaggerConfigurationService.GetSwaggerUIOptions());
 		app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse });
-		app.MapGet("/terms", () => app.Configuration["CommonOptions:TermsAndConditions"]);
+		app.MapGet("/terms", () => app.Configuration["ApplicationOptions:TermsAndConditions"]);
 		app.UseAuthServices();
 
 		return app;
