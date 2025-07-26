@@ -137,9 +137,7 @@ cd sites/docs.arolariu.ro
 docfx serve
 ```
 
-### 🔄 CI/CD Compatibility
 
-All existing CI/CD workflows remain fully functional. The unified CLI is designed for local development convenience and doesn't affect production build processes.
 
 ### High Level Infrastructure overview (using Bicep Visualizer)
 
