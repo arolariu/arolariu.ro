@@ -9,7 +9,7 @@ export async function main() {
   console.log("⚙️  Building API...");
   
   try {
-    execSync("cd sites/api.arolariu.ro && dotnet build", {stdio: "inherit"});
+    execSync("dotnet build arolariu.sln", {stdio: "inherit"});
     console.log("✅ API built successfully!");
   } catch (error) {
     console.log("⚠️  .NET SDK not available - install .NET 9.0 SDK to build API");

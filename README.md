@@ -49,51 +49,81 @@ This monorepo provides a unified CLI interface for managing all projects from th
 
 ```bash
 # Show all available commands
-npm run help
+yarn help
 
 # Install dependencies for all projects
-npm run setup
+yarn setup
 
 # Build all projects
-npm run build
+yarn build
 
 # Clean all build artifacts
-npm run clean
+yarn clean
 ```
 
 ### 🏗️ Build Commands
 
 | Command | Description |
 |---------|-------------|
-| `npm run build` | Build all projects sequentially |
-| `npm run build:parallel` | Instructions for parallel building |
-| `npm run build:components` | Build React component library only |
-| `npm run build:website` | Build Next.js website only |
-| `npm run build:docs` | Build DocFX documentation only |
-| `npm run build:api` | Build .NET API backend only |
+| `yarn build` | Build all projects sequentially |
+| `yarn build:parallel` | Instructions for parallel building |
+| `yarn build:components` | Build React component library only |
+| `yarn build:website` | Build Next.js website only |
+| `yarn build:docs` | Build DocFX documentation only |
+| `yarn build:api` | Build .NET API backend only |
 
 ### 🧹 Maintenance Commands
 
 | Command | Description |
 |---------|-------------|
-| `npm run clean` | Clean all build artifacts across projects |
-| `npm run setup` | Install dependencies for all projects |
+| `yarn clean` | Clean all build artifacts across projects |
+| `yarn setup` | Install dependencies for all projects |
 
 ### 🛠️ Development Commands
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev:components` | Start Storybook development server |
-| `npm run test` | Run tests across all projects |
-| `npm run lint` | Lint all projects |
-| `npm run format` | Format code across all projects |
+| `yarn dev:components` | Start Storybook development server |
+| `yarn test` | Run tests across all projects |
+| `yarn lint` | Lint all projects |
+| `yarn format` | Format code across all projects |
 
 ### 📊 Utility Commands
 
 | Command | Description |
 |---------|-------------|
-| `npm run status` | Show build status across all projects |
-| `npm run help` | Display available commands |
+| `yarn status` | Show build status across all projects |
+| `yarn help` | Display available commands |
+
+### 🎯 Workspace-Specific Commands
+
+The monorepo uses Yarn workspaces for dependency management. You can run commands on specific packages using the `yarn workspace` command:
+
+```bash
+# Run Storybook for the components package
+yarn workspace @arolariu/components storybook
+
+# Build only the components package
+yarn workspace @arolariu/components build
+
+# Install a dependency in the website package
+yarn workspace @arolariu/website add lodash
+
+# Run tests for the API package
+yarn workspace @arolariu/api test
+
+# List all available workspaces
+yarn workspaces list
+
+# Run a command in all workspaces
+yarn workspaces foreach run build
+```
+
+**Available Workspaces:**
+- `@arolariu/components` - React component library (`packages/components/`)
+- `@arolariu/website` - Next.js website (`sites/arolariu.ro/`)
+- `@arolariu/api` - .NET API backend (`sites/api.arolariu.ro/`)
+- `@arolariu/docs` - DocFX documentation (`sites/docs.arolariu.ro/`)
 
 ### 📁 Project Structure
 

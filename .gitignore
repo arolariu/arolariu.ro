@@ -15,3 +15,11 @@ Thumbs.db
 
 # Next.js SWC cache
 .next/
+
+# Test coverage
+coverage/
+**/.nyc_output
+**/*.lcov
+
+# Jest
+jest.log
