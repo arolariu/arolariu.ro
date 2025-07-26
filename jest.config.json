@@ -1,15 +1,16 @@
 {
   "preset": "ts-jest",
   "testEnvironment": "node",
-  "testMatch": ["**/scripts/tests/**/*.test.ts"],
-  "extensionsToTreatAsEsm": [".ts"],
+  "testMatch": [
+    "**/scripts/tests/**/*.test.ts"
+  ],
+  "extensionsToTreatAsEsm": [
+    ".ts"
+  ],
   "globals": {
     "ts-jest": {
       "useESM": true
     }
-  },
-  "moduleNameMapping": {
-    "^(\\.{1,2}/.*)\\.js$": "$1"
   },
   "clearMocks": true,
   "collectCoverage": true,

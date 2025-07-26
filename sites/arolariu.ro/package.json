@@ -1,5 +1,5 @@
 {
-  "name": "arolariu.ro",
+  "name": "@arolariu/website",
   "description": "The `arolariu.ro` project consists of a Next.JS web application.",
   "homepage": "https://arolariu.ro",
   "repository": "github:arolariu/arolariu.ro",
@@ -9,7 +9,7 @@
   "license": "MIT",
   "type": "module",
   "engines": {
-    "node": ">=22.8",
+    "node": ">=24.0",
     "yarn": ">=4.5"
   },
   "keywords": [
