@@ -120,9 +120,11 @@ __metadata:
   dependencies:
     "@jest/globals": "npm:^29.7.0"
     "@types/jest": "npm:^29.5.12"
+    "@types/node": "npm:^22.10.2"
     jest: "npm:^29.7.0"
     ts-jest: "npm:^29.1.2"
     tsx: "npm:^4.19.1"
+    typescript: "npm:^5.7.3"
   languageName: unknown
   linkType: soft
 
@@ -8578,6 +8580,15 @@ __metadata:
   dependencies:
     undici-types: "npm:~5.26.4"
   checksum: 10/82e3b190d4904a1cdad70799abc8654ffe420f9141f9538d81d1b372c5c4139d8807481dc39e99784396c296c48e0f2da82722b54ddb759ae157ff0b1fedc352
+  languageName: node
+  linkType: hard
+
+"@types/node@npm:^22.10.2":
+  version: 22.16.5
+  resolution: "@types/node@npm:22.16.5"
+  dependencies:
+    undici-types: "npm:~6.21.0"
+  checksum: 10/ba45b5c9113cbc5edb12960fcfe7e80db2c998af5c1931264240695b27d756570d92462150b95781bd67a03aa82111cc970ab0f4504eb99213edff8bf425354e
   languageName: node
   linkType: hard
 
@@ -22368,7 +22379,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:5.8.3, typescript@npm:>=5":
+"typescript@npm:5.8.3, typescript@npm:>=5, typescript@npm:^5.7.3":
   version: 5.8.3
   resolution: "typescript@npm:5.8.3"
   bin:
@@ -22388,7 +22399,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A5.8.3#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A>=5#optional!builtin<compat/typescript>":
+"typescript@patch:typescript@npm%3A5.8.3#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A>=5#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A^5.7.3#optional!builtin<compat/typescript>":
   version: 5.8.3
   resolution: "typescript@patch:typescript@npm%3A5.8.3#optional!builtin<compat/typescript>::version=5.8.3&hash=5786d5"
   bin:

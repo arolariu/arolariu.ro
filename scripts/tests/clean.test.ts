@@ -11,7 +11,7 @@ describe('clean script', () => {
   let consoleLogSpy: jest.SpiedFunction<typeof console.log>;
 
   beforeEach(() => {
-    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.clearAllMocks();
   });
 
@@ -24,7 +24,7 @@ describe('clean script', () => {
     mockedExecSync.mockReturnValue(Buffer.from('clean completed'));
 
     // Act
-    const {main} = await import('../clean.js');
+    const {main} = await import('../clean.ts');
     await main();
 
     // Assert

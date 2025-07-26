@@ -5,7 +5,7 @@
  */
 export async function main() {
   console.log(`
-🚀 Arolariu.ro Monorepo CLI
+🚀 AROLARIU.RO Monorepo CLI
 
 📋 Available Commands:
 

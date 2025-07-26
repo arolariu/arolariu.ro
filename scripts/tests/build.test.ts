@@ -12,8 +12,10 @@ describe('build script', () => {
   let processExitSpy: jest.SpiedFunction<typeof process.exit>;
 
   beforeEach(() => {
-    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-    processExitSpy = jest.spyOn(process, 'exit').mockImplementation();
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    processExitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit() called');
+    });
     jest.clearAllMocks();
   });
 
@@ -27,7 +29,7 @@ describe('build script', () => {
     mockedExecSync.mockReturnValue(Buffer.from('build completed'));
 
     // Act
-    const {main} = await import('../build.js');
+    const {main} = await import('../build.ts');
     await main();
 
     // Assert
@@ -46,7 +48,7 @@ describe('build script', () => {
     });
 
     // Act
-    const {main} = await import('../build.js');
+    const {main} = await import('../build.ts');
     await main();
 
     // Assert

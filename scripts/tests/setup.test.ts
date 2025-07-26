@@ -13,8 +13,10 @@ describe('setup script', () => {
   let processVersionSpy: jest.SpiedFunction<any>;
 
   beforeEach(() => {
-    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-    processExitSpy = jest.spyOn(process, 'exit').mockImplementation();
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    processExitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {
+      throw new Error('process.exit() called');
+    });
     jest.clearAllMocks();
   });
 
@@ -41,12 +43,12 @@ describe('setup script', () => {
       .mockReturnValueOnce(Buffer.from('yarn install completed')); // yarn install
 
     // Act
-    const {main} = await import('../setup.js');
+    const {main} = await import('../setup.ts');
     await main();
 
     // Assert
     expect(consoleLogSpy).toHaveBeenCalledWith('🔧 Setting up development environment...');
-    expect(consoleLogSpy).toHaveBeenCalledWith('✅ Node.js v24.0.0 (compatible)');
+    expect(consoleLogSpy).toHaveBeenCalledWith('✅ Node.ts v24.0.0 (compatible)');
     expect(consoleLogSpy).toHaveBeenCalledWith('🎉 Development environment is ready!');
     expect(processExitSpy).not.toHaveBeenCalled();
   });
@@ -64,7 +66,7 @@ describe('setup script', () => {
       .mockReturnValueOnce(Buffer.from('yarn install completed')); // yarn install
 
     // Act
-    const {main} = await import('../setup.js');
+    const {main} = await import('../setup.ts');
     await main();
 
     // Assert
@@ -89,7 +91,7 @@ describe('setup script', () => {
       .mockImplementationOnce(() => { throw new Error('yarn install failed'); }); // yarn install fails
 
     // Act
-    const {main} = await import('../setup.js');
+    const {main} = await import('../setup.ts');
     await main();
 
     // Assert
