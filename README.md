@@ -41,6 +41,106 @@ The `arolariu.ro` repository contains the open-source code for different service
 - [Next.JS Development Platform](https://dev.arolariu.ro) - is the development platform for the main website.
 - [ASP.NET (LTS) Public API](https://api.arolariu.ro) - acts as the main backend; it is able to serve REST, GraphQL, and gRPC requests.
 
+## 🚀 Unified CLI Commands
+
+This monorepo provides a unified CLI interface for managing all projects from the root directory. All commands can be run from the repository root without needing to navigate between individual project directories.
+
+### 📋 Quick Start
+
+```bash
+# Show all available commands
+npm run help
+
+# Install dependencies for all projects
+npm run setup
+
+# Build all projects
+npm run build
+
+# Clean all build artifacts
+npm run clean
+```
+
+### 🏗️ Build Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run build` | Build all projects sequentially |
+| `npm run build:parallel` | Instructions for parallel building |
+| `npm run build:components` | Build React component library only |
+| `npm run build:website` | Build Next.js website only |
+| `npm run build:docs` | Build DocFX documentation only |
+| `npm run build:api` | Build .NET API backend only |
+
+### 🧹 Maintenance Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run clean` | Clean all build artifacts across projects |
+| `npm run setup` | Install dependencies for all projects |
+
+### 🛠️ Development Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev:components` | Start Storybook development server |
+| `npm run test` | Run tests across all projects |
+| `npm run lint` | Lint all projects |
+| `npm run format` | Format code across all projects |
+
+### 📊 Utility Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run status` | Show build status across all projects |
+| `npm run help` | Display available commands |
+
+### 📁 Project Structure
+
+```
+├── packages/
+│   └── components/          # React component library (@arolariu/components)
+├── sites/
+│   ├── arolariu.ro/        # Next.js website (main platform)
+│   ├── api.arolariu.ro/    # .NET API backend 
+│   └── docs.arolariu.ro/   # DocFX documentation
+├── package.json            # Root package.json with unified CLI
+└── README.md              # This file
+```
+
+### 🔧 Prerequisites
+
+- **Node.js** ≥ 20.0 (for website and components)
+- **npm** (package manager)
+- **.NET 9.0 SDK** (for API backend)
+- **DocFX** (for documentation building)
+
+### 💡 Individual Project Development
+
+You can still work on individual projects by navigating to their directories:
+
+```bash
+# Work on components
+cd packages/components
+npm run storybook
+
+# Work on website  
+cd sites/arolariu.ro
+npm run dev
+
+# Work on API
+cd sites/api.arolariu.ro
+dotnet run
+
+# Work on documentation
+cd sites/docs.arolariu.ro
+docfx serve
+```
+
+### 🔄 CI/CD Compatibility
+
+All existing CI/CD workflows remain fully functional. The unified CLI is designed for local development convenience and doesn't affect production build processes.
+
 ### High Level Infrastructure overview (using Bicep Visualizer)
 
 ![High Level Infrastructure overview](./design/high-level-infra.png)

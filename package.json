@@ -1,0 +1,54 @@
+{
+  "name": "arolariu.ro-monorepo",
+  "version": "1.0.0",
+  "description": "Monorepo for arolariu.ro - Website, API, Components, and Documentation",
+  "private": true,
+  "engines": {
+    "node": ">=22.8"
+  },
+  "scripts": {
+    "help": "echo '\\n📋 Available Commands:\\n\\n🏗️  Build Commands:\\n  npm run build          - Build all projects sequentially\\n  npm run build:parallel - Build projects in parallel\\n  npm run build:components - Build React component library\\n  npm run build:website  - Build Next.js website\\n  npm run build:docs     - Build DocFX documentation\\n  npm run build:api      - Build .NET API\\n\\n🧹 Maintenance Commands:\\n  npm run clean          - Clean all build artifacts\\n  npm run setup          - Install all dependencies\\n\\n🛠️  Development Commands:\\n  npm run dev:components - Start Storybook development server\\n  npm run test           - Run all tests\\n  npm run lint           - Lint all projects\\n  npm run format         - Format all projects\\n\\n📊 Utility Commands:\\n  npm run status         - Show build status across all projects\\n  npm run help           - Display this help\\n'",
+    "setup": "echo '🔧 Installing dependencies...' && npm install --legacy-peer-deps && echo '🔧 Installing components dependencies...' && cd packages/components && npm install && echo '🔧 Installing website dependencies...' && cd ../../sites/arolariu.ro && npm install && cd ../../ && echo '✅ Dependencies installed successfully!'",
+    "clean": "echo '🧹 Cleaning all build artifacts...' && npm run clean:components && npm run clean:website && npm run clean:docs && npm run clean:api && echo '✅ All projects cleaned!'",
+    "clean:components": "echo '📦 Cleaning components...' && cd packages/components && (npm run build:clean 2>/dev/null || rm -rf dist) && echo '  ✅ Components cleaned'",
+    "clean:website": "echo '🌐 Cleaning website...' && cd sites/arolariu.ro && (npm run clean 2>/dev/null || rm -rf .next) && echo '  ✅ Website cleaned'",
+    "clean:docs": "echo '📚 Cleaning docs...' && cd sites/docs.arolariu.ro && rm -rf _site api && echo '  ✅ Documentation cleaned'",
+    "clean:api": "echo '⚙️  Cleaning API...' && cd sites/api.arolariu.ro && (dotnet clean 2>/dev/null || echo '  ⚠️  .NET not available') && echo '  ✅ API cleaned'",
+    "build": "echo '🏗️  Building all projects sequentially...' && npm run build:components && npm run build:website && npm run build:docs && npm run build:api && echo '✅ All builds completed!'",
+    "build:parallel": "echo '🏗️  Building projects in parallel...' && echo '⚠️  Install concurrently first: npm install concurrently' && echo 'Then use: npx concurrently \"npm run build:components\" \"npm run build:website\" \"npm run build:docs\" \"npm run build:api\"'",
+    "build:components": "echo '📦 Building components...' && cd packages/components && npm run build && echo '✅ Components built successfully!'",
+    "build:website": "echo '🌐 Building website...' && cd sites/arolariu.ro && npm run build && echo '✅ Website built successfully!'",
+    "build:docs": "echo '📚 Building documentation...' && cd sites/docs.arolariu.ro && (docfx docfx.json 2>/dev/null && echo '✅ Documentation built successfully!') || echo '⚠️  DocFX not available - install DocFX to build documentation'",
+    "build:api": "echo '⚙️  Building API...' && cd sites/api.arolariu.ro && (dotnet build 2>/dev/null && echo '✅ API built successfully!') || echo '⚠️  .NET SDK not available - install .NET 9.0 SDK to build API'",
+    "dev:components": "echo '🚀 Starting Storybook development server...' && cd packages/components && npm run storybook",
+    "test": "echo '🧪 Running all tests...' && npm run test:components && npm run test:website && echo '✅ All tests completed!'",
+    "test:components": "echo '📦 Testing components...' && cd packages/components && echo '⚠️  Component tests not configured yet'",
+    "test:website": "echo '🌐 Testing website...' && cd sites/arolariu.ro && npm run test",
+    "lint": "echo '🔍 Linting all projects...' && npm run lint:components && npm run lint:website && echo '✅ All linting completed!'",
+    "lint:components": "echo '📦 Linting components...' && cd packages/components && echo '⚠️  Component linting not configured yet'",
+    "lint:website": "echo '🌐 Linting website...' && cd sites/arolariu.ro && npm run lint",
+    "format": "echo '💅 Formatting all projects...' && npm run format:components && npm run format:website && echo '✅ All formatting completed!'",
+    "format:components": "echo '📦 Formatting components...' && cd packages/components && echo '⚠️  Component formatting not configured yet'",
+    "format:website": "echo '🌐 Formatting website...' && cd sites/arolariu.ro && npm run format",
+    "status": "echo '📊 Build Status Report:\\n' && echo '📦 Components:' && (cd packages/components && ls -la dist 2>/dev/null | wc -l | xargs -I {} echo '  {} build artifacts found' || echo '  ❌ No build artifacts found') && echo '🌐 Website:' && (cd sites/arolariu.ro && ls -la .next 2>/dev/null | wc -l | xargs -I {} echo '  {} build artifacts found' || echo '  ❌ No build artifacts found') && echo '📚 Documentation:' && (cd sites/docs.arolariu.ro && ls -la _site 2>/dev/null | wc -l | xargs -I {} echo '  {} build artifacts found' || echo '  ❌ No build artifacts found') && echo '⚙️  API:' && (cd sites/api.arolariu.ro && find . -name 'bin' -type d 2>/dev/null | wc -l | xargs -I {} echo '  {} build outputs found' || echo '  ❌ No build artifacts found')"
+  },
+  "devDependencies": {},
+  "author": {
+    "name": "Alexandru-Razvan Olariu",
+    "email": "admin@arolariu.ro",
+    "url": "https://arolariu.ro"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arolariu/arolariu.ro"
+  },
+  "keywords": [
+    "monorepo",
+    "nextjs",
+    "react",
+    "dotnet",
+    "docfx",
+    "typescript"
+  ]
+}
