@@ -1,13 +1,9 @@
-/**
- * @type {import('tailwindcss').Config}
- */
-const tailwindConfig = {
+import { Config } from "tailwindcss";
+
+const tailwindConfig: Config = {
   darkMode: "class",
   plugins: [],
-  content: [
-    "./src/**/*.{js,ts,jsx,tsx,mdx}",
-    "./stories/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
+  content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {

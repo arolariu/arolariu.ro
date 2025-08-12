@@ -31,7 +31,7 @@ _A comprehensive collection of 60+ beautifully crafted React components built on
 - **⚡ Performance Optimized** - Tree-shakeable, minimal bundle impact, source maps included
 - **🔧 Developer Experience** - Full TypeScript support, comprehensive docs, and debugging tools
 - **🎭 Flexible Styling** - Tailwind CSS integration with easy customization
-- **🚀 Modern Stack** - React 18/19, ESM/CJS, SSR compatible
+- **🚀 Modern Stack** - React 18/19, ESM, SSR compatible
 
 **Perfect for building modern web applications, design systems, and prototypes.**
 

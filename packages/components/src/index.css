@@ -1,7 +1,5 @@
-@import 'tailwindcss';
-
-@config '../tailwind.config.mjs';
-
+@import "tailwindcss";
+@config '../tailwind.config.ts';
 @custom-variant dark (&:is(.dark *));
 
 /*

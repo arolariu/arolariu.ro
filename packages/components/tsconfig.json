@@ -41,7 +41,7 @@
     "allowUnusedLabels": false,
     "declaration": true,
     "sourceMap": true,
-    "declarationDir": "dist/types",
+    "declarationDir": "dist/",
     "emitDeclarationOnly": true,
     "outDir": "dist",
     "rootDir": "src",
