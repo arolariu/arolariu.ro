@@ -41,6 +41,6 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_CV_TOKEN }}
           action: "upload"
-          app_location: "./"
-          api_location: "./build/server"
-          output_location: "./build/static"
+          app_location: "./sites/cv.arolariu.ro/"
+          api_location: "./sites/cv.arolariu.ro/build/server"
+          output_location: "./sites/cv.arolariu.ro/build/static"
