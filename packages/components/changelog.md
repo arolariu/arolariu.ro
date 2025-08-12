@@ -8,6 +8,14 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 ## 🎉 Latest Releases
 
+### [0.1.0](https://www.npmjs.com/package/@arolariu/components/v/0.1.0) - 2025-08-12
+
+**🔧 Dependencies & Infrastructure**
+
+- 💥 **Breaking Change: Only export ESM format** starting from this version
+- ⬆️ **Upgraded Radix UI** packages to latest versions for better performance
+- ⬆️ **Updated rslib/rsbuild** core packages to latest versions
+
 ### [0.0.40](https://www.npmjs.com/package/@arolariu/components/v/0.0.40) - 2025-07-25
 
 **🔧 Dependencies & Infrastructure**

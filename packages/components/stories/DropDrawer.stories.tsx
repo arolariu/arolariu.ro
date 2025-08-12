@@ -104,7 +104,8 @@ export const Basic: Story = {
   parameters: {
     docs: {
       description: {
-        story: "A basic implementation of the DropDrawer component with simple menu items.",
+        story:
+          "A basic implementation of the DropDrawer component with simple menu items.",
       },
     },
   },
@@ -182,7 +183,7 @@ export const WithSubmenus: Story = {
           Profile
         </DropDrawerItem>
         <DropDrawerSeparator />
-        
+
         <DropDrawerSub>
           <DropDrawerSubTrigger>
             <ShieldIcon className="mr-2 h-4 w-4" />
@@ -199,7 +200,7 @@ export const WithSubmenus: Story = {
             </DropDrawerItem>
           </DropDrawerSubContent>
         </DropDrawerSub>
-        
+
         <DropDrawerSub>
           <DropDrawerSubTrigger>
             <CloudIcon className="mr-2 h-4 w-4" />
@@ -227,7 +228,7 @@ export const WithSubmenus: Story = {
             </DropDrawerSub>
           </DropDrawerSubContent>
         </DropDrawerSub>
-        
+
         <DropDrawerSeparator />
         <DropDrawerItem>
           <SettingsIcon className="mr-2 h-4 w-4" />
@@ -243,7 +244,8 @@ export const WithSubmenus: Story = {
   parameters: {
     docs: {
       description: {
-        story: "DropDrawer with multi-level nested submenus, showcasing the nested navigation capability.",
+        story:
+          "DropDrawer with multi-level nested submenus, showcasing the nested navigation capability.",
       },
     },
   },
@@ -327,7 +329,8 @@ export const MobileDrawerVariant: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Demonstration of the DropDrawer in mobile mode where it renders as a drawer instead of a dropdown.",
+        story:
+          "Demonstration of the DropDrawer in mobile mode where it renders as a drawer instead of a dropdown.",
       },
     },
     viewport: {
@@ -358,7 +361,8 @@ export const ItemVariants: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Showcasing the different variants and styles available for DropDrawerItem.",
+        story:
+          "Showcasing the different variants and styles available for DropDrawerItem.",
       },
     },
   },
@@ -385,10 +389,10 @@ export const ComplexExample: Story = {
             Account Settings
           </DropDrawerItem>
         </DropDrawerGroup>
-        
+
         <DropDrawerSeparator />
         <DropDrawerLabel>Resources</DropDrawerLabel>
-        
+
         <DropDrawerSub>
           <DropDrawerSubTrigger>
             <CloudIcon className="mr-2 h-4 w-4" />
@@ -400,7 +404,7 @@ export const ComplexExample: Story = {
             <DropDrawerItem inset>Networking</DropDrawerItem>
           </DropDrawerSubContent>
         </DropDrawerSub>
-        
+
         <DropDrawerSub>
           <DropDrawerSubTrigger>
             <ShieldIcon className="mr-2 h-4 w-4" />
@@ -427,7 +431,7 @@ export const ComplexExample: Story = {
             </DropDrawerSub>
           </DropDrawerSubContent>
         </DropDrawerSub>
-        
+
         <DropDrawerSeparator />
         <DropDrawerGroup>
           <DropDrawerItem>
@@ -439,7 +443,7 @@ export const ComplexExample: Story = {
             Sign Out
           </DropDrawerItem>
         </DropDrawerGroup>
-        
+
         <DropDrawerFooter>
           <p className="text-xs text-center text-muted-foreground pb-2">
             Signed in as admin@example.com
@@ -454,7 +458,8 @@ export const ComplexExample: Story = {
   parameters: {
     docs: {
       description: {
-        story: "A comprehensive example showcasing most features of the DropDrawer component including submenus, groups, separators, and footer.",
+        story:
+          "A comprehensive example showcasing most features of the DropDrawer component including submenus, groups, separators, and footer.",
       },
     },
   },

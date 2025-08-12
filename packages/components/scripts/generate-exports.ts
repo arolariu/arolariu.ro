@@ -30,35 +30,28 @@ const packageJson = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, "utf-8"));
 type ExportEntry = Readonly<
   | {
       types?: string;
-      import: string;
-      require: string;
-      default: string;
+      import?: string;
+      require?: string;
+      default?: string;
     }
   | string
 >;
 
 // Initialize exports object with main entry
 const exports: Record<string, ExportEntry> = {
-  ".": {
-    types: "./dist/types/index.d.ts",
-    import: "./dist/esm/index.js",
-    require: "./dist/cjs/index.cjs",
-    default: "./dist/index.js",
-  },
-  "./*": {
-    types: "./dist/types/*.d.ts",
-    import: "./dist/esm/*.js",
-    require: "./dist/cjs/*.cjs",
-    default: "./dist/esm/*.js",
-  },
-  "./tailwind": {
-    import: "./dist/esm/tailwind.js",
-    require: "./dist/cjs/tailwind.cjs",
-    default: "./dist/esm/tailwind.js",
-  },
   "./package.json": "./package.json",
   "./styles": "./dist/index.css",
   "./styles.css": "./dist/index.css",
+  ".": {
+    types: "./dist/index.d.ts",
+    import: "./dist/index.js",
+    default: "./dist/index.js",
+  },
+  "./*": {
+    types: "./dist/*.d.ts",
+    import: "./dist/*.js",
+    default: "./dist/*.js",
+  },
 };
 
 // Helper to process items in a directory
@@ -81,7 +74,6 @@ function processItems(dir: string, prefix: string = "") {
 
     let exportPath: string | null = null;
     let importPath: string | null = null;
-    let requirePath: string | null = null;
     let typesPath: string | null = null;
 
     if (item.isDirectory()) {
@@ -93,14 +85,13 @@ function processItems(dir: string, prefix: string = "") {
         const flatName = prefix + itemName.toLowerCase();
 
         exportPath = `./${flatName}`;
-        importPath = `./dist/esm/components/ui/${flatName}.js`;
-        requirePath = `./dist/cjs/components/ui/${flatName}.cjs`;
-        typesPath = `./dist/types/components/ui/${flatName}.d.ts`;
+        importPath = `./dist/components/ui/${flatName}.js`;
+        typesPath = `./dist/components/ui/${flatName}.d.ts`;
       } else {
         // Recursively process subdirectories
         processItems(
           path.join(dir, itemName),
-          `${prefix}${itemName.toLowerCase()}-`
+          `${prefix}${itemName.toLowerCase()}-`,
         );
       }
     } else if (
@@ -112,17 +103,15 @@ function processItems(dir: string, prefix: string = "") {
       const flatName = prefix + baseName.toLowerCase();
 
       exportPath = `./${flatName}`;
-      importPath = `./dist/esm/components/ui/${flatName}.js`;
-      requirePath = `./dist/cjs/components/ui/${flatName}.cjs`;
-      typesPath = `./dist/types/components/ui/${flatName}.d.ts`;
+      importPath = `./dist/components/ui/${flatName}.js`;
+      typesPath = `./dist/components/ui/${flatName}.d.ts`;
     }
 
     // If we found a valid component, add it to exports
-    if (exportPath && importPath && requirePath && typesPath) {
+    if (exportPath && importPath && typesPath) {
       exports[exportPath] = {
         types: typesPath,
         import: importPath,
-        require: requirePath,
         default: importPath,
       };
       console.log(`>>> Added export for: ${exportPath}`);
@@ -142,5 +131,5 @@ fs.writeFileSync(PACKAGE_JSON_PATH, JSON.stringify(packageJson, null, 2));
 console.log(
   `>>> ✅ Successfully generated ${
     Object.keys(exports).length - 1
-  } component exports`
+  } component exports`,
 );

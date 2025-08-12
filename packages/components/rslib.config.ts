@@ -5,11 +5,11 @@ import path from "node:path";
 /**
  * Bundler configuration for building the component library.
  *
- * Configures the build process to output both ESM and CommonJS formats
+ * Configures the build process to output ESM format
  * with separate distribution directories for each module system.
  *
  * @remarks
- * - Generates TypeScript declaration files (.d.ts) for both formats
+ * - Generates TypeScript declaration files (.d.ts) for ESM format
  * - Outputs source maps for JavaScript and CSS files
  * - Uses React plugin for JSX transformation
  * - Sets up path alias '@' pointing to the src directory
@@ -19,7 +19,6 @@ import path from "node:path";
  * ```typescript
  * // The configuration produces:
  * // - ESM modules in ./dist/esm/
- * // - CommonJS modules in ./dist/cjs/
  * ```
  */
 const bundlerConfig = defineConfig({
@@ -36,24 +35,10 @@ const bundlerConfig = defineConfig({
       format: "esm",
       output: {
         distPath: {
-          root: "./dist/esm",
+          root: "./dist/",
         },
         filename: {
           js: "[name].js",
-          css: "[name].css",
-        },
-      },
-    },
-    {
-      bundle: false,
-      dts: true,
-      format: "cjs",
-      output: {
-        distPath: {
-          root: "./dist/cjs",
-        },
-        filename: {
-          js: "[name].cjs",
           css: "[name].css",
         },
       },

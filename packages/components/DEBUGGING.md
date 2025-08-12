@@ -21,14 +21,9 @@ All distribution files include source maps for optimal debugging experience:
 
 ```
 dist/
-├── esm/
-│   ├── button.js
-│   ├── button.js.map      ✅ ESM source map
-│   └── ...
-├── cjs/
-│   ├── button.cjs
-│   ├── button.cjs.map     ✅ CommonJS source map
-│   └── ...
+├── button.js
+├── button.js.map      ✅ ESM source map
+└── ...
 ```
 
 ### Benefits
