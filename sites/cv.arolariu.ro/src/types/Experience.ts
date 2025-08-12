@@ -5,12 +5,12 @@ export type Experience = {
 	description: string;
 	period: string;
 
-	/* This string is separated via the special # characyer. */
+	/* This string is separated via the special # character. */
 	responsibilities: string;
 
-	/* This string is separated via the special # characyer. */
+	/* This string is separated via the special # character. */
 	achievements: string;
 
-	/* This string is separated via the special # characyer. */
+	/* This string is separated via the special # character. */
 	techAndSkills: string;
 };

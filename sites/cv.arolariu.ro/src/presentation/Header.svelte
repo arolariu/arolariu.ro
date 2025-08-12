@@ -41,9 +41,10 @@
 			: 'z-50 border-b border-gray-200 dark:border-gray-700 bg-gray-50/90 dark:bg-gray-900/90 backdrop-blur-sm');
 
 	const titleClasses =
-		"font-bold font-['Caudex'] transition-colors duration-300 " + variant === 'inverse'
+		"font-bold font-['Caudex'] transition-colors duration-300 " +
+		(variant === 'inverse'
 			? 'text-xl md:text-xl text-white'
-			: 'text-xl md:text-xl text-gray-900 dark:text-gray-100';
+			: 'text-xl md:text-xl text-gray-900 dark:text-gray-100');
 </script>
 
 <header class={`${wrapperBase} transition-all duration-300 ${extra} print:hidden`}>
