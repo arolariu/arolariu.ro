@@ -25,6 +25,17 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4.2.2
 
+      - name: 📦 Installing Node.js...
+        uses: actions/setup-node@v4.4.0
+        with:
+          node-version: latest
+
+      - name: 📦 Installing dependencies...
+        run: |
+          yarn install
+          yarn prepare
+          yarn build
+
       - name: "🚀 Deploying CV website..."
         uses: Azure/static-web-apps-deploy@v1
         with:
