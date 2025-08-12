@@ -25,24 +25,11 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v4.2.2
 
-      - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v4.4.0
-        with:
-          node-version: latest
-
-      - name: 📦 Installing dependencies...
-        run: |
-          corepack enable
-          yarn install --immutable
-          yarn prepare
-          yarn build
-
       - name: "🚀 Deploying CV website..."
         uses: Azure/static-web-apps-deploy@v1
         with:
-          skip_api_build: true
-          skip_app_build: true
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_CV_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "./sites/cv.arolariu.ro/"
           api_location: "./sites/cv.arolariu.ro/build/server"
