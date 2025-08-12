@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "engines": {
-    "node": ">=24"
+    "node": ">=22.8"
   },
   "scripts": {
     "dev": "vite dev",
@@ -32,8 +32,5 @@
     "tailwindcss": "4.1.11",
     "typescript": "5.9.2",
     "vite": "7.1.2"
-  },
-  "dependencies": {
-    "@azure/static-web-apps-cli": "^2.0.6"
   }
 }
