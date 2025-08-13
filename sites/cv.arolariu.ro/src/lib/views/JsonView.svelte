@@ -143,5 +143,29 @@
 				>
 			</div>
 		</div>
+
+		<!-- API access info -->
+		<div
+			class="mt-6 rounded-lg p-4 border transition-all duration-300 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+		>
+			<h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-100">API access</h3>
+			<p class="text-sm mb-3 transition-colors duration-300 text-gray-600 dark:text-gray-400">
+				You can also access this JSON resume via the public API endpoint:
+			</p>
+			<div class="flex items-center gap-2 text-xs font-mono">
+				<span
+					class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+					>HTTP GET</span
+				>
+				<a
+					href="https://cv.arolariu.ro/rest/json"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="underline break-all text-blue-700 dark:text-blue-300"
+				>
+					https://cv.arolariu.ro/rest/json
+				</a>
+			</div>
+		</div>
 	</div>
 </main>

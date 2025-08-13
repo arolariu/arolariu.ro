@@ -1,7 +1,11 @@
 {
   "build": {
-    "content": ["**/*.{md,yml}"],
-    "resource": ["images/**"],
+    "content": [
+      "**/*.{md,yml}"
+    ],
+    "resource": [
+      "images/**"
+    ],
     "output": "_site",
     "globalMetadata": {
       "_appTitle": "arolariu.ro DocFX",
@@ -14,6 +18,7 @@
       "_disableToc": false,
       "_disableContribution": false,
       "_disableSideFilter": false,
+      "msClarityId": "hvhwmt03k3",
       "_gitContribute": {
         "repo": "https://github.com/arolariu/arolariu.ro"
       },
@@ -21,7 +26,8 @@
     },
     "template": [
       "default",
-      "modern"
+      "modern",
+      "templates/clarity"
     ],
     "disableGitFeatures": false,
     "sitemap": {
@@ -44,7 +50,9 @@
     {
       "src": [
         {
-          "files": ["/src/**/*.csproj"],
+          "files": [
+            "/src/**/*.csproj"
+          ],
           "src": "../api.arolariu.ro/"
         }
       ],

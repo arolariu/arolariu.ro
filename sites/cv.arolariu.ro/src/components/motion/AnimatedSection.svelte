@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Tween, prefersReducedMotion } from 'svelte/motion';
 	import { intersect } from './intersection';
+	import { onMount } from 'svelte';
 
 	type AnimationType =
 		| 'fade-up'
@@ -31,6 +32,7 @@
 	}: Props = $props();
 
 	let hasAnimated = $state(false);
+	let sectionEl: HTMLElement | null = null;
 
 	const animationStyles: Record<
 		AnimationType,
@@ -63,6 +65,21 @@
 		opacity.set(1, { duration: ms, delay: dl });
 	}
 
+	// If the element is already in view on mount (landing mid-page), trigger immediately.
+	onMount(() => {
+		try {
+			const el = sectionEl as HTMLElement | undefined;
+			if (!el) return;
+			const rect = el.getBoundingClientRect();
+			const vh = window.innerHeight || document.documentElement.clientHeight;
+			const vw = window.innerWidth || document.documentElement.clientWidth;
+			const inView = rect.bottom >= 0 && rect.right >= 0 && rect.top <= vh && rect.left <= vw;
+			if (inView) {
+				runAnimation();
+			}
+		} catch {}
+	});
+
 	// Safety fallback: if IO never fires (rare), reveal content after a short delay
 	$effect(() => {
 		const timer = setTimeout(() => {
@@ -81,6 +98,7 @@
 </script>
 
 <section
+	bind:this={sectionEl}
 	use:intersect={{ threshold, once: true, onEnter: runAnimation }}
 	{id}
 	class={className}
