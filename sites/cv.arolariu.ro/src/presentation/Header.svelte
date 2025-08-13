@@ -50,15 +50,13 @@
 <header class={`${wrapperBase} transition-all duration-300 ${extra} print:hidden`}>
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 		<div class="flex justify-between items-center h-16">
-			<div class="flex items-center">
-				<span class="mr-2">
-					<ActionButton
-						back
-						label={ui.navigation.backToMenu}
-						onClick={goBack}
-						variant={variant === 'inverse' ? 'text-inverse' : 'text'}
-					/>
-				</span>
+			<div class="flex items-center gap-4">
+				<ActionButton
+					back
+					label={ui.navigation.backToMenu}
+					onClick={goBack}
+					variant={variant === 'inverse' ? 'text-inverse' : 'text'}
+				/>
 				<div class="flex items-center 2xsm:text-md">
 					<h1 class={titleClasses}>Alexandru-Razvan Olariu</h1>
 				</div>
@@ -90,7 +88,7 @@
 				{/if}
 				<ThemeToggle />
 				{#if actionsConfig}
-					<div class="flex items-center gap-3">
+					<div class="md:flex items-center gap-3 2xsm:hidden">
 						{#each actionsConfig as act}
 							<ActionButton
 								icon={act.icon}
@@ -104,7 +102,7 @@
 					</div>
 				{/if}
 				{#if actions && !actionsConfig}
-					<div class="flex items-center gap-3 2xsm:hidden">{@render actions()}</div>
+					<div class="md:flex items-center gap-3 2xsm:hidden">{@render actions()}</div>
 				{/if}
 			</div>
 		</div>

@@ -1,2 +1,19 @@
 @import 'tailwindcss';
-@custom-variant dark (&:where(.dark, .dark *));
+@config '../tailwind.config.js';
+
+html {
+	text-rendering: optimizelegibility;
+}
+
+body {
+	min-height: 100dvh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

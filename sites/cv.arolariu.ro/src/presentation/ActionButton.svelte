@@ -35,16 +35,17 @@
 </script>
 
 <button
+	type="button"
 	onclick={onClick}
 	disabled={disabled || loading}
-	class={`${base} ${variantClasses[variant] ?? variantClasses['default']} ${extra} 2xsm:hidden block`}
+	class={`${base} ${variantClasses[variant] ?? variantClasses['default']} ${extra} block`}
 >
 	{#if loading}
 		{@html spinner}
 	{:else if back && !icon}
-		<Icon name="arrow-left" class="w-5 h-5" />
+		<Icon name="arrow-left" class="w-5 h-5 inline" />
 	{:else if icon}
-		<Icon name={icon as any} class="w-4 h-4" />
+		<Icon name={icon as any} class="w-4 h-4 inline" />
 	{/if}
 	<span class="whitespace-nowrap">{label}</span>
 </button>
