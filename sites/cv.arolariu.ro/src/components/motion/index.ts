@@ -1,1 +1,3 @@
-export { default as AnimatedSection } from './AnimatedSection.svelte';
+/** @format */
+
+export {default as AnimatedSection} from "./AnimatedSection.svelte";

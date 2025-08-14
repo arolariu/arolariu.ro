@@ -1,6 +1,8 @@
-import type { Education } from '@/types';
+/** @format */
 
-type EducationKeys = 'aseBucharest' | 'malmoSweden';
+import type {Education} from "@/types";
+
+type EducationKeys = "aseBucharest" | "malmoSweden";
 type Educations = Record<EducationKeys, Education>;
 
 /**
@@ -9,26 +11,26 @@ type Educations = Record<EducationKeys, Education>;
  * The values are objects containing details about the degree, institution, location, period, status, and description.
  */
 export const education: Educations = {
-	malmoSweden: {
-		degree: 'MSc. Internet of Things & Network Engineering',
-		institution: 'Malmö University',
-		location: 'Malmö, Sweden',
-		period: '2023 - 2024',
-		status: 'Interrupted',
-		eduUrl: 'https://mau.se',
-		description:
-			'Previously enrolled in the MSc. Internet of Things program at Malmö University, Sweden. Interrupted due to personal and unforeseen circumstances in 2024.'
-	},
-	aseBucharest: {
-		degree: 'BSc. Computer Science & Economics',
-		institution: 'Academia de Studii Economice',
-		location: 'Bucharest, Romania',
-		period: '2019 - 2022',
-		status: 'Completed',
-		eduUrl: 'https://ase.ro',
-		description:
-			"Bachelor's degree in Computer Science and Economy from the Bucharest University of Economic Studies in Bucharest, Romania. Finished in top 1% according to thesis rating statistics."
-	}
+  malmoSweden: {
+    degree: "MSc. Internet of Things & Network Engineering",
+    institution: "Malmö University",
+    location: "Malmö, Sweden",
+    period: "2023 - 2024",
+    status: "Interrupted",
+    eduUrl: "https://mau.se",
+    description:
+      "Previously enrolled in the MSc. Internet of Things program at Malmö University, Sweden. Interrupted due to personal and unforeseen circumstances in 2024.",
+  },
+  aseBucharest: {
+    degree: "BSc. Computer Science & Economics",
+    institution: "Academia de Studii Economice",
+    location: "Bucharest, Romania",
+    period: "2019 - 2022",
+    status: "Completed",
+    eduUrl: "https://ase.ro",
+    description:
+      "Bachelor's degree in Computer Science and Economy from the Bucharest University of Economic Studies in Bucharest, Romania. Finished in top 1% according to thesis rating statistics.",
+  },
 };
 
 /**

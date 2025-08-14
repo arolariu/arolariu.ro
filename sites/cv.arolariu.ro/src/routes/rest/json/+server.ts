@@ -1,5 +1,7 @@
-import { json, type RequestHandler } from '@sveltejs/kit';
-import { jsonCVData as resume } from '@/data/json';
+/** @format */
+
+import {json, type RequestHandler} from "@sveltejs/kit";
+import {jsonCVData as resume} from "@/data/json";
 
 /**
  * Unified CV endpoint.
@@ -13,23 +15,23 @@ import { jsonCVData as resume } from '@/data/json';
  *  - Consider ETag / cache headers later if needed (small payload now).
  */
 export const GET: RequestHandler = () => {
-	return json(
-		{
-			resume,
-			meta: {
-				format: 'cv.bundle',
-				version: '1.0.0',
-				resumeSchema: resume?.$schema ?? 'unknown',
-				generatedAt: new Date().toISOString(),
-				source: 'cv.arolariu.ro'
-			}
-		},
-		{
-			headers: {
-				// Allow embedding / external consumption
-				'Access-Control-Allow-Origin': '*',
-				'Cache-Control': 'public, max-age=300'
-			}
-		}
-	);
+  return json(
+    {
+      resume,
+      meta: {
+        format: "cv.bundle",
+        version: "1.0.0",
+        resumeSchema: resume?.$schema ?? "unknown",
+        generatedAt: new Date().toISOString(),
+        source: "cv.arolariu.ro",
+      },
+    },
+    {
+      headers: {
+        // Allow embedding / external consumption
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=300",
+      },
+    },
+  );
 };

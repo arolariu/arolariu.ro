@@ -1,16 +1,18 @@
-import azure from 'svelte-adapter-azure-swa';
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+/** @format */
+
+import azure from "svelte-adapter-azure-swa";
+import {vitePreprocess} from "@sveltejs/vite-plugin-svelte";
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	preprocess: vitePreprocess(),
+  preprocess: vitePreprocess(),
 
-	kit: {
-		adapter: azure(),
-		alias: {
-			'@/*': 'src/*'
-		}
-	}
+  kit: {
+    adapter: azure(),
+    alias: {
+      "@/*": "src/*",
+    },
+  },
 };
 
 export default config;

@@ -1,4 +1,6 @@
+/** @format */
+
 export type Skill = {
-	name: string;
-	level: number;
+  name: string;
+  level: number;
 };

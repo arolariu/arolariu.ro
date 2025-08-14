@@ -1,7 +1,10 @@
+<!-- @format -->
 <script lang="ts">
-	import '@/app.css';
+  import "@/app.css";
 </script>
 
-<main id="main-content">
-	<slot />
+<main
+  id="main-content"
+  class="dark:text-white">
+  <slot />
 </main>

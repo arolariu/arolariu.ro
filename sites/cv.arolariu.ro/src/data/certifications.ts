@@ -1,6 +1,8 @@
-import type { Certificate } from '@/types';
+/** @format */
 
-type CertificationKeys = 'az900' | 'ai900' | 'sc900';
+import type {Certificate} from "@/types";
+
+type CertificationKeys = "az900" | "ai900" | "sc900";
 type Certifications = Record<CertificationKeys, Certificate>;
 
 /**
@@ -9,34 +11,31 @@ type Certifications = Record<CertificationKeys, Certificate>;
  * The values are objects containing details about the certification name, issuer, code, issue date, and optional description.
  */
 export const certifications: Certifications = {
-	az900: {
-		name: 'AZ-900 (Azure Fundamentals)',
-		code: 'AZ-900',
-		issuer: 'Microsoft',
-		issuerUrl: 'https://learn.microsoft.com/en-us/certifications/azure-fundamentals/',
-		issueDate: '2023',
-		description:
-			'Validates foundational knowledge of cloud services and how those services are provided with Microsoft Azure.'
-	},
-	ai900: {
-		name: 'AI-900 (Azure AI Fundamentals)',
-		code: 'AI-900',
-		issuer: 'Microsoft',
-		issuerUrl: 'https://learn.microsoft.com/en-us/certifications/azure-ai-fundamentals/',
-		issueDate: '2023',
-		description:
-			'Demonstrates knowledge of common AI and machine learning workloads and how to implement them on Azure.'
-	},
-	sc900: {
-		name: 'SC-900 (Security, Compliance & Identity Fundamentals)',
-		code: 'SC-900',
-		issuer: 'Microsoft',
-		issuerUrl:
-			'https://learn.microsoft.com/en-us/certifications/security-compliance-and-identity-fundamentals/',
-		issueDate: '2023',
-		description:
-			'Validates foundational knowledge of security, compliance, and identity concepts and related cloud-based Microsoft solutions.'
-	}
+  az900: {
+    name: "AZ-900 (Azure Fundamentals)",
+    code: "AZ-900",
+    issuer: "Microsoft",
+    issuerUrl: "https://learn.microsoft.com/en-us/certifications/azure-fundamentals/",
+    issueDate: "2023",
+    description: "Validates foundational knowledge of cloud services and how those services are provided with Microsoft Azure.",
+  },
+  ai900: {
+    name: "AI-900 (Azure AI Fundamentals)",
+    code: "AI-900",
+    issuer: "Microsoft",
+    issuerUrl: "https://learn.microsoft.com/en-us/certifications/azure-ai-fundamentals/",
+    issueDate: "2023",
+    description: "Demonstrates knowledge of common AI and machine learning workloads and how to implement them on Azure.",
+  },
+  sc900: {
+    name: "SC-900 (Security, Compliance & Identity Fundamentals)",
+    code: "SC-900",
+    issuer: "Microsoft",
+    issuerUrl: "https://learn.microsoft.com/en-us/certifications/security-compliance-and-identity-fundamentals/",
+    issueDate: "2023",
+    description:
+      "Validates foundational knowledge of security, compliance, and identity concepts and related cloud-based Microsoft solutions.",
+  },
 };
 
 /**
