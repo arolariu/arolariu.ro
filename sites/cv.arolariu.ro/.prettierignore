@@ -7,3 +7,12 @@ bun.lockb
 
 # Miscellaneous
 /static/
+
+*.html
+*.css
+*.md
+
+.prettierrc
+.prettierignore
+.gitignore
+*.json

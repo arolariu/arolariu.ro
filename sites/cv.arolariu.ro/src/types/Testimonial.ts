@@ -1,6 +1,8 @@
+/** @format */
+
 export type Testimonial = {
-	author: string;
-	position: string;
-	company: string;
-	quote: string;
+  author: string;
+  position: string;
+  company: string;
+  quote: string;
 };
