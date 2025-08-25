@@ -61,6 +61,9 @@ export {
 } from "./components/ui/carousel";
 
 export {
+  type ChartConfig,
+  type ChartLegendContentProps,
+  type CustomTooltipProps,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -383,6 +386,10 @@ export { DotBackground } from "./components/ui/dot-background";
 
 // Aceternity UI exports:
 export { BackgroundBeams } from "./components/ui/background-beams";
+export {
+  TypewriterText,
+  TypewriterTextSmooth,
+} from "./components/ui/typewriter";
 
 // Jia Wei Ng export (https://github.com/jiaweing/DropDrawer):
 export {
