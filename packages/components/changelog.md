@@ -14,6 +14,8 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 - ⬆️ **Upgraded Radix UI** packages to latest versions for better performance
 - ⬆️ **Updated rslib/rsbuild** core packages to latest versions
+- 🆕 **Typewriter Component** Added new component from Aceternity UI.
+- ⬆️ **Recharts V3** Upgraded chart.tsx to use Rechars v3.
 
 ### [0.1.0](https://www.npmjs.com/package/@arolariu/components/v/0.1.0) - 2025-08-12
 
