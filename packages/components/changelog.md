@@ -8,7 +8,7 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 ## 🎉 Latest Releases
 
-### [0.1.1](https://www.npmjs.com/package/@arolariu/components/v/0.1.1) - 2025-08-23
+### [0.1.1](https://www.npmjs.com/package/@arolariu/components/v/0.1.1) - 2025-08-25
 
 **🔧 Dependencies & Infrastructure**
 
