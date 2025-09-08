@@ -1,6 +1,6 @@
 {
   "name": "cv",
-  "$schema": "https://nx.dev/reference/project-configuration",
+  "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
   "sourceRoot": "sites/cv.arolariu.ro/src",
   "projectType": "application",
   "targets": {
