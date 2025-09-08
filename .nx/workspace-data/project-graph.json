@@ -6,7 +6,7 @@
       "data": {
         "root": "sites/docs.arolariu.ro",
         "name": "docs",
-        "$schema": "https://nx.dev/reference/project-configuration",
+        "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
         "sourceRoot": "sites/docs.arolariu.ro",
         "projectType": "application",
         "tags": [
@@ -87,7 +87,7 @@
       "data": {
         "root": "sites/api.arolariu.ro",
         "name": "api",
-        "$schema": "https://nx.dev/reference/project-configuration",
+        "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
         "sourceRoot": "sites/api.arolariu.ro/src",
         "projectType": "application",
         "tags": [
@@ -99,8 +99,8 @@
           "build": {
             "executor": "nx:run-commands",
             "options": {
-              "command": "dotnet build --configuration Release",
-              "cwd": "sites/api.arolariu.ro"
+              "command": "dotnet build arolariu.sln --configuration Release",
+              "cwd": "."
             },
             "configurations": {},
             "parallelism": true,
@@ -279,7 +279,7 @@
             "cache": true
           }
         },
-        "$schema": "https://nx.dev/reference/project-configuration",
+        "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
         "implicitDependencies": []
       }
     },
@@ -748,7 +748,7 @@
             "parallelism": true
           }
         },
-        "$schema": "https://nx.dev/reference/project-configuration",
+        "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
         "implicitDependencies": []
       }
     },
@@ -1170,7 +1170,7 @@
             "parallelism": true
           }
         },
-        "$schema": "https://nx.dev/reference/project-configuration",
+        "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
         "implicitDependencies": []
       }
     }
@@ -7917,24 +7917,6 @@
         "hash": "sha512-5EdhGZtnu3V88ces7s53hhfK5KSASnJZv8Lulpc04cWO3REESroJXg73DFsOmgbU2BhwV0E20bu2IDZb3VKW4Q=="
       }
     },
-    "npm:picomatch@4.0.3": {
-      "type": "npm",
-      "name": "npm:picomatch@4.0.3",
-      "data": {
-        "version": "4.0.3",
-        "packageName": "picomatch",
-        "hash": "sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q=="
-      }
-    },
-    "npm:picomatch": {
-      "type": "npm",
-      "name": "npm:picomatch",
-      "data": {
-        "version": "2.3.1",
-        "packageName": "picomatch",
-        "hash": "sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA=="
-      }
-    },
     "npm:@rollup/rollup-android-arm-eabi": {
       "type": "npm",
       "name": "npm:@rollup/rollup-android-arm-eabi",
@@ -11148,6 +11130,24 @@
         "hash": "sha512-KMReFUr0B4t+D+OBkjR3KYqvocp2XaSzO55UcB6mgQMd3KbcE+mWTyvVV7D/zsdEbNnV6acZUutkiHQXvTr1Rw=="
       }
     },
+    "npm:picomatch@2.3.1": {
+      "type": "npm",
+      "name": "npm:picomatch@2.3.1",
+      "data": {
+        "version": "2.3.1",
+        "packageName": "picomatch",
+        "hash": "sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA=="
+      }
+    },
+    "npm:picomatch": {
+      "type": "npm",
+      "name": "npm:picomatch",
+      "data": {
+        "version": "4.0.3",
+        "packageName": "picomatch",
+        "hash": "sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q=="
+      }
+    },
     "npm:append-transform": {
       "type": "npm",
       "name": "npm:append-transform",
@@ -11560,6 +11560,15 @@
         "version": "2.8.0",
         "packageName": "babel-plugin-macros",
         "hash": "sha512-SEP5kJpfGYqYKpBrj5XU3ahw5p5GOHJ0U5ssOSQ/WBVdwkD2Dzlce95exQTs3jOVWPPKLBN2rlEWkCK7dSmLvg=="
+      }
+    },
+    "npm:babel-plugin-macros@3.1.0": {
+      "type": "npm",
+      "name": "npm:babel-plugin-macros@3.1.0",
+      "data": {
+        "version": "3.1.0",
+        "packageName": "babel-plugin-macros",
+        "hash": "sha512-Cg7TFGpIr01vOQNODXOOaGz2NpCU5gl8x1qJFbb6hbZxR7XrcE2vtbAsTAbJ7/xwJtUuJEw8K8Zr/AE0LHlesg=="
       }
     },
     "npm:babel-plugin-polyfill-corejs2": {
@@ -14287,6 +14296,24 @@
         "version": "2.1.0",
         "packageName": "escodegen",
         "hash": "sha512-2NlIDTwUWJN0mRPQOdtQBzbUHvdGY2P1VXSyU83Q3xKxM7WHX2Ql8dKq782Q9TgQUNOLEzEYu9bzLNj1q88I5w=="
+      }
+    },
+    "npm:eslint": {
+      "type": "npm",
+      "name": "npm:eslint",
+      "data": {
+        "version": "9.35.0",
+        "packageName": "eslint",
+        "hash": "sha512-QePbBFMJFjgmlE+cXAlbHZbHpdFVS2E/6vzCy7aKlebddvl1vadiC4JFV5u/wqTkNUwEV8WrQi257jf5f06hrg=="
+      }
+    },
+    "npm:eslint@9.32.0": {
+      "type": "npm",
+      "name": "npm:eslint@9.32.0",
+      "data": {
+        "version": "9.32.0",
+        "packageName": "eslint",
+        "hash": "sha512-LSehfdpgMeWcTZkWZVIJl+tkZ2nuSkyyB9C27MZqFWXuph7DvaowgcTvKqxvpLW1JZIk8PN7hFY3Rj9LQ7m7lg=="
       }
     },
     "npm:eslint-compat-utils": {
@@ -21875,15 +21902,6 @@
         "packageName": "@arolariu/components",
         "hash": "sha512-WwXxhQxff16UCc3DvPcLSow2zPcavc/uQf1TjCDBhSLNfJ2jQwXr5vtRda2/vPSVqLcYDvXxcZ/wGlrN1tIs6A=="
       }
-    },
-    "npm:eslint@9.32.0": {
-      "type": "npm",
-      "name": "npm:eslint@9.32.0",
-      "data": {
-        "version": "9.32.0",
-        "packageName": "eslint",
-        "hash": "sha512-LSehfdpgMeWcTZkWZVIJl+tkZ2nuSkyyB9C27MZqFWXuph7DvaowgcTvKqxvpLW1JZIk8PN7hFY3Rj9LQ7m7lg=="
-      }
     }
   },
   "dependencies": {
@@ -25497,7 +25515,19 @@
     "npm:@eslint-community/eslint-utils": [
       {
         "source": "npm:@eslint-community/eslint-utils",
+        "target": "npm:eslint",
+        "type": "static"
+      },
+      {
+        "source": "npm:@eslint-community/eslint-utils",
         "target": "npm:eslint-visitor-keys@3.4.3",
+        "type": "static"
+      }
+    ],
+    "npm:@eslint/compat": [
+      {
+        "source": "npm:@eslint/compat",
+        "target": "npm:eslint",
         "type": "static"
       }
     ],
@@ -27362,6 +27392,11 @@
       {
         "source": "npm:@nx/eslint",
         "target": "npm:@zkochan/js-yaml",
+        "type": "static"
+      },
+      {
+        "source": "npm:@nx/eslint",
+        "target": "npm:eslint",
         "type": "static"
       },
       {
@@ -32799,7 +32834,7 @@
       },
       {
         "source": "npm:@rollup/pluginutils",
-        "target": "npm:picomatch@4.0.3",
+        "target": "npm:picomatch",
         "type": "static"
       }
     ],
@@ -35848,6 +35883,11 @@
       },
       {
         "source": "npm:@typescript-eslint/eslint-plugin",
+        "target": "npm:eslint",
+        "type": "static"
+      },
+      {
+        "source": "npm:@typescript-eslint/eslint-plugin",
         "target": "npm:typescript",
         "type": "static"
       },
@@ -35941,6 +35981,11 @@
     "npm:@typescript-eslint/type-utils@8.38.0": [
       {
         "source": "npm:@typescript-eslint/type-utils@8.38.0",
+        "target": "npm:eslint",
+        "type": "static"
+      },
+      {
+        "source": "npm:@typescript-eslint/type-utils@8.38.0",
         "target": "npm:typescript",
         "type": "static"
       },
@@ -36030,6 +36075,11 @@
     "npm:@typescript-eslint/utils@8.38.0": [
       {
         "source": "npm:@typescript-eslint/utils@8.38.0",
+        "target": "npm:eslint",
+        "type": "static"
+      },
+      {
+        "source": "npm:@typescript-eslint/utils@8.38.0",
         "target": "npm:typescript",
         "type": "static"
       },
@@ -36110,6 +36160,11 @@
     "npm:@typescript-eslint/parser": [
       {
         "source": "npm:@typescript-eslint/parser",
+        "target": "npm:eslint",
+        "type": "static"
+      },
+      {
+        "source": "npm:@typescript-eslint/parser",
         "target": "npm:typescript",
         "type": "static"
       },
@@ -36181,6 +36236,11 @@
       }
     ],
     "npm:@typescript-eslint/type-utils": [
+      {
+        "source": "npm:@typescript-eslint/type-utils",
+        "target": "npm:eslint",
+        "type": "static"
+      },
       {
         "source": "npm:@typescript-eslint/type-utils",
         "target": "npm:typescript",
@@ -36270,6 +36330,11 @@
       }
     ],
     "npm:@typescript-eslint/utils": [
+      {
+        "source": "npm:@typescript-eslint/utils",
+        "target": "npm:eslint",
+        "type": "static"
+      },
       {
         "source": "npm:@typescript-eslint/utils",
         "target": "npm:typescript",
@@ -36767,7 +36832,7 @@
       },
       {
         "source": "npm:anymatch",
-        "target": "npm:picomatch",
+        "target": "npm:picomatch@2.3.1",
         "type": "static"
       }
     ],
@@ -39941,7 +40006,194 @@
         "type": "static"
       }
     ],
+    "npm:eslint": [
+      {
+        "source": "npm:eslint",
+        "target": "npm:jiti",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:@eslint-community/eslint-utils",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:@eslint-community/regexpp",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:@eslint/config-array",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:@eslint/config-helpers",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:@eslint/core",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:@eslint/eslintrc",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:@eslint/js",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:@eslint/plugin-kit",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:@humanfs/node",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:@humanwhocodes/module-importer",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:@humanwhocodes/retry",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:@types/estree",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:@types/json-schema",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:ajv",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:chalk",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:cross-spawn",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:debug",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:escape-string-regexp",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:eslint-scope",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:eslint-visitor-keys",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:espree",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:esquery",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:esutils",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:fast-deep-equal",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:file-entry-cache",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:find-up@5.0.0",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:glob-parent",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:ignore",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:imurmurhash",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:is-glob",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:json-stable-stringify-without-jsonify",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:lodash.merge",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:minimatch@3.1.2",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:natural-compare",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint",
+        "target": "npm:optionator",
+        "type": "static"
+      }
+    ],
     "npm:eslint-compat-utils": [
+      {
+        "source": "npm:eslint-compat-utils",
+        "target": "npm:eslint",
+        "type": "static"
+      },
       {
         "source": "npm:eslint-compat-utils",
         "target": "npm:semver",
@@ -39949,6 +40201,11 @@
       }
     ],
     "npm:eslint-plugin-es-x": [
+      {
+        "source": "npm:eslint-plugin-es-x",
+        "target": "npm:eslint",
+        "type": "static"
+      },
       {
         "source": "npm:eslint-plugin-es-x",
         "target": "npm:@eslint-community/eslint-utils",
@@ -39966,6 +40223,11 @@
       }
     ],
     "npm:eslint-plugin-functional": [
+      {
+        "source": "npm:eslint-plugin-functional",
+        "target": "npm:eslint",
+        "type": "static"
+      },
       {
         "source": "npm:eslint-plugin-functional",
         "target": "npm:typescript",
@@ -40010,6 +40272,11 @@
       },
       {
         "source": "npm:eslint-plugin-jest",
+        "target": "npm:eslint",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint-plugin-jest",
         "target": "npm:jest",
         "type": "static"
       },
@@ -40020,6 +40287,11 @@
       }
     ],
     "npm:eslint-plugin-jsdoc": [
+      {
+        "source": "npm:eslint-plugin-jsdoc",
+        "target": "npm:eslint",
+        "type": "static"
+      },
       {
         "source": "npm:eslint-plugin-jsdoc",
         "target": "npm:@es-joy/jsdoccomment",
@@ -40072,6 +40344,11 @@
       }
     ],
     "npm:eslint-plugin-jsx-a11y": [
+      {
+        "source": "npm:eslint-plugin-jsx-a11y",
+        "target": "npm:eslint",
+        "type": "static"
+      },
       {
         "source": "npm:eslint-plugin-jsx-a11y",
         "target": "npm:aria-query@5.3.2",
@@ -40151,6 +40428,11 @@
     "npm:eslint-plugin-n": [
       {
         "source": "npm:eslint-plugin-n",
+        "target": "npm:eslint",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint-plugin-n",
         "target": "npm:@eslint-community/eslint-utils",
         "type": "static"
       },
@@ -40198,6 +40480,11 @@
     "npm:eslint-plugin-perfectionist": [
       {
         "source": "npm:eslint-plugin-perfectionist",
+        "target": "npm:eslint",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint-plugin-perfectionist",
         "target": "npm:@typescript-eslint/types",
         "type": "static"
       },
@@ -40215,11 +40502,21 @@
     "npm:eslint-plugin-promise": [
       {
         "source": "npm:eslint-plugin-promise",
+        "target": "npm:eslint",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint-plugin-promise",
         "target": "npm:@eslint-community/eslint-utils",
         "type": "static"
       }
     ],
     "npm:eslint-plugin-react": [
+      {
+        "source": "npm:eslint-plugin-react",
+        "target": "npm:eslint",
+        "type": "static"
+      },
       {
         "source": "npm:eslint-plugin-react",
         "target": "npm:array-includes",
@@ -40314,6 +40611,11 @@
     "npm:eslint-plugin-react-hooks": [
       {
         "source": "npm:eslint-plugin-react-hooks",
+        "target": "npm:eslint",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint-plugin-react-hooks",
         "target": "npm:@babel/core",
         "type": "static"
       },
@@ -40370,6 +40672,11 @@
     "npm:eslint-plugin-sonarjs": [
       {
         "source": "npm:eslint-plugin-sonarjs",
+        "target": "npm:eslint",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint-plugin-sonarjs",
         "target": "npm:@eslint-community/regexpp",
         "type": "static"
       },
@@ -40420,6 +40727,11 @@
       }
     ],
     "npm:eslint-plugin-unicorn": [
+      {
+        "source": "npm:eslint-plugin-unicorn",
+        "target": "npm:eslint",
+        "type": "static"
+      },
       {
         "source": "npm:eslint-plugin-unicorn",
         "target": "npm:@babel/helper-validator-identifier",
@@ -40734,7 +41046,7 @@
       },
       {
         "source": "npm:jest-util@30.0.5",
-        "target": "npm:picomatch@4.0.3",
+        "target": "npm:picomatch",
         "type": "static"
       }
     ],
@@ -40783,6 +41095,13 @@
       {
         "source": "npm:fb-watchman",
         "target": "npm:bser",
+        "type": "static"
+      }
+    ],
+    "npm:fdir": [
+      {
+        "source": "npm:fdir",
+        "target": "npm:picomatch",
         "type": "static"
       }
     ],
@@ -42103,6 +42422,11 @@
     "npm:is-immutable-type": [
       {
         "source": "npm:is-immutable-type",
+        "target": "npm:eslint",
+        "type": "static"
+      },
+      {
+        "source": "npm:is-immutable-type",
         "target": "npm:typescript",
         "type": "static"
       },
@@ -42571,6 +42895,30 @@
       {
         "source": "npm:jest-circus",
         "target": "npm:stack-utils",
+        "type": "static"
+      }
+    ],
+    "npm:babel-plugin-macros@3.1.0": [
+      {
+        "source": "npm:babel-plugin-macros@3.1.0",
+        "target": "npm:@babel/runtime",
+        "type": "static"
+      },
+      {
+        "source": "npm:babel-plugin-macros@3.1.0",
+        "target": "npm:cosmiconfig@7.1.0",
+        "type": "static"
+      },
+      {
+        "source": "npm:babel-plugin-macros@3.1.0",
+        "target": "npm:resolve",
+        "type": "static"
+      }
+    ],
+    "npm:dedent@1.7.0": [
+      {
+        "source": "npm:dedent@1.7.0",
+        "target": "npm:babel-plugin-macros@3.1.0",
         "type": "static"
       }
     ],
@@ -43603,7 +43951,7 @@
       },
       {
         "source": "npm:jest-util",
-        "target": "npm:picomatch",
+        "target": "npm:picomatch@2.3.1",
         "type": "static"
       }
     ],
@@ -44393,7 +44741,7 @@
       },
       {
         "source": "npm:micromatch",
-        "target": "npm:picomatch",
+        "target": "npm:picomatch@2.3.1",
         "type": "static"
       }
     ],
@@ -47499,7 +47847,7 @@
     "npm:readdirp": [
       {
         "source": "npm:readdirp",
-        "target": "npm:picomatch",
+        "target": "npm:picomatch@2.3.1",
         "type": "static"
       }
     ],
@@ -50378,7 +50726,7 @@
       },
       {
         "source": "npm:tinyglobby",
-        "target": "npm:picomatch@4.0.3",
+        "target": "npm:picomatch",
         "type": "static"
       }
     ],
@@ -50536,7 +50884,7 @@
       },
       {
         "source": "npm:ts-declaration-location",
-        "target": "npm:picomatch@4.0.3",
+        "target": "npm:picomatch",
         "type": "static"
       }
     ],
@@ -50888,6 +51236,11 @@
       }
     ],
     "npm:typescript-eslint": [
+      {
+        "source": "npm:typescript-eslint",
+        "target": "npm:eslint",
+        "type": "static"
+      },
       {
         "source": "npm:typescript-eslint",
         "target": "npm:typescript",
@@ -51366,7 +51719,7 @@
       },
       {
         "source": "npm:vite",
-        "target": "npm:picomatch@4.0.3",
+        "target": "npm:picomatch",
         "type": "static"
       },
       {

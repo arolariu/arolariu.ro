@@ -17,20 +17,20 @@
     "lint": "prettier --check ."
   },
   "devDependencies": {
-    "@sveltejs/adapter-auto": "workspace:*",
-    "@sveltejs/kit": "workspace:*",
-    "@sveltejs/vite-plugin-svelte": "workspace:*",
-    "@tailwindcss/forms": "workspace:*",
-    "@tailwindcss/typography": "workspace:*",
-    "@tailwindcss/vite": "workspace:*",
-    "prettier": "workspace:*",
-    "prettier-plugin-svelte": "workspace:*",
-    "svelte": "workspace:*",
-    "svelte-adapter-azure-swa": "workspace:*",
-    "svelte-check": "workspace:*",
-    "svelte-pdf": "workspace:*",
-    "tailwindcss": "workspace:*",
-    "typescript": "workspace:*",
-    "vite": "workspace:*"
+    "@sveltejs/adapter-auto": "6.1.0",
+    "@sveltejs/kit": "2.37.1",
+    "@sveltejs/vite-plugin-svelte": "6.1.4",
+    "@tailwindcss/forms": "0.5.10",
+    "@tailwindcss/typography": "0.5.16",
+    "@tailwindcss/vite": "4.1.13",
+    "prettier": "3.6.2",
+    "prettier-plugin-svelte": "3.4.0",
+    "svelte": "5.38.7",
+    "svelte-adapter-azure-swa": "0.22.0",
+    "svelte-check": "4.3.1",
+    "svelte-pdf": "1.0.28",
+    "tailwindcss": "4.1.13",
+    "typescript": "5.9.2",
+    "vite": "7.1.5"
   }
 }

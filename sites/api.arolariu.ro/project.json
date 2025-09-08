@@ -7,8 +7,8 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dotnet build --configuration Release",
-        "cwd": "sites/api.arolariu.ro"
+        "command": "dotnet build arolariu.sln --configuration Release",
+        "cwd": "."
       }
     },
     "clean": {
