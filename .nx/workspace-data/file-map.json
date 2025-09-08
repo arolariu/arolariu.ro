@@ -1,0 +1,3048 @@
+{
+  "version": "6.0",
+  "nxVersion": "21.4.1",
+  "pathMappings": {},
+  "nxJsonPlugins": [],
+  "fileMap": {
+    "projectFileMap": {
+      "cv": [
+        {
+          "file": "sites/cv.arolariu.ro/.gitignore",
+          "hash": "9693691127960088612"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/.prettierignore",
+          "hash": "12386949481068265532"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/.prettierrc",
+          "hash": "17897657148253707477"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/README.md",
+          "hash": "3303960267538121923"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/package.json",
+          "hash": "14673924745912686547",
+          "deps": [
+            "npm:typescript"
+          ]
+        },
+        {
+          "file": "sites/cv.arolariu.ro/project.json",
+          "hash": "2882499317748315637"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/app.css",
+          "hash": "12659515560017364435"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/app.d.ts",
+          "hash": "8514019045939557847"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/app.html",
+          "hash": "15448127097260669406"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/HelpDialog.svelte",
+          "hash": "12259363690321809972"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/ThemeToggle.svelte",
+          "hash": "7020492195937312727"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/motion/AnimatedSection.svelte",
+          "hash": "15949454634994784839"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/motion/index.ts",
+          "hash": "17772647290158595663"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/motion/intersection.ts",
+          "hash": "10333650512474152276"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/author.ts",
+          "hash": "7666706648209752274"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/biography.ts",
+          "hash": "11966131661493107925"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/certifications.ts",
+          "hash": "6959303671964264881"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/competencies.ts",
+          "hash": "6840113674527933901"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/education.ts",
+          "hash": "14084444241749874903"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/experiences.ts",
+          "hash": "7802474418247666615"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/index.ts",
+          "hash": "9917235996069479720"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/json.ts",
+          "hash": "9550411484385879719"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/landing.ts",
+          "hash": "162138338550990994"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/skills.ts",
+          "hash": "14039917629316922652"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/technical.ts",
+          "hash": "9076663166835991113"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/testimonials.ts",
+          "hash": "1487723096091984262"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/viewdata.ts",
+          "hash": "6277423006675960109"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/volunteering.ts",
+          "hash": "3240285271915616218"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/hooks/useTheme.svelte.ts",
+          "hash": "1389134633798985127"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/assets/favicon.svg",
+          "hash": "14344918875278748999"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/index.ts",
+          "hash": "403399750106740132"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/utils/copy.ts",
+          "hash": "14228755613358236426"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/utils/download.ts",
+          "hash": "10055437945488547822"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/utils/index.ts",
+          "hash": "4104171537983704147"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/utils/result.ts",
+          "hash": "15339667925540983639"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/views/HumanView.svelte",
+          "hash": "9418705439415495637"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/views/JsonView.svelte",
+          "hash": "1854862091354057259"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/views/MainView.svelte",
+          "hash": "12326938216384830657"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/views/PdfView.svelte",
+          "hash": "11957603127857186623"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/ActionButton.svelte",
+          "hash": "9168149753126022929"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/Badge.svelte",
+          "hash": "4178978181550486678"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/Footer.svelte",
+          "hash": "8683140588897537473"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/Header.svelte",
+          "hash": "12051930318733548814"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/Icon.svelte",
+          "hash": "1530539487002649841"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/About.svelte",
+          "hash": "5873921196909514002"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Competencies.svelte",
+          "hash": "10611886546397417549"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Contact.svelte",
+          "hash": "5664568380744371092"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Education.svelte",
+          "hash": "12041275645655425923"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Experience.svelte",
+          "hash": "7236584550429239208"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Hero.svelte",
+          "hash": "1560548963812033650"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Skills.svelte",
+          "hash": "7604287960659433821"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Testimonials.svelte",
+          "hash": "9321053902994584273"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/+layout.svelte",
+          "hash": "12357600702002436888"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/+page.svelte",
+          "hash": "12017184010938085599"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/human/+page.svelte",
+          "hash": "15093783064937628200"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/json/+page.svelte",
+          "hash": "12871415413743881255"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/pdf/+page.svelte",
+          "hash": "13371676539790079941"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/rest/json/+server.ts",
+          "hash": "15307343536355860094"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Biography.ts",
+          "hash": "9419486526803261270"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Certificate.ts",
+          "hash": "17370042838597356449"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Competency.ts",
+          "hash": "17697754484993987509"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Education.ts",
+          "hash": "13138272282365068161"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Experience.ts",
+          "hash": "9247889510250992193"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/PersonalInformation.ts",
+          "hash": "10725174226119185852"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Skill.ts",
+          "hash": "15986963919752416832"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Testimonial.ts",
+          "hash": "2775355216894778173"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/index.ts",
+          "hash": "6037331709054615390"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/static/author.jpeg",
+          "hash": "6837292437898454945"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/static/cv.pdf",
+          "hash": "4905060426598892796"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/static/robots.txt",
+          "hash": "8128781345255320682"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/svelte.config.js",
+          "hash": "12010224839640651075"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/swa-cli.config.json",
+          "hash": "10483501801312831594"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/tailwind.config.js",
+          "hash": "2808229931761276497"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/tsconfig.json",
+          "hash": "13604813847796067401"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/vite.config.js",
+          "hash": "16297919805923460214"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/yarn.lock",
+          "hash": "13120729347680354489"
+        }
+      ],
+      "components": [
+        {
+          "file": "packages/components/.editorconfig",
+          "hash": "11525873501642599925"
+        },
+        {
+          "file": "packages/components/.gitattributes",
+          "hash": "5816063049553364052"
+        },
+        {
+          "file": "packages/components/.gitignore",
+          "hash": "7579625984851485945"
+        },
+        {
+          "file": "packages/components/.npmignore",
+          "hash": "4823366373799514953"
+        },
+        {
+          "file": "packages/components/.storybook/main.ts",
+          "hash": "11154508189134293353"
+        },
+        {
+          "file": "packages/components/.storybook/preview.ts",
+          "hash": "10422226424724871560"
+        },
+        {
+          "file": "packages/components/.yarnrc.yml",
+          "hash": "8032949330729474890"
+        },
+        {
+          "file": "packages/components/CONTRIBUTING.md",
+          "hash": "15716441153597845359"
+        },
+        {
+          "file": "packages/components/DEBUGGING.md",
+          "hash": "620540025338524281"
+        },
+        {
+          "file": "packages/components/EXAMPLES.md",
+          "hash": "11381767269462754860"
+        },
+        {
+          "file": "packages/components/LICENSE.md",
+          "hash": "5788632615828194898"
+        },
+        {
+          "file": "packages/components/changelog.md",
+          "hash": "5977471077428156204"
+        },
+        {
+          "file": "packages/components/components.json",
+          "hash": "6023558422618191586"
+        },
+        {
+          "file": "packages/components/package.json",
+          "hash": "9922379043926755904",
+          "deps": [
+            "npm:@types/node",
+            "npm:typescript"
+          ]
+        },
+        {
+          "file": "packages/components/postcss.config.ts",
+          "hash": "11670021787661412008"
+        },
+        {
+          "file": "packages/components/project.json",
+          "hash": "7602208404183275641"
+        },
+        {
+          "file": "packages/components/readme.md",
+          "hash": "16078566551060520946"
+        },
+        {
+          "file": "packages/components/rslib.config.ts",
+          "hash": "10729989022203041080"
+        },
+        {
+          "file": "packages/components/scripts/generate-exports.ts",
+          "hash": "16538506712886830781"
+        },
+        {
+          "file": "packages/components/src/components/ui/accordion.tsx",
+          "hash": "17299815226734524285"
+        },
+        {
+          "file": "packages/components/src/components/ui/alert-dialog.tsx",
+          "hash": "11661239190832217159"
+        },
+        {
+          "file": "packages/components/src/components/ui/alert.tsx",
+          "hash": "2182990431490037044"
+        },
+        {
+          "file": "packages/components/src/components/ui/aspect-ratio.tsx",
+          "hash": "4606169473813726734"
+        },
+        {
+          "file": "packages/components/src/components/ui/avatar.tsx",
+          "hash": "17384832726976543448"
+        },
+        {
+          "file": "packages/components/src/components/ui/background-beams.tsx",
+          "hash": "13702005136238343422"
+        },
+        {
+          "file": "packages/components/src/components/ui/badge.tsx",
+          "hash": "10292464856163758721"
+        },
+        {
+          "file": "packages/components/src/components/ui/breadcrumb.tsx",
+          "hash": "8968029525729114086"
+        },
+        {
+          "file": "packages/components/src/components/ui/bubble-background.tsx",
+          "hash": "391179514383964693"
+        },
+        {
+          "file": "packages/components/src/components/ui/button.tsx",
+          "hash": "185559879251684815"
+        },
+        {
+          "file": "packages/components/src/components/ui/calendar.tsx",
+          "hash": "15077313089040611063"
+        },
+        {
+          "file": "packages/components/src/components/ui/card.tsx",
+          "hash": "15450139886303145510"
+        },
+        {
+          "file": "packages/components/src/components/ui/carousel.tsx",
+          "hash": "8231392209371262743"
+        },
+        {
+          "file": "packages/components/src/components/ui/chart.tsx",
+          "hash": "14603915284685602573"
+        },
+        {
+          "file": "packages/components/src/components/ui/checkbox.tsx",
+          "hash": "16320784960970074535"
+        },
+        {
+          "file": "packages/components/src/components/ui/collapsible.tsx",
+          "hash": "17952782360746368922"
+        },
+        {
+          "file": "packages/components/src/components/ui/command.tsx",
+          "hash": "6031176062298598506"
+        },
+        {
+          "file": "packages/components/src/components/ui/context-menu.tsx",
+          "hash": "4223366329495244101"
+        },
+        {
+          "file": "packages/components/src/components/ui/counting-number.tsx",
+          "hash": "13610680740970608505"
+        },
+        {
+          "file": "packages/components/src/components/ui/dialog.tsx",
+          "hash": "13054091900467942337"
+        },
+        {
+          "file": "packages/components/src/components/ui/dot-background.tsx",
+          "hash": "18394725875975686851"
+        },
+        {
+          "file": "packages/components/src/components/ui/drawer.tsx",
+          "hash": "1690118432151329009"
+        },
+        {
+          "file": "packages/components/src/components/ui/dropdown-menu.tsx",
+          "hash": "7202576572599694831"
+        },
+        {
+          "file": "packages/components/src/components/ui/dropdrawer.tsx",
+          "hash": "9521326115899011845"
+        },
+        {
+          "file": "packages/components/src/components/ui/fireworks-background.tsx",
+          "hash": "6858263757084158884"
+        },
+        {
+          "file": "packages/components/src/components/ui/flip-button.tsx",
+          "hash": "13901848367490170152"
+        },
+        {
+          "file": "packages/components/src/components/ui/form.tsx",
+          "hash": "14447785933679907830"
+        },
+        {
+          "file": "packages/components/src/components/ui/gradient-background.tsx",
+          "hash": "7313621754759490355"
+        },
+        {
+          "file": "packages/components/src/components/ui/gradient-text.tsx",
+          "hash": "14965116242636138277"
+        },
+        {
+          "file": "packages/components/src/components/ui/highlight-text.tsx",
+          "hash": "6369678940497199882"
+        },
+        {
+          "file": "packages/components/src/components/ui/hole-background.tsx",
+          "hash": "9776365904941695237"
+        },
+        {
+          "file": "packages/components/src/components/ui/hover-card.tsx",
+          "hash": "14165647658584306902"
+        },
+        {
+          "file": "packages/components/src/components/ui/input-otp.tsx",
+          "hash": "3420373038828772957"
+        },
+        {
+          "file": "packages/components/src/components/ui/input.tsx",
+          "hash": "17007866537954501136"
+        },
+        {
+          "file": "packages/components/src/components/ui/label.tsx",
+          "hash": "17992629208852058960"
+        },
+        {
+          "file": "packages/components/src/components/ui/menubar.tsx",
+          "hash": "8056776562539413317"
+        },
+        {
+          "file": "packages/components/src/components/ui/navigation-menu.tsx",
+          "hash": "18062547974822095341"
+        },
+        {
+          "file": "packages/components/src/components/ui/pagination.tsx",
+          "hash": "3207847053010488040"
+        },
+        {
+          "file": "packages/components/src/components/ui/popover.tsx",
+          "hash": "340375541626603428"
+        },
+        {
+          "file": "packages/components/src/components/ui/progress.tsx",
+          "hash": "9065033862777507155"
+        },
+        {
+          "file": "packages/components/src/components/ui/radio-group.tsx",
+          "hash": "15111815666279259713"
+        },
+        {
+          "file": "packages/components/src/components/ui/resizable.tsx",
+          "hash": "4586475161360993529"
+        },
+        {
+          "file": "packages/components/src/components/ui/ripple-button.tsx",
+          "hash": "4443435968126821753"
+        },
+        {
+          "file": "packages/components/src/components/ui/scratcher.tsx",
+          "hash": "17564212033422334971"
+        },
+        {
+          "file": "packages/components/src/components/ui/scroll-area.tsx",
+          "hash": "4317549406678443949"
+        },
+        {
+          "file": "packages/components/src/components/ui/select.tsx",
+          "hash": "7586012612311272127"
+        },
+        {
+          "file": "packages/components/src/components/ui/separator.tsx",
+          "hash": "7443008638955122786"
+        },
+        {
+          "file": "packages/components/src/components/ui/sheet.tsx",
+          "hash": "17747769327134134594"
+        },
+        {
+          "file": "packages/components/src/components/ui/sidebar.tsx",
+          "hash": "14848768308280853413"
+        },
+        {
+          "file": "packages/components/src/components/ui/skeleton.tsx",
+          "hash": "5906701918444365652"
+        },
+        {
+          "file": "packages/components/src/components/ui/slider.tsx",
+          "hash": "16283649896254241750"
+        },
+        {
+          "file": "packages/components/src/components/ui/sonner.tsx",
+          "hash": "17996715027035620908"
+        },
+        {
+          "file": "packages/components/src/components/ui/switch.tsx",
+          "hash": "9030193380806192285"
+        },
+        {
+          "file": "packages/components/src/components/ui/table.tsx",
+          "hash": "1818992291291922268"
+        },
+        {
+          "file": "packages/components/src/components/ui/tabs.tsx",
+          "hash": "12545532191750757225"
+        },
+        {
+          "file": "packages/components/src/components/ui/textarea.tsx",
+          "hash": "230482805822790343"
+        },
+        {
+          "file": "packages/components/src/components/ui/toggle-group.tsx",
+          "hash": "8714767819769344694"
+        },
+        {
+          "file": "packages/components/src/components/ui/toggle.tsx",
+          "hash": "4547741379318831936"
+        },
+        {
+          "file": "packages/components/src/components/ui/tooltip.tsx",
+          "hash": "9915299380283988734"
+        },
+        {
+          "file": "packages/components/src/components/ui/typewriter.tsx",
+          "hash": "10977177624607766996"
+        },
+        {
+          "file": "packages/components/src/hooks/useIsMobile.tsx",
+          "hash": "13039703850798776634"
+        },
+        {
+          "file": "packages/components/src/hooks/useWindowSize.tsx",
+          "hash": "11277560458995832145"
+        },
+        {
+          "file": "packages/components/src/index.css",
+          "hash": "4620819702153823213"
+        },
+        {
+          "file": "packages/components/src/index.ts",
+          "hash": "14014933093316683464"
+        },
+        {
+          "file": "packages/components/src/lib/utils.ts",
+          "hash": "17124554240397410575"
+        },
+        {
+          "file": "packages/components/stories/Accordion.stories.tsx",
+          "hash": "6731562617004098816"
+        },
+        {
+          "file": "packages/components/stories/Alert.stories.tsx",
+          "hash": "3971026645478162355"
+        },
+        {
+          "file": "packages/components/stories/AlertDialog.stories.tsx",
+          "hash": "12043865367910801332"
+        },
+        {
+          "file": "packages/components/stories/AspectRatio.stories.tsx",
+          "hash": "4935549091668111300"
+        },
+        {
+          "file": "packages/components/stories/Avatar.stories.tsx",
+          "hash": "18427908569902196261"
+        },
+        {
+          "file": "packages/components/stories/Badge.stories.tsx",
+          "hash": "4650397260263600804"
+        },
+        {
+          "file": "packages/components/stories/Breadcrumb.stories.tsx",
+          "hash": "11780075988313849342"
+        },
+        {
+          "file": "packages/components/stories/BubbleBackground.stories.tsx",
+          "hash": "5562374280229997190"
+        },
+        {
+          "file": "packages/components/stories/Button.stories.tsx",
+          "hash": "16696403868734529007"
+        },
+        {
+          "file": "packages/components/stories/Calendar.stories.tsx",
+          "hash": "2364716186209669437"
+        },
+        {
+          "file": "packages/components/stories/Card.stories.tsx",
+          "hash": "7302168230605935621"
+        },
+        {
+          "file": "packages/components/stories/Carousel.stories.tsx",
+          "hash": "1946752918365234281"
+        },
+        {
+          "file": "packages/components/stories/Checkbox.stories.tsx",
+          "hash": "12878059879747680410"
+        },
+        {
+          "file": "packages/components/stories/Collapsible.stories.tsx",
+          "hash": "4324817709030783579"
+        },
+        {
+          "file": "packages/components/stories/Command.stories.tsx",
+          "hash": "2079408116407089719"
+        },
+        {
+          "file": "packages/components/stories/CountingNumber.stories.tsx",
+          "hash": "18023235276664952868"
+        },
+        {
+          "file": "packages/components/stories/Dialog.stories.tsx",
+          "hash": "18133364863818628719"
+        },
+        {
+          "file": "packages/components/stories/DotBackground.stories.tsx",
+          "hash": "2787868496458095722"
+        },
+        {
+          "file": "packages/components/stories/Drawer.stories.tsx",
+          "hash": "4632046615145280260"
+        },
+        {
+          "file": "packages/components/stories/DropDrawer.stories.tsx",
+          "hash": "1094432452294305808"
+        },
+        {
+          "file": "packages/components/stories/DropdownMenu.stories.tsx",
+          "hash": "2751665659301543407"
+        },
+        {
+          "file": "packages/components/stories/FireworksBackground.stories.tsx",
+          "hash": "11452856480493576084"
+        },
+        {
+          "file": "packages/components/stories/FlipButton.stories.tsx",
+          "hash": "15719524798863317825"
+        },
+        {
+          "file": "packages/components/stories/Form.stories.tsx",
+          "hash": "17586635588392725895"
+        },
+        {
+          "file": "packages/components/stories/HoverCard.stories.tsx",
+          "hash": "5964725150220976802"
+        },
+        {
+          "file": "packages/components/stories/Input.stories.tsx",
+          "hash": "16021314085929721314"
+        },
+        {
+          "file": "packages/components/stories/InputOTP.stories.tsx",
+          "hash": "3581096193159501176"
+        },
+        {
+          "file": "packages/components/stories/Label.stories.tsx",
+          "hash": "15258750781842444720"
+        },
+        {
+          "file": "packages/components/stories/NavigationMenu.stories.tsx",
+          "hash": "2700038911009569570"
+        },
+        {
+          "file": "packages/components/stories/Pagination.stories.tsx",
+          "hash": "17337755118370923258"
+        },
+        {
+          "file": "packages/components/stories/Popover.stories.tsx",
+          "hash": "16477935238212787504"
+        },
+        {
+          "file": "packages/components/stories/Progress.stories.tsx",
+          "hash": "16644308252751783713"
+        },
+        {
+          "file": "packages/components/stories/RadioGroup.stories.tsx",
+          "hash": "910790739796438417"
+        },
+        {
+          "file": "packages/components/stories/Resizable.stories.tsx",
+          "hash": "16255958701105420720"
+        },
+        {
+          "file": "packages/components/stories/ScrollArea.stories.tsx",
+          "hash": "9919818699664697320"
+        },
+        {
+          "file": "packages/components/stories/Select.stories.tsx",
+          "hash": "63566677882873632"
+        },
+        {
+          "file": "packages/components/stories/Separator.stories.tsx",
+          "hash": "17206488088614486634"
+        },
+        {
+          "file": "packages/components/stories/Sheet.stories.tsx",
+          "hash": "11176078093531492525"
+        },
+        {
+          "file": "packages/components/stories/Sidebar.stories.tsx",
+          "hash": "2665841712745926376"
+        },
+        {
+          "file": "packages/components/stories/Skeleton.stories.tsx",
+          "hash": "14137480802683926550"
+        },
+        {
+          "file": "packages/components/stories/Slider.stories.tsx",
+          "hash": "2826353471337826851"
+        },
+        {
+          "file": "packages/components/stories/Switch.stories.tsx",
+          "hash": "8190769646365911428"
+        },
+        {
+          "file": "packages/components/stories/Table.stories.tsx",
+          "hash": "9981722704720173004"
+        },
+        {
+          "file": "packages/components/stories/Tabs.stories.tsx",
+          "hash": "636538364047579201"
+        },
+        {
+          "file": "packages/components/stories/Toggle.stories.tsx",
+          "hash": "6098737115608286014"
+        },
+        {
+          "file": "packages/components/stories/Tooltip.stories.tsx",
+          "hash": "10245648190343590805"
+        },
+        {
+          "file": "packages/components/tailwind.config.ts",
+          "hash": "5709866967099273509"
+        },
+        {
+          "file": "packages/components/tsconfig.json",
+          "hash": "16758146525393411674"
+        },
+        {
+          "file": "packages/components/yarn.lock",
+          "hash": "17855511221714591212"
+        }
+      ],
+      "api": [
+        {
+          "file": "sites/api.arolariu.ro/.dockerignore",
+          "hash": "15592786434469945615"
+        },
+        {
+          "file": "sites/api.arolariu.ro/Controllers_Breakpoints.xml",
+          "hash": "4450599551685440761"
+        },
+        {
+          "file": "sites/api.arolariu.ro/Dockerfile",
+          "hash": "1133658481183629021"
+        },
+        {
+          "file": "sites/api.arolariu.ro/project.json",
+          "hash": "6698942900368390451"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/DDD/Contracts/BaseEntity.cs",
+          "hash": "5425144769086793917"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/DDD/Contracts/IAuditable.cs",
+          "hash": "10813825451700961299"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/DDD/Contracts/NamedEntity.cs",
+          "hash": "6647734087891195310"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Options/ApplicationOptions.cs",
+          "hash": "2445526816533342497"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Options/CloudOptionsManager.cs",
+          "hash": "4435132129373469890"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Options/IOptionsManager.cs",
+          "hash": "18330201420841734241"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Options/LocalOptionsManager.cs",
+          "hash": "3400382618875229748"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Services/KeyVault/IKeyVaultService.cs",
+          "hash": "11573101383300508600"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Services/KeyVault/KeyVaultService.cs",
+          "hash": "12161288748698968344"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Logging/Log.cs",
+          "hash": "11739523079108968979"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Logging/LoggingExtensions.cs",
+          "hash": "13420187501064484489"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Metering/MeteringExtensions.cs",
+          "hash": "4786135891425597780"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Telemetry/TelemetryExtensions.cs",
+          "hash": "11650083657260210235"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Tracing/ActivityGenerators.cs",
+          "hash": "17826222792602049631"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Tracing/TracingExtensions.cs",
+          "hash": "7102165873938181197"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Validators/Validator.cs",
+          "hash": "2946613604713779945"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj",
+          "hash": "1876983983428866892"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Brokers/AuthDbContext.cs",
+          "hash": "200620099562891587"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Endpoints/AuthEndpoints.Handlers.cs",
+          "hash": "9375147730596604175"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Endpoints/AuthEndpoints.Mappings.cs",
+          "hash": "14480718917592355114"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Endpoints/AuthEndpoints.cs",
+          "hash": "10253422856431991433"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Models/AuthenticatedUser.cs",
+          "hash": "9128320407996197951"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Models/AuthenticatedUserRole.cs",
+          "hash": "2353623498982134569"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Modules/WebApplicationBuilderExtensions.cs",
+          "hash": "11864144168725714873"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Modules/WebApplicationExtensions.cs",
+          "hash": "16582841121456930934"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Properties/launchSettings.json",
+          "hash": "15740283677798482833"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/arolariu.Backend.Core.Auth.csproj",
+          "hash": "15485695310803066458"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/arolariu.Backend.Core.Auth.csproj.user",
+          "hash": "11829192674250305323"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs",
+          "hash": "15011356319254484048"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationExtensions.cs",
+          "hash": "8784092834637235762"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Domain/General/Services/Swagger/SwaggerConfigurationService.cs",
+          "hash": "14491657426297309965"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Domain/General/Services/Swagger/SwaggerFilterService.cs",
+          "hash": "3742037840676054184"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Program.cs",
+          "hash": "286653202647200640"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Properties/launchSettings.json",
+          "hash": "15026665446515735349"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Properties/serviceDependencies.local.json.user",
+          "hash": "10384602919595219439"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/appsettings.Development.json",
+          "hash": "9804185829386699275"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/appsettings.Production.json",
+          "hash": "9804185829386699275"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/appsettings.json",
+          "hash": "2850435928585984027"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj",
+          "hash": "2122375640246943011"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj.user",
+          "hash": "12623104781130995556"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/ClassifierBroker/AzureOpenAiBroker.Internals.cs",
+          "hash": "5710355985318058956"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/ClassifierBroker/AzureOpenAiBroker.cs",
+          "hash": "1220450319198262968"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/ClassifierBroker/IOpenAiBroker.cs",
+          "hash": "933902879406929368"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/IdentifierBroker/AzureFormRecognizerBroker.Internals.cs",
+          "hash": "11662182252714059266"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/IdentifierBroker/AzureFormRecognizerBroker.cs",
+          "hash": "8769481075363171283"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/IdentifierBroker/IFormRecognizerBroker.cs",
+          "hash": "6820018608505883108"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/DatabaseBroker/IInvoiceNoSqlBroker.cs",
+          "hash": "6643808332257076653"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/DatabaseBroker/InvoiceNoSqlBroker.Invoices.cs",
+          "hash": "18445808721701166978"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/DatabaseBroker/InvoiceNoSqlBroker.Merchants.cs",
+          "hash": "13781130273335661853"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/DatabaseBroker/InvoiceNoSqlBroker.cs",
+          "hash": "14973219519284511337"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/TranslatorBroker/AzureTranslatorBroker.cs",
+          "hash": "2368854465725302080"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/TranslatorBroker/ITranslatorBroker.cs",
+          "hash": "7955216585889216487"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoiceDescriptionNotSetException.cs",
+          "hash": "17344123844574764027"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoiceIdNotSetException.cs",
+          "hash": "9704057337896421007"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoicePaymentInformationNotCorrectException.cs",
+          "hash": "17845796522575411738"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoicePhotoLocationNotCorrectException.cs",
+          "hash": "12922263478467298693"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoiceTimeInformationNotCorrectException.cs",
+          "hash": "3575487832588749140"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Foundation/InvoiceFoundationDependencyException.cs",
+          "hash": "9814949980260244955"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Foundation/InvoiceFoundationDependencyValidationException.cs",
+          "hash": "17085412335571168051"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Foundation/InvoiceFoundationServiceException.cs",
+          "hash": "1826664385416046043"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Foundation/InvoiceFoundationValidationException.cs",
+          "hash": "15317938357418383112"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Orchestration/InvoiceOrchestrationDependencyException.cs",
+          "hash": "10168589250815699735"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Orchestration/InvoiceOrchestrationDependencyValidationException.cs",
+          "hash": "13476365633012943756"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Orchestration/InvoiceOrchestrationServiceException.cs",
+          "hash": "15172614429214032917"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Orchestration/InvoiceOrchestrationValidationException.cs",
+          "hash": "6712230454367919579"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Processing/InvoiceProcessingServiceDependencyException.cs",
+          "hash": "1252204243434290862"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Processing/InvoiceProcessingServiceDependencyValidationException.cs",
+          "hash": "16493677958689351383"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Processing/InvoiceProcessingServiceException.cs",
+          "hash": "13229099707687583568"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Processing/InvoiceProcessingServiceValidationException.cs",
+          "hash": "12328596090130574282"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Invoice.cs",
+          "hash": "6938424619567067216"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/InvoiceCategory.cs",
+          "hash": "8974151710184832064"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Inner/MerchantIdNotSetException.cs",
+          "hash": "5867988978080018771"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Inner/MerchantParentCompanyIdNotSetException.cs",
+          "hash": "1751117430034568351"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Foundation/MerchantFoundationServiceDependencyException.cs",
+          "hash": "12608337952701608394"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Foundation/MerchantFoundationServiceDependencyValidationException.cs",
+          "hash": "1353770184306518415"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Foundation/MerchantFoundationServiceException.cs",
+          "hash": "15127601451816352473"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Foundation/MerchantFoundationServiceValidationException.cs",
+          "hash": "4937916459244445233"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Orchestration/MerchantOrchestrationServiceDependencyException.cs",
+          "hash": "15287974753543386211"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Orchestration/MerchantOrchestrationServiceDependencyValidationException.cs",
+          "hash": "4586854259031860700"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Orchestration/MerchantOrchestrationServiceException.cs",
+          "hash": "4994326695960282772"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Orchestration/MerchantOrchestrationServiceValidationException.cs",
+          "hash": "15889237744938648018"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Merchant.cs",
+          "hash": "12834893975614593252"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/MerchantCategory.cs",
+          "hash": "10984480449894512090"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Allergen.cs",
+          "hash": "3476796196228207454"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Currency.cs",
+          "hash": "2959467667550900826"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/PaymentInformation.cs",
+          "hash": "8572881094715341794"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Products/Product.cs",
+          "hash": "14477594175464596495"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Products/ProductCategory.cs",
+          "hash": "3499672934567538851"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Products/ProductMetadata.cs",
+          "hash": "16857938673788060982"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Recipe.cs",
+          "hash": "11510086658678750912"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DTOs/AnalysisOptions.cs",
+          "hash": "8371500520406936378"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DTOs/CreateInvoiceDto.cs",
+          "hash": "2787598045258323040"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DTOs/CreateMerchantDto.cs",
+          "hash": "11442188792756479086"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DTOs/InvoiceStatusDto.cs",
+          "hash": "11876218334128969860"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.Handlers.cs",
+          "hash": "17483776819711474323"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.Mappings.cs",
+          "hash": "8984612983639931945"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.Metadata.cs",
+          "hash": "16322373663461442725"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.cs",
+          "hash": "15272667928830897672"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Modules/Log.cs",
+          "hash": "9564665542982093331"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Modules/ValueConverters/ValueConverterForIEnumerableOf.cs",
+          "hash": "6619840143911268436"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Modules/WebApplicationBuilderExtensions.cs",
+          "hash": "7368585634563337679"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Modules/WebApplicationExtensions.cs",
+          "hash": "4470091602424657491"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Properties/launchSettings.json",
+          "hash": "11479278708442602560"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceAnalysis/IInvoiceAnalysisFoundationService.cs",
+          "hash": "3626070432620275939"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceAnalysis/InvoiceAnalysisFoundationService.Exceptions.cs",
+          "hash": "3876976494074604137"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceAnalysis/InvoiceAnalysisFoundationService.Validations.cs",
+          "hash": "12821876510431028008"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceAnalysis/InvoiceAnalysisFoundationService.cs",
+          "hash": "14198599583821210325"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/IInvoiceStorageFoundationService.cs",
+          "hash": "9052443578817915704"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/InvoiceStorageFoundationService.Exceptions.cs",
+          "hash": "15805421144987170026"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/InvoiceStorageFoundationService.Validations.cs",
+          "hash": "3978306329231457341"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/InvoiceStorageFoundationService.cs",
+          "hash": "4234725039746111329"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/MerchantStorage/IMerchantStorageFoundationService.cs",
+          "hash": "9994226268161815133"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/MerchantStorage/MerchantStorageFoundationService.Exceptions.cs",
+          "hash": "10936867771975211358"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/MerchantStorage/MerchantStorageFoundationService.Validations.cs",
+          "hash": "4557650472524359116"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/MerchantStorage/MerchantStorageFoundationService.cs",
+          "hash": "2913029926252492454"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/InvoiceService/IInvoiceOrchestrationService.cs",
+          "hash": "2504259152353154292"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/InvoiceService/InvoiceOrchestrationService.Exceptions.cs",
+          "hash": "11061109917681619203"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/InvoiceService/InvoiceOrchestrationService.Validations.cs",
+          "hash": "13953038012538392219"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/InvoiceService/InvoiceOrchestrationService.cs",
+          "hash": "14952889445801879581"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/MerchantService/IMerchantOrchestrationService.cs",
+          "hash": "1263272722521331306"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/MerchantService/MerchantOrchestrationService.Exceptions.cs",
+          "hash": "1133318820349678297"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/MerchantService/MerchantOrchestrationService.Validations.cs",
+          "hash": "10526631903045488724"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/MerchantService/MerchantOrchestrationService.cs",
+          "hash": "15527291984703827931"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Processing/IInvoiceProcessingService.cs",
+          "hash": "11110180070157262700"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Processing/InvoiceProcessingService.Exceptions.cs",
+          "hash": "17864841377629671792"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Processing/InvoiceProcessingService.Validations.cs",
+          "hash": "17867111629017879511"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Processing/InvoiceProcessingService.cs",
+          "hash": "3199778479010705962"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/arolariu.Backend.Domain.Invoices.csproj",
+          "hash": "12577958783664600918"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/arolariu.Backend.Domain.Invoices.csproj.user",
+          "hash": "2946496967990599104"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Core.Tests/MocksContainer.cs",
+          "hash": "16150425431924397128"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Core.Tests/arolariu.Backend.Core.Tests.csproj",
+          "hash": "6263143334713427249"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Builders/InvoiceBuilder.cs",
+          "hash": "15387979299915666116"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Builders/MerchantBuilder.cs",
+          "hash": "4421214429836889151"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Brokers/InvoiceNoSqlBrokerComprehensiveTests.cs",
+          "hash": "3273536775067872056"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Brokers/InvoiceNoSqlBrokerTests.Base.cs",
+          "hash": "4371201714322567920"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Brokers/MerchantNoSqlBrokerTests.cs",
+          "hash": "1463202486647971928"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/arolariu.Backend.Domain.Tests.csproj",
+          "hash": "10628875374070508545"
+        }
+      ],
+      "website": [
+        {
+          "file": "sites/arolariu.ro/.env.example",
+          "hash": "6785193873288690691"
+        },
+        {
+          "file": "sites/arolariu.ro/.gitattributes",
+          "hash": "14772901856226465301"
+        },
+        {
+          "file": "sites/arolariu.ro/.gitignore",
+          "hash": "1843414606073227517"
+        },
+        {
+          "file": "sites/arolariu.ro/.node-version",
+          "hash": "12858473645637222155"
+        },
+        {
+          "file": "sites/arolariu.ro/.prettierignore",
+          "hash": "15176021047741282473"
+        },
+        {
+          "file": "sites/arolariu.ro/.prettierrc",
+          "hash": "17614421692653572991"
+        },
+        {
+          "file": "sites/arolariu.ro/.storybook/main.ts",
+          "hash": "17506221164502103139"
+        },
+        {
+          "file": "sites/arolariu.ro/.storybook/preview.ts",
+          "hash": "17741130135917573222"
+        },
+        {
+          "file": "sites/arolariu.ro/.storybook/utils.tsx",
+          "hash": "17825633266629718316"
+        },
+        {
+          "file": "sites/arolariu.ro/.yarnrc.yml",
+          "hash": "8032949330729474890"
+        },
+        {
+          "file": "sites/arolariu.ro/Dockerfile",
+          "hash": "3700495218219787279"
+        },
+        {
+          "file": "sites/arolariu.ro/README.md",
+          "hash": "17228483218838857412"
+        },
+        {
+          "file": "sites/arolariu.ro/emails/invoices/AnalyzedInvoice.tsx",
+          "hash": "9974923803061077581"
+        },
+        {
+          "file": "sites/arolariu.ro/emails/invoices/DeletedInvoice.tsx",
+          "hash": "2775103511104950021"
+        },
+        {
+          "file": "sites/arolariu.ro/emails/invoices/InvoiceFeedback.tsx",
+          "hash": "14373813975408697786"
+        },
+        {
+          "file": "sites/arolariu.ro/emails/invoices/SharedInvoice.tsx",
+          "hash": "969215709071726568"
+        },
+        {
+          "file": "sites/arolariu.ro/emails/newsletter/Subscription.tsx",
+          "hash": "5860264820282608359"
+        },
+        {
+          "file": "sites/arolariu.ro/emails/readme.md",
+          "hash": "13113813552928464414"
+        },
+        {
+          "file": "sites/arolariu.ro/eslint.config.ts",
+          "hash": "181415834602191841",
+          "deps": [
+            "npm:globals"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/jest.config.ts",
+          "hash": "15872323906514260913"
+        },
+        {
+          "file": "sites/arolariu.ro/messages/en.json",
+          "hash": "10559110185478750323"
+        },
+        {
+          "file": "sites/arolariu.ro/messages/ro.json",
+          "hash": "15112814216530154378"
+        },
+        {
+          "file": "sites/arolariu.ro/next-env.d.ts",
+          "hash": "5284841197950455437"
+        },
+        {
+          "file": "sites/arolariu.ro/next.config.ts",
+          "hash": "8636070376627694862"
+        },
+        {
+          "file": "sites/arolariu.ro/package.json",
+          "hash": "863260357810668613",
+          "deps": [
+            "npm:@eslint/js",
+            "npm:@types/node",
+            "npm:eslint",
+            "npm:globals",
+            "npm:typescript",
+            "components"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/playwright.config.ts",
+          "hash": "822071757223679531"
+        },
+        {
+          "file": "sites/arolariu.ro/postcss.config.js",
+          "hash": "261516259639629466"
+        },
+        {
+          "file": "sites/arolariu.ro/project.json",
+          "hash": "1824003044462577782"
+        },
+        {
+          "file": "sites/arolariu.ro/public/humans.txt",
+          "hash": "11562008063568866126"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/3d-illustration.png",
+          "hash": "7632244169401595978"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/about/author-thumbnail.svg",
+          "hash": "15611210832102119955"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/about/platform-thumbnail.svg",
+          "hash": "6046383678481378816"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/about/the-author/author.jpeg",
+          "hash": "6837292437898454945"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/about/the-author/work-together.svg",
+          "hash": "11261784116180454719"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/auth/forbidden.svg",
+          "hash": "14321929697419378306"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/auth/sign-in.svg",
+          "hash": "10607015613212209574"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/auth/sign-up.svg",
+          "hash": "12237510182377003157"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/domains/invoice-management-system.png",
+          "hash": "9771634861823647689"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/domains/invoices/403.svg",
+          "hash": "5238647681090554984"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/domains/invoices/invoice-bottom.svg",
+          "hash": "601263909191582190"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/domains/invoices/invoice-top.svg",
+          "hash": "18428377532359663455"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/domains/live-chat-rooms.jpeg",
+          "hash": "15090677499393187562"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-128x128.png",
+          "hash": "15084601307512700190"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-144x144.png",
+          "hash": "5359781216160187312"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-192x192.png",
+          "hash": "8812789810098664128"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-384x384.png",
+          "hash": "9365348472408653294"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-512x512.png",
+          "hash": "13261530669029011910"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-72x72.png",
+          "hash": "13886070576291614325"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-96x96.png",
+          "hash": "16949876641906068518"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-114x114.png",
+          "hash": "11184430298782854523"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-120x120.png",
+          "hash": "16029491723018321739"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-144x144.png",
+          "hash": "2118096982359220819"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-152x152.png",
+          "hash": "17558901213722870022"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-180x180.png",
+          "hash": "5396542305262151954"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-57x57.png",
+          "hash": "12180927186905238615"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-60x60.png",
+          "hash": "7609031738293452209"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-72x72.png",
+          "hash": "16992625568079084948"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-76x76.png",
+          "hash": "8721030401541782705"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/favicon-16x16.png",
+          "hash": "18125303437733873834"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/favicon-32x32.png",
+          "hash": "9318045513719467153"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/favicon.ico",
+          "hash": "18121354123891453145"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/logo.png",
+          "hash": "6845117438673990551"
+        },
+        {
+          "file": "sites/arolariu.ro/public/security.txt",
+          "hash": "1303358046509908665"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/afterBuild.ts",
+          "hash": "778224310384284700"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/beforeBuild.ts",
+          "hash": "5072893186024739708"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/checkTranslations.ts",
+          "hash": "137323024621810015"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/clean.ts",
+          "hash": "6459664439839876949"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/format.ts",
+          "hash": "15598819100839667765"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/generateAcknowledgements.ts",
+          "hash": "4824514169285685420"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/generateEnvironment.ts",
+          "hash": "18006714199814960377"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/generateTranslations.ts",
+          "hash": "11322950506238991397"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/utils.azure.ts",
+          "hash": "14187352111258086079"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/utils.generic.ts",
+          "hash": "10392180860223510871"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/_components/EnhancedLegalArticles.tsx",
+          "hash": "10511864844461230949"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/_components/PackagesScreen.tsx",
+          "hash": "623304599353802155"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/_hooks/usePackageFilters.tsx",
+          "hash": "2975518210390071547"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/island.tsx",
+          "hash": "12098559939757160829"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/layout.tsx",
+          "hash": "11432091288370104689"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/loading.tsx",
+          "hash": "6996989133534346690"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/page.tsx",
+          "hash": "8540931835363587398"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/privacy-policy/island.tsx",
+          "hash": "3968972712221969895"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/privacy-policy/page.tsx",
+          "hash": "6529308634200865079"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/terms-of-service/island.tsx",
+          "hash": "7356769021437616632"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/terms-of-service/page.tsx",
+          "hash": "7281861646188560105"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/EULA.tsx",
+          "hash": "8188322532398514091"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/_components/Features.tsx",
+          "hash": "2484565483521156370"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/_components/Hero.tsx",
+          "hash": "4707560670134535837"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/_components/Technologies.tsx",
+          "hash": "17680069345513180554"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/_effects/TechSphere.tsx",
+          "hash": "7392843170635891289"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/island.tsx",
+          "hash": "14776522609056272947"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/layout.tsx",
+          "hash": "11860318739099968886"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/loading.tsx",
+          "hash": "10474953574945330287"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/page.tsx",
+          "hash": "14403947124528642874"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Biography.tsx",
+          "hash": "4113726126971250727"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Certifications.tsx",
+          "hash": "5903903956860936574"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Competencies.tsx",
+          "hash": "7174327585174506726"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Contact.tsx",
+          "hash": "690624436208928932"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Education.tsx",
+          "hash": "11669287997818210492"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Experience.tsx",
+          "hash": "2214680859781717941"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Hero.tsx",
+          "hash": "3945445009387343728"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Perspectives.tsx",
+          "hash": "5806948645824690801"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_secrets/Terminal.tsx",
+          "hash": "15200181528366495527"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/page.tsx",
+          "hash": "18032706620515774615"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-platform/_components/Hero.tsx",
+          "hash": "11597328617979783114"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-platform/_components/Statistics.tsx",
+          "hash": "4122875470617210629"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-platform/_components/TechStack.tsx",
+          "hash": "14416028115924454956"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-platform/_components/Timeline.tsx",
+          "hash": "8652746853329251272"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-platform/page.tsx",
+          "hash": "7035357173464360302"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/api/mail/invoices/feedback/[id]/route.ts",
+          "hash": "2841737338647178560"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/api/mail/invoices/share/[id]/route.ts",
+          "hash": "767310565243211242"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/api/user/route.ts",
+          "hash": "4229706053020902577"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/_components/AuthCard.tsx",
+          "hash": "15043407547457059462"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/island.tsx",
+          "hash": "12162087674526710538"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/layout.tsx",
+          "hash": "18410384264401527723"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/loading.tsx",
+          "hash": "14158188532070622861"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/page.tsx",
+          "hash": "970348517644685986"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/sign-in/[[...sign-in]]/page.tsx",
+          "hash": "6957317478912031032"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/sign-up/[[...sign-up]]/page.tsx",
+          "hash": "13032768096182484462"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/_components/DomainServiceCard.tsx",
+          "hash": "15716145678366303889"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/InvoiceNotAnalyzed.tsx",
+          "hash": "6925703113648512839"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/InvoiceNotFound.tsx",
+          "hash": "5584834650309822035"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/InvoicesNotFound.tsx",
+          "hash": "8179235855062703240"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/LoadingInvoice.tsx",
+          "hash": "3288424958841240450"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/LoadingInvoices.tsx",
+          "hash": "753582462558468181"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContainer.tsx",
+          "hash": "7365687497568619618"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContext.test.tsx",
+          "hash": "12250898978081005544"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContext.tsx",
+          "hash": "10896608949533902735"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/CarouselView.tsx",
+          "hash": "4318381041021593299"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/GridView.tsx",
+          "hash": "15689916526259746319"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/InvoicePreview.tsx",
+          "hash": "18319111867032959026"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/InvoiceSubmitForm.tsx",
+          "hash": "3058163280812624540"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/InvoiceSubtitle.tsx",
+          "hash": "7165620934984985085"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/MediaPreview.tsx",
+          "hash": "795468610850609833"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_context/InvoiceCreatorContext.tsx",
+          "hash": "14403476397603190528"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_hooks/useBlobUrls.tsx",
+          "hash": "12323361970511624885"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_hooks/useInvoiceActions.tsx",
+          "hash": "7018422610955816755"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_types/InvoiceScan.ts",
+          "hash": "2949708780658818819"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_utils/invoiceScanUtils.ts",
+          "hash": "16559451843681381395"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/island.tsx",
+          "hash": "1860481885267839859"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/page.tsx",
+          "hash": "5476137518034810503"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/edit-invoice/[id]/page.tsx",
+          "hash": "16830369414171371343"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/island.tsx",
+          "hash": "43855332486013690"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/layout.tsx",
+          "hash": "14236183142438276346"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/loading.tsx",
+          "hash": "12866244004106318957"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/page.tsx",
+          "hash": "17904594477216465163"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/InvoiceHeader.tsx",
+          "hash": "5563588460439579171"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/TriviaTips.tsx",
+          "hash": "5328875892181927548"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/AnalyticsCard.tsx",
+          "hash": "14888349520594416909"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/ImageCard.tsx",
+          "hash": "11316696377595638022"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/InvoiceCard.tsx",
+          "hash": "4462559274710457800"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/MerchantCard.tsx",
+          "hash": "4453514434146005496"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/RecipeCard.tsx",
+          "hash": "828936601683682437"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/SharingCard.tsx",
+          "hash": "1806748547663918468"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/charts.tsx",
+          "hash": "2285427034849664991"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/FeedbackDialog.tsx",
+          "hash": "6610350617109795685"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/ImageDialog.tsx",
+          "hash": "13019608067545051826"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/ItemsDialog.tsx",
+          "hash": "11606366276489213949"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/MerchantDialog.tsx",
+          "hash": "4260399567617032965"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/MerchantReceiptsDialog.tsx",
+          "hash": "14877935873275450146"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/MetadataDialog.tsx",
+          "hash": "9727401974435067043"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/RecipeDialog.tsx",
+          "hash": "1563062360168182631"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/ShareAnalytics.tsx",
+          "hash": "17064195423153252784"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/SharingDialog.tsx",
+          "hash": "11590302699005367117"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/sidebar/SidebarSection.tsx",
+          "hash": "17044209502925179454"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/tables/ItemsTable.tsx",
+          "hash": "1598983646147007701"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/tabs/MetadataTab.tsx",
+          "hash": "12380514054693667912"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/tabs/RecipesTab.tsx",
+          "hash": "12753828221611241680"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/island.tsx",
+          "hash": "1086075818696432083"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/page.tsx",
+          "hash": "11151327449095101963"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/InvoicesHeader.tsx",
+          "hash": "9512640949302050077"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/MessageInput.tsx",
+          "hash": "6566109326316536748"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/MessageList.tsx",
+          "hash": "9485897267341574165"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/dialogs/ExportDialog.tsx",
+          "hash": "11911292089306998763"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/dialogs/ImportDialog.tsx",
+          "hash": "14932645733241187848"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/dialogs/ShareDialog.tsx",
+          "hash": "6581002834817975454"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/tables/InvoiceTable.tsx",
+          "hash": "11326405033190300918"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/tables/InvoiceTableActions.tsx",
+          "hash": "17046826264302132523"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/views/GenerativeView.tsx",
+          "hash": "16515585765160522789"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/views/InvoicesView.tsx",
+          "hash": "808163900738294819"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/views/StatisticsView.tsx",
+          "hash": "7429284909181504521"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/island.tsx",
+          "hash": "400652540017433926"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/page.tsx",
+          "hash": "16502302624122851519"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/island.tsx",
+          "hash": "2425523073101928149"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/page.tsx",
+          "hash": "15080082832439437934"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/favicon.ico",
+          "hash": "18121354123891453145"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/global-error.tsx",
+          "hash": "8055266650647898344"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/globals.css",
+          "hash": "2642075783130591808"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/globals.ts",
+          "hash": "5287027641762202993"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/icon.svg",
+          "hash": "18085560056179948415"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/island.tsx",
+          "hash": "18067682628005649661"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/layout.tsx",
+          "hash": "9660056613185945684"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/loading.tsx",
+          "hash": "15463543233582144974"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/logo.svg",
+          "hash": "10215207022868746475"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/manifest.json",
+          "hash": "16387743888343178176"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/not-found.tsx",
+          "hash": "15350196351365983089"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/page.tsx",
+          "hash": "13015467218841652149"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/providers.tsx",
+          "hash": "7266677092929937041"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/robots.txt",
+          "hash": "13811142617598754572"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/routing.spec.tsx",
+          "hash": "13875852404128903739"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/sitemap.xml",
+          "hash": "3187038387079840317"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/tracking.tsx",
+          "hash": "9768013323105112276"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/web-vitals.tsx",
+          "hash": "15182336353280785105"
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Buttons/AuthButton.tsx",
+          "hash": "3405724005068417744"
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Buttons/ThemeButton.tsx",
+          "hash": "5474209535999144644"
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Commander.tsx",
+          "hash": "5996826047732713711"
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Footer.spec.tsx",
+          "hash": "16866268038225951631"
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Footer.tsx",
+          "hash": "1831042094813390243"
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Header.spec.tsx",
+          "hash": "5024815364805337135"
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Header.tsx",
+          "hash": "3354173375846223863"
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Navigation.tsx",
+          "hash": "14478928895101558546"
+        },
+        {
+          "file": "sites/arolariu.ro/src/contexts/FontContext.tsx",
+          "hash": "4126477019157813719"
+        },
+        {
+          "file": "sites/arolariu.ro/src/data/mocks/invoices.ts",
+          "hash": "5699140168873884539"
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/index.ts",
+          "hash": "16270379679957578596"
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/stateStore.tsx",
+          "hash": "7428530717568557641"
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useInvoice.tsx",
+          "hash": "12396180293070504283"
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useInvoices.tsx",
+          "hash": "6413710749166449349"
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useMerchant.tsx",
+          "hash": "13155604217753228063"
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useMerchants.tsx",
+          "hash": "12380340869952674959"
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/usePagination.test.tsx",
+          "hash": "6991189707765716965"
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/usePagination.tsx",
+          "hash": "9628164087829345333"
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useScrollToTop.tsx",
+          "hash": "14220588491819217316"
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useUserInformation.tsx",
+          "hash": "1898633307338740583"
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useWindowSize.test.tsx",
+          "hash": "16242704082944032379"
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useWindowSize.tsx",
+          "hash": "3660715272787745882"
+        },
+        {
+          "file": "sites/arolariu.ro/src/i18n/request.ts",
+          "hash": "17932131673175128876"
+        },
+        {
+          "file": "sites/arolariu.ro/src/instrumentation.ts",
+          "hash": "5899639681104040158"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/cookies/cookies.action.test.ts",
+          "hash": "108727179676393860"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/cookies/cookies.action.ts",
+          "hash": "727335197640930573"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/cookies/index.ts",
+          "hash": "6348781827446379722"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/analyzeInvoice.ts",
+          "hash": "4787872569048927070"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/fetchInvoice.ts",
+          "hash": "2454109732162303553"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/fetchInvoices.ts",
+          "hash": "9254218246584585602"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/fetchMerchant.ts",
+          "hash": "17535875573077130174"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/fetchMerchants.ts",
+          "hash": "11851671877066434704"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/updateInvoice.ts",
+          "hash": "4938487459183878263"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/uploadInvoice.ts",
+          "hash": "16913334435282141896"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/storage/fetchBlob.ts",
+          "hash": "10841202299571407473"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/storage/fetchConfig.ts",
+          "hash": "6588376185726857046"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/storage/uploadBlob.ts",
+          "hash": "9365917336923937075"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/user/fetchUser.ts",
+          "hash": "13618418071795023354"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/utils.client.test.ts",
+          "hash": "12967962761557838071"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/utils.client.ts",
+          "hash": "3403234142603300437"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/utils.generic.test.ts",
+          "hash": "13434453333910789312"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/utils.generic.ts",
+          "hash": "13820616306387618521"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/utils.server.ts",
+          "hash": "4131493183162353890"
+        },
+        {
+          "file": "sites/arolariu.ro/src/metadata.ts",
+          "hash": "5927409571400000085"
+        },
+        {
+          "file": "sites/arolariu.ro/src/middleware.ts",
+          "hash": "17361095745993794918"
+        },
+        {
+          "file": "sites/arolariu.ro/src/presentation/ForbiddenScreen.stories.tsx",
+          "hash": "1227075147557892384"
+        },
+        {
+          "file": "sites/arolariu.ro/src/presentation/ForbiddenScreen.tsx",
+          "hash": "15220798194191684464"
+        },
+        {
+          "file": "sites/arolariu.ro/src/presentation/Text/ParallaxText.tsx",
+          "hash": "11450190894672131901"
+        },
+        {
+          "file": "sites/arolariu.ro/src/presentation/Text/RichText.tsx",
+          "hash": "9177224899953900461"
+        },
+        {
+          "file": "sites/arolariu.ro/src/presentation/Text/TypewriterText.tsx",
+          "hash": "947490166896000518"
+        },
+        {
+          "file": "sites/arolariu.ro/src/presentation/Text/index.ts",
+          "hash": "9612168164119468058"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/DDD/Entities/BaseEntity.ts",
+          "hash": "15485996897464795666"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/DDD/Entities/NamedEntity.ts",
+          "hash": "9357337520130456144"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/DDD/Entities/index.ts",
+          "hash": "11851086861315085381"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/DDD/SharedKernel/Currency.ts",
+          "hash": "2450813359271503548"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/DDD/SharedKernel/index.ts",
+          "hash": "13187014328135325365"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/DDD/index.ts",
+          "hash": "17610115050851563851"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/index.ts",
+          "hash": "17605589241761427257"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/Allergen.ts",
+          "hash": "17498131482471986263"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/Invoice.ts",
+          "hash": "15294795679635024739"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/Merchant.ts",
+          "hash": "16531088880463744404"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/Payment.ts",
+          "hash": "13520500534275642318"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/Product.ts",
+          "hash": "457779989250084882"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/Recipe.ts",
+          "hash": "1521499840131446373"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/index.ts",
+          "hash": "16462390616475638093"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/typedEnv.ts",
+          "hash": "4376389807104768309"
+        },
+        {
+          "file": "sites/arolariu.ro/tailwind.config.ts",
+          "hash": "17122533353278670419"
+        },
+        {
+          "file": "sites/arolariu.ro/tsconfig.json",
+          "hash": "2403262220250865277"
+        },
+        {
+          "file": "sites/arolariu.ro/yarn.lock",
+          "hash": "7955836701736424157"
+        }
+      ],
+      "docs": [
+        {
+          "file": "sites/docs.arolariu.ro/.gitignore",
+          "hash": "18013169672449240583"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/api/.gitignore",
+          "hash": "11527703051823208509"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/api/index.md",
+          "hash": "17730404732296428310"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/articles/index.md",
+          "hash": "12279128282206897938"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/articles/toc.yml",
+          "hash": "10636485818892037041"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/docfx.json",
+          "hash": "234050973229000507"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/index.md",
+          "hash": "11411296201719496492"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/project.json",
+          "hash": "11257382879086250015"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/templates/clarity/public/main.js",
+          "hash": "8920647009592654689"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/toc.yml",
+          "hash": "9315000067485361493"
+        }
+      ]
+    },
+    "nonProjectFiles": [
+      {
+        "file": ".dockerignore",
+        "hash": "11368791139138863873"
+      },
+      {
+        "file": ".editorconfig",
+        "hash": "5631796739714087083"
+      },
+      {
+        "file": ".filenesting.json",
+        "hash": "3390723915487591878"
+      },
+      {
+        "file": ".gitattributes",
+        "hash": "5816063049553364052"
+      },
+      {
+        "file": ".github/ISSUE_TEMPLATE/config.yml",
+        "hash": "6640007949522705431"
+      },
+      {
+        "file": ".github/ISSUE_TEMPLATE/feature_request.md",
+        "hash": "7660499400917826667"
+      },
+      {
+        "file": ".github/ISSUE_TEMPLATE/i-want-to-report-a-bug.md",
+        "hash": "10740966344877621966"
+      },
+      {
+        "file": ".github/PULL_REQUEST_TEMPLATE.md",
+        "hash": "12163142389550896886"
+      },
+      {
+        "file": ".github/copilot-instructions.md",
+        "hash": "1158433464912889855"
+      },
+      {
+        "file": ".github/frontend-instructions.md",
+        "hash": "9117962417844116017"
+      },
+      {
+        "file": ".github/scripts/lib/git-helper.ts",
+        "hash": "16233895380138488534"
+      },
+      {
+        "file": ".github/scripts/lib/jest-helper.ts",
+        "hash": "14045430993752629981"
+      },
+      {
+        "file": ".github/scripts/lib/playwright-helper.ts",
+        "hash": "10350221004874743621"
+      },
+      {
+        "file": ".github/scripts/package-lock.json",
+        "hash": "1332139205994007775"
+      },
+      {
+        "file": ".github/scripts/package.json",
+        "hash": "16240841305348781076"
+      },
+      {
+        "file": ".github/scripts/src/create-pr-comment.ts",
+        "hash": "7428634405268452501"
+      },
+      {
+        "file": ".github/scripts/tsconfig.json",
+        "hash": "7142148686186198108"
+      },
+      {
+        "file": ".github/scripts/types/index.ts",
+        "hash": "15511799347548310910"
+      },
+      {
+        "file": ".github/workflows/api-official-trigger.yml",
+        "hash": "6291023789722642690"
+      },
+      {
+        "file": ".github/workflows/cv-official-trigger.yml",
+        "hash": "3783888417392290519"
+      },
+      {
+        "file": ".github/workflows/docs-official-trigger.yml",
+        "hash": "17751806378872393071"
+      },
+      {
+        "file": ".github/workflows/website-official-build.yml",
+        "hash": "12344134642193695694"
+      },
+      {
+        "file": ".github/workflows/website-official-release.yml",
+        "hash": "2792495227226216896"
+      },
+      {
+        "file": ".gitignore",
+        "hash": "14913322788755046634"
+      },
+      {
+        "file": ".pnp.cjs",
+        "hash": "18224280966112164660"
+      },
+      {
+        "file": ".vscode/mcp.json",
+        "hash": "2035354960920675143"
+      },
+      {
+        "file": ".vscode/settings.json",
+        "hash": "1115909572603447820"
+      },
+      {
+        "file": ".yarn/install-state.gz",
+        "hash": "6455725984650592928"
+      },
+      {
+        "file": "CODE_OF_CONDUCT.md",
+        "hash": "2711697284573684277"
+      },
+      {
+        "file": "CONTRIBUTING.md",
+        "hash": "4661768014643655194"
+      },
+      {
+        "file": "LICENSE",
+        "hash": "17945265950602017309"
+      },
+      {
+        "file": "README.md",
+        "hash": "846405551137231547"
+      },
+      {
+        "file": "SECURITY.md",
+        "hash": "7367720463422840844"
+      },
+      {
+        "file": "arolariu.sln",
+        "hash": "7240675228850833149"
+      },
+      {
+        "file": "arolariu.slnx",
+        "hash": "14184167639406669673"
+      },
+      {
+        "file": "design/high-level-infra.png",
+        "hash": "15650282425802074242"
+      },
+      {
+        "file": "infra/Azure/ARM/appConfiguration.json",
+        "hash": "2370175329701311318"
+      },
+      {
+        "file": "infra/Azure/ARM/main.json",
+        "hash": "16477554555668816794"
+      },
+      {
+        "file": "infra/Azure/ARM/sql-rbac-uami.sql",
+        "hash": "10482366731404037012"
+      },
+      {
+        "file": "infra/Azure/Bicep/COST_OPTIMIZATION.md",
+        "hash": "6242698841337242270"
+      },
+      {
+        "file": "infra/Azure/Bicep/DEPLOYMENT_GUIDE.md",
+        "hash": "17200596325117863227"
+      },
+      {
+        "file": "infra/Azure/Bicep/README.md",
+        "hash": "8548486637192757765"
+      },
+      {
+        "file": "infra/Azure/Bicep/ai/README.md",
+        "hash": "12688874976817869636"
+      },
+      {
+        "file": "infra/Azure/Bicep/ai/aiFoundry.bicep",
+        "hash": "14337535391261118310"
+      },
+      {
+        "file": "infra/Azure/Bicep/ai/deploymentFile.bicep",
+        "hash": "832424175000753084"
+      },
+      {
+        "file": "infra/Azure/Bicep/ai/openai.bicep",
+        "hash": "18062238678536850342"
+      },
+      {
+        "file": "infra/Azure/Bicep/bicepconfig.json",
+        "hash": "7132768046222535495"
+      },
+      {
+        "file": "infra/Azure/Bicep/bindings/README.md",
+        "hash": "977362270963899597"
+      },
+      {
+        "file": "infra/Azure/Bicep/bindings/api-arolariu-ro-bindings.bicep",
+        "hash": "4085654881736840317"
+      },
+      {
+        "file": "infra/Azure/Bicep/bindings/api-arolariu-ro-certificate-bindings.bicep",
+        "hash": "5550737100389031384"
+      },
+      {
+        "file": "infra/Azure/Bicep/bindings/cv-arolariu-ro-bindings.bicep",
+        "hash": "17853664604070460164"
+      },
+      {
+        "file": "infra/Azure/Bicep/bindings/deploymentFile.bicep",
+        "hash": "8697140181192769161"
+      },
+      {
+        "file": "infra/Azure/Bicep/bindings/dev-arolariu-ro-bindings.bicep",
+        "hash": "13488842511245526865"
+      },
+      {
+        "file": "infra/Azure/Bicep/bindings/dev-arolariu-ro-certificate-bindings.bicep",
+        "hash": "6862994079190236793"
+      },
+      {
+        "file": "infra/Azure/Bicep/bindings/docs-arolariu-ro-bindings.bicep",
+        "hash": "14765321106269166951"
+      },
+      {
+        "file": "infra/Azure/Bicep/compute/README.md",
+        "hash": "14829883706017370556"
+      },
+      {
+        "file": "infra/Azure/Bicep/compute/appServicePlans.bicep",
+        "hash": "3998380447565386862"
+      },
+      {
+        "file": "infra/Azure/Bicep/compute/deploymentFile.bicep",
+        "hash": "3435682062309575927"
+      },
+      {
+        "file": "infra/Azure/Bicep/configuration/README.md",
+        "hash": "6624726611556588120"
+      },
+      {
+        "file": "infra/Azure/Bicep/configuration/appConfiguration.bicep",
+        "hash": "10093556590915197957"
+      },
+      {
+        "file": "infra/Azure/Bicep/configuration/appConfiguration.json",
+        "hash": "8890065912728222298"
+      },
+      {
+        "file": "infra/Azure/Bicep/configuration/deploymentFile.bicep",
+        "hash": "15744802400253854610"
+      },
+      {
+        "file": "infra/Azure/Bicep/configuration/keyVault.bicep",
+        "hash": "18122505909738357427"
+      },
+      {
+        "file": "infra/Azure/Bicep/configuration/keyVault.json",
+        "hash": "8940633809508572881"
+      },
+      {
+        "file": "infra/Azure/Bicep/facade.bicep",
+        "hash": "4296929551746388681"
+      },
+      {
+        "file": "infra/Azure/Bicep/identity/README.md",
+        "hash": "298137874807438201"
+      },
+      {
+        "file": "infra/Azure/Bicep/identity/deploymentFile.bicep",
+        "hash": "17004511457152452374"
+      },
+      {
+        "file": "infra/Azure/Bicep/identity/federatedCredentials.bicep",
+        "hash": "12678638055429939706"
+      },
+      {
+        "file": "infra/Azure/Bicep/identity/securityGroups.bicep",
+        "hash": "12314239129087932194"
+      },
+      {
+        "file": "infra/Azure/Bicep/identity/userAssignedIdentity.bicep",
+        "hash": "16162919967427535246"
+      },
+      {
+        "file": "infra/Azure/Bicep/main.bicep",
+        "hash": "6733775741423271866"
+      },
+      {
+        "file": "infra/Azure/Bicep/main.parameters.json",
+        "hash": "5598377633617534763"
+      },
+      {
+        "file": "infra/Azure/Bicep/network/README.md",
+        "hash": "9119793770384717869"
+      },
+      {
+        "file": "infra/Azure/Bicep/network/azureFrontDoor.bicep",
+        "hash": "10356037598862399942"
+      },
+      {
+        "file": "infra/Azure/Bicep/network/deploymentFile.bicep",
+        "hash": "68492084510546560"
+      },
+      {
+        "file": "infra/Azure/Bicep/network/dnsZone.bicep",
+        "hash": "2385823289713783960"
+      },
+      {
+        "file": "infra/Azure/Bicep/observability/README.md",
+        "hash": "9691163747524911753"
+      },
+      {
+        "file": "infra/Azure/Bicep/observability/application-insights.bicep",
+        "hash": "15770960125224012582"
+      },
+      {
+        "file": "infra/Azure/Bicep/observability/deploymentFile.bicep",
+        "hash": "13336991390240327314"
+      },
+      {
+        "file": "infra/Azure/Bicep/observability/grafana.bicep",
+        "hash": "1862157723090248269"
+      },
+      {
+        "file": "infra/Azure/Bicep/observability/log-analytics.bicep",
+        "hash": "12020495227942930782"
+      },
+      {
+        "file": "infra/Azure/Bicep/rbac/README.md",
+        "hash": "11522063228828495857"
+      },
+      {
+        "file": "infra/Azure/Bicep/rbac/backend-uami-rbac.bicep",
+        "hash": "2164054428250488127"
+      },
+      {
+        "file": "infra/Azure/Bicep/rbac/deploymentFile.bicep",
+        "hash": "2292550048977600411"
+      },
+      {
+        "file": "infra/Azure/Bicep/rbac/frontend-uami-rbac.bicep",
+        "hash": "5457308099200828045"
+      },
+      {
+        "file": "infra/Azure/Bicep/rbac/infrastructure-uami-rbac.bicep",
+        "hash": "12786071111419360171"
+      },
+      {
+        "file": "infra/Azure/Bicep/rbac/sql-rbac-uami.sql",
+        "hash": "10482366731404037012"
+      },
+      {
+        "file": "infra/Azure/Bicep/sites/README.md",
+        "hash": "5919267007517648851"
+      },
+      {
+        "file": "infra/Azure/Bicep/sites/api-arolariu-ro.bicep",
+        "hash": "2535510947327931448"
+      },
+      {
+        "file": "infra/Azure/Bicep/sites/arolariu-ro.bicep",
+        "hash": "2618904746299431601"
+      },
+      {
+        "file": "infra/Azure/Bicep/sites/cv-arolariu-ro.bicep",
+        "hash": "4503344276581449140"
+      },
+      {
+        "file": "infra/Azure/Bicep/sites/deploymentFile.bicep",
+        "hash": "17866096626334584408"
+      },
+      {
+        "file": "infra/Azure/Bicep/sites/dev-arolariu-ro.bicep",
+        "hash": "163824799133090233"
+      },
+      {
+        "file": "infra/Azure/Bicep/sites/docs-arolariu-ro.bicep",
+        "hash": "9844639553757416181"
+      },
+      {
+        "file": "infra/Azure/Bicep/storage/README.md",
+        "hash": "14113768590394307314"
+      },
+      {
+        "file": "infra/Azure/Bicep/storage/containerRegistry.bicep",
+        "hash": "995195063565496298"
+      },
+      {
+        "file": "infra/Azure/Bicep/storage/deploymentFile.bicep",
+        "hash": "9550325194374912263"
+      },
+      {
+        "file": "infra/Azure/Bicep/storage/noSqlServer.bicep",
+        "hash": "16436889202234810840"
+      },
+      {
+        "file": "infra/Azure/Bicep/storage/sqlServer.bicep",
+        "hash": "6161147408587760185"
+      },
+      {
+        "file": "infra/Azure/Bicep/storage/storageAccount.bicep",
+        "hash": "14183654533000464809"
+      },
+      {
+        "file": "infra/Azure/Bicep/types/README.md",
+        "hash": "212638785369694145"
+      },
+      {
+        "file": "infra/Azure/Bicep/types/common.type.bicep",
+        "hash": "2533366236260936217"
+      },
+      {
+        "file": "infra/Azure/Bicep/types/identity.type.bicep",
+        "hash": "730936739099874775"
+      },
+      {
+        "file": "infra/Local/.gitignore",
+        "hash": "16821858191933193325"
+      },
+      {
+        "file": "infra/Local/Backend/docker-compose.yml",
+        "hash": "13956588220789207764"
+      },
+      {
+        "file": "infra/Local/Frontend/docker-compose.yml",
+        "hash": "18070400171040548881"
+      },
+      {
+        "file": "infra/Local/Management/docker-compose.yml",
+        "hash": "10838983634393859390"
+      },
+      {
+        "file": "infra/Local/Management/traefik/traefik.yml",
+        "hash": "9984632369329182337"
+      },
+      {
+        "file": "infra/Local/Storage/docker-compose.yml",
+        "hash": "12288353826347846320"
+      },
+      {
+        "file": "infra/Local/Storage/sqlSchema.sql",
+        "hash": "1099123854294989262"
+      },
+      {
+        "file": "infra/Local/readme.md",
+        "hash": "2389956417055850950"
+      },
+      {
+        "file": "infra/Local/selfhost-start.bat",
+        "hash": "14156224222772424494"
+      },
+      {
+        "file": "infra/Local/selfhost-start.sh",
+        "hash": "11795759166779404703"
+      },
+      {
+        "file": "infra/Local/selfhost-stop.bat",
+        "hash": "4841981930549021416"
+      },
+      {
+        "file": "infra/Local/selfhost-stop.sh",
+        "hash": "3719192375312263393"
+      },
+      {
+        "file": "nx.json",
+        "hash": "14741996215080143393"
+      },
+      {
+        "file": "package-lock.json",
+        "hash": "126209863787105664"
+      },
+      {
+        "file": "package.json",
+        "hash": "11985754798661451320"
+      },
+      {
+        "file": "readme/desktop-platform.png",
+        "hash": "7480276697876683877"
+      },
+      {
+        "file": "readme/logo.png",
+        "hash": "17732454488048036140"
+      },
+      {
+        "file": "yarn.lock",
+        "hash": "7921757777518918363"
+      }
+    ]
+  }
+}

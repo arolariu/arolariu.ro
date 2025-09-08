@@ -1,0 +1,51 @@
+{
+  "name": "api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "sites/api.arolariu.ro/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "dotnet build --configuration Release",
+        "cwd": "sites/api.arolariu.ro"
+      }
+    },
+    "clean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "dotnet clean",
+        "cwd": "sites/api.arolariu.ro"
+      }
+    },
+    "restore": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "dotnet restore",
+        "cwd": "sites/api.arolariu.ro"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "dotnet test --configuration Release --logger trx --results-directory ./TestResults --collect:\"XPlat Code Coverage\"",
+        "cwd": "sites/api.arolariu.ro"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "dotnet run --project src/Core",
+        "cwd": "sites/api.arolariu.ro"
+      }
+    },
+    "docker:build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker build -t api.arolariu.ro .",
+        "cwd": "sites/api.arolariu.ro"
+      }
+    }
+  },
+  "tags": ["scope:api", "type:app", "platform:dotnet"]
+}

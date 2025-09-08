@@ -1,0 +1,48 @@
+{
+  "name": "docs",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "sites/docs.arolariu.ro",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docfx build docfx.json",
+        "cwd": "sites/docs.arolariu.ro"
+      },
+      "outputs": ["{projectRoot}/_site"],
+      "dependsOn": ["api:build"]
+    },
+    "metadata": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docfx metadata docfx.json",
+        "cwd": "sites/docs.arolariu.ro"
+      },
+      "dependsOn": ["api:build"]
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docfx serve _site",
+        "cwd": "sites/docs.arolariu.ro"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docfx docfx.json --serve",
+        "cwd": "sites/docs.arolariu.ro"
+      },
+      "dependsOn": ["api:build"]
+    },
+    "clean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "rm -rf _site api obj",
+        "cwd": "sites/docs.arolariu.ro"
+      }
+    }
+  },
+  "tags": ["scope:docs", "type:app", "platform:dotnet"]
+}

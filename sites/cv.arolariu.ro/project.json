@@ -1,0 +1,66 @@
+{
+  "name": "cv",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "sites/cv.arolariu.ro/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn build",
+        "cwd": "sites/cv.arolariu.ro"
+      },
+      "outputs": ["{projectRoot}/build"]
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn dev",
+        "cwd": "sites/cv.arolariu.ro"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn preview",
+        "cwd": "sites/cv.arolariu.ro"
+      }
+    },
+    "prepare": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn prepare",
+        "cwd": "sites/cv.arolariu.ro"
+      }
+    },
+    "check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn check",
+        "cwd": "sites/cv.arolariu.ro"
+      }
+    },
+    "check:watch": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn check:watch",
+        "cwd": "sites/cv.arolariu.ro"
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn format",
+        "cwd": "sites/cv.arolariu.ro"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn lint",
+        "cwd": "sites/cv.arolariu.ro"
+      }
+    }
+  },
+  "tags": ["scope:cv", "type:app"]
+}

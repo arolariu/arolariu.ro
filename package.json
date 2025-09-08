@@ -1,0 +1,11 @@
+{
+  "name": "arolariu.ro",
+  "packageManager": "yarn@4.9.4",
+  "devDependencies": {
+    "@nx/js": "^21.4.1",
+    "@nx/node": "^21.4.1",
+    "@nx/web": "^21.4.1",
+    "@nx/workspace": "^21.4.1",
+    "nx": "^21.4.1"
+  }
+}

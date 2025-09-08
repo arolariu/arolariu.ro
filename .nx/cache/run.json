@@ -1,0 +1,21 @@
+{
+  "run": {
+    "command": "nx run components:build --dry-run",
+    "startTime": "2025-09-08T14:42:40.320Z",
+    "endTime": "2025-09-08T14:42:40.630Z",
+    "inner": false
+  },
+  "tasks": [
+    {
+      "taskId": "components:build",
+      "target": "build",
+      "projectName": "components",
+      "hash": "7139943740878489877",
+      "startTime": "2025-09-08T14:42:40.338Z",
+      "endTime": "2025-09-08T14:42:40.629Z",
+      "params": "",
+      "cacheStatus": "cache-miss",
+      "status": 1
+    }
+  ]
+}
