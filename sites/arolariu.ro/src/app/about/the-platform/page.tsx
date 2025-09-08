@@ -25,6 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /**
  * This is the platform page.
+ * @returns The platform page, rendered as a React component.
  */
 export default async function PlatformPage(): Promise<React.JSX.Element> {
   return (

@@ -1,9 +1,8 @@
 /** @format */
 
 import type {Metadata} from "next";
+import React from "react";
 import RenderViewInvoiceScreen from "./island";
-
-type Props = {params: Promise<{id: string}>};
 
 export const metadata: Metadata = {
   title: "View Invoice",
@@ -15,8 +14,10 @@ export const metadata: Metadata = {
  * This page uses a dynamic route to display a specific invoice.
  * @returns Render the view invoice page, SSR'ed.
  */
-export default async function ViewInvoicePage({params}: Readonly<Props>) {
-  const resolvedParams = await params;
+export default async function ViewInvoicePage(
+  props: Readonly<PageProps<"/domains/invoices/view-invoice/[id]">>,
+): Promise<React.JSX.Element> {
+  const resolvedParams = await props.params;
   const invoiceIdentifier = resolvedParams.id;
 
   return (

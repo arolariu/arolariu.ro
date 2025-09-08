@@ -2,7 +2,7 @@
 
 "use client";
 
-import {useCallback, useEffect, useMemo, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 
 type PaginationWithSearchInputType<T> = {
   items: T[];
@@ -12,8 +12,8 @@ type PaginationWithSearchInputType<T> = {
 };
 
 type PaginationWithSearchOutputType<T> = {
-  currentPage: number;
-  setCurrentPage: (page: number) => void;
+  currentPage: number; // derived, clamped, and reset to 1 when searching
+  setCurrentPage: (page: number) => void; // sets the requested page
   pageSize: number;
   setPageSize: (size: number) => void;
   totalPages: number;
@@ -25,6 +25,7 @@ type PaginationWithSearchOutputType<T> = {
 /**
  * Custom React hook for pagination of items with optional search functionality.
  * @template T - The type of items being paginated
+ * @returns An object containing pagination state and controls.
  * @example
  * const {
  *   paginatedItems,
@@ -43,48 +44,40 @@ export function usePaginationWithSearch<T>({
   initialPage = 1,
   searchQuery,
 }: PaginationWithSearchInputType<T>): PaginationWithSearchOutputType<T> {
-  // State for pagination controls
-  const [currentPage, setCurrentPage] = useState<number>(initialPage);
+  const [requestedPage, setRequestedPage] = useState<number>(initialPage);
   const [pageSize, setPageSize] = useState<number>(initialPageSize);
 
   // Filter items based on search query if provided
   const filteredItems = useMemo(() => {
-    if (!searchQuery?.trim()) return items;
-
-    const normalizedQuery = searchQuery.toLowerCase().trim();
+    const q = searchQuery?.trim().toLowerCase();
+    if (!q) {
+      return items;
+    }
 
     return items.filter((item) => {
       try {
-        // Generic search implementation - in a production app,
-        // this would likely be customized based on the item structure
-        return JSON.stringify(item).toLowerCase().includes(normalizedQuery);
-      } catch (error) {
-        console.error("Error filtering item during search:", error);
+        return JSON.stringify(item).toLowerCase().includes(q);
+      } catch {
         return false;
       }
     });
   }, [items, searchQuery]);
 
-  // Calculate total pages based on filtered items
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filteredItems.length / pageSize));
-  }, [filteredItems.length, pageSize]);
+  // Compute total pages from filtered items
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredItems.length / pageSize)), [filteredItems.length, pageSize]);
 
-  // Reset to first page when search query changes
-  useEffect(() => {
+  // Derive the current page (no Effects)
+  const currentPage = useMemo(() => {
+    // If searching, always show page 1 (without mutating state)
     if (searchQuery?.trim()) {
-      setCurrentPage(1);
+      return 1;
     }
-  }, [searchQuery]);
 
-  // Ensure current page is valid when total pages changes
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(Math.max(1, totalPages));
-    }
-  }, [totalPages, currentPage]);
+    // Otherwise clamp requested page into [1, totalPages]
+    return Math.min(Math.max(requestedPage, 1), totalPages);
+  }, [requestedPage, totalPages, searchQuery]);
 
-  // Generic pagination function
+  // Generic pagination function using the derived current page
   const paginate = useCallback(
     <U = T,>(itemsToPage: U[]): U[] => {
       const startIndex = (currentPage - 1) * pageSize;
@@ -94,19 +87,17 @@ export function usePaginationWithSearch<T>({
   );
 
   // Get current items for this page
-  const paginatedItems = useMemo(() => {
-    return paginate(filteredItems);
-  }, [filteredItems, paginate]);
+  const paginatedItems = useMemo(() => paginate(filteredItems), [filteredItems, paginate]);
 
-  // Reset pagination to initial values
+  // Reset to initial values (intent state only)
   const resetPagination = useCallback(() => {
-    setCurrentPage(initialPage);
+    setRequestedPage(initialPage);
     setPageSize(initialPageSize);
   }, [initialPage, initialPageSize]);
 
   return {
     currentPage,
-    setCurrentPage,
+    setCurrentPage: setRequestedPage,
     pageSize,
     setPageSize,
     totalPages,

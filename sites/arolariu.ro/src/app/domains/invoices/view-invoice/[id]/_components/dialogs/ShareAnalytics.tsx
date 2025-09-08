@@ -77,6 +77,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
@@ -136,6 +137,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
                   type='email'
                   placeholder='name@example.com'
                   value={email}
+                  // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>

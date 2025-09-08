@@ -4,6 +4,8 @@
 import {Skeleton} from "@arolariu/components/skeleton";
 import {motion} from "motion/react";
 
+const SKELETON_KEYS = ["ske-1", "ske-2", "ske-3", "ske-4", "ske-5", "ske-6"] as const;
+
 /**
  * A loading component.
  * @returns A loading component.
@@ -90,15 +92,12 @@ export default function Loading(): React.JSX.Element {
           </div>
 
           <div className='grid grid-cols-1 gap-8 md:grid-cols-3'>
-            {Array.from({length: 6})
-              .fill(0)
-              .map((_, index) => (
-                <Skeleton
-                  // eslint-disable-next-line react/no-array-index-key -- skeleton
-                  key={index}
-                  className='h-64 w-full rounded-lg'
-                />
-              ))}
+            {SKELETON_KEYS.map((key) => (
+              <Skeleton
+                key={key}
+                className='h-64 w-full rounded-lg'
+              />
+            ))}
           </div>
         </div>
       </section>

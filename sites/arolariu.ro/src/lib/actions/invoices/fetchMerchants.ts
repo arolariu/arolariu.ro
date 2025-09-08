@@ -21,8 +21,11 @@ export default async function fetchMerchants(authToken: string): Promise<Merchan
       },
     });
 
-    if (response.ok) return response.json() as Promise<Merchant[]>;
-    else throw new Error(`Failed to fetch merchants. Status: ${response.status}`);
+    if (response.ok) {
+      return response.json() as Promise<Merchant[]>;
+    } else {
+      throw new Error(`Failed to fetch merchants. Status: ${response.status}`);
+    }
   } catch (error) {
     console.error("Error fetching the merchants from the server:", error);
     throw error;

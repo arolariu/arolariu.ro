@@ -170,12 +170,12 @@
         "subtitle": "A journey through Alexandru's professional career and the companies he's worked with.",
         "title": "Professional Experience",
         "ubisoft": {
-          "achievements": "# Contributed to the development of cloud-native applications using .NET and Azure, # Implemented microservices architecture for scalable and resilient systems, # Collaborated with cross-functional teams to deliver high-quality software solutions, # Participated in code reviews and mentored junior developers",
+          "achievements": "#  I've consistently over-exceeded the quota of reported bugs, glitches and artefacts, ranking as the #1 reporter for a solid 5 months out of the 6 worked. #  Found and reported major code defects that ranged from race conditions to memory resource allocation defects. #  Increased the daily report efficiency by leveraging SQL and JQL filtering capabilities.",
           "company": "Ubisoft",
-          "description": "Alexandru is currently working at Microsoft as a software engineer in the E+D MSAI FAST organization. He is building solutions that are used by millions of users worldwide. He is also a big fan of the \"open-source\" movement and has contributed to Microsoft's OSS repositories (dotnet/core, dotnet/docs, azure/docs and fluentui).",
-          "location": "Hybrid (Romania)",
+          "description": "I've worked on the Avatar: Frontiers of Pandora™ first person, action-adventure game built using the latest iteration of the Snowdrop engine (C++) by Massive Entertainment - a UBISOFT studio, and tested by UBISOFT Romania.",
+          "location": "Hybrid - Bucharest, Romania",
           "period": "2020 - 2021",
-          "responsibilites": "# Developed and maintained cloud-native applications using .NET and Azure, # Designed and implemented microservices architecture for scalable and resilient systems, # Collaborated with cross-functional teams to deliver high-quality software solutions, # Participated in code reviews and mentored junior developers",
+          "responsibilites": "# Managed regression, integration and unit testing with software such as XRAY, TestRail, Bugzilla. # Create high quality test suites and test plans using Atlassian (JIRA / Confluence) products. # Assure communications are stable and clear between production and testing teams.",
           "techAndSkills": "# Unit Testing # Integration Testing # A/B Testing # Performance Testing # Automatic Testing # E2E Testing",
           "title": "QA/QC Engineer"
         }
@@ -215,6 +215,27 @@
           "company": "Microsoft",
           "position": "Software Engineer II",
           "quote": "I really appreciate your proactive approach and collaborative spirit, and your support and friendly communication style have been very positive to my onboarding experience and to learning the ins and outs of our project. Your ability to communicate effectively and keep everyone in the loop is something I'm looking up to, you are experienced with dealing with cross-functional teams, especially with our partner teams, with learning their needs and solving their problems. Your technical skills are impressive and your attention to detail is commendable."
+        },
+        "perspectiveFromYX": {
+          "author": "Anonymous",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Senior Product Manager",
+          "quote": "Alexandru's depth of character is evident in his passion and commitment towards helping others succeed and nowhere is that clearer that in his mentorship of. I hold Alexandru in high regard - I may have a few years on him, but he should not hesitate to challenge me if he believes there's a better way to approach a problem."
+        },
+        "perspectiveFromYY": {
+          "author": "Anonymous",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Staff Software Engineer",
+          "quote": "I love your attitude and open mindset, I find it easy to work and talk with you. I don't have much for you to leverage these strength further: keep being yourself and you are already doing great work!"
+        },
+        "perspectiveFromYZ": {
+          "author": "Anonymous",
+          "avatar": " ",
+          "company": "Microsoft",
+          "position": "Staff Software Engineer",
+          "quote": "Alexandru is a great software engineer. He's incredibly sharp and I would rate him in the top 1% for his age - at 25 most people struggle to find a job, while Alexandru is delivering impact that translates into millions of dollars. He's extremely talented."
         },
         "perspectiveFromZ": {
           "author": "Anonymous",

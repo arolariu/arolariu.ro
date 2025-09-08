@@ -2,8 +2,7 @@
 
 "use client";
 
-import {Badge} from "@arolariu/components/badge";
-import {Button} from "@arolariu/components/button";
+import {Badge, Button} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import {TbCheck, TbExternalLink} from "react-icons/tb";

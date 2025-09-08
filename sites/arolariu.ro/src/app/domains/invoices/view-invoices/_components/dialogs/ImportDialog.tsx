@@ -15,7 +15,7 @@ import {
   TabsTrigger,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
-import {useRef, useState} from "react";
+import {useCallback, useRef, useState} from "react";
 import {TbAlertCircle, TbCheck, TbFile, TbFileSpreadsheet, TbFileText, TbFileTypePdf, TbUpload} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 
@@ -31,34 +31,40 @@ export default function ImportDialog(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<"csv" | "pdf" | "xlsx">("csv");
   const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle");
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const selectedFiles = [...e.target.files];
-      handleFiles(selectedFiles);
-    }
-  };
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files.length > 0) {
+        const selectedFiles = [...e.target.files];
 
-  const handleFiles = (newFiles: File[]) => {
-    // Filter files based on active tab
-    const filteredFiles = newFiles.filter((file) => {
-      const extension = file.name.split(".").pop()?.toLowerCase();
-      if (activeTab === "csv") return extension === "csv";
-      if (activeTab === "pdf") return extension === "pdf";
-      if (activeTab === "xlsx") return extension === "xlsx" || extension === "xls";
-      return false;
-    });
+        // Filter files based on active tab
+        const filteredFiles = selectedFiles.filter((file) => {
+          const extension = file.name.split(".").pop()?.toLowerCase();
+          switch (activeTab) {
+            case "csv":
+              return extension === "csv";
+            case "pdf":
+              return extension === "pdf";
+            case "xlsx":
+              return extension === "xlsx" || extension === "xls";
+            default:
+              return false;
+          }
+        });
 
-    if (filteredFiles.length > 0) {
-      setFiles((prev) => [...prev, ...filteredFiles]);
-      setUploadStatus("idle");
-    }
-  };
+        if (filteredFiles.length > 0) {
+          setFiles((prev) => [...prev, ...filteredFiles]);
+          setUploadStatus("idle");
+        }
+      }
+    },
+    [activeTab],
+  );
 
-  const removeFile = (index: number) => {
+  const removeFile = useCallback((index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
-  const handleImport = () => {
+  const handleImport = useCallback(() => {
     // Simulate import process
     if (files.length > 0) {
       setTimeout(() => {
@@ -71,19 +77,42 @@ export default function ImportDialog(): React.JSX.Element {
         }, 1500);
       }, 1000);
     }
-  };
+  }, [files]);
 
   const getFileIcon = (fileName: string) => {
     const extension = fileName.split(".").pop()?.toLowerCase();
-    if (extension === "csv") return <TbFileText className='h-5 w-5 text-blue-500' />;
-    if (extension === "pdf") return <TbFileTypePdf className='h-5 w-5 text-red-500' />;
-    if (extension === "xlsx" || extension === "xls") return <TbFileSpreadsheet className='h-5 w-5 text-green-500' />;
-    return <TbFile className='h-5 w-5 text-gray-500' />;
+    switch (extension) {
+      case "csv":
+        return <TbFileText className='h-5 w-5 text-blue-500' />;
+      case "pdf":
+        return <TbFileTypePdf className='h-5 w-5 text-red-500' />;
+      case "xlsx":
+      case "xls":
+        return <TbFileSpreadsheet className='h-5 w-5 text-green-500' />;
+      default:
+        return <TbFile className='h-5 w-5 text-gray-500' />;
+    }
   };
+
+  const handleTabChange = useCallback((value: string) => setActiveTab(value as "csv" | "pdf" | "xlsx"), []);
+
+  const handleRemoveClick = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      const idxAttr = (e.currentTarget as HTMLButtonElement).dataset["index"];
+      if (idxAttr) {
+        removeFile(Number(idxAttr));
+      }
+    },
+    [removeFile],
+  );
+
+  const fileKey = (file: File) => `${file.name}-${file.size}-${file.lastModified}`;
 
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-[525px]'>
         <DialogHeader>
@@ -93,7 +122,7 @@ export default function ImportDialog(): React.JSX.Element {
 
         <Tabs
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value as "csv" | "pdf" | "xlsx")}
+          onValueChange={handleTabChange}
           className='w-full'>
           <TabsList className='grid w-full grid-cols-3'>
             <TabsTrigger value='csv'>CSV</TabsTrigger>
@@ -130,8 +159,7 @@ export default function ImportDialog(): React.JSX.Element {
               <div className='max-h-[150px] space-y-2 overflow-y-auto'>
                 {files.map((file, index) => (
                   <div
-                    // eslint-disable-next-line react/no-array-index-key -- Using index as key for simplicity
-                    key={`${file.name}-${index}`}
+                    key={fileKey(file)}
                     className='bg-muted/50 flex items-center justify-between rounded-md p-2'>
                     <div className='flex items-center space-x-2'>
                       {getFileIcon(file.name)}
@@ -140,10 +168,8 @@ export default function ImportDialog(): React.JSX.Element {
                     <Button
                       variant='ghost'
                       size='sm'
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeFile(index);
-                      }}>
+                      data-index={index}
+                      onClick={handleRemoveClick}>
                       Remove
                     </Button>
                   </div>

@@ -16,63 +16,6 @@ import {
 } from "@/types/invoices";
 import {faker as fake} from "@faker-js/faker";
 
-const generateFakeInvoice = (): Invoice => {
-  const invoiceCategory = fake.number.int({min: 0, max: 400, multipleOf: 100}) as InvoiceCategory;
-  const products = Array.from({length: fake.number.int({min: 3, max: 30})}, generateFakeInvoiceProduct);
-  const totalAmount = products.reduce((acc, product) => acc + product.totalPrice, 0);
-  const currency = {
-    code: fake.finance.currencyCode(),
-    name: fake.finance.currencyName(),
-    symbol: fake.finance.currencySymbol(),
-  } satisfies Currency;
-
-  return {
-    id: fake.string.uuid(),
-    category: invoiceCategory,
-    createdAt: fake.date.past(),
-    merchantReference: fake.string.uuid(),
-    createdBy: fake.string.uuid(),
-    description: fake.lorem.sentence({min: 7, max: 30}),
-    isImportant: fake.datatype.boolean(),
-    isSoftDeleted: fake.datatype.boolean(),
-    lastUpdatedAt: fake.date.recent(),
-    lastUpdatedBy: fake.string.uuid(),
-    name: fake.lorem.sentence(3),
-    numberOfUpdates: fake.number.int({min: 0, max: 100}),
-    photoLocation: fake.image.url({width: 800, height: 600}),
-    userIdentifier: fake.string.uuid(),
-    sharedWith: Array.from({length: fake.number.int({min: 0, max: 5})}, () => fake.string.uuid()),
-    items: products,
-    paymentInformation: {
-      transactionDate: fake.date.past(),
-      paymentType: fake.number.int({min: 0, max: 4}) as PaymentType,
-      currency: currency,
-      totalCostAmount: totalAmount,
-      totalTaxAmount: fake.number.float({min: totalAmount * 0.05, max: totalAmount / 2, multipleOf: 3}),
-    } satisfies PaymentInformation,
-    possibleRecipes: Array.from(
-      {length: fake.number.int({min: 0, max: 3})},
-      () =>
-        ({
-          name: fake.lorem.sentence(3),
-          complexity: fake.number.int({min: 0, max: 3}) as RecipeComplexity,
-          ingredients: Array.from({length: fake.number.int({min: 3, max: 10})}, generateFakeInvoiceProduct),
-          duration: `${fake.number.int({min: 5, max: 120})} minutes`,
-          description: fake.lorem.sentence({min: 10, max: 80}),
-          referenceForMoreDetails: fake.internet.url(),
-          cookingTime: fake.number.int({min: 5, max: 120}),
-          preparationTime: fake.number.int({min: 5, max: 120}),
-          instructions: fake.lorem.sentence({min: 10, max: 50}),
-        }) satisfies Recipe,
-    ),
-    additionalMetadata: {
-      isComplete: fake.string.nanoid(),
-      isEdited: fake.string.nanoid(),
-      isSoftDeleted: fake.string.nanoid(),
-    },
-  } satisfies Invoice;
-};
-
 const generateFakeMerchant = (): Merchant => ({
   category: fake.number.int({min: 1, max: 3}) as MerchantCategory,
   address: fake.location.streetAddress(true),
@@ -131,6 +74,63 @@ const generateFakeInvoiceProduct = (): Product => {
       isSoftDeleted: fake.datatype.boolean(),
     },
   } satisfies Product;
+};
+
+const generateFakeInvoice = (): Invoice => {
+  const invoiceCategory = fake.number.int({min: 0, max: 400, multipleOf: 100}) as InvoiceCategory;
+  const products = Array.from({length: fake.number.int({min: 3, max: 30})}, generateFakeInvoiceProduct);
+  const totalAmount = products.reduce((acc, product) => acc + product.totalPrice, 0);
+  const currency = {
+    code: fake.finance.currencyCode(),
+    name: fake.finance.currencyName(),
+    symbol: fake.finance.currencySymbol(),
+  } satisfies Currency;
+
+  return {
+    id: fake.string.uuid(),
+    category: invoiceCategory,
+    createdAt: fake.date.past(),
+    merchantReference: fake.string.uuid(),
+    createdBy: fake.string.uuid(),
+    description: fake.lorem.sentence({min: 7, max: 30}),
+    isImportant: fake.datatype.boolean(),
+    isSoftDeleted: fake.datatype.boolean(),
+    lastUpdatedAt: fake.date.recent(),
+    lastUpdatedBy: fake.string.uuid(),
+    name: fake.lorem.sentence(3),
+    numberOfUpdates: fake.number.int({min: 0, max: 100}),
+    photoLocation: fake.image.url({width: 800, height: 600}),
+    userIdentifier: fake.string.uuid(),
+    sharedWith: Array.from({length: fake.number.int({min: 0, max: 5})}, () => fake.string.uuid()),
+    items: products,
+    paymentInformation: {
+      transactionDate: fake.date.past(),
+      paymentType: fake.number.int({min: 0, max: 4}) as PaymentType,
+      currency,
+      totalCostAmount: totalAmount,
+      totalTaxAmount: fake.number.float({min: totalAmount * 0.05, max: totalAmount / 2, multipleOf: 3}),
+    } satisfies PaymentInformation,
+    possibleRecipes: Array.from(
+      {length: fake.number.int({min: 0, max: 3})},
+      () =>
+        ({
+          name: fake.lorem.sentence(3),
+          complexity: fake.number.int({min: 0, max: 3}) as RecipeComplexity,
+          ingredients: Array.from({length: fake.number.int({min: 3, max: 10})}, generateFakeInvoiceProduct),
+          duration: `${fake.number.int({min: 5, max: 120})} minutes`,
+          description: fake.lorem.sentence({min: 10, max: 80}),
+          referenceForMoreDetails: fake.internet.url(),
+          cookingTime: fake.number.int({min: 5, max: 120}),
+          preparationTime: fake.number.int({min: 5, max: 120}),
+          instructions: fake.lorem.sentence({min: 10, max: 50}),
+        }) satisfies Recipe,
+    ),
+    additionalMetadata: {
+      isComplete: fake.string.nanoid(),
+      isEdited: fake.string.nanoid(),
+      isSoftDeleted: fake.string.nanoid(),
+    },
+  } satisfies Invoice;
 };
 
 const shortIterable = Array.from({length: fake.number.int({min: 3, max: 10})});

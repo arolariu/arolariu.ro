@@ -4,14 +4,12 @@
 
 import logo from "@/app/logo.svg";
 import {useWindowSize} from "@/hooks";
-import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import {memo} from "react";
+import AuthButton from "./Buttons/AuthButton";
+import ThemeButton from "./Buttons/ThemeButton";
 import {DesktopNavigation, MobileNavigation} from "./Navigation";
-
-const AuthButton = dynamic(() => import("./Buttons/AuthButton"), {ssr: false});
-const ThemeButton = dynamic(() => import("./Buttons/ThemeButton"), {ssr: false});
 
 /**
  * The header component.

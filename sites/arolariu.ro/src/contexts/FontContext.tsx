@@ -4,7 +4,7 @@
 import {isBrowserStorageAvailable} from "@/lib/utils.client";
 import type {NextFontWithVariable} from "next/dist/compiled/@next/font";
 import {Atkinson_Hyperlegible, Caudex} from "next/font/google";
-import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from "react";
+import React, {createContext, use, useCallback, useEffect, useMemo, useState} from "react";
 
 const STORAGE_KEY = "selectedFont";
 
@@ -103,38 +103,40 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
 
   // 🛡️ Enhanced font application with safety checks
   useEffect(() => {
-    if (typeof document === "undefined") return;
+    if (typeof globalThis.document === "undefined") {
+      return;
+    }
 
     const currentFont = fontType === "dyslexic" ? dyslexicFont : defaultFont;
     const fontClassName = currentFont.className;
 
     // 🛡️ Safety Check 1: Skip if font class is already applied
-    if (document.documentElement.classList.contains(fontClassName)) {
+    if (globalThis.document.documentElement.classList.contains(fontClassName)) {
       return;
     }
 
     // 🛡️ Safety Check 2: Remove only conflicting font classes safely
-    const existingClasses = document.documentElement.className.split(" ").filter((className) => {
-      // Keep all classes except font classes that aren't system ones
-      return (
-        !className.includes("font-")
-        || className.includes("font-sans")
-        || className.includes("font-serif")
-        || className.includes("font-mono")
+    const existingClasses = globalThis.document.documentElement.className
+      .split(" ")
+      .filter(
+        (className) =>
+          !className.includes("font-")
+          || className.includes("font-sans")
+          || className.includes("font-serif")
+          || className.includes("font-mono"),
       );
-    });
 
     // 🛡️ Safety Check 3: Apply new font class only if it's different
     const newClassName = [...existingClasses, fontClassName].join(" ").trim();
 
-    if (document.documentElement.className !== newClassName) {
-      document.documentElement.className = newClassName;
+    if (globalThis.document.documentElement.className !== newClassName) {
+      globalThis.document.documentElement.className = newClassName;
     }
 
     // Cleanup function to remove the specific font class
     return () => {
-      if (typeof document !== "undefined") {
-        document.documentElement.classList.remove(fontClassName);
+      if (typeof globalThis.document !== "undefined") {
+        globalThis.document.documentElement.classList.remove(fontClassName);
       }
     };
   }, [fontType]);
@@ -159,7 +161,8 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
     // eslint-disable-next-line react-hooks/exhaustive-deps -- handleFontChange is stable and does not change.
     [fontType],
   );
-  return <FontContext.Provider value={value}>{children}</FontContext.Provider>;
+
+  return <FontContext value={value}>{children}</FontContext>;
 }
 
 /**
@@ -170,7 +173,7 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
  * @throws If the hook is used outside of a FontContextProvider.
  */
 export const useFontContext = (): FontContextValueType => {
-  const context = useContext(FontContext);
+  const context = use(FontContext);
   if (context === undefined) {
     throw new Error("useFontContext must be used within a FontContextProvider");
   }

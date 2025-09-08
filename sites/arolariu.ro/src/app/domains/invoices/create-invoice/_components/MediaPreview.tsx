@@ -1,156 +1,158 @@
 /** @format */
 
-import {Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger} from "@arolariu/components";
+import {Badge, Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {AnimatePresence, motion} from "motion/react";
 import Image from "next/image";
-import {memo, useEffect, useState} from "react";
-import {TbArrowAutofitHeight, TbRotateClockwise, TbTrash} from "react-icons/tb";
+import {useCallback} from "react";
+import {TbEdit, TbRotateClockwise, TbTrash} from "react-icons/tb";
+import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
 import type {InvoiceScan} from "../_types/InvoiceScan";
-import {getScanUrl, isPDF} from "../_utils/invoiceScanUtils";
 
-type Props = {
-  scan: InvoiceScan;
-  index: number;
-  onRotate?: (index: number) => void;
-  onDelete: (index: number) => void;
-};
+type MediaPreviewProps = {file: InvoiceScan};
 
 /**
- * Component to render a media preview for an invoice scan.
- * It handles both PDF and image scans, displaying them appropriately.
- * @param scan The invoice scan to preview.
- * @param index The index of the scan in the list.
- * @param onRotate Optional callback to rotate the scan.
- * @param onDelete Callback to delete the scan.
- * @returns The JSX for the media preview.
+ * Media preview component for invoice scans.
+ * @returns JSX.Element that displays a preview of the invoice scan.
  */
-export const MediaPreview = memo(function MediaPreview({scan, index, onRotate, onDelete}: Readonly<Props>) {
-  const isPdfFile = isPDF(scan);
-  const [url, setUrl] = useState<string>("");
-  const [loadError, setLoadError] = useState<boolean>(false);
+export default function MediaPreview({file}: Readonly<MediaPreviewProps>): React.JSX.Element {
+  const {rotateScan, renameScan, removeScan} = useInvoiceCreator();
+  const showProcessing = Boolean(file.isProcessing);
 
-  useEffect(() => {
-    // Reset state when scan changes
-    setLoadError(false);
+  const handleRotate = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      rotateScan(file.id, 90);
+    },
+    [rotateScan, file.id],
+  );
 
-    // Get URL for the scan
-    const scanUrl = getScanUrl(scan);
-    setUrl(scanUrl);
-  }, [scan]);
+  const handleRename = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      const newName = prompt("Enter new filename:", file.name);
+      if (newName) {
+        renameScan(file.id, newName);
+      }
+    },
+    [renameScan, file.id, file.name],
+  );
 
-  const renderContent = () => {
-    if (isPdfFile) {
-      return (
-        <>
-          <div className='bg-primary absolute top-0 left-0 z-10 rounded-br-lg px-2 py-1 text-xs text-white'>PDF</div>
-          {url ? (
-            <iframe
-              src={`${url}#view=FitH&toolbar=0&navpanes=0&scrollbar=0`}
-              className='h-full w-full rounded-lg'
-              style={{border: "none", overflow: "hidden"}}
-              title={`PDF Document ${index + 1}`}
-              sandbox='allow-scripts'
-            />
-          ) : (
-            <div className='flex h-full w-full items-center justify-center bg-gray-50'>
-              <div className='border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
-            </div>
-          )}
-        </>
-      );
-    }
-
-    if (!url || loadError) {
-      return (
-        <div className='flex h-full w-full items-center justify-center bg-gray-50'>
-          {loadError ? (
-            <div className='text-muted-foreground text-center'>
-              <div>Failed to load image</div>
-            </div>
-          ) : (
-            <div className='border-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent' />
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <Image
-        className='h-full w-full rounded-lg object-contain object-center transition-all'
-        src={url}
-        width={300}
-        height={300}
-        unoptimized
-        priority={index < 4}
-        onError={() => setLoadError(true)}
-        alt={`Invoice scan ${index + 1} - ${scan.name}`}
-      />
-    );
-  };
+  const handleDelete = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      removeScan(file.id);
+    },
+    [removeScan, file.id],
+  );
 
   return (
-    <div className='relative h-full w-full overflow-hidden'>
-      {renderContent()}
-      <div className='bg-opacity-50 absolute right-2 bottom-2 flex gap-2 rounded-lg bg-black p-2'>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button
-              size='icon'
-              variant='secondary'>
-              <TbArrowAutofitHeight
-                className='h-4 w-4'
-                aria-hidden='true'
+    <div className='group relative overflow-hidden rounded-lg bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl dark:bg-gray-900'>
+      <AnimatePresence>
+        {showProcessing ? (
+          <motion.div
+            className='absolute inset-0 z-30 flex items-center justify-center bg-purple-500/20 backdrop-blur-sm'
+            initial={{opacity: 0}}
+            animate={{opacity: 1}}
+            exit={{opacity: 0}}>
+            <div className='flex items-center gap-3 rounded-lg bg-white/90 p-4 dark:bg-gray-800'>
+              <motion.div
+                className='h-6 w-6 rounded-full border-2 border-purple-600 border-t-transparent'
+                animate={{rotate: 360}}
+                transition={{duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear"}}
               />
-              <span className='sr-only'>View full screen</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className='h-[80vh] w-[80vw] max-w-full'>
-            <DialogHeader>
-              <DialogTitle className='text-lg font-semibold'>
-                {isPdfFile ? `PDF Document - ${scan.name}` : `Image ${index + 1} - ${scan.name}`}
-              </DialogTitle>
-            </DialogHeader>
-            {isPdfFile ? (
-              <iframe
-                src={url}
-                className='h-full w-full'
-                title={`PDF Document ${index + 1} - ${scan.name}`}
-                sandbox='allow-scripts'
-              />
-            ) : (
-              <div className='relative h-full w-full overflow-hidden'>
-                <Image
-                  src={url}
-                  alt={`Enlarged scan ${index + 1} - ${scan.name}`}
-                  fill
-                  className='object-contain'
-                />
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-        {!isPdfFile && Boolean(onRotate) && (
-          <Button
-            size='icon'
-            variant='secondary'
-            onClick={() => onRotate!(index)}>
-            <TbRotateClockwise
-              className='h-4 w-4'
-              aria-hidden='true'
-            />
-            <span className='sr-only'>Rotate image</span>
-          </Button>
-        )}
-        <Button
-          size='icon'
-          variant='destructive'
-          onClick={() => onDelete(index)}>
-          <TbTrash
-            className='h-4 w-4'
-            aria-hidden='true'
+              <span className='font-medium text-gray-900 dark:text-white'>Processing...</span>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      {file.type === "pdf" && (
+        <motion.div
+          className='absolute top-3 left-3 z-20'
+          initial={{y: -20, opacity: 0}}
+          animate={{y: 0, opacity: 1}}>
+          <Badge className='bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg'>PDF</Badge>
+        </motion.div>
+      )}
+
+      <div className='relative aspect-square overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900'>
+        {file.type === "pdf" ? (
+          <iframe
+            src={file.preview}
+            className='h-full w-full border-0 transition-transform duration-500 group-hover:scale-105'
+            title={`Preview of ${file.name}`}
+            sandbox=''
           />
-          <span className='sr-only'>Delete {isPdfFile ? "PDF" : "image"}</span>
-        </Button>
+        ) : (
+          <Image
+            src={file.preview || "/placeholder.svg?height=300&width=300&query=invoice%20image%20placeholder"}
+            alt={file.name}
+            width={300}
+            height={300}
+            className='h-full w-full object-cover transition-transform duration-500 group-hover:scale-110'
+            style={{
+              transform: `rotate(${file.rotation ?? 0}deg)`,
+              filter: `brightness(${file.brightness ?? 100}%) contrast(${file.contrast ?? 100}%) saturate(${file.saturation ?? 100}%)`,
+            }}
+            priority={false}
+            // Guard for leaked render: show empty placeholder when preview missing
+            placeholder='empty'
+          />
+        )}
+        <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100' />
+      </div>
+
+      <motion.div className='absolute right-3 bottom-3 z-20 flex gap-2'>
+        <TooltipProvider>
+          {file.type === "image" && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size='sm'
+                  variant='secondary'
+                  className='h-10 w-10 cursor-pointer border-2 border-white bg-white p-0 shadow-xl transition-all duration-200 hover:scale-110 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700'
+                  onClick={handleRotate}>
+                  <TbRotateClockwise className='h-4 w-4 text-gray-700 dark:text-gray-100' />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Rotate 90°</TooltipContent>
+            </Tooltip>
+          )}
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size='sm'
+                variant='secondary'
+                className='h-10 w-10 cursor-pointer border-2 border-white bg-white p-0 shadow-xl transition-all duration-200 hover:scale-110 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700'
+                onClick={handleRename}>
+                <TbEdit className='h-4 w-4 text-gray-700 dark:text-gray-100' />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Rename file</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size='sm'
+                variant='destructive'
+                className='h-10 w-10 cursor-pointer border-2 border-white bg-red-500 p-0 shadow-xl transition-all duration-200 hover:scale-110 hover:bg-red-600 dark:border-gray-700'
+                onClick={handleDelete}>
+                <TbTrash className='h-4 w-4 text-white' />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Delete file</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </motion.div>
+
+      <div className='absolute bottom-3 left-3 z-20 opacity-0 transition-opacity duration-300 group-hover:opacity-100'>
+        <div className='rounded-lg border border-white/20 bg-white/95 px-3 py-2 shadow-xl backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/95'>
+          <p className='max-w-32 truncate text-xs font-medium text-gray-800 dark:text-gray-200'>{file.name}</p>
+          <p className='text-xs text-gray-500 dark:text-gray-400'>{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+        </div>
       </div>
     </div>
   );
-});
+}

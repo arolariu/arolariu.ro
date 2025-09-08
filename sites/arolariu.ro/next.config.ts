@@ -36,6 +36,7 @@ const nextConfig: NextConfig = {
   },
 
   images: {
+    qualities: [50, 75, 100],
     remotePatterns: [
       new URL("https://cdn.arolariu.ro"), // CDN assets.
       new URL("https://clerk.com"), // Clerk - auth-as-a-service assets.
@@ -116,7 +117,6 @@ const nextConfig: NextConfig = {
 
   experimental: {
     allowDevelopmentBuild: isDebugBuild ? true : undefined,
-    devtoolSegmentExplorer: isDebugBuild ? true : undefined,
     serverSourceMaps: isDebugBuild,
     turbopackSourceMaps: isDebugBuild,
     turbopackMinify: !isDebugBuild,
@@ -168,6 +168,7 @@ const nextConfig: NextConfig = {
   assetPrefix: isCdnEnabled ? "https://cdn.arolariu.ro" : undefined,
   compress: false, // We use AFD built-in compression for static assets.
   trailingSlash: true,
+  typedRoutes: true,
 };
 
 const withBundleAnalyzer = withBundleAnalyzerInit({

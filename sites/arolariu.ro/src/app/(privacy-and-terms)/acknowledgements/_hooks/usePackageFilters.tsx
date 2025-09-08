@@ -1,11 +1,11 @@
 /** @format */
 
 import type {NodePackageInformation, NodePackagesJSON} from "@/types";
-import {type Dispatch, type SetStateAction, useCallback, useMemo, useState} from "react";
+import {type Dispatch, type SetStateAction, useCallback, useState} from "react";
 
-type SortField = "name" | "dependencies" | "type";
-type SortDirection = "asc" | "desc";
-type PackageType = "all" | "production" | "development";
+type SortField = Readonly<"name" | "dependencies" | "type">;
+type SortDirection = Readonly<"asc" | "desc">;
+type PackageType = Readonly<"all" | "production" | "development">;
 
 type HookInputType = Readonly<NodePackagesJSON>;
 type HookReturnType = Readonly<{
@@ -23,6 +23,7 @@ type HookReturnType = Readonly<{
 
 /**
  * Internal function for comparing package types.
+ * @returns A negative number if `a` should be sorted before `b`, a positive number if `a` should be sorted after `b`, and 0 if they are equal.
  */
 function __comparePackageTypes__(
   a: NodePackageInformation,
@@ -32,7 +33,10 @@ function __comparePackageTypes__(
 ): number {
   const typeA = extractPackageType(a);
   const typeB = extractPackageType(b);
-  if (typeA === typeB) return 0;
+  if (typeA === typeB) {
+    return 0;
+  }
+
   if (direction === "asc") {
     return typeA === "production" ? -1 : 1;
   } else {
@@ -42,8 +46,9 @@ function __comparePackageTypes__(
 
 /**
  * Internal function for extracting the package type.
+ * @returns The package type ("all" | "production" | "development") for the given package.
  */
-function __extractPackageType__(pkg: {name: string}, packages: HookInputType): PackageType {
+function __extractPackageType__(pkg: {name: string}, packages: HookInputType): Readonly<PackageType> {
   const productionPackages = packages.production ?? [];
   const developmentPackages = packages.development ?? [];
 
@@ -59,6 +64,7 @@ function __extractPackageType__(pkg: {name: string}, packages: HookInputType): P
 
 /**
  * Internal function for sorting packages based on the selected field and direction.
+ * @returns A negative number if `a` should be sorted before `b`, a positive number if `a` should be sorted after `b`, and 0 if they are equal.
  */
 function __sortPackages__(
   a: NodePackageInformation,
@@ -66,7 +72,7 @@ function __sortPackages__(
   sortField: SortField,
   sortDirection: SortDirection,
   extractPackageType: (pkg: {name: string}) => PackageType,
-): number {
+): Readonly<number> {
   switch (sortField) {
     case "dependencies":
       return sortDirection === "asc"
@@ -104,15 +110,14 @@ function __sortPackages__(
  *   filteredAndSortedPackages
  * } = usePackageFilters(nodePackages);
  */
-export function usePackageFilters(packages: HookInputType): HookReturnType {
-  const memoizedExtractPackageType = useCallback((pkg: {name: string}): PackageType => __extractPackageType__(pkg, packages), [packages]);
-
-  const flatPackages = useMemo(() => Object.values(packages).flat(), [packages]);
+export function usePackageFilters(packages: HookInputType): Readonly<HookReturnType> {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [packageType, setPackageType] = useState<PackageType>("all");
+  const memoizedExtractPackageType = useCallback((pkg: {name: string}): PackageType => __extractPackageType__(pkg, packages), [packages]);
 
+  const flatPackages = [packages.development!, packages.production!, packages.peer!].flat();
   const filteredAndSortedPackages = flatPackages
     // Filter by search query
     .filter(
@@ -124,11 +129,13 @@ export function usePackageFilters(packages: HookInputType): HookReturnType {
     )
     // Then filter by package type
     .filter((pkg) => {
-      if (packageType === "all") return true;
+      if (packageType === "all") {
+        return true;
+      }
       return memoizedExtractPackageType(pkg) === packageType;
     })
     // Then sort by the selected field and direction
-    .sort((a, b) => __sortPackages__(a, b, sortField, sortDirection, memoizedExtractPackageType));
+    .toSorted((a, b) => __sortPackages__(a, b, sortField, sortDirection, memoizedExtractPackageType));
 
   return {
     searchQuery,

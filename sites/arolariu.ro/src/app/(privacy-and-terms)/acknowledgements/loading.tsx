@@ -18,11 +18,35 @@ import {
   TabsTrigger,
 } from "@arolariu/components";
 
+const GRID_SKELETON_KEYS = [
+  "ack-grid-skel-1",
+  "ack-grid-skel-2",
+  "ack-grid-skel-3",
+  "ack-grid-skel-4",
+  "ack-grid-skel-5",
+  "ack-grid-skel-6",
+  "ack-grid-skel-7",
+  "ack-grid-skel-8",
+  "ack-grid-skel-9",
+] as const;
+
+const TABLE_SKELETON_KEYS = [
+  "ack-table-skel-1",
+  "ack-table-skel-2",
+  "ack-table-skel-3",
+  "ack-table-skel-4",
+  "ack-table-skel-5",
+  "ack-table-skel-6",
+  "ack-table-skel-7",
+  "ack-table-skel-8",
+] as const;
+
 /**
  * This component renders a loading skeleton for the acknowledgements page.
  * It displays placeholders for the header, last updated date, search and filter controls,
  * tabs, and footer.
  * The skeletons are used to indicate that the content is being loaded.
+ * @returns The loading skeleton for the acknowledgements page.
  */
 export default function Loading(): React.JSX.Element {
   return (
@@ -74,45 +98,42 @@ export default function Loading(): React.JSX.Element {
             value='grid'
             className='w-full'>
             <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
-              {Array.from({length: 9})
-                .fill(0)
-                .map((_, index) => (
-                  <Card
-                    // eslint-disable-next-line react/no-array-index-key -- skeleton
-                    key={index}
-                    className='h-full'>
-                    <CardHeader>
-                      <div className='flex items-center justify-between'>
-                        <Skeleton className='h-6 w-32' />
-                        <Skeleton className='h-5 w-16 rounded-full' />
+              {GRID_SKELETON_KEYS.map((key) => (
+                <Card
+                  key={key}
+                  className='h-full'>
+                  <CardHeader>
+                    <div className='flex items-center justify-between'>
+                      <Skeleton className='h-6 w-32' />
+                      <Skeleton className='h-5 w-16 rounded-full' />
+                    </div>
+                    <div className='mt-2 flex items-center'>
+                      <Skeleton className='h-5 w-24 rounded-full' />
+                    </div>
+                    <div className='mt-2 space-y-2'>
+                      <Skeleton className='h-4 w-full' />
+                      <Skeleton className='h-4 w-full' />
+                      <Skeleton className='h-4 w-3/4' />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className='flex flex-col space-y-2'>
+                      <div className='flex items-center'>
+                        <Skeleton className='mr-2 h-4 w-24' />
+                        <Skeleton className='h-4 w-16' />
                       </div>
-                      <div className='mt-2 flex items-center'>
-                        <Skeleton className='h-5 w-24 rounded-full' />
+                      <div className='flex items-center'>
+                        <Skeleton className='mr-2 h-4 w-28' />
+                        <Skeleton className='h-4 w-8' />
                       </div>
-                      <div className='mt-2 space-y-2'>
-                        <Skeleton className='h-4 w-full' />
-                        <Skeleton className='h-4 w-full' />
-                        <Skeleton className='h-4 w-3/4' />
+                      <div className='mt-4 flex items-center justify-between'>
+                        <Skeleton className='h-8 w-24' />
+                        <Skeleton className='h-8 w-32' />
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className='flex flex-col space-y-2'>
-                        <div className='flex items-center'>
-                          <Skeleton className='mr-2 h-4 w-24' />
-                          <Skeleton className='h-4 w-16' />
-                        </div>
-                        <div className='flex items-center'>
-                          <Skeleton className='mr-2 h-4 w-28' />
-                          <Skeleton className='h-4 w-8' />
-                        </div>
-                        <div className='mt-4 flex items-center justify-between'>
-                          <Skeleton className='h-8 w-24' />
-                          <Skeleton className='h-8 w-32' />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </TabsContent>
 
@@ -145,35 +166,31 @@ export default function Loading(): React.JSX.Element {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {Array.from({length: 8})
-                    .fill(0)
-                    .map((_, index) => (
-                      <TableRow
-                        // eslint-disable-next-line react/no-array-index-key -- skeleton
-                        key={index}>
-                        <TableCell>
-                          <Skeleton className='h-4 w-32' />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className='h-4 w-16' />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className='h-5 w-24 rounded-full' />
-                        </TableCell>
-                        <TableCell className='hidden md:table-cell'>
-                          <Skeleton className='h-4 w-full' />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className='h-4 w-12' />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className='h-8 w-28' />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className='mx-auto h-8 w-8 rounded-md' />
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                  {TABLE_SKELETON_KEYS.map((key) => (
+                    <TableRow key={key}>
+                      <TableCell>
+                        <Skeleton className='h-4 w-32' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-16' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-5 w-24 rounded-full' />
+                      </TableCell>
+                      <TableCell className='hidden md:table-cell'>
+                        <Skeleton className='h-4 w-full' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-4 w-12' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='h-8 w-28' />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className='mx-auto h-8 w-8 rounded-md' />
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>

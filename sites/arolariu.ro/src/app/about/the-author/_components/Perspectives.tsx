@@ -4,10 +4,10 @@
 
 import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components/avatar";
 import {Card, CardContent} from "@arolariu/components/card";
-import {motion} from "motion/react";
+import {motion, useInView, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
+import {useRef} from "react";
 import {TbQuote} from "react-icons/tb";
-import {useInView} from "react-intersection-observer";
 
 type PerspectiveType = {
   author: string;
@@ -17,37 +17,19 @@ type PerspectiveType = {
   quote: string;
 };
 
-const Perspective = ({perspective}: Readonly<{perspective: PerspectiveType}>): React.JSX.Element => {
-  return (
-    <Card className='bg-card h-full overflow-visible border-none shadow-lg transition-all duration-300 hover:shadow-xl'>
-      <CardContent className='relative px-6 pt-12 pb-8'>
-        <div className='bg-primary absolute -top-8 left-6 rounded-full p-4 shadow-lg'>
-          <TbQuote className='text-primary-foreground h-6 w-6' />
-        </div>
-        <p className='text-muted-foreground mb-6 italic'>&ldquo;{perspective.quote}&rdquo;</p>
-        <div className='flex items-center gap-4'>
-          <Avatar>
-            <AvatarImage
-              src={perspective.avatar}
-              alt={perspective.author}
-            />
-            <AvatarFallback>
-              {perspective.author
-                .split(" ")
-                .map((n) => n[0])
-                .join("")}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <p className='font-medium'>{perspective.author}</p>
-            <p className='text-muted-foreground text-sm'>
-              {perspective.position} - {perspective.company}
-            </p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+const containerVariants: Variants = {
+  hidden: {opacity: 0},
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: {opacity: 0, y: 30},
+  visible: {opacity: 1, y: 0, transition: {duration: 0.6}},
 };
 
 /**
@@ -56,10 +38,8 @@ const Perspective = ({perspective}: Readonly<{perspective: PerspectiveType}>): R
  */
 export default function Perspectives(): React.JSX.Element {
   const t = useTranslations("About.Author.Perspectives");
-  const [ref, inView] = useInView({
-    triggerOnce: true,
-    threshold: 0.1,
-  });
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const inView = useInView(sectionRef, {amount: 0.1, once: true});
 
   const perspectives = [
     {
@@ -104,26 +84,32 @@ export default function Perspectives(): React.JSX.Element {
       company: t("perspectiveFromXZ.company"),
       quote: t("perspectiveFromXZ.quote"),
     },
-  ] satisfies PerspectiveType[];
-
-  const containerVariants = {
-    hidden: {opacity: 0},
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      },
+    {
+      author: t("perspectiveFromYX.author"),
+      avatar: t("perspectiveFromYX.avatar"),
+      position: t("perspectiveFromYX.position"),
+      company: t("perspectiveFromYX.company"),
+      quote: t("perspectiveFromYX.quote"),
     },
-  };
-
-  const itemVariants = {
-    hidden: {opacity: 0, y: 30},
-    visible: {opacity: 1, y: 0, transition: {duration: 0.6}},
-  };
+    {
+      author: t("perspectiveFromYY.author"),
+      avatar: t("perspectiveFromYY.avatar"),
+      position: t("perspectiveFromYY.position"),
+      company: t("perspectiveFromYY.company"),
+      quote: t("perspectiveFromYY.quote"),
+    },
+    {
+      author: t("perspectiveFromYZ.author"),
+      avatar: t("perspectiveFromYZ.avatar"),
+      position: t("perspectiveFromYZ.position"),
+      company: t("perspectiveFromYZ.company"),
+      quote: t("perspectiveFromYZ.quote"),
+    },
+  ] satisfies PerspectiveType[];
 
   return (
     <section
-      ref={ref}
+      ref={sectionRef}
       className='bg-muted/30 px-4 py-20 md:px-8'>
       <div className='mx-auto max-w-6xl'>
         <motion.div
@@ -147,7 +133,34 @@ export default function Perspectives(): React.JSX.Element {
             <motion.div
               key={perspective.quote.slice(0, 20)}
               variants={itemVariants}>
-              <Perspective perspective={perspective} />
+              <Card className='bg-card h-full overflow-visible border-none shadow-lg transition-all duration-300 hover:shadow-xl'>
+                <CardContent className='relative px-6 pt-12 pb-8'>
+                  <div className='bg-primary absolute -top-8 left-6 rounded-full p-4 shadow-lg'>
+                    <TbQuote className='text-primary-foreground h-6 w-6' />
+                  </div>
+                  <p className='text-muted-foreground mb-6 italic'>&ldquo;{perspective.quote}&rdquo;</p>
+                  <div className='flex items-center gap-4'>
+                    <Avatar>
+                      <AvatarImage
+                        src={perspective.avatar}
+                        alt={perspective.author}
+                      />
+                      <AvatarFallback>
+                        {perspective.author
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className='font-medium'>{perspective.author}</p>
+                      <p className='text-muted-foreground text-sm'>
+                        {perspective.position} - {perspective.company}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           ))}
         </motion.div>

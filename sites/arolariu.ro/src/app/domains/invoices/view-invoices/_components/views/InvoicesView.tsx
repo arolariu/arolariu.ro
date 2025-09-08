@@ -210,6 +210,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                     variant={view === "table" ? "default" : "ghost"}
                     size='sm'
                     className='rounded-r-none'
+                    // eslint-disable-next-line react/jsx-no-bind -- small fn
                     onClick={() => setView("table")}>
                     <TbTable className='h-4 w-4' />
                   </Button>
@@ -224,9 +225,8 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
                     variant={view === "grid" ? "default" : "ghost"}
                     size='sm'
                     className='rounded-l-none'
-                    onClick={() => {
-                      setView("grid");
-                    }}>
+                    // eslint-disable-next-line react/jsx-no-bind -- small fn
+                    onClick={() => setView("grid")}>
                     <TbCards className='h-4 w-4' />
                   </Button>
                 </TooltipTrigger>

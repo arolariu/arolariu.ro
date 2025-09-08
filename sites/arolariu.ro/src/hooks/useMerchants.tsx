@@ -3,7 +3,6 @@
 "use client";
 
 import fetchMerchants from "@/lib/actions/invoices/fetchMerchants";
-import type {UserInformation} from "@/types";
 import type {Merchant} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useUserInformation} from "./index";
@@ -27,7 +26,7 @@ export function useMerchants(): HookOutputType {
   const setPossiblyStaleMerchants = useZustandStore((state) => state.setMerchants);
 
   useEffect(() => {
-    const fetchMerchantsForUser = async (userInformation: UserInformation) => {
+    const fetchMerchantsForUser = async () => {
       setIsLoading(true);
 
       try {
@@ -42,7 +41,7 @@ export function useMerchants(): HookOutputType {
       }
     };
 
-    fetchMerchantsForUser(userInformation);
+    fetchMerchantsForUser();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setPossiblyStaleMerchants is a stable function.
   }, [userInformation]);

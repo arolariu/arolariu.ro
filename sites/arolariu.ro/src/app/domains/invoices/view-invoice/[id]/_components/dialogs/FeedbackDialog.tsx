@@ -40,6 +40,25 @@ export default function FeedbackDialog(): React.JSX.Element {
   console.log(">>> FeedbackDialog", {invoice, merchant});
   const features = ["Spending Trends", "Price Comparisons", "Savings Tips", "Merchant Analysis", "Visual Charts", "Category Breakdown"];
 
+  // Stable handlers to avoid inline arrow functions in JSX
+  const handleStarEnter = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const value = Number((e.currentTarget as HTMLButtonElement).dataset["star"]);
+    if (!Number.isNaN(value)) {
+      setHoveredRating(value);
+    }
+  }, []);
+
+  const handleStarLeave = useCallback(() => {
+    setHoveredRating(0);
+  }, []);
+
+  const handleStarClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const value = Number((e.currentTarget as HTMLButtonElement).dataset["star"]);
+    if (!Number.isNaN(value)) {
+      setRating(value);
+    }
+  }, []);
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -99,13 +118,22 @@ export default function FeedbackDialog(): React.JSX.Element {
     [feedback, invoice.id, rating, selectedFeatures, close],
   );
 
-  const toggleFeature = (feature: string) => {
+  const handleToggleFeature = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    const {feature} = (e.currentTarget as HTMLElement).dataset;
+    if (!feature) {
+      return;
+    }
     setSelectedFeatures((prev) => (prev.includes(feature) ? prev.filter((f) => f !== feature) : [...prev, feature]));
-  };
+  }, []);
+
+  const handleFeedbackChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFeedback(e.target.value);
+  }, []);
 
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
@@ -123,9 +151,10 @@ export default function FeedbackDialog(): React.JSX.Element {
                   key={star}
                   type='button'
                   className='p-1'
-                  onMouseEnter={() => setHoveredRating(star)}
-                  onMouseLeave={() => setHoveredRating(0)}
-                  onClick={() => setRating(star)}>
+                  data-star={star}
+                  onMouseEnter={handleStarEnter}
+                  onMouseLeave={handleStarLeave}
+                  onClick={handleStarClick}>
                   <TbStar
                     className={`h-8 w-8 ${star <= (hoveredRating || rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`}
                   />
@@ -143,7 +172,8 @@ export default function FeedbackDialog(): React.JSX.Element {
                   key={feature}
                   variant={selectedFeatures.includes(feature) ? "default" : "outline"}
                   className='cursor-pointer'
-                  onClick={() => toggleFeature(feature)}>
+                  data-feature={feature}
+                  onClick={handleToggleFeature}>
                   {feature}
                 </Badge>
               ))}
@@ -156,7 +186,7 @@ export default function FeedbackDialog(): React.JSX.Element {
             <Textarea
               placeholder='Share your thoughts about the analytics...'
               value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
+              onChange={handleFeedbackChange}
               rows={4}
             />
           </div>

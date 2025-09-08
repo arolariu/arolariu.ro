@@ -21,7 +21,7 @@ import {useDialogs} from "./DialogContext";
  * related to invoices, merchants, recipes, and metadata.
  * @returns The DialogContainer component, CSR'ed.
  */
-export default function DialogContainer(): React.JSX.Element {
+export default function DialogContainer(): React.JSX.Element | null {
   const {
     currentDialog: {type},
   } = useDialogs();
@@ -52,6 +52,6 @@ export default function DialogContainer(): React.JSX.Element {
     case "INVOICES_EXPORT":
       return <InvoicesExportDialog />;
     default:
-      return false as unknown as React.JSX.Element;
+      return null as never;
   }
 }

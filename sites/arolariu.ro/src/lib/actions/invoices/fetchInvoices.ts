@@ -21,8 +21,11 @@ export default async function fetchInvoices(authToken: string): Promise<Invoice[
       },
     });
 
-    if (response.ok) return response.json() as Promise<Invoice[]>;
-    else throw new Error(`Failed to fetch invoices. Status: ${response.status}`);
+    if (response.ok) {
+      return response.json() as Promise<Invoice[]>;
+    } else {
+      throw new Error(`Failed to fetch invoices. Status: ${response.status}`);
+    }
   } catch (error) {
     console.error("Error fetching the invoices from the server:", error);
     throw error;

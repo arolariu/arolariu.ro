@@ -79,6 +79,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-4xl lg:max-w-7xl'>
         <DialogHeader>

@@ -31,16 +31,16 @@ export function useWindowSize(): HookReturnType {
      * After it is attached to the window object, it will be garbage collected
      *  when the component unmounts or the window is resized.
      */
-    function __handleResize() {
+    function __handleResize__() {
       setWindowSize({
         width: window.innerWidth,
         height: window.innerHeight,
       });
     }
 
-    window.addEventListener("resize", __handleResize);
-    __handleResize(); // Call the function once to get the initial window size
-    return () => window.removeEventListener("resize", __handleResize);
+    window.addEventListener("resize", __handleResize__);
+    __handleResize__(); // Call the function once to get the initial window size
+    return () => window.removeEventListener("resize", __handleResize__);
   }, []); // Empty array ensures that effect is only run on mount
 
   return {
