@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Common.Options;
 
 using System;
+using System.Collections.Generic;
 
 /// <summary>
 /// Defines the contract for retrieving and managing application configuration options.
