@@ -11,7 +11,7 @@ defaults:
 on:
   push:
     branches: ["main"]
-    paths: ["/sites/cv.arolariu.ro/**"]
+    paths: ["sites/cv.arolariu.ro/**"]
   workflow_dispatch:
 
 jobs:
