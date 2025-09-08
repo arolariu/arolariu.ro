@@ -1,6 +1,7 @@
 /** @format */
 
 import type {User} from "@clerk/nextjs/server";
+import type {Route} from "next";
 export type {
   SecretEnvironmentVariablesType,
   TypedDevelopmentEnvironmentVariablesType,
@@ -11,13 +12,13 @@ export type {
 /**
  * The type of a node package.
  */
-export type NodePackageDependencyType = "production" | "development" | "peer";
+export type NodePackageDependencyType = Readonly<"production" | "development" | "peer">;
 
 /**
  * A short name-version pair of a node package, that is mostly used for dependencies of dependencies.
  * This is used to show the dependents of a package.
  */
-export type NodePackageDependencyDependsOn = {name: string; version: string};
+export type NodePackageDependencyDependsOn = Readonly<{name: string; version: string}>;
 
 /**
  * The type of the object that represents the information about a node package.
@@ -66,6 +67,16 @@ export type UserInformation = {
  */
 export type NavigationItem = {
   label: string;
-  href: string;
+  href: Route;
   children?: NavigationItem[];
+};
+
+export type NavigatorKeys = keyof globalThis.Navigator;
+export type NavigatorValues = globalThis.Navigator[NavigatorKeys];
+export type ScreenKeys = keyof globalThis.Screen;
+export type ScreenValues = Omit<globalThis.Screen[ScreenKeys], "orientation">;
+
+export type BrowserInformation = {
+  navigationInformation: Partial<Record<NavigatorKeys, NavigatorValues>>;
+  screenInformation: Partial<Record<ScreenKeys, ScreenValues>>;
 };

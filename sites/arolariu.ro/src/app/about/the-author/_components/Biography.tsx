@@ -2,16 +2,31 @@
 
 "use client";
 
-import {motion} from "motion/react";
+import {motion, useInView, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
+import {useRef} from "react";
 import {TbAntenna, TbBook, TbBulb, TbCode, TbDeviceGamepad} from "react-icons/tb";
-import {useInView} from "react-intersection-observer";
+
+const containerVariants: Variants = {
+  hidden: {opacity: 0},
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: {opacity: 0, y: 20},
+  visible: {opacity: 1, y: 0, transition: {duration: 0.8}},
+};
 
 /**
  * @description Renders a section with the author's biography, displaying animated content
  * with colorful background elements. The component uses Framer Motion for
- * animations and react-intersection-observer to trigger animations when the
- * component enters the viewport.
+ * animations and the built-in motion/react useInView hook to trigger animations
+ * when the component enters the viewport.
  * The biography content is organized in sections, each with an icon and text
  * loaded from internationalization strings. The component creates a visually
  * engaging presentation with gradients, blur effects, and staggered animations.
@@ -19,25 +34,8 @@ import {useInView} from "react-intersection-observer";
  */
 export default function Biography(): React.JSX.Element {
   const t = useTranslations("About.Author.Biography");
-  const [ref, inView] = useInView({
-    triggerOnce: false,
-    threshold: 0.1,
-  });
-
-  const containerVariants = {
-    hidden: {opacity: 0},
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: {opacity: 0, y: 20},
-    visible: {opacity: 1, y: 0, transition: {duration: 0.8}},
-  };
+  const sectionRef = useRef<HTMLDivElement | null>(null);
+  const inView = useInView(sectionRef, {amount: 0.1, once: false});
 
   const bioSections = [
     {
@@ -64,7 +62,6 @@ export default function Biography(): React.JSX.Element {
 
   return (
     <section className='relative mx-auto max-w-6xl px-4 py-20 md:px-8'>
-      {/* Colorful background elements */}
       <div className='absolute inset-0'>
         <motion.div
           className='absolute -top-20 -right-20 h-64 w-64 rounded-full bg-blue-500/100 blur-3xl'
@@ -85,7 +82,7 @@ export default function Biography(): React.JSX.Element {
       </div>
 
       <motion.div
-        ref={ref}
+        ref={sectionRef}
         variants={containerVariants}
         initial='hidden'
         animate={inView ? "visible" : "hidden"}

@@ -40,11 +40,11 @@ import {useCallback} from "react";
 import {TbExternalLink, TbPackage} from "react-icons/tb";
 import {usePackageFilters} from "../_hooks/usePackageFilters";
 
-type Props = {packages: NodePackagesJSON};
+type Props = Readonly<{packages: NodePackagesJSON}>;
 
-type SortField = "name" | "dependencies" | "type";
-type SortDirection = "asc" | "desc";
-type PackageType = "all" | "production" | "development";
+type SortDirection = Readonly<"asc" | "desc">;
+type SortField = Readonly<"name" | "dependencies" | "type">;
+type PackageType = Readonly<"all" | "production" | "development">;
 
 /**
  * Component that displays a badge indicating the type of package (production or development).
@@ -258,7 +258,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                           </div>
                           <div className='mt-4 flex items-center justify-between'>
                             <Link
-                              href={pkg.homepage}
+                              href={new URL(pkg.homepage)}
                               target='_blank'
                               rel='noopener noreferrer'
                               className='text-muted-foreground hover:text-primary flex items-center text-sm transition-colors'>
@@ -318,7 +318,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                         </TableCell>
                         <TableCell>
                           <Link
-                            href={pkg.homepage}
+                            href={new URL(pkg.homepage)}
                             target='_blank'
                             rel='noopener noreferrer'
                             className='hover:bg-muted rounded-md p-2 transition-colors'

@@ -27,6 +27,8 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function AuthPage(): Promise<React.JSX.Element> {
   const {isAuthenticated} = await fetchUser();
-  if (isAuthenticated) return redirect("/");
+  if (isAuthenticated) {
+    return redirect("/");
+  }
   return <RenderAuthScreen />;
 }

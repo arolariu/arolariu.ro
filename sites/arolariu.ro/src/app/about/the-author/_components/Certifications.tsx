@@ -3,11 +3,10 @@
 "use client";
 
 import {Badge} from "@arolariu/components/badge";
-import {motion} from "motion/react";
+import {motion, useInView, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useState} from "react";
-import {TbAward, TbCheck, TbChevronDown, TbChevronUp, TbExternalLink} from "react-icons/tb";
-import {useInView} from "react-intersection-observer";
+import {useRef} from "react";
+import {TbAward, TbCheck, TbExternalLink} from "react-icons/tb";
 
 type CertificationType = {
   name: string;
@@ -19,27 +18,29 @@ type CertificationType = {
   link: string;
 };
 
+const containerVariants: Variants = {
+  hidden: {opacity: 0},
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: {opacity: 0, y: 20},
+  visible: {opacity: 1, y: 0, transition: {duration: 0.6}},
+};
+
 /**
  * @description This component renders a section showcasing professional certifications.
  * @returns A section containing certification cards with interactive elements
  */
 export default function Certifications(): React.JSX.Element {
   const t = useTranslations("About.Author.Certifications");
-  const [ref, inView] = useInView({
-    triggerOnce: false,
-    threshold: 0.1,
-  });
-
-  const [hoveredCert, setHoveredCert] = useState<number | null>(null);
-  const [expandedCerts, setExpandedCerts] = useState<number[]>([]);
-
-  const toggleExpand = (index: number) => {
-    if (expandedCerts.includes(index)) {
-      setExpandedCerts(expandedCerts.filter((i) => i !== index));
-    } else {
-      setExpandedCerts([...expandedCerts, index]);
-    }
-  };
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const inView = useInView(sectionRef, {amount: 0.1, once: false});
 
   const certifications = [
     {
@@ -66,24 +67,9 @@ export default function Certifications(): React.JSX.Element {
     },
   ] satisfies CertificationType[];
 
-  const containerVariants = {
-    hidden: {opacity: 0},
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.15,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: {opacity: 0, y: 20},
-    visible: {opacity: 1, y: 0, transition: {duration: 0.6}},
-  };
-
   return (
     <section
-      ref={ref}
+      ref={sectionRef}
       className='bg-muted/30 px-4 py-20 md:px-8'>
       <div className='mx-auto max-w-6xl'>
         <motion.div
@@ -102,13 +88,11 @@ export default function Certifications(): React.JSX.Element {
           initial='hidden'
           animate={inView ? "visible" : "hidden"}
           className='grid gap-8 md:grid-cols-2 lg:grid-cols-3'>
-          {certifications.map((cert, index) => (
+          {certifications.map((cert) => (
             <motion.div
               key={cert.code}
               variants={itemVariants}
               className='group relative'
-              onHoverStart={() => setHoveredCert(index)}
-              onHoverEnd={() => setHoveredCert(null)}
               whileHover={{
                 scale: 1.03,
                 transition: {duration: 0.2},
@@ -136,24 +120,22 @@ export default function Certifications(): React.JSX.Element {
                 <div className='custom-scrollbar h-[350px] overflow-y-auto pr-2'>
                   <p className='text-muted-foreground mb-4 text-sm'>{cert.description}</p>
 
-                  {expandedCerts.includes(index) && (
-                    <div className='mt-4'>
-                      <h4 className='mb-2 text-sm font-semibold'>Core Skills Demonstrated:</h4>
-                      <div className='space-y-2'>
-                        {cert.coreSkills.map((skill, i) => (
-                          <motion.div
-                            key={`${skill.slice(0, 10)}`}
-                            className='flex items-center'
-                            initial={{opacity: 0, x: -10}}
-                            animate={{opacity: 1, x: 0}}
-                            transition={{delay: i * 0.1, duration: 0.3}}>
-                            <TbCheck className='text-primary mr-2 h-4 w-4 shrink-0' />
-                            <span className='text-sm'>{skill}</span>
-                          </motion.div>
-                        ))}
-                      </div>
+                  <div className='mt-4'>
+                    <h4 className='mb-2 text-sm font-semibold'>Core Skills Demonstrated:</h4>
+                    <div className='space-y-2'>
+                      {cert.coreSkills.map((skill, i) => (
+                        <motion.div
+                          key={`${skill.slice(0, 10)}`}
+                          className='flex items-center'
+                          initial={{opacity: 0, x: -10}}
+                          animate={{opacity: 1, x: 0}}
+                          transition={{delay: i * 0.1, duration: 0.3}}>
+                          <TbCheck className='text-primary mr-2 h-4 w-4 shrink-0' />
+                          <span className='text-sm'>{skill}</span>
+                        </motion.div>
+                      ))}
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 <div className='absolute right-6 bottom-6 left-6 mt-4 flex items-center justify-between'>
@@ -166,42 +148,22 @@ export default function Certifications(): React.JSX.Element {
                     View certification
                     <TbExternalLink className='ml-1 h-3 w-3' />
                   </motion.a>
-
-                  <motion.button
-                    onClick={() => toggleExpand(index)}
-                    className='text-primary flex items-center text-sm'
-                    whileHover={{scale: 1.1}}>
-                    {expandedCerts.includes(index) ? (
-                      <>
-                        <span className='mr-1'>Less</span>
-                        <TbChevronUp className='h-4 w-4' />
-                      </>
-                    ) : (
-                      <>
-                        <span className='mr-1'>More</span>
-                        <TbChevronDown className='h-4 w-4' />
-                      </>
-                    )}
-                  </motion.button>
                 </div>
 
                 <motion.div
                   className='bg-primary absolute bottom-0 left-0 h-1'
                   initial={{width: "0%"}}
-                  animate={{width: hoveredCert === index ? "100%" : "0%"}}
                   transition={{duration: 0.3}}
                 />
               </div>
 
-              {hoveredCert === index && (
-                <motion.div
-                  className='bg-primary/5 absolute inset-0 -z-10 rounded-xl blur-xl'
-                  initial={{opacity: 0}}
-                  animate={{opacity: 1}}
-                  exit={{opacity: 0}}
-                  transition={{duration: 0.3}}
-                />
-              )}
+              <motion.div
+                className='bg-primary/5 absolute inset-0 -z-10 rounded-xl blur-xl'
+                initial={{opacity: 0}}
+                animate={{opacity: 1}}
+                exit={{opacity: 0}}
+                transition={{duration: 0.3}}
+              />
             </motion.div>
           ))}
         </motion.div>

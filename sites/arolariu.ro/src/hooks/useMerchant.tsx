@@ -3,10 +3,13 @@
 "use client";
 
 import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
-import type {UserInformation} from "@/types";
 import type {Merchant} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useUserInformation} from "./index";
+
+type HookInputType = Readonly<{
+  merchantIdentifier: string;
+}>;
 
 type HookOutputType = Readonly<{
   merchant: Merchant | null;
@@ -18,14 +21,14 @@ type HookOutputType = Readonly<{
  * This hook fetches the merchant information.
  * @returns The merchant information and loading state.
  */
-export function useMerchant(merchantIdentifier: string): HookOutputType {
+export function useMerchant({merchantIdentifier}: HookInputType): HookOutputType {
   const {userInformation} = useUserInformation();
   const [isError, setIsError] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
 
   useEffect(() => {
-    const fetchMerchantForUser = async (userInformation: UserInformation, merchantIdentifier: string) => {
+    const fetchMerchantForUser = async (merchantIdentifier: string) => {
       setIsLoading(true);
 
       try {
@@ -40,7 +43,7 @@ export function useMerchant(merchantIdentifier: string): HookOutputType {
       }
     };
 
-    fetchMerchantForUser(userInformation, merchantIdentifier);
+    fetchMerchantForUser(merchantIdentifier);
   }, [userInformation, merchantIdentifier]);
 
   return {merchant, isLoading, isError} as const;

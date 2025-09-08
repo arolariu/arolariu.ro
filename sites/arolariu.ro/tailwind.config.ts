@@ -4,7 +4,7 @@ import typography from "@tailwindcss/typography";
 import type {Config} from "tailwindcss";
 import tailwindAnimate from "tailwindcss-animate";
 
-const tailwindConfig = {
+const tailwindConfig: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   darkMode: "class",
   theme: {
@@ -84,6 +84,6 @@ const tailwindConfig = {
   },
   plugins: [typography, tailwindAnimate],
   future: {hoverOnlyWhenSupported: true},
-} satisfies Config;
+};
 
 export default tailwindConfig;

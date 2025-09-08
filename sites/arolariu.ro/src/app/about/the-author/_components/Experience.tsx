@@ -5,7 +5,7 @@
 import {Badge} from "@arolariu/components/badge";
 import {AnimatePresence, motion} from "motion/react";
 import {useTranslations} from "next-intl";
-import React, {useState} from "react";
+import React, {useCallback, useState} from "react";
 import {CgMicrosoft} from "react-icons/cg";
 import {SiIntel, SiUbisoft} from "react-icons/si";
 import {TbBriefcase, TbCalendar, TbChevronRight, TbMap} from "react-icons/tb";
@@ -20,102 +20,6 @@ type ExperienceType = {
   achievements: string[];
   skills: string[];
   logo: React.JSX.Element;
-};
-
-const WorkCard = (props: Readonly<{experience: ExperienceType}>): React.JSX.Element => {
-  const {experience} = props;
-
-  return (
-    <motion.div
-      initial={{opacity: 0, x: 20}}
-      animate={{opacity: 1, x: 0}}
-      exit={{opacity: 0, x: -20}}
-      transition={{duration: 0.3}}
-      className='border-border/50 bg-card relative top-0 left-0 h-full w-full overflow-hidden rounded-xl border p-6 shadow-lg'>
-      <div className='absolute top-0 left-0 h-1 w-full bg-linear-to-r from-pink-500 via-purple-500 to-blue-500' />
-
-      <div className='mb-6 flex items-start justify-between'>
-        <div>
-          <h3 className='text-glow text-2xl font-bold'>{experience.role}</h3>
-          <div className='text-muted-foreground mt-1 flex items-center'>
-            <span className='font-medium'>{experience.company}</span>
-          </div>
-          <div className='text-muted-foreground mt-1 flex items-center text-sm'>
-            <TbMap className='mr-1 h-3 w-3' />
-            <span>{experience.location}</span>
-          </div>
-        </div>
-
-        <div className='bg-background flex h-16 w-16 items-center justify-center rounded-lg'>
-          <motion.div className='bg-background text-muted-foreground flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-300'>
-            {experience.logo}
-          </motion.div>
-        </div>
-      </div>
-
-      <p className='text-muted-foreground mb-6'>{experience.description}</p>
-
-      <div className='mb-6'>
-        <h4 className='mb-3 text-lg font-semibold'>Responsibilites</h4>
-        <ul className='space-y-2'>
-          {experience.responsibilities.map((responsability, i) => (
-            <motion.li
-              key={`${responsability.slice(0, 20)}`}
-              className='flex items-start'
-              initial={{opacity: 0, x: -10}}
-              animate={{opacity: 1, x: 0}}
-              transition={{delay: i * 0.1, duration: 0.3}}>
-              <TbChevronRight className='text-primary mt-1 mr-2 h-4 w-4 shrink-0' />
-              <span>{responsability}</span>
-            </motion.li>
-          ))}
-        </ul>
-      </div>
-
-      <div className='mb-6'>
-        <h4 className='mb-3 text-lg font-semibold'>Achievements</h4>
-        <ul className='space-y-2'>
-          {experience.achievements.map((achievement, i) => (
-            <motion.li
-              key={`${achievement.slice(0, 20)}`}
-              className='flex items-start'
-              initial={{opacity: 0, x: -10}}
-              animate={{opacity: 1, x: 0}}
-              transition={{delay: i * 0.1, duration: 0.3}}>
-              <TbChevronRight className='text-primary mt-1 mr-2 h-4 w-4 shrink-0' />
-              <span>{achievement}</span>
-            </motion.li>
-          ))}
-        </ul>
-      </div>
-
-      <div>
-        <h4 className='mb-3 text-lg font-semibold'>Technologies & Skills</h4>
-        <div className='flex flex-wrap gap-2'>
-          {experience.skills.map((skill, i) => (
-            <motion.div
-              key={`${skill.slice(0, 20)}`}
-              initial={{opacity: 0, scale: 0.8}}
-              animate={{opacity: 1, scale: 1}}
-              transition={{delay: i * 0.5, duration: 0.3}}>
-              <Badge
-                variant='secondary'
-                className='hover:bg-primary font-normal transition-colors duration-300 hover:text-white'>
-                {skill}
-              </Badge>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      <motion.div
-        className='absolute bottom-0 left-0 h-1 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500'
-        initial={{width: "0%"}}
-        animate={{width: "100%"}}
-        transition={{duration: 3, delay: 0.3}}
-      />
-    </motion.div>
-  );
 };
 
 /**
@@ -133,6 +37,14 @@ const WorkCard = (props: Readonly<{experience: ExperienceType}>): React.JSX.Elem
 export default function Experience(): React.JSX.Element {
   const t = useTranslations("About.Author.Experiences");
   const [activeExpIndex, setActiveExpIndex] = useState<number>(0);
+  const handleExperienceClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    const idxStr = e.currentTarget?.dataset?.["index"];
+    const idx = typeof idxStr === "string" ? Number(idxStr) : Number.NaN;
+    if (!Number.isNaN(idx)) {
+      setActiveExpIndex(idx);
+    }
+  }, []);
+
   const experiences = [
     {
       company: t("microsoft3.company"),
@@ -240,16 +152,17 @@ export default function Experience(): React.JSX.Element {
           <div className='relative'>
             <div className='bg-border/50 absolute top-0 bottom-0 left-8 w-px' />
 
-            {experiences.map((exp, index) => (
+            {experiences.map((experience, index) => (
               <motion.div
-                key={`${exp.company}-${exp.period}`}
+                key={`${experience.company}-${experience.period}`}
                 className='relative mb-8 last:mb-0'
                 initial={{opacity: 0, x: -20}}
                 animate={{opacity: 1, x: 0}}
                 transition={{delay: index * 0.1, duration: 0.5}}>
                 <button
                   type='button'
-                  onClick={() => setActiveExpIndex(index)}
+                  data-index={index}
+                  onClick={handleExperienceClick}
                   className={`relative flex items-start pl-16 ${activeExpIndex === index ? "opacity-100" : "opacity-70 hover:opacity-100"} transition-opacity duration-300`}>
                   <div
                     className={`absolute left-0 z-10 flex h-16 w-16 items-center justify-center rounded-full transition-all duration-300 ${activeExpIndex === index ? "bg-primary/20" : "bg-muted"}`}>
@@ -261,12 +174,12 @@ export default function Experience(): React.JSX.Element {
 
                   <div className='text-left'>
                     <h3 className={`text-xl font-bold transition-colors duration-300 ${activeExpIndex === index ? "text-glow" : ""}`}>
-                      {exp.company}
+                      {experience.company}
                     </h3>
-                    <p className='text-muted-foreground'>{exp.role}</p>
+                    <p className='text-muted-foreground'>{experience.role}</p>
                     <div className='text-muted-foreground mt-1 flex items-center text-sm'>
                       <TbCalendar className='mr-1 h-3 w-3' />
-                      <span>{exp.period}</span>
+                      <span>{experience.period}</span>
                     </div>
                   </div>
                 </button>
@@ -277,7 +190,95 @@ export default function Experience(): React.JSX.Element {
           {/* Timeline Content */}
           <div className='relative h-full'>
             <AnimatePresence mode='wait'>
-              <WorkCard experience={currentExperience} />
+              <motion.div
+                initial={{opacity: 0, x: 20}}
+                animate={{opacity: 1, x: 0}}
+                exit={{opacity: 0, x: -20}}
+                transition={{duration: 0.3}}
+                className='border-border/50 bg-card relative top-0 left-0 h-full w-full overflow-hidden rounded-xl border p-6 shadow-lg'>
+                <div className='absolute top-0 left-0 h-1 w-full bg-linear-to-r from-pink-500 via-purple-500 to-blue-500' />
+
+                <div className='mb-6 flex items-start justify-between'>
+                  <div>
+                    <h3 className='text-glow text-2xl font-bold'>{currentExperience.role}</h3>
+                    <div className='text-muted-foreground mt-1 flex items-center'>
+                      <span className='font-medium'>{currentExperience.company}</span>
+                    </div>
+                    <div className='text-muted-foreground mt-1 flex items-center text-sm'>
+                      <TbMap className='mr-1 h-3 w-3' />
+                      <span>{currentExperience.location}</span>
+                    </div>
+                  </div>
+
+                  <div className='bg-background flex h-16 w-16 items-center justify-center rounded-lg'>
+                    <motion.div className='bg-background text-muted-foreground flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-300'>
+                      {currentExperience.logo}
+                    </motion.div>
+                  </div>
+                </div>
+
+                <p className='text-muted-foreground mb-6'>{currentExperience.description}</p>
+
+                <div className='mb-6'>
+                  <h4 className='mb-3 text-lg font-semibold'>Responsibilites</h4>
+                  <ul className='space-y-2'>
+                    {currentExperience.responsibilities.map((responsability, i) => (
+                      <motion.li
+                        key={`${responsability.slice(0, 20)}`}
+                        className='flex items-start'
+                        initial={{opacity: 0, x: -10}}
+                        animate={{opacity: 1, x: 0}}
+                        transition={{delay: i * 0.1, duration: 0.3}}>
+                        <TbChevronRight className='text-primary mt-1 mr-2 h-4 w-4 shrink-0' />
+                        <span>{responsability}</span>
+                      </motion.li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className='mb-6'>
+                  <h4 className='mb-3 text-lg font-semibold'>Achievements</h4>
+                  <ul className='space-y-2'>
+                    {currentExperience.achievements.map((achievement, i) => (
+                      <motion.li
+                        key={`${achievement.slice(0, 20)}`}
+                        className='flex items-start'
+                        initial={{opacity: 0, x: -10}}
+                        animate={{opacity: 1, x: 0}}
+                        transition={{delay: i * 0.1, duration: 0.3}}>
+                        <TbChevronRight className='text-primary mt-1 mr-2 h-4 w-4 shrink-0' />
+                        <span>{achievement}</span>
+                      </motion.li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <h4 className='mb-3 text-lg font-semibold'>Technologies & Skills</h4>
+                  <div className='flex flex-wrap gap-2'>
+                    {currentExperience.skills.map((skill, i) => (
+                      <motion.div
+                        key={`${skill.slice(0, 20)}`}
+                        initial={{opacity: 0, scale: 0.8}}
+                        animate={{opacity: 1, scale: 1}}
+                        transition={{delay: i * 0.5, duration: 0.3}}>
+                        <Badge
+                          variant='secondary'
+                          className='hover:bg-primary font-normal transition-colors duration-300 hover:text-white'>
+                          {skill}
+                        </Badge>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+
+                <motion.div
+                  className='absolute bottom-0 left-0 h-1 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500'
+                  initial={{width: "0%"}}
+                  animate={{width: "100%"}}
+                  transition={{duration: 3, delay: 0.3}}
+                />
+              </motion.div>
             </AnimatePresence>
           </div>
         </div>

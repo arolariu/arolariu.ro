@@ -12,6 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Input,
   Label,
   RadioGroup,
   RadioGroupItem,
@@ -19,6 +20,8 @@ import {
 import React, {useCallback, useState} from "react";
 import {TbDownload, TbFileSpreadsheet, TbFileText, TbJson} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
+import type {InvoiceExportRequest} from "../../_types/InvoiceExport";
+import {exportInvoices} from "../../_utils/export";
 
 /**
  * The ExportDialog component allows users to export selected invoices in various formats.
@@ -26,9 +29,13 @@ import {useDialog} from "../../../_contexts/DialogContext";
  * @returns The ExportDialog component, CSR'ed.
  */
 export default function ExportDialog(): React.JSX.Element {
-  const [format, setFormat] = useState<"csv" | "json" | "pdf">("csv");
-  const [includeMetadata, setIncludeMetadata] = useState<boolean>(false);
-  const [includeItems, setIncludeItems] = useState<boolean>(false);
+  const [exportOptions, setExportOptions] = useState<InvoiceExportRequest>({
+    format: "csv",
+    includeMetadata: false,
+    includeMerchant: false,
+    includeProducts: false,
+  });
+
   const {isOpen, open, close} = useDialog("INVOICES_EXPORT");
   const selectedInvoices = useZustandStore((state) => state.selectedInvoices);
 
@@ -36,24 +43,19 @@ export default function ExportDialog(): React.JSX.Element {
     async (e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {
       e.preventDefault();
       e.stopPropagation();
-
-      // Simulate export logic
-      console.log("Exporting invoices:", selectedInvoices, {
-        format,
-        includeMetadata,
-        includeItems,
-      });
-
-      // Close the dialog after export
-      close();
+      exportInvoices(selectedInvoices, exportOptions);
     },
-    // TODO: maybe leave as simple handler? or pass params?
-    [format, includeMetadata, includeItems, selectedInvoices, close],
+    [selectedInvoices, exportOptions],
   );
+
+  const handleOptionsChange = useCallback((key: keyof InvoiceExportRequest, value: any) => {
+    setExportOptions((prev) => ({...prev, [key]: value}));
+  }, []);
 
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
@@ -65,8 +67,9 @@ export default function ExportDialog(): React.JSX.Element {
           <div className='space-y-2'>
             <h3 className='text-sm font-medium'>Export Format</h3>
             <RadioGroup
-              defaultValue={format}
-              onValueChange={(value) => setFormat(value as any)}>
+              defaultValue={exportOptions.format}
+              // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+              onValueChange={(format) => handleOptionsChange("format", format)}>
               <div className='flex items-center space-x-2'>
                 <RadioGroupItem
                   value='csv'
@@ -111,19 +114,63 @@ export default function ExportDialog(): React.JSX.Element {
             <div className='flex items-center space-x-2'>
               <Checkbox
                 id='include-metadata'
-                checked={includeMetadata}
-                onCheckedChange={(checked) => setIncludeMetadata(checked === true)}
+                checked={exportOptions.includeMetadata}
+                // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                onCheckedChange={(checked) => handleOptionsChange("includeMetadata", checked === true)}
               />
               <Label htmlFor='include-metadata'>Include metadata</Label>
             </div>
             <div className='flex items-center space-x-2'>
               <Checkbox
                 id='include-items'
-                checked={includeItems}
-                onCheckedChange={(checked) => setIncludeItems(checked === true)}
+                checked={exportOptions.includeProducts}
+                // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                onCheckedChange={(checked) => handleOptionsChange("includeProducts", checked === true)}
               />
-              <Label htmlFor='include-items'>Include line items</Label>
+              <Label htmlFor='include-items'>Include products</Label>
             </div>
+            <div className='flex items-center space-x-2'>
+              <Checkbox
+                id='include-merchant'
+                checked={exportOptions.includeMerchant}
+                // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                onCheckedChange={(checked) => handleOptionsChange("includeMerchant", checked === true)}
+              />
+              <Label htmlFor='include-merchant'>Include merchant</Label>
+            </div>
+            {exportOptions.format === "csv" && (
+              <>
+                <div className='flex items-center space-x-2'>
+                  <Checkbox
+                    id='csv-include-headers'
+                    checked={exportOptions.csvOptions?.includeHeaders}
+                    // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                    onCheckedChange={(checked) => handleOptionsChange("csvOptions", {...exportOptions.csvOptions, includeHeaders: checked})}
+                  />
+                  <Label htmlFor='csv-include-headers'>Include CSV Headers</Label>
+                </div>
+                <Label htmlFor='csv-delimiter'>CSV Delimiter Override (optional):</Label>
+                <Input
+                  className='w-1/2'
+                  id='csv-delimiter'
+                  placeholder=','
+                  value={exportOptions.csvOptions?.delimiter}
+                  // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                  onChange={(e) => handleOptionsChange("csvOptions", {...exportOptions.csvOptions, delimiter: e.target.value})}
+                />
+              </>
+            )}
+            {exportOptions.format === "json" && (
+              <div className='flex items-center space-x-2'>
+                <Checkbox
+                  id='json-pretty-print'
+                  checked={exportOptions.jsonOptions?.prettyPrint}
+                  // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
+                  onCheckedChange={(checked) => handleOptionsChange("jsonOptions", {...exportOptions.jsonOptions, prettyPrint: checked})}
+                />
+                <Label htmlFor='json-pretty-print'>Pretty Print (2 spaces)</Label>
+              </div>
+            )}
           </div>
         </div>
 

@@ -27,7 +27,10 @@ export default function TechSphere(): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current; // snapshot the ref once
+    if (!container) {
+      return;
+    }
 
     // Scene setup
     const scene = new Scene();
@@ -36,10 +39,13 @@ export default function TechSphere(): React.JSX.Element {
 
     const renderer = new WebGLRenderer({antialias: true, alpha: true});
 
+    // Optional clarity on high-DPI screens
+    renderer.setPixelRatio(Math.min(2, globalThis.devicePixelRatio || 1));
+
     // Sphere
     const sphereGeometry = new IcosahedronGeometry(3, 3);
     const sphereMaterial = new MeshBasicMaterial({
-      color: 0x8b_5c_f6, // purple-500
+      color: "#8B5CF6", // purple-500
       wireframe: true,
       transparent: true,
       opacity: 0.8,
@@ -55,37 +61,40 @@ export default function TechSphere(): React.JSX.Element {
     const particlesGeometry = new BufferGeometry();
     const particlesCnt = 1000;
     const posArray = new Float32Array(particlesCnt * 3);
-    // eslint-disable-next-line functional/no-let -- using let for performance in this case
     for (let i = 0; i < particlesCnt * 3; i++) {
-      // eslint-disable-next-line sonarjs/pseudo-random -- using Math.random for simplicity
-      posArray[i] = (Math.random() - 0.5) * 5;
+      // eslint-disable-next-line security/detect-object-injection -- safe access
+      posArray[i] =
+        // eslint-disable-next-line sonarjs/pseudo-random -- using Math.random for simplicity
+        (Math.random() - 0.5) * 5;
     }
+
     particlesGeometry.setAttribute("position", new BufferAttribute(posArray, 3));
     const particlesMaterial = new PointsMaterial({
       size: 0.05,
-      color: 0x63_66_f1, // blue-500
+      color: "#6366F1", // blue-500
       transparent: true,
       alphaTest: 0.5, // add alpha test for better rendering
     });
+
     const particlesMesh = new Points(particlesGeometry, particlesMaterial);
     scene.add(particlesMesh);
 
     // Sizing and Resize Handling
     const handleResize = () => {
-      if (!containerRef.current) return;
-      const size = Math.min(600, containerRef.current.clientWidth);
+      const size = Math.min(600, container.clientWidth);
       renderer.setSize(size, size);
       camera.aspect = 1;
       camera.updateProjectionMatrix();
     };
 
     handleResize();
-    containerRef.current.append(renderer.domElement);
+    container.append(renderer.domElement);
     globalThis.addEventListener("resize", handleResize);
 
-    // Animation Loop
+    // Animation Loop (track id so we can cancel it)
+    let rafId = 0;
     const animate = () => {
-      requestAnimationFrame(animate);
+      rafId = requestAnimationFrame(animate);
       sphere.rotation.y += 0.005;
       particlesMesh.rotation.y += 0.001;
       renderer.render(scene, camera);
@@ -95,10 +104,12 @@ export default function TechSphere(): React.JSX.Element {
 
     // Cleanup
     return () => {
+      cancelAnimationFrame(rafId);
       globalThis.removeEventListener("resize", handleResize);
-      if (containerRef.current?.contains(renderer.domElement)) {
+      if (container.contains(renderer.domElement)) {
         renderer.domElement.remove();
       }
+
       sphereGeometry.dispose();
       sphereMaterial.dispose();
       particlesGeometry.dispose();
