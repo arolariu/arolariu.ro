@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "$schema": "https://nx.dev/reference/project-configuration",
   "sourceRoot": "sites/docs.arolariu.ro",
   "projectType": "application",
   "targets": {

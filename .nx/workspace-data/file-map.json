@@ -1,6 +1,6 @@
 {
   "version": "6.0",
-  "nxVersion": "21.4.1",
+  "nxVersion": "20.3.2",
   "pathMappings": {},
   "nxJsonPlugins": [],
   "fileMap": {
@@ -36,7 +36,7 @@
         },
         {
           "file": "sites/docs.arolariu.ro/project.json",
-          "hash": "11257382879086250015"
+          "hash": "12773218182905106167"
         },
         {
           "file": "sites/docs.arolariu.ro/templates/clarity/public/main.js",
@@ -45,6 +45,2114 @@
         {
           "file": "sites/docs.arolariu.ro/toc.yml",
           "hash": "9315000067485361493"
+        }
+      ],
+      "cv": [
+        {
+          "file": "sites/cv.arolariu.ro/.gitignore",
+          "hash": "9693691127960088612"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/.prettierignore",
+          "hash": "12386949481068265532"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/.prettierrc",
+          "hash": "17897657148253707477"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/README.md",
+          "hash": "3303960267538121923"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/package.json",
+          "hash": "14673924745912686547",
+          "deps": [
+            "npm:typescript"
+          ]
+        },
+        {
+          "file": "sites/cv.arolariu.ro/project.json",
+          "hash": "2198334310080808170"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/app.css",
+          "hash": "12659515560017364435"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/app.d.ts",
+          "hash": "8514019045939557847"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/app.html",
+          "hash": "15448127097260669406"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/HelpDialog.svelte",
+          "hash": "12259363690321809972"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/ThemeToggle.svelte",
+          "hash": "7020492195937312727"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/motion/AnimatedSection.svelte",
+          "hash": "15949454634994784839"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/motion/index.ts",
+          "hash": "17772647290158595663"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/motion/intersection.ts",
+          "hash": "10333650512474152276"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/author.ts",
+          "hash": "7666706648209752274"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/biography.ts",
+          "hash": "11966131661493107925"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/certifications.ts",
+          "hash": "6959303671964264881"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/competencies.ts",
+          "hash": "6840113674527933901"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/education.ts",
+          "hash": "14084444241749874903"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/experiences.ts",
+          "hash": "7802474418247666615"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/index.ts",
+          "hash": "9917235996069479720"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/json.ts",
+          "hash": "9550411484385879719"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/landing.ts",
+          "hash": "162138338550990994"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/skills.ts",
+          "hash": "14039917629316922652"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/technical.ts",
+          "hash": "9076663166835991113"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/testimonials.ts",
+          "hash": "1487723096091984262"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/viewdata.ts",
+          "hash": "6277423006675960109"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/volunteering.ts",
+          "hash": "3240285271915616218"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/hooks/useTheme.svelte.ts",
+          "hash": "1389134633798985127"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/assets/favicon.svg",
+          "hash": "14344918875278748999"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/index.ts",
+          "hash": "403399750106740132"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/utils/copy.ts",
+          "hash": "14228755613358236426"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/utils/download.ts",
+          "hash": "10055437945488547822"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/utils/index.ts",
+          "hash": "4104171537983704147"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/utils/result.ts",
+          "hash": "15339667925540983639"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/views/HumanView.svelte",
+          "hash": "9418705439415495637"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/views/JsonView.svelte",
+          "hash": "1854862091354057259"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/views/MainView.svelte",
+          "hash": "12326938216384830657"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/views/PdfView.svelte",
+          "hash": "11957603127857186623"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/ActionButton.svelte",
+          "hash": "9168149753126022929"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/Badge.svelte",
+          "hash": "4178978181550486678"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/Footer.svelte",
+          "hash": "8683140588897537473"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/Header.svelte",
+          "hash": "12051930318733548814"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/Icon.svelte",
+          "hash": "1530539487002649841"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/About.svelte",
+          "hash": "5873921196909514002"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Competencies.svelte",
+          "hash": "10611886546397417549"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Contact.svelte",
+          "hash": "5664568380744371092"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Education.svelte",
+          "hash": "12041275645655425923"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Experience.svelte",
+          "hash": "7236584550429239208"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Hero.svelte",
+          "hash": "1560548963812033650"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Skills.svelte",
+          "hash": "7604287960659433821"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Testimonials.svelte",
+          "hash": "9321053902994584273"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/+layout.svelte",
+          "hash": "12357600702002436888"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/+page.svelte",
+          "hash": "12017184010938085599"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/human/+page.svelte",
+          "hash": "15093783064937628200"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/json/+page.svelte",
+          "hash": "12871415413743881255"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/pdf/+page.svelte",
+          "hash": "13371676539790079941"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/rest/json/+server.ts",
+          "hash": "15307343536355860094",
+          "deps": [
+            "npm:@sveltejs/kit"
+          ]
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Biography.ts",
+          "hash": "9419486526803261270"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Certificate.ts",
+          "hash": "17370042838597356449"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Competency.ts",
+          "hash": "17697754484993987509"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Education.ts",
+          "hash": "13138272282365068161"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Experience.ts",
+          "hash": "9247889510250992193"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/PersonalInformation.ts",
+          "hash": "10725174226119185852"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Skill.ts",
+          "hash": "15986963919752416832"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Testimonial.ts",
+          "hash": "2775355216894778173"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/index.ts",
+          "hash": "6037331709054615390"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/static/author.jpeg",
+          "hash": "6837292437898454945"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/static/cv.pdf",
+          "hash": "4905060426598892796"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/static/robots.txt",
+          "hash": "8128781345255320682"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/svelte.config.js",
+          "hash": "12010224839640651075",
+          "deps": [
+            "npm:svelte-adapter-azure-swa",
+            "npm:@sveltejs/vite-plugin-svelte"
+          ]
+        },
+        {
+          "file": "sites/cv.arolariu.ro/swa-cli.config.json",
+          "hash": "10483501801312831594"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/tailwind.config.js",
+          "hash": "2808229931761276497"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/tsconfig.json",
+          "hash": "13604813847796067401"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/vite.config.js",
+          "hash": "16297919805923460214",
+          "deps": [
+            "npm:@tailwindcss/vite",
+            "npm:@sveltejs/kit",
+            "npm:vite"
+          ]
+        },
+        {
+          "file": "sites/cv.arolariu.ro/yarn.lock",
+          "hash": "13120729347680354489"
+        }
+      ],
+      "website": [
+        {
+          "file": "sites/arolariu.ro/.env.example",
+          "hash": "6785193873288690691"
+        },
+        {
+          "file": "sites/arolariu.ro/.gitattributes",
+          "hash": "14772901856226465301"
+        },
+        {
+          "file": "sites/arolariu.ro/.gitignore",
+          "hash": "1843414606073227517"
+        },
+        {
+          "file": "sites/arolariu.ro/.node-version",
+          "hash": "12858473645637222155"
+        },
+        {
+          "file": "sites/arolariu.ro/.prettierignore",
+          "hash": "15176021047741282473"
+        },
+        {
+          "file": "sites/arolariu.ro/.prettierrc",
+          "hash": "17614421692653572991"
+        },
+        {
+          "file": "sites/arolariu.ro/.storybook/main.ts",
+          "hash": "17506221164502103139",
+          "deps": [
+            "npm:@storybook/nextjs"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/.storybook/preview.ts",
+          "hash": "17741130135917573222",
+          "deps": [
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/.storybook/utils.tsx",
+          "hash": "17825633266629718316",
+          "deps": [
+            "npm:@storybook/addon-themes",
+            "npm:@storybook/react",
+            "npm:next-intl",
+            "npm:react",
+            "npm:storybook"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/.yarnrc.yml",
+          "hash": "8032949330729474890"
+        },
+        {
+          "file": "sites/arolariu.ro/Dockerfile",
+          "hash": "3700495218219787279"
+        },
+        {
+          "file": "sites/arolariu.ro/README.md",
+          "hash": "17228483218838857412"
+        },
+        {
+          "file": "sites/arolariu.ro/emails/invoices/AnalyzedInvoice.tsx",
+          "hash": "9974923803061077581",
+          "deps": [
+            "npm:@react-email/components"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/emails/invoices/DeletedInvoice.tsx",
+          "hash": "2775103511104950021",
+          "deps": [
+            "npm:@react-email/components"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/emails/invoices/InvoiceFeedback.tsx",
+          "hash": "14373813975408697786",
+          "deps": [
+            "npm:@react-email/components"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/emails/invoices/SharedInvoice.tsx",
+          "hash": "969215709071726568",
+          "deps": [
+            "npm:@react-email/components"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/emails/newsletter/Subscription.tsx",
+          "hash": "5860264820282608359",
+          "deps": [
+            "npm:@react-email/components"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/emails/readme.md",
+          "hash": "13113813552928464414"
+        },
+        {
+          "file": "sites/arolariu.ro/eslint.config.ts",
+          "hash": "181415834602191841",
+          "deps": [
+            "npm:globals"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/jest.config.ts",
+          "hash": "15872323906514260913",
+          "deps": [
+            "npm:jest",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/messages/en.json",
+          "hash": "10559110185478750323"
+        },
+        {
+          "file": "sites/arolariu.ro/messages/ro.json",
+          "hash": "15112814216530154378"
+        },
+        {
+          "file": "sites/arolariu.ro/next-env.d.ts",
+          "hash": "5284841197950455437"
+        },
+        {
+          "file": "sites/arolariu.ro/next.config.ts",
+          "hash": "8636070376627694862",
+          "deps": [
+            "npm:@next/bundle-analyzer",
+            "npm:next",
+            "npm:next-intl"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/package.json",
+          "hash": "863260357810668613",
+          "deps": [
+            "npm:@eslint/js",
+            "npm:@types/node",
+            "npm:globals",
+            "npm:typescript",
+            "components"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/playwright.config.ts",
+          "hash": "822071757223679531",
+          "deps": [
+            "npm:@playwright/test"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/postcss.config.js",
+          "hash": "261516259639629466"
+        },
+        {
+          "file": "sites/arolariu.ro/project.json",
+          "hash": "1693352270274783184"
+        },
+        {
+          "file": "sites/arolariu.ro/public/humans.txt",
+          "hash": "11562008063568866126"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/3d-illustration.png",
+          "hash": "7632244169401595978"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/about/author-thumbnail.svg",
+          "hash": "15611210832102119955"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/about/platform-thumbnail.svg",
+          "hash": "6046383678481378816"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/about/the-author/author.jpeg",
+          "hash": "6837292437898454945"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/about/the-author/work-together.svg",
+          "hash": "11261784116180454719"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/auth/forbidden.svg",
+          "hash": "14321929697419378306"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/auth/sign-in.svg",
+          "hash": "10607015613212209574"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/auth/sign-up.svg",
+          "hash": "12237510182377003157"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/domains/invoice-management-system.png",
+          "hash": "9771634861823647689"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/domains/invoices/403.svg",
+          "hash": "5238647681090554984"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/domains/invoices/invoice-bottom.svg",
+          "hash": "601263909191582190"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/domains/invoices/invoice-top.svg",
+          "hash": "18428377532359663455"
+        },
+        {
+          "file": "sites/arolariu.ro/public/images/domains/live-chat-rooms.jpeg",
+          "hash": "15090677499393187562"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-128x128.png",
+          "hash": "15084601307512700190"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-144x144.png",
+          "hash": "5359781216160187312"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-192x192.png",
+          "hash": "8812789810098664128"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-384x384.png",
+          "hash": "9365348472408653294"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-512x512.png",
+          "hash": "13261530669029011910"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-72x72.png",
+          "hash": "13886070576291614325"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/android-chrome-96x96.png",
+          "hash": "16949876641906068518"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-114x114.png",
+          "hash": "11184430298782854523"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-120x120.png",
+          "hash": "16029491723018321739"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-144x144.png",
+          "hash": "2118096982359220819"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-152x152.png",
+          "hash": "17558901213722870022"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-180x180.png",
+          "hash": "5396542305262151954"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-57x57.png",
+          "hash": "12180927186905238615"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-60x60.png",
+          "hash": "7609031738293452209"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-72x72.png",
+          "hash": "16992625568079084948"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-76x76.png",
+          "hash": "8721030401541782705"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/favicon-16x16.png",
+          "hash": "18125303437733873834"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/favicon-32x32.png",
+          "hash": "9318045513719467153"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/favicon.ico",
+          "hash": "18121354123891453145"
+        },
+        {
+          "file": "sites/arolariu.ro/public/manifest/logo.png",
+          "hash": "6845117438673990551"
+        },
+        {
+          "file": "sites/arolariu.ro/public/security.txt",
+          "hash": "1303358046509908665"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/afterBuild.ts",
+          "hash": "778224310384284700"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/beforeBuild.ts",
+          "hash": "5072893186024739708"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/checkTranslations.ts",
+          "hash": "137323024621810015"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/clean.ts",
+          "hash": "6459664439839876949"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/format.ts",
+          "hash": "15598819100839667765"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/generateAcknowledgements.ts",
+          "hash": "4824514169285685420"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/generateEnvironment.ts",
+          "hash": "18006714199814960377",
+          "deps": [
+            "npm:@azure/app-configuration",
+            "npm:@azure/identity"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/generateTranslations.ts",
+          "hash": "11322950506238991397"
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/utils.azure.ts",
+          "hash": "14187352111258086079",
+          "deps": [
+            "npm:@azure/identity",
+            "npm:@azure/keyvault-secrets"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/scripts/utils.generic.ts",
+          "hash": "10392180860223510871"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/_components/EnhancedLegalArticles.tsx",
+          "hash": "10511864844461230949",
+          "deps": [
+            "npm:next-intl"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/_components/PackagesScreen.tsx",
+          "hash": "623304599353802155",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:next",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/_hooks/usePackageFilters.tsx",
+          "hash": "2975518210390071547",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/island.tsx",
+          "hash": "12098559939757160829",
+          "deps": [
+            "npm:next-intl"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/layout.tsx",
+          "hash": "11432091288370104689",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/loading.tsx",
+          "hash": "6996989133534346690",
+          "deps": [
+            "npm:@arolariu/components@0.0.40"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/page.tsx",
+          "hash": "8540931835363587398",
+          "deps": [
+            "npm:next-intl",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/privacy-policy/island.tsx",
+          "hash": "3968972712221969895"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/privacy-policy/page.tsx",
+          "hash": "6529308634200865079",
+          "deps": [
+            "npm:next-intl",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/terms-of-service/island.tsx",
+          "hash": "7356769021437616632"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/terms-of-service/page.tsx",
+          "hash": "7281861646188560105",
+          "deps": [
+            "npm:next-intl",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/EULA.tsx",
+          "hash": "8188322532398514091",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:next-intl",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/_components/Features.tsx",
+          "hash": "2484565483521156370",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:next-intl",
+            "npm:next",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/_components/Hero.tsx",
+          "hash": "4707560670134535837",
+          "deps": [
+            "npm:motion",
+            "npm:next-intl",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/_components/Technologies.tsx",
+          "hash": "17680069345513180554",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:next-intl",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/_effects/TechSphere.tsx",
+          "hash": "7392843170635891289",
+          "deps": [
+            "npm:react",
+            "npm:three"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/island.tsx",
+          "hash": "14776522609056272947",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:next-intl",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/layout.tsx",
+          "hash": "11860318739099968886",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/loading.tsx",
+          "hash": "10474953574945330287",
+          "deps": [
+            "npm:@arolariu/components@0.0.40"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/page.tsx",
+          "hash": "14403947124528642874",
+          "deps": [
+            "npm:next-intl",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Biography.tsx",
+          "hash": "4113726126971250727",
+          "deps": [
+            "npm:motion",
+            "npm:next-intl",
+            "npm:react-icons",
+            "npm:react-intersection-observer"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Certifications.tsx",
+          "hash": "5903903956860936574",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:next-intl",
+            "npm:react",
+            "npm:react-icons",
+            "npm:react-intersection-observer"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Competencies.tsx",
+          "hash": "7174327585174506726",
+          "deps": [
+            "npm:motion",
+            "npm:next-intl",
+            "npm:react-icons",
+            "npm:react-intersection-observer"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Contact.tsx",
+          "hash": "690624436208928932",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:next-intl",
+            "npm:react",
+            "npm:react-icons",
+            "npm:react-intersection-observer"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Education.tsx",
+          "hash": "11669287997818210492",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:next-intl",
+            "npm:react",
+            "npm:react-icons",
+            "npm:react-intersection-observer"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Experience.tsx",
+          "hash": "2214680859781717941",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:next-intl",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Hero.tsx",
+          "hash": "3945445009387343728",
+          "deps": [
+            "npm:motion",
+            "npm:next-intl",
+            "npm:next",
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Perspectives.tsx",
+          "hash": "5806948645824690801",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:next-intl",
+            "npm:react-icons",
+            "npm:react-intersection-observer"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/_secrets/Terminal.tsx",
+          "hash": "15200181528366495527",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-author/page.tsx",
+          "hash": "18032706620515774615",
+          "deps": [
+            "npm:next-intl",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-platform/_components/Hero.tsx",
+          "hash": "11597328617979783114",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-platform/_components/Statistics.tsx",
+          "hash": "4122875470617210629",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-platform/_components/TechStack.tsx",
+          "hash": "14416028115924454956",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-platform/_components/Timeline.tsx",
+          "hash": "8652746853329251272",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/about/the-platform/page.tsx",
+          "hash": "7035357173464360302",
+          "deps": [
+            "npm:next-intl",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/api/mail/invoices/feedback/[id]/route.ts",
+          "hash": "2841737338647178560",
+          "deps": [
+            "npm:next",
+            "npm:resend"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/api/mail/invoices/share/[id]/route.ts",
+          "hash": "767310565243211242",
+          "deps": [
+            "npm:next",
+            "npm:resend"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/api/user/route.ts",
+          "hash": "4229706053020902577",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/_components/AuthCard.tsx",
+          "hash": "15043407547457059462",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/island.tsx",
+          "hash": "12162087674526710538",
+          "deps": [
+            "npm:next-intl"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/layout.tsx",
+          "hash": "18410384264401527723",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/loading.tsx",
+          "hash": "14158188532070622861",
+          "deps": [
+            "npm:@arolariu/components@0.0.40"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/page.tsx",
+          "hash": "970348517644685986",
+          "deps": [
+            "npm:next-intl",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/sign-in/[[...sign-in]]/page.tsx",
+          "hash": "6957317478912031032",
+          "deps": [
+            "npm:@clerk/nextjs",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/auth/sign-up/[[...sign-up]]/page.tsx",
+          "hash": "13032768096182484462",
+          "deps": [
+            "npm:@clerk/nextjs",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/_components/DomainServiceCard.tsx",
+          "hash": "15716145678366303889",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/InvoiceNotAnalyzed.tsx",
+          "hash": "6925703113648512839",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:next",
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/InvoiceNotFound.tsx",
+          "hash": "5584834650309822035"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/InvoicesNotFound.tsx",
+          "hash": "8179235855062703240",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/LoadingInvoice.tsx",
+          "hash": "3288424958841240450"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/LoadingInvoices.tsx",
+          "hash": "753582462558468181"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContainer.tsx",
+          "hash": "7365687497568619618"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContext.test.tsx",
+          "hash": "12250898978081005544",
+          "deps": [
+            "npm:@testing-library/react",
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContext.tsx",
+          "hash": "10896608949533902735",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/CarouselView.tsx",
+          "hash": "4318381041021593299",
+          "deps": [
+            "npm:@arolariu/components@0.0.40"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/GridView.tsx",
+          "hash": "15689916526259746319",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/InvoicePreview.tsx",
+          "hash": "18319111867032959026",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:next",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/InvoiceSubmitForm.tsx",
+          "hash": "3058163280812624540"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/InvoiceSubtitle.tsx",
+          "hash": "7165620934984985085",
+          "deps": [
+            "npm:next-intl"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/MediaPreview.tsx",
+          "hash": "795468610850609833",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:next",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_context/InvoiceCreatorContext.tsx",
+          "hash": "14403476397603190528",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_hooks/useBlobUrls.tsx",
+          "hash": "12323361970511624885",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_hooks/useInvoiceActions.tsx",
+          "hash": "7018422610955816755",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_types/InvoiceScan.ts",
+          "hash": "2949708780658818819"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_utils/invoiceScanUtils.ts",
+          "hash": "16559451843681381395"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/island.tsx",
+          "hash": "1860481885267839859"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/page.tsx",
+          "hash": "5476137518034810503",
+          "deps": [
+            "npm:next-intl",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/edit-invoice/[id]/page.tsx",
+          "hash": "16830369414171371343",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/island.tsx",
+          "hash": "43855332486013690",
+          "deps": [
+            "npm:next-intl",
+            "npm:next",
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/layout.tsx",
+          "hash": "14236183142438276346",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/loading.tsx",
+          "hash": "12866244004106318957",
+          "deps": [
+            "npm:@arolariu/components@0.0.40"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/page.tsx",
+          "hash": "17904594477216465163",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/InvoiceHeader.tsx",
+          "hash": "5563588460439579171",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/TriviaTips.tsx",
+          "hash": "5328875892181927548",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/AnalyticsCard.tsx",
+          "hash": "14888349520594416909",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/ImageCard.tsx",
+          "hash": "11316696377595638022",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/InvoiceCard.tsx",
+          "hash": "4462559274710457800",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/MerchantCard.tsx",
+          "hash": "4453514434146005496",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/RecipeCard.tsx",
+          "hash": "828936601683682437",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/SharingCard.tsx",
+          "hash": "1806748547663918468",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:next",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/charts.tsx",
+          "hash": "2285427034849664991",
+          "deps": [
+            "npm:recharts"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/FeedbackDialog.tsx",
+          "hash": "6610350617109795685",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/ImageDialog.tsx",
+          "hash": "13019608067545051826",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/ItemsDialog.tsx",
+          "hash": "11606366276489213949",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/MerchantDialog.tsx",
+          "hash": "4260399567617032965",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/MerchantReceiptsDialog.tsx",
+          "hash": "14877935873275450146",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/MetadataDialog.tsx",
+          "hash": "9727401974435067043",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/RecipeDialog.tsx",
+          "hash": "1563062360168182631",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/ShareAnalytics.tsx",
+          "hash": "17064195423153252784",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/SharingDialog.tsx",
+          "hash": "11590302699005367117",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react",
+            "npm:react-icons",
+            "npm:react-qr-code"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/sidebar/SidebarSection.tsx",
+          "hash": "17044209502925179454",
+          "deps": [
+            "npm:motion"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/tables/ItemsTable.tsx",
+          "hash": "1598983646147007701",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/tabs/MetadataTab.tsx",
+          "hash": "12380514054693667912",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/tabs/RecipesTab.tsx",
+          "hash": "12753828221611241680",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/island.tsx",
+          "hash": "1086075818696432083",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/page.tsx",
+          "hash": "11151327449095101963",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/InvoicesHeader.tsx",
+          "hash": "9512640949302050077",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/MessageInput.tsx",
+          "hash": "6566109326316536748",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/MessageList.tsx",
+          "hash": "9485897267341574165",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/dialogs/ExportDialog.tsx",
+          "hash": "11911292089306998763",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/dialogs/ImportDialog.tsx",
+          "hash": "14932645733241187848",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/dialogs/ShareDialog.tsx",
+          "hash": "6581002834817975454",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react",
+            "npm:react-icons",
+            "npm:react-qr-code"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/tables/InvoiceTable.tsx",
+          "hash": "11326405033190300918",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:next",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/tables/InvoiceTableActions.tsx",
+          "hash": "17046826264302132523",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:next",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/views/GenerativeView.tsx",
+          "hash": "16515585765160522789",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/views/InvoicesView.tsx",
+          "hash": "808163900738294819",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/views/StatisticsView.tsx",
+          "hash": "7429284909181504521"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/island.tsx",
+          "hash": "400652540017433926",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/page.tsx",
+          "hash": "16502302624122851519",
+          "deps": [
+            "npm:next-intl",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/island.tsx",
+          "hash": "2425523073101928149",
+          "deps": [
+            "npm:next-intl"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/domains/page.tsx",
+          "hash": "15080082832439437934",
+          "deps": [
+            "npm:next-intl",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/favicon.ico",
+          "hash": "18121354123891453145"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/global-error.tsx",
+          "hash": "8055266650647898344",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/globals.css",
+          "hash": "2642075783130591808"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/globals.ts",
+          "hash": "5287027641762202993"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/icon.svg",
+          "hash": "18085560056179948415"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/island.tsx",
+          "hash": "18067682628005649661",
+          "deps": [
+            "npm:@arolariu/components@0.0.40"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/layout.tsx",
+          "hash": "9660056613185945684",
+          "deps": [
+            "npm:next-intl",
+            "npm:react",
+            "npm:@arolariu/components@0.0.40"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/loading.tsx",
+          "hash": "15463543233582144974",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/logo.svg",
+          "hash": "10215207022868746475"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/manifest.json",
+          "hash": "16387743888343178176"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/not-found.tsx",
+          "hash": "15350196351365983089",
+          "deps": [
+            "npm:next",
+            "npm:next-intl",
+            "npm:react-qr-code"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/page.tsx",
+          "hash": "13015467218841652149"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/providers.tsx",
+          "hash": "7266677092929937041",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:@clerk/localizations",
+            "npm:@clerk/nextjs",
+            "npm:next-intl",
+            "npm:next-themes",
+            "npm:next",
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/robots.txt",
+          "hash": "13811142617598754572"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/routing.spec.tsx",
+          "hash": "13875852404128903739",
+          "deps": [
+            "npm:@playwright/test"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/sitemap.xml",
+          "hash": "3187038387079840317"
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/tracking.tsx",
+          "hash": "9768013323105112276",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/app/web-vitals.tsx",
+          "hash": "15182336353280785105",
+          "deps": [
+            "npm:next",
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Buttons/AuthButton.tsx",
+          "hash": "3405724005068417744",
+          "deps": [
+            "npm:@clerk/nextjs",
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Buttons/ThemeButton.tsx",
+          "hash": "5474209535999144644",
+          "deps": [
+            "npm:motion",
+            "npm:next-themes",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Commander.tsx",
+          "hash": "5996826047732713711",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:next-themes",
+            "npm:next",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Footer.spec.tsx",
+          "hash": "16866268038225951631",
+          "deps": [
+            "npm:@playwright/test"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Footer.tsx",
+          "hash": "1831042094813390243",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:next-intl",
+            "npm:next",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Header.spec.tsx",
+          "hash": "5024815364805337135",
+          "deps": [
+            "npm:@playwright/test"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Header.tsx",
+          "hash": "3354173375846223863",
+          "deps": [
+            "npm:next",
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/components/Navigation.tsx",
+          "hash": "14478928895101558546",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:next",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/contexts/FontContext.tsx",
+          "hash": "4126477019157813719",
+          "deps": [
+            "npm:next",
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/data/mocks/invoices.ts",
+          "hash": "5699140168873884539",
+          "deps": [
+            "npm:@faker-js/faker"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/index.ts",
+          "hash": "16270379679957578596"
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/stateStore.tsx",
+          "hash": "7428530717568557641",
+          "deps": [
+            "npm:zustand"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useInvoice.tsx",
+          "hash": "12396180293070504283",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useInvoices.tsx",
+          "hash": "6413710749166449349",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useMerchant.tsx",
+          "hash": "13155604217753228063",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useMerchants.tsx",
+          "hash": "12380340869952674959",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/usePagination.test.tsx",
+          "hash": "6991189707765716965",
+          "deps": [
+            "npm:@testing-library/react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/usePagination.tsx",
+          "hash": "9628164087829345333",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useScrollToTop.tsx",
+          "hash": "14220588491819217316",
+          "deps": [
+            "npm:motion",
+            "npm:react",
+            "npm:react-icons"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useUserInformation.tsx",
+          "hash": "1898633307338740583",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useWindowSize.test.tsx",
+          "hash": "16242704082944032379",
+          "deps": [
+            "npm:@testing-library/react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/hooks/useWindowSize.tsx",
+          "hash": "3660715272787745882",
+          "deps": [
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/i18n/request.ts",
+          "hash": "17932131673175128876",
+          "deps": [
+            "npm:next-intl"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/instrumentation.ts",
+          "hash": "5899639681104040158"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/cookies/cookies.action.test.ts",
+          "hash": "108727179676393860",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/cookies/cookies.action.ts",
+          "hash": "727335197640930573",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/cookies/index.ts",
+          "hash": "6348781827446379722"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/analyzeInvoice.ts",
+          "hash": "4787872569048927070"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/fetchInvoice.ts",
+          "hash": "2454109732162303553"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/fetchInvoices.ts",
+          "hash": "9254218246584585602"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/fetchMerchant.ts",
+          "hash": "17535875573077130174"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/fetchMerchants.ts",
+          "hash": "11851671877066434704"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/updateInvoice.ts",
+          "hash": "4938487459183878263"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/invoices/uploadInvoice.ts",
+          "hash": "16913334435282141896"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/storage/fetchBlob.ts",
+          "hash": "10841202299571407473",
+          "deps": [
+            "npm:@azure/identity",
+            "npm:@azure/storage-blob"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/storage/fetchConfig.ts",
+          "hash": "6588376185726857046",
+          "deps": [
+            "npm:@azure/app-configuration"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/storage/uploadBlob.ts",
+          "hash": "9365917336923937075",
+          "deps": [
+            "npm:@azure/identity",
+            "npm:@azure/storage-blob"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/actions/user/fetchUser.ts",
+          "hash": "13618418071795023354",
+          "deps": [
+            "npm:@clerk/nextjs"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/utils.client.test.ts",
+          "hash": "12967962761557838071"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/utils.client.ts",
+          "hash": "3403234142603300437"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/utils.generic.test.ts",
+          "hash": "13434453333910789312"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/utils.generic.ts",
+          "hash": "13820616306387618521"
+        },
+        {
+          "file": "sites/arolariu.ro/src/lib/utils.server.ts",
+          "hash": "4131493183162353890",
+          "deps": [
+            "npm:resend"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/metadata.ts",
+          "hash": "5927409571400000085",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/middleware.ts",
+          "hash": "17361095745993794918",
+          "deps": [
+            "npm:@clerk/nextjs"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/presentation/ForbiddenScreen.stories.tsx",
+          "hash": "1227075147557892384",
+          "deps": [
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/presentation/ForbiddenScreen.tsx",
+          "hash": "15220798194191684464",
+          "deps": [
+            "npm:next-intl",
+            "npm:next"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/presentation/Text/ParallaxText.tsx",
+          "hash": "11450190894672131901",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/presentation/Text/RichText.tsx",
+          "hash": "9177224899953900461",
+          "deps": [
+            "npm:next-intl"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/presentation/Text/TypewriterText.tsx",
+          "hash": "947490166896000518",
+          "deps": [
+            "npm:@arolariu/components@0.0.40",
+            "npm:motion",
+            "npm:react"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/presentation/Text/index.ts",
+          "hash": "9612168164119468058"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/DDD/Entities/BaseEntity.ts",
+          "hash": "15485996897464795666"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/DDD/Entities/NamedEntity.ts",
+          "hash": "9357337520130456144"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/DDD/Entities/index.ts",
+          "hash": "11851086861315085381"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/DDD/SharedKernel/Currency.ts",
+          "hash": "2450813359271503548"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/DDD/SharedKernel/index.ts",
+          "hash": "13187014328135325365"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/DDD/index.ts",
+          "hash": "17610115050851563851"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/index.ts",
+          "hash": "17605589241761427257",
+          "deps": [
+            "npm:@clerk/nextjs"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/Allergen.ts",
+          "hash": "17498131482471986263"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/Invoice.ts",
+          "hash": "15294795679635024739"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/Merchant.ts",
+          "hash": "16531088880463744404"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/Payment.ts",
+          "hash": "13520500534275642318"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/Product.ts",
+          "hash": "457779989250084882"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/Recipe.ts",
+          "hash": "1521499840131446373"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/invoices/index.ts",
+          "hash": "16462390616475638093"
+        },
+        {
+          "file": "sites/arolariu.ro/src/types/typedEnv.ts",
+          "hash": "4376389807104768309"
+        },
+        {
+          "file": "sites/arolariu.ro/tailwind.config.ts",
+          "hash": "17122533353278670419",
+          "deps": [
+            "npm:@tailwindcss/typography",
+            "npm:tailwindcss",
+            "npm:tailwindcss-animate"
+          ]
+        },
+        {
+          "file": "sites/arolariu.ro/tsconfig.json",
+          "hash": "2403262220250865277"
+        },
+        {
+          "file": "sites/arolariu.ro/yarn.lock",
+          "hash": "7955836701736424157"
         }
       ],
       "api": [
@@ -62,7 +2170,7 @@
         },
         {
           "file": "sites/api.arolariu.ro/project.json",
-          "hash": "6698942900368390451"
+          "hash": "7426673021548455769"
         },
         {
           "file": "sites/api.arolariu.ro/src/Common/DDD/Contracts/BaseEntity.cs",
@@ -632,11 +2740,18 @@
         },
         {
           "file": "packages/components/.storybook/main.ts",
-          "hash": "11154508189134293353"
+          "hash": "11154508189134293353",
+          "deps": [
+            "npm:storybook-react-rsbuild"
+          ]
         },
         {
           "file": "packages/components/.storybook/preview.ts",
-          "hash": "10422226424724871560"
+          "hash": "10422226424724871560",
+          "deps": [
+            "npm:@storybook/react",
+            "npm:@storybook/addon-themes"
+          ]
         },
         {
           "file": "packages/components/.yarnrc.yml",
@@ -680,7 +2795,7 @@
         },
         {
           "file": "packages/components/project.json",
-          "hash": "7602208404183275641"
+          "hash": "13183592428525019691"
         },
         {
           "file": "packages/components/readme.md",
@@ -688,7 +2803,11 @@
         },
         {
           "file": "packages/components/rslib.config.ts",
-          "hash": "10729989022203041080"
+          "hash": "10729989022203041080",
+          "deps": [
+            "npm:@rslib/core",
+            "npm:@rsbuild/plugin-react"
+          ]
         },
         {
           "file": "packages/components/scripts/generate-exports.ts",
@@ -696,251 +2815,518 @@
         },
         {
           "file": "packages/components/src/components/ui/accordion.tsx",
-          "hash": "17299815226734524285"
+          "hash": "17299815226734524285",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-accordion",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/alert-dialog.tsx",
-          "hash": "11661239190832217159"
+          "hash": "11661239190832217159",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-alert-dialog"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/alert.tsx",
-          "hash": "2182990431490037044"
+          "hash": "2182990431490037044",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:class-variance-authority"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/aspect-ratio.tsx",
-          "hash": "4606169473813726734"
+          "hash": "4606169473813726734",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-aspect-ratio"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/avatar.tsx",
-          "hash": "17384832726976543448"
+          "hash": "17384832726976543448",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-avatar"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/background-beams.tsx",
-          "hash": "13702005136238343422"
+          "hash": "13702005136238343422",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/badge.tsx",
-          "hash": "10292464856163758721"
+          "hash": "10292464856163758721",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-slot",
+            "npm:class-variance-authority"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/breadcrumb.tsx",
-          "hash": "8968029525729114086"
+          "hash": "8968029525729114086",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-slot",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/bubble-background.tsx",
-          "hash": "391179514383964693"
+          "hash": "391179514383964693",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/button.tsx",
-          "hash": "185559879251684815"
+          "hash": "185559879251684815",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-slot",
+            "npm:class-variance-authority"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/calendar.tsx",
-          "hash": "15077313089040611063"
+          "hash": "15077313089040611063",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:lucide-react",
+            "npm:react-day-picker"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/card.tsx",
-          "hash": "15450139886303145510"
+          "hash": "15450139886303145510",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/carousel.tsx",
-          "hash": "8231392209371262743"
+          "hash": "8231392209371262743",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:embla-carousel-react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/chart.tsx",
-          "hash": "14603915284685602573"
+          "hash": "14603915284685602573",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:recharts@3.1.2"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/checkbox.tsx",
-          "hash": "16320784960970074535"
+          "hash": "16320784960970074535",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-checkbox",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/collapsible.tsx",
-          "hash": "17952782360746368922"
+          "hash": "17952782360746368922",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-collapsible"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/command.tsx",
-          "hash": "6031176062298598506"
+          "hash": "6031176062298598506",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:cmdk",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/context-menu.tsx",
-          "hash": "4223366329495244101"
+          "hash": "4223366329495244101",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-context-menu",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/counting-number.tsx",
-          "hash": "13610680740970608505"
+          "hash": "13610680740970608505",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/dialog.tsx",
-          "hash": "13054091900467942337"
+          "hash": "13054091900467942337",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-dialog",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/dot-background.tsx",
-          "hash": "18394725875975686851"
+          "hash": "18394725875975686851",
+          "deps": [
+            "npm:motion@12.23.12",
+            "npm:react@19.1.1"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/drawer.tsx",
-          "hash": "1690118432151329009"
+          "hash": "1690118432151329009",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:vaul"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/dropdown-menu.tsx",
-          "hash": "7202576572599694831"
+          "hash": "7202576572599694831",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-dropdown-menu",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/dropdrawer.tsx",
-          "hash": "9521326115899011845"
+          "hash": "9521326115899011845",
+          "deps": [
+            "npm:motion@12.23.12",
+            "npm:lucide-react",
+            "npm:react@19.1.1"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/fireworks-background.tsx",
-          "hash": "6858263757084158884"
+          "hash": "6858263757084158884",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/flip-button.tsx",
-          "hash": "13901848367490170152"
+          "hash": "13901848367490170152",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/form.tsx",
-          "hash": "14447785933679907830"
+          "hash": "14447785933679907830",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-label",
+            "npm:@radix-ui/react-slot",
+            "npm:react-hook-form"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/gradient-background.tsx",
-          "hash": "7313621754759490355"
+          "hash": "7313621754759490355",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/gradient-text.tsx",
-          "hash": "14965116242636138277"
+          "hash": "14965116242636138277",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/highlight-text.tsx",
-          "hash": "6369678940497199882"
+          "hash": "6369678940497199882",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/hole-background.tsx",
-          "hash": "9776365904941695237"
+          "hash": "9776365904941695237",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/hover-card.tsx",
-          "hash": "14165647658584306902"
+          "hash": "14165647658584306902",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-hover-card"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/input-otp.tsx",
-          "hash": "3420373038828772957"
+          "hash": "3420373038828772957",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:input-otp",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/input.tsx",
-          "hash": "17007866537954501136"
+          "hash": "17007866537954501136",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/label.tsx",
-          "hash": "17992629208852058960"
+          "hash": "17992629208852058960",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-label"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/menubar.tsx",
-          "hash": "8056776562539413317"
+          "hash": "8056776562539413317",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-menubar",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/navigation-menu.tsx",
-          "hash": "18062547974822095341"
+          "hash": "18062547974822095341",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-navigation-menu",
+            "npm:class-variance-authority",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/pagination.tsx",
-          "hash": "3207847053010488040"
+          "hash": "3207847053010488040",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/popover.tsx",
-          "hash": "340375541626603428"
+          "hash": "340375541626603428",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-popover"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/progress.tsx",
-          "hash": "9065033862777507155"
+          "hash": "9065033862777507155",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-progress"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/radio-group.tsx",
-          "hash": "15111815666279259713"
+          "hash": "15111815666279259713",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-radio-group",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/resizable.tsx",
-          "hash": "4586475161360993529"
+          "hash": "4586475161360993529",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:lucide-react",
+            "npm:react-resizable-panels"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/ripple-button.tsx",
-          "hash": "4443435968126821753"
+          "hash": "4443435968126821753",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/scratcher.tsx",
-          "hash": "17564212033422334971"
+          "hash": "17564212033422334971",
+          "deps": [
+            "npm:motion@12.23.12",
+            "npm:react@19.1.1"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/scroll-area.tsx",
-          "hash": "4317549406678443949"
+          "hash": "4317549406678443949",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-scroll-area"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/select.tsx",
-          "hash": "7586012612311272127"
+          "hash": "7586012612311272127",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-select",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/separator.tsx",
-          "hash": "7443008638955122786"
+          "hash": "7443008638955122786",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-separator"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/sheet.tsx",
-          "hash": "17747769327134134594"
+          "hash": "17747769327134134594",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-dialog",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/sidebar.tsx",
-          "hash": "14848768308280853413"
+          "hash": "14848768308280853413",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-slot",
+            "npm:class-variance-authority",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/skeleton.tsx",
-          "hash": "5906701918444365652"
+          "hash": "5906701918444365652",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/slider.tsx",
-          "hash": "16283649896254241750"
+          "hash": "16283649896254241750",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-slider"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/sonner.tsx",
-          "hash": "17996715027035620908"
+          "hash": "17996715027035620908",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:next-themes",
+            "npm:sonner"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/switch.tsx",
-          "hash": "9030193380806192285"
+          "hash": "9030193380806192285",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-switch"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/table.tsx",
-          "hash": "1818992291291922268"
+          "hash": "1818992291291922268",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/tabs.tsx",
-          "hash": "12545532191750757225"
+          "hash": "12545532191750757225",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-tabs"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/textarea.tsx",
-          "hash": "230482805822790343"
+          "hash": "230482805822790343",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/toggle-group.tsx",
-          "hash": "8714767819769344694"
+          "hash": "8714767819769344694",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-toggle-group",
+            "npm:class-variance-authority"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/toggle.tsx",
-          "hash": "4547741379318831936"
+          "hash": "4547741379318831936",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-toggle",
+            "npm:class-variance-authority"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/tooltip.tsx",
-          "hash": "9915299380283988734"
+          "hash": "9915299380283988734",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-tooltip"
+          ]
         },
         {
           "file": "packages/components/src/components/ui/typewriter.tsx",
-          "hash": "10977177624607766996"
+          "hash": "10977177624607766996",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
         },
         {
           "file": "packages/components/src/hooks/useIsMobile.tsx",
-          "hash": "13039703850798776634"
+          "hash": "13039703850798776634",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
         },
         {
           "file": "packages/components/src/hooks/useWindowSize.tsx",
-          "hash": "11277560458995832145"
+          "hash": "11277560458995832145",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
         },
         {
           "file": "packages/components/src/index.css",
@@ -952,195 +3338,405 @@
         },
         {
           "file": "packages/components/src/lib/utils.ts",
-          "hash": "17124554240397410575"
+          "hash": "17124554240397410575",
+          "deps": [
+            "npm:clsx",
+            "npm:tailwind-merge"
+          ]
         },
         {
           "file": "packages/components/stories/Accordion.stories.tsx",
-          "hash": "6731562617004098816"
+          "hash": "6731562617004098816",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Alert.stories.tsx",
-          "hash": "3971026645478162355"
+          "hash": "3971026645478162355",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/stories/AlertDialog.stories.tsx",
-          "hash": "12043865367910801332"
+          "hash": "12043865367910801332",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/AspectRatio.stories.tsx",
-          "hash": "4935549091668111300"
+          "hash": "4935549091668111300",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Avatar.stories.tsx",
-          "hash": "18427908569902196261"
+          "hash": "18427908569902196261",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Badge.stories.tsx",
-          "hash": "4650397260263600804"
+          "hash": "4650397260263600804",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Breadcrumb.stories.tsx",
-          "hash": "11780075988313849342"
+          "hash": "11780075988313849342",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/stories/BubbleBackground.stories.tsx",
-          "hash": "5562374280229997190"
+          "hash": "5562374280229997190",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Button.stories.tsx",
-          "hash": "16696403868734529007"
+          "hash": "16696403868734529007",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/stories/Calendar.stories.tsx",
-          "hash": "2364716186209669437"
+          "hash": "2364716186209669437",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Card.stories.tsx",
-          "hash": "7302168230605935621"
+          "hash": "7302168230605935621",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Carousel.stories.tsx",
-          "hash": "1946752918365234281"
+          "hash": "1946752918365234281",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Checkbox.stories.tsx",
-          "hash": "12878059879747680410"
+          "hash": "12878059879747680410",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Collapsible.stories.tsx",
-          "hash": "4324817709030783579"
+          "hash": "4324817709030783579",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/stories/Command.stories.tsx",
-          "hash": "2079408116407089719"
+          "hash": "2079408116407089719",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/stories/CountingNumber.stories.tsx",
-          "hash": "18023235276664952868"
+          "hash": "18023235276664952868",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Dialog.stories.tsx",
-          "hash": "18133364863818628719"
+          "hash": "18133364863818628719",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/DotBackground.stories.tsx",
-          "hash": "2787868496458095722"
+          "hash": "2787868496458095722",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Drawer.stories.tsx",
-          "hash": "4632046615145280260"
+          "hash": "4632046615145280260",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/DropDrawer.stories.tsx",
-          "hash": "1094432452294305808"
+          "hash": "1094432452294305808",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/stories/DropdownMenu.stories.tsx",
-          "hash": "2751665659301543407"
+          "hash": "2751665659301543407",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/stories/FireworksBackground.stories.tsx",
-          "hash": "11452856480493576084"
+          "hash": "11452856480493576084",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/FlipButton.stories.tsx",
-          "hash": "15719524798863317825"
+          "hash": "15719524798863317825",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/stories/Form.stories.tsx",
-          "hash": "17586635588392725895"
+          "hash": "17586635588392725895",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:@hookform/resolvers",
+            "npm:react-hook-form",
+            "npm:zod"
+          ]
         },
         {
           "file": "packages/components/stories/HoverCard.stories.tsx",
-          "hash": "5964725150220976802"
+          "hash": "5964725150220976802",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Input.stories.tsx",
-          "hash": "16021314085929721314"
+          "hash": "16021314085929721314",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/InputOTP.stories.tsx",
-          "hash": "3581096193159501176"
+          "hash": "3581096193159501176",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:react-hook-form",
+            "npm:zod",
+            "npm:@hookform/resolvers"
+          ]
         },
         {
           "file": "packages/components/stories/Label.stories.tsx",
-          "hash": "15258750781842444720"
+          "hash": "15258750781842444720",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/NavigationMenu.stories.tsx",
-          "hash": "2700038911009569570"
+          "hash": "2700038911009569570",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Pagination.stories.tsx",
-          "hash": "17337755118370923258"
+          "hash": "17337755118370923258",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Popover.stories.tsx",
-          "hash": "16477935238212787504"
+          "hash": "16477935238212787504",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Progress.stories.tsx",
-          "hash": "16644308252751783713"
+          "hash": "16644308252751783713",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/RadioGroup.stories.tsx",
-          "hash": "910790739796438417"
+          "hash": "910790739796438417",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Resizable.stories.tsx",
-          "hash": "16255958701105420720"
+          "hash": "16255958701105420720",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/stories/ScrollArea.stories.tsx",
-          "hash": "9919818699664697320"
+          "hash": "9919818699664697320",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Select.stories.tsx",
-          "hash": "63566677882873632"
+          "hash": "63566677882873632",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Separator.stories.tsx",
-          "hash": "17206488088614486634"
+          "hash": "17206488088614486634",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Sheet.stories.tsx",
-          "hash": "11176078093531492525"
+          "hash": "11176078093531492525",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Sidebar.stories.tsx",
-          "hash": "2665841712745926376"
+          "hash": "2665841712745926376",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/stories/Skeleton.stories.tsx",
-          "hash": "14137480802683926550"
+          "hash": "14137480802683926550",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Slider.stories.tsx",
-          "hash": "2826353471337826851"
+          "hash": "2826353471337826851",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Switch.stories.tsx",
-          "hash": "8190769646365911428"
+          "hash": "8190769646365911428",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Table.stories.tsx",
-          "hash": "9981722704720173004"
+          "hash": "9981722704720173004",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/stories/Tabs.stories.tsx",
-          "hash": "636538364047579201"
+          "hash": "636538364047579201",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
         },
         {
           "file": "packages/components/stories/Toggle.stories.tsx",
-          "hash": "6098737115608286014"
+          "hash": "6098737115608286014",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/stories/Tooltip.stories.tsx",
-          "hash": "10245648190343590805"
+          "hash": "10245648190343590805",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
         },
         {
           "file": "packages/components/tailwind.config.ts",
-          "hash": "5709866967099273509"
+          "hash": "5709866967099273509",
+          "deps": [
+            "npm:tailwindcss@4.1.12"
+          ]
         },
         {
           "file": "packages/components/tsconfig.json",
@@ -1149,1613 +3745,6 @@
         {
           "file": "packages/components/yarn.lock",
           "hash": "17855511221714591212"
-        }
-      ],
-      "website": [
-        {
-          "file": "sites/arolariu.ro/.env.example",
-          "hash": "6785193873288690691"
-        },
-        {
-          "file": "sites/arolariu.ro/.gitattributes",
-          "hash": "14772901856226465301"
-        },
-        {
-          "file": "sites/arolariu.ro/.gitignore",
-          "hash": "1843414606073227517"
-        },
-        {
-          "file": "sites/arolariu.ro/.node-version",
-          "hash": "12858473645637222155"
-        },
-        {
-          "file": "sites/arolariu.ro/.prettierignore",
-          "hash": "15176021047741282473"
-        },
-        {
-          "file": "sites/arolariu.ro/.prettierrc",
-          "hash": "17614421692653572991"
-        },
-        {
-          "file": "sites/arolariu.ro/.storybook/main.ts",
-          "hash": "17506221164502103139"
-        },
-        {
-          "file": "sites/arolariu.ro/.storybook/preview.ts",
-          "hash": "17741130135917573222"
-        },
-        {
-          "file": "sites/arolariu.ro/.storybook/utils.tsx",
-          "hash": "17825633266629718316"
-        },
-        {
-          "file": "sites/arolariu.ro/.yarnrc.yml",
-          "hash": "8032949330729474890"
-        },
-        {
-          "file": "sites/arolariu.ro/Dockerfile",
-          "hash": "3700495218219787279"
-        },
-        {
-          "file": "sites/arolariu.ro/README.md",
-          "hash": "17228483218838857412"
-        },
-        {
-          "file": "sites/arolariu.ro/emails/invoices/AnalyzedInvoice.tsx",
-          "hash": "9974923803061077581"
-        },
-        {
-          "file": "sites/arolariu.ro/emails/invoices/DeletedInvoice.tsx",
-          "hash": "2775103511104950021"
-        },
-        {
-          "file": "sites/arolariu.ro/emails/invoices/InvoiceFeedback.tsx",
-          "hash": "14373813975408697786"
-        },
-        {
-          "file": "sites/arolariu.ro/emails/invoices/SharedInvoice.tsx",
-          "hash": "969215709071726568"
-        },
-        {
-          "file": "sites/arolariu.ro/emails/newsletter/Subscription.tsx",
-          "hash": "5860264820282608359"
-        },
-        {
-          "file": "sites/arolariu.ro/emails/readme.md",
-          "hash": "13113813552928464414"
-        },
-        {
-          "file": "sites/arolariu.ro/eslint.config.ts",
-          "hash": "181415834602191841",
-          "deps": [
-            "npm:globals"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/jest.config.ts",
-          "hash": "15872323906514260913"
-        },
-        {
-          "file": "sites/arolariu.ro/messages/en.json",
-          "hash": "10559110185478750323"
-        },
-        {
-          "file": "sites/arolariu.ro/messages/ro.json",
-          "hash": "15112814216530154378"
-        },
-        {
-          "file": "sites/arolariu.ro/next-env.d.ts",
-          "hash": "5284841197950455437"
-        },
-        {
-          "file": "sites/arolariu.ro/next.config.ts",
-          "hash": "8636070376627694862"
-        },
-        {
-          "file": "sites/arolariu.ro/package.json",
-          "hash": "863260357810668613",
-          "deps": [
-            "npm:@eslint/js",
-            "npm:@types/node",
-            "npm:eslint",
-            "npm:globals",
-            "npm:typescript",
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/playwright.config.ts",
-          "hash": "822071757223679531"
-        },
-        {
-          "file": "sites/arolariu.ro/postcss.config.js",
-          "hash": "261516259639629466"
-        },
-        {
-          "file": "sites/arolariu.ro/project.json",
-          "hash": "1824003044462577782"
-        },
-        {
-          "file": "sites/arolariu.ro/public/humans.txt",
-          "hash": "11562008063568866126"
-        },
-        {
-          "file": "sites/arolariu.ro/public/images/3d-illustration.png",
-          "hash": "7632244169401595978"
-        },
-        {
-          "file": "sites/arolariu.ro/public/images/about/author-thumbnail.svg",
-          "hash": "15611210832102119955"
-        },
-        {
-          "file": "sites/arolariu.ro/public/images/about/platform-thumbnail.svg",
-          "hash": "6046383678481378816"
-        },
-        {
-          "file": "sites/arolariu.ro/public/images/about/the-author/author.jpeg",
-          "hash": "6837292437898454945"
-        },
-        {
-          "file": "sites/arolariu.ro/public/images/about/the-author/work-together.svg",
-          "hash": "11261784116180454719"
-        },
-        {
-          "file": "sites/arolariu.ro/public/images/auth/forbidden.svg",
-          "hash": "14321929697419378306"
-        },
-        {
-          "file": "sites/arolariu.ro/public/images/auth/sign-in.svg",
-          "hash": "10607015613212209574"
-        },
-        {
-          "file": "sites/arolariu.ro/public/images/auth/sign-up.svg",
-          "hash": "12237510182377003157"
-        },
-        {
-          "file": "sites/arolariu.ro/public/images/domains/invoice-management-system.png",
-          "hash": "9771634861823647689"
-        },
-        {
-          "file": "sites/arolariu.ro/public/images/domains/invoices/403.svg",
-          "hash": "5238647681090554984"
-        },
-        {
-          "file": "sites/arolariu.ro/public/images/domains/invoices/invoice-bottom.svg",
-          "hash": "601263909191582190"
-        },
-        {
-          "file": "sites/arolariu.ro/public/images/domains/invoices/invoice-top.svg",
-          "hash": "18428377532359663455"
-        },
-        {
-          "file": "sites/arolariu.ro/public/images/domains/live-chat-rooms.jpeg",
-          "hash": "15090677499393187562"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/android-chrome-128x128.png",
-          "hash": "15084601307512700190"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/android-chrome-144x144.png",
-          "hash": "5359781216160187312"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/android-chrome-192x192.png",
-          "hash": "8812789810098664128"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/android-chrome-384x384.png",
-          "hash": "9365348472408653294"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/android-chrome-512x512.png",
-          "hash": "13261530669029011910"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/android-chrome-72x72.png",
-          "hash": "13886070576291614325"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/android-chrome-96x96.png",
-          "hash": "16949876641906068518"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-114x114.png",
-          "hash": "11184430298782854523"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-120x120.png",
-          "hash": "16029491723018321739"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-144x144.png",
-          "hash": "2118096982359220819"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-152x152.png",
-          "hash": "17558901213722870022"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-180x180.png",
-          "hash": "5396542305262151954"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-57x57.png",
-          "hash": "12180927186905238615"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-60x60.png",
-          "hash": "7609031738293452209"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-72x72.png",
-          "hash": "16992625568079084948"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/apple-touch-icon-76x76.png",
-          "hash": "8721030401541782705"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/favicon-16x16.png",
-          "hash": "18125303437733873834"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/favicon-32x32.png",
-          "hash": "9318045513719467153"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/favicon.ico",
-          "hash": "18121354123891453145"
-        },
-        {
-          "file": "sites/arolariu.ro/public/manifest/logo.png",
-          "hash": "6845117438673990551"
-        },
-        {
-          "file": "sites/arolariu.ro/public/security.txt",
-          "hash": "1303358046509908665"
-        },
-        {
-          "file": "sites/arolariu.ro/scripts/afterBuild.ts",
-          "hash": "778224310384284700"
-        },
-        {
-          "file": "sites/arolariu.ro/scripts/beforeBuild.ts",
-          "hash": "5072893186024739708"
-        },
-        {
-          "file": "sites/arolariu.ro/scripts/checkTranslations.ts",
-          "hash": "137323024621810015"
-        },
-        {
-          "file": "sites/arolariu.ro/scripts/clean.ts",
-          "hash": "6459664439839876949"
-        },
-        {
-          "file": "sites/arolariu.ro/scripts/format.ts",
-          "hash": "15598819100839667765"
-        },
-        {
-          "file": "sites/arolariu.ro/scripts/generateAcknowledgements.ts",
-          "hash": "4824514169285685420"
-        },
-        {
-          "file": "sites/arolariu.ro/scripts/generateEnvironment.ts",
-          "hash": "18006714199814960377"
-        },
-        {
-          "file": "sites/arolariu.ro/scripts/generateTranslations.ts",
-          "hash": "11322950506238991397"
-        },
-        {
-          "file": "sites/arolariu.ro/scripts/utils.azure.ts",
-          "hash": "14187352111258086079"
-        },
-        {
-          "file": "sites/arolariu.ro/scripts/utils.generic.ts",
-          "hash": "10392180860223510871"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/_components/EnhancedLegalArticles.tsx",
-          "hash": "10511864844461230949"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/_components/PackagesScreen.tsx",
-          "hash": "623304599353802155",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/_hooks/usePackageFilters.tsx",
-          "hash": "2975518210390071547"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/island.tsx",
-          "hash": "12098559939757160829"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/layout.tsx",
-          "hash": "11432091288370104689"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/loading.tsx",
-          "hash": "6996989133534346690",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/acknowledgements/page.tsx",
-          "hash": "8540931835363587398"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/privacy-policy/island.tsx",
-          "hash": "3968972712221969895"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/privacy-policy/page.tsx",
-          "hash": "6529308634200865079"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/terms-of-service/island.tsx",
-          "hash": "7356769021437616632"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/(privacy-and-terms)/terms-of-service/page.tsx",
-          "hash": "7281861646188560105"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/EULA.tsx",
-          "hash": "8188322532398514091",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/_components/Features.tsx",
-          "hash": "2484565483521156370",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/_components/Hero.tsx",
-          "hash": "4707560670134535837"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/_components/Technologies.tsx",
-          "hash": "17680069345513180554",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/_effects/TechSphere.tsx",
-          "hash": "7392843170635891289"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/island.tsx",
-          "hash": "14776522609056272947",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/layout.tsx",
-          "hash": "11860318739099968886"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/loading.tsx",
-          "hash": "10474953574945330287",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/page.tsx",
-          "hash": "14403947124528642874"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Biography.tsx",
-          "hash": "4113726126971250727"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Certifications.tsx",
-          "hash": "5903903956860936574",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Competencies.tsx",
-          "hash": "7174327585174506726"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Contact.tsx",
-          "hash": "690624436208928932",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Education.tsx",
-          "hash": "11669287997818210492",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Experience.tsx",
-          "hash": "2214680859781717941",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Hero.tsx",
-          "hash": "3945445009387343728"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-author/_components/Perspectives.tsx",
-          "hash": "5806948645824690801",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-author/_secrets/Terminal.tsx",
-          "hash": "15200181528366495527",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-author/page.tsx",
-          "hash": "18032706620515774615"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-platform/_components/Hero.tsx",
-          "hash": "11597328617979783114",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-platform/_components/Statistics.tsx",
-          "hash": "4122875470617210629",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-platform/_components/TechStack.tsx",
-          "hash": "14416028115924454956",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-platform/_components/Timeline.tsx",
-          "hash": "8652746853329251272",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/about/the-platform/page.tsx",
-          "hash": "7035357173464360302"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/api/mail/invoices/feedback/[id]/route.ts",
-          "hash": "2841737338647178560"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/api/mail/invoices/share/[id]/route.ts",
-          "hash": "767310565243211242"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/api/user/route.ts",
-          "hash": "4229706053020902577"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/auth/_components/AuthCard.tsx",
-          "hash": "15043407547457059462"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/auth/island.tsx",
-          "hash": "12162087674526710538"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/auth/layout.tsx",
-          "hash": "18410384264401527723"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/auth/loading.tsx",
-          "hash": "14158188532070622861",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/auth/page.tsx",
-          "hash": "970348517644685986"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/auth/sign-in/[[...sign-in]]/page.tsx",
-          "hash": "6957317478912031032"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/auth/sign-up/[[...sign-up]]/page.tsx",
-          "hash": "13032768096182484462"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/_components/DomainServiceCard.tsx",
-          "hash": "15716145678366303889"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/InvoiceNotAnalyzed.tsx",
-          "hash": "6925703113648512839",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/InvoiceNotFound.tsx",
-          "hash": "5584834650309822035"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/InvoicesNotFound.tsx",
-          "hash": "8179235855062703240"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/LoadingInvoice.tsx",
-          "hash": "3288424958841240450"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/_components/LoadingInvoices.tsx",
-          "hash": "753582462558468181"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContainer.tsx",
-          "hash": "7365687497568619618"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContext.test.tsx",
-          "hash": "12250898978081005544"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/_contexts/DialogContext.tsx",
-          "hash": "10896608949533902735"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/CarouselView.tsx",
-          "hash": "4318381041021593299",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/GridView.tsx",
-          "hash": "15689916526259746319",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/InvoicePreview.tsx",
-          "hash": "18319111867032959026",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/InvoiceSubmitForm.tsx",
-          "hash": "3058163280812624540"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/InvoiceSubtitle.tsx",
-          "hash": "7165620934984985085"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_components/MediaPreview.tsx",
-          "hash": "795468610850609833",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_context/InvoiceCreatorContext.tsx",
-          "hash": "14403476397603190528"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_hooks/useBlobUrls.tsx",
-          "hash": "12323361970511624885"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_hooks/useInvoiceActions.tsx",
-          "hash": "7018422610955816755",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_types/InvoiceScan.ts",
-          "hash": "2949708780658818819"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/_utils/invoiceScanUtils.ts",
-          "hash": "16559451843681381395"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/island.tsx",
-          "hash": "1860481885267839859"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/create-invoice/page.tsx",
-          "hash": "5476137518034810503"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/edit-invoice/[id]/page.tsx",
-          "hash": "16830369414171371343"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/island.tsx",
-          "hash": "43855332486013690"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/layout.tsx",
-          "hash": "14236183142438276346"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/loading.tsx",
-          "hash": "12866244004106318957",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/page.tsx",
-          "hash": "17904594477216465163"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/InvoiceHeader.tsx",
-          "hash": "5563588460439579171",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/TriviaTips.tsx",
-          "hash": "5328875892181927548",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/AnalyticsCard.tsx",
-          "hash": "14888349520594416909",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/ImageCard.tsx",
-          "hash": "11316696377595638022",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/InvoiceCard.tsx",
-          "hash": "4462559274710457800",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/MerchantCard.tsx",
-          "hash": "4453514434146005496",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/RecipeCard.tsx",
-          "hash": "828936601683682437",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/cards/SharingCard.tsx",
-          "hash": "1806748547663918468",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/charts.tsx",
-          "hash": "2285427034849664991"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/FeedbackDialog.tsx",
-          "hash": "6610350617109795685",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/ImageDialog.tsx",
-          "hash": "13019608067545051826",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/ItemsDialog.tsx",
-          "hash": "11606366276489213949",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/MerchantDialog.tsx",
-          "hash": "4260399567617032965",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/MerchantReceiptsDialog.tsx",
-          "hash": "14877935873275450146",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/MetadataDialog.tsx",
-          "hash": "9727401974435067043",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/RecipeDialog.tsx",
-          "hash": "1563062360168182631",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/ShareAnalytics.tsx",
-          "hash": "17064195423153252784",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/dialogs/SharingDialog.tsx",
-          "hash": "11590302699005367117",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/sidebar/SidebarSection.tsx",
-          "hash": "17044209502925179454"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/tables/ItemsTable.tsx",
-          "hash": "1598983646147007701",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/tabs/MetadataTab.tsx",
-          "hash": "12380514054693667912",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/_components/tabs/RecipesTab.tsx",
-          "hash": "12753828221611241680",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/island.tsx",
-          "hash": "1086075818696432083",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoice/[id]/page.tsx",
-          "hash": "11151327449095101963"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/InvoicesHeader.tsx",
-          "hash": "9512640949302050077",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/MessageInput.tsx",
-          "hash": "6566109326316536748",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/MessageList.tsx",
-          "hash": "9485897267341574165",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/dialogs/ExportDialog.tsx",
-          "hash": "11911292089306998763",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/dialogs/ImportDialog.tsx",
-          "hash": "14932645733241187848",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/dialogs/ShareDialog.tsx",
-          "hash": "6581002834817975454",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/tables/InvoiceTable.tsx",
-          "hash": "11326405033190300918",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/tables/InvoiceTableActions.tsx",
-          "hash": "17046826264302132523",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/views/GenerativeView.tsx",
-          "hash": "16515585765160522789",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/views/InvoicesView.tsx",
-          "hash": "808163900738294819",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/_components/views/StatisticsView.tsx",
-          "hash": "7429284909181504521"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/island.tsx",
-          "hash": "400652540017433926",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/invoices/view-invoices/page.tsx",
-          "hash": "16502302624122851519"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/island.tsx",
-          "hash": "2425523073101928149"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/domains/page.tsx",
-          "hash": "15080082832439437934"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/favicon.ico",
-          "hash": "18121354123891453145"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/global-error.tsx",
-          "hash": "8055266650647898344",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/globals.css",
-          "hash": "2642075783130591808"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/globals.ts",
-          "hash": "5287027641762202993"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/icon.svg",
-          "hash": "18085560056179948415"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/island.tsx",
-          "hash": "18067682628005649661",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/layout.tsx",
-          "hash": "9660056613185945684",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/loading.tsx",
-          "hash": "15463543233582144974",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/logo.svg",
-          "hash": "10215207022868746475"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/manifest.json",
-          "hash": "16387743888343178176"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/not-found.tsx",
-          "hash": "15350196351365983089"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/page.tsx",
-          "hash": "13015467218841652149"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/providers.tsx",
-          "hash": "7266677092929937041",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/robots.txt",
-          "hash": "13811142617598754572"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/routing.spec.tsx",
-          "hash": "13875852404128903739"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/sitemap.xml",
-          "hash": "3187038387079840317"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/tracking.tsx",
-          "hash": "9768013323105112276"
-        },
-        {
-          "file": "sites/arolariu.ro/src/app/web-vitals.tsx",
-          "hash": "15182336353280785105"
-        },
-        {
-          "file": "sites/arolariu.ro/src/components/Buttons/AuthButton.tsx",
-          "hash": "3405724005068417744"
-        },
-        {
-          "file": "sites/arolariu.ro/src/components/Buttons/ThemeButton.tsx",
-          "hash": "5474209535999144644"
-        },
-        {
-          "file": "sites/arolariu.ro/src/components/Commander.tsx",
-          "hash": "5996826047732713711",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/components/Footer.spec.tsx",
-          "hash": "16866268038225951631"
-        },
-        {
-          "file": "sites/arolariu.ro/src/components/Footer.tsx",
-          "hash": "1831042094813390243",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/components/Header.spec.tsx",
-          "hash": "5024815364805337135"
-        },
-        {
-          "file": "sites/arolariu.ro/src/components/Header.tsx",
-          "hash": "3354173375846223863"
-        },
-        {
-          "file": "sites/arolariu.ro/src/components/Navigation.tsx",
-          "hash": "14478928895101558546",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/contexts/FontContext.tsx",
-          "hash": "4126477019157813719"
-        },
-        {
-          "file": "sites/arolariu.ro/src/data/mocks/invoices.ts",
-          "hash": "5699140168873884539"
-        },
-        {
-          "file": "sites/arolariu.ro/src/hooks/index.ts",
-          "hash": "16270379679957578596"
-        },
-        {
-          "file": "sites/arolariu.ro/src/hooks/stateStore.tsx",
-          "hash": "7428530717568557641"
-        },
-        {
-          "file": "sites/arolariu.ro/src/hooks/useInvoice.tsx",
-          "hash": "12396180293070504283"
-        },
-        {
-          "file": "sites/arolariu.ro/src/hooks/useInvoices.tsx",
-          "hash": "6413710749166449349"
-        },
-        {
-          "file": "sites/arolariu.ro/src/hooks/useMerchant.tsx",
-          "hash": "13155604217753228063"
-        },
-        {
-          "file": "sites/arolariu.ro/src/hooks/useMerchants.tsx",
-          "hash": "12380340869952674959"
-        },
-        {
-          "file": "sites/arolariu.ro/src/hooks/usePagination.test.tsx",
-          "hash": "6991189707765716965"
-        },
-        {
-          "file": "sites/arolariu.ro/src/hooks/usePagination.tsx",
-          "hash": "9628164087829345333"
-        },
-        {
-          "file": "sites/arolariu.ro/src/hooks/useScrollToTop.tsx",
-          "hash": "14220588491819217316"
-        },
-        {
-          "file": "sites/arolariu.ro/src/hooks/useUserInformation.tsx",
-          "hash": "1898633307338740583"
-        },
-        {
-          "file": "sites/arolariu.ro/src/hooks/useWindowSize.test.tsx",
-          "hash": "16242704082944032379"
-        },
-        {
-          "file": "sites/arolariu.ro/src/hooks/useWindowSize.tsx",
-          "hash": "3660715272787745882"
-        },
-        {
-          "file": "sites/arolariu.ro/src/i18n/request.ts",
-          "hash": "17932131673175128876"
-        },
-        {
-          "file": "sites/arolariu.ro/src/instrumentation.ts",
-          "hash": "5899639681104040158"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/cookies/cookies.action.test.ts",
-          "hash": "108727179676393860"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/cookies/cookies.action.ts",
-          "hash": "727335197640930573"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/cookies/index.ts",
-          "hash": "6348781827446379722"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/invoices/analyzeInvoice.ts",
-          "hash": "4787872569048927070"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/invoices/fetchInvoice.ts",
-          "hash": "2454109732162303553"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/invoices/fetchInvoices.ts",
-          "hash": "9254218246584585602"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/invoices/fetchMerchant.ts",
-          "hash": "17535875573077130174"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/invoices/fetchMerchants.ts",
-          "hash": "11851671877066434704"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/invoices/updateInvoice.ts",
-          "hash": "4938487459183878263"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/invoices/uploadInvoice.ts",
-          "hash": "16913334435282141896"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/storage/fetchBlob.ts",
-          "hash": "10841202299571407473"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/storage/fetchConfig.ts",
-          "hash": "6588376185726857046"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/storage/uploadBlob.ts",
-          "hash": "9365917336923937075"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/actions/user/fetchUser.ts",
-          "hash": "13618418071795023354"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/utils.client.test.ts",
-          "hash": "12967962761557838071"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/utils.client.ts",
-          "hash": "3403234142603300437"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/utils.generic.test.ts",
-          "hash": "13434453333910789312"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/utils.generic.ts",
-          "hash": "13820616306387618521"
-        },
-        {
-          "file": "sites/arolariu.ro/src/lib/utils.server.ts",
-          "hash": "4131493183162353890"
-        },
-        {
-          "file": "sites/arolariu.ro/src/metadata.ts",
-          "hash": "5927409571400000085"
-        },
-        {
-          "file": "sites/arolariu.ro/src/middleware.ts",
-          "hash": "17361095745993794918"
-        },
-        {
-          "file": "sites/arolariu.ro/src/presentation/ForbiddenScreen.stories.tsx",
-          "hash": "1227075147557892384"
-        },
-        {
-          "file": "sites/arolariu.ro/src/presentation/ForbiddenScreen.tsx",
-          "hash": "15220798194191684464"
-        },
-        {
-          "file": "sites/arolariu.ro/src/presentation/Text/ParallaxText.tsx",
-          "hash": "11450190894672131901",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/presentation/Text/RichText.tsx",
-          "hash": "9177224899953900461"
-        },
-        {
-          "file": "sites/arolariu.ro/src/presentation/Text/TypewriterText.tsx",
-          "hash": "947490166896000518",
-          "deps": [
-            "components"
-          ]
-        },
-        {
-          "file": "sites/arolariu.ro/src/presentation/Text/index.ts",
-          "hash": "9612168164119468058"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/DDD/Entities/BaseEntity.ts",
-          "hash": "15485996897464795666"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/DDD/Entities/NamedEntity.ts",
-          "hash": "9357337520130456144"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/DDD/Entities/index.ts",
-          "hash": "11851086861315085381"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/DDD/SharedKernel/Currency.ts",
-          "hash": "2450813359271503548"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/DDD/SharedKernel/index.ts",
-          "hash": "13187014328135325365"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/DDD/index.ts",
-          "hash": "17610115050851563851"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/index.ts",
-          "hash": "17605589241761427257"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/invoices/Allergen.ts",
-          "hash": "17498131482471986263"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/invoices/Invoice.ts",
-          "hash": "15294795679635024739"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/invoices/Merchant.ts",
-          "hash": "16531088880463744404"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/invoices/Payment.ts",
-          "hash": "13520500534275642318"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/invoices/Product.ts",
-          "hash": "457779989250084882"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/invoices/Recipe.ts",
-          "hash": "1521499840131446373"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/invoices/index.ts",
-          "hash": "16462390616475638093"
-        },
-        {
-          "file": "sites/arolariu.ro/src/types/typedEnv.ts",
-          "hash": "4376389807104768309"
-        },
-        {
-          "file": "sites/arolariu.ro/tailwind.config.ts",
-          "hash": "17122533353278670419"
-        },
-        {
-          "file": "sites/arolariu.ro/tsconfig.json",
-          "hash": "2403262220250865277"
-        },
-        {
-          "file": "sites/arolariu.ro/yarn.lock",
-          "hash": "7955836701736424157"
-        }
-      ],
-      "cv": [
-        {
-          "file": "sites/cv.arolariu.ro/.gitignore",
-          "hash": "9693691127960088612"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/.prettierignore",
-          "hash": "12386949481068265532"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/.prettierrc",
-          "hash": "17897657148253707477"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/README.md",
-          "hash": "3303960267538121923"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/package.json",
-          "hash": "14673924745912686547",
-          "deps": [
-            "npm:typescript"
-          ]
-        },
-        {
-          "file": "sites/cv.arolariu.ro/project.json",
-          "hash": "2882499317748315637"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/app.css",
-          "hash": "12659515560017364435"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/app.d.ts",
-          "hash": "8514019045939557847"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/app.html",
-          "hash": "15448127097260669406"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/components/HelpDialog.svelte",
-          "hash": "12259363690321809972"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/components/ThemeToggle.svelte",
-          "hash": "7020492195937312727"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/components/motion/AnimatedSection.svelte",
-          "hash": "15949454634994784839"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/components/motion/index.ts",
-          "hash": "17772647290158595663"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/components/motion/intersection.ts",
-          "hash": "10333650512474152276"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/author.ts",
-          "hash": "7666706648209752274"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/biography.ts",
-          "hash": "11966131661493107925"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/certifications.ts",
-          "hash": "6959303671964264881"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/competencies.ts",
-          "hash": "6840113674527933901"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/education.ts",
-          "hash": "14084444241749874903"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/experiences.ts",
-          "hash": "7802474418247666615"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/index.ts",
-          "hash": "9917235996069479720"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/json.ts",
-          "hash": "9550411484385879719"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/landing.ts",
-          "hash": "162138338550990994"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/skills.ts",
-          "hash": "14039917629316922652"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/technical.ts",
-          "hash": "9076663166835991113"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/testimonials.ts",
-          "hash": "1487723096091984262"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/viewdata.ts",
-          "hash": "6277423006675960109"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/volunteering.ts",
-          "hash": "3240285271915616218"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/hooks/useTheme.svelte.ts",
-          "hash": "1389134633798985127"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/assets/favicon.svg",
-          "hash": "14344918875278748999"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/index.ts",
-          "hash": "403399750106740132"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/utils/copy.ts",
-          "hash": "14228755613358236426"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/utils/download.ts",
-          "hash": "10055437945488547822"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/utils/index.ts",
-          "hash": "4104171537983704147"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/utils/result.ts",
-          "hash": "15339667925540983639"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/views/HumanView.svelte",
-          "hash": "9418705439415495637"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/views/JsonView.svelte",
-          "hash": "1854862091354057259"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/views/MainView.svelte",
-          "hash": "12326938216384830657"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/views/PdfView.svelte",
-          "hash": "11957603127857186623"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/ActionButton.svelte",
-          "hash": "9168149753126022929"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/Badge.svelte",
-          "hash": "4178978181550486678"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/Footer.svelte",
-          "hash": "8683140588897537473"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/Header.svelte",
-          "hash": "12051930318733548814"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/Icon.svelte",
-          "hash": "1530539487002649841"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/About.svelte",
-          "hash": "5873921196909514002"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Competencies.svelte",
-          "hash": "10611886546397417549"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Contact.svelte",
-          "hash": "5664568380744371092"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Education.svelte",
-          "hash": "12041275645655425923"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Experience.svelte",
-          "hash": "7236584550429239208"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Hero.svelte",
-          "hash": "1560548963812033650"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Skills.svelte",
-          "hash": "7604287960659433821"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Testimonials.svelte",
-          "hash": "9321053902994584273"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/routes/+layout.svelte",
-          "hash": "12357600702002436888"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/routes/+page.svelte",
-          "hash": "12017184010938085599"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/routes/human/+page.svelte",
-          "hash": "15093783064937628200"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/routes/json/+page.svelte",
-          "hash": "12871415413743881255"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/routes/pdf/+page.svelte",
-          "hash": "13371676539790079941"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/routes/rest/json/+server.ts",
-          "hash": "15307343536355860094"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Biography.ts",
-          "hash": "9419486526803261270"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Certificate.ts",
-          "hash": "17370042838597356449"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Competency.ts",
-          "hash": "17697754484993987509"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Education.ts",
-          "hash": "13138272282365068161"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Experience.ts",
-          "hash": "9247889510250992193"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/PersonalInformation.ts",
-          "hash": "10725174226119185852"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Skill.ts",
-          "hash": "15986963919752416832"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Testimonial.ts",
-          "hash": "2775355216894778173"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/index.ts",
-          "hash": "6037331709054615390"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/static/author.jpeg",
-          "hash": "6837292437898454945"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/static/cv.pdf",
-          "hash": "4905060426598892796"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/static/robots.txt",
-          "hash": "8128781345255320682"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/svelte.config.js",
-          "hash": "12010224839640651075"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/swa-cli.config.json",
-          "hash": "10483501801312831594"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/tailwind.config.js",
-          "hash": "2808229931761276497"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/tsconfig.json",
-          "hash": "13604813847796067401"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/vite.config.js",
-          "hash": "16297919805923460214"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/yarn.lock",
-          "hash": "13120729347680354489"
         }
       ]
     },
@@ -2861,20 +3850,12 @@
         "hash": "16023137821942760772"
       },
       {
-        "file": ".pnp.cjs",
-        "hash": "18224280966112164660"
-      },
-      {
         "file": ".vscode/mcp.json",
         "hash": "2035354960920675143"
       },
       {
         "file": ".vscode/settings.json",
         "hash": "1115909572603447820"
-      },
-      {
-        "file": ".yarn/install-state.gz",
-        "hash": "6455725984650592928"
       },
       {
         "file": "CODE_OF_CONDUCT.md",
@@ -3234,11 +4215,11 @@
       },
       {
         "file": "package-lock.json",
-        "hash": "126209863787105664"
+        "hash": "13619935043555661733"
       },
       {
         "file": "package.json",
-        "hash": "18028727537322339703"
+        "hash": "8209980805839758356"
       },
       {
         "file": "readme/desktop-platform.png",
@@ -3251,10 +4232,6 @@
       {
         "file": "validate-monorepo.sh",
         "hash": "13674129390619868059"
-      },
-      {
-        "file": "yarn.lock",
-        "hash": "7921757777518918363"
       }
     ]
   }
