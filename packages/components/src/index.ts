@@ -329,7 +329,8 @@ export {
   TooltipProvider,
 } from "./components/ui/tooltip";
 
-export { useIsMobile } from "./hooks/use-mobile";
+export { useIsMobile } from "./hooks/useIsMobile";
+export { useWindowSize } from "./hooks/useWindowSize";
 
 export { cn } from "./lib/utils";
 
