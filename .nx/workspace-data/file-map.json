@@ -5,6 +5,2046 @@
   "nxJsonPlugins": [],
   "fileMap": {
     "projectFileMap": {
+      "api": [
+        {
+          "file": "sites/api.arolariu.ro/.dockerignore",
+          "hash": "15592786434469945615"
+        },
+        {
+          "file": "sites/api.arolariu.ro/Controllers_Breakpoints.xml",
+          "hash": "4450599551685440761"
+        },
+        {
+          "file": "sites/api.arolariu.ro/Dockerfile",
+          "hash": "1133658481183629021"
+        },
+        {
+          "file": "sites/api.arolariu.ro/project.json",
+          "hash": "13168973350973028059"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/DDD/Contracts/BaseEntity.cs",
+          "hash": "5425144769086793917"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/DDD/Contracts/IAuditable.cs",
+          "hash": "10813825451700961299"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/DDD/Contracts/NamedEntity.cs",
+          "hash": "6647734087891195310"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Options/ApplicationOptions.cs",
+          "hash": "2445526816533342497"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Options/CloudOptionsManager.cs",
+          "hash": "4435132129373469890"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Options/IOptionsManager.cs",
+          "hash": "18330201420841734241"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Options/LocalOptionsManager.cs",
+          "hash": "3400382618875229748"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Services/KeyVault/IKeyVaultService.cs",
+          "hash": "11573101383300508600"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Services/KeyVault/KeyVaultService.cs",
+          "hash": "12161288748698968344"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Logging/Log.cs",
+          "hash": "11739523079108968979"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Logging/LoggingExtensions.cs",
+          "hash": "13420187501064484489"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Metering/MeteringExtensions.cs",
+          "hash": "4786135891425597780"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Telemetry/TelemetryExtensions.cs",
+          "hash": "11650083657260210235"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Tracing/ActivityGenerators.cs",
+          "hash": "17826222792602049631"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Tracing/TracingExtensions.cs",
+          "hash": "7102165873938181197"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/Validators/Validator.cs",
+          "hash": "2946613604713779945"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj",
+          "hash": "1876983983428866892"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Brokers/AuthDbContext.cs",
+          "hash": "200620099562891587"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Endpoints/AuthEndpoints.Handlers.cs",
+          "hash": "9375147730596604175"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Endpoints/AuthEndpoints.Mappings.cs",
+          "hash": "14480718917592355114"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Endpoints/AuthEndpoints.cs",
+          "hash": "10253422856431991433"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Models/AuthenticatedUser.cs",
+          "hash": "9128320407996197951"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Models/AuthenticatedUserRole.cs",
+          "hash": "2353623498982134569"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Modules/WebApplicationBuilderExtensions.cs",
+          "hash": "11864144168725714873"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Modules/WebApplicationExtensions.cs",
+          "hash": "16582841121456930934"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/Properties/launchSettings.json",
+          "hash": "15740283677798482833"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/arolariu.Backend.Core.Auth.csproj",
+          "hash": "15485695310803066458"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core.Auth/arolariu.Backend.Core.Auth.csproj.user",
+          "hash": "11829192674250305323"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs",
+          "hash": "15011356319254484048"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationExtensions.cs",
+          "hash": "8784092834637235762"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Domain/General/Services/Swagger/SwaggerConfigurationService.cs",
+          "hash": "14491657426297309965"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Domain/General/Services/Swagger/SwaggerFilterService.cs",
+          "hash": "3742037840676054184"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Program.cs",
+          "hash": "286653202647200640"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Properties/launchSettings.json",
+          "hash": "15026665446515735349"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/Properties/serviceDependencies.local.json.user",
+          "hash": "10384602919595219439"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/appsettings.Development.json",
+          "hash": "9804185829386699275"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/appsettings.Production.json",
+          "hash": "9804185829386699275"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/appsettings.json",
+          "hash": "2850435928585984027"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj",
+          "hash": "2122375640246943011"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj.user",
+          "hash": "12623104781130995556"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/ClassifierBroker/AzureOpenAiBroker.Internals.cs",
+          "hash": "5710355985318058956"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/ClassifierBroker/AzureOpenAiBroker.cs",
+          "hash": "1220450319198262968"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/ClassifierBroker/IOpenAiBroker.cs",
+          "hash": "933902879406929368"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/IdentifierBroker/AzureFormRecognizerBroker.Internals.cs",
+          "hash": "11662182252714059266"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/IdentifierBroker/AzureFormRecognizerBroker.cs",
+          "hash": "8769481075363171283"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/IdentifierBroker/IFormRecognizerBroker.cs",
+          "hash": "6820018608505883108"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/DatabaseBroker/IInvoiceNoSqlBroker.cs",
+          "hash": "6643808332257076653"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/DatabaseBroker/InvoiceNoSqlBroker.Invoices.cs",
+          "hash": "18445808721701166978"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/DatabaseBroker/InvoiceNoSqlBroker.Merchants.cs",
+          "hash": "13781130273335661853"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/DatabaseBroker/InvoiceNoSqlBroker.cs",
+          "hash": "14973219519284511337"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/TranslatorBroker/AzureTranslatorBroker.cs",
+          "hash": "2368854465725302080"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/TranslatorBroker/ITranslatorBroker.cs",
+          "hash": "7955216585889216487"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoiceDescriptionNotSetException.cs",
+          "hash": "17344123844574764027"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoiceIdNotSetException.cs",
+          "hash": "9704057337896421007"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoicePaymentInformationNotCorrectException.cs",
+          "hash": "17845796522575411738"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoicePhotoLocationNotCorrectException.cs",
+          "hash": "12922263478467298693"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoiceTimeInformationNotCorrectException.cs",
+          "hash": "3575487832588749140"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Foundation/InvoiceFoundationDependencyException.cs",
+          "hash": "9814949980260244955"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Foundation/InvoiceFoundationDependencyValidationException.cs",
+          "hash": "17085412335571168051"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Foundation/InvoiceFoundationServiceException.cs",
+          "hash": "1826664385416046043"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Foundation/InvoiceFoundationValidationException.cs",
+          "hash": "15317938357418383112"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Orchestration/InvoiceOrchestrationDependencyException.cs",
+          "hash": "10168589250815699735"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Orchestration/InvoiceOrchestrationDependencyValidationException.cs",
+          "hash": "13476365633012943756"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Orchestration/InvoiceOrchestrationServiceException.cs",
+          "hash": "15172614429214032917"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Orchestration/InvoiceOrchestrationValidationException.cs",
+          "hash": "6712230454367919579"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Processing/InvoiceProcessingServiceDependencyException.cs",
+          "hash": "1252204243434290862"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Processing/InvoiceProcessingServiceDependencyValidationException.cs",
+          "hash": "16493677958689351383"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Processing/InvoiceProcessingServiceException.cs",
+          "hash": "13229099707687583568"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Processing/InvoiceProcessingServiceValidationException.cs",
+          "hash": "12328596090130574282"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Invoice.cs",
+          "hash": "6938424619567067216"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/InvoiceCategory.cs",
+          "hash": "8974151710184832064"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Inner/MerchantIdNotSetException.cs",
+          "hash": "5867988978080018771"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Inner/MerchantParentCompanyIdNotSetException.cs",
+          "hash": "1751117430034568351"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Foundation/MerchantFoundationServiceDependencyException.cs",
+          "hash": "12608337952701608394"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Foundation/MerchantFoundationServiceDependencyValidationException.cs",
+          "hash": "1353770184306518415"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Foundation/MerchantFoundationServiceException.cs",
+          "hash": "15127601451816352473"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Foundation/MerchantFoundationServiceValidationException.cs",
+          "hash": "4937916459244445233"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Orchestration/MerchantOrchestrationServiceDependencyException.cs",
+          "hash": "15287974753543386211"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Orchestration/MerchantOrchestrationServiceDependencyValidationException.cs",
+          "hash": "4586854259031860700"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Orchestration/MerchantOrchestrationServiceException.cs",
+          "hash": "4994326695960282772"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Orchestration/MerchantOrchestrationServiceValidationException.cs",
+          "hash": "15889237744938648018"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Merchant.cs",
+          "hash": "12834893975614593252"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/MerchantCategory.cs",
+          "hash": "10984480449894512090"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Allergen.cs",
+          "hash": "3476796196228207454"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Currency.cs",
+          "hash": "2959467667550900826"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/PaymentInformation.cs",
+          "hash": "8572881094715341794"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Products/Product.cs",
+          "hash": "14477594175464596495"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Products/ProductCategory.cs",
+          "hash": "3499672934567538851"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Products/ProductMetadata.cs",
+          "hash": "16857938673788060982"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Recipe.cs",
+          "hash": "11510086658678750912"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DTOs/AnalysisOptions.cs",
+          "hash": "8371500520406936378"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DTOs/CreateInvoiceDto.cs",
+          "hash": "2787598045258323040"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DTOs/CreateMerchantDto.cs",
+          "hash": "11442188792756479086"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/DTOs/InvoiceStatusDto.cs",
+          "hash": "11876218334128969860"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.Handlers.cs",
+          "hash": "17483776819711474323"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.Mappings.cs",
+          "hash": "8984612983639931945"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.Metadata.cs",
+          "hash": "16322373663461442725"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.cs",
+          "hash": "15272667928830897672"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Modules/Log.cs",
+          "hash": "9564665542982093331"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Modules/ValueConverters/ValueConverterForIEnumerableOf.cs",
+          "hash": "6619840143911268436"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Modules/WebApplicationBuilderExtensions.cs",
+          "hash": "7368585634563337679"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Modules/WebApplicationExtensions.cs",
+          "hash": "4470091602424657491"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Properties/launchSettings.json",
+          "hash": "11479278708442602560"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceAnalysis/IInvoiceAnalysisFoundationService.cs",
+          "hash": "3626070432620275939"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceAnalysis/InvoiceAnalysisFoundationService.Exceptions.cs",
+          "hash": "3876976494074604137"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceAnalysis/InvoiceAnalysisFoundationService.Validations.cs",
+          "hash": "12821876510431028008"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceAnalysis/InvoiceAnalysisFoundationService.cs",
+          "hash": "14198599583821210325"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/IInvoiceStorageFoundationService.cs",
+          "hash": "9052443578817915704"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/InvoiceStorageFoundationService.Exceptions.cs",
+          "hash": "15805421144987170026"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/InvoiceStorageFoundationService.Validations.cs",
+          "hash": "3978306329231457341"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/InvoiceStorageFoundationService.cs",
+          "hash": "4234725039746111329"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/MerchantStorage/IMerchantStorageFoundationService.cs",
+          "hash": "9994226268161815133"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/MerchantStorage/MerchantStorageFoundationService.Exceptions.cs",
+          "hash": "10936867771975211358"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/MerchantStorage/MerchantStorageFoundationService.Validations.cs",
+          "hash": "4557650472524359116"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/MerchantStorage/MerchantStorageFoundationService.cs",
+          "hash": "2913029926252492454"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/InvoiceService/IInvoiceOrchestrationService.cs",
+          "hash": "2504259152353154292"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/InvoiceService/InvoiceOrchestrationService.Exceptions.cs",
+          "hash": "11061109917681619203"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/InvoiceService/InvoiceOrchestrationService.Validations.cs",
+          "hash": "13953038012538392219"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/InvoiceService/InvoiceOrchestrationService.cs",
+          "hash": "14952889445801879581"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/MerchantService/IMerchantOrchestrationService.cs",
+          "hash": "1263272722521331306"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/MerchantService/MerchantOrchestrationService.Exceptions.cs",
+          "hash": "1133318820349678297"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/MerchantService/MerchantOrchestrationService.Validations.cs",
+          "hash": "10526631903045488724"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/MerchantService/MerchantOrchestrationService.cs",
+          "hash": "15527291984703827931"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Processing/IInvoiceProcessingService.cs",
+          "hash": "11110180070157262700"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Processing/InvoiceProcessingService.Exceptions.cs",
+          "hash": "17864841377629671792"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Processing/InvoiceProcessingService.Validations.cs",
+          "hash": "17867111629017879511"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/Services/Processing/InvoiceProcessingService.cs",
+          "hash": "3199778479010705962"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/arolariu.Backend.Domain.Invoices.csproj",
+          "hash": "12577958783664600918"
+        },
+        {
+          "file": "sites/api.arolariu.ro/src/Invoices/arolariu.Backend.Domain.Invoices.csproj.user",
+          "hash": "2946496967990599104"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Core.Tests/MocksContainer.cs",
+          "hash": "16150425431924397128"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Core.Tests/arolariu.Backend.Core.Tests.csproj",
+          "hash": "6263143334713427249"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Builders/InvoiceBuilder.cs",
+          "hash": "15387979299915666116"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Builders/MerchantBuilder.cs",
+          "hash": "4421214429836889151"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Brokers/InvoiceNoSqlBrokerComprehensiveTests.cs",
+          "hash": "3273536775067872056"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Brokers/InvoiceNoSqlBrokerTests.Base.cs",
+          "hash": "4371201714322567920"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Brokers/MerchantNoSqlBrokerTests.cs",
+          "hash": "1463202486647971928"
+        },
+        {
+          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/arolariu.Backend.Domain.Tests.csproj",
+          "hash": "10628875374070508545"
+        }
+      ],
+      "components": [
+        {
+          "file": "packages/components/.editorconfig",
+          "hash": "11525873501642599925"
+        },
+        {
+          "file": "packages/components/.gitattributes",
+          "hash": "5816063049553364052"
+        },
+        {
+          "file": "packages/components/.gitignore",
+          "hash": "7579625984851485945"
+        },
+        {
+          "file": "packages/components/.npmignore",
+          "hash": "4823366373799514953"
+        },
+        {
+          "file": "packages/components/.storybook/main.ts",
+          "hash": "11154508189134293353",
+          "deps": [
+            "npm:storybook-react-rsbuild"
+          ]
+        },
+        {
+          "file": "packages/components/.storybook/preview.ts",
+          "hash": "10422226424724871560",
+          "deps": [
+            "npm:@storybook/react",
+            "npm:@storybook/addon-themes"
+          ]
+        },
+        {
+          "file": "packages/components/.yarnrc.yml",
+          "hash": "8032949330729474890"
+        },
+        {
+          "file": "packages/components/CONTRIBUTING.md",
+          "hash": "15716441153597845359"
+        },
+        {
+          "file": "packages/components/DEBUGGING.md",
+          "hash": "620540025338524281"
+        },
+        {
+          "file": "packages/components/EXAMPLES.md",
+          "hash": "11381767269462754860"
+        },
+        {
+          "file": "packages/components/LICENSE.md",
+          "hash": "5788632615828194898"
+        },
+        {
+          "file": "packages/components/changelog.md",
+          "hash": "5977471077428156204"
+        },
+        {
+          "file": "packages/components/components.json",
+          "hash": "6023558422618191586"
+        },
+        {
+          "file": "packages/components/package.json",
+          "hash": "8878048340043438600",
+          "deps": [
+            "npm:motion@12.23.12",
+            "npm:react@19.1.1",
+            "npm:react-dom@19.1.1",
+            "npm:tailwindcss@4.1.12",
+            "npm:@microsoft/api-extractor",
+            "npm:@rsbuild/core",
+            "npm:@rsbuild/plugin-react",
+            "npm:@rslib/core",
+            "npm:@storybook/addon-a11y",
+            "npm:@storybook/addon-docs",
+            "npm:@storybook/addon-essentials",
+            "npm:@storybook/addon-interactions",
+            "npm:@storybook/addon-links",
+            "npm:@storybook/addon-storysource",
+            "npm:@storybook/addon-themes",
+            "npm:@tailwindcss/postcss@4.1.12",
+            "npm:@types/node",
+            "npm:@types/react@19.1.12",
+            "npm:@types/react-dom@19.1.9",
+            "npm:cssnano@7.1.1",
+            "npm:playwright",
+            "npm:postcss",
+            "npm:rimraf",
+            "npm:storybook",
+            "npm:storybook-addon-rslib",
+            "npm:storybook-builder-rsbuild",
+            "npm:storybook-react-rsbuild",
+            "npm:tsx@4.20.4",
+            "npm:typescript@5.9.2",
+            "npm:@hookform/resolvers",
+            "npm:@radix-ui/react-accordion",
+            "npm:@radix-ui/react-alert-dialog",
+            "npm:@radix-ui/react-aspect-ratio",
+            "npm:@radix-ui/react-avatar",
+            "npm:@radix-ui/react-checkbox",
+            "npm:@radix-ui/react-collapsible",
+            "npm:@radix-ui/react-context-menu",
+            "npm:@radix-ui/react-dialog",
+            "npm:@radix-ui/react-dropdown-menu",
+            "npm:@radix-ui/react-hover-card",
+            "npm:@radix-ui/react-label",
+            "npm:@radix-ui/react-menubar",
+            "npm:@radix-ui/react-navigation-menu",
+            "npm:@radix-ui/react-popover",
+            "npm:@radix-ui/react-progress",
+            "npm:@radix-ui/react-radio-group",
+            "npm:@radix-ui/react-scroll-area",
+            "npm:@radix-ui/react-select",
+            "npm:@radix-ui/react-separator",
+            "npm:@radix-ui/react-slider",
+            "npm:@radix-ui/react-slot",
+            "npm:@radix-ui/react-switch",
+            "npm:@radix-ui/react-tabs",
+            "npm:@radix-ui/react-toggle",
+            "npm:@radix-ui/react-toggle-group",
+            "npm:@radix-ui/react-tooltip",
+            "npm:class-variance-authority",
+            "npm:clsx",
+            "npm:cmdk",
+            "npm:embla-carousel-react",
+            "npm:input-otp",
+            "npm:lucide-react",
+            "npm:next-themes",
+            "npm:react-day-picker",
+            "npm:react-hook-form",
+            "npm:react-resizable-panels",
+            "npm:recharts@3.1.2",
+            "npm:shiki",
+            "npm:sonner",
+            "npm:tailwind-merge",
+            "npm:tailwindcss-animate",
+            "npm:vaul",
+            "npm:zod"
+          ]
+        },
+        {
+          "file": "packages/components/postcss.config.ts",
+          "hash": "11670021787661412008"
+        },
+        {
+          "file": "packages/components/project.json",
+          "hash": "7641427502486320073"
+        },
+        {
+          "file": "packages/components/readme.md",
+          "hash": "16078566551060520946"
+        },
+        {
+          "file": "packages/components/rslib.config.ts",
+          "hash": "10729989022203041080",
+          "deps": [
+            "npm:@rslib/core",
+            "npm:@rsbuild/plugin-react"
+          ]
+        },
+        {
+          "file": "packages/components/scripts/generate-exports.ts",
+          "hash": "16538506712886830781"
+        },
+        {
+          "file": "packages/components/src/components/ui/accordion.tsx",
+          "hash": "17299815226734524285",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-accordion",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/alert-dialog.tsx",
+          "hash": "11661239190832217159",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-alert-dialog"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/alert.tsx",
+          "hash": "2182990431490037044",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:class-variance-authority"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/aspect-ratio.tsx",
+          "hash": "4606169473813726734",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-aspect-ratio"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/avatar.tsx",
+          "hash": "17384832726976543448",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-avatar"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/background-beams.tsx",
+          "hash": "13702005136238343422",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/badge.tsx",
+          "hash": "10292464856163758721",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-slot",
+            "npm:class-variance-authority"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/breadcrumb.tsx",
+          "hash": "8968029525729114086",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-slot",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/bubble-background.tsx",
+          "hash": "391179514383964693",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/button.tsx",
+          "hash": "185559879251684815",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-slot",
+            "npm:class-variance-authority"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/calendar.tsx",
+          "hash": "15077313089040611063",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:lucide-react",
+            "npm:react-day-picker"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/card.tsx",
+          "hash": "15450139886303145510",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/carousel.tsx",
+          "hash": "8231392209371262743",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:embla-carousel-react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/chart.tsx",
+          "hash": "14603915284685602573",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:recharts@3.1.2"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/checkbox.tsx",
+          "hash": "16320784960970074535",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-checkbox",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/collapsible.tsx",
+          "hash": "17952782360746368922",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-collapsible"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/command.tsx",
+          "hash": "6031176062298598506",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:cmdk",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/context-menu.tsx",
+          "hash": "4223366329495244101",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-context-menu",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/counting-number.tsx",
+          "hash": "13610680740970608505",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/dialog.tsx",
+          "hash": "13054091900467942337",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-dialog",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/dot-background.tsx",
+          "hash": "18394725875975686851",
+          "deps": [
+            "npm:motion@12.23.12",
+            "npm:react@19.1.1"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/drawer.tsx",
+          "hash": "1690118432151329009",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:vaul"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/dropdown-menu.tsx",
+          "hash": "7202576572599694831",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-dropdown-menu",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/dropdrawer.tsx",
+          "hash": "9521326115899011845",
+          "deps": [
+            "npm:motion@12.23.12",
+            "npm:lucide-react",
+            "npm:react@19.1.1"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/fireworks-background.tsx",
+          "hash": "6858263757084158884",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/flip-button.tsx",
+          "hash": "13901848367490170152",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/form.tsx",
+          "hash": "14447785933679907830",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-label",
+            "npm:@radix-ui/react-slot",
+            "npm:react-hook-form"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/gradient-background.tsx",
+          "hash": "7313621754759490355",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/gradient-text.tsx",
+          "hash": "14965116242636138277",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/highlight-text.tsx",
+          "hash": "6369678940497199882",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/hole-background.tsx",
+          "hash": "9776365904941695237",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/hover-card.tsx",
+          "hash": "14165647658584306902",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-hover-card"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/input-otp.tsx",
+          "hash": "3420373038828772957",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:input-otp",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/input.tsx",
+          "hash": "17007866537954501136",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/label.tsx",
+          "hash": "17992629208852058960",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-label"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/menubar.tsx",
+          "hash": "8056776562539413317",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-menubar",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/navigation-menu.tsx",
+          "hash": "18062547974822095341",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-navigation-menu",
+            "npm:class-variance-authority",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/pagination.tsx",
+          "hash": "3207847053010488040",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/popover.tsx",
+          "hash": "340375541626603428",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-popover"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/progress.tsx",
+          "hash": "9065033862777507155",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-progress"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/radio-group.tsx",
+          "hash": "15111815666279259713",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-radio-group",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/resizable.tsx",
+          "hash": "4586475161360993529",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:lucide-react",
+            "npm:react-resizable-panels"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/ripple-button.tsx",
+          "hash": "4443435968126821753",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/scratcher.tsx",
+          "hash": "17564212033422334971",
+          "deps": [
+            "npm:motion@12.23.12",
+            "npm:react@19.1.1"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/scroll-area.tsx",
+          "hash": "4317549406678443949",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-scroll-area"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/select.tsx",
+          "hash": "7586012612311272127",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-select",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/separator.tsx",
+          "hash": "7443008638955122786",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-separator"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/sheet.tsx",
+          "hash": "17747769327134134594",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-dialog",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/sidebar.tsx",
+          "hash": "14848768308280853413",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-slot",
+            "npm:class-variance-authority",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/skeleton.tsx",
+          "hash": "5906701918444365652",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/slider.tsx",
+          "hash": "16283649896254241750",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-slider"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/sonner.tsx",
+          "hash": "17996715027035620908",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:next-themes",
+            "npm:sonner"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/switch.tsx",
+          "hash": "9030193380806192285",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-switch"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/table.tsx",
+          "hash": "1818992291291922268",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/tabs.tsx",
+          "hash": "12545532191750757225",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-tabs"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/textarea.tsx",
+          "hash": "230482805822790343",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/toggle-group.tsx",
+          "hash": "8714767819769344694",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-toggle-group",
+            "npm:class-variance-authority"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/toggle.tsx",
+          "hash": "4547741379318831936",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-toggle",
+            "npm:class-variance-authority"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/tooltip.tsx",
+          "hash": "9915299380283988734",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@radix-ui/react-tooltip"
+          ]
+        },
+        {
+          "file": "packages/components/src/components/ui/typewriter.tsx",
+          "hash": "10977177624607766996",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:motion@12.23.12"
+          ]
+        },
+        {
+          "file": "packages/components/src/hooks/useIsMobile.tsx",
+          "hash": "13039703850798776634",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
+        },
+        {
+          "file": "packages/components/src/hooks/useWindowSize.tsx",
+          "hash": "11277560458995832145",
+          "deps": [
+            "npm:react@19.1.1"
+          ]
+        },
+        {
+          "file": "packages/components/src/index.css",
+          "hash": "4620819702153823213"
+        },
+        {
+          "file": "packages/components/src/index.ts",
+          "hash": "14014933093316683464"
+        },
+        {
+          "file": "packages/components/src/lib/utils.ts",
+          "hash": "17124554240397410575",
+          "deps": [
+            "npm:clsx",
+            "npm:tailwind-merge"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Accordion.stories.tsx",
+          "hash": "6731562617004098816",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Alert.stories.tsx",
+          "hash": "3971026645478162355",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/AlertDialog.stories.tsx",
+          "hash": "12043865367910801332",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/AspectRatio.stories.tsx",
+          "hash": "4935549091668111300",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Avatar.stories.tsx",
+          "hash": "18427908569902196261",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Badge.stories.tsx",
+          "hash": "4650397260263600804",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Breadcrumb.stories.tsx",
+          "hash": "11780075988313849342",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/BubbleBackground.stories.tsx",
+          "hash": "5562374280229997190",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Button.stories.tsx",
+          "hash": "16696403868734529007",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Calendar.stories.tsx",
+          "hash": "2364716186209669437",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Card.stories.tsx",
+          "hash": "7302168230605935621",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Carousel.stories.tsx",
+          "hash": "1946752918365234281",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Checkbox.stories.tsx",
+          "hash": "12878059879747680410",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Collapsible.stories.tsx",
+          "hash": "4324817709030783579",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Command.stories.tsx",
+          "hash": "2079408116407089719",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/CountingNumber.stories.tsx",
+          "hash": "18023235276664952868",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Dialog.stories.tsx",
+          "hash": "18133364863818628719",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/DotBackground.stories.tsx",
+          "hash": "2787868496458095722",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Drawer.stories.tsx",
+          "hash": "4632046615145280260",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/DropDrawer.stories.tsx",
+          "hash": "1094432452294305808",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/DropdownMenu.stories.tsx",
+          "hash": "2751665659301543407",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/FireworksBackground.stories.tsx",
+          "hash": "11452856480493576084",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/FlipButton.stories.tsx",
+          "hash": "15719524798863317825",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Form.stories.tsx",
+          "hash": "17586635588392725895",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:@hookform/resolvers",
+            "npm:react-hook-form",
+            "npm:zod"
+          ]
+        },
+        {
+          "file": "packages/components/stories/HoverCard.stories.tsx",
+          "hash": "5964725150220976802",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Input.stories.tsx",
+          "hash": "16021314085929721314",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/InputOTP.stories.tsx",
+          "hash": "3581096193159501176",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:react-hook-form",
+            "npm:zod",
+            "npm:@hookform/resolvers"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Label.stories.tsx",
+          "hash": "15258750781842444720",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/NavigationMenu.stories.tsx",
+          "hash": "2700038911009569570",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Pagination.stories.tsx",
+          "hash": "17337755118370923258",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Popover.stories.tsx",
+          "hash": "16477935238212787504",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Progress.stories.tsx",
+          "hash": "16644308252751783713",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/RadioGroup.stories.tsx",
+          "hash": "910790739796438417",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Resizable.stories.tsx",
+          "hash": "16255958701105420720",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/ScrollArea.stories.tsx",
+          "hash": "9919818699664697320",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Select.stories.tsx",
+          "hash": "63566677882873632",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Separator.stories.tsx",
+          "hash": "17206488088614486634",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Sheet.stories.tsx",
+          "hash": "11176078093531492525",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Sidebar.stories.tsx",
+          "hash": "2665841712745926376",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Skeleton.stories.tsx",
+          "hash": "14137480802683926550",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Slider.stories.tsx",
+          "hash": "2826353471337826851",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Switch.stories.tsx",
+          "hash": "8190769646365911428",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Table.stories.tsx",
+          "hash": "9981722704720173004",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Tabs.stories.tsx",
+          "hash": "636538364047579201",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Toggle.stories.tsx",
+          "hash": "6098737115608286014",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/stories/Tooltip.stories.tsx",
+          "hash": "10245648190343590805",
+          "deps": [
+            "npm:react@19.1.1",
+            "npm:@storybook/react",
+            "npm:lucide-react"
+          ]
+        },
+        {
+          "file": "packages/components/tailwind.config.ts",
+          "hash": "5709866967099273509",
+          "deps": [
+            "npm:tailwindcss@4.1.12"
+          ]
+        },
+        {
+          "file": "packages/components/tsconfig.json",
+          "hash": "16758146525393411674"
+        },
+        {
+          "file": "packages/components/yarn.lock",
+          "hash": "17855511221714591212"
+        }
+      ],
+      "docs": [
+        {
+          "file": "sites/docs.arolariu.ro/.gitignore",
+          "hash": "18013169672449240583"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/api/.gitignore",
+          "hash": "11527703051823208509"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/api/index.md",
+          "hash": "17730404732296428310"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/articles/index.md",
+          "hash": "12279128282206897938"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/articles/toc.yml",
+          "hash": "10636485818892037041"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/docfx.json",
+          "hash": "234050973229000507"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/index.md",
+          "hash": "11411296201719496492"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/project.json",
+          "hash": "8245247608364754659"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/templates/clarity/public/main.js",
+          "hash": "8920647009592654689"
+        },
+        {
+          "file": "sites/docs.arolariu.ro/toc.yml",
+          "hash": "9315000067485361493"
+        }
+      ],
+      "cv": [
+        {
+          "file": "sites/cv.arolariu.ro/.gitignore",
+          "hash": "9693691127960088612"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/.prettierignore",
+          "hash": "12386949481068265532"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/.prettierrc",
+          "hash": "17897657148253707477"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/README.md",
+          "hash": "3303960267538121923"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/package.json",
+          "hash": "18411690718484231559",
+          "deps": [
+            "npm:@sveltejs/adapter-auto",
+            "npm:@sveltejs/kit",
+            "npm:@sveltejs/vite-plugin-svelte",
+            "npm:@tailwindcss/forms",
+            "npm:@tailwindcss/typography",
+            "npm:@tailwindcss/vite",
+            "npm:prettier",
+            "npm:prettier-plugin-svelte",
+            "npm:svelte",
+            "npm:svelte-adapter-azure-swa",
+            "npm:svelte-check",
+            "npm:svelte-pdf",
+            "npm:tailwindcss@4.1.13",
+            "npm:typescript@5.9.2",
+            "npm:vite"
+          ]
+        },
+        {
+          "file": "sites/cv.arolariu.ro/project.json",
+          "hash": "11618657272246812360"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/app.css",
+          "hash": "12659515560017364435"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/app.d.ts",
+          "hash": "8514019045939557847"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/app.html",
+          "hash": "15448127097260669406"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/HelpDialog.svelte",
+          "hash": "12259363690321809972"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/ThemeToggle.svelte",
+          "hash": "7020492195937312727"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/motion/AnimatedSection.svelte",
+          "hash": "15949454634994784839"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/motion/index.ts",
+          "hash": "17772647290158595663"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/components/motion/intersection.ts",
+          "hash": "10333650512474152276"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/author.ts",
+          "hash": "7666706648209752274"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/biography.ts",
+          "hash": "11966131661493107925"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/certifications.ts",
+          "hash": "6959303671964264881"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/competencies.ts",
+          "hash": "6840113674527933901"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/education.ts",
+          "hash": "14084444241749874903"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/experiences.ts",
+          "hash": "7802474418247666615"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/index.ts",
+          "hash": "9917235996069479720"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/json.ts",
+          "hash": "9550411484385879719"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/landing.ts",
+          "hash": "162138338550990994"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/skills.ts",
+          "hash": "14039917629316922652"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/technical.ts",
+          "hash": "9076663166835991113"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/testimonials.ts",
+          "hash": "1487723096091984262"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/viewdata.ts",
+          "hash": "6277423006675960109"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/data/volunteering.ts",
+          "hash": "3240285271915616218"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/hooks/useTheme.svelte.ts",
+          "hash": "1389134633798985127"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/assets/favicon.svg",
+          "hash": "14344918875278748999"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/index.ts",
+          "hash": "403399750106740132"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/utils/copy.ts",
+          "hash": "14228755613358236426"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/utils/download.ts",
+          "hash": "10055437945488547822"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/utils/index.ts",
+          "hash": "4104171537983704147"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/utils/result.ts",
+          "hash": "15339667925540983639"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/views/HumanView.svelte",
+          "hash": "9418705439415495637"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/views/JsonView.svelte",
+          "hash": "1854862091354057259"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/views/MainView.svelte",
+          "hash": "12326938216384830657"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/lib/views/PdfView.svelte",
+          "hash": "11957603127857186623"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/ActionButton.svelte",
+          "hash": "9168149753126022929"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/Badge.svelte",
+          "hash": "4178978181550486678"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/Footer.svelte",
+          "hash": "8683140588897537473"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/Header.svelte",
+          "hash": "12051930318733548814"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/Icon.svelte",
+          "hash": "1530539487002649841"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/About.svelte",
+          "hash": "5873921196909514002"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Competencies.svelte",
+          "hash": "10611886546397417549"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Contact.svelte",
+          "hash": "5664568380744371092"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Education.svelte",
+          "hash": "12041275645655425923"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Experience.svelte",
+          "hash": "7236584550429239208"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Hero.svelte",
+          "hash": "1560548963812033650"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Skills.svelte",
+          "hash": "7604287960659433821"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/presentation/human/Testimonials.svelte",
+          "hash": "9321053902994584273"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/+layout.svelte",
+          "hash": "12357600702002436888"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/+page.svelte",
+          "hash": "12017184010938085599"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/human/+page.svelte",
+          "hash": "15093783064937628200"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/json/+page.svelte",
+          "hash": "12871415413743881255"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/pdf/+page.svelte",
+          "hash": "13371676539790079941"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/routes/rest/json/+server.ts",
+          "hash": "15307343536355860094",
+          "deps": [
+            "npm:@sveltejs/kit"
+          ]
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Biography.ts",
+          "hash": "9419486526803261270"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Certificate.ts",
+          "hash": "17370042838597356449"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Competency.ts",
+          "hash": "17697754484993987509"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Education.ts",
+          "hash": "13138272282365068161"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Experience.ts",
+          "hash": "9247889510250992193"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/PersonalInformation.ts",
+          "hash": "10725174226119185852"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Skill.ts",
+          "hash": "15986963919752416832"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/Testimonial.ts",
+          "hash": "2775355216894778173"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/src/types/index.ts",
+          "hash": "6037331709054615390"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/static/author.jpeg",
+          "hash": "6837292437898454945"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/static/cv.pdf",
+          "hash": "4905060426598892796"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/static/robots.txt",
+          "hash": "8128781345255320682"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/svelte.config.js",
+          "hash": "12010224839640651075",
+          "deps": [
+            "npm:svelte-adapter-azure-swa",
+            "npm:@sveltejs/vite-plugin-svelte"
+          ]
+        },
+        {
+          "file": "sites/cv.arolariu.ro/swa-cli.config.json",
+          "hash": "10483501801312831594"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/tailwind.config.js",
+          "hash": "2808229931761276497"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/tsconfig.json",
+          "hash": "13604813847796067401"
+        },
+        {
+          "file": "sites/cv.arolariu.ro/vite.config.js",
+          "hash": "16297919805923460214",
+          "deps": [
+            "npm:@tailwindcss/vite",
+            "npm:@sveltejs/kit",
+            "npm:vite"
+          ]
+        },
+        {
+          "file": "sites/cv.arolariu.ro/yarn.lock",
+          "hash": "13120729347680354489"
+        }
+      ],
       "website": [
         {
           "file": "sites/arolariu.ro/.env.example",
@@ -144,13 +2184,101 @@
         },
         {
           "file": "sites/arolariu.ro/package.json",
-          "hash": "863260357810668613",
+          "hash": "15860117087824329196",
           "deps": [
-            "npm:@eslint/js",
-            "npm:@types/node",
-            "npm:globals",
-            "npm:typescript",
-            "components"
+            "npm:@eslint/compat",
+            "npm:@eslint/js@9.32.0",
+            "npm:@faker-js/faker",
+            "npm:@next/bundle-analyzer",
+            "npm:@next/eslint-plugin-next",
+            "npm:@playwright/test",
+            "npm:@prettier/plugin-hermes",
+            "npm:@prettier/plugin-oxc",
+            "npm:@react-email/preview-server",
+            "npm:@react-pdf/types",
+            "npm:@storybook/addon-a11y",
+            "npm:@storybook/addon-coverage",
+            "npm:@storybook/addon-essentials",
+            "npm:@storybook/addon-interactions",
+            "npm:@storybook/addon-links",
+            "npm:@storybook/addon-onboarding",
+            "npm:@storybook/addon-themes",
+            "npm:@storybook/blocks",
+            "npm:@storybook/nextjs",
+            "npm:@storybook/react",
+            "npm:@storybook/test",
+            "npm:@storybook/test-runner",
+            "npm:@tailwindcss/postcss@4.1.12",
+            "npm:@tailwindcss/typography",
+            "npm:@testing-library/dom",
+            "npm:@testing-library/jest-dom",
+            "npm:@testing-library/react",
+            "npm:@types/eslint",
+            "npm:@types/eslint-plugin-jsx-a11y",
+            "npm:@types/eslint__js",
+            "npm:@types/jest",
+            "npm:@types/node@24.1.0",
+            "npm:@types/react@19.1.12",
+            "npm:@types/react-dom@19.1.9",
+            "npm:@types/three",
+            "npm:cross-env",
+            "npm:cssnano@7.1.1",
+            "npm:daisyui",
+            "npm:eslint@9.32.0",
+            "npm:eslint-plugin-functional",
+            "npm:eslint-plugin-jest",
+            "npm:eslint-plugin-jsdoc",
+            "npm:eslint-plugin-jsx-a11y",
+            "npm:eslint-plugin-n",
+            "npm:eslint-plugin-perfectionist",
+            "npm:eslint-plugin-promise",
+            "npm:eslint-plugin-react",
+            "npm:eslint-plugin-react-hooks",
+            "npm:eslint-plugin-security",
+            "npm:eslint-plugin-sonarjs",
+            "npm:eslint-plugin-unicorn",
+            "npm:globals@16.3.0",
+            "npm:jest",
+            "npm:jest-environment-jsdom",
+            "npm:jiti",
+            "npm:msw",
+            "npm:postcss",
+            "npm:prettier",
+            "npm:prettier-plugin-organize-imports",
+            "npm:prettier-plugin-tailwindcss",
+            "npm:source-map-explorer",
+            "npm:storybook",
+            "npm:tailwindcss@4.1.12",
+            "npm:tailwindcss-animate",
+            "npm:ts-jest",
+            "npm:ts-node@10.9.2",
+            "npm:tsx@4.20.4",
+            "npm:typescript@5.9.2",
+            "npm:typescript-eslint",
+            "components",
+            "npm:@azure/app-configuration",
+            "npm:@azure/identity",
+            "npm:@azure/keyvault-secrets",
+            "npm:@azure/storage-blob",
+            "npm:@clerk/localizations",
+            "npm:@clerk/nextjs",
+            "npm:@react-email/components",
+            "npm:@react-pdf/renderer",
+            "npm:html2canvas",
+            "npm:motion",
+            "npm:next",
+            "npm:next-intl",
+            "npm:next-themes",
+            "npm:react@19.1.1",
+            "npm:react-dom@19.1.1",
+            "npm:react-email",
+            "npm:react-icons",
+            "npm:react-intersection-observer",
+            "npm:react-qr-code",
+            "npm:recharts",
+            "npm:resend",
+            "npm:three",
+            "npm:zustand"
           ]
         },
         {
@@ -1791,1961 +3919,6 @@
           "file": "sites/arolariu.ro/yarn.lock",
           "hash": "7955836701736424157"
         }
-      ],
-      "components": [
-        {
-          "file": "packages/components/.editorconfig",
-          "hash": "11525873501642599925"
-        },
-        {
-          "file": "packages/components/.gitattributes",
-          "hash": "5816063049553364052"
-        },
-        {
-          "file": "packages/components/.gitignore",
-          "hash": "7579625984851485945"
-        },
-        {
-          "file": "packages/components/.npmignore",
-          "hash": "4823366373799514953"
-        },
-        {
-          "file": "packages/components/.storybook/main.ts",
-          "hash": "11154508189134293353",
-          "deps": [
-            "npm:storybook-react-rsbuild"
-          ]
-        },
-        {
-          "file": "packages/components/.storybook/preview.ts",
-          "hash": "10422226424724871560",
-          "deps": [
-            "npm:@storybook/react",
-            "npm:@storybook/addon-themes"
-          ]
-        },
-        {
-          "file": "packages/components/.yarnrc.yml",
-          "hash": "8032949330729474890"
-        },
-        {
-          "file": "packages/components/CONTRIBUTING.md",
-          "hash": "15716441153597845359"
-        },
-        {
-          "file": "packages/components/DEBUGGING.md",
-          "hash": "620540025338524281"
-        },
-        {
-          "file": "packages/components/EXAMPLES.md",
-          "hash": "11381767269462754860"
-        },
-        {
-          "file": "packages/components/LICENSE.md",
-          "hash": "5788632615828194898"
-        },
-        {
-          "file": "packages/components/changelog.md",
-          "hash": "5977471077428156204"
-        },
-        {
-          "file": "packages/components/components.json",
-          "hash": "6023558422618191586"
-        },
-        {
-          "file": "packages/components/package.json",
-          "hash": "9922379043926755904",
-          "deps": [
-            "npm:@types/node",
-            "npm:typescript"
-          ]
-        },
-        {
-          "file": "packages/components/postcss.config.ts",
-          "hash": "11670021787661412008"
-        },
-        {
-          "file": "packages/components/project.json",
-          "hash": "7641427502486320073"
-        },
-        {
-          "file": "packages/components/readme.md",
-          "hash": "16078566551060520946"
-        },
-        {
-          "file": "packages/components/rslib.config.ts",
-          "hash": "10729989022203041080",
-          "deps": [
-            "npm:@rslib/core",
-            "npm:@rsbuild/plugin-react"
-          ]
-        },
-        {
-          "file": "packages/components/scripts/generate-exports.ts",
-          "hash": "16538506712886830781"
-        },
-        {
-          "file": "packages/components/src/components/ui/accordion.tsx",
-          "hash": "17299815226734524285",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-accordion",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/alert-dialog.tsx",
-          "hash": "11661239190832217159",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-alert-dialog"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/alert.tsx",
-          "hash": "2182990431490037044",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:class-variance-authority"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/aspect-ratio.tsx",
-          "hash": "4606169473813726734",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-aspect-ratio"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/avatar.tsx",
-          "hash": "17384832726976543448",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-avatar"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/background-beams.tsx",
-          "hash": "13702005136238343422",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:motion@12.23.12"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/badge.tsx",
-          "hash": "10292464856163758721",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-slot",
-            "npm:class-variance-authority"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/breadcrumb.tsx",
-          "hash": "8968029525729114086",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-slot",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/bubble-background.tsx",
-          "hash": "391179514383964693",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:motion@12.23.12"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/button.tsx",
-          "hash": "185559879251684815",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-slot",
-            "npm:class-variance-authority"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/calendar.tsx",
-          "hash": "15077313089040611063",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:lucide-react",
-            "npm:react-day-picker"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/card.tsx",
-          "hash": "15450139886303145510",
-          "deps": [
-            "npm:react@19.1.1"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/carousel.tsx",
-          "hash": "8231392209371262743",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:embla-carousel-react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/chart.tsx",
-          "hash": "14603915284685602573",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:recharts@3.1.2"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/checkbox.tsx",
-          "hash": "16320784960970074535",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-checkbox",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/collapsible.tsx",
-          "hash": "17952782360746368922",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-collapsible"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/command.tsx",
-          "hash": "6031176062298598506",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:cmdk",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/context-menu.tsx",
-          "hash": "4223366329495244101",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-context-menu",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/counting-number.tsx",
-          "hash": "13610680740970608505",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:motion@12.23.12"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/dialog.tsx",
-          "hash": "13054091900467942337",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-dialog",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/dot-background.tsx",
-          "hash": "18394725875975686851",
-          "deps": [
-            "npm:motion@12.23.12",
-            "npm:react@19.1.1"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/drawer.tsx",
-          "hash": "1690118432151329009",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:vaul"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/dropdown-menu.tsx",
-          "hash": "7202576572599694831",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-dropdown-menu",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/dropdrawer.tsx",
-          "hash": "9521326115899011845",
-          "deps": [
-            "npm:motion@12.23.12",
-            "npm:lucide-react",
-            "npm:react@19.1.1"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/fireworks-background.tsx",
-          "hash": "6858263757084158884",
-          "deps": [
-            "npm:react@19.1.1"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/flip-button.tsx",
-          "hash": "13901848367490170152",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:motion@12.23.12"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/form.tsx",
-          "hash": "14447785933679907830",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-label",
-            "npm:@radix-ui/react-slot",
-            "npm:react-hook-form"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/gradient-background.tsx",
-          "hash": "7313621754759490355",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:motion@12.23.12"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/gradient-text.tsx",
-          "hash": "14965116242636138277",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:motion@12.23.12"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/highlight-text.tsx",
-          "hash": "6369678940497199882",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:motion@12.23.12"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/hole-background.tsx",
-          "hash": "9776365904941695237",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:motion@12.23.12"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/hover-card.tsx",
-          "hash": "14165647658584306902",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-hover-card"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/input-otp.tsx",
-          "hash": "3420373038828772957",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:input-otp",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/input.tsx",
-          "hash": "17007866537954501136",
-          "deps": [
-            "npm:react@19.1.1"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/label.tsx",
-          "hash": "17992629208852058960",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-label"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/menubar.tsx",
-          "hash": "8056776562539413317",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-menubar",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/navigation-menu.tsx",
-          "hash": "18062547974822095341",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-navigation-menu",
-            "npm:class-variance-authority",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/pagination.tsx",
-          "hash": "3207847053010488040",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/popover.tsx",
-          "hash": "340375541626603428",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-popover"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/progress.tsx",
-          "hash": "9065033862777507155",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-progress"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/radio-group.tsx",
-          "hash": "15111815666279259713",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-radio-group",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/resizable.tsx",
-          "hash": "4586475161360993529",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:lucide-react",
-            "npm:react-resizable-panels"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/ripple-button.tsx",
-          "hash": "4443435968126821753",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:motion@12.23.12"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/scratcher.tsx",
-          "hash": "17564212033422334971",
-          "deps": [
-            "npm:motion@12.23.12",
-            "npm:react@19.1.1"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/scroll-area.tsx",
-          "hash": "4317549406678443949",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-scroll-area"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/select.tsx",
-          "hash": "7586012612311272127",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-select",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/separator.tsx",
-          "hash": "7443008638955122786",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-separator"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/sheet.tsx",
-          "hash": "17747769327134134594",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-dialog",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/sidebar.tsx",
-          "hash": "14848768308280853413",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-slot",
-            "npm:class-variance-authority",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/skeleton.tsx",
-          "hash": "5906701918444365652",
-          "deps": [
-            "npm:react@19.1.1"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/slider.tsx",
-          "hash": "16283649896254241750",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-slider"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/sonner.tsx",
-          "hash": "17996715027035620908",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:next-themes",
-            "npm:sonner"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/switch.tsx",
-          "hash": "9030193380806192285",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-switch"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/table.tsx",
-          "hash": "1818992291291922268",
-          "deps": [
-            "npm:react@19.1.1"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/tabs.tsx",
-          "hash": "12545532191750757225",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-tabs"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/textarea.tsx",
-          "hash": "230482805822790343",
-          "deps": [
-            "npm:react@19.1.1"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/toggle-group.tsx",
-          "hash": "8714767819769344694",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-toggle-group",
-            "npm:class-variance-authority"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/toggle.tsx",
-          "hash": "4547741379318831936",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-toggle",
-            "npm:class-variance-authority"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/tooltip.tsx",
-          "hash": "9915299380283988734",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@radix-ui/react-tooltip"
-          ]
-        },
-        {
-          "file": "packages/components/src/components/ui/typewriter.tsx",
-          "hash": "10977177624607766996",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:motion@12.23.12"
-          ]
-        },
-        {
-          "file": "packages/components/src/hooks/useIsMobile.tsx",
-          "hash": "13039703850798776634",
-          "deps": [
-            "npm:react@19.1.1"
-          ]
-        },
-        {
-          "file": "packages/components/src/hooks/useWindowSize.tsx",
-          "hash": "11277560458995832145",
-          "deps": [
-            "npm:react@19.1.1"
-          ]
-        },
-        {
-          "file": "packages/components/src/index.css",
-          "hash": "4620819702153823213"
-        },
-        {
-          "file": "packages/components/src/index.ts",
-          "hash": "14014933093316683464"
-        },
-        {
-          "file": "packages/components/src/lib/utils.ts",
-          "hash": "17124554240397410575",
-          "deps": [
-            "npm:clsx",
-            "npm:tailwind-merge"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Accordion.stories.tsx",
-          "hash": "6731562617004098816",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Alert.stories.tsx",
-          "hash": "3971026645478162355",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/AlertDialog.stories.tsx",
-          "hash": "12043865367910801332",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/AspectRatio.stories.tsx",
-          "hash": "4935549091668111300",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Avatar.stories.tsx",
-          "hash": "18427908569902196261",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Badge.stories.tsx",
-          "hash": "4650397260263600804",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Breadcrumb.stories.tsx",
-          "hash": "11780075988313849342",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/BubbleBackground.stories.tsx",
-          "hash": "5562374280229997190",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Button.stories.tsx",
-          "hash": "16696403868734529007",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Calendar.stories.tsx",
-          "hash": "2364716186209669437",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Card.stories.tsx",
-          "hash": "7302168230605935621",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Carousel.stories.tsx",
-          "hash": "1946752918365234281",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Checkbox.stories.tsx",
-          "hash": "12878059879747680410",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Collapsible.stories.tsx",
-          "hash": "4324817709030783579",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Command.stories.tsx",
-          "hash": "2079408116407089719",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/CountingNumber.stories.tsx",
-          "hash": "18023235276664952868",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Dialog.stories.tsx",
-          "hash": "18133364863818628719",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/DotBackground.stories.tsx",
-          "hash": "2787868496458095722",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Drawer.stories.tsx",
-          "hash": "4632046615145280260",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/DropDrawer.stories.tsx",
-          "hash": "1094432452294305808",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/DropdownMenu.stories.tsx",
-          "hash": "2751665659301543407",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/FireworksBackground.stories.tsx",
-          "hash": "11452856480493576084",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/FlipButton.stories.tsx",
-          "hash": "15719524798863317825",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Form.stories.tsx",
-          "hash": "17586635588392725895",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:@hookform/resolvers",
-            "npm:react-hook-form",
-            "npm:zod"
-          ]
-        },
-        {
-          "file": "packages/components/stories/HoverCard.stories.tsx",
-          "hash": "5964725150220976802",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Input.stories.tsx",
-          "hash": "16021314085929721314",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/InputOTP.stories.tsx",
-          "hash": "3581096193159501176",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:react-hook-form",
-            "npm:zod",
-            "npm:@hookform/resolvers"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Label.stories.tsx",
-          "hash": "15258750781842444720",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/NavigationMenu.stories.tsx",
-          "hash": "2700038911009569570",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Pagination.stories.tsx",
-          "hash": "17337755118370923258",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Popover.stories.tsx",
-          "hash": "16477935238212787504",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Progress.stories.tsx",
-          "hash": "16644308252751783713",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/RadioGroup.stories.tsx",
-          "hash": "910790739796438417",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Resizable.stories.tsx",
-          "hash": "16255958701105420720",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/ScrollArea.stories.tsx",
-          "hash": "9919818699664697320",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Select.stories.tsx",
-          "hash": "63566677882873632",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Separator.stories.tsx",
-          "hash": "17206488088614486634",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Sheet.stories.tsx",
-          "hash": "11176078093531492525",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Sidebar.stories.tsx",
-          "hash": "2665841712745926376",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Skeleton.stories.tsx",
-          "hash": "14137480802683926550",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Slider.stories.tsx",
-          "hash": "2826353471337826851",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Switch.stories.tsx",
-          "hash": "8190769646365911428",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Table.stories.tsx",
-          "hash": "9981722704720173004",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Tabs.stories.tsx",
-          "hash": "636538364047579201",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Toggle.stories.tsx",
-          "hash": "6098737115608286014",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/stories/Tooltip.stories.tsx",
-          "hash": "10245648190343590805",
-          "deps": [
-            "npm:react@19.1.1",
-            "npm:@storybook/react",
-            "npm:lucide-react"
-          ]
-        },
-        {
-          "file": "packages/components/tailwind.config.ts",
-          "hash": "5709866967099273509",
-          "deps": [
-            "npm:tailwindcss@4.1.12"
-          ]
-        },
-        {
-          "file": "packages/components/tsconfig.json",
-          "hash": "16758146525393411674"
-        },
-        {
-          "file": "packages/components/yarn.lock",
-          "hash": "17855511221714591212"
-        }
-      ],
-      "api": [
-        {
-          "file": "sites/api.arolariu.ro/.dockerignore",
-          "hash": "15592786434469945615"
-        },
-        {
-          "file": "sites/api.arolariu.ro/Controllers_Breakpoints.xml",
-          "hash": "4450599551685440761"
-        },
-        {
-          "file": "sites/api.arolariu.ro/Dockerfile",
-          "hash": "1133658481183629021"
-        },
-        {
-          "file": "sites/api.arolariu.ro/project.json",
-          "hash": "13168973350973028059"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/DDD/Contracts/BaseEntity.cs",
-          "hash": "5425144769086793917"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/DDD/Contracts/IAuditable.cs",
-          "hash": "10813825451700961299"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/DDD/Contracts/NamedEntity.cs",
-          "hash": "6647734087891195310"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/Options/ApplicationOptions.cs",
-          "hash": "2445526816533342497"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/Options/CloudOptionsManager.cs",
-          "hash": "4435132129373469890"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/Options/IOptionsManager.cs",
-          "hash": "18330201420841734241"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/Options/LocalOptionsManager.cs",
-          "hash": "3400382618875229748"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/Services/KeyVault/IKeyVaultService.cs",
-          "hash": "11573101383300508600"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/Services/KeyVault/KeyVaultService.cs",
-          "hash": "12161288748698968344"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Logging/Log.cs",
-          "hash": "11739523079108968979"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Logging/LoggingExtensions.cs",
-          "hash": "13420187501064484489"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Metering/MeteringExtensions.cs",
-          "hash": "4786135891425597780"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/Telemetry/TelemetryExtensions.cs",
-          "hash": "11650083657260210235"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Tracing/ActivityGenerators.cs",
-          "hash": "17826222792602049631"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/Telemetry/Tracing/TracingExtensions.cs",
-          "hash": "7102165873938181197"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/Validators/Validator.cs",
-          "hash": "2946613604713779945"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Common/arolariu.Backend.Common.csproj",
-          "hash": "1876983983428866892"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core.Auth/Brokers/AuthDbContext.cs",
-          "hash": "200620099562891587"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core.Auth/Endpoints/AuthEndpoints.Handlers.cs",
-          "hash": "9375147730596604175"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core.Auth/Endpoints/AuthEndpoints.Mappings.cs",
-          "hash": "14480718917592355114"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core.Auth/Endpoints/AuthEndpoints.cs",
-          "hash": "10253422856431991433"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core.Auth/Models/AuthenticatedUser.cs",
-          "hash": "9128320407996197951"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core.Auth/Models/AuthenticatedUserRole.cs",
-          "hash": "2353623498982134569"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core.Auth/Modules/WebApplicationBuilderExtensions.cs",
-          "hash": "11864144168725714873"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core.Auth/Modules/WebApplicationExtensions.cs",
-          "hash": "16582841121456930934"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core.Auth/Properties/launchSettings.json",
-          "hash": "15740283677798482833"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core.Auth/arolariu.Backend.Core.Auth.csproj",
-          "hash": "15485695310803066458"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core.Auth/arolariu.Backend.Core.Auth.csproj.user",
-          "hash": "11829192674250305323"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationBuilderExtensions.cs",
-          "hash": "15011356319254484048"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core/Domain/General/Extensions/WebApplicationExtensions.cs",
-          "hash": "8784092834637235762"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core/Domain/General/Services/Swagger/SwaggerConfigurationService.cs",
-          "hash": "14491657426297309965"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core/Domain/General/Services/Swagger/SwaggerFilterService.cs",
-          "hash": "3742037840676054184"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core/Program.cs",
-          "hash": "286653202647200640"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core/Properties/launchSettings.json",
-          "hash": "15026665446515735349"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core/Properties/serviceDependencies.local.json.user",
-          "hash": "10384602919595219439"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core/appsettings.Development.json",
-          "hash": "9804185829386699275"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core/appsettings.Production.json",
-          "hash": "9804185829386699275"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core/appsettings.json",
-          "hash": "2850435928585984027"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj",
-          "hash": "2122375640246943011"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Core/arolariu.Backend.Core.csproj.user",
-          "hash": "12623104781130995556"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/ClassifierBroker/AzureOpenAiBroker.Internals.cs",
-          "hash": "5710355985318058956"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/ClassifierBroker/AzureOpenAiBroker.cs",
-          "hash": "1220450319198262968"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/ClassifierBroker/IOpenAiBroker.cs",
-          "hash": "933902879406929368"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/IdentifierBroker/AzureFormRecognizerBroker.Internals.cs",
-          "hash": "11662182252714059266"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/IdentifierBroker/AzureFormRecognizerBroker.cs",
-          "hash": "8769481075363171283"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/AnalysisBrokers/IdentifierBroker/IFormRecognizerBroker.cs",
-          "hash": "6820018608505883108"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/DatabaseBroker/IInvoiceNoSqlBroker.cs",
-          "hash": "6643808332257076653"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/DatabaseBroker/InvoiceNoSqlBroker.Invoices.cs",
-          "hash": "18445808721701166978"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/DatabaseBroker/InvoiceNoSqlBroker.Merchants.cs",
-          "hash": "13781130273335661853"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/DatabaseBroker/InvoiceNoSqlBroker.cs",
-          "hash": "14973219519284511337"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/TranslatorBroker/AzureTranslatorBroker.cs",
-          "hash": "2368854465725302080"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Brokers/TranslatorBroker/ITranslatorBroker.cs",
-          "hash": "7955216585889216487"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoiceDescriptionNotSetException.cs",
-          "hash": "17344123844574764027"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoiceIdNotSetException.cs",
-          "hash": "9704057337896421007"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoicePaymentInformationNotCorrectException.cs",
-          "hash": "17845796522575411738"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoicePhotoLocationNotCorrectException.cs",
-          "hash": "12922263478467298693"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Inner/InvoiceTimeInformationNotCorrectException.cs",
-          "hash": "3575487832588749140"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Foundation/InvoiceFoundationDependencyException.cs",
-          "hash": "9814949980260244955"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Foundation/InvoiceFoundationDependencyValidationException.cs",
-          "hash": "17085412335571168051"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Foundation/InvoiceFoundationServiceException.cs",
-          "hash": "1826664385416046043"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Foundation/InvoiceFoundationValidationException.cs",
-          "hash": "15317938357418383112"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Orchestration/InvoiceOrchestrationDependencyException.cs",
-          "hash": "10168589250815699735"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Orchestration/InvoiceOrchestrationDependencyValidationException.cs",
-          "hash": "13476365633012943756"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Orchestration/InvoiceOrchestrationServiceException.cs",
-          "hash": "15172614429214032917"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Orchestration/InvoiceOrchestrationValidationException.cs",
-          "hash": "6712230454367919579"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Processing/InvoiceProcessingServiceDependencyException.cs",
-          "hash": "1252204243434290862"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Processing/InvoiceProcessingServiceDependencyValidationException.cs",
-          "hash": "16493677958689351383"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Processing/InvoiceProcessingServiceException.cs",
-          "hash": "13229099707687583568"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Exceptions/Outer/Processing/InvoiceProcessingServiceValidationException.cs",
-          "hash": "12328596090130574282"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/Invoice.cs",
-          "hash": "6938424619567067216"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/AggregatorRoots/Invoices/InvoiceCategory.cs",
-          "hash": "8974151710184832064"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Inner/MerchantIdNotSetException.cs",
-          "hash": "5867988978080018771"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Inner/MerchantParentCompanyIdNotSetException.cs",
-          "hash": "1751117430034568351"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Foundation/MerchantFoundationServiceDependencyException.cs",
-          "hash": "12608337952701608394"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Foundation/MerchantFoundationServiceDependencyValidationException.cs",
-          "hash": "1353770184306518415"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Foundation/MerchantFoundationServiceException.cs",
-          "hash": "15127601451816352473"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Foundation/MerchantFoundationServiceValidationException.cs",
-          "hash": "4937916459244445233"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Orchestration/MerchantOrchestrationServiceDependencyException.cs",
-          "hash": "15287974753543386211"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Orchestration/MerchantOrchestrationServiceDependencyValidationException.cs",
-          "hash": "4586854259031860700"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Orchestration/MerchantOrchestrationServiceException.cs",
-          "hash": "4994326695960282772"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Exceptions/Outer/Orchestration/MerchantOrchestrationServiceValidationException.cs",
-          "hash": "15889237744938648018"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/Merchant.cs",
-          "hash": "12834893975614593252"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/Entities/Merchants/MerchantCategory.cs",
-          "hash": "10984480449894512090"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Allergen.cs",
-          "hash": "3476796196228207454"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Currency.cs",
-          "hash": "2959467667550900826"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/PaymentInformation.cs",
-          "hash": "8572881094715341794"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Products/Product.cs",
-          "hash": "14477594175464596495"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Products/ProductCategory.cs",
-          "hash": "3499672934567538851"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Products/ProductMetadata.cs",
-          "hash": "16857938673788060982"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DDD/ValueObjects/Recipe.cs",
-          "hash": "11510086658678750912"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DTOs/AnalysisOptions.cs",
-          "hash": "8371500520406936378"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DTOs/CreateInvoiceDto.cs",
-          "hash": "2787598045258323040"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DTOs/CreateMerchantDto.cs",
-          "hash": "11442188792756479086"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/DTOs/InvoiceStatusDto.cs",
-          "hash": "11876218334128969860"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.Handlers.cs",
-          "hash": "17483776819711474323"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.Mappings.cs",
-          "hash": "8984612983639931945"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.Metadata.cs",
-          "hash": "16322373663461442725"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Endpoints/InvoiceEndpoints.cs",
-          "hash": "15272667928830897672"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Modules/Log.cs",
-          "hash": "9564665542982093331"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Modules/ValueConverters/ValueConverterForIEnumerableOf.cs",
-          "hash": "6619840143911268436"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Modules/WebApplicationBuilderExtensions.cs",
-          "hash": "7368585634563337679"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Modules/WebApplicationExtensions.cs",
-          "hash": "4470091602424657491"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Properties/launchSettings.json",
-          "hash": "11479278708442602560"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceAnalysis/IInvoiceAnalysisFoundationService.cs",
-          "hash": "3626070432620275939"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceAnalysis/InvoiceAnalysisFoundationService.Exceptions.cs",
-          "hash": "3876976494074604137"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceAnalysis/InvoiceAnalysisFoundationService.Validations.cs",
-          "hash": "12821876510431028008"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceAnalysis/InvoiceAnalysisFoundationService.cs",
-          "hash": "14198599583821210325"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/IInvoiceStorageFoundationService.cs",
-          "hash": "9052443578817915704"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/InvoiceStorageFoundationService.Exceptions.cs",
-          "hash": "15805421144987170026"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/InvoiceStorageFoundationService.Validations.cs",
-          "hash": "3978306329231457341"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/InvoiceStorage/InvoiceStorageFoundationService.cs",
-          "hash": "4234725039746111329"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/MerchantStorage/IMerchantStorageFoundationService.cs",
-          "hash": "9994226268161815133"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/MerchantStorage/MerchantStorageFoundationService.Exceptions.cs",
-          "hash": "10936867771975211358"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/MerchantStorage/MerchantStorageFoundationService.Validations.cs",
-          "hash": "4557650472524359116"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Foundation/MerchantStorage/MerchantStorageFoundationService.cs",
-          "hash": "2913029926252492454"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/InvoiceService/IInvoiceOrchestrationService.cs",
-          "hash": "2504259152353154292"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/InvoiceService/InvoiceOrchestrationService.Exceptions.cs",
-          "hash": "11061109917681619203"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/InvoiceService/InvoiceOrchestrationService.Validations.cs",
-          "hash": "13953038012538392219"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/InvoiceService/InvoiceOrchestrationService.cs",
-          "hash": "14952889445801879581"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/MerchantService/IMerchantOrchestrationService.cs",
-          "hash": "1263272722521331306"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/MerchantService/MerchantOrchestrationService.Exceptions.cs",
-          "hash": "1133318820349678297"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/MerchantService/MerchantOrchestrationService.Validations.cs",
-          "hash": "10526631903045488724"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Orchestration/MerchantService/MerchantOrchestrationService.cs",
-          "hash": "15527291984703827931"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Processing/IInvoiceProcessingService.cs",
-          "hash": "11110180070157262700"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Processing/InvoiceProcessingService.Exceptions.cs",
-          "hash": "17864841377629671792"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Processing/InvoiceProcessingService.Validations.cs",
-          "hash": "17867111629017879511"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/Services/Processing/InvoiceProcessingService.cs",
-          "hash": "3199778479010705962"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/arolariu.Backend.Domain.Invoices.csproj",
-          "hash": "12577958783664600918"
-        },
-        {
-          "file": "sites/api.arolariu.ro/src/Invoices/arolariu.Backend.Domain.Invoices.csproj.user",
-          "hash": "2946496967990599104"
-        },
-        {
-          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Core.Tests/MocksContainer.cs",
-          "hash": "16150425431924397128"
-        },
-        {
-          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Core.Tests/arolariu.Backend.Core.Tests.csproj",
-          "hash": "6263143334713427249"
-        },
-        {
-          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Builders/InvoiceBuilder.cs",
-          "hash": "15387979299915666116"
-        },
-        {
-          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Builders/MerchantBuilder.cs",
-          "hash": "4421214429836889151"
-        },
-        {
-          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Brokers/InvoiceNoSqlBrokerComprehensiveTests.cs",
-          "hash": "3273536775067872056"
-        },
-        {
-          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Brokers/InvoiceNoSqlBrokerTests.Base.cs",
-          "hash": "4371201714322567920"
-        },
-        {
-          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/Invoices/Brokers/MerchantNoSqlBrokerTests.cs",
-          "hash": "1463202486647971928"
-        },
-        {
-          "file": "sites/api.arolariu.ro/tests/arolariu.Backend.Domain.Tests/arolariu.Backend.Domain.Tests.csproj",
-          "hash": "10628875374070508545"
-        }
-      ],
-      "cv": [
-        {
-          "file": "sites/cv.arolariu.ro/.gitignore",
-          "hash": "9693691127960088612"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/.prettierignore",
-          "hash": "12386949481068265532"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/.prettierrc",
-          "hash": "17897657148253707477"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/README.md",
-          "hash": "3303960267538121923"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/package.json",
-          "hash": "14673924745912686547",
-          "deps": [
-            "npm:typescript"
-          ]
-        },
-        {
-          "file": "sites/cv.arolariu.ro/project.json",
-          "hash": "11618657272246812360"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/app.css",
-          "hash": "12659515560017364435"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/app.d.ts",
-          "hash": "8514019045939557847"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/app.html",
-          "hash": "15448127097260669406"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/components/HelpDialog.svelte",
-          "hash": "12259363690321809972"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/components/ThemeToggle.svelte",
-          "hash": "7020492195937312727"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/components/motion/AnimatedSection.svelte",
-          "hash": "15949454634994784839"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/components/motion/index.ts",
-          "hash": "17772647290158595663"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/components/motion/intersection.ts",
-          "hash": "10333650512474152276"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/author.ts",
-          "hash": "7666706648209752274"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/biography.ts",
-          "hash": "11966131661493107925"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/certifications.ts",
-          "hash": "6959303671964264881"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/competencies.ts",
-          "hash": "6840113674527933901"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/education.ts",
-          "hash": "14084444241749874903"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/experiences.ts",
-          "hash": "7802474418247666615"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/index.ts",
-          "hash": "9917235996069479720"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/json.ts",
-          "hash": "9550411484385879719"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/landing.ts",
-          "hash": "162138338550990994"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/skills.ts",
-          "hash": "14039917629316922652"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/technical.ts",
-          "hash": "9076663166835991113"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/testimonials.ts",
-          "hash": "1487723096091984262"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/viewdata.ts",
-          "hash": "6277423006675960109"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/data/volunteering.ts",
-          "hash": "3240285271915616218"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/hooks/useTheme.svelte.ts",
-          "hash": "1389134633798985127"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/assets/favicon.svg",
-          "hash": "14344918875278748999"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/index.ts",
-          "hash": "403399750106740132"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/utils/copy.ts",
-          "hash": "14228755613358236426"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/utils/download.ts",
-          "hash": "10055437945488547822"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/utils/index.ts",
-          "hash": "4104171537983704147"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/utils/result.ts",
-          "hash": "15339667925540983639"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/views/HumanView.svelte",
-          "hash": "9418705439415495637"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/views/JsonView.svelte",
-          "hash": "1854862091354057259"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/views/MainView.svelte",
-          "hash": "12326938216384830657"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/lib/views/PdfView.svelte",
-          "hash": "11957603127857186623"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/ActionButton.svelte",
-          "hash": "9168149753126022929"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/Badge.svelte",
-          "hash": "4178978181550486678"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/Footer.svelte",
-          "hash": "8683140588897537473"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/Header.svelte",
-          "hash": "12051930318733548814"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/Icon.svelte",
-          "hash": "1530539487002649841"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/About.svelte",
-          "hash": "5873921196909514002"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Competencies.svelte",
-          "hash": "10611886546397417549"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Contact.svelte",
-          "hash": "5664568380744371092"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Education.svelte",
-          "hash": "12041275645655425923"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Experience.svelte",
-          "hash": "7236584550429239208"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Hero.svelte",
-          "hash": "1560548963812033650"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Skills.svelte",
-          "hash": "7604287960659433821"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/presentation/human/Testimonials.svelte",
-          "hash": "9321053902994584273"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/routes/+layout.svelte",
-          "hash": "12357600702002436888"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/routes/+page.svelte",
-          "hash": "12017184010938085599"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/routes/human/+page.svelte",
-          "hash": "15093783064937628200"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/routes/json/+page.svelte",
-          "hash": "12871415413743881255"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/routes/pdf/+page.svelte",
-          "hash": "13371676539790079941"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/routes/rest/json/+server.ts",
-          "hash": "15307343536355860094",
-          "deps": [
-            "npm:@sveltejs/kit"
-          ]
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Biography.ts",
-          "hash": "9419486526803261270"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Certificate.ts",
-          "hash": "17370042838597356449"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Competency.ts",
-          "hash": "17697754484993987509"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Education.ts",
-          "hash": "13138272282365068161"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Experience.ts",
-          "hash": "9247889510250992193"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/PersonalInformation.ts",
-          "hash": "10725174226119185852"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Skill.ts",
-          "hash": "15986963919752416832"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/Testimonial.ts",
-          "hash": "2775355216894778173"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/src/types/index.ts",
-          "hash": "6037331709054615390"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/static/author.jpeg",
-          "hash": "6837292437898454945"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/static/cv.pdf",
-          "hash": "4905060426598892796"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/static/robots.txt",
-          "hash": "8128781345255320682"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/svelte.config.js",
-          "hash": "12010224839640651075",
-          "deps": [
-            "npm:svelte-adapter-azure-swa",
-            "npm:@sveltejs/vite-plugin-svelte"
-          ]
-        },
-        {
-          "file": "sites/cv.arolariu.ro/swa-cli.config.json",
-          "hash": "10483501801312831594"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/tailwind.config.js",
-          "hash": "2808229931761276497"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/tsconfig.json",
-          "hash": "13604813847796067401"
-        },
-        {
-          "file": "sites/cv.arolariu.ro/vite.config.js",
-          "hash": "16297919805923460214",
-          "deps": [
-            "npm:@tailwindcss/vite",
-            "npm:@sveltejs/kit",
-            "npm:vite"
-          ]
-        },
-        {
-          "file": "sites/cv.arolariu.ro/yarn.lock",
-          "hash": "13120729347680354489"
-        }
-      ],
-      "docs": [
-        {
-          "file": "sites/docs.arolariu.ro/.gitignore",
-          "hash": "18013169672449240583"
-        },
-        {
-          "file": "sites/docs.arolariu.ro/api/.gitignore",
-          "hash": "11527703051823208509"
-        },
-        {
-          "file": "sites/docs.arolariu.ro/api/index.md",
-          "hash": "17730404732296428310"
-        },
-        {
-          "file": "sites/docs.arolariu.ro/articles/index.md",
-          "hash": "12279128282206897938"
-        },
-        {
-          "file": "sites/docs.arolariu.ro/articles/toc.yml",
-          "hash": "10636485818892037041"
-        },
-        {
-          "file": "sites/docs.arolariu.ro/docfx.json",
-          "hash": "234050973229000507"
-        },
-        {
-          "file": "sites/docs.arolariu.ro/index.md",
-          "hash": "11411296201719496492"
-        },
-        {
-          "file": "sites/docs.arolariu.ro/project.json",
-          "hash": "8245247608364754659"
-        },
-        {
-          "file": "sites/docs.arolariu.ro/templates/clarity/public/main.js",
-          "hash": "8920647009592654689"
-        },
-        {
-          "file": "sites/docs.arolariu.ro/toc.yml",
-          "hash": "9315000067485361493"
-        }
       ]
     },
     "nonProjectFiles": [
@@ -3760,10 +3933,6 @@
       {
         "file": ".filenesting.json",
         "hash": "3390723915487591878"
-      },
-      {
-        "file": ".gitattributes",
-        "hash": "9379122265658127849"
       },
       {
         "file": ".github/ISSUE_TEMPLATE/config.yml",
@@ -4215,11 +4384,11 @@
       },
       {
         "file": "package-lock.json",
-        "hash": "11151930658868829432"
+        "hash": "15484437349518216064"
       },
       {
         "file": "package.json",
-        "hash": "8209980805839758356"
+        "hash": "3318359913305548241"
       },
       {
         "file": "readme/desktop-platform.png",
