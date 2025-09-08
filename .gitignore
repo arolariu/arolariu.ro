@@ -15,3 +15,6 @@ Thumbs.db
 
 # Next.js SWC cache
 .next/
+
+# Nx cache
+.nx/

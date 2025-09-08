@@ -1,11 +1,72 @@
 {
-  "name": "arolariu.ro",
-  "packageManager": "yarn@4.9.4",
+  "name": "@arolariu/monorepo",
+  "version": "1.0.0",
+  "description": "Monorepo for all arolariu.ro projects and packages",
+  "private": true,
+  "type": "module",
+  "packageManager": "yarn@4.9.2+sha512.1fc009bc09d13cfd0e19efa44cbfc2b9cf6ca61482725eb35bbc5e257e093ebf4130db6dfe15d604ff4b79efd8e1e8e99b25fa7d0a6197c9f9826358d4d65c3c",
+  "engines": {
+    "node": ">=22",
+    "yarn": ">=4.5"
+  },
+  "author": {
+    "name": "Alexandru-Razvan Olariu",
+    "email": "admin@arolariu.ro",
+    "url": "https://arolariu.ro"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arolariu/arolariu.ro"
+  },
+  "workspaces": [
+    "packages/*",
+    "sites/*"
+  ],
+  "scripts": {
+    "build": "nx run-many --target=build --all",
+    "build:components": "nx run components:build",
+    "build:website": "nx run website:build",
+    "build:api": "nx run api:build",
+    "build:cv": "nx run cv:build",
+    "build:docs": "nx run docs:build",
+    "clean": "nx run-many --target=clean --all",
+    "clean:components": "nx run components:clean",
+    "clean:website": "nx run website:clean",
+    "clean:api": "nx run api:clean",
+    "clean:cv": "nx run cv:clean",
+    "clean:docs": "nx run docs:clean",
+    "dev": "nx run-many --target=dev --all --parallel",
+    "dev:components": "nx run components:dev",
+    "dev:website": "nx run website:dev",
+    "dev:api": "nx run api:dev",
+    "dev:cv": "nx run cv:dev",
+    "dev:docs": "nx run docs:dev",
+    "format": "nx run-many --target=format --all",
+    "format:components": "nx run components:format",
+    "format:website": "nx run website:format",
+    "format:cv": "nx run cv:format",
+    "lint": "nx run-many --target=lint --all",
+    "lint:components": "nx run components:lint",
+    "lint:website": "nx run website:lint",
+    "lint:cv": "nx run cv:lint",
+    "test": "nx run-many --target=test --all",
+    "test:components": "nx run components:test",
+    "test:website": "nx run website:test",
+    "test:api": "nx run api:test",
+    "test:cv": "nx run cv:test",
+    "affected": "nx affected",
+    "affected:build": "nx affected --target=build",
+    "affected:test": "nx affected --target=test",
+    "affected:lint": "nx affected --target=lint",
+    "graph": "nx graph",
+    "nx": "nx"
+  },
   "devDependencies": {
-    "@nx/js": "^21.4.1",
-    "@nx/node": "^21.4.1",
-    "@nx/web": "^21.4.1",
-    "@nx/workspace": "^21.4.1",
-    "nx": "^21.4.1"
+    "@nx/js": "20.3.2",
+    "@nx/node": "20.3.2",
+    "@nx/web": "20.3.2",
+    "@nx/workspace": "20.3.2",
+    "nx": "20.3.2"
   }
 }

@@ -184,7 +184,7 @@
           "targetGroups": {},
           "js": {
             "packageName": "@arolariu/cv",
-            "isInPackageManagerWorkspaces": false
+            "isInPackageManagerWorkspaces": true
           }
         },
         "targets": {
@@ -659,7 +659,7 @@
               }
             },
             "packageMain": "dist/index.js",
-            "isInPackageManagerWorkspaces": false
+            "isInPackageManagerWorkspaces": true
           }
         },
         "targets": {
@@ -790,7 +790,7 @@
           "description": "The `arolariu.ro` project consists of a Next.JS web application.",
           "js": {
             "packageName": "@arolariu/website",
-            "isInPackageManagerWorkspaces": false
+            "isInPackageManagerWorkspaces": true
           }
         },
         "targets": {
@@ -12910,5 +12910,5 @@
   },
   "version": "6.0",
   "errors": [],
-  "computedAt": 1757342572031
+  "computedAt": 1757343004232
 }
