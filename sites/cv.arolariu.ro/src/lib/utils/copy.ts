@@ -1,7 +1,4 @@
-/** @format */
-
-import {err, ok} from "./result";
-import type {Result} from "./result";
+import {error, ok, type Result} from "./result";
 
 /**
  * Copy arbitrary text to the clipboard (Phase 0 utility consolidation).
@@ -9,7 +6,7 @@ import type {Result} from "./result";
  */
 export async function copyText(text: string): Promise<Result<void>> {
   // SSR / non-browser guard
-  if (typeof window === "undefined") return err(new Error("Clipboard not available (SSR)"));
+  if (typeof window === "undefined") return error(new Error("Clipboard not available (SSR)"));
   if (!text) return ok(undefined);
 
   // Prefer modern async clipboard API
@@ -35,6 +32,6 @@ export async function copyText(text: string): Promise<Result<void>> {
     document.body.removeChild(ta);
     return ok(undefined);
   } catch (e: any) {
-    return err(e instanceof Error ? e : new Error(String(e)));
+    return error(e instanceof Error ? e : new Error(String(e)));
   }
 }

@@ -1,5 +1,3 @@
-/** @format */
-
 import {author} from "./author";
 
 // Technical information for the help dialog and app metadata

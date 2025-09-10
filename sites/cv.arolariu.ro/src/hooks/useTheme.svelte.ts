@@ -1,5 +1,3 @@
-/** @format */
-
 import {browser} from "$app/environment";
 
 export type Theme = "light" | "dark";

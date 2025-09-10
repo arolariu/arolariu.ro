@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import Icon from "@/presentation/Icon.svelte";
 

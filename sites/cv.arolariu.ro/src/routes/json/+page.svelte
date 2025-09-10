@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import JsonView from "@/lib/views/JsonView.svelte";
 </script>

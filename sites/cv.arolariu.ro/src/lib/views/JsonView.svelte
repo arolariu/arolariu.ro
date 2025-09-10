@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import {ui} from "@/data";
   import Header, {type ActionConfig} from "@/presentation/Header.svelte";

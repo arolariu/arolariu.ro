@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Testimonial} from "@/types";
 
 type TestimonialKeys =

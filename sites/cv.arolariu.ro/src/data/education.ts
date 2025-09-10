@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Education} from "@/types";
 
 type EducationKeys = "aseBucharest" | "malmoSweden";

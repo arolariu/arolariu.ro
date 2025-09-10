@@ -1,5 +1,3 @@
-/** @format */
-
 export interface IntersectParams {
   threshold?: number | number[];
   root?: Element | Document | null;

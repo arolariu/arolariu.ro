@@ -1,5 +1,3 @@
-/** @format */
-
 export type Biography = {
   firstPoint: string;
   secondPoint: string;

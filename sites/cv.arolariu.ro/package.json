@@ -12,9 +12,7 @@
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "format": "prettier --write .",
-    "lint": "prettier --check ."
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "*",
@@ -23,8 +21,6 @@
     "@tailwindcss/forms": "*",
     "@tailwindcss/typography": "*",
     "@tailwindcss/vite": "*",
-    "prettier": "*",
-    "prettier-plugin-svelte": "*",
     "svelte": "*",
     "svelte-adapter-azure-swa": "*",
     "svelte-check": "*",

@@ -1,5 +1,3 @@
-/** @format */
-
 // Landing page specific content
 export const landing = {
   title: "Alexandru-Razvan Olariu",

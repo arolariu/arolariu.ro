@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import {Tween, prefersReducedMotion} from "svelte/motion";
   import {intersect} from "./intersection";

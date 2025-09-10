@@ -1,7 +1,5 @@
-/** @format */
-
-import {json, type RequestHandler} from "@sveltejs/kit";
 import {jsonCVData as resume} from "@/data/json";
+import {json, type RequestHandler} from "@sveltejs/kit";
 
 /**
  * Unified CV endpoint.

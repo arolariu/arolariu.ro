@@ -1,5 +1,3 @@
-/** @format */
-
 import type {PersonalInformation} from "@/types";
 
 export const author: PersonalInformation = {

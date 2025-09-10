@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Certificate} from "@/types";
 
 type CertificationKeys = "az900" | "ai900" | "sc900";

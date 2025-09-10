@@ -1,5 +1,3 @@
-/** @format */
-
 export type Testimonial = {
   author: string;
   position: string;

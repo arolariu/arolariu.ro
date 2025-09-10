@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   /**
    * Badge component for skill tokens, statuses, tags.

@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import {skills} from "@/data/skills";
 </script>

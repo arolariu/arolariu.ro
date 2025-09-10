@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Experience} from "@/types";
 
 type ExperienceKeys = "microsoft3" | "microsoft2" | "microsoft1" | "ubisoft" | "intel";

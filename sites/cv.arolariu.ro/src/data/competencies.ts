@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Competency} from "@/types";
 
 type CompetencyKeys =

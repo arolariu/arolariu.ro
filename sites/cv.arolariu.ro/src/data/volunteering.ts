@@ -1,5 +1,3 @@
-/** @format */
-
 export const volunteering = [
   {
     title: "Mentor Leader @ Global Mentorship Initiative (GMI)",

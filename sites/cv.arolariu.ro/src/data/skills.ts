@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Skill} from "@/types";
 
 type SkillAreas = "Frontend" | "Backend" | "Tools & Technologies" | "Architecture & Design";

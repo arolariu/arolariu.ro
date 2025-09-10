@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import {AnimatedSection} from "@/components/motion";
   import {testimonialsAsArray} from "@/data/testimonials";

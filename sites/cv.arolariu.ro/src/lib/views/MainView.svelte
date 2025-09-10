@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import {landing} from "@/data";
   import ThemeToggle from "@/components/ThemeToggle.svelte";

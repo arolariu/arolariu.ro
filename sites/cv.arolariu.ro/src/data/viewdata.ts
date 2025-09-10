@@ -1,5 +1,3 @@
-/** @format */
-
 // UI-related content like navigation, buttons, labels, etc.
 export const ui = {
   navigation: {

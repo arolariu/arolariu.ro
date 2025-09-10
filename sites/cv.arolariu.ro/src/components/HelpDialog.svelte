@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import {help, techInfo, ui} from "@/data";
   // Bindable open flag; parent can bind:open, and we set open=false to close
