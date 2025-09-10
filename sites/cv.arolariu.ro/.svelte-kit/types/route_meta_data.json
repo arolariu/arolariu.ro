@@ -1,9 +1,0 @@
-{
-	"/": [],
-	"/human": [],
-	"/json": [],
-	"/pdf": [],
-	"/rest/json": [
-		"src/routes/rest/json/+server.ts"
-	]
-}
