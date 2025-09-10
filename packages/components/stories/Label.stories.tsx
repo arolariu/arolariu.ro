@@ -1,13 +1,5 @@
-import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import {
-  Label,
-  Input,
-  Checkbox,
-  RadioGroup,
-  RadioGroupItem,
-  Switch,
-} from "../dist";
+import type {Meta, StoryObj} from "@storybook/react";
+import {Checkbox, Input, Label, RadioGroup, RadioGroupItem, Switch} from "../dist";
 
 const meta: Meta<typeof Label> = {
   title: "Design System/Label",
@@ -45,21 +37,21 @@ See the [shadcn/ui Label documentation](https://ui.shadcn.com/docs/components/la
       control: "text",
       description: "The ID of the form control the label is associated with.",
       table: {
-        type: { summary: "string" },
+        type: {summary: "string"},
       },
     },
     className: {
       control: "text",
       description: "Additional CSS classes to apply to the label.",
       table: {
-        type: { summary: "string" },
+        type: {summary: "string"},
       },
     },
     children: {
       control: "text",
       description: "The content of the label.",
       table: {
-        type: { summary: "ReactNode" },
+        type: {summary: "ReactNode"},
       },
     },
     // Standard HTML attributes like 'id', 'style', etc., are also available
@@ -74,17 +66,22 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "A basic example of the Label component associated with an input field.",
+        story: "A basic example of the Label component associated with an input field.",
       },
     },
   },
   render: () => (
-    <div className="flex items-center space-x-2">
-      <Label htmlFor="example" className="">
+    <div className='flex items-center space-x-2'>
+      <Label
+        htmlFor='example'
+        className=''>
         Example Label
       </Label>
-      <Input id="example" className="" type="text" />
+      <Input
+        id='example'
+        className=''
+        type='text'
+      />
     </div>
   ),
 };
@@ -94,20 +91,23 @@ export const Required: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstrates adding a visual indicator for required fields using an asterisk within the Label.",
+        story: "Demonstrates adding a visual indicator for required fields using an asterisk within the Label.",
       },
     },
   },
   render: () => (
-    <div className="flex flex-col space-y-2 w-64">
+    <div className='flex w-64 flex-col space-y-2'>
       <Label
-        htmlFor="required"
-        className="after:content-['*'] after:ml-0.5 after:text-red-500"
-      >
+        htmlFor='required'
+        className="after:ml-0.5 after:text-red-500 after:content-['*']">
         Required Field
       </Label>
-      <Input id="required" required className="" type="text" />
+      <Input
+        id='required'
+        required
+        className=''
+        type='text'
+      />
     </div>
   ),
 };
@@ -122,9 +122,14 @@ export const WithCheckbox: Story = {
     },
   },
   render: () => (
-    <div className="flex items-center space-x-2">
-      <Checkbox id="terms" className="" />
-      <Label htmlFor="terms" className="">
+    <div className='flex items-center space-x-2'>
+      <Checkbox
+        id='terms'
+        className=''
+      />
+      <Label
+        htmlFor='terms'
+        className=''>
         Accept terms and conditions
       </Label>
     </div>
@@ -141,22 +146,42 @@ export const WithRadioGroup: Story = {
     },
   },
   render: () => (
-    <RadioGroup defaultValue="option-one" className="space-y-2">
-      <div className="flex items-center space-x-2">
-        <RadioGroupItem value="option-one" id="option-one" className="" />
-        <Label htmlFor="option-one" className="">
+    <RadioGroup
+      defaultValue='option-one'
+      className='space-y-2'>
+      <div className='flex items-center space-x-2'>
+        <RadioGroupItem
+          value='option-one'
+          id='option-one'
+          className=''
+        />
+        <Label
+          htmlFor='option-one'
+          className=''>
           Option One
         </Label>
       </div>
-      <div className="flex items-center space-x-2">
-        <RadioGroupItem value="option-two" id="option-two" className="" />
-        <Label htmlFor="option-two" className="">
+      <div className='flex items-center space-x-2'>
+        <RadioGroupItem
+          value='option-two'
+          id='option-two'
+          className=''
+        />
+        <Label
+          htmlFor='option-two'
+          className=''>
           Option Two
         </Label>
       </div>
-      <div className="flex items-center space-x-2">
-        <RadioGroupItem value="option-three" id="option-three" className="" />
-        <Label htmlFor="option-three" className="">
+      <div className='flex items-center space-x-2'>
+        <RadioGroupItem
+          value='option-three'
+          id='option-three'
+          className=''
+        />
+        <Label
+          htmlFor='option-three'
+          className=''>
           Option Three
         </Label>
       </div>
@@ -174,9 +199,14 @@ export const WithSwitch: Story = {
     },
   },
   render: () => (
-    <div className="flex items-center space-x-2">
-      <Switch id="airplane-mode" className="" />
-      <Label htmlFor="airplane-mode" className="">
+    <div className='flex items-center space-x-2'>
+      <Switch
+        id='airplane-mode'
+        className=''
+      />
+      <Label
+        htmlFor='airplane-mode'
+        className=''>
         Airplane Mode
       </Label>
     </div>
@@ -188,35 +218,50 @@ export const Sizes: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Showing different text sizes for the Label component by applying utility classes.",
+        story: "Showing different text sizes for the Label component by applying utility classes.",
       },
     },
   },
   render: () => (
-    <div className="space-y-6 w-64">
-      <div className="space-y-1">
-        <Label htmlFor="small" className="text-xs">
+    <div className='w-64 space-y-6'>
+      <div className='space-y-1'>
+        <Label
+          htmlFor='small'
+          className='text-xs'>
           Small Label
         </Label>
-        <Input id="small" placeholder="Small input" className="" type="text" />
+        <Input
+          id='small'
+          placeholder='Small input'
+          className=''
+          type='text'
+        />
       </div>
-      <div className="space-y-1">
-        <Label htmlFor="medium" className="">
+      <div className='space-y-1'>
+        <Label
+          htmlFor='medium'
+          className=''>
           Medium Label (Default)
         </Label>
         <Input
-          id="medium"
-          placeholder="Medium input"
-          className=""
-          type="text"
+          id='medium'
+          placeholder='Medium input'
+          className=''
+          type='text'
         />
       </div>
-      <div className="space-y-1">
-        <Label htmlFor="large" className="text-lg">
+      <div className='space-y-1'>
+        <Label
+          htmlFor='large'
+          className='text-lg'>
           Large Label
         </Label>
-        <Input id="large" placeholder="Large input" className="" type="text" />
+        <Input
+          id='large'
+          placeholder='Large input'
+          className=''
+          type='text'
+        />
       </div>
     </div>
   ),
@@ -233,11 +278,18 @@ export const Disabled: Story = {
     },
   },
   render: () => (
-    <div className="flex flex-col space-y-2 w-64">
-      <Label htmlFor="disabled" className="text-muted-foreground">
+    <div className='flex w-64 flex-col space-y-2'>
+      <Label
+        htmlFor='disabled'
+        className='text-muted-foreground'>
         Disabled Field
       </Label>
-      <Input id="disabled" disabled className="" type="text" />
+      <Input
+        id='disabled'
+        disabled
+        className=''
+        type='text'
+      />
     </div>
   ),
 };
@@ -247,20 +299,23 @@ export const WithDescription: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Providing additional descriptive text below the Label to give context to the associated input field.",
+        story: "Providing additional descriptive text below the Label to give context to the associated input field.",
       },
     },
   },
   render: () => (
-    <div className="space-y-1 w-64">
-      <Label htmlFor="with-description" className="">
+    <div className='w-64 space-y-1'>
+      <Label
+        htmlFor='with-description'
+        className=''>
         Username
       </Label>
-      <p className="text-xs text-muted-foreground">
-        This will be displayed on your public profile.
-      </p>
-      <Input id="with-description" className="" type="text" />
+      <p className='text-muted-foreground text-xs'>This will be displayed on your public profile.</p>
+      <Input
+        id='with-description'
+        className=''
+        type='text'
+      />
     </div>
   ),
 };
@@ -276,36 +331,54 @@ export const FormExample: Story = {
     },
   },
   render: () => (
-    <form className="space-y-6 w-80">
-      <div className="space-y-1">
-        <Label htmlFor="name" className="">
+    <form className='w-80 space-y-6'>
+      <div className='space-y-1'>
+        <Label
+          htmlFor='name'
+          className=''>
           Full Name
         </Label>
-        <Input id="name" placeholder="John Doe" className="" type="text" />
+        <Input
+          id='name'
+          placeholder='John Doe'
+          className=''
+          type='text'
+        />
       </div>
-      <div className="space-y-1">
-        <Label htmlFor="email" className="">
+      <div className='space-y-1'>
+        <Label
+          htmlFor='email'
+          className=''>
           Email
         </Label>
         <Input
-          id="email"
-          type="email"
-          placeholder="john@example.com"
-          className=""
+          id='email'
+          type='email'
+          placeholder='john@example.com'
+          className=''
         />
       </div>
-      <div className="space-y-1">
-        <Label htmlFor="password" className="">
+      <div className='space-y-1'>
+        <Label
+          htmlFor='password'
+          className=''>
           Password
         </Label>
-        <Input id="password" type="password" className="" />
-        <p className="text-xs text-muted-foreground">
-          Must be at least 8 characters.
-        </p>
+        <Input
+          id='password'
+          type='password'
+          className=''
+        />
+        <p className='text-muted-foreground text-xs'>Must be at least 8 characters.</p>
       </div>
-      <div className="flex items-center space-x-2">
-        <Checkbox id="remember" className="" />
-        <Label htmlFor="remember" className="">
+      <div className='flex items-center space-x-2'>
+        <Checkbox
+          id='remember'
+          className=''
+        />
+        <Label
+          htmlFor='remember'
+          className=''>
           Remember me
         </Label>
       </div>

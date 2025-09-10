@@ -2,12 +2,10 @@
 
 import * as React from "react";
 
-import { cn } from "@/lib/utils";
+import {cn} from "@/lib/utils";
 
-const rand = (min: number, max: number): number =>
-  Math.random() * (max - min) + min;
-const randInt = (min: number, max: number): number =>
-  Math.floor(Math.random() * (max - min) + min);
+const rand = (min: number, max: number): number => Math.random() * (max - min) + min;
+const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min) + min);
 const randColor = (): string => `hsl(${randInt(0, 360)}, 100%, 50%)`;
 
 interface ParticleType {
@@ -89,7 +87,7 @@ interface FireworkType {
   angle: number;
   vx: number;
   vy: number;
-  trail: { x: number; y: number }[];
+  trail: {x: number; y: number}[];
   trailLength: number;
   exploded: boolean;
   update: () => boolean;
@@ -104,14 +102,14 @@ const createFirework = (
   color: string,
   speed: number,
   size: number,
-  particleSpeed: { min: number; max: number } | number,
-  particleSize: { min: number; max: number } | number,
+  particleSpeed: {min: number; max: number} | number,
+  particleSize: {min: number; max: number} | number,
   onExplode: (particles: ParticleType[]) => void,
 ): FireworkType => {
   const angle = -Math.PI / 2 + rand(-0.3, 0.3);
   const vx = Math.cos(angle) * speed;
   const vy = Math.sin(angle) * speed;
-  const trail: { x: number; y: number }[] = [];
+  const trail: {x: number; y: number}[] = [];
   const trailLength = randInt(10, 25);
 
   return {
@@ -128,7 +126,7 @@ const createFirework = (
     trailLength,
     exploded: false,
     update() {
-      this.trail.push({ x: this.x, y: this.y });
+      this.trail.push({x: this.x, y: this.y});
       if (this.trail.length > this.trailLength) {
         this.trail.shift();
       }
@@ -148,18 +146,7 @@ const createFirework = (
         const particleAngle = rand(0, Math.PI * 2);
         const localParticleSpeed = getValueByRange(particleSpeed);
         const localParticleSize = getValueByRange(particleSize);
-        particles.push(
-          createParticle(
-            this.x,
-            this.y,
-            this.color,
-            localParticleSpeed,
-            particleAngle,
-            0.05,
-            0.98,
-            localParticleSize,
-          ),
-        );
+        particles.push(createParticle(this.x, this.y, this.color, localParticleSpeed, particleAngle, 0.05, 0.98, localParticleSize));
       }
       onExplode(particles);
     },
@@ -184,9 +171,7 @@ const createFirework = (
   };
 };
 
-const getValueByRange = (
-  range: { min: number; max: number } | number,
-): number => {
+const getValueByRange = (range: {min: number; max: number} | number): number => {
   if (typeof range === "number") {
     return range;
   }
@@ -200,41 +185,34 @@ const getColor = (color: string | string[] | undefined): string => {
   return color ?? randColor();
 };
 
-interface FireworksBackgroundProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "color"> {
+interface FireworksBackgroundProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "color"> {
   canvasProps?: React.HTMLAttributes<HTMLCanvasElement>;
   population?: number;
   color?: string | string[];
-  fireworkSpeed?: { min: number; max: number } | number;
-  fireworkSize?: { min: number; max: number } | number;
-  particleSpeed?: { min: number; max: number } | number;
-  particleSize?: { min: number; max: number } | number;
+  fireworkSpeed?: {min: number; max: number} | number;
+  fireworkSize?: {min: number; max: number} | number;
+  particleSpeed?: {min: number; max: number} | number;
+  particleSize?: {min: number; max: number} | number;
 }
 
-const FireworksBackground = React.forwardRef<
-  HTMLDivElement,
-  FireworksBackgroundProps
->(
+const FireworksBackground = React.forwardRef<HTMLDivElement, FireworksBackgroundProps>(
   (
     {
       className,
       canvasProps,
       population = 1,
       color,
-      fireworkSpeed = { min: 4, max: 8 },
-      fireworkSize = { min: 2, max: 5 },
-      particleSpeed = { min: 2, max: 7 },
-      particleSize = { min: 1, max: 5 },
+      fireworkSpeed = {min: 4, max: 8},
+      fireworkSize = {min: 2, max: 5},
+      particleSpeed = {min: 2, max: 7},
+      particleSize = {min: 1, max: 5},
       ...props
     },
     ref,
   ) => {
     const canvasRef = React.useRef<HTMLCanvasElement>(null);
     const containerRef = React.useRef<HTMLDivElement>(null);
-    React.useImperativeHandle(
-      ref,
-      () => containerRef.current as HTMLDivElement,
-    );
+    React.useImperativeHandle(ref, () => containerRef.current as HTMLDivElement);
 
     React.useEffect(() => {
       const canvas = canvasRef.current;
@@ -272,19 +250,7 @@ const FireworksBackground = React.forwardRef<
         const fireworkColor = getColor(color);
         const speed = getValueByRange(fireworkSpeed);
         const size = getValueByRange(fireworkSize);
-        fireworks.push(
-          createFirework(
-            x,
-            y,
-            targetY,
-            fireworkColor,
-            speed,
-            size,
-            particleSpeed,
-            particleSize,
-            handleExplosion,
-          ),
-        );
+        fireworks.push(createFirework(x, y, targetY, fireworkColor, speed, size, particleSpeed, particleSize, handleExplosion));
         const timeout = rand(300, 800) / population;
         setTimeout(launchFirework, timeout);
       };
@@ -326,19 +292,7 @@ const FireworksBackground = React.forwardRef<
         const fireworkColor = getColor(color);
         const speed = getValueByRange(fireworkSpeed);
         const size = getValueByRange(fireworkSize);
-        fireworks.push(
-          createFirework(
-            x,
-            y,
-            targetY,
-            fireworkColor,
-            speed,
-            size,
-            particleSpeed,
-            particleSize,
-            handleExplosion,
-          ),
-        );
+        fireworks.push(createFirework(x, y, targetY, fireworkColor, speed, size, particleSpeed, particleSize, handleExplosion));
       };
 
       container.addEventListener("click", handleClick);
@@ -348,21 +302,13 @@ const FireworksBackground = React.forwardRef<
         container.removeEventListener("click", handleClick);
         cancelAnimationFrame(animationFrameId);
       };
-    }, [
-      population,
-      color,
-      fireworkSpeed,
-      fireworkSize,
-      particleSpeed,
-      particleSize,
-    ]);
+    }, [population, color, fireworkSpeed, fireworkSize, particleSpeed, particleSize]);
 
     return (
       <div
         ref={containerRef}
         className={cn("relative size-full overflow-hidden", className)}
-        {...props}
-      >
+        {...props}>
         <canvas
           {...canvasProps}
           ref={canvasRef}
@@ -375,4 +321,4 @@ const FireworksBackground = React.forwardRef<
 
 FireworksBackground.displayName = "FireworksBackground";
 
-export { FireworksBackground, type FireworksBackgroundProps };
+export {FireworksBackground, type FireworksBackgroundProps};

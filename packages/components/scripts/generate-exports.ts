@@ -1,10 +1,13 @@
 /**
  * This script will generate the `exports` property on the package.json file
  * based on every built component, so that they are properly exported.
+ *
+ * @format
  */
+
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import {fileURLToPath} from "node:url";
 
 // ES Module alternative to __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -58,17 +61,13 @@ const exports: Record<string, ExportEntry> = {
 function processItems(dir: string, prefix: string = "") {
   if (!pathExists(dir)) return;
 
-  const items = fs.readdirSync(dir, { withFileTypes: true });
+  const items = fs.readdirSync(dir, {withFileTypes: true});
 
   items.forEach((item) => {
     const itemName = item.name;
 
     // Skip files with extensions (we only want directories or direct component files)
-    if (
-      item.isFile() &&
-      path.extname(itemName) !== ".tsx" &&
-      path.extname(itemName) !== ".ts"
-    ) {
+    if (item.isFile() && path.extname(itemName) !== ".tsx" && path.extname(itemName) !== ".ts") {
       return;
     }
 
@@ -89,15 +88,9 @@ function processItems(dir: string, prefix: string = "") {
         typesPath = `./dist/components/ui/${flatName}.d.ts`;
       } else {
         // Recursively process subdirectories
-        processItems(
-          path.join(dir, itemName),
-          `${prefix}${itemName.toLowerCase()}-`,
-        );
+        processItems(path.join(dir, itemName), `${prefix}${itemName.toLowerCase()}-`);
       }
-    } else if (
-      item.isFile() &&
-      (path.extname(itemName) === ".tsx" || path.extname(itemName) === ".ts")
-    ) {
+    } else if (item.isFile() && (path.extname(itemName) === ".tsx" || path.extname(itemName) === ".ts")) {
       // Handle direct .tsx/.ts component files with flat structure
       const baseName = path.basename(itemName, path.extname(itemName));
       const flatName = prefix + baseName.toLowerCase();
@@ -128,8 +121,4 @@ processItems(LIB_DIR);
 packageJson.exports = exports;
 fs.writeFileSync(PACKAGE_JSON_PATH, JSON.stringify(packageJson, null, 2));
 
-console.log(
-  `>>> ✅ Successfully generated ${
-    Object.keys(exports).length - 1
-  } component exports`,
-);
+console.log(`>>> ✅ Successfully generated ${Object.keys(exports).length - 1} component exports`);

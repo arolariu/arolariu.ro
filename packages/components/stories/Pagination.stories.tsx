@@ -1,6 +1,7 @@
+import type {Meta, StoryObj} from "@storybook/react";
 import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
 import {
+  Button,
   Pagination,
   PaginationContent,
   PaginationEllipsis,
@@ -8,7 +9,6 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-  Button,
 } from "../dist";
 
 const meta: Meta<typeof Pagination> = {
@@ -55,8 +55,7 @@ export const Basic: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Displays a basic pagination setup with previous/next buttons and a few page links. The active page is highlighted.",
+        story: "Displays a basic pagination setup with previous/next buttons and a few page links. The active page is highlighted.",
       },
     },
   },
@@ -64,21 +63,23 @@ export const Basic: Story = {
     <Pagination>
       <PaginationContent>
         <PaginationItem>
-          <PaginationPrevious href="#" />
+          <PaginationPrevious href='#' />
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#">1</PaginationLink>
+          <PaginationLink href='#'>1</PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#" isActive>
+          <PaginationLink
+            href='#'
+            isActive>
             2
           </PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#">3</PaginationLink>
+          <PaginationLink href='#'>3</PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationNext href="#" />
+          <PaginationNext href='#' />
         </PaginationItem>
       </PaginationContent>
     </Pagination>
@@ -90,8 +91,7 @@ export const WithEllipsis: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstrates pagination with ellipsis (...) to indicate omitted page numbers, useful for navigating large sets of pages.",
+        story: "Demonstrates pagination with ellipsis (...) to indicate omitted page numbers, useful for navigating large sets of pages.",
       },
     },
   },
@@ -99,33 +99,35 @@ export const WithEllipsis: Story = {
     <Pagination>
       <PaginationContent>
         <PaginationItem>
-          <PaginationPrevious href="#" />
+          <PaginationPrevious href='#' />
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#">1</PaginationLink>
+          <PaginationLink href='#'>1</PaginationLink>
         </PaginationItem>
         <PaginationItem>
           <PaginationEllipsis />
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#">4</PaginationLink>
+          <PaginationLink href='#'>4</PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#" isActive>
+          <PaginationLink
+            href='#'
+            isActive>
             5
           </PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#">6</PaginationLink>
+          <PaginationLink href='#'>6</PaginationLink>
         </PaginationItem>
         <PaginationItem>
           <PaginationEllipsis />
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#">10</PaginationLink>
+          <PaginationLink href='#'>10</PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationNext href="#" />
+          <PaginationNext href='#' />
         </PaginationItem>
       </PaginationContent>
     </Pagination>
@@ -137,8 +139,7 @@ export const CustomItemCount: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Shows how to dynamically generate a specific number of pagination links based on the total number of pages.",
+        story: "Shows how to dynamically generate a specific number of pagination links based on the total number of pages.",
       },
     },
   },
@@ -146,17 +147,19 @@ export const CustomItemCount: Story = {
     <Pagination>
       <PaginationContent>
         <PaginationItem>
-          <PaginationPrevious href="#" />
+          <PaginationPrevious href='#' />
         </PaginationItem>
-        {Array.from({ length: 7 }).map((_, i) => (
+        {Array.from({length: 7}).map((_, i) => (
           <PaginationItem key={i}>
-            <PaginationLink href="#" isActive={i === 3}>
+            <PaginationLink
+              href='#'
+              isActive={i === 3}>
               {i + 1}
             </PaginationLink>
           </PaginationItem>
         ))}
         <PaginationItem>
-          <PaginationNext href="#" />
+          <PaginationNext href='#' />
         </PaginationItem>
       </PaginationContent>
     </Pagination>
@@ -177,21 +180,26 @@ export const DisabledItems: Story = {
     <Pagination>
       <PaginationContent>
         <PaginationItem>
-          <PaginationPrevious href="#" isDisabled />
+          <PaginationPrevious
+            href='#'
+            isDisabled
+          />
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#" isActive>
+          <PaginationLink
+            href='#'
+            isActive>
             1
           </PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#">2</PaginationLink>
+          <PaginationLink href='#'>2</PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#">3</PaginationLink>
+          <PaginationLink href='#'>3</PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationNext href="#" />
+          <PaginationNext href='#' />
         </PaginationItem>
       </PaginationContent>
     </Pagination>
@@ -217,34 +225,32 @@ export const Interactive: Story = {
     };
 
     return (
-      <div className="space-y-4">
-        <div className="text-center">
+      <div className='space-y-4'>
+        <div className='text-center'>
           <p>Current Page: {currentPage}</p>
         </div>
         <Pagination>
           <PaginationContent>
             <PaginationItem>
               <Button
-                variant="outline"
-                size="icon"
+                variant='outline'
+                size='icon'
                 onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="h-9 w-9"
-              >
-                <span className="sr-only">Go to previous page</span>
+                className='h-9 w-9'>
+                <span className='sr-only'>Go to previous page</span>
                 <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="lucide lucide-chevron-left h-4 w-4"
-                >
-                  <polyline points="15 18 9 12 15 6"></polyline>
+                  xmlns='http://www.w3.org/2000/svg'
+                  width='16'
+                  height='16'
+                  viewBox='0 0 24 24'
+                  fill='none'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  className='lucide lucide-chevron-left h-4 w-4'>
+                  <polyline points='15 18 9 12 15 6'></polyline>
                 </svg>
               </Button>
             </PaginationItem>
@@ -252,11 +258,10 @@ export const Interactive: Story = {
             {currentPage > 2 && (
               <PaginationItem>
                 <Button
-                  variant="outline"
-                  size="icon"
+                  variant='outline'
+                  size='icon'
                   onClick={() => handlePageChange(1)}
-                  className="h-9 w-9"
-                >
+                  className='h-9 w-9'>
                   1
                 </Button>
               </PaginationItem>
@@ -271,11 +276,10 @@ export const Interactive: Story = {
             {currentPage > 1 && (
               <PaginationItem>
                 <Button
-                  variant="outline"
-                  size="icon"
+                  variant='outline'
+                  size='icon'
                   onClick={() => handlePageChange(currentPage - 1)}
-                  className="h-9 w-9"
-                >
+                  className='h-9 w-9'>
                   {currentPage - 1}
                 </Button>
               </PaginationItem>
@@ -283,11 +287,10 @@ export const Interactive: Story = {
 
             <PaginationItem>
               <Button
-                variant="outline"
-                size="icon"
-                className="h-9 w-9 bg-neutral-100 dark:bg-neutral-800"
-                disabled
-              >
+                variant='outline'
+                size='icon'
+                className='h-9 w-9 bg-neutral-100 dark:bg-neutral-800'
+                disabled>
                 {currentPage}
               </Button>
             </PaginationItem>
@@ -295,11 +298,10 @@ export const Interactive: Story = {
             {currentPage < totalPages && (
               <PaginationItem>
                 <Button
-                  variant="outline"
-                  size="icon"
+                  variant='outline'
+                  size='icon'
                   onClick={() => handlePageChange(currentPage + 1)}
-                  className="h-9 w-9"
-                >
+                  className='h-9 w-9'>
                   {currentPage + 1}
                 </Button>
               </PaginationItem>
@@ -314,11 +316,10 @@ export const Interactive: Story = {
             {currentPage < totalPages - 1 && (
               <PaginationItem>
                 <Button
-                  variant="outline"
-                  size="icon"
+                  variant='outline'
+                  size='icon'
                   onClick={() => handlePageChange(totalPages)}
-                  className="h-9 w-9"
-                >
+                  className='h-9 w-9'>
                   {totalPages}
                 </Button>
               </PaginationItem>
@@ -326,28 +327,24 @@ export const Interactive: Story = {
 
             <PaginationItem>
               <Button
-                variant="outline"
-                size="icon"
-                onClick={() =>
-                  handlePageChange(Math.min(totalPages, currentPage + 1))
-                }
+                variant='outline'
+                size='icon'
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="h-9 w-9"
-              >
-                <span className="sr-only">Go to next page</span>
+                className='h-9 w-9'>
+                <span className='sr-only'>Go to next page</span>
                 <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="lucide lucide-chevron-right h-4 w-4"
-                >
-                  <polyline points="9 18 15 12 9 6"></polyline>
+                  xmlns='http://www.w3.org/2000/svg'
+                  width='16'
+                  height='16'
+                  viewBox='0 0 24 24'
+                  fill='none'
+                  stroke='currentColor'
+                  strokeWidth='2'
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  className='lucide lucide-chevron-right h-4 w-4'>
+                  <polyline points='9 18 15 12 9 6'></polyline>
                 </svg>
               </Button>
             </PaginationItem>
@@ -370,28 +367,28 @@ export const Compact: Story = {
   },
   render: () => (
     <Pagination>
-      <PaginationContent className="flex-wrap">
+      <PaginationContent className='flex-wrap'>
         <PaginationItem>
-          <PaginationPrevious href="#" />
+          <PaginationPrevious href='#' />
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#">1</PaginationLink>
+          <PaginationLink href='#'>1</PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#" isActive>
+          <PaginationLink
+            href='#'
+            isActive>
             2
           </PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#">3</PaginationLink>
+          <PaginationLink href='#'>3</PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationNext href="#" />
+          <PaginationNext href='#' />
         </PaginationItem>
       </PaginationContent>
-      <div className="mt-4 text-center text-sm text-muted-foreground">
-        Page 2 of 10
-      </div>
+      <div className='text-muted-foreground mt-4 text-center text-sm'>Page 2 of 10</div>
     </Pagination>
   ),
 };
@@ -401,8 +398,7 @@ export const CustomStyled: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstrates applying custom CSS classes to pagination components for unique styling, overriding the default appearance.",
+        story: "Demonstrates applying custom CSS classes to pagination components for unique styling, overriding the default appearance.",
       },
     },
   },
@@ -411,39 +407,36 @@ export const CustomStyled: Story = {
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
-            href="#"
-            className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950 dark:hover:text-blue-300"
+            href='#'
+            className='border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950 dark:hover:text-blue-300'
           />
         </PaginationItem>
         <PaginationItem>
           <PaginationLink
-            href="#"
-            className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950 dark:hover:text-blue-300"
-          >
+            href='#'
+            className='border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950 dark:hover:text-blue-300'>
             1
           </PaginationLink>
         </PaginationItem>
         <PaginationItem>
           <PaginationLink
-            href="#"
+            href='#'
             isActive
-            className="border-blue-600 bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 dark:border-blue-600 dark:bg-blue-900/50 dark:text-blue-100"
-          >
+            className='border-blue-600 bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800 dark:border-blue-600 dark:bg-blue-900/50 dark:text-blue-100'>
             2
           </PaginationLink>
         </PaginationItem>
         <PaginationItem>
           <PaginationLink
-            href="#"
-            className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950 dark:hover:text-blue-300"
-          >
+            href='#'
+            className='border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950 dark:hover:text-blue-300'>
             3
           </PaginationLink>
         </PaginationItem>
         <PaginationItem>
           <PaginationNext
-            href="#"
-            className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950 dark:hover:text-blue-300"
+            href='#'
+            className='border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950 dark:hover:text-blue-300'
           />
         </PaginationItem>
       </PaginationContent>

@@ -1,11 +1,5 @@
-import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "../dist";
+import type {Meta, StoryObj} from "@storybook/react";
+import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "../dist";
 
 const meta: Meta<typeof Accordion> = {
   title: "Design System/Accordion",
@@ -38,19 +32,17 @@ See the [shadcn/ui Accordion documentation](https://ui.shadcn.com/docs/component
   argTypes: {
     type: {
       options: ["single", "multiple"],
-      control: { type: "radio" },
-      description:
-        "Determines whether one or multiple items can be opened at the same time.",
+      control: {type: "radio"},
+      description: "Determines whether one or multiple items can be opened at the same time.",
       table: {
-        defaultValue: { summary: "single" },
+        defaultValue: {summary: "single"},
       },
     },
     collapsible: {
       control: "boolean",
-      description:
-        "When \`type\` is \`single\`, allows closing the currently open item.",
+      description: "When \`type\` is \`single\`, allows closing the currently open item.",
       table: {
-        defaultValue: { summary: "false" },
+        defaultValue: {summary: "false"},
       },
     },
     // Note: Other props like `value`, `defaultValue`, `onValueChange` are available
@@ -72,31 +64,23 @@ export const Single: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "A basic accordion where only one item can be open at a time. `collapsible` allows closing the open item.",
+        story: "A basic accordion where only one item can be open at a time. `collapsible` allows closing the open item.",
       },
     },
   },
   render: (args) => (
     <Accordion {...args}>
-      <AccordionItem value="item-1">
+      <AccordionItem value='item-1'>
         <AccordionTrigger>Is it accessible?</AccordionTrigger>
-        <AccordionContent>
-          Yes. It adheres to the WAI-ARIA design pattern.
-        </AccordionContent>
+        <AccordionContent>Yes. It adheres to the WAI-ARIA design pattern.</AccordionContent>
       </AccordionItem>
-      <AccordionItem value="item-2">
+      <AccordionItem value='item-2'>
         <AccordionTrigger>Is it styled?</AccordionTrigger>
-        <AccordionContent>
-          Yes. It comes with default styles that matches the other components'
-          aesthetic.
-        </AccordionContent>
+        <AccordionContent>Yes. It comes with default styles that matches the other components' aesthetic.</AccordionContent>
       </AccordionItem>
-      <AccordionItem value="item-3">
+      <AccordionItem value='item-3'>
         <AccordionTrigger>Is it animated?</AccordionTrigger>
-        <AccordionContent>
-          Yes. It's animated by default, but you can disable it if you prefer.
-        </AccordionContent>
+        <AccordionContent>Yes. It's animated by default, but you can disable it if you prefer.</AccordionContent>
       </AccordionItem>
     </Accordion>
   ),
@@ -111,31 +95,23 @@ export const Multiple: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "An accordion where multiple items can be open simultaneously by setting `type='multiple'`.",
+        story: "An accordion where multiple items can be open simultaneously by setting `type='multiple'`.",
       },
     },
   },
   render: (args) => (
     <Accordion {...args}>
-      <AccordionItem value="item-1">
+      <AccordionItem value='item-1'>
         <AccordionTrigger>Configuration</AccordionTrigger>
-        <AccordionContent>
-          You can configure the accordion to allow multiple items to be opened
-          at the same time.
-        </AccordionContent>
+        <AccordionContent>You can configure the accordion to allow multiple items to be opened at the same time.</AccordionContent>
       </AccordionItem>
-      <AccordionItem value="item-2">
+      <AccordionItem value='item-2'>
         <AccordionTrigger>Customization</AccordionTrigger>
-        <AccordionContent>
-          The component can be customized with your own classes and styles.
-        </AccordionContent>
+        <AccordionContent>The component can be customized with your own classes and styles.</AccordionContent>
       </AccordionItem>
-      <AccordionItem value="item-3">
+      <AccordionItem value='item-3'>
         <AccordionTrigger>Accessibility</AccordionTrigger>
-        <AccordionContent>
-          Built with full keyboard navigation and screen reader support.
-        </AccordionContent>
+        <AccordionContent>Built with full keyboard navigation and screen reader support.</AccordionContent>
       </AccordionItem>
     </Accordion>
   ),
@@ -151,37 +127,31 @@ export const CustomStyled: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstrates applying custom CSS classes to the Accordion and its parts for unique styling.",
+        story: "Demonstrates applying custom CSS classes to the Accordion and its parts for unique styling.",
       },
     },
   },
   render: (args) => (
     <Accordion {...args}>
-      <AccordionItem value="item-1" className="border-b border-blue-200">
-        <AccordionTrigger className="text-blue-600 hover:text-blue-800">
-          Custom Colors
-        </AccordionTrigger>
-        <AccordionContent className="text-gray-600">
-          This accordion has custom colors applied to demonstrate styling
-          capabilities.
+      <AccordionItem
+        value='item-1'
+        className='border-b border-blue-200'>
+        <AccordionTrigger className='text-blue-600 hover:text-blue-800'>Custom Colors</AccordionTrigger>
+        <AccordionContent className='text-gray-600'>
+          This accordion has custom colors applied to demonstrate styling capabilities.
         </AccordionContent>
       </AccordionItem>
-      <AccordionItem value="item-2" className="border-b border-blue-200">
-        <AccordionTrigger className="text-blue-600 hover:text-blue-800">
-          Custom Borders
-        </AccordionTrigger>
-        <AccordionContent className="text-gray-600">
-          Custom border styles can be applied to match your design system.
-        </AccordionContent>
+      <AccordionItem
+        value='item-2'
+        className='border-b border-blue-200'>
+        <AccordionTrigger className='text-blue-600 hover:text-blue-800'>Custom Borders</AccordionTrigger>
+        <AccordionContent className='text-gray-600'>Custom border styles can be applied to match your design system.</AccordionContent>
       </AccordionItem>
-      <AccordionItem value="item-3" className="border-b border-blue-200">
-        <AccordionTrigger className="text-blue-600 hover:text-blue-800">
-          Custom Typography
-        </AccordionTrigger>
-        <AccordionContent className="text-gray-600">
-          You can customize the typography by applying your own text classes.
-        </AccordionContent>
+      <AccordionItem
+        value='item-3'
+        className='border-b border-blue-200'>
+        <AccordionTrigger className='text-blue-600 hover:text-blue-800'>Custom Typography</AccordionTrigger>
+        <AccordionContent className='text-gray-600'>You can customize the typography by applying your own text classes.</AccordionContent>
       </AccordionItem>
     </Accordion>
   ),

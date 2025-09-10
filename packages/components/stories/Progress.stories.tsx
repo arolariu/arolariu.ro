@@ -1,6 +1,6 @@
+import type {Meta, StoryObj} from "@storybook/react";
 import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import { Progress, Button } from "../dist";
+import {Button, Progress} from "../dist";
 
 const meta: Meta<typeof Progress> = {
   title: "Design System/Progress",
@@ -39,15 +39,17 @@ type Story = StoryObj<typeof Progress>;
 // Basic progress bar
 export const Basic: Story = {
   render: () => (
-    <div className="w-[60%] space-y-6">
-      <Progress value={33} className="w-full" />
+    <div className='w-[60%] space-y-6'>
+      <Progress
+        value={33}
+        className='w-full'
+      />
     </div>
   ),
   parameters: {
     docs: {
       description: {
-        story:
-          "A basic Progress bar example showing a specific completion percentage (e.g., 33%).",
+        story: "A basic Progress bar example showing a specific completion percentage (e.g., 33%).",
       },
     },
   },
@@ -56,25 +58,25 @@ export const Basic: Story = {
 // Different values
 export const DifferentValues: Story = {
   render: () => (
-    <div className="w-[60%] space-y-6">
-      <div className="space-y-2">
-        <div className="text-sm font-medium">0%</div>
+    <div className='w-[60%] space-y-6'>
+      <div className='space-y-2'>
+        <div className='text-sm font-medium'>0%</div>
         <Progress value={0} />
       </div>
-      <div className="space-y-2">
-        <div className="text-sm font-medium">25%</div>
+      <div className='space-y-2'>
+        <div className='text-sm font-medium'>25%</div>
         <Progress value={25} />
       </div>
-      <div className="space-y-2">
-        <div className="text-sm font-medium">50%</div>
+      <div className='space-y-2'>
+        <div className='text-sm font-medium'>50%</div>
         <Progress value={50} />
       </div>
-      <div className="space-y-2">
-        <div className="text-sm font-medium">75%</div>
+      <div className='space-y-2'>
+        <div className='text-sm font-medium'>75%</div>
         <Progress value={75} />
       </div>
-      <div className="space-y-2">
-        <div className="text-sm font-medium">100%</div>
+      <div className='space-y-2'>
+        <div className='text-sm font-medium'>100%</div>
         <Progress value={100} />
       </div>
     </div>
@@ -82,8 +84,7 @@ export const DifferentValues: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Examples of Progress bars with different completion values ranging from 0% to 100%.",
+        story: "Examples of Progress bars with different completion values ranging from 0% to 100%.",
       },
     },
   },
@@ -92,34 +93,33 @@ export const DifferentValues: Story = {
 // Custom colors
 export const CustomColors: Story = {
   render: () => (
-    <div className="w-[60%] space-y-6">
+    <div className='w-[60%] space-y-6'>
       <Progress
         value={45}
-        className="w-full bg-blue-100 dark:bg-blue-950"
-        indicatorClassName="bg-blue-600 dark:bg-blue-400"
+        className='w-full bg-blue-100 dark:bg-blue-950'
+        indicatorClassName='bg-blue-600 dark:bg-blue-400'
       />
       <Progress
         value={60}
-        className="w-full bg-green-100 dark:bg-green-950"
-        indicatorClassName="bg-green-600 dark:bg-green-400"
+        className='w-full bg-green-100 dark:bg-green-950'
+        indicatorClassName='bg-green-600 dark:bg-green-400'
       />
       <Progress
         value={75}
-        className="w-full bg-amber-100 dark:bg-amber-950"
-        indicatorClassName="bg-amber-600 dark:bg-amber-400"
+        className='w-full bg-amber-100 dark:bg-amber-950'
+        indicatorClassName='bg-amber-600 dark:bg-amber-400'
       />
       <Progress
         value={90}
-        className="w-full bg-red-100 dark:bg-red-950"
-        indicatorClassName="bg-red-600 dark:bg-red-400"
+        className='w-full bg-red-100 dark:bg-red-950'
+        indicatorClassName='bg-red-600 dark:bg-red-400'
       />
     </div>
   ),
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstrates customizing the Progress bar's color using Tailwind CSS utility classes.",
+        story: "Demonstrates customizing the Progress bar's color using Tailwind CSS utility classes.",
       },
     },
   },
@@ -128,23 +128,23 @@ export const CustomColors: Story = {
 // With labels
 export const WithLabels: Story = {
   render: () => (
-    <div className="w-[60%] space-y-6">
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm text-muted-foreground">
+    <div className='w-[60%] space-y-6'>
+      <div className='space-y-2'>
+        <div className='text-muted-foreground flex justify-between text-sm'>
           <div>Uploading...</div>
           <div>45%</div>
         </div>
         <Progress value={45} />
       </div>
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm text-muted-foreground">
+      <div className='space-y-2'>
+        <div className='text-muted-foreground flex justify-between text-sm'>
           <div>Processing...</div>
           <div>67%</div>
         </div>
         <Progress value={67} />
       </div>
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm text-muted-foreground">
+      <div className='space-y-2'>
+        <div className='text-muted-foreground flex justify-between text-sm'>
           <div>Complete</div>
           <div>100%</div>
         </div>
@@ -155,8 +155,7 @@ export const WithLabels: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Shows a Progress bar with a text label indicating the current percentage value.",
+        story: "Shows a Progress bar with a text label indicating the current percentage value.",
       },
     },
   },
@@ -165,30 +164,38 @@ export const WithLabels: Story = {
 // Different sizes
 export const DifferentSizes: Story = {
   render: () => (
-    <div className="w-[60%] space-y-6">
-      <div className="space-y-2">
-        <div className="text-sm font-medium">Small (h-2)</div>
-        <Progress value={75} className="h-2" />
+    <div className='w-[60%] space-y-6'>
+      <div className='space-y-2'>
+        <div className='text-sm font-medium'>Small (h-2)</div>
+        <Progress
+          value={75}
+          className='h-2'
+        />
       </div>
-      <div className="space-y-2">
-        <div className="text-sm font-medium">Default (h-4)</div>
+      <div className='space-y-2'>
+        <div className='text-sm font-medium'>Default (h-4)</div>
         <Progress value={75} />
       </div>
-      <div className="space-y-2">
-        <div className="text-sm font-medium">Large (h-6)</div>
-        <Progress value={75} className="h-6" />
+      <div className='space-y-2'>
+        <div className='text-sm font-medium'>Large (h-6)</div>
+        <Progress
+          value={75}
+          className='h-6'
+        />
       </div>
-      <div className="space-y-2">
-        <div className="text-sm font-medium">Extra Large (h-8)</div>
-        <Progress value={75} className="h-8" />
+      <div className='space-y-2'>
+        <div className='text-sm font-medium'>Extra Large (h-8)</div>
+        <Progress
+          value={75}
+          className='h-8'
+        />
       </div>
     </div>
   ),
   parameters: {
     docs: {
       description: {
-        story:
-          "Examples of Progress bars with different sizes, ranging from small to extra large.",
+        story: "Examples of Progress bars with different sizes, ranging from small to extra large.",
       },
     },
   },
@@ -214,35 +221,22 @@ export const Interactive: Story = {
     }
 
     return (
-      <div className="w-[60%] space-y-6">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <div>
-              {progress === 100
-                ? "Upload complete"
-                : progress === 0
-                  ? "Ready to upload"
-                  : "Uploading..."}
-            </div>
+      <div className='w-[60%] space-y-6'>
+        <div className='space-y-2'>
+          <div className='text-muted-foreground flex justify-between text-sm'>
+            <div>{progress === 100 ? "Upload complete" : progress === 0 ? "Ready to upload" : "Uploading..."}</div>
             <div>{progress}%</div>
           </div>
           <Progress value={progress} />
         </div>
-        <Button onClick={onClick}>
-          {progress === 100
-            ? "Upload again"
-            : progress === 0
-              ? "Start upload"
-              : "Uploading..."}
-        </Button>
+        <Button onClick={onClick}>{progress === 100 ? "Upload again" : progress === 0 ? "Start upload" : "Uploading..."}</Button>
       </div>
     );
   },
   parameters: {
     docs: {
       description: {
-        story:
-          "An interactive Progress bar example where the user can start and reset the progress.",
+        story: "An interactive Progress bar example where the user can start and reset the progress.",
       },
     },
   },
@@ -251,13 +245,13 @@ export const Interactive: Story = {
 // Indeterminate progress
 export const Indeterminate: Story = {
   render: () => (
-    <div className="w-[60%] space-y-6">
-      <div className="space-y-2">
-        <div className="text-sm font-medium">Indeterminate</div>
-        <Progress className="h-4 w-full">
-          <div className="h-full w-full bg-primary/10 dark:bg-primary/20">
+    <div className='w-[60%] space-y-6'>
+      <div className='space-y-2'>
+        <div className='text-sm font-medium'>Indeterminate</div>
+        <Progress className='h-4 w-full'>
+          <div className='bg-primary/10 dark:bg-primary/20 h-full w-full'>
             <div
-              className="h-full bg-primary animate-[indeterminate_1s_ease-in-out_infinite] will-change-transform dark:bg-primary"
+              className='bg-primary dark:bg-primary h-full animate-[indeterminate_1s_ease-in-out_infinite] will-change-transform'
               style={{
                 width: "30%",
                 backgroundSize: "200% 100%",
@@ -281,8 +275,7 @@ export const Indeterminate: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Displays an indeterminate Progress bar, used when the completion percentage is unknown or cannot be determined.",
+        story: "Displays an indeterminate Progress bar, used when the completion percentage is unknown or cannot be determined.",
       },
     },
   },
@@ -296,9 +289,9 @@ export const WithSteps: Story = {
     const progress = (currentStep / totalSteps) * 100;
 
     return (
-      <div className="w-[60%] space-y-6">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-muted-foreground">
+      <div className='w-[60%] space-y-6'>
+        <div className='space-y-2'>
+          <div className='text-muted-foreground flex justify-between text-sm'>
             <div>
               Step {currentStep} of {totalSteps}
             </div>
@@ -306,14 +299,13 @@ export const WithSteps: Story = {
           </div>
           <Progress value={progress} />
         </div>
-        <div className="flex justify-between">
-          {Array.from({ length: totalSteps }).map((_, index) => (
+        <div className='flex justify-between'>
+          {Array.from({length: totalSteps}).map((_, index) => (
             <Button
               key={index}
               variant={currentStep > index ? "default" : "outline"}
-              size="sm"
-              onClick={() => setCurrentStep(index + 1)}
-            >
+              size='sm'
+              onClick={() => setCurrentStep(index + 1)}>
               Step {index + 1}
             </Button>
           ))}
@@ -324,8 +316,7 @@ export const WithSteps: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "A Progress bar example with steps, showing the current step and total steps.",
+        story: "A Progress bar example with steps, showing the current step and total steps.",
       },
     },
   },
@@ -352,15 +343,15 @@ export const Animated: Story = {
     }, []);
 
     return (
-      <div className="w-[60%] space-y-6">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm text-muted-foreground">
+      <div className='w-[60%] space-y-6'>
+        <div className='space-y-2'>
+          <div className='text-muted-foreground flex justify-between text-sm'>
             <div>Auto-incrementing progress</div>
             <div>{progress}%</div>
           </div>
           <Progress
             value={progress}
-            className="transition-all duration-500 ease-in-out"
+            className='transition-all duration-500 ease-in-out'
           />
         </div>
       </div>
@@ -369,8 +360,7 @@ export const Animated: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "An example of an animated Progress bar where the value updates over time, simulating a task in progress.",
+        story: "An example of an animated Progress bar where the value updates over time, simulating a task in progress.",
       },
     },
   },

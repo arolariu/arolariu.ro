@@ -1,15 +1,5 @@
-import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import {
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardAction,
-  Button,
-} from "../dist";
+import type {Meta, StoryObj} from "@storybook/react";
+import {Button, Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "../dist";
 
 const meta: Meta<typeof Card> = {
   title: "Design System/Cards/Card",
@@ -55,13 +45,12 @@ export const Basic: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "A fundamental card structure including Header (with Title and Description), Content, and Footer.",
+        story: "A fundamental card structure including Header (with Title and Description), Content, and Footer.",
       },
     },
   },
   render: () => (
-    <Card className="w-[350px]">
+    <Card className='w-[350px]'>
       <CardHeader>
         <CardTitle>Card Title</CardTitle>
         <CardDescription>Card Description</CardDescription>
@@ -87,12 +76,14 @@ export const WithAction: Story = {
     },
   },
   render: () => (
-    <Card className="w-[350px]">
+    <Card className='w-[350px]'>
       <CardHeader>
         <CardTitle>Notification</CardTitle>
         <CardDescription>You have a new message</CardDescription>
         <CardAction>
-          <Button variant="outline" size="sm">
+          <Button
+            variant='outline'
+            size='sm'>
             Mark as Read
           </Button>
         </CardAction>
@@ -100,11 +91,13 @@ export const WithAction: Story = {
       <CardContent>
         <p>John Doe sent you a message about the project deadline.</p>
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" size="sm">
+      <CardFooter className='flex justify-between'>
+        <Button
+          variant='outline'
+          size='sm'>
           Dismiss
         </Button>
-        <Button size="sm">View</Button>
+        <Button size='sm'>View</Button>
       </CardFooter>
     </Card>
   ),
@@ -115,77 +108,67 @@ export const CustomStyled: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Shows how to apply custom styles (gradients, colors, borders) to the Card and its sub-components using CSS classes.",
+        story: "Shows how to apply custom styles (gradients, colors, borders) to the Card and its sub-components using CSS classes.",
       },
     },
   },
   render: () => (
-    <Card className="w-[350px] bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/50 dark:to-blue-950/50 border-blue-100 dark:border-blue-900">
+    <Card className='w-[350px] border-blue-100 bg-gradient-to-br from-purple-50 to-blue-50 dark:border-blue-900 dark:from-purple-950/50 dark:to-blue-950/50'>
       <CardHeader>
-        <CardTitle className="text-blue-700 dark:text-blue-300">
-          Premium Plan
-        </CardTitle>
-        <CardDescription className="text-blue-600/80 dark:text-blue-400/80">
-          Access all features
-        </CardDescription>
+        <CardTitle className='text-blue-700 dark:text-blue-300'>Premium Plan</CardTitle>
+        <CardDescription className='text-blue-600/80 dark:text-blue-400/80'>Access all features</CardDescription>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2 text-blue-700 dark:text-blue-300">
-          <li className="flex items-center gap-2">
+        <ul className='space-y-2 text-blue-700 dark:text-blue-300'>
+          <li className='flex items-center gap-2'>
             <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M20 6 9 17l-5-5" />
+              xmlns='http://www.w3.org/2000/svg'
+              width='16'
+              height='16'
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='2'
+              strokeLinecap='round'
+              strokeLinejoin='round'>
+              <path d='M20 6 9 17l-5-5' />
             </svg>
             Unlimited projects
           </li>
-          <li className="flex items-center gap-2">
+          <li className='flex items-center gap-2'>
             <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M20 6 9 17l-5-5" />
+              xmlns='http://www.w3.org/2000/svg'
+              width='16'
+              height='16'
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='2'
+              strokeLinecap='round'
+              strokeLinejoin='round'>
+              <path d='M20 6 9 17l-5-5' />
             </svg>
             Priority support
           </li>
-          <li className="flex items-center gap-2">
+          <li className='flex items-center gap-2'>
             <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M20 6 9 17l-5-5" />
+              xmlns='http://www.w3.org/2000/svg'
+              width='16'
+              height='16'
+              viewBox='0 0 24 24'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='2'
+              strokeLinecap='round'
+              strokeLinejoin='round'>
+              <path d='M20 6 9 17l-5-5' />
             </svg>
             Custom domains
           </li>
         </ul>
       </CardContent>
       <CardFooter>
-        <Button className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-600/90 dark:hover:bg-blue-700/90">
-          Upgrade Now
-        </Button>
+        <Button className='w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-600/90 dark:hover:bg-blue-700/90'>Upgrade Now</Button>
       </CardFooter>
     </Card>
   ),
@@ -196,13 +179,12 @@ export const MultipleCards: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Illustrates how multiple Card components can be arranged within a layout (e.g., a grid).",
+        story: "Illustrates how multiple Card components can be arranged within a layout (e.g., a grid).",
       },
     },
   },
   render: () => (
-    <div className="grid grid-cols-2 gap-4">
+    <div className='grid grid-cols-2 gap-4'>
       <Card>
         <CardHeader>
           <CardTitle>First Card</CardTitle>

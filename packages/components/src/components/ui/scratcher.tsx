@@ -1,8 +1,8 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { motion, useAnimation } from "motion/react";
-import React, { useEffect, useRef, useState } from "react";
+import {cn} from "@/lib/utils";
+import {motion, useAnimation} from "motion/react";
+import React, {useEffect, useRef, useState} from "react";
 
 interface ScratcherProps {
   children: React.ReactNode;
@@ -35,12 +35,7 @@ export const Scratcher: React.FC<ScratcherProps> = ({
     if (canvas && ctx) {
       ctx.fillStyle = "#ccc";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const gradient = ctx.createLinearGradient(
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-      );
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
       gradient.addColorStop(0, gradientColors[0]);
       gradient.addColorStop(0.5, gradientColors[1]);
       gradient.addColorStop(1, gradientColors[2]);
@@ -112,7 +107,7 @@ export const Scratcher: React.FC<ScratcherProps> = ({
     await controls.start({
       scale: [1, 1.5, 1],
       rotate: [0, 10, -10, 10, -10, 0],
-      transition: { duration: 0.5 },
+      transition: {duration: 0.5},
     });
 
     // Call onComplete after animation finishes
@@ -155,16 +150,14 @@ export const Scratcher: React.FC<ScratcherProps> = ({
         cursor:
           "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDMyIDMyIj4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIxNSIgc3R5bGU9ImZpbGw6I2ZmZjtzdHJva2U6IzAwMDtzdHJva2Utd2lkdGg6MXB4OyIgLz4KPC9zdmc+'), auto",
       }}
-      animate={controls}
-    >
+      animate={controls}>
       <canvas
         ref={canvasRef}
         width={width}
         height={height}
-        className="absolute left-0 top-0"
+        className='absolute top-0 left-0'
         onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-      ></canvas>
+        onTouchStart={handleTouchStart}></canvas>
       {children}
     </motion.div>
   );

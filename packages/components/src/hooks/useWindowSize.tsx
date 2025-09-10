@@ -1,8 +1,6 @@
-/** @format */
-
 "use client";
 
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -56,17 +54,12 @@ export function useWindowSize(): HookReturnType {
 
     globalThis.window.addEventListener("resize", __handleResize__);
     __handleResize__(); // Call the function once to get the initial window size
-    return () =>
-      globalThis.window.removeEventListener("resize", __handleResize__);
+    return () => globalThis.window.removeEventListener("resize", __handleResize__);
   }, []); // Empty array ensures that effect is only run on mount
 
   return {
     windowSize,
-    isMobile:
-      typeof windowSize.width === "number" &&
-      windowSize.width < MOBILE_BREAKPOINT,
-    isDesktop:
-      typeof windowSize.width === "number" &&
-      windowSize.width >= MOBILE_BREAKPOINT,
+    isMobile: typeof windowSize.width === "number" && windowSize.width < MOBILE_BREAKPOINT,
+    isDesktop: typeof windowSize.width === "number" && windowSize.width >= MOBILE_BREAKPOINT,
   } as const;
 }
