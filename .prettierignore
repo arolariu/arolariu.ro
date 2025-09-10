@@ -1,0 +1,50 @@
+# dotfiles and dotfolders:
+.next
+.vscode
+.env
+.env.*
+.node-version
+.gitattributes
+.prettierignore
+.prettierrc
+.editorconfig
+.gitignore
+
+# Docker files:
+Dockerfile
+
+# Test / Storybook folders:
+**/code-cov/**
+**/storybook-static/**
+
+# Svelte-based html-infused files:
+sites/cv.arolariu.ro/**/**/*.html
+
+# Package Manager lockfile:
+package-lock.json
+
+# exceptions for all directories:
+**/**/*.md
+**/**/*.ico
+**/**/*.css
+**/**/*.svg
+**/**/*.png
+**/**/*.jpg
+**/**/*.jpeg
+**/**/*.mdx
+**/**/*.pem
+**/**/*.json
+**/**/*.txt
+**/**/*.xml
+**/**/*.pdf
+
+# Don't format output dirs:
+**/tmp/**
+**/node_modules/**
+**/_site/**
+**/obj/**
+**/bin/**
+**/dist/**
+**/build/**
+**/out/**
+**/output/**
