@@ -1,4 +1,15 @@
 {
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "terminal.integrated.scrollback": 10000,
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.ts": "$(capture).test.ts, $(capture).test.tsx, $(capture).stories.tsx, $(capture).spec.tsx",
+    "*.tsx": "$(capture).test.ts, $(capture).test.tsx, $(capture).stories.tsx, $(capture).spec.tsx"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.autoClosingTags": true,
   "typescript.tsserver.maxTsServerMemory": 8192,
   "typescript.tsserver.nodePath": "node",
@@ -14,4 +25,3 @@
     "**/app/**/route.{ts,tsx}": "${dirname} - route"
   }
 }
-
