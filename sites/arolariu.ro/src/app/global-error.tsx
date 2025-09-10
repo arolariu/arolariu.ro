@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {dumpBrowserInformation} from "@/lib/utils.client";

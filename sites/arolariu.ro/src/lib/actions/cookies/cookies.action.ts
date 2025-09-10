@@ -1,5 +1,3 @@
-/** @format */
-
 "use server";
 
 import {cookies} from "next/headers";

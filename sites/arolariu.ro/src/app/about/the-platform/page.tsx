@@ -1,5 +1,3 @@
-/** @format */
-
 import {ScrollToTop} from "@/hooks/useScrollToTop";
 import {createMetadata} from "@/metadata";
 import {getLocale, getTranslations} from "next-intl/server";

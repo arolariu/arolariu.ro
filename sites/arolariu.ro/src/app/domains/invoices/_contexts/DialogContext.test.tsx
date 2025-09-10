@@ -1,5 +1,3 @@
-/** @format */
-
 import {act, renderHook} from "@testing-library/react";
 import type {ReactNode} from "react";
 import {DialogProvider, useDialog} from "./DialogContext";

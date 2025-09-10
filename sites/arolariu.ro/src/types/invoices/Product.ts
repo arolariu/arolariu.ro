@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Allergen} from "./index.ts";
 
 /**

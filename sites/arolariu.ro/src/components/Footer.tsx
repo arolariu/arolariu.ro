@@ -1,5 +1,3 @@
-/** @format */
-
 import logo from "@/app/logo.svg";
 import {COMMIT_SHA, SITE_NAME, TIMESTAMP} from "@/lib/utils.generic";
 import {RichText} from "@/presentation/Text";

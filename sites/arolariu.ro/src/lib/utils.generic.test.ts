@@ -1,5 +1,3 @@
-/** @format */
-
 import {COMMIT_SHA, CONFIG_STORE, generateGuid, SITE_ENV, SITE_NAME, SITE_URL, TIMESTAMP} from "./utils.generic";
 
 describe("generateGuid", () => {

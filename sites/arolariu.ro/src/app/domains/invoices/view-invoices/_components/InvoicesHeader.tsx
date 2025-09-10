@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";

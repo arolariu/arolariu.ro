@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import UploadArea from "./_components/UploadArea";

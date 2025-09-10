@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {usePaginationWithSearch, useWindowSize} from "@/hooks";

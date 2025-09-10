@@ -1,5 +1,3 @@
-/** @format */
-
 export type InvoiceScanType = "image" | "pdf";
 
 export interface InvoiceScan {

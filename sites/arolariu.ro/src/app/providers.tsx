@@ -1,5 +1,3 @@
-/** @format */
-
 import Commander from "@/components/Commander";
 import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
 import {Toaster as ToastProvider} from "@arolariu/components";

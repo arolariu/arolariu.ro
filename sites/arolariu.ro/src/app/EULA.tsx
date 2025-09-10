@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {getCookie, setCookie} from "@/lib/actions/cookies";

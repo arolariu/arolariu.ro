@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {Button} from "@arolariu/components/button";

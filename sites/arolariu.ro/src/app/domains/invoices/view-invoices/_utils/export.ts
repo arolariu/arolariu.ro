@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Invoice} from "@/types/invoices/Invoice";
 import type {InvoiceExportRequest} from "../_types/InvoiceExport";
 

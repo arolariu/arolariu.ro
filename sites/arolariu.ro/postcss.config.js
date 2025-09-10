@@ -1,5 +1,3 @@
-/** @format */
-
 const postcssConfig = {
   plugins: {
     "@tailwindcss/postcss": {},

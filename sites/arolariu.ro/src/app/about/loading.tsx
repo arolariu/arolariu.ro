@@ -1,5 +1,3 @@
-/** @format */
-
 import {Skeleton} from "@arolariu/components/skeleton";
 
 /**

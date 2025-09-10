@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Invoice, Merchant} from "@/types/invoices";
 import {create} from "zustand";
 import {createJSONStorage, devtools, persist} from "zustand/middleware";

@@ -1,5 +1,3 @@
-/** @format */
-
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@arolariu/components/dialog";
 import Image from "next/image";
 import {useDialog} from "../../../../_contexts/DialogContext";

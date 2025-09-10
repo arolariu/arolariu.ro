@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {motion, useInView, type Variants} from "motion/react";

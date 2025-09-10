@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Currency} from "@/types/DDD";
 import {
   InvoiceCategory,

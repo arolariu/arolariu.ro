@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {retrieveNavigatorInformation, retrieveScreenInformation} from "@/lib/utils.client";

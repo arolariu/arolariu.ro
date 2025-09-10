@@ -1,5 +1,3 @@
-/** @format */
-
 import SharedInvoice from "@/../emails/invoices/SharedInvoice";
 import {resend} from "@/lib/utils.server";
 import {NextRequest, NextResponse} from "next/server";

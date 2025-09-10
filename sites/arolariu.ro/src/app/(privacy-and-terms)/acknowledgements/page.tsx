@@ -1,5 +1,3 @@
-/** @format */
-
 import licenses from "@/../licenses.json";
 import {TIMESTAMP} from "@/lib/utils.generic";
 import {createMetadata} from "@/metadata";

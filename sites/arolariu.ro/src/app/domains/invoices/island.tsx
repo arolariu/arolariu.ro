@@ -1,5 +1,3 @@
-/** @format */
-
 import {RichText} from "@/presentation/Text";
 import {useTranslations} from "next-intl";
 import Image from "next/image";

@@ -1,5 +1,3 @@
-/** @format */
-
 import {Card, CardContent, Progress} from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";

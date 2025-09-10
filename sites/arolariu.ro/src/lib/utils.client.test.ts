@@ -1,5 +1,3 @@
-/** @format */
-
 import {extractBase64FromBlob, isBrowserStorageAvailable} from "./utils.client";
 
 describe("extractBase64FromBlob", () => {

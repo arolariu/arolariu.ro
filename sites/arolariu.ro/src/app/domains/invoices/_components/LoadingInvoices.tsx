@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * This component is used to display a message when the invoices are loading.
  * @returns The JSX for the loading invoices view.

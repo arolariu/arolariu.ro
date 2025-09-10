@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {Badge, Button} from "@arolariu/components";

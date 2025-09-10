@@ -1,5 +1,3 @@
-/** @format */
-
 import {FakeInvoice} from "@/data/mocks/invoices";
 import type {Invoice} from "@/types/invoices";
 import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";

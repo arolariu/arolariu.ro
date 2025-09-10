@@ -1,5 +1,3 @@
-/** @format */
-
 export {type Allergen} from "./Allergen";
 export {InvoiceAnalysisOptions, InvoiceCategory, type Invoice, type InvoicePayload} from "./Invoice";
 export {MerchantCategory, type Merchant} from "./Merchant";

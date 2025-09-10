@@ -1,5 +1,3 @@
-/** @format */
-
 // Blank comment for prettier
 
 /**

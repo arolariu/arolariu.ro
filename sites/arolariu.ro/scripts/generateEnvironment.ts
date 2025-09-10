@@ -1,5 +1,3 @@
-/** @format */
-
 import {AppConfigurationClient} from "@azure/app-configuration";
 import {DefaultAzureCredential} from "@azure/identity";
 import fs from "node:fs";

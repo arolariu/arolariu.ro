@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import logo from "@/app/logo.svg";

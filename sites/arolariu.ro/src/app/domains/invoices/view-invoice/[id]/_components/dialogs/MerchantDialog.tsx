@@ -1,5 +1,3 @@
-/** @format */
-
 import {type Merchant, MerchantCategory} from "@/types/invoices";
 import {
   Badge,

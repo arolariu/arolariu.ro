@@ -1,5 +1,3 @@
-/** @format */
-
 import {Separator, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useLayoutEffect, useRef, useState} from "react";

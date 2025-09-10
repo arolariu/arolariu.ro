@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * This function checks if a given key is a secret key.
  * It looks for common patterns in the key name that indicate it is a secret,

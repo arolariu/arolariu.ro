@@ -1,5 +1,3 @@
-/** @format */
-
 import {generateGuid} from "@/lib/utils.generic";
 import {clerkClient} from "@clerk/nextjs/server";
 import {verifyWebhook} from "@clerk/nextjs/webhooks";

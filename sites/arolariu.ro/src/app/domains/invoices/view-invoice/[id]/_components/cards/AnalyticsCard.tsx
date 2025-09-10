@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {formatCurrency} from "@/lib/utils.generic";

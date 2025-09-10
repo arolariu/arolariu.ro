@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import fetchMerchants from "@/lib/actions/invoices/fetchMerchants";

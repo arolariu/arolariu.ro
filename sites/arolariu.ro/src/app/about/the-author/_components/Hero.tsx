@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {TypewriterTextSmooth} from "@arolariu/components";

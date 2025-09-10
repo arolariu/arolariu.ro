@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Metadata} from "next";
 import type {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
 import type {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";

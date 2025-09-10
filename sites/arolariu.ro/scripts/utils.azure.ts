@@ -1,5 +1,3 @@
-/** @format */
-
 import {DefaultAzureCredential} from "@azure/identity";
 import {SecretClient} from "@azure/keyvault-secrets";
 

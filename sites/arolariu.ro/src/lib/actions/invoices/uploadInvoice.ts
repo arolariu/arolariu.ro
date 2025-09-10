@@ -1,5 +1,3 @@
-/** @format */
-
 "use server";
 
 import type {UserInformation} from "@/types";

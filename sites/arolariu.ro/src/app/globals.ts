@@ -1,5 +1,3 @@
-/** @format */
-
 import en from "../../messages/en.json";
 
 const locales = ["en", "ro"] as const;

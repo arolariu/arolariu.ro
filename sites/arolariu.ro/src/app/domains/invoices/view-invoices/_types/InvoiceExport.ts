@@ -1,5 +1,3 @@
-/** @format */
-
 export type InvoiceExportFormat = "csv" | "pdf" | "json";
 
 export type InvoiceExportRequest = {

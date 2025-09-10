@@ -1,5 +1,3 @@
-/** @format */
-
 import {Button} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useCallback, useRef, useState} from "react";

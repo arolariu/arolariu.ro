@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Merchant} from "@/types/invoices";
 import {
   Button,

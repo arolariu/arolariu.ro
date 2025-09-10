@@ -1,5 +1,3 @@
-/** @format */
-
 import type {NamedEntity} from "../DDD";
 import type {PaymentInformation, Product, Recipe} from "./index.ts";
 

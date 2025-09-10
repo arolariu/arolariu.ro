@@ -1,5 +1,3 @@
-/** @format */
-
 export {useInvoice} from "./useInvoice";
 export {useInvoices} from "./useInvoices";
 export {useMerchant} from "./useMerchant";

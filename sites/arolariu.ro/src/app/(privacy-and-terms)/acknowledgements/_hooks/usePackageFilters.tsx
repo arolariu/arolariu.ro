@@ -1,5 +1,3 @@
-/** @format */
-
 import type {NodePackageInformation, NodePackagesJSON} from "@/types";
 import {type Dispatch, type SetStateAction, useCallback, useState} from "react";
 

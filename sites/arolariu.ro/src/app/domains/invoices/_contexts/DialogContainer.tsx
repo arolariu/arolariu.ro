@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import InvoiceFeedbackDialog from "../view-invoice/[id]/_components/dialogs/FeedbackDialog";

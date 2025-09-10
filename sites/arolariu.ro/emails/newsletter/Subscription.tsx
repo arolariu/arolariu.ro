@@ -1,5 +1,3 @@
-/** @format */
-
 import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
 export default function SubscriptionEmail({username}: Readonly<{username: string}>) {

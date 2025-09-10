@@ -1,5 +1,3 @@
-/** @format */
-
 import type {User} from "@clerk/nextjs/server";
 import type {Route} from "next";
 export type {

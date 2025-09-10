@@ -1,5 +1,3 @@
-/** @format */
-
 import {RichText} from "@/presentation/Text";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";

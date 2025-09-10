@@ -1,5 +1,3 @@
-/** @format */
-
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {getCookie} from "@/lib/actions/cookies";

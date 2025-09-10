@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {Avatar, AvatarFallback, AvatarImage} from "@arolariu/components/avatar";

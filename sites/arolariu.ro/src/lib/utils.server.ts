@@ -1,5 +1,3 @@
-/** @format */
-
 import {Blob} from "node:buffer";
 import crypto from "node:crypto";
 import {Resend} from "resend";

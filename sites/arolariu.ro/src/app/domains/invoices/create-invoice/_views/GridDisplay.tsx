@@ -1,5 +1,3 @@
-/** @format */
-
 import {usePaginationWithSearch} from "@/hooks";
 import {
   Card,

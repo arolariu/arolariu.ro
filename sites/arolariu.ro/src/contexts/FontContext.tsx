@@ -1,4 +1,3 @@
-/** @format */
 "use client";
 
 import {isBrowserStorageAvailable} from "@/lib/utils.client";

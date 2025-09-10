@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {FakeInvoice, FakeMerchant} from "@/data/mocks/invoices";

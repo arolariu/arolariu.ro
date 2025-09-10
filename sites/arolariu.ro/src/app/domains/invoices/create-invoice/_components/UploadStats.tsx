@@ -1,5 +1,3 @@
-/** @format */
-
 import {Button, Card, CardContent} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useCallback, useEffect, useRef} from "react";

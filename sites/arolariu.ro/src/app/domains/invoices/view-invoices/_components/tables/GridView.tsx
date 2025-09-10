@@ -1,5 +1,3 @@
-/** @format */
-
 import {useZustandStore} from "@/hooks/stateStore";
 import {type Invoice} from "@/types/invoices";
 import {

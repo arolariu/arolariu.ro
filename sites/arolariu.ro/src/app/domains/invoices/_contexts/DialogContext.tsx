@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {createContext, use, useCallback, useMemo, useRef, useState, type ReactNode} from "react";

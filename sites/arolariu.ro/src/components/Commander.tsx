@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {useFontContext} from "@/contexts/FontContext";

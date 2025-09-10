@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";

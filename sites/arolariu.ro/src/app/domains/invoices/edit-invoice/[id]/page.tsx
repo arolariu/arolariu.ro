@@ -1,5 +1,3 @@
-/** @format */
-
 import {fetchUser} from "@/lib/actions/user/fetchUser";
 import ForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";

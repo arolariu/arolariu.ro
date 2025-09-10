@@ -1,5 +1,3 @@
-/** @format */
-
 import {Currency} from "@/types/DDD";
 
 export const SITE_ENV = process.env["SITE_ENV"] ?? "";

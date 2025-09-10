@@ -1,5 +1,3 @@
-/** @format */
-
 import {Badge, Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
 import Image from "next/image";

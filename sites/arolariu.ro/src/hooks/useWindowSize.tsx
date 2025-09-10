@@ -1,8 +1,4 @@
-/** @format */
-
 "use client";
-
-/** @format */
 
 import {useEffect, useState} from "react";
 
