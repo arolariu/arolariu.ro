@@ -3,23 +3,23 @@ import {browser} from "$app/environment";
 export type Theme = "light" | "dark";
 
 class ThemeState {
-  private _theme = $state<Theme>("dark");
+  private __theme__ = $state<Theme>("dark");
 
   constructor() {
     // Initialize theme from localStorage if in browser
     if (browser) {
       const stored = localStorage.getItem("theme") as Theme;
-      this._theme = stored ?? "dark";
-      this.applyTheme(this._theme);
+      this.__theme__ = stored ?? "dark";
+      this.applyTheme(this.__theme__);
     }
   }
 
   get current(): Theme {
-    return this._theme;
+    return this.__theme__;
   }
 
   set(value: Theme) {
-    this._theme = value;
+    this.__theme__ = value;
     if (browser) {
       localStorage.setItem("theme", value);
       this.applyTheme(value);
@@ -27,10 +27,11 @@ class ThemeState {
   }
 
   toggle() {
-    const newTheme = this._theme === "dark" ? "light" : "dark";
-    this.set(newTheme);
+    const updatedTheme = this.__theme__ === "dark" ? "light" : "dark";
+    this.set(updatedTheme);
   }
 
+  // eslint-disable-next-line class-methods-use-this -- utility method
   private applyTheme(theme: Theme) {
     if (!browser) return;
 
@@ -41,6 +42,9 @@ class ThemeState {
 
     // Add new theme class
     html.classList.add(theme);
+
+    // Also set data-theme attribute for CSS variable theming
+    // eslint-disable-next-line unicorn/prefer-dom-node-dataset -- old browsers support
     html.setAttribute("data-theme", theme);
   }
 }
@@ -64,3 +68,4 @@ export function useTheme() {
     set: (value: Theme) => themeState.set(value),
   };
 }
+

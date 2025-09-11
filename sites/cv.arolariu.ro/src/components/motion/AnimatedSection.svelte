@@ -1,3 +1,4 @@
+
 <script lang="ts">
   import {Tween, prefersReducedMotion} from "svelte/motion";
   import {intersect} from "./intersection";
@@ -5,7 +6,7 @@
 
   type AnimationType = "fade-up" | "fade-down" | "fade-left" | "fade-right" | "fade-in" | "scale-up";
 
-  interface Props {
+  type Props = {
     children?: any;
     class?: string;
     // Delay before the animation starts. Accepts milliseconds.

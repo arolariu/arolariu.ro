@@ -1,7 +1,7 @@
 import type {Experience} from "@/types";
 
 type ExperienceKeys = "microsoft3" | "microsoft2" | "microsoft1" | "ubisoft" | "intel";
-type Experiences = Record<ExperienceKeys, Experience>;
+type Experiences = Readonly<Record<ExperienceKeys, Experience>>;
 
 /**
  * This object contains the professional experience of the individual.

@@ -12,8 +12,8 @@ import {json, type RequestHandler} from "@sveltejs/kit";
  *  - Keep payload stable; additive changes only to avoid breaking external consumers.
  *  - Consider ETag / cache headers later if needed (small payload now).
  */
-export const GET: RequestHandler = () => {
-  return json(
+export const GET: RequestHandler = () =>
+  json(
     {
       resume,
       meta: {
@@ -32,4 +32,3 @@ export const GET: RequestHandler = () => {
       },
     },
   );
-};

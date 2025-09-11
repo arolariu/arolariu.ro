@@ -6,6 +6,12 @@
   ],
   "compilerOptions": {
     "allowArbitraryExtensions": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
   },
   "exclude": [
     "node_modules"

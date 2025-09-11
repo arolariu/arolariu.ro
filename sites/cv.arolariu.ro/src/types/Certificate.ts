@@ -1,4 +1,4 @@
-export type Certificate = {
+export type Certificate = Readonly<{
   name: string;
   issuer: string;
   issuerUrl?: string;
@@ -8,4 +8,4 @@ export type Certificate = {
   description?: string;
   url?: string;
   level?: string;
-};
+}>;

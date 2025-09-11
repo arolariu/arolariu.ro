@@ -1,4 +1,4 @@
-export type PersonalInformation = {
+export type PersonalInformation = Readonly<{
   name: string;
   age: number;
   location: string;
@@ -9,4 +9,4 @@ export type PersonalInformation = {
   github: string;
   region: string;
   summary: string;
-};
+}>;

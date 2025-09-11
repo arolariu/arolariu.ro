@@ -8,7 +8,7 @@ type CompetencyKeys =
   | "agileMethodologies"
   | "algorithmicSkills";
 
-type CompetenciesMap = Record<CompetencyKeys, Competency>;
+type CompetenciesMap = Readonly<Record<CompetencyKeys, Competency>>;
 
 export const competencies: CompetenciesMap = {
   engineeringExcellence: {

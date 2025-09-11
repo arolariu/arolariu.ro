@@ -1,7 +1,7 @@
 import type {Education} from "@/types";
 
-type EducationKeys = "aseBucharest" | "malmoSweden";
-type Educations = Record<EducationKeys, Education>;
+type EducationKeys = Readonly<"aseBucharest" | "malmoSweden">;
+type Educations = Readonly<Record<EducationKeys, Education>>;
 
 /**
  * This object contains the education history of the individual.

@@ -1,4 +1,4 @@
-export type Experience = {
+export type Experience = Readonly<{
   title: string;
   company: string;
   location: string;
@@ -13,4 +13,4 @@ export type Experience = {
 
   /* This string is separated via the special # character. */
   techAndSkills: string;
-};
+}>;
