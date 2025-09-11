@@ -37,9 +37,12 @@ package-lock.json
 **/**/*.txt
 **/**/*.xml
 **/**/*.pdf
+**/**/*.tsbuildinfo
+
 
 # Don't format output dirs:
 **/tmp/**
+**/.svelte-kit/**
 **/node_modules/**
 **/_site/**
 **/obj/**
