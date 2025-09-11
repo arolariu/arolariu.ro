@@ -8,12 +8,9 @@
 **/build/**
 **/out/**
 **/output/**
-
-# Next.js SWC cache
-.next/
-
-# Nx cache
-.nx/
+**/.nx/**
+**/.vs/**
+**/.next/**
 
 # Don't commit env variables:
 **/.env
