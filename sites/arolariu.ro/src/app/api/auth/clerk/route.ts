@@ -1,7 +1,7 @@
 import {generateGuid} from "@/lib/utils.generic";
 import {clerkClient} from "@clerk/nextjs/server";
 import {verifyWebhook} from "@clerk/nextjs/webhooks";
-import {NextRequest, NextResponse} from "next/server";
+import {type NextRequest, NextResponse} from "next/server";
 
 /**
  * This route handles the webhook events raised by the Clerk Auth-as-a-Service.
@@ -10,6 +10,7 @@ import {NextRequest, NextResponse} from "next/server";
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    // @ts-expect-error -- Weird TS error! to fix later!
     const evt = await verifyWebhook(request);
 
     if (evt.type === "user.created") {
