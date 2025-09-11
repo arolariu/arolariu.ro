@@ -225,7 +225,7 @@ const eslintConfig = defineConfig(
   },
   {
     name: "[@arolariu/cv]",
-    files: ["sites/cv.arolariu.ro/**/*.{ts,svelte}"],
+    files: ["sites/cv.arolariu.ro/**/*.ts"],
     ignores: ["**/node_modules/**", "**/*.config.{js,ts}", "**/*.{test,spec,stories}.{ts,svelte,tsx}", "**/.svelte-kit/**"],
     languageOptions: {
       ecmaVersion: "latest",
@@ -237,6 +237,7 @@ const eslintConfig = defineConfig(
         },
         ecmaFeatures: {
           impliedStrict: true,
+          jsx: false,
         },
         tsconfigRootDir: import.meta.dirname,
         ecmaVersion: "latest",
@@ -277,9 +278,19 @@ const eslintConfig = defineConfig(
       ...eslintPluginNode.configs["flat/recommended"].rules,
       ...eslintPluginPromise.configs["flat/recommended"].rules,
 
+      curly: "off", // we allow single line if statements without braces.
       "one-var": "off", // we allow multiple variable declarations per file.
+      "no-undef": "off", // svelte + eslint can't accurately detect undefined variables.
       "sort-keys": "off", // this rule is biased; we use Prettier for sorting.
+      "no-continue": "off", // we allow continue statements in loops.
+      "no-console": "off", // Console statements are stripped in prod builds.
+      "no-ternary": "off", // we use ternary operators for conditional expressions.
+      "func-style": "off", // we allow both function declarations and expressions.
       "sort-imports": "off", // this rule is biased; we use Prettier for sorting.
+      "max-statements": "off", // we don't impose a max statements limit on functions.
+      "no-underscore-dangle": "off", // we use dunder naming for private access modifier mark.
+      "max-lines-per-function": "off", // we don't impose a max lines limit on functions.
+      "max-lines": ["error", {max: 600}], // we allow a maximum of 600 lines per file.
 
       "react/jsx-indent": "off", // We format via Prettier.
       "react/jsx-newline": "off", // We use Prettier for formatting.
@@ -290,16 +301,29 @@ const eslintConfig = defineConfig(
       "react/jsx-indent-props": "off", // We format via Prettier.
       "react/jsx-curly-newline": "off", // We format via Prettier.
 
+      "unicorn/no-null": "off", // We allow null values.
       "unicorn/filename-case": "off", // this rule is biased.
+      "unicorn/prefer-dom-node-append": "off", // We support older browsers.
+      "unicorn/prefer-dom-node-remove": "off", // We support older browsers.
 
+      "functional/no-let": "off", // Sometimes we need mutable data.
       "functional/no-classes": "off", // We allow classes and OOP concepts.
+      "functional/no-return-void": "off", // Some functions are pure.
+      "functional/no-mixed-types": "off", // We allow mixed types in functions.
+      "functional/immutable-data": "off", // Sometimes we need mutable data.
+      "functional/no-try-statements": "off", // We allow try/catch.
+      "functional/no-this-expressions": "off", // We allow OOP concepts.
       "functional/functional-parameters": "off", // Functions can have no parameters.
       "functional/prefer-immutable-types": "off", // Some types need to be mutable.
+      "functional/no-expression-statements": "off", // We allow expression statements.
+      "functional/no-conditional-statements": "off", // Ternary operators are not a silver bullet.
 
+      "n/no-missing-import": "off", // Barrel and index files are blindly caught by this rule.
       "n/no-unsupported-features/node-builtins": "off", // We use Node.js v24+ built-ins.
 
       "perfectionist/sort-enums": "off", // this rule is biased; we use Prettier for sorting.
       "perfectionist/sort-objects": "off", // this rule is biased; we use Prettier for sorting.
+      "perfectionist/sort-classes": "off", // this rule is biased; we use Prettier for sorting.
       "perfectionist/sort-modules": "off", // this rule is biased; we use Prettier for sorting.
       "perfectionist/sort-imports": "off", // this rule is biased; we use Prettier for sorting.
       "perfectionist/sort-exports": "off", // this rule is biased; we use Prettier for sorting.
@@ -324,7 +348,14 @@ const eslintConfig = defineConfig(
   {
     name: "[@arolariu/packages]",
     files: ["packages/**/*.{ts,tsx}"],
-    ignores: ["**/node_modules/**", "**/*.config.{js,ts}", "**/*.{test,spec,stories}.{ts,tsx}", "**/dist/**", "**/build/**"],
+    ignores: [
+      "**/node_modules/**",
+      "**/.storybook/**",
+      "**/*.config.{js,ts}",
+      "**/*.{test,spec,stories}.{ts,tsx}",
+      "**/dist/**",
+      "**/build/**",
+    ],
     languageOptions: {
       ecmaVersion: "latest",
       parser: tseslint.parser,
@@ -398,9 +429,98 @@ const eslintConfig = defineConfig(
       ...eslintPluginNode.configs["flat/recommended"].rules,
       ...eslintPluginPromise.configs["flat/recommended"].rules,
 
+      curly: "off", // we allow single line if statements without braces.
+      camelcase: "off", // we allow camelCase for variable names.
       "one-var": "off", // we allow multiple variable declarations per file.
+      "id-length": "off", // we allow short variable names.
       "sort-keys": "off", // this rule is biased; we use Prettier for sorting.
+      "no-plusplus": "off", // We allow the use of the ++ and -- operators.
+      "no-ternary": "off", // we use ternary operators for conditional rendering.
+      "no-shadow": "off", // We never use var to have hoisting issues.
+      "func-style": "off", // we allow both function declarations and expressions.
+      "dot-notation": "off", // we allow dot notation for property access.
       "sort-imports": "off", // this rule is biased; we use Prettier for sorting.
+      "no-undefined": "off", // we allow undefined values for context init code.
+      "no-unused-vars": "off", // eslint can't accurately detect unused hoisted variables from fns.
+      "max-statements": "off", // we don't impose a max statements limit on functions.
+      "arrow-body-style": "off", // we allow both expression and block bodies for arrow functions.
+      "consistent-return": "off", // useEffect cleanup fns are not 100% needed.
+      "no-magic-numbers": "off", // Magic numbers are used for prioritization of enums and fields.
+      "no-inline-comments": "off", // we use inline comments to mark things.
+      "capitalized-comments": "off", // Sometimes comments are multi-line.
+      "no-underscore-dangle": "off", // we use dunder naming for private access modifier mark.
+      "no-use-before-define": "off", // we define functions after their usage, this is a library.
+      "max-lines-per-function": "off", // we don't impose a max lines limit on functions.
+      "max-params": ["error", {max: 10}], // we allow a maximum of 10 parameters per function.
+      "max-lines": ["error", {max: 1000}], // we allow a maximum of 1000 lines per file.
+
+      "react/jsx-indent": "off", // We format via Prettier.
+      "react/jsx-newline": "off", // We use Prettier for formatting.
+      "react/jsx-no-bind": "off", // Performance hit from using ShadCN - jsx bind is alive.
+      "react/no-multi-comp": "off", // Colocate components in same main file.
+      "react/jsx-max-depth": "off", // Sometimes we have deeply nested components.
+      "react/jsx-sort-props": "off", // We sort via Prettier.
+      "react/jsx-no-literals": "off", // We allow literal strings in JSX -- another ShadCN limitation.
+      "react/self-closing-comp": "off", // Another limitation pulled from ShadCN library.
+      "react/jsx-indent-props": "off", // We format via Prettier.
+      "react/jsx-curly-newline": "off", // We format via Prettier.
+      "react/no-array-index-key": "off", // another ShadCN limitation.
+      "react/require-default-props": "off", // We use TypeScript's optional props.
+      "react/prefer-read-only-props": "off", // We don't enforce read-only props.
+      "react/jsx-props-no-spreading": "off", // We allow props spreading.
+      "react/forbid-component-props": "off", // We allow component props.
+      "react/jsx-closing-tag-location": "off", // We use Prettier for formatting.
+      "react/jsx-one-expression-per-line": "off", // We use Prettier for formatting.
+      "react/jsx-closing-bracket-location": "off", // We use Prettier for formatting.
+      "react/function-component-definition": "off", // Sometimes we use arrow syntax.
+      "react/jsx-no-constructed-context-values": "off", // Another ShadCN limitation...
+      "react/jsx-filename-extension": [2, {extensions: [".tsx", ".ts"]}],
+
+      "react-hooks/refs": "off", // Another ShadCN limitation...
+      "react-hooks/purity": "off", // Some hooks are not pure due to randomness (e.g. confetti).
+      "react-hooks/immutability": "off", // Another ShadCN limitation...
+      "react-hooks/preserve-manual-memoization": "off", // Another ShadCN limitation...
+
+      "react-x/no-use-context": "off", // We use React Context API from React 18.
+      "react-x/no-forward-ref": "off", // We use forwardRef where needed, from React 18.
+      "react-x/no-array-index-key": "off", // Another ShadCN limitation...
+      "react-x/no-unstable-context": "off", // Another ShadCN limitation...
+      "react-x/no-context-provider": "off", // We use React Context API from React 18.
+      "react-x/no-unstable-context-value": "off", // Another ShadCN limitation...
+
+      "jsdoc/require-jsdoc": "off", // We don't require JSDoc comments for every function.
+
+      "n/no-unpublished-import": "off", // Packages are published; false positive.
+      "n/no-missing-import": "off", // Barrel and index files are blindly caught by this rule.
+
+      "sonarjs/pseudo-random": "off", // We allow Math.random for non-crypto use cases.
+      "sonarjs/prefer-read-only-props": "off", // We don't enforce read-only props.
+      "sonarjs/no-nested-functions": "off", // Sometimes fns are nested for closure reasons.
+      "sonarjs/no-nested-conditional": "off", // Another ShadCN limitation...
+
+      "security/detect-object-injection": "off", // We don't do object injection; it's controlled keys.
+
+      "unicorn/no-null": "off", // We allow null values.
+      "unicorn/filename-case": "off", // this rule is biased.
+      "unicorn/no-array-for-each": "off", // We have no preference.
+      "unicorn/no-keyword-prefix": "off", // Biased rule.
+      "unicorn/no-nested-ternary": "off", // We allow nested ternary operators.
+      "unicorn/prevent-abbreviations": "off", // this rule is biased.
+      "unicorn/explicit-length-check": "off", // .size sometimes returns a string, not a number.
+      "unicorn/no-abusive-eslint-disable": "warn", // We warn about eslint-disable comments.
+
+      "functional/no-let": "off", // Sometimes we need mutable data.
+      "functional/no-return-void": "off", // Some functions are pure.
+      "functional/immutable-data": "off", // Sometimes we need mutable data.
+      "functional/no-mixed-types": "off", // We allow mixed types in functions.
+      "functional/no-loop-statements": "off", // Sometimes we need loops.
+      "functional/no-throw-statements": "off", // Use Context can throw.
+      "functional/no-this-expressions": "off", // We allow OOP concepts.
+      "functional/functional-parameters": "off", // Functions can have no parameters.
+      "functional/prefer-immutable-types": "off", // Some types need to be mutable.
+      "functional/no-conditional-statements": "off", // Ternary operators are not a silver bullet.
+      "functional/no-expression-statements": "off", // Hook setters are pure; biased rule.
+      "functional/type-declaration-immutability": "off", // Some types need to be mutable.
 
       "perfectionist/sort-enums": "off", // this rule is biased; we use Prettier for sorting.
       "perfectionist/sort-objects": "off", // this rule is biased; we use Prettier for sorting.
@@ -432,7 +552,15 @@ const eslintConfig = defineConfig(
 
 // Add the global ignores to the default config.
 eslintConfig.forEach((config) => {
-  const ignoreList = ["*.d.ts", "*.config.{js,ts}", "**/node_modules/**", "**/*.{test,spec,stories}.{ts,svelte,tsx}"];
+  const ignoreList = [
+    "**/*.d.ts",
+    "**/**/*.d.ts",
+    "**/*.config.{js,ts}",
+    "**/**/*.config.{js,ts}",
+    "**/node_modules/**",
+    "**/*.{test,spec,stories}.{ts,svelte,tsx}",
+    "**/**/*.{test,spec,stories}.{ts,svelte,tsx}",
+  ];
   config.ignores = config.ignores ? [...config.ignores, ...ignoreList] : [...ignoreList];
 });
 
