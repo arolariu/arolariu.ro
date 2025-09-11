@@ -27,6 +27,14 @@
   - [Platform screenshots](#platform-screenshots)
   - [Table of Contents](#table-of-contents)
     - [What is this repository?](#what-is-this-repository)
+  - [Setup Guide](#setup-guide)
+    - [Quick Start](#quick-start)
+    - [Nx Workflow Diagrams](#nx-workflow-diagrams)
+      - [Build Command Flow](#build-command-flow)
+      - [Development Command Flow](#development-command-flow)
+      - [Test Command Flow](#test-command-flow)
+    - [Project Structure](#project-structure)
+    - [Advanced Nx Commands](#advanced-nx-commands)
     - [High Level Infrastructure overview (using Bicep Visualizer)](#high-level-infrastructure-overview-using-bicep-visualizer)
     - [Current CI/CD status](#current-cicd-status)
     - [Repository Statistics](#repository-statistics)
@@ -70,7 +78,6 @@ npm run dev:docs         # Start docs dev server
 
 # Testing & maintenance
 npm run test             # Run all tests
-npm run test:website     # Test specific project
 npm run lint             # Lint all projects
 npm run format           # Format all projects
 ```
@@ -163,16 +170,8 @@ arolariu.ro/
 │   ├── cv.arolariu.ro/     # CV site (SvelteKit)
 │   └── docs.arolariu.ro/   # Documentation (DocFX)
 ├── package.json            # Root workspace configuration
-├── nx.json                 # Nx workspace configuration
-└── README-MONOREPO.md      # Detailed monorepo guide
+└── nx.json                 # Nx workspace configuration
 ```
-
-### Project Dependencies
-
-The workspace automatically manages dependencies between projects:
-- **Website** depends on **Components** - components are built first
-- **Docs** depends on **API** - API must be built before documentation generation
-- All other projects are independent
 
 ### Advanced Nx Commands
 
@@ -193,21 +192,6 @@ npx nx run api:dev
 npx nx show project website
 npx nx show projects --affected
 ```
-
-### Benefits
-
-- **🚀 Unified Development Experience**: Single command interface for all projects
-- **⚡ Smart Caching**: Only rebuilds what has changed
-- **🔍 Dependency Analysis**: Visualize project relationships and impact
-- **🛠️ Enhanced Tooling**: Rich CLI with autocompletion and IDE integration
-
-### Backward Compatibility
-
-All existing workflows continue to work:
-- Individual `package.json` files remain functional
-- CI/CD workflows work with existing `working-directory` settings
-- Developers can still navigate to individual directories
-- Zero breaking changes to existing development processes
 
 ### High Level Infrastructure overview (using Bicep Visualizer)
 
