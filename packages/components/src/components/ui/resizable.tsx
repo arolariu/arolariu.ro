@@ -4,7 +4,7 @@ import {GripVerticalIcon} from "lucide-react";
 import * as React from "react";
 import * as ResizablePrimitive from "react-resizable-panels";
 
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 
 function ResizablePanelGroup({className, ...props}: React.ComponentProps<typeof ResizablePrimitive.PanelGroup>) {
   return (
@@ -40,7 +40,7 @@ function ResizableHandle({
         className,
       )}
       {...props}>
-      {withHandle && (
+      {Boolean(withHandle) && (
         <div className='z-10 flex h-4 w-3 items-center justify-center rounded-xs border bg-neutral-200 dark:bg-neutral-800'>
           <GripVerticalIcon className='size-2.5' />
         </div>

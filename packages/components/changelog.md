@@ -8,6 +8,12 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 ## 🎉 Latest Releases
 
+### [0.2.0](https://www.npmjs.com/package/@arolariu/components/v/0.2.0) - 2025-9-11
+
+**✨ New Features & Improvements**
+- ⚙️ **Migrated tooling to monorepo-based NPM+NX** for better package management and development experience.
+- ⬆️ **Updated rslib/rsbuild** core packages to latest versions.
+
 ### [0.1.2](https://www.npmjs.com/package/@arolariu/components/v/0.1.2) - 2025-09-08
 
 **🔧 Dependencies & Infrastructure**

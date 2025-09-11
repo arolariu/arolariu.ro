@@ -4,7 +4,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {XIcon} from "lucide-react";
 import * as React from "react";
 
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 
 function Dialog({...props}: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return (
@@ -74,7 +74,7 @@ function DialogContent({
         )}
         {...props}>
         {children}
-        {showCloseButton && (
+        {Boolean(showCloseButton) && (
           <DialogPrimitive.Close
             data-slot='dialog-close'
             className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:ring-2 focus:ring-neutral-950 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-neutral-100 data-[state=open]:text-neutral-500 dark:ring-offset-neutral-950 dark:focus:ring-neutral-300 dark:data-[state=open]:bg-neutral-800 dark:data-[state=open]:text-neutral-400 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">

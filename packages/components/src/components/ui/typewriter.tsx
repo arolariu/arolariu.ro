@@ -1,6 +1,6 @@
 "use client";
 
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 import {motion, stagger, useAnimate, useInView} from "motion/react";
 import * as React from "react";
 import {useEffect} from "react";

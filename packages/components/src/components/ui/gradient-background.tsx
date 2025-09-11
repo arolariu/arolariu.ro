@@ -3,7 +3,7 @@
 import {HTMLMotionProps, motion, type Transition} from "motion/react";
 import * as React from "react";
 
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 
 interface GradientBackgroundProps extends HTMLMotionProps<"div"> {
   transition?: Transition;

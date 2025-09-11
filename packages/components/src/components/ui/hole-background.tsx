@@ -3,7 +3,7 @@
 import {motion} from "motion/react";
 import * as React from "react";
 
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 
 interface HoleBackgroundProps extends React.HTMLAttributes<HTMLCanvasElement> {
   strokeColor?: string;
@@ -35,7 +35,7 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
     });
 
     const linear = (p: number) => p;
-    const easeInExpo = (p: number) => (p === 0 ? 0 : Math.pow(2, 10 * (p - 1)));
+    const easeInExpo = (p: number) => (p === 0 ? 0 : 2 ** (10 * (p - 1)));
 
     const tweenValue = React.useCallback((start: number, end: number, p: number, ease: "inExpo" | null = null) => {
       const delta = end - start;
@@ -97,7 +97,7 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
         stateRef.current.discs.push(disc);
       }
       const clipPath = new Path2D();
-      const disc = stateRef.current.clip.disc;
+      const {disc} = stateRef.current.clip;
       clipPath.ellipse(disc.x, disc.y, disc.w, disc.h, 0, 0, Math.PI * 2);
       clipPath.rect(disc.x - disc.w, 0, disc.w * 2, disc.y);
       stateRef.current.clip.path = clipPath;
@@ -174,7 +174,7 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
     const setParticles = React.useCallback(() => {
       const {width, height} = stateRef.current.rect;
       stateRef.current.particles = [];
-      const disc = stateRef.current.clip.disc;
+      const {disc} = stateRef.current.clip;
       stateRef.current.particleArea = {
         sw: disc.w * 0.5,
         ew: disc.w * 2,
@@ -322,4 +322,6 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
   },
 );
 
+HoleBackground.displayName = "HoleBackground";
 export {HoleBackground, type HoleBackgroundProps};
+

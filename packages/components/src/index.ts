@@ -258,7 +258,7 @@ export {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "./compon
 export {useIsMobile} from "./hooks/useIsMobile";
 export {useWindowSize} from "./hooks/useWindowSize";
 
-export {cn} from "./lib/utils";
+export {cn} from "./lib/utilities";
 
 // Animate-UI exports:
 export {FlipButton, type FlipButtonProps, type FlipDirection} from "./components/ui/flip-button";

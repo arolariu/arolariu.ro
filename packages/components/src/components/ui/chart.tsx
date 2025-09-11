@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable */
+
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
 
@@ -8,7 +10,7 @@ import {NameType, Payload, ValueType} from "recharts/types/component/DefaultTool
 import type {Props as LegendProps} from "recharts/types/component/Legend";
 import {TooltipContentProps} from "recharts/types/component/Tooltip";
 
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = {light: "", dark: ".dark"} as const;
@@ -299,3 +301,4 @@ function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key:
 }
 
 export {ChartContainer, ChartLegend, ChartLegendContent, ChartStyle, ChartTooltip, ChartTooltipContent};
+

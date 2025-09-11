@@ -3,7 +3,7 @@
 import {type HTMLMotionProps, type Transition, type Variant, motion} from "motion/react";
 import * as React from "react";
 
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 
 type FlipDirection = "top" | "bottom" | "left" | "righ";
 

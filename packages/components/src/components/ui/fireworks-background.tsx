@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 
 const rand = (min: number, max: number): number => Math.random() * (max - min) + min;
 const randInt = (min: number, max: number): number => Math.floor(Math.random() * (max - min) + min);
@@ -257,6 +257,7 @@ const FireworksBackground = React.forwardRef<HTMLDivElement, FireworksBackground
 
       launchFirework();
 
+      // eslint-disable-next-line init-declarations -- firework animation id
       let animationFrameId: number;
       const animate = () => {
         ctx.clearRect(0, 0, maxX, maxY);

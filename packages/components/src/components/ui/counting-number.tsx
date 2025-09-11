@@ -36,7 +36,7 @@ const CountingNumber = React.forwardRef<HTMLSpanElement, CountingNumberProps>(
     React.useImperativeHandle(ref, () => localRef.current as HTMLSpanElement);
 
     const numberStr = number.toString();
-    const decimals = typeof decimalPlaces === "number" ? decimalPlaces : numberStr.includes(".") ? numberStr.split(".")[1].length : 0;
+    const decimals = typeof decimalPlaces === "number" ? decimalPlaces : numberStr.includes(".") ? numberStr?.split(".")[1].length : 0;
 
     const motionVal = useMotionValue(fromNumber);
     const springVal = useSpring(motionVal, transition);

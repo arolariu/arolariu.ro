@@ -3,7 +3,7 @@
 import {motion, type Transition} from "motion/react";
 import * as React from "react";
 
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 
 interface GradientTextProps extends React.HTMLAttributes<HTMLSpanElement> {
   text: string;
@@ -42,7 +42,7 @@ const GradientText = React.forwardRef<HTMLSpanElement, GradientTextProps>(
           {text}
         </motion.span>
 
-        {neon && (
+        {Boolean(neon) && (
           <motion.span
             className='absolute top-0 left-0 m-0 bg-[length:700%_100%] bg-clip-text bg-[position:0%_0%] text-transparent mix-blend-plus-lighter blur-[8px]'
             style={baseStyle}

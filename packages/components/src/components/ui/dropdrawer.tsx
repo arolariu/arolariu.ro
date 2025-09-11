@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable */
+
 import {ChevronLeftIcon, ChevronRightIcon} from "lucide-react";
 import {AnimatePresence, motion, Transition} from "motion/react";
 import * as React from "react";
@@ -17,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {useIsMobile} from "@/hooks/useIsMobile";
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 
 const DropDrawerContext = React.createContext<{isMobile: boolean}>({
   isMobile: false,

@@ -3,7 +3,7 @@
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import * as React from "react";
 
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 
 function Slider({className, defaultValue, value, min = 0, max = 100, ...props}: React.ComponentProps<typeof SliderPrimitive.Root>) {
   const _values = React.useMemo(

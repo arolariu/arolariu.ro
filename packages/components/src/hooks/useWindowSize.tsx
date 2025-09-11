@@ -46,6 +46,7 @@ export function useWindowSize(): HookReturnType {
      *  when the component unmounts or the window is resized.
      */
     function __handleResize__() {
+      // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect
       setWindowSize({
         width: globalThis.window.innerWidth,
         height: globalThis.window.innerHeight,
@@ -63,3 +64,4 @@ export function useWindowSize(): HookReturnType {
     isDesktop: typeof windowSize.width === "number" && windowSize.width >= MOBILE_BREAKPOINT,
   } as const;
 }
+

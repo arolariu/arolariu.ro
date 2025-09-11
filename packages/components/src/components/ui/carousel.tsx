@@ -5,7 +5,7 @@ import {ArrowLeft, ArrowRight} from "lucide-react";
 import * as React from "react";
 
 import {Button} from "@/components/ui/button";
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 
 type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
@@ -106,7 +106,7 @@ function Carousel({
     <CarouselContext.Provider
       value={{
         carouselRef,
-        api: api,
+        api,
         opts,
         orientation: orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
         scrollPrev,

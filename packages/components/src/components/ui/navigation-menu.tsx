@@ -5,7 +5,7 @@ import {cva} from "class-variance-authority";
 import {ChevronDownIcon} from "lucide-react";
 import * as React from "react";
 
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 
 function NavigationMenu({
   className,
@@ -22,7 +22,7 @@ function NavigationMenu({
       className={cn("group/navigation-menu relative flex max-w-max flex-1 items-center justify-center", className)}
       {...props}>
       {children}
-      {viewport && <NavigationMenuViewport />}
+      {Boolean(viewport) && <NavigationMenuViewport />}
     </NavigationMenuPrimitive.Root>
   );
 }
@@ -58,7 +58,6 @@ function NavigationMenuTrigger({className, children, ...props}: React.ComponentP
       className={cn(navigationMenuTriggerStyle(), "group", className)}
       {...props}>
       {children}
-      {""}
       <ChevronDownIcon
         className='relative top-[1px] ml-1 size-3 transition duration-300 group-data-[state=open]:rotate-180'
         aria-hidden='true'

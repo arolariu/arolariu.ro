@@ -3,7 +3,7 @@
 import {motion, type SpringOptions, Transition, useMotionValue, useSpring} from "motion/react";
 import * as React from "react";
 
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 
 interface BubbleBackgroundProps extends React.HTMLAttributes<HTMLDivElement> {
   interactive?: boolean;
@@ -148,7 +148,7 @@ const BubbleBackground = React.forwardRef<HTMLDivElement, BubbleBackgroundProps>
             <div className='absolute top-[calc(50%-80%)] left-[calc(50%-80%)] size-[160%] rounded-full bg-[radial-gradient(circle_at_center,rgba(var(--fifth-color),0.8)_0%,rgba(var(--fifth-color),0)_50%)] mix-blend-hard-light' />
           </motion.div>
 
-          {interactive && (
+          {Boolean(interactive) && (
             <motion.div
               className='absolute size-full rounded-full bg-[radial-gradient(circle_at_center,rgba(var(--sixth-color),0.8)_0%,rgba(var(--sixth-color),0)_50%)] opacity-70 mix-blend-hard-light'
               style={{

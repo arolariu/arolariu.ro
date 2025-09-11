@@ -1,6 +1,6 @@
 "use client";
 
-import {cn} from "@/lib/utils";
+import {cn} from "@/lib/utilities";
 import {motion} from "motion/react";
 import * as React from "react";
 
@@ -75,7 +75,7 @@ export const BackgroundBeams = React.memo(({className}: {className?: string}) =>
 
         {paths.map((path, index) => (
           <motion.path
-            key={`path-` + index}
+            key={`path-${index}`}
             d={path}
             stroke={`url(#linearGradient-${index})`}
             strokeOpacity='0.4'
@@ -84,8 +84,8 @@ export const BackgroundBeams = React.memo(({className}: {className?: string}) =>
         <defs>
           {paths.map((path, index) => (
             <motion.linearGradient
-              id={`linearGradient-${index}`}
-              key={`gradient-${index}`}
+              id={`linearGradient-${path}-${index}`}
+              key={`gradient-${path}-${index}`}
               initial={{
                 x1: "0%",
                 x2: "0%",

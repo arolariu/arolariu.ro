@@ -23,4 +23,8 @@ const Toaster = ({...props}: ToasterProps) => {
   );
 };
 
-export {Toaster, toast};
+export {
+  Toaster,
+  // eslint-disable-next-line unicorn/prefer-export-from -- same export style.
+  toast,
+};
