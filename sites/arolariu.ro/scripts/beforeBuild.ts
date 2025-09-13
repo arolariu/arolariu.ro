@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 /**
  * Executes a series of scripts to prepare for the build process.
  *

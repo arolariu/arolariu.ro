@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import type {NodePackageDependencyDependsOn, NodePackageDependencyType, NodePackageInformation} from "@/types";
 import fs, {globSync} from "node:fs";
 import path from "node:path";
@@ -218,3 +220,4 @@ export async function main(verbose: boolean = false) {
 }
 
 main();
+
