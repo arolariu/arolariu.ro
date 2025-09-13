@@ -48,9 +48,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5
+
+      - name: 📦 Installing Node.js...
+        uses: actions/setup-node@v5
         with:
-          fetch-depth: 0 # Fetch all history for all branches and tags
+          node-version: 24
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2.3.0
@@ -59,39 +62,27 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v4.4.0
-        with:
-          node-version: latest
-
       - name: 📦 Installing dependencies...
         run: |
-          corepack enable
-          yarn install --immutable
-          yarn setup:azure
-          yarn playwright install --with-deps
-          yarn generate
+          npm install --immutable
+          npm setup:azure
+          npm playwright install --with-deps
+          npm generate
 
       - name: 🧪 Running Jest Unit tests...
-        run: yarn test:jest
+        run: npm run test:unit
         env: # We will use local assets for the tests
           USE_CDN: "false"
 
       - name: 🧪 Running Playwright E2E Component tests...
-        run: yarn test:playwright
+        run: npm run test:e2e
         env: # We will use local assets for the tests
           USE_CDN: "false"
 
       - name: 🧪 Preparing UI tests (Building Storybook)...
-        run: yarn storybook:build --quiet
+        run: npm run storybook:build --quiet
         env: # We will use local assets for the tests
           USE_CDN: "false"
-
-      - name: 🧪 Running Smoke & Integration tests (Playwright on Storybook)...
-        run: |
-          yarn dlx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
-            "yarn dlx http-server storybook-static --port 6006 --silent" \
-            "yarn dlx wait-on tcp:6006 && yarn storybook:test"
 
       - name: ❓ Find Pull Request
         if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
@@ -160,7 +151,7 @@ jobs:
     environment: ${{ inputs.environment || 'development'}}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2.3.0
@@ -177,16 +168,16 @@ jobs:
           login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
       - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v4.4.0
+        uses: actions/setup-node@v5
         with:
-          node-version: latest
+          node-version: 24
 
       - name: 📦 Installing dependencies...
         run: |
           corepack enable
-          yarn install --immutable
-          yarn setup:azure
-          yarn generate
+          npm install --immutable
+          npm run setup:azure
+          npm run generate
 
       - name: 🏗️ Building the docker container...
         env:

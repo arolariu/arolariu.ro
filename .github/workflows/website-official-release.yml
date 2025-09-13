@@ -54,7 +54,7 @@ jobs:
 
       - name: ⚓ Releasing docker container to Azure App Service...
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3.0.2
+        uses: azure/webapps-deploy@v3.0.6
         env:
           CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
           CONTAINER_TAG: ${{inputs.environment == 'PRODUCTION' && github.sha || 'latest'}}
