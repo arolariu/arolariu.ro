@@ -324,4 +324,3 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
 
 HoleBackground.displayName = "HoleBackground";
 export {HoleBackground, type HoleBackgroundProps};
-

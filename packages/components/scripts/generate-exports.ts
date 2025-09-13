@@ -125,4 +125,3 @@ fs.writeFileSync(PACKAGE_JSON_PATH, JSON.stringify(packageJson, null, 2));
 
 // eslint-disable-next-line no-console -- build script.
 console.log(`>>> ✅ Successfully generated ${Object.keys(exports).length - 1} component exports`);
-

@@ -64,4 +64,3 @@ export function useWindowSize(): HookReturnType {
     isDesktop: typeof windowSize.width === "number" && windowSize.width >= MOBILE_BREAKPOINT,
   } as const;
 }
-
