@@ -16,27 +16,8 @@ type MessageFormat = {
 /**
  * This function will extract all keys from a MessageFormat object.
  * The keys are extracted recursively, so if the value of a key is another MessageFormat object, the function will extract the keys from that object as well.
- * -------------
- * Example:
- * {
- * "Home": "Acasă",
- * "Domains": {
- *    "title": "Domenii",
- *   "services": {
- *    "title": "Servicii",
- *   "invoices": {
- *    "title": "Facturi",
- *  }
- * }
- * }
- * }
- * -------------
- * The above object will return the following keys:
- *  ["Home", "Domains", "Domains.title", "Domains.services", "Domains.services.title", "Domains.services.invoices", "Domains.services.invoices.title"]
- * --------------
  * Whenever a key is a string, the function will add it to the keys array.
  * Whenever a key is a MessageFormat object, the function will recursively call itself with the value of the key, and append a dot (.) to the key - e.g. "Domains.services."
- * --------------
  * @param messages
  * @returns
  */
@@ -196,3 +177,4 @@ export async function main(verbose: boolean = false) {
 }
 
 main();
+

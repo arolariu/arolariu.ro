@@ -1,3 +1,5 @@
+import {execSync} from "node:child_process";
+
 /**
  * Executes a series of scripts to prepare for the build process.
  *
@@ -13,15 +15,8 @@ export default async function main() {
 
   // 1. Clean the build directory using the clean script
   console.info("[arolariu.ro::beforeBuild] Cleaning build directory...");
-  await import("./clean").then(() => {
-    console.info("[arolariu.ro::beforeBuild] Finished cleaning build directory.");
-  });
-
-  // 2. Generate new licenses & acknowledgements using the generateAcknowledgements script
-  console.info("[arolariu.ro::beforeBuild] Generating licenses...");
-  await import("./generateAcknowledgements").then(() => {
-    console.info("[arolariu.ro::beforeBuild] Finished generating licenses.");
-  });
+  // clean using npm run build:clean script
+  execSync("npm run build:clean");
 
   console.info("[arolariu.ro::beforeBuild] Finished running before build scripts.");
 }

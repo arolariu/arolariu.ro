@@ -77,7 +77,9 @@
     "email": "admin@arolariu.ro"
   },
   "scripts": {
-    "build": "npm run build:clean && rslib build && npm run build:exports",
+    "build": "npm run build:before && rslib build && npm run build:after",
+    "build:before": "tsx scripts/beforeBuild.ts",
+    "build:after": "tsx scripts/afterBuild.ts",
     "build:clean": "rimraf dist",
     "build:exports": "tsx scripts/generate-exports.ts",
     "build:storybook": "storybook build",

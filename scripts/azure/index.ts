@@ -46,3 +46,4 @@ export async function getSecretFromKeyVault(uri: string): Promise<string> {
   if (!secret.value) throw new Error(`Secret ${secretName} has no value`);
   return secret.value;
 }
+
