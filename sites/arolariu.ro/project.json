@@ -1,7 +1,7 @@
 {
-  "name": "website",
+  "name": "@arolariu/website",
   "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
-  "sourceRoot": "sites/arolariu.ro/src",
+  "sourceRoot": "sites/arolariu.ro",
   "projectType": "application",
   "targets": {
     "build": {
@@ -10,8 +10,12 @@
         "command": "npm run build",
         "cwd": "sites/arolariu.ro"
       },
-      "outputs": ["{projectRoot}/.next"],
-      "dependsOn": ["components:build"]
+      "outputs": [
+        "{projectRoot}/.next"
+      ],
+      "dependsOn": [
+        "components:build"
+      ]
     },
     "build:before": {
       "executor": "nx:run-commands",
@@ -47,7 +51,9 @@
         "command": "npm run dev",
         "cwd": "sites/arolariu.ro"
       },
-      "dependsOn": ["components:build"]
+      "dependsOn": [
+        "components:build"
+      ]
     },
     "dev:classic": {
       "executor": "nx:run-commands",
@@ -105,27 +111,6 @@
         "cwd": "sites/arolariu.ro"
       }
     },
-    "lint": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run lint",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "lint:fix": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run lint:fix",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "format": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run format",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
     "clean": {
       "executor": "nx:run-commands",
       "options": {
@@ -169,5 +154,8 @@
       }
     }
   },
-  "tags": ["scope:website", "type:app"]
+  "tags": [
+    "scope:website",
+    "type:app"
+  ]
 }

@@ -1,7 +1,7 @@
 {
-  "name": "api",
+  "name": "@arolariu/api",
   "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
-  "sourceRoot": "sites/api.arolariu.ro/src",
+  "sourceRoot": "sites/api.arolariu.ro",
   "projectType": "application",
   "targets": {
     "build": {
@@ -47,5 +47,9 @@
       }
     }
   },
-  "tags": ["scope:api", "type:app", "platform:dotnet"]
+  "tags": [
+    "scope:api",
+    "type:app",
+    "platform:dotnet"
+  ]
 }

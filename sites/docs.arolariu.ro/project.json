@@ -1,5 +1,5 @@
 {
-  "name": "docs",
+  "name": "@arolariu/docs",
   "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
   "sourceRoot": "sites/docs.arolariu.ro",
   "projectType": "application",
@@ -10,8 +10,12 @@
         "command": "docfx build docfx.json",
         "cwd": "sites/docs.arolariu.ro"
       },
-      "outputs": ["{projectRoot}/_site"],
-      "dependsOn": ["api:build"]
+      "outputs": [
+        "{projectRoot}/_site"
+      ],
+      "dependsOn": [
+        "api:build"
+      ]
     },
     "metadata": {
       "executor": "nx:run-commands",
@@ -19,7 +23,9 @@
         "command": "docfx metadata docfx.json",
         "cwd": "sites/docs.arolariu.ro"
       },
-      "dependsOn": ["api:build"]
+      "dependsOn": [
+        "api:build"
+      ]
     },
     "serve": {
       "executor": "nx:run-commands",
@@ -34,7 +40,9 @@
         "command": "docfx docfx.json --serve",
         "cwd": "sites/docs.arolariu.ro"
       },
-      "dependsOn": ["api:build"]
+      "dependsOn": [
+        "api:build"
+      ]
     },
     "clean": {
       "executor": "nx:run-commands",
@@ -44,5 +52,9 @@
       }
     }
   },
-  "tags": ["scope:docs", "type:app", "platform:dotnet"]
+  "tags": [
+    "scope:docs",
+    "type:app",
+    "platform:dotnet"
+  ]
 }

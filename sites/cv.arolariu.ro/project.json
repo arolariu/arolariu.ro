@@ -1,7 +1,7 @@
 {
-  "name": "cv",
+  "name": "@arolariu/cv",
   "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
-  "sourceRoot": "sites/cv.arolariu.ro/src",
+  "sourceRoot": "sites/cv.arolariu.ro",
   "projectType": "application",
   "targets": {
     "build": {
@@ -10,7 +10,9 @@
         "command": "npm run build",
         "cwd": "sites/cv.arolariu.ro"
       },
-      "outputs": ["{projectRoot}/build"]
+      "outputs": [
+        "{projectRoot}/build"
+      ]
     },
     "dev": {
       "executor": "nx:run-commands",
@@ -53,14 +55,10 @@
         "command": "npm run format",
         "cwd": "sites/cv.arolariu.ro"
       }
-    },
-    "lint": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run lint",
-        "cwd": "sites/cv.arolariu.ro"
-      }
     }
   },
-  "tags": ["scope:cv", "type:app"]
+  "tags": [
+    "scope:cv",
+    "type:app"
+  ]
 }

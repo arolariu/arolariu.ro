@@ -1,7 +1,7 @@
 {
-  "name": "components",
+  "name": "@arolariu/components",
   "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/components/src",
+  "sourceRoot": "packages/components",
   "projectType": "library",
   "targets": {
     "build": {
@@ -10,7 +10,9 @@
         "command": "npm run build",
         "cwd": "packages/components"
       },
-      "outputs": ["{projectRoot}/dist"]
+      "outputs": [
+        "{projectRoot}/dist"
+      ]
     },
     "build:clean": {
       "executor": "nx:run-commands",
@@ -32,7 +34,9 @@
         "command": "npm run build:storybook",
         "cwd": "packages/components"
       },
-      "outputs": ["{projectRoot}/storybook-static"]
+      "outputs": [
+        "{projectRoot}/storybook-static"
+      ]
     },
     "storybook": {
       "executor": "nx:run-commands",
@@ -56,5 +60,8 @@
       }
     }
   },
-  "tags": ["scope:components", "type:lib"]
+  "tags": [
+    "scope:components",
+    "type:lib"
+  ]
 }
