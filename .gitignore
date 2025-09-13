@@ -10,7 +10,11 @@
 **/output/**
 **/.nx/**
 **/.vs/**
+**/playwright-report/**
+**/coverage/**
+**/test-results/**
 **/.next/**
+**/**/.DS_Store
 
 # Don't commit env variables:
 **/.env
