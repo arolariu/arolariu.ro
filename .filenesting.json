@@ -1,4 +1,5 @@
 {
+  "$schema": "https://www.schemastore.org/vs-nesting.json",
   "help": "https://go.microsoft.com/fwlink/?linkid=866610",
   "root": true
 }
