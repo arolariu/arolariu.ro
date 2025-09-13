@@ -3,12 +3,12 @@ import {DefaultAzureCredential} from "@azure/identity";
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
+import {isSecretKey} from "../sites/arolariu.ro/scripts/utils.generic";
 import type {
   TypedProductionEnvironmentVariablesType as TypedDevelopmentEnvironment,
   TypedDevelopmentEnvironmentVariablesType as TypedProductionEnvironment,
-} from "../src/types";
-import {getSecretFromKeyVault, isKeyVaultRef} from "./utils.azure";
-import {isSecretKey} from "./utils.generic";
+} from "../sites/arolariu.ro/src/types";
+import {getSecretFromKeyVault, isKeyVaultRef} from "./azure";
 
 type AllEnvironmentVariablesKeys = keyof (TypedProductionEnvironment | TypedDevelopmentEnvironment);
 type TypedConfigurationType = Record<AllEnvironmentVariablesKeys | (string & {}), string>;
@@ -235,3 +235,4 @@ export async function main(): Promise<void> {
 }
 
 await main();
+
