@@ -10,7 +10,6 @@ import {type NextRequest, NextResponse} from "next/server";
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    // @ts-expect-error -- Weird TS error! to fix later!
     const evt = await verifyWebhook(request);
 
     if (evt.type === "user.created") {
