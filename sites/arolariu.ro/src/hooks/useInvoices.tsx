@@ -1,9 +1,6 @@
-/** @format */
-
 "use client";
 
 import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
-import type {UserInformation} from "@/types";
 import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useUserInformation} from "./index";
@@ -27,7 +24,7 @@ export function useInvoices(): HookOutputType {
   const setPossiblyStaleInvoices = useZustandStore((state) => state.setInvoices);
 
   useEffect(() => {
-    const fetchInvoicesForUser = async (userInformation: UserInformation) => {
+    const fetchInvoicesForUser = async () => {
       setIsLoading(true);
 
       try {
@@ -43,7 +40,7 @@ export function useInvoices(): HookOutputType {
     };
 
     if (userInformation) {
-      fetchInvoicesForUser(userInformation);
+      fetchInvoicesForUser();
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setPossiblyStaleInvoices is a stable function.

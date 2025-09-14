@@ -1,4 +1,3 @@
-/** @format */
 "use client";
 
 import type {NodePackagesJSON} from "@/types";

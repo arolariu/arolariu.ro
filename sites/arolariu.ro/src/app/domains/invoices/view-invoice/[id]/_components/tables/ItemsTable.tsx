@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {usePaginationWithSearch} from "@/hooks";
@@ -26,6 +24,9 @@ import {useDialog} from "../../../../_contexts/DialogContext";
 type Props = {
   invoice: Invoice;
 };
+
+// Stable keys for rendering placeholder rows (avoid using array index as key)
+const EMPTY_ITEM_ROW_KEYS = ["empty-item-row-1", "empty-item-row-2", "empty-item-row-3", "empty-item-row-4", "empty-item-row-5"] as const;
 
 /**
  * The ItemsTable component displays a paginated table of invoice items.
@@ -107,10 +108,9 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 <td className='px-4 py-3 text-right text-sm font-medium whitespace-nowrap'>{formatCurrency(item.price * item.quantity)}</td>
               </motion.tr>
             ))}
-            {Array.from({length: 5 - paginatedItems.length}).map((_, index) => (
+            {EMPTY_ITEM_ROW_KEYS.slice(0, Math.max(0, 5 - paginatedItems.length)).map((key, index) => (
               <motion.tr
-                // eslint-disable-next-line react/no-array-index-key -- Using index as key for empty rows
-                key={index}
+                key={key}
                 initial={{opacity: 0, x: 0}}
                 animate={{opacity: 1, x: 0}}
                 transition={{delay: index * 0.05}}

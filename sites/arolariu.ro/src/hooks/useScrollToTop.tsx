@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {AnimatePresence, motion} from "motion/react";

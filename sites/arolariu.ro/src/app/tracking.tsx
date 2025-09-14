@@ -1,5 +1,3 @@
-/** @format */
-
 import {SITE_ENV} from "@/lib/utils.generic";
 import Script from "next/script";
 

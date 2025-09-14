@@ -1,7 +1,5 @@
-/** @format */
-
-import {json, type RequestHandler} from "@sveltejs/kit";
 import {jsonCVData as resume} from "@/data/json";
+import {json, type RequestHandler} from "@sveltejs/kit";
 
 /**
  * Unified CV endpoint.
@@ -14,8 +12,8 @@ import {jsonCVData as resume} from "@/data/json";
  *  - Keep payload stable; additive changes only to avoid breaking external consumers.
  *  - Consider ETag / cache headers later if needed (small payload now).
  */
-export const GET: RequestHandler = () => {
-  return json(
+export const GET: RequestHandler = () =>
+  json(
     {
       resume,
       meta: {
@@ -34,4 +32,3 @@ export const GET: RequestHandler = () => {
       },
     },
   );
-};

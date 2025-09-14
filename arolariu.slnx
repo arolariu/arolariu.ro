@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/root/">
     <File Path=".editorconfig" />
+    <File Path=".filenesting.json" />
+    <File Path=".gitignore" />
     <File Path="sites/api.arolariu.ro/.dockerignore" />
     <File Path="sites/api.arolariu.ro/Controllers_Breakpoints.xml" />
     <File Path="sites/api.arolariu.ro/Dockerfile" />

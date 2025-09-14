@@ -1,5 +1,4 @@
-/** @format */
-
+import {RichText} from "@/presentation/Text";
 import {motion} from "motion/react";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
@@ -27,14 +26,10 @@ export default function HeroSection(): React.JSX.Element {
             <span className='bg-linear-to-r from-cyan-500 to-purple-500 bg-clip-text text-transparent'>{t("title")}</span>
           </h1>
           <p className='2xsm:text-center mt-4 max-w-lg text-xl text-gray-500 md:text-left lg:max-w-2xl'>
-            {t.rich("subtitle", {
-              br: (chunks) => (
-                <>
-                  <br />
-                  {chunks}
-                </>
-              ),
-            })}
+            <RichText
+              sectionKey='Home'
+              textKey='subtitle'
+            />
           </p>
           <div className='2xsm:ml-[26%] relative mt-8 inline-flex md:ml-0'>
             <div className='absolute -inset-px rounded-full bg-linear-to-r from-cyan-500 to-purple-500 transition-all duration-200 group-hover:shadow-lg group-hover:shadow-cyan-500/50' />

@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Product} from "./index.ts";
 
 /**

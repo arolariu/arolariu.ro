@@ -1,4 +1,4 @@
-/** @format */
+/* eslint-disable */
 
 /**
  * Executes a series of scripts to prepare for the build process.
@@ -19,13 +19,7 @@ export default async function main() {
     console.info("[arolariu.ro::beforeBuild] Finished cleaning build directory.");
   });
 
-  // 2. Format code using the format script
-  console.info("[arolariu.ro::beforeBuild] Formatting code...");
-  await import("./format").then(() => {
-    console.info("[arolariu.ro::beforeBuild] Finished formatting code.");
-  });
-
-  // 3. Generate new licenses & acknowledgements using the generateAcknowledgements script
+  // 2. Generate new licenses & acknowledgements using the generateAcknowledgements script
   console.info("[arolariu.ro::beforeBuild] Generating licenses...");
   await import("./generateAcknowledgements").then(() => {
     console.info("[arolariu.ro::beforeBuild] Finished generating licenses.");
@@ -35,3 +29,4 @@ export default async function main() {
 }
 
 main();
+

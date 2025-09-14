@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Competency} from "@/types";
 
 type CompetencyKeys =
@@ -10,7 +8,7 @@ type CompetencyKeys =
   | "agileMethodologies"
   | "algorithmicSkills";
 
-type CompetenciesMap = Record<CompetencyKeys, Competency>;
+type CompetenciesMap = Readonly<Record<CompetencyKeys, Competency>>;
 
 export const competencies: CompetenciesMap = {
   engineeringExcellence: {

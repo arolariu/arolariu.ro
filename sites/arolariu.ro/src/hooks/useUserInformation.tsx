@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {SITE_URL} from "@/lib/utils.generic";

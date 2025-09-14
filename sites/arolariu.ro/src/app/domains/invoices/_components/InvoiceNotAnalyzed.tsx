@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {useUserInformation} from "@/hooks";
@@ -27,7 +25,7 @@ export default function InvoiceNotAnalyzed({invoiceIdentifier}: Readonly<{invoic
         action: {
           label: "View Invoice",
           onClick: () => {
-            router.push(`/invoices/view-invoice/${invoiceIdentifier}`);
+            router.push(`/domains/invoices/view-invoice/${invoiceIdentifier}`);
           },
         },
         icon: <span className='text-white'>✔️</span>,

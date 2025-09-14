@@ -1,17 +1,21 @@
-**/node_modules
-**/obj
-**/bin
-**/dist
-**/build
-**/package
-**/.vs
-**/.vsc
-**/.env
+# Don't commit transient artifacts
+**/tmp/**
+**/node_modules/**
 **/_site/**
+**/obj/**
+**/bin/**
+**/dist/**
+**/build/**
+**/out/**
+**/output/**
+**/.nx/**
+**/.vs/**
+**/playwright-report/**
+**/coverage/**
+**/test-results/**
+**/.next/**
+**/**/.DS_Store
 
-# MacOS cache files
-.DS_Store
-Thumbs.db
-
-# Next.js SWC cache
-.next/
+# Don't commit env variables:
+**/.env
+**/.env.*

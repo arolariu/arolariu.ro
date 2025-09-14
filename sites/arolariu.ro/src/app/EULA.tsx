@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {getCookie, setCookie} from "@/lib/actions/cookies";
@@ -42,6 +40,50 @@ type CookieState = {
 type Props = {locale: string};
 
 /**
+ * A shimmer for the EULA component.
+ * @returns The EULA loading component.
+ */
+function EulaLoading(): React.JSX.Element {
+  return (
+    <Card className='border-2 shadow-lg'>
+      <CardHeader className='space-y-4 text-center'>
+        <div className='flex justify-center'>
+          <div className='h-12 w-12 animate-pulse rounded-full bg-gray-200' />
+        </div>
+        <div className='mx-auto h-8 w-64 animate-pulse rounded-md bg-gray-200' />
+        <div className='mx-auto h-4 w-48 animate-pulse rounded-md bg-gray-200' />
+
+        <div className='mx-auto w-full max-w-xs'>
+          <div className='h-10 animate-pulse rounded-md bg-gray-200' />
+        </div>
+      </CardHeader>
+
+      <CardContent className='space-y-6'>
+        <div className='h-16 animate-pulse rounded-md bg-gray-200' />
+
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
+          <div className='h-48 animate-pulse rounded-md bg-gray-200' />
+          <div className='h-48 animate-pulse rounded-md bg-gray-200' />
+        </div>
+
+        <div className='h-1 animate-pulse rounded-md bg-gray-200' />
+
+        <div className='space-y-4'>
+          <div className='h-8 animate-pulse rounded-md bg-gray-200' />
+          <div className='h-24 animate-pulse rounded-md bg-gray-200' />
+          <div className='h-24 animate-pulse rounded-md bg-gray-200' />
+        </div>
+      </CardContent>
+
+      <CardFooter className='flex flex-col space-y-4'>
+        <div className='h-12 w-full animate-pulse rounded-md bg-gray-200' />
+        <div className='mx-auto h-4 w-3/4 animate-pulse rounded-md bg-gray-200' />
+      </CardFooter>
+    </Card>
+  );
+}
+
+/**
  * EULA component to display the End User License Agreement.
  * The component includes sections for Terms of Service, Privacy Policy, and Cookies Policy.
  * @returns The EULA component, CSR'ed.
@@ -65,11 +107,26 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
     setEulaCookie(true);
   }, [cookieState, locale]);
 
+  const handleLocaleEnClick = useCallback(() => {
+    handleLocale("en");
+  }, [handleLocale]);
+
+  const handleLocaleRoClick = useCallback(() => {
+    handleLocale("ro");
+  }, [handleLocale]);
+
+  const handleAnalyticsCheckedChange = useCallback((checked: boolean) => {
+    setCookieState((prev) => ({...prev, analytics: checked}));
+  }, []);
+
   useEffect(() => {
     const fetchCookie = async () => {
       const cookie = await getCookie("eula-accepted");
-      if (cookie) setEulaCookie(cookie === "true");
-      else setEulaCookie(false);
+      if (cookie) {
+        setEulaCookie(cookie === "true");
+      } else {
+        setEulaCookie(false);
+      }
     };
 
     fetchCookie();
@@ -111,7 +168,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
             <TabsList className='flex flex-row items-center justify-center justify-items-center gap-2'>
               <TabsTrigger
                 value='en'
-                onClick={() => handleLocale("en")}
+                onClick={handleLocaleEnClick}
                 className='flex cursor-pointer items-center gap-2'>
                 <TbGlobe className='h-4 w-4' />
                 English (EN)
@@ -122,7 +179,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
               />
               <TabsTrigger
                 value='ro'
-                onClick={() => handleLocale("ro")}
+                onClick={handleLocaleRoClick}
                 className='flex cursor-pointer items-center gap-2'>
                 <TbGlobe className='h-4 w-4' />
                 Română (RO)
@@ -272,9 +329,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
                         <Switch
                           id='analytics'
                           checked={cookieState.analytics}
-                          onCheckedChange={(checked) => {
-                            setCookieState((prev) => ({...prev, analytics: checked}));
-                          }}
+                          onCheckedChange={handleAnalyticsCheckedChange}
                         />
                         <label
                           htmlFor='analytics'
@@ -306,49 +361,5 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
         </CardFooter>
       </Card>
     </motion.div>
-  );
-}
-
-/**
- * A shimmer for the EULA component.
- * @returns The EULA loading component.
- */
-function EulaLoading(): React.JSX.Element {
-  return (
-    <Card className='border-2 shadow-lg'>
-      <CardHeader className='space-y-4 text-center'>
-        <div className='flex justify-center'>
-          <div className='h-12 w-12 animate-pulse rounded-full bg-gray-200' />
-        </div>
-        <div className='mx-auto h-8 w-64 animate-pulse rounded-md bg-gray-200' />
-        <div className='mx-auto h-4 w-48 animate-pulse rounded-md bg-gray-200' />
-
-        <div className='mx-auto w-full max-w-xs'>
-          <div className='h-10 animate-pulse rounded-md bg-gray-200' />
-        </div>
-      </CardHeader>
-
-      <CardContent className='space-y-6'>
-        <div className='h-16 animate-pulse rounded-md bg-gray-200' />
-
-        <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-          <div className='h-48 animate-pulse rounded-md bg-gray-200' />
-          <div className='h-48 animate-pulse rounded-md bg-gray-200' />
-        </div>
-
-        <div className='h-1 animate-pulse rounded-md bg-gray-200' />
-
-        <div className='space-y-4'>
-          <div className='h-8 animate-pulse rounded-md bg-gray-200' />
-          <div className='h-24 animate-pulse rounded-md bg-gray-200' />
-          <div className='h-24 animate-pulse rounded-md bg-gray-200' />
-        </div>
-      </CardContent>
-
-      <CardFooter className='flex flex-col space-y-4'>
-        <div className='h-12 w-full animate-pulse rounded-md bg-gray-200' />
-        <div className='mx-auto h-4 w-3/4 animate-pulse rounded-md bg-gray-200' />
-      </CardFooter>
-    </Card>
   );
 }

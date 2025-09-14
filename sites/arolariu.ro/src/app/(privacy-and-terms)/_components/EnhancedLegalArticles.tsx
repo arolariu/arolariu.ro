@@ -1,11 +1,9 @@
-/** @format */
-
 "use client";
-import {useTranslations} from "next-intl";
+import {RichText} from "@/presentation/Text";
 
-type TranslatedPage = "privacyPolicy" | "termsOfService";
-type TranslatedPageArticle = {titleKey: string; contentKey: string};
-type TranslatedPageArticles = Readonly<TranslatedPageArticle>[];
+type TranslatedPage = Readonly<"privacyPolicy" | "termsOfService">;
+type TranslatedPageArticle = Readonly<{titleKey: string; contentKey: string}>;
+type TranslatedPageArticles = Readonly<TranslatedPageArticle[]>;
 
 const articlesForPrivacyPolicy: TranslatedPageArticles = [
   {titleKey: "terms.whatIsTerms.title", contentKey: "terms.whatIsTerms.content"},
@@ -58,7 +56,7 @@ const articlesForTermsOfService: TranslatedPageArticles = [
 const articles = {
   privacyPolicy: articlesForPrivacyPolicy,
   termsOfService: articlesForTermsOfService,
-} as Record<TranslatedPage, TranslatedPageArticles>;
+} as Readonly<Record<TranslatedPage, TranslatedPageArticles>>;
 
 /**
  * The EnhancedLegalArticles component renders a list of legal articles for a given page type.
@@ -66,9 +64,8 @@ const articles = {
  * @returns A list of legal articles for the given page type.
  */
 export default function EnhancedLegalArticles({pageType}: Readonly<{pageType: TranslatedPage}>): React.JSX.Element {
-  const t = useTranslations<TranslatedPage>(pageType);
-  // eslint-disable-next-line security/detect-object-injection -- pageType is a controlled value
-  const sections = articles.hasOwnProperty(pageType) ? articles[pageType] : [];
+  // eslint-disable-next-line security/detect-object-injection -- this is safe.
+  const sections = articles[pageType];
 
   return (
     <>
@@ -80,30 +77,16 @@ export default function EnhancedLegalArticles({pageType}: Readonly<{pageType: Tr
             className='w-full py-4'
             key={titleKey}>
             <span className='text-2xl font-black tracking-widest underline'>
-              {/* @ts-expect-error -- This is a known issue with the library */}
-              {t.rich(`${titleKey}`, {
-                br: (chunks) => (
-                  <>
-                    <br />
-                    {chunks}
-                  </>
-                ),
-              })}
+              <RichText
+                sectionKey={pageType}
+                textKey={titleKey}
+              />
             </span>
             <section className='text-pretty italic'>
-              {/* @ts-expect-error -- This is a known issue with the library */}
-              {t.rich(`${contentKey}`, {
-                br: (chunks) => (
-                  <>
-                    <br />
-                    {chunks}
-                  </>
-                ),
-                code: (chunks) => <code className='font-extrabold text-blue-400'>{chunks}</code>,
-                ul: (chunks) => <ul className='list-inside list-disc pt-2'>{chunks}</ul>,
-                li: (chunks) => <li>{chunks}</li>,
-                span: (chunks) => <span>{chunks}</span>,
-              })}
+              <RichText
+                sectionKey={pageType}
+                textKey={contentKey}
+              />
             </section>
           </article>
         );

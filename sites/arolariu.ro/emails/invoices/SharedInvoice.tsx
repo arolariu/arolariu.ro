@@ -1,15 +1,18 @@
-/** @format */
-
 import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
 type Props = {
   identifier: string;
 };
 
-const DEVELOPMENT_PROPS = {
+const DEVELOPMENT_PROPS: Readonly<Props> = {
   identifier: "0123-4567-8901",
-} satisfies Props;
+};
 
+/**
+ * Shared invoice email template.
+ * @param props The props for the shared invoice email.
+ * @returns The email template as a React JSX template.
+ */
 export default function SharedInvoice(props: Readonly<Props>) {
   if (process.env.NODE_ENV === "development") {
     props = DEVELOPMENT_PROPS;
@@ -47,7 +50,7 @@ export default function SharedInvoice(props: Readonly<Props>) {
             </Link>
             <Section>
               <Row>
-                <Text className='font-bold'>{`Hello there,`}</Text>
+                <Text className='font-bold'>{`Hello there, ${props.identifier}`}</Text>
               </Row>
               <Row>
                 <Text>Somebody has shared an invoice with you! 🎉🎉</Text>
@@ -87,3 +90,4 @@ export default function SharedInvoice(props: Readonly<Props>) {
     </Html>
   );
 }
+

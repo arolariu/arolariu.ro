@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * Represents a base entity from the Domain-Driven Design concepts.
  */

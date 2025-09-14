@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {BackgroundBeams} from "@arolariu/components/background-beams";

@@ -1,8 +1,6 @@
-/** @format */
-
 "use client";
 
-import {createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode} from "react";
+import {createContext, use, useCallback, useMemo, useRef, useState, type ReactNode} from "react";
 
 /**
  * DialogType is a union type representing the different types of dialogs that can be opened.
@@ -29,7 +27,7 @@ export type DialogType =
   | "shareAnalytics"
   | null; // null is used to indicate no dialog is open
 
-export type DialogMode = "view" | "add" | "edit" | "delete" | "share" | null;
+export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> | null;
 
 // eslint-disable-next-line sonarjs/redundant-type-aliases
 export type DialogPayload = unknown;
@@ -137,7 +135,7 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
     [dialogState],
   );
 
-  return <DialogContext.Provider value={value}>{children}</DialogContext.Provider>;
+  return <DialogContext value={value}>{children}</DialogContext>;
 }
 
 /**
@@ -145,7 +143,7 @@ export function DialogProvider({children}: Readonly<{children: ReactNode}>) {
  * @returns The current dialog state and functions to manage it.
  */
 export function useDialogs() {
-  const context = useContext(DialogContext);
+  const context = use(DialogContext);
   if (context === undefined) {
     throw new Error("useDialogs must be used within a DialogProvider");
   }

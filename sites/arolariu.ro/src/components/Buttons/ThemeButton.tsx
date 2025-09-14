@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {motion} from "motion/react";
@@ -25,7 +23,9 @@ export default function ThemeButton(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setTheme is a stable function.
   }, [theme]);
 
-  if (!mounted) return false as unknown as React.JSX.Element;
+  if (!mounted) {
+    return false as unknown as React.JSX.Element;
+  }
 
   return (
     <motion.button

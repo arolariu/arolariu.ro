@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import MainView from "@/lib/views/MainView.svelte";
 </script>

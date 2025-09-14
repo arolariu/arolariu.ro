@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import {AnimatedSection} from "@/components/motion";
   import {experiencesAsArray, parseList} from "@/data/experiences";

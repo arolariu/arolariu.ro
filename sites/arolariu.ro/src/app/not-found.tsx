@@ -1,5 +1,3 @@
-/** @format */
-
 import {fetchUser} from "@/lib/actions/user/fetchUser";
 import type {Metadata} from "next";
 import {getTranslations} from "next-intl/server";
@@ -41,7 +39,7 @@ export default async function NotFound(): Promise<React.JSX.Element> {
         <span className='text-center text-xs'>{t("falsePositive")}</span>
         <div className='2xsm:flex-col mt-4 flex items-center justify-between justify-items-center gap-4 md:flex-row'>
           <Link
-            href=''
+            href='/'
             className='btn btn-secondary mx-auto'>
             {t("buttons.submitErrorButton")}
           </Link>

@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import {author} from "@/data";
   let heroVisible = $state(false);

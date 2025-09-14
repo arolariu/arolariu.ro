@@ -1,5 +1,3 @@
-/** @format */
-
 import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
 type Props = {
@@ -9,13 +7,18 @@ type Props = {
   feedbackFeatures: string[];
 };
 
-const DEVELOPMENT_PROPS = {
+const DEVELOPMENT_PROPS: Readonly<Props> = {
   feedbackFrom: "test@test.test",
   feedbackText: "This is a test feedback text.",
   feedbackRating: 3,
   feedbackFeatures: ["Feature 1", "Feature 2", "Feature 3"],
-} satisfies Props;
+};
 
+/**
+ * Invoice feedback email template.
+ * @param props The feedback details.
+ * @returns The email template as a React JSX template.
+ */
 export default function InvoiceFeedback(props: Readonly<Props>) {
   if (process.env.NODE_ENV === "development") {
     props = DEVELOPMENT_PROPS;
@@ -100,3 +103,4 @@ export default function InvoiceFeedback(props: Readonly<Props>) {
     </Html>
   );
 }
+

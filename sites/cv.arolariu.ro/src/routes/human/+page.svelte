@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import HumanView from "@/lib/views/HumanView.svelte";
 </script>

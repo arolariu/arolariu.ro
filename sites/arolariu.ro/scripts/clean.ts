@@ -1,4 +1,4 @@
-/** @format */
+/* eslint-disable */
 
 import {execSync} from "child_process";
 import fs from "node:fs";
@@ -145,3 +145,4 @@ export async function main(verbose: boolean = false) {
 }
 
 main();
+

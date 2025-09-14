@@ -1,5 +1,3 @@
-/** @format */
-
 import {defineConfig, devices} from "@playwright/test";
 
 const weAreInCI = Boolean(process.env["CI"]);

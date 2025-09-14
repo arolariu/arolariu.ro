@@ -1,5 +1,3 @@
-/** @format */
-
 import {createMetadata} from "@/metadata";
 import {getLocale, getTranslations} from "next-intl/server";
 import type {Metadata} from "next/types";
@@ -21,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /**
  * The privacy policy page, which outlines the privacy policy for the `arolariu.ro` platform.
- * This component is SSR'ed.
+ * @returns The privacy policy page, rendered as a React component, server-side.
  */
 export default async function PrivacyPolicyPage(): Promise<React.JSX.Element> {
   const t = await getTranslations("privacyPolicy");

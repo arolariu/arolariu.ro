@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * This file is used to register the instrumentation for the application.
  * The instrumentation is called BEFORE the application is started.

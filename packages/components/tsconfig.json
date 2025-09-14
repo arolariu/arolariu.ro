@@ -1,58 +1,42 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "allowJs": false,
-    "checkJs": false,
-    "alwaysStrict": true,
-    "noEmit": false,
-    "declarationMap": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "erasableSyntaxOnly": true,
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "strict": true,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "noUnusedLocals": true,
-    "noErrorTruncation": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": true,
-    "useUnknownInCatchVariables": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "allowUnreachableCode": false,
-    "allowImportingTsExtensions": false,
-    "allowArbitraryExtensions": true,
-    "diagnostics": true,
-    "extendedDiagnostics": true,
-    "pretty": true,
-    "resolvePackageJsonExports": true,
-    "resolvePackageJsonImports": true,
-    "removeComments": false,
-    "allowUnusedLabels": false,
-    "declaration": true,
-    "sourceMap": true,
-    "declarationDir": "dist/",
-    "emitDeclarationOnly": true,
-    "outDir": "dist",
-    "rootDir": "src",
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "types": ["@types/node", "@types/react", "@types/react-dom"],
+    "declaration": true,
+    "declarationDir": "dist/",
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "emitDecoratorMetadata": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "exactOptionalPropertyTypes": false,
+    "experimentalDecorators": true,
+    "outDir": "dist",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "removeComments": false,
+    "rootDir": "src",
+    "sourceMap": true,
+    "noImplicitReturns": false,
+    "strictPropertyInitialization": false,
+    "strictNullChecks": false,
+    "target": "ES2020",
+    "types": [
+      "@types/node",
+      "@types/react",
+      "@types/react-dom"
+    ]
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist", "**/*.{test,stories}.{ts,tsx}"]
+  "exclude": [
+    "node_modules",
+    "dist/**",
+    ".storybook/**",
+    "**/*.{test,stories}.{ts,tsx}"
+  ],
+  "include": [
+    "src"
+  ]
 }

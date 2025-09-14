@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Biography} from "@/types";
 import {author} from "./author";
 

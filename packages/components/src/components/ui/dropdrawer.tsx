@@ -1,18 +1,12 @@
 "use client";
 
-import { AnimatePresence, motion, Transition } from "motion/react";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+/* eslint-disable */
+
+import {ChevronLeftIcon, ChevronRightIcon} from "lucide-react";
+import {AnimatePresence, motion, Transition} from "motion/react";
 import * as React from "react";
 
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+import {Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger} from "@/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,39 +18,31 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useIsMobile } from "@/hooks/useIsMobile";
-import { cn } from "@/lib/utils";
+import {useIsMobile} from "@/hooks/useIsMobile";
+import {cn} from "@/lib/utilities";
 
-const DropDrawerContext = React.createContext<{ isMobile: boolean }>({
+const DropDrawerContext = React.createContext<{isMobile: boolean}>({
   isMobile: false,
 });
 
 const useDropDrawerContext = () => {
   const context = React.useContext(DropDrawerContext);
   if (!context) {
-    throw new Error(
-      "DropDrawer components cannot be rendered outside the Context",
-    );
+    throw new Error("DropDrawer components cannot be rendered outside the Context");
   }
   return context;
 };
 
-function DropDrawer({
-  children,
-  ...props
-}:
-  | React.ComponentProps<typeof Drawer>
-  | React.ComponentProps<typeof DropdownMenu>) {
+function DropDrawer({children, ...props}: React.ComponentProps<typeof Drawer> | React.ComponentProps<typeof DropdownMenu>) {
   const isMobile = useIsMobile();
   const DropdownComponent = isMobile ? Drawer : DropdownMenu;
 
   return (
-    <DropDrawerContext.Provider value={{ isMobile }}>
+    <DropDrawerContext.Provider value={{isMobile}}>
       <DropdownComponent
-        data-slot="drop-drawer"
-        {...(isMobile && { autoFocus: true })}
-        {...props}
-      >
+        data-slot='drop-drawer'
+        {...(isMobile && {autoFocus: true})}
+        {...props}>
         {children}
       </DropdownComponent>
     </DropDrawerContext.Provider>
@@ -67,18 +53,15 @@ function DropDrawerTrigger({
   className,
   children,
   ...props
-}:
-  | React.ComponentProps<typeof DrawerTrigger>
-  | React.ComponentProps<typeof DropdownMenuTrigger>) {
-  const { isMobile } = useDropDrawerContext();
+}: React.ComponentProps<typeof DrawerTrigger> | React.ComponentProps<typeof DropdownMenuTrigger>) {
+  const {isMobile} = useDropDrawerContext();
   const TriggerComponent = isMobile ? DrawerTrigger : DropdownMenuTrigger;
 
   return (
     <TriggerComponent
-      data-slot="drop-drawer-trigger"
+      data-slot='drop-drawer-trigger'
       className={className}
-      {...props}
-    >
+      {...props}>
       {children}
     </TriggerComponent>
   );
@@ -88,24 +71,16 @@ function DropDrawerContent({
   className,
   children,
   ...props
-}:
-  | React.ComponentProps<typeof DrawerContent>
-  | React.ComponentProps<typeof DropdownMenuContent>) {
-  const { isMobile } = useDropDrawerContext();
+}: React.ComponentProps<typeof DrawerContent> | React.ComponentProps<typeof DropdownMenuContent>) {
+  const {isMobile} = useDropDrawerContext();
   const [activeSubmenu, setActiveSubmenu] = React.useState<string | null>(null);
   const [submenuTitle, setSubmenuTitle] = React.useState<string | null>(null);
-  const [submenuStack, setSubmenuStack] = React.useState<
-    { id: string; title: string }[]
-  >([]);
+  const [submenuStack, setSubmenuStack] = React.useState<{id: string; title: string}[]>([]);
   // Add animation direction state
-  const [animationDirection, setAnimationDirection] = React.useState<
-    "forward" | "backward"
-  >("forward");
+  const [animationDirection, setAnimationDirection] = React.useState<"forward" | "backward">("forward");
 
   // Create a ref to store submenu content by ID
-  const submenuContentRef = React.useRef<Map<string, React.ReactNode[]>>(
-    new Map(),
-  );
+  const submenuContentRef = React.useRef<Map<string, React.ReactNode[]>>(new Map());
 
   // Function to navigate to a submenu
   const navigateToSubmenu = React.useCallback((id: string, title: string) => {
@@ -113,7 +88,7 @@ function DropDrawerContent({
     setAnimationDirection("forward");
     setActiveSubmenu(id);
     setSubmenuTitle(title);
-    setSubmenuStack((prev) => [...prev, { id, title }]);
+    setSubmenuStack((prev) => [...prev, {id, title}]);
   }, []);
 
   // Function to go back to previous menu
@@ -138,88 +113,74 @@ function DropDrawerContent({
   }, [submenuStack]);
 
   // Function to register submenu content
-  const registerSubmenuContent = React.useCallback(
-    (id: string, content: React.ReactNode[]) => {
-      submenuContentRef.current.set(id, content);
-    },
-    [],
-  );
+  const registerSubmenuContent = React.useCallback((id: string, content: React.ReactNode[]) => {
+    submenuContentRef.current.set(id, content);
+  }, []);
 
   // Function to extract submenu content
-  const extractSubmenuContent = React.useCallback(
-    (elements: React.ReactNode, targetId: string): React.ReactNode[] => {
-      const result: React.ReactNode[] = [];
+  const extractSubmenuContent = React.useCallback((elements: React.ReactNode, targetId: string): React.ReactNode[] => {
+    const result: React.ReactNode[] = [];
 
-      // Recursive function to search through all children
-      const findSubmenuContent = (node: React.ReactNode) => {
-        // Skip if not a valid element
-        if (!React.isValidElement(node)) return;
+    // Recursive function to search through all children
+    const findSubmenuContent = (node: React.ReactNode) => {
+      // Skip if not a valid element
+      if (!React.isValidElement(node)) return;
 
-        const element = node as React.ReactElement;
-        // Use a more specific type to avoid 'any'
-        const props = element.props as {
-          id?: string;
-          "data-submenu-id"?: string;
-          children?: React.ReactNode;
-        };
-
-        // Check if this is a DropDrawerSub
-        if (element.type === DropDrawerSub) {
-          // Get all possible ID values
-          const elementId = props.id;
-          const dataSubmenuId = props["data-submenu-id"];
-
-          // If this is the submenu we're looking for
-          if (elementId === targetId || dataSubmenuId === targetId) {
-            // Find the SubContent within this Sub
-            if (props.children) {
-              React.Children.forEach(props.children, (child) => {
-                if (
-                  React.isValidElement(child) &&
-                  child.type === DropDrawerSubContent
-                ) {
-                  // Add all children of the SubContent to the result
-                  const subContentProps = child.props as {
-                    children?: React.ReactNode;
-                  };
-                  if (subContentProps.children) {
-                    React.Children.forEach(
-                      subContentProps.children,
-                      (contentChild) => {
-                        result.push(contentChild);
-                      },
-                    );
-                  }
-                }
-              });
-            }
-            return; // Found what we needed, no need to search deeper
-          }
-        }
-
-        // If this element has children, search through them
-        if (props.children) {
-          if (Array.isArray(props.children)) {
-            props.children.forEach((child: React.ReactNode) =>
-              findSubmenuContent(child),
-            );
-          } else {
-            findSubmenuContent(props.children);
-          }
-        }
+      const element = node as React.ReactElement;
+      // Use a more specific type to avoid 'any'
+      const props = element.props as {
+        id?: string;
+        "data-submenu-id"?: string;
+        children?: React.ReactNode;
       };
 
-      // Start the search from the root elements
-      if (Array.isArray(elements)) {
-        elements.forEach((child) => findSubmenuContent(child));
-      } else {
-        findSubmenuContent(elements);
+      // Check if this is a DropDrawerSub
+      if (element.type === DropDrawerSub) {
+        // Get all possible ID values
+        const elementId = props.id;
+        const dataSubmenuId = props["data-submenu-id"];
+
+        // If this is the submenu we're looking for
+        if (elementId === targetId || dataSubmenuId === targetId) {
+          // Find the SubContent within this Sub
+          if (props.children) {
+            React.Children.forEach(props.children, (child) => {
+              if (React.isValidElement(child) && child.type === DropDrawerSubContent) {
+                // Add all children of the SubContent to the result
+                const subContentProps = child.props as {
+                  children?: React.ReactNode;
+                };
+                if (subContentProps.children) {
+                  React.Children.forEach(subContentProps.children, (contentChild) => {
+                    result.push(contentChild);
+                  });
+                }
+              }
+            });
+          }
+          return; // Found what we needed, no need to search deeper
+        }
       }
 
-      return result;
-    },
-    [],
-  );
+      // If this element has children, search through them
+      if (props.children) {
+        if (Array.isArray(props.children)) {
+          props.children.forEach((child: React.ReactNode) => findSubmenuContent(child));
+        } else {
+          findSubmenuContent(props.children);
+        }
+      }
+    };
+
+    // Start the search from the root elements
+    if (Array.isArray(elements)) {
+      elements.forEach((child) => findSubmenuContent(child));
+    } else {
+      findSubmenuContent(elements);
+    }
+
+    return result;
+  }, []);
 
   // Get submenu content (either from cache or extract it)
   const getSubmenuContent = React.useCallback(
@@ -285,71 +246,62 @@ function DropDrawerContent({
           setSubmenuTitle,
           navigateToSubmenu,
           registerSubmenuContent,
-        }}
-      >
+        }}>
         <DrawerContent
-          data-slot="drop-drawer-content"
+          data-slot='drop-drawer-content'
           className={cn("max-h-[90vh]", className)}
-          {...props}
-        >
+          {...props}>
           {activeSubmenu ? (
             <>
               <DrawerHeader>
-                <div className="flex items-center gap-2">
+                <div className='flex items-center gap-2'>
                   <button
                     onClick={goBack}
-                    className="hover:bg-neutral-100/50 rounded-full p-1 dark:hover:bg-neutral-800/50"
-                  >
-                    <ChevronLeftIcon className="h-5 w-5" />
+                    className='rounded-full p-1 hover:bg-neutral-100/50 dark:hover:bg-neutral-800/50'>
+                    <ChevronLeftIcon className='h-5 w-5' />
                   </button>
                   <DrawerTitle>{submenuTitle || "Submenu"}</DrawerTitle>
                 </div>
               </DrawerHeader>
-              <div className="flex-1 relative overflow-y-auto max-h-[70vh]">
+              <div className='relative max-h-[70vh] flex-1 overflow-y-auto'>
                 {/* Use AnimatePresence to handle exit animations */}
                 <AnimatePresence
                   initial={false}
-                  mode="wait"
-                  custom={animationDirection}
-                >
+                  mode='wait'
+                  custom={animationDirection}>
                   <motion.div
                     key={activeSubmenu || "main"}
                     custom={animationDirection}
                     variants={variants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
+                    initial='enter'
+                    animate='center'
+                    exit='exit'
                     transition={transition}
-                    className="pb-6 space-y-1.5 w-full h-full"
-                  >
-                    {activeSubmenu
-                      ? getSubmenuContent(activeSubmenu)
-                      : children}
+                    className='h-full w-full space-y-1.5 pb-6'>
+                    {activeSubmenu ? getSubmenuContent(activeSubmenu) : children}
                   </motion.div>
                 </AnimatePresence>
               </div>
             </>
           ) : (
             <>
-              <DrawerHeader className="sr-only">
+              <DrawerHeader className='sr-only'>
                 <DrawerTitle>Menu</DrawerTitle>
               </DrawerHeader>
-              <div className="overflow-y-auto max-h-[70vh]">
+              <div className='max-h-[70vh] overflow-y-auto'>
                 <AnimatePresence
                   initial={false}
-                  mode="wait"
-                  custom={animationDirection}
-                >
+                  mode='wait'
+                  custom={animationDirection}>
                   <motion.div
-                    key="main-menu"
+                    key='main-menu'
                     custom={animationDirection}
                     variants={variants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
+                    initial='enter'
+                    animate='center'
+                    exit='exit'
                     transition={transition}
-                    className="pb-6 space-y-1.5 w-full"
-                  >
+                    className='w-full space-y-1.5 pb-6'>
                     {children}
                   </motion.div>
                 </AnimatePresence>
@@ -369,18 +321,13 @@ function DropDrawerContent({
         submenuTitle,
         setSubmenuTitle,
         registerSubmenuContent,
-      }}
-    >
+      }}>
       <DropdownMenuContent
-        data-slot="drop-drawer-content"
-        align="end"
+        data-slot='drop-drawer-content'
+        align='end'
         sideOffset={4}
-        className={cn(
-          "max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[220px] overflow-y-auto",
-          className,
-        )}
-        {...props}
-      >
+        className={cn("max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[220px] overflow-y-auto", className)}
+        {...props}>
         {children}
       </DropdownMenuContent>
     </SubmenuContext.Provider>
@@ -400,26 +347,23 @@ function DropDrawerItem({
 }: React.ComponentProps<typeof DropdownMenuItem> & {
   icon?: React.ReactNode;
 }) {
-  const { isMobile } = useDropDrawerContext();
+  const {isMobile} = useDropDrawerContext();
 
   // Define hooks outside of conditionals to follow React rules
   // Check if this item is inside a group by looking at parent elements
-  const isInGroup = React.useCallback(
-    (element: HTMLElement | null): boolean => {
-      if (!element) return false;
+  const isInGroup = React.useCallback((element: HTMLElement | null): boolean => {
+    if (!element) return false;
 
-      // Check if any parent has a data-drop-drawer-group attribute
-      let parent = element.parentElement;
-      while (parent) {
-        if (parent.hasAttribute("data-drop-drawer-group")) {
-          return true;
-        }
-        parent = parent.parentElement;
+    // Check if any parent has a data-drop-drawer-group attribute
+    let parent = element.parentElement;
+    while (parent) {
+      if (parent.hasAttribute("data-drop-drawer-group")) {
+        return true;
       }
-      return false;
-    },
-    [],
-  );
+      parent = parent.parentElement;
+    }
+    return false;
+  }, []);
 
   // Create a ref to check if the item is in a group
   const itemRef = React.useRef<HTMLDivElement>(null);
@@ -450,36 +394,32 @@ function DropDrawerItem({
     const content = (
       <div
         ref={itemRef}
-        data-slot="drop-drawer-item"
+        data-slot='drop-drawer-item'
         data-variant={variant}
         data-inset={inset}
         data-disabled={disabled}
         className={cn(
           "flex cursor-pointer items-center justify-between px-4 py-4",
           // Only apply margin, background and rounded corners if not in a group
-          !isInsideGroup &&
-            "bg-neutral-100 dark:bg-neutral-100 mx-2 my-1.5 rounded-md dark:bg-neutral-800 dark:dark:bg-neutral-800",
+          !isInsideGroup && "mx-2 my-1.5 rounded-md bg-neutral-100 dark:bg-neutral-100 dark:bg-neutral-800 dark:dark:bg-neutral-800",
           // For items in a group, don't add background but add more padding
           isInsideGroup && "bg-transparent py-4",
           inset && "pl-8",
-          variant === "destructive" &&
-            "text-red-500 dark:text-red-500 dark:text-red-900 dark:dark:text-red-900",
+          variant === "destructive" && "text-red-500 dark:dark:text-red-900 dark:text-red-500 dark:text-red-900",
           disabled && "pointer-events-none opacity-50",
           className,
         )}
         onClick={handleClick}
         aria-disabled={disabled}
-        {...props}
-      >
-        <div className="flex items-center gap-2">{children}</div>
-        {icon && <div className="flex-shrink-0">{icon}</div>}
+        {...props}>
+        <div className='flex items-center gap-2'>{children}</div>
+        {icon && <div className='flex-shrink-0'>{icon}</div>}
       </div>
     );
 
     // Check if this is inside a submenu
     const isInSubmenu =
-      (props as Record<string, unknown>)["data-parent-submenu-id"] ||
-      (props as Record<string, unknown>)["data-parent-submenu"];
+      (props as Record<string, unknown>)["data-parent-submenu-id"] || (props as Record<string, unknown>)["data-parent-submenu"];
 
     if (isInSubmenu) {
       return content;
@@ -490,7 +430,7 @@ function DropDrawerItem({
 
   return (
     <DropdownMenuItem
-      data-slot="drop-drawer-item"
+      data-slot='drop-drawer-item'
       data-variant={variant}
       data-inset={inset}
       className={className}
@@ -499,9 +439,8 @@ function DropDrawerItem({
       variant={variant}
       inset={inset}
       disabled={disabled}
-      {...props}
-    >
-      <div className="flex w-full items-center justify-between">
+      {...props}>
+      <div className='flex w-full items-center justify-between'>
         <div>{children}</div>
         {icon && <div>{icon}</div>}
       </div>
@@ -509,11 +448,8 @@ function DropDrawerItem({
   );
 }
 
-function DropDrawerSeparator({
-  className,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuSeparator>) {
-  const { isMobile } = useDropDrawerContext();
+function DropDrawerSeparator({className, ...props}: React.ComponentProps<typeof DropdownMenuSeparator>) {
+  const {isMobile} = useDropDrawerContext();
 
   // For mobile, render a simple divider
   if (isMobile) {
@@ -523,7 +459,7 @@ function DropDrawerSeparator({
   // For desktop, use the standard dropdown separator
   return (
     <DropdownMenuSeparator
-      data-slot="drop-drawer-separator"
+      data-slot='drop-drawer-separator'
       className={className}
       {...props}
     />
@@ -534,22 +470,16 @@ function DropDrawerLabel({
   className,
   children,
   ...props
-}:
-  | React.ComponentProps<typeof DropdownMenuLabel>
-  | React.ComponentProps<typeof DrawerTitle>) {
-  const { isMobile } = useDropDrawerContext();
+}: React.ComponentProps<typeof DropdownMenuLabel> | React.ComponentProps<typeof DrawerTitle>) {
+  const {isMobile} = useDropDrawerContext();
 
   if (isMobile) {
     return (
-      <DrawerHeader className="p-0">
+      <DrawerHeader className='p-0'>
         <DrawerTitle
-          data-slot="drop-drawer-label"
-          className={cn(
-            "text-neutral-500 px-4 py-2 text-sm font-medium dark:text-neutral-400",
-            className,
-          )}
-          {...props}
-        >
+          data-slot='drop-drawer-label'
+          className={cn("px-4 py-2 text-sm font-medium text-neutral-500 dark:text-neutral-400", className)}
+          {...props}>
           {children}
         </DrawerTitle>
       </DrawerHeader>
@@ -558,29 +488,23 @@ function DropDrawerLabel({
 
   return (
     <DropdownMenuLabel
-      data-slot="drop-drawer-label"
+      data-slot='drop-drawer-label'
       className={className}
-      {...props}
-    >
+      {...props}>
       {children}
     </DropdownMenuLabel>
   );
 }
 
-function DropDrawerFooter({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof DrawerFooter> | React.ComponentProps<"div">) {
-  const { isMobile } = useDropDrawerContext();
+function DropDrawerFooter({className, children, ...props}: React.ComponentProps<typeof DrawerFooter> | React.ComponentProps<"div">) {
+  const {isMobile} = useDropDrawerContext();
 
   if (isMobile) {
     return (
       <DrawerFooter
-        data-slot="drop-drawer-footer"
+        data-slot='drop-drawer-footer'
         className={cn("p-4", className)}
-        {...props}
-      >
+        {...props}>
         {children}
       </DrawerFooter>
     );
@@ -589,10 +513,9 @@ function DropDrawerFooter({
   // No direct equivalent in DropdownMenu, so we'll just render a div
   return (
     <div
-      data-slot="drop-drawer-footer"
+      data-slot='drop-drawer-footer'
       className={cn("p-2", className)}
-      {...props}
-    >
+      {...props}>
       {children}
     </div>
   );
@@ -605,7 +528,7 @@ function DropDrawerGroup({
 }: React.ComponentProps<"div"> & {
   children: React.ReactNode;
 }) {
-  const { isMobile } = useDropDrawerContext();
+  const {isMobile} = useDropDrawerContext();
 
   // Add separators between children on mobile
   const childrenWithSeparators = React.useMemo(() => {
@@ -614,10 +537,7 @@ function DropDrawerGroup({
     const childArray = React.Children.toArray(children);
 
     // Filter out any existing separators
-    const filteredChildren = childArray.filter(
-      (child) =>
-        React.isValidElement(child) && child.type !== DropDrawerSeparator,
-    );
+    const filteredChildren = childArray.filter((child) => React.isValidElement(child) && child.type !== DropDrawerSeparator);
 
     // Add separators between items
     return filteredChildren.flatMap((child, index) => {
@@ -626,8 +546,8 @@ function DropDrawerGroup({
         child,
         <div
           key={`separator-${index}`}
-          className="bg-neutral-200 h-px dark:bg-neutral-800"
-          aria-hidden="true"
+          className='h-px bg-neutral-200 dark:bg-neutral-800'
+          aria-hidden='true'
         />,
       ];
     });
@@ -637,14 +557,13 @@ function DropDrawerGroup({
     return (
       <div
         data-drop-drawer-group
-        data-slot="drop-drawer-group"
-        role="group"
+        data-slot='drop-drawer-group'
+        role='group'
         className={cn(
-          "bg-neutral-100 dark:bg-neutral-100 mx-2 my-3 overflow-hidden rounded-xl dark:bg-neutral-800 dark:dark:bg-neutral-800",
+          "mx-2 my-3 overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-100 dark:bg-neutral-800 dark:dark:bg-neutral-800",
           className,
         )}
-        {...props}
-      >
+        {...props}>
         {childrenWithSeparators}
       </div>
     );
@@ -654,11 +573,10 @@ function DropDrawerGroup({
   return (
     <div
       data-drop-drawer-group
-      data-slot="drop-drawer-group"
-      role="group"
+      data-slot='drop-drawer-group'
+      role='group'
       className={className}
-      {...props}
-    >
+      {...props}>
       {children}
     </div>
   );
@@ -694,8 +612,8 @@ function DropDrawerSub({
 }: React.ComponentProps<typeof DropdownMenuSub> & {
   id?: string;
 }) {
-  const { isMobile } = useDropDrawerContext();
-  const { registerSubmenuContent } = React.useContext(SubmenuContext);
+  const {isMobile} = useDropDrawerContext();
+  const {registerSubmenuContent} = React.useContext(SubmenuContext);
 
   // Generate a simple numeric ID instead of using React.useId()
   const [generatedId] = React.useState(() => `submenu-${submenuIdCounter++}`);
@@ -710,12 +628,9 @@ function DropDrawerSub({
     React.Children.forEach(children, (child) => {
       if (React.isValidElement(child) && child.type === DropDrawerSubContent) {
         // Add all children of the SubContent to the result
-        React.Children.forEach(
-          (child.props as { children?: React.ReactNode }).children,
-          (contentChild) => {
-            contentItems.push(contentChild);
-          },
-        );
+        React.Children.forEach((child.props as {children?: React.ReactNode}).children, (contentChild) => {
+          contentItems.push(contentChild);
+        });
       }
     });
 
@@ -762,10 +677,9 @@ function DropDrawerSub({
 
     return (
       <div
-        data-slot="drop-drawer-sub"
+        data-slot='drop-drawer-sub'
         data-submenu-id={submenuId}
-        id={submenuId}
-      >
+        id={submenuId}>
         {processedChildren}
       </div>
     );
@@ -774,11 +688,10 @@ function DropDrawerSub({
   // For desktop, pass the generated ID to the DropdownMenuSub
   return (
     <DropdownMenuSub
-      data-slot="drop-drawer-sub"
+      data-slot='drop-drawer-sub'
       data-submenu-id={submenuId}
       // Don't pass id to DropdownMenuSub as it doesn't accept this prop
-      {...props}
-    >
+      {...props}>
       {children}
     </DropdownMenuSub>
   );
@@ -792,27 +705,24 @@ function DropDrawerSubTrigger({
 }: React.ComponentProps<typeof DropdownMenuSubTrigger> & {
   icon?: React.ReactNode;
 }) {
-  const { isMobile } = useDropDrawerContext();
-  const { navigateToSubmenu } = React.useContext(SubmenuContext);
+  const {isMobile} = useDropDrawerContext();
+  const {navigateToSubmenu} = React.useContext(SubmenuContext);
 
   // Define hooks outside of conditionals to follow React rules
   // Check if this item is inside a group by looking at parent elements
-  const isInGroup = React.useCallback(
-    (element: HTMLElement | null): boolean => {
-      if (!element) return false;
+  const isInGroup = React.useCallback((element: HTMLElement | null): boolean => {
+    if (!element) return false;
 
-      // Check if any parent has a data-drop-drawer-group attribute
-      let parent = element.parentElement;
-      while (parent) {
-        if (parent.hasAttribute("data-drop-drawer-group")) {
-          return true;
-        }
-        parent = parent.parentElement;
+    // Check if any parent has a data-drop-drawer-group attribute
+    let parent = element.parentElement;
+    while (parent) {
+      if (parent.hasAttribute("data-drop-drawer-group")) {
+        return true;
       }
-      return false;
-    },
-    [],
-  );
+      parent = parent.parentElement;
+    }
+    return false;
+  }, []);
 
   // Create a ref to check if the item is in a group
   const itemRef = React.useRef<HTMLDivElement>(null);
@@ -854,10 +764,8 @@ function DropDrawerSubTrigger({
       // If not found, try props
       if (!submenuId) {
         submenuId =
-          ((props as Record<string, unknown>)[
-            "data-parent-submenu-id"
-          ] as string) ||
-          ((props as Record<string, unknown>)["data-parent-submenu"] as string);
+          ((props as Record<string, unknown>)["data-parent-submenu-id"] as string)
+          || ((props as Record<string, unknown>)["data-parent-submenu"] as string);
       }
 
       if (!submenuId) {
@@ -878,9 +786,7 @@ function DropDrawerSubTrigger({
       // Call the original onClick if provided
       const typedProps = props as Record<string, unknown>;
       if (typedProps["onClick"]) {
-        const originalOnClick = typedProps[
-          "onClick"
-        ] as React.MouseEventHandler<HTMLDivElement>;
+        const originalOnClick = typedProps["onClick"] as React.MouseEventHandler<HTMLDivElement>;
         originalOnClick(e as React.MouseEvent<HTMLDivElement>);
       }
 
@@ -889,53 +795,45 @@ function DropDrawerSubTrigger({
     };
 
     // Remove onClick from props to avoid duplicate handlers
-    const { ...restProps } = props as Record<string, unknown>;
+    const {...restProps} = props as Record<string, unknown>;
 
     // Don't wrap in DrawerClose for submenu triggers
     return (
       <div
         ref={itemRef}
-        data-slot="drop-drawer-sub-trigger"
+        data-slot='drop-drawer-sub-trigger'
         data-inset={inset}
         className={cn(
           "flex cursor-pointer items-center justify-between px-4 py-4",
           // Only apply margin, background and rounded corners if not in a group
-          !isInsideGroup &&
-            "bg-neutral-100 dark:bg-neutral-100 mx-2 my-1.5 rounded-md dark:bg-neutral-800 dark:dark:bg-neutral-800",
+          !isInsideGroup && "mx-2 my-1.5 rounded-md bg-neutral-100 dark:bg-neutral-100 dark:bg-neutral-800 dark:dark:bg-neutral-800",
           // For items in a group, don't add background but add more padding
           isInsideGroup && "bg-transparent py-4",
           inset && "pl-8",
           className,
         )}
         onClick={combinedOnClick}
-        {...restProps}
-      >
-        <div className="flex items-center gap-2">{children}</div>
-        <ChevronRightIcon className="h-5 w-5" />
+        {...restProps}>
+        <div className='flex items-center gap-2'>{children}</div>
+        <ChevronRightIcon className='h-5 w-5' />
       </div>
     );
   }
 
   return (
     <DropdownMenuSubTrigger
-      data-slot="drop-drawer-sub-trigger"
+      data-slot='drop-drawer-sub-trigger'
       data-inset={inset}
       className={className}
       inset={inset}
-      {...props}
-    >
+      {...props}>
       {children}
     </DropdownMenuSubTrigger>
   );
 }
 
-function DropDrawerSubContent({
-  className,
-  sideOffset = 4,
-  children,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuSubContent>) {
-  const { isMobile } = useDropDrawerContext();
+function DropDrawerSubContent({className, sideOffset = 4, children, ...props}: React.ComponentProps<typeof DropdownMenuSubContent>) {
+  const {isMobile} = useDropDrawerContext();
 
   if (isMobile) {
     // For mobile, we don't render the content directly
@@ -945,14 +843,13 @@ function DropDrawerSubContent({
 
   return (
     <DropdownMenuSubContent
-      data-slot="drop-drawer-sub-content"
+      data-slot='drop-drawer-sub-content'
       sideOffset={sideOffset}
       className={cn(
         "z-50 min-w-[8rem] overflow-hidden rounded-md border border-neutral-200 p-1 shadow-lg dark:border-neutral-800",
         className,
       )}
-      {...props}
-    >
+      {...props}>
       {children}
     </DropdownMenuSubContent>
   );

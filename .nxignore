@@ -1,0 +1,13 @@
+node_modules
+dist
+build
+.next
+_site
+.git
+.nyc_output
+coverage
+.DS_Store
+*.log
+TestResults
+storybook-static
+.storybook-static

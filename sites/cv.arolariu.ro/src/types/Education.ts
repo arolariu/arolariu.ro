@@ -1,6 +1,4 @@
-/** @format */
-
-export type Education = {
+export type Education = Readonly<{
   degree: string;
   institution: string;
   location: string;
@@ -8,4 +6,4 @@ export type Education = {
   period: string;
   status: string;
   eduUrl?: string;
-};
+}>;

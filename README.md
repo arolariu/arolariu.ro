@@ -27,6 +27,14 @@
   - [Platform screenshots](#platform-screenshots)
   - [Table of Contents](#table-of-contents)
     - [What is this repository?](#what-is-this-repository)
+  - [Setup Guide](#setup-guide)
+    - [Quick Start](#quick-start)
+    - [Nx Workflow Diagrams](#nx-workflow-diagrams)
+      - [Build Command Flow](#build-command-flow)
+      - [Development Command Flow](#development-command-flow)
+      - [Test Command Flow](#test-command-flow)
+    - [Project Structure](#project-structure)
+    - [Advanced Nx Commands](#advanced-nx-commands)
     - [High Level Infrastructure overview (using Bicep Visualizer)](#high-level-infrastructure-overview-using-bicep-visualizer)
     - [Current CI/CD status](#current-cicd-status)
     - [Repository Statistics](#repository-statistics)
@@ -40,6 +48,150 @@ The `arolariu.ro` repository contains the open-source code for different service
 - [Next.JS Production Platform](https://arolariu.ro) - is the main point of contact and the primary entry point for users.
 - [Next.JS Development Platform](https://dev.arolariu.ro) - is the development platform for the main website.
 - [ASP.NET (LTS) Public API](https://api.arolariu.ro) - acts as the main backend; it is able to serve REST, GraphQL, and gRPC requests.
+
+## Setup Guide
+
+This repository uses [Nx](https://nx.dev) as a monorepo tool to manage all projects from a unified CLI interface. This provides streamlined build, test, and development workflows across the entire codebase.
+
+### Quick Start
+
+```bash
+# Install dependencies at root level
+npm install
+
+# Build all projects
+npm run build
+
+# Build specific projects
+npm run build:website      # Main website (Next.js)
+npm run build:components   # React component library
+npm run build:api         # Backend API (.NET)
+npm run build:cv          # CV site (SvelteKit)
+npm run build:docs        # Documentation (DocFX)
+
+# Development servers
+npm run dev:website       # Start website dev server
+npm run dev:components    # Start component storybook
+npm run dev:api          # Start API dev server
+npm run dev:cv           # Start CV dev server
+npm run dev:docs         # Start docs dev server
+
+# Testing & maintenance
+npm run test             # Run all tests
+npm run lint             # Lint all projects
+npm run format           # Format all projects
+```
+
+### Nx Workflow Diagrams
+
+#### Build Command Flow
+```mermaid
+graph TD
+    A[npm run build] --> B[nx run-many --target=build --all]
+    B --> C[Components Build]
+    B --> D[CV Build]
+    B --> E[API Build]
+    B --> F[Docs Build]
+    B --> G[Website Build]
+    
+    C --> G
+    E --> F
+    
+    C --> H[Component Library Output]
+    D --> I[CV Site Output]
+    E --> J[API Binaries]
+    F --> K[Documentation Site]
+    G --> L[Website Output]
+    
+    style C fill:#e1f5fe
+    style D fill:#e1f5fe
+    style E fill:#fff3e0
+    style F fill:#fff3e0
+    style G fill:#e8f5e8
+```
+
+#### Development Command Flow
+```mermaid
+graph TD
+    A[npm run dev] --> B[nx run-many --target=dev --all --parallel]
+    B --> C[Components Storybook]
+    B --> D[CV Dev Server]
+    B --> E[API Dev Server]
+    B --> F[Docs Dev Server]
+    B --> G[Website Dev Server]
+    
+    C --> H[localhost:6006]
+    D --> I[localhost:3001]
+    E --> J[localhost:5000]
+    F --> K[localhost:8080]
+    G --> L[localhost:3000]
+    
+    style C fill:#e1f5fe
+    style D fill:#e1f5fe
+    style E fill:#fff3e0
+    style F fill:#fff3e0
+    style G fill:#e8f5e8
+```
+
+#### Test Command Flow
+```mermaid
+graph TD
+    A[npm run test] --> B[nx run-many --target=test --all]
+    B --> C[Components Tests]
+    B --> D[CV Tests]
+    B --> E[API Tests]
+    B --> F[Website Tests]
+    
+    C --> G[Jest + React Testing Library]
+    D --> H[Vitest + SvelteKit Testing]
+    E --> I[.NET xUnit Tests]
+    F --> J[Jest + Playwright E2E]
+    
+    G --> K[Component Test Results]
+    H --> L[CV Test Results]
+    I --> M[API Test Results]
+    J --> N[Website Test Results]
+    
+    style C fill:#e1f5fe
+    style D fill:#e1f5fe
+    style E fill:#fff3e0
+    style F fill:#e8f5e8
+```
+
+### Project Structure
+
+```
+arolariu.ro/
+├── packages/
+│   └── components/          # React component library
+├── sites/
+│   ├── arolariu.ro/        # Main website (Next.js)
+│   ├── api.arolariu.ro/    # Backend API (.NET)
+│   ├── cv.arolariu.ro/     # CV site (SvelteKit)
+│   └── docs.arolariu.ro/   # Documentation (DocFX)
+├── package.json            # Root workspace configuration
+└── nx.json                 # Nx workspace configuration
+```
+
+### Advanced Nx Commands
+
+```bash
+# Show project dependency graph
+npx nx graph
+
+# Run commands only on affected projects
+npx nx affected --target=build
+npx nx affected --target=test
+
+# Run specific commands
+npx nx run website:build
+npx nx run components:storybook
+npx nx run api:dev
+
+# Show project details
+npx nx show project website
+npx nx show projects --affected
+```
 
 ### High Level Infrastructure overview (using Bicep Visualizer)
 

@@ -1,8 +1,28 @@
-/** @format */
 import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
-export default function DeletedInvoice({username, invoiceId}: Readonly<{username: string; invoiceId: string}>) {
-  if (process.env.NODE_ENV === "development") invoiceId = "1234567890";
+type Props = {
+  username: string;
+  invoiceId: string;
+};
+
+const DEVELOPMENT_PROPS: Readonly<Props> = {
+  username: "testuser",
+  invoiceId: "1234567890",
+};
+
+/**
+ * This email template will be sent when an invoice has been deleted.
+ * @param username The username of the recipient.
+ * @param invoiceId The ID of the deleted invoice.
+ * @returns The email template as a React JSX template.
+ */
+export default function DeletedInvoice(props: Readonly<Props>) {
+  if (process.env.NODE_ENV === "development") {
+    props = DEVELOPMENT_PROPS;
+  }
+
+  const {username, invoiceId} = props;
+
   return (
     <Html>
       <Head>
@@ -81,3 +101,4 @@ export default function DeletedInvoice({username, invoiceId}: Readonly<{username
     </Html>
   );
 }
+

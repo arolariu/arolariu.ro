@@ -1,6 +1,5 @@
-import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import { Checkbox } from "../dist";
+import type {Meta, StoryObj} from "@storybook/react";
+import {Checkbox} from "../dist";
 
 const meta: Meta<typeof Checkbox> = {
   title: "Design System/Checkbox",
@@ -47,14 +46,14 @@ See the [shadcn/ui Checkbox documentation](https://ui.shadcn.com/docs/components
       control: "boolean",
       description: "Prevents user interaction with the checkbox.",
       table: {
-        defaultValue: { summary: false },
+        defaultValue: {summary: false},
       },
     },
     required: {
       control: "boolean",
       description: "Marks the checkbox as required for form submission.",
       table: {
-        defaultValue: { summary: false },
+        defaultValue: {summary: false},
       },
     },
     name: {
@@ -63,14 +62,12 @@ See the [shadcn/ui Checkbox documentation](https://ui.shadcn.com/docs/components
     },
     value: {
       control: "text",
-      description:
-        "The value submitted with form data when the checkbox is checked.",
+      description: "The value submitted with form data when the checkbox is checked.",
     },
     // id is usually needed for label association
     id: {
       control: "text",
-      description:
-        "Unique identifier, often used with a label's `htmlFor` attribute.",
+      description: "Unique identifier, often used with a label's `htmlFor` attribute.",
     },
   },
 };
@@ -88,7 +85,7 @@ export const Basic: Story = {
       },
     },
   },
-  render: () => <Checkbox id="basic-checkbox" />, // Added id for potential label
+  render: () => <Checkbox id='basic-checkbox' />, // Added id for potential label
 };
 
 // Checked checkbox
@@ -103,7 +100,12 @@ export const Checked: Story = {
       },
     },
   },
-  render: (args) => <Checkbox {...args} id="checked-checkbox" />, // Added id
+  render: (args) => (
+    <Checkbox
+      {...args}
+      id='checked-checkbox'
+    />
+  ), // Added id
 };
 
 // Disabled checkbox
@@ -118,7 +120,12 @@ export const Disabled: Story = {
       },
     },
   },
-  render: (args) => <Checkbox {...args} id="disabled-checkbox" />, // Added id
+  render: (args) => (
+    <Checkbox
+      {...args}
+      id='disabled-checkbox'
+    />
+  ), // Added id
 };
 
 // Disabled and checked checkbox
@@ -134,7 +141,12 @@ export const DisabledChecked: Story = {
       },
     },
   },
-  render: (args) => <Checkbox {...args} id="disabled-checked-checkbox" />, // Added id
+  render: (args) => (
+    <Checkbox
+      {...args}
+      id='disabled-checked-checkbox'
+    />
+  ), // Added id
 };
 
 // With label
@@ -142,18 +154,16 @@ export const WithLabel: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Shows the common pattern of associating a checkbox with a label using `id` and `htmlFor` for accessibility.",
+        story: "Shows the common pattern of associating a checkbox with a label using `id` and `htmlFor` for accessibility.",
       },
     },
   },
   render: () => (
-    <div className="flex items-center gap-2">
-      <Checkbox id="terms" />
+    <div className='flex items-center gap-2'>
+      <Checkbox id='terms' />
       <label
-        htmlFor="terms"
-        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-      >
+        htmlFor='terms'
+        className='text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
         Accept terms and conditions
       </label>
     </div>
@@ -165,37 +175,36 @@ export const CheckboxGroup: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstrates grouping multiple related checkboxes together, each with its own label.",
+        story: "Demonstrates grouping multiple related checkboxes together, each with its own label.",
       },
     },
   },
   render: () => (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Checkbox id="email" defaultChecked />
+    <div className='space-y-3'>
+      <div className='flex items-center gap-2'>
+        <Checkbox
+          id='email'
+          defaultChecked
+        />
         <label
-          htmlFor="email"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
+          htmlFor='email'
+          className='text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
           Email notifications
         </label>
       </div>
-      <div className="flex items-center gap-2">
-        <Checkbox id="push" />
+      <div className='flex items-center gap-2'>
+        <Checkbox id='push' />
         <label
-          htmlFor="push"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
+          htmlFor='push'
+          className='text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
           Push notifications
         </label>
       </div>
-      <div className="flex items-center gap-2">
-        <Checkbox id="sms" />
+      <div className='flex items-center gap-2'>
+        <Checkbox id='sms' />
         <label
-          htmlFor="sms"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
+          htmlFor='sms'
+          className='text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
           SMS notifications
         </label>
       </div>
@@ -214,17 +223,19 @@ export const Error: Story = {
     },
   },
   render: () => (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-2">
-        <Checkbox id="error" aria-invalid="true" />
+    <div className='flex flex-col gap-1.5'>
+      <div className='flex items-center gap-2'>
+        <Checkbox
+          id='error'
+          aria-invalid='true'
+        />
         <label
-          htmlFor="error"
-          className="text-sm font-medium leading-none text-red-500 peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
+          htmlFor='error'
+          className='text-sm leading-none font-medium text-red-500 peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
           Required field
         </label>
       </div>
-      <p className="text-xs text-red-500">This field is required</p>
+      <p className='text-xs text-red-500'>This field is required</p>
     </div>
   ),
 };

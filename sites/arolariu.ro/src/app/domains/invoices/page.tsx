@@ -1,5 +1,3 @@
-/** @format */
-
 import {fetchUser} from "@/lib/actions/user/fetchUser";
 import type {Metadata} from "next";
 import RenderInvoiceDomainScreen from "./island";

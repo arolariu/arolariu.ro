@@ -1,6 +1,3 @@
-/** @format */
-
-import {SITE_URL} from "@/lib/utils.generic";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,12 +23,12 @@ export default function ForbiddenScreen(): React.JSX.Element {
         <h1 className='mb-4 inline bg-linear-to-r from-pink-400 to-red-600 bg-clip-text text-3xl font-medium text-transparent sm:text-4xl'>
           {t("title")}
         </h1>
-        <span className='mb-4 inline text-4xl font-black sm:text-4xl'> 😭 </span>
+        <span className='mb-4 inline text-4xl font-black sm:text-4xl'>😭</span>
         <p className='my-8 leading-relaxed'>{t("description")}</p>
       </article>
       <article className='mb-12 flex justify-center'>
         <Link
-          href={`${SITE_URL}/auth`}
+          href='/auth'
           className='inline-flex rounded border-0 bg-indigo-600 px-6 py-2 text-lg text-white hover:bg-indigo-700 focus:outline-hidden'>
           {t("callToAction")}
         </Link>

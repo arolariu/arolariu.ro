@@ -1,6 +1,6 @@
+import type {Meta, StoryObj} from "@storybook/react";
 import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import { Label, Switch } from "../dist";
+import {Label, Switch} from "../dist";
 
 const meta: Meta<typeof Switch> = {
   title: "Design System/Switch",
@@ -109,15 +109,17 @@ export const WithLabel: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "A Switch component accompanied by a Label, providing context for the toggle.",
+        story: "A Switch component accompanied by a Label, providing context for the toggle.",
       },
     },
   },
   render: (args) => (
-    <div className="flex items-center space-x-2">
-      <Switch id="airplane-mode" {...args} />
-      <Label htmlFor="airplane-mode">Airplane Mode</Label>
+    <div className='flex items-center space-x-2'>
+      <Switch
+        id='airplane-mode'
+        {...args}
+      />
+      <Label htmlFor='airplane-mode'>Airplane Mode</Label>
     </div>
   ),
 };
@@ -126,30 +128,26 @@ export const Controlled: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "An example of a controlled Switch where the checked state is managed by React state.",
+        story: "An example of a controlled Switch where the checked state is managed by React state.",
       },
     },
   },
   render: function ControlledSwitch() {
     const [checked, setChecked] = React.useState(false);
     return (
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center space-x-2">
+      <div className='flex flex-col gap-4'>
+        <div className='flex items-center space-x-2'>
           <Switch
-            id="controlled-switch"
+            id='controlled-switch'
             checked={checked}
             onCheckedChange={setChecked}
           />
-          <Label htmlFor="controlled-switch">{checked ? "On" : "Off"}</Label>
+          <Label htmlFor='controlled-switch'>{checked ? "On" : "Off"}</Label>
         </div>
-        <p className="text-sm text-neutral-500">
-          The switch is {checked ? "on" : "off"}
-        </p>
+        <p className='text-sm text-neutral-500'>The switch is {checked ? "on" : "off"}</p>
         <button
           onClick={() => setChecked(!checked)}
-          className="w-fit px-4 py-2 bg-neutral-900 text-white rounded-md dark:bg-neutral-50 dark:text-neutral-900"
-        >
+          className='w-fit rounded-md bg-neutral-900 px-4 py-2 text-white dark:bg-neutral-50 dark:text-neutral-900'>
           Toggle
         </button>
       </div>
@@ -164,27 +162,23 @@ export const FormExample: Story = {
         onSubmit={(e) => {
           e.preventDefault();
           const formData = new FormData(e.currentTarget);
-          alert(
-            `Form submitted! Marketing emails: ${
-              formData.get("marketing") ? "Yes" : "No"
-            }`,
-          );
+          alert(`Form submitted! Marketing emails: ${formData.get("marketing") ? "Yes" : "No"}`);
         }}
-        className="w-full max-w-sm space-y-4"
-      >
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <Switch id="marketing" name="marketing" defaultChecked />
-            <Label htmlFor="marketing">Receive marketing emails</Label>
+        className='w-full max-w-sm space-y-4'>
+        <div className='space-y-2'>
+          <div className='flex items-center space-x-2'>
+            <Switch
+              id='marketing'
+              name='marketing'
+              defaultChecked
+            />
+            <Label htmlFor='marketing'>Receive marketing emails</Label>
           </div>
-          <p className="text-sm text-neutral-500">
-            Get notified about new products, features, and more.
-          </p>
+          <p className='text-sm text-neutral-500'>Get notified about new products, features, and more.</p>
         </div>
         <button
-          type="submit"
-          className="px-4 py-2 bg-neutral-900 text-white rounded-md dark:bg-neutral-50 dark:text-neutral-900"
-        >
+          type='submit'
+          className='rounded-md bg-neutral-900 px-4 py-2 text-white dark:bg-neutral-50 dark:text-neutral-900'>
           Save preferences
         </button>
       </form>

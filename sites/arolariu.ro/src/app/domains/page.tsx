@@ -1,5 +1,3 @@
-/** @format */
-
 import {createMetadata} from "@/metadata";
 import {getLocale, getTranslations} from "next-intl/server";
 import type {Metadata} from "next/types";

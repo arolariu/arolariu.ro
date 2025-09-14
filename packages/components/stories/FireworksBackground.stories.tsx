@@ -1,6 +1,5 @@
-import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import { FireworksBackground } from "../dist";
+import type {Meta, StoryObj} from "@storybook/react";
+import {FireworksBackground} from "../dist";
 
 const meta: Meta<typeof FireworksBackground> = {
   title: "Design System/Backgrounds/Fireworks Background",
@@ -41,7 +40,7 @@ A custom component that renders an animated fireworks display using HTML canvas.
   },
   argTypes: {
     population: {
-      control: { type: "range", min: 0.5, max: 3, step: 0.1 },
+      control: {type: "range", min: 0.5, max: 3, step: 0.1},
       description: "Density of fireworks",
     },
     color: {
@@ -70,12 +69,10 @@ type Story = StoryObj<typeof FireworksBackground>;
 // Basic usage
 export const Default: Story = {
   render: () => (
-    <div className="w-[600px] h-[400px]">
+    <div className='h-[400px] w-[600px]'>
       <FireworksBackground>
-        <div className="relative z-10 flex items-center justify-center w-full h-full">
-          <h1 className="text-white text-3xl font-bold text-center">
-            Fireworks Background
-          </h1>
+        <div className='relative z-10 flex h-full w-full items-center justify-center'>
+          <h1 className='text-center text-3xl font-bold text-white'>Fireworks Background</h1>
         </div>
       </FireworksBackground>
     </div>
@@ -85,12 +82,10 @@ export const Default: Story = {
 // Customized fireworks
 export const CustomDensity: Story = {
   render: () => (
-    <div className="w-[600px] h-[400px]">
+    <div className='h-[400px] w-[600px]'>
       <FireworksBackground population={2}>
-        <div className="relative z-10 flex items-center justify-center w-full h-full">
-          <h1 className="text-white text-3xl font-bold text-center">
-            Higher Density Fireworks
-          </h1>
+        <div className='relative z-10 flex h-full w-full items-center justify-center'>
+          <h1 className='text-center text-3xl font-bold text-white'>Higher Density Fireworks</h1>
         </div>
       </FireworksBackground>
     </div>
@@ -100,17 +95,14 @@ export const CustomDensity: Story = {
 // Customized with specific colors and size settings
 export const CustomProperties: Story = {
   render: () => (
-    <div className="w-[600px] h-[400px]">
+    <div className='h-[400px] w-[600px]'>
       <FireworksBackground
-        color="#ff4500"
-        fireworkSize={{ min: 4, max: 8 }}
-        particleSize={{ min: 2, max: 6 }}
-        fireworkSpeed={{ min: 5, max: 10 }}
-      >
-        <div className="relative z-10 flex items-center justify-center w-full h-full">
-          <h1 className="text-white text-3xl font-bold text-center">
-            Custom Fireworks Properties
-          </h1>
+        color='#ff4500'
+        fireworkSize={{min: 4, max: 8}}
+        particleSize={{min: 2, max: 6}}
+        fireworkSpeed={{min: 5, max: 10}}>
+        <div className='relative z-10 flex h-full w-full items-center justify-center'>
+          <h1 className='text-center text-3xl font-bold text-white'>Custom Fireworks Properties</h1>
         </div>
       </FireworksBackground>
     </div>
@@ -120,16 +112,15 @@ export const CustomProperties: Story = {
 // With content overlay
 export const WithContent: Story = {
   render: () => (
-    <div className="w-[600px] h-[400px]">
+    <div className='h-[400px] w-[600px]'>
       <FireworksBackground>
-        <div className="relative z-10 flex flex-col items-center justify-center w-full h-full p-6">
-          <div className="bg-white/20 backdrop-blur-md p-6 rounded-xl text-center">
-            <h2 className="text-white text-2xl font-bold mb-4">Celebration!</h2>
-            <p className="text-white/90 mb-4">
-              This component creates a beautiful fireworks effect in the
-              background while keeping your content in focus.
+        <div className='relative z-10 flex h-full w-full flex-col items-center justify-center p-6'>
+          <div className='rounded-xl bg-white/20 p-6 text-center backdrop-blur-md'>
+            <h2 className='mb-4 text-2xl font-bold text-white'>Celebration!</h2>
+            <p className='mb-4 text-white/90'>
+              This component creates a beautiful fireworks effect in the background while keeping your content in focus.
             </p>
-            <button className="bg-white text-black px-4 py-2 rounded-md font-medium hover:bg-white/90 transition-colors">
+            <button className='rounded-md bg-white px-4 py-2 font-medium text-black transition-colors hover:bg-white/90'>
               Get Started
             </button>
           </div>

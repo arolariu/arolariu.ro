@@ -1,7 +1,6 @@
-/** @format */
-
 import logo from "@/app/logo.svg";
 import {COMMIT_SHA, SITE_NAME, TIMESTAMP} from "@/lib/utils.generic";
+import {RichText} from "@/presentation/Text";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
@@ -11,19 +10,11 @@ import {TbBrandGithub, TbBrandLinkedin} from "react-icons/tb";
 
 /**
  * The footer component.
+ * This component is used to display the footer of the website.
  * @returns The footer component.
  */
 export default function Footer(): React.JSX.Element {
   const t = useTranslations("Footer");
-  const description = t.rich("subtitle", {
-    br: (chunks: React.ReactNode) => (
-      <>
-        <br />
-        {chunks}
-      </>
-    ),
-  });
-
   const siteName = SITE_NAME.toUpperCase();
 
   return (
@@ -56,13 +47,24 @@ export default function Footer(): React.JSX.Element {
               <span className='ml-2 text-xl font-bold tracking-wide uppercase'>{siteName}</span>
             </Link>
             <div className='2xsm:px-4 2xsm:text-center mt-4 text-sm md:px-0 md:text-left'>
-              <p className='prose 2xsm:text-center text-pretty text-white md:text-start'>{description}</p>
+              <RichText
+                className='prose 2xsm:text-center text-pretty text-white md:text-start'
+                sectionKey='Footer'
+                textKey='subtitle'
+              />
             </div>
           </div>
           <div className='2xsm:flex-col 2xsm:text-center flex gap-8 lg:flex-row lg:text-left'>
             <div>
               <p className='cursor-default font-semibold tracking-wide text-white hover:text-yellow-500'>{t("navigation.subdomains")}</p>
               <ul className='mt-2 space-y-2'>
+                <li>
+                  <Link
+                    href='https://cv.arolariu.ro'
+                    className='text-deep-purple-50 hover:text-teal-accent-400 transition-colors duration-300'>
+                    <code>cv.arolariu.ro</code>
+                  </Link>
+                </li>
                 {SITE_NAME === "arolariu.ro" ? (
                   <li>
                     <Link
@@ -167,7 +169,7 @@ export default function Footer(): React.JSX.Element {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span>{t("builtOn") + " " + TIMESTAMP.split("T")[0]}</span>
+                <span>{`${t("builtOn")} ${TIMESTAMP.split("T")[0]}`}</span>
               </TooltipTrigger>
               <TooltipContent>
                 <code className='cursor-help'>{new Date(TIMESTAMP).toUTCString()}</code>

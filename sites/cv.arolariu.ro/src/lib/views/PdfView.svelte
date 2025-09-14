@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import Header from "@/presentation/Header.svelte";
   import {onMount} from "svelte";

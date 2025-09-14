@@ -1,36 +1,36 @@
-import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
+import type {Meta, StoryObj} from "@storybook/react";
 import {
+  CloudIcon,
+  CreditCardIcon,
+  DatabaseIcon,
+  GlobeIcon,
+  KeyIcon,
+  LogOutIcon,
+  PlusIcon,
+  ServerIcon,
+  SettingsIcon,
+  TrashIcon,
+  UserIcon,
+  UserPlusIcon,
+} from "lucide-react";
+import React from "react";
+import {
+  Button,
   DropdownMenu,
-  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuCheckboxItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
-  DropdownMenuSubTrigger,
   DropdownMenuSubContent,
-  Button,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
 } from "../dist";
-import {
-  UserIcon,
-  SettingsIcon,
-  LogOutIcon,
-  CreditCardIcon,
-  KeyIcon,
-  PlusIcon,
-  TrashIcon,
-  CloudIcon,
-  GlobeIcon,
-  ServerIcon,
-  DatabaseIcon,
-  UserPlusIcon,
-} from "lucide-react";
 
 const meta: Meta<typeof DropdownMenu> = {
   title: "Design System/Dropdown",
@@ -84,10 +84,9 @@ See the [shadcn/ui Dropdown Menu documentation](https://ui.shadcn.com/docs/compo
     },
     modal: {
       control: "boolean",
-      description:
-        "Determines if the menu behaves modally (prevents interaction outside).",
+      description: "Determines if the menu behaves modally (prevents interaction outside).",
       table: {
-        defaultValue: { summary: true },
+        defaultValue: {summary: true},
       },
     },
     dir: {
@@ -113,12 +112,12 @@ export const Basic: Story = {
     },
   },
   render: () => (
-    <div className="flex items-center justify-center p-10">
+    <div className='flex items-center justify-center p-10'>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline">Open Menu</Button>
+          <Button variant='outline'>Open Menu</Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
+        <DropdownMenuContent className='w-56'>
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>Profile</DropdownMenuItem>
@@ -136,36 +135,35 @@ export const WithIcons: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstrates adding icons (using lucide-react) and keyboard shortcuts to menu items.",
+        story: "Demonstrates adding icons (using lucide-react) and keyboard shortcuts to menu items.",
       },
     },
   },
   render: () => (
-    <div className="flex items-center justify-center p-10">
+    <div className='flex items-center justify-center p-10'>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline">My Account</Button>
+          <Button variant='outline'>My Account</Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
+        <DropdownMenuContent className='w-56'>
           <DropdownMenuItem>
-            <UserIcon className="mr-2 h-4 w-4" />
+            <UserIcon className='mr-2 h-4 w-4' />
             <span>Profile</span>
             <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <CreditCardIcon className="mr-2 h-4 w-4" />
+            <CreditCardIcon className='mr-2 h-4 w-4' />
             <span>Billing</span>
             <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <SettingsIcon className="mr-2 h-4 w-4" />
+            <SettingsIcon className='mr-2 h-4 w-4' />
             <span>Settings</span>
             <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
-            <LogOutIcon className="mr-2 h-4 w-4" />
+            <LogOutIcon className='mr-2 h-4 w-4' />
             <span>Log out</span>
             <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -180,8 +178,7 @@ export const WithCheckboxes: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Shows how to use \`<DropdownMenuCheckboxItem>\` for toggleable options, managing state with React hooks.",
+        story: "Shows how to use \`<DropdownMenuCheckboxItem>\` for toggleable options, managing state with React hooks.",
       },
     },
   },
@@ -191,30 +188,27 @@ export const WithCheckboxes: Story = {
     const [showPanel, setShowPanel] = React.useState(false);
 
     return (
-      <div className="flex items-center justify-center p-10">
+      <div className='flex items-center justify-center p-10'>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline">View Options</Button>
+            <Button variant='outline'>View Options</Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
+          <DropdownMenuContent className='w-56'>
             <DropdownMenuLabel>Appearance</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
               checked={showStatusBar}
-              onCheckedChange={setShowStatusBar}
-            >
+              onCheckedChange={setShowStatusBar}>
               Status Bar
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={showActivityBar}
-              onCheckedChange={setShowActivityBar}
-            >
+              onCheckedChange={setShowActivityBar}>
               Activity Bar
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={showPanel}
-              onCheckedChange={setShowPanel}
-            >
+              onCheckedChange={setShowPanel}>
               Panel
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
@@ -229,8 +223,7 @@ export const WithRadioItems: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Illustrates using \`<DropdownMenuRadioGroup>\` and \`<DropdownMenuRadioItem>\` for selecting one option from a set.",
+        story: "Illustrates using \`<DropdownMenuRadioGroup>\` and \`<DropdownMenuRadioItem>\` for selecting one option from a set.",
       },
     },
   },
@@ -238,24 +231,21 @@ export const WithRadioItems: Story = {
     const [position, setPosition] = React.useState("bottom");
 
     return (
-      <div className="flex items-center justify-center p-10">
+      <div className='flex items-center justify-center p-10'>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline">Panel Position</Button>
+            <Button variant='outline'>Panel Position</Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
+          <DropdownMenuContent className='w-56'>
             <DropdownMenuLabel>Panel Position</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup
               value={position}
-              onValueChange={setPosition}
-            >
-              <DropdownMenuRadioItem value="top">Top</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="right">Right</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="bottom">
-                Bottom
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="left">Left</DropdownMenuRadioItem>
+              onValueChange={setPosition}>
+              <DropdownMenuRadioItem value='top'>Top</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value='right'>Right</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value='bottom'>Bottom</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value='left'>Left</DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -275,46 +265,46 @@ export const WithSubMenus: Story = {
     },
   },
   render: () => (
-    <div className="flex items-center justify-center p-10">
+    <div className='flex items-center justify-center p-10'>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline">Deployment Options</Button>
+          <Button variant='outline'>Deployment Options</Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
+        <DropdownMenuContent className='w-56'>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
-            <PlusIcon className="mr-2 h-4 w-4" />
+            <PlusIcon className='mr-2 h-4 w-4' />
             <span>New Deployment</span>
           </DropdownMenuItem>
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
-              <CloudIcon className="mr-2 h-4 w-4" />
+              <CloudIcon className='mr-2 h-4 w-4' />
               <span>Cloud Provider</span>
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-48">
+            <DropdownMenuSubContent className='w-48'>
               <DropdownMenuItem>
-                <GlobeIcon className="mr-2 h-4 w-4" />
+                <GlobeIcon className='mr-2 h-4 w-4' />
                 <span>AWS</span>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <GlobeIcon className="mr-2 h-4 w-4" />
+                <GlobeIcon className='mr-2 h-4 w-4' />
                 <span>Google Cloud</span>
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <GlobeIcon className="mr-2 h-4 w-4" />
+                <GlobeIcon className='mr-2 h-4 w-4' />
                 <span>Azure</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                <ServerIcon className="mr-2 h-4 w-4" />
+                <ServerIcon className='mr-2 h-4 w-4' />
                 <span>Self-hosted</span>
               </DropdownMenuItem>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">
-            <TrashIcon className="mr-2 h-4 w-4" />
+          <DropdownMenuItem variant='destructive'>
+            <TrashIcon className='mr-2 h-4 w-4' />
             <span>Delete Deployment</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -334,30 +324,30 @@ export const ComplexExample: Story = {
     },
   },
   render: () => (
-    <div className="flex items-center justify-center p-10">
+    <div className='flex items-center justify-center p-10'>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button>
-            <SettingsIcon className="mr-2 h-4 w-4" />
+            <SettingsIcon className='mr-2 h-4 w-4' />
             <span>Settings</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-64">
+        <DropdownMenuContent className='w-64'>
           <DropdownMenuLabel>Configuration</DropdownMenuLabel>
           <DropdownMenuSeparator />
 
           <DropdownMenuGroup>
             <DropdownMenuItem>
-              <UserIcon className="mr-2 h-4 w-4" />
+              <UserIcon className='mr-2 h-4 w-4' />
               <span>Profile</span>
               <DropdownMenuShortcut>⌘P</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <CreditCardIcon className="mr-2 h-4 w-4" />
+              <CreditCardIcon className='mr-2 h-4 w-4' />
               <span>Subscription</span>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <KeyIcon className="mr-2 h-4 w-4" />
+              <KeyIcon className='mr-2 h-4 w-4' />
               <span>API Keys</span>
             </DropdownMenuItem>
           </DropdownMenuGroup>
@@ -368,12 +358,12 @@ export const ComplexExample: Story = {
 
           <DropdownMenuGroup>
             <DropdownMenuItem>
-              <UserPlusIcon className="mr-2 h-4 w-4" />
+              <UserPlusIcon className='mr-2 h-4 w-4' />
               <span>Invite Users</span>
             </DropdownMenuItem>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>
-                <DatabaseIcon className="mr-2 h-4 w-4" />
+                <DatabaseIcon className='mr-2 h-4 w-4' />
                 <span>Database</span>
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
@@ -396,8 +386,8 @@ export const ComplexExample: Story = {
           </DropdownMenuGroup>
 
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">
-            <TrashIcon className="mr-2 h-4 w-4" />
+          <DropdownMenuItem variant='destructive'>
+            <TrashIcon className='mr-2 h-4 w-4' />
             <span>Delete Account</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -411,28 +401,25 @@ export const ContextMenuExample: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Shows how to trigger a dropdown menu using the `onContextMenu` event (right-click) instead of a standard button click.",
+        story: "Shows how to trigger a dropdown menu using the `onContextMenu` event (right-click) instead of a standard button click.",
       },
     },
   },
   render: function ContextMenuExample() {
     return (
-      <div className="flex items-center justify-center p-10">
+      <div className='flex items-center justify-center p-10'>
         <DropdownMenu>
-          <DropdownMenuTrigger className="hidden" />
+          <DropdownMenuTrigger className='hidden' />
           <div
-            className="w-64 h-32 bg-neutral-100 rounded-md flex items-center justify-center dark:bg-neutral-800"
+            className='flex h-32 w-64 items-center justify-center rounded-md bg-neutral-100 dark:bg-neutral-800'
             onContextMenu={(e) => {
               e.preventDefault();
-              const button = e.currentTarget
-                .previousSibling as HTMLButtonElement;
+              const button = e.currentTarget.previousSibling as HTMLButtonElement;
               button?.click();
-            }}
-          >
+            }}>
             Right-click here
           </div>
-          <DropdownMenuContent className="w-64">
+          <DropdownMenuContent className='w-64'>
             <DropdownMenuItem>
               <span>View</span>
             </DropdownMenuItem>
@@ -445,7 +432,7 @@ export const ContextMenuExample: Story = {
               <DropdownMenuShortcut>⌘X</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">
+            <DropdownMenuItem variant='destructive'>
               <span>Delete</span>
               <DropdownMenuShortcut>⌫</DropdownMenuShortcut>
             </DropdownMenuItem>
@@ -467,12 +454,12 @@ export const InsetItems: Story = {
     },
   },
   render: () => (
-    <div className="flex items-center justify-center p-10">
+    <div className='flex items-center justify-center p-10'>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline">Options</Button>
+          <Button variant='outline'>Options</Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
+        <DropdownMenuContent className='w-56'>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>Regular item</DropdownMenuItem>
@@ -491,30 +478,31 @@ export const DisabledItems: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Illustrates how to disable individual menu items, checkbox items, and radio items using the `disabled` prop.",
+        story: "Illustrates how to disable individual menu items, checkbox items, and radio items using the `disabled` prop.",
       },
     },
   },
   render: () => (
-    <div className="flex items-center justify-center p-10">
+    <div className='flex items-center justify-center p-10'>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline">Actions</Button>
+          <Button variant='outline'>Actions</Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56">
+        <DropdownMenuContent className='w-56'>
           <DropdownMenuItem>Available Action</DropdownMenuItem>
           <DropdownMenuItem disabled>Disabled Action</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuCheckboxItem disabled checked>
+          <DropdownMenuCheckboxItem
+            disabled
+            checked>
             Disabled Checkbox
           </DropdownMenuCheckboxItem>
           <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup value="radio1">
-            <DropdownMenuRadioItem value="radio1">
-              Available Option
-            </DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="radio2" disabled>
+          <DropdownMenuRadioGroup value='radio1'>
+            <DropdownMenuRadioItem value='radio1'>Available Option</DropdownMenuRadioItem>
+            <DropdownMenuRadioItem
+              value='radio2'
+              disabled>
               Disabled Option
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>

@@ -1,5 +1,3 @@
-/** @format */
-
 import {cookies} from "next/headers";
 import {deleteCookie, getCookie, setCookie} from "./cookies.action";
 
