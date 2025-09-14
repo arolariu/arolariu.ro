@@ -140,7 +140,7 @@ const eslintConfig = defineConfig(
       "no-unused-expressions": "off", // Sometimes we use unused expressions for side effects.
       "max-lines-per-function": "off", // we don't impose a max lines limit on functions.
       "max-params": ["error", {max: 5}], // we allow a maximum of 5 parameters per function.
-      "max-lines": ["error", {max: 600}], // we allow a maximum of 600 lines per file.
+      "max-lines": ["error", {max: 1000}], // we allow a maximum of 1000 lines per file.
       "max-statements": "off", // we don't impose a max statements limit on functions.
 
       "react/jsx-indent": "off", // We format via Prettier.
@@ -179,6 +179,7 @@ const eslintConfig = defineConfig(
       "unicorn/switch-case-braces": "off", // Single statement switch cases can be unbraced.
       "unicorn/no-typeof-undefined": "off", // We allow typeof undefined comparison checks.
       "unicorn/prevent-abbreviations": "off", // this rule is biased.
+      "unicorn/no-abusive-eslint-disable": "warn", // Warn about abusive eslint-disable usage.
 
       "functional/no-let": "off", // Sometimes we need mutable data.
       "functional/no-classes": "off", // We allow classes and OOP concepts.

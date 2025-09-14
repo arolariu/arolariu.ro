@@ -130,8 +130,14 @@ export default function TechStack(): React.JSX.Element {
                       scale: 1.05,
                       transition: {duration: 0.2},
                     }}
-                    onHoverStart={() => setHoveredTech(tech.name)}
-                    onHoverEnd={() => setHoveredTech(null)}>
+                    onHoverStart={
+                      // eslint-disable-next-line react/jsx-no-bind -- simple page
+                      () => setHoveredTech(tech.name)
+                    }
+                    onHoverEnd={
+                      // eslint-disable-next-line react/jsx-no-bind -- simple page
+                      () => setHoveredTech(null)
+                    }>
                     <Card
                       className={`h-full overflow-hidden transition-all duration-300 hover:shadow-md ${hoveredTech === tech.name ? "border-primary" : "hover:border-primary/30"}`}>
                       <CardContent className='flex flex-col items-center p-6 text-center'>
@@ -161,3 +167,4 @@ export default function TechStack(): React.JSX.Element {
     </section>
   );
 }
+

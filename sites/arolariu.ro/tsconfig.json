@@ -21,6 +21,7 @@
     ]
   },
   "exclude": [
+    ".storybook/**",
     "node_modules"
   ],
   "include": [

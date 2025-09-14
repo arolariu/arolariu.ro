@@ -1,6 +1,25 @@
 import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
-export default function SubscriptionEmail({username}: Readonly<{username: string}>) {
+type Props = {
+  username: string;
+};
+
+const DEVELOPMENT_PROPS: Readonly<Props> = {
+  username: "testuser",
+};
+
+/**
+ * Subscription email template.
+ * @param username The username of the recipient.
+ * @returns The email template as a React JSX template.
+ */
+export default function SubscriptionEmail(props: Readonly<Props>) {
+  if (process.env.NODE_ENV === "development") {
+    props = DEVELOPMENT_PROPS;
+  }
+
+  const {username} = props;
+
   return (
     <Html>
       <Head>
@@ -33,7 +52,7 @@ export default function SubscriptionEmail({username}: Readonly<{username: string
             </Link>
             <Section>
               <Row>
-                <Text className='font-bold'>Hello {username ?? "there"}!</Text>
+                <Text className='font-bold'>{`Hello ${username ?? "there"}!`}</Text>
               </Row>
               <Row>
                 <Text>
@@ -89,3 +108,4 @@ export default function SubscriptionEmail({username}: Readonly<{username: string
     </Html>
   );
 }
+
