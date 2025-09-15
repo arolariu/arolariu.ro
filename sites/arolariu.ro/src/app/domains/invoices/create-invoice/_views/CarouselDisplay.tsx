@@ -9,41 +9,9 @@ import {
   CarouselPrevious,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useState, useSyncExternalStore} from "react";
+import {useEffect, useState} from "react";
 import MediaPreview from "../_components/MediaPreview";
 import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
-
-/**
- * Custom hook to get the current and total count of carousel items.
- * @param api The carousel API instance.
- * @returns An object containing the current slide index and total slide count.
- */
-function useCarouselSnapshot(api: CarouselApi | null) {
-  return useSyncExternalStore(
-    (onChange) => {
-      if (!api) {
-        return () => {};
-      }
-
-      const notify = () => onChange();
-      api.on("select", notify);
-      api.on("reInit", notify);
-      return () => {
-        api.off("select", notify);
-        api.off("reInit", notify);
-      };
-    },
-    () => {
-      if (!api) {
-        return {current: 1, count: 0};
-      }
-
-      const count = api.scrollSnapList().length;
-      const current = api.selectedScrollSnap() + 1;
-      return {current, count};
-    },
-  );
-}
 
 /**
  * Carousel display component for invoice scans.
@@ -51,7 +19,31 @@ function useCarouselSnapshot(api: CarouselApi | null) {
  */
 export default function CarouselDisplay(): React.JSX.Element | null {
   const [api, setApi] = useState<CarouselApi | null>(null);
-  const {current, count} = useCarouselSnapshot(api);
+  const [current, setCurrent] = useState(1);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!api) {
+      setCurrent(1);
+      setCount(0);
+      return;
+    }
+
+    const update = () => {
+      setCount(api.scrollSnapList().length);
+      setCurrent(api.selectedScrollSnap() + 1);
+    };
+
+    // initialize
+    update();
+    api.on("select", update);
+    api.on("reInit", update);
+
+    return () => {
+      api.off("select", update);
+      api.off("reInit", update);
+    };
+  }, [api]);
   const {scans} = useInvoiceCreator();
 
   if (scans.length === 0) {
