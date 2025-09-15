@@ -792,7 +792,7 @@
   "yaml.customTags": [],
   "yaml.disableAdditionalProperties": false,
   "yaml.disableDefaultProperties": false,
-  "yaml.extension.recommendations": "true",
+  "yaml.extension.recommendations": true,
   "yaml.format.bracketSpacing": true,
   "yaml.format.enable": true,
   "yaml.format.printWidth": 80,
