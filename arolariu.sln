@@ -1,42 +1,44 @@
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.6.33801.468
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11012.143 main
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sites", "sites", "{E2FEF08E-F7EE-4660-A42C-9D8BC5037052}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "api.arolariu.ro", "api.arolariu.ro", "{43EC0FDF-1BAE-4E8D-96AF-4965B3D3955B}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "about.arolariu.ro", "about.arolariu.ro", "{6B1480E8-688F-4DC2-8CB2-4FCD8322DB51}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs.arolariu.ro", "docs.arolariu.ro", "{515DC48E-C467-42DA-82C0-43BC1B8855EE}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1187C109-1E68-46E3-86FB-3ABB5FC50129}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{8521A553-FE75-45D8-8C39-5AC04A9F9102}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Core", "sites\api.arolariu.ro\src\Core\arolariu.Backend.Core.csproj", "{E6984367-2B9A-48AA-9D45-8BA72871153E}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Core.Auth", "sites\api.arolariu.ro\src\Core.Auth\arolariu.Backend.Core.Auth.csproj", "{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Domain.Invoices", "sites\api.arolariu.ro\src\Invoices\arolariu.Backend.Domain.Invoices.csproj", "{E85B9224-1256-4396-BF99-B94F8359F3E1}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Core.Tests", "sites\api.arolariu.ro\tests\arolariu.Backend.Core.Tests\arolariu.Backend.Core.Tests.csproj", "{3C562B2D-B1CB-4B86-B2E5-0FE29D37BCAA}"
-	ProjectSection(ProjectDependencies) = postProject
-		{6C25CE54-46CD-4ED9-9A9E-9DD94A4F938E} = {6C25CE54-46CD-4ED9-9A9E-9DD94A4F938E}
-		{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4} = {BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4}
-		{E6984367-2B9A-48AA-9D45-8BA72871153E} = {E6984367-2B9A-48AA-9D45-8BA72871153E}
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Domain.Tests", "sites\api.arolariu.ro\tests\arolariu.Backend.Domain.Tests\arolariu.Backend.Domain.Tests.csproj", "{119ABED5-14E7-46C1-A8E9-C2FAFAFFE6C2}"
-	ProjectSection(ProjectDependencies) = postProject
-		{E85B9224-1256-4396-BF99-B94F8359F3E1} = {E85B9224-1256-4396-BF99-B94F8359F3E1}
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "arolariu.Backend.Common", "sites\api.arolariu.ro\src\Common\arolariu.Backend.Common.csproj", "{6C25CE54-46CD-4ED9-9A9E-9DD94A4F938E}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BAD47DAD-82CB-4943-8706-F3B19B51CD09}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{15F6FC59-AAC4-54A0-792B-7B93FC8C81FD}"
 	ProjectSection(SolutionItems) = preProject
+		sites\api.arolariu.ro\.dockerignore = sites\api.arolariu.ro\.dockerignore
 		.editorconfig = .editorconfig
+		.filenesting.json = .filenesting.json
+		.gitignore = .gitignore
+		sites\api.arolariu.ro\Controllers_Breakpoints.xml = sites\api.arolariu.ro\Controllers_Breakpoints.xml
+		sites\api.arolariu.ro\Dockerfile = sites\api.arolariu.ro\Dockerfile
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sites", "sites", "{764265A3-F92B-2B65-AB15-F6A725BE5888}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "api.arolariu.ro", "api.arolariu.ro", "{96C5D728-50B5-84A8-2EE8-A51E81D65133}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{56B9566A-5DC1-5AE6-B61A-3D4881CCA276}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "arolariu.Backend.Common", "sites\api.arolariu.ro\src\Common\arolariu.Backend.Common.csproj", "{B114EC8D-7A16-887F-080F-ED90CE10FF59}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "arolariu.Backend.Core.Auth", "sites\api.arolariu.ro\src\Core.Auth\arolariu.Backend.Core.Auth.csproj", "{8CC13807-7648-5A91-A761-FF46AF5F16D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "arolariu.Backend.Core", "sites\api.arolariu.ro\src\Core\arolariu.Backend.Core.csproj", "{FEA8F32A-76AB-69C5-8C7A-EE7A033536D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "arolariu.Backend.Domain.Invoices", "sites\api.arolariu.ro\src\Invoices\arolariu.Backend.Domain.Invoices.csproj", "{85A9E228-2D4B-57C7-A712-AE5A4A972DE0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{8FD46565-B069-3AA7-5A3C-B95608CE873A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "arolariu.Backend.Core.Tests", "sites\api.arolariu.ro\tests\arolariu.Backend.Core.Tests\arolariu.Backend.Core.Tests.csproj", "{CD7B7AE6-14D4-BD72-9859-4EB283B6E3F1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B114EC8D-7A16-887F-080F-ED90CE10FF59} = {B114EC8D-7A16-887F-080F-ED90CE10FF59}
+		{8CC13807-7648-5A91-A761-FF46AF5F16D1} = {8CC13807-7648-5A91-A761-FF46AF5F16D1}
+		{FEA8F32A-76AB-69C5-8C7A-EE7A033536D9} = {FEA8F32A-76AB-69C5-8C7A-EE7A033536D9}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "arolariu.Backend.Domain.Tests", "sites\api.arolariu.ro\tests\arolariu.Backend.Domain.Tests\arolariu.Backend.Domain.Tests.csproj", "{CFF48AAE-5595-6496-9740-514FDCA22564}"
+	ProjectSection(ProjectDependencies) = postProject
+		{85A9E228-2D4B-57C7-A712-AE5A4A972DE0} = {85A9E228-2D4B-57C7-A712-AE5A4A972DE0}
 	EndProjectSection
 EndProject
 Global
@@ -45,48 +47,43 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E6984367-2B9A-48AA-9D45-8BA72871153E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E6984367-2B9A-48AA-9D45-8BA72871153E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E6984367-2B9A-48AA-9D45-8BA72871153E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E6984367-2B9A-48AA-9D45-8BA72871153E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E85B9224-1256-4396-BF99-B94F8359F3E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E85B9224-1256-4396-BF99-B94F8359F3E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E85B9224-1256-4396-BF99-B94F8359F3E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E85B9224-1256-4396-BF99-B94F8359F3E1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3C562B2D-B1CB-4B86-B2E5-0FE29D37BCAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3C562B2D-B1CB-4B86-B2E5-0FE29D37BCAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3C562B2D-B1CB-4B86-B2E5-0FE29D37BCAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3C562B2D-B1CB-4B86-B2E5-0FE29D37BCAA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{119ABED5-14E7-46C1-A8E9-C2FAFAFFE6C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{119ABED5-14E7-46C1-A8E9-C2FAFAFFE6C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{119ABED5-14E7-46C1-A8E9-C2FAFAFFE6C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{119ABED5-14E7-46C1-A8E9-C2FAFAFFE6C2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6C25CE54-46CD-4ED9-9A9E-9DD94A4F938E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6C25CE54-46CD-4ED9-9A9E-9DD94A4F938E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6C25CE54-46CD-4ED9-9A9E-9DD94A4F938E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6C25CE54-46CD-4ED9-9A9E-9DD94A4F938E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B114EC8D-7A16-887F-080F-ED90CE10FF59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B114EC8D-7A16-887F-080F-ED90CE10FF59}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B114EC8D-7A16-887F-080F-ED90CE10FF59}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B114EC8D-7A16-887F-080F-ED90CE10FF59}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8CC13807-7648-5A91-A761-FF46AF5F16D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8CC13807-7648-5A91-A761-FF46AF5F16D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8CC13807-7648-5A91-A761-FF46AF5F16D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8CC13807-7648-5A91-A761-FF46AF5F16D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FEA8F32A-76AB-69C5-8C7A-EE7A033536D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FEA8F32A-76AB-69C5-8C7A-EE7A033536D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FEA8F32A-76AB-69C5-8C7A-EE7A033536D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FEA8F32A-76AB-69C5-8C7A-EE7A033536D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85A9E228-2D4B-57C7-A712-AE5A4A972DE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85A9E228-2D4B-57C7-A712-AE5A4A972DE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85A9E228-2D4B-57C7-A712-AE5A4A972DE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85A9E228-2D4B-57C7-A712-AE5A4A972DE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD7B7AE6-14D4-BD72-9859-4EB283B6E3F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD7B7AE6-14D4-BD72-9859-4EB283B6E3F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD7B7AE6-14D4-BD72-9859-4EB283B6E3F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD7B7AE6-14D4-BD72-9859-4EB283B6E3F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CFF48AAE-5595-6496-9740-514FDCA22564}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFF48AAE-5595-6496-9740-514FDCA22564}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFF48AAE-5595-6496-9740-514FDCA22564}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFF48AAE-5595-6496-9740-514FDCA22564}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{43EC0FDF-1BAE-4E8D-96AF-4965B3D3955B} = {E2FEF08E-F7EE-4660-A42C-9D8BC5037052}
-		{6B1480E8-688F-4DC2-8CB2-4FCD8322DB51} = {E2FEF08E-F7EE-4660-A42C-9D8BC5037052}
-		{515DC48E-C467-42DA-82C0-43BC1B8855EE} = {E2FEF08E-F7EE-4660-A42C-9D8BC5037052}
-		{1187C109-1E68-46E3-86FB-3ABB5FC50129} = {43EC0FDF-1BAE-4E8D-96AF-4965B3D3955B}
-		{8521A553-FE75-45D8-8C39-5AC04A9F9102} = {43EC0FDF-1BAE-4E8D-96AF-4965B3D3955B}
-		{E6984367-2B9A-48AA-9D45-8BA72871153E} = {1187C109-1E68-46E3-86FB-3ABB5FC50129}
-		{BC0C3E67-E6F9-48EF-8173-C1CEB3ACA3E4} = {1187C109-1E68-46E3-86FB-3ABB5FC50129}
-		{E85B9224-1256-4396-BF99-B94F8359F3E1} = {1187C109-1E68-46E3-86FB-3ABB5FC50129}
-		{3C562B2D-B1CB-4B86-B2E5-0FE29D37BCAA} = {8521A553-FE75-45D8-8C39-5AC04A9F9102}
-		{119ABED5-14E7-46C1-A8E9-C2FAFAFFE6C2} = {8521A553-FE75-45D8-8C39-5AC04A9F9102}
-		{6C25CE54-46CD-4ED9-9A9E-9DD94A4F938E} = {1187C109-1E68-46E3-86FB-3ABB5FC50129}
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {69464FAA-8262-4FE4-9C8A-470CBE7146E1}
+		{96C5D728-50B5-84A8-2EE8-A51E81D65133} = {764265A3-F92B-2B65-AB15-F6A725BE5888}
+		{56B9566A-5DC1-5AE6-B61A-3D4881CCA276} = {96C5D728-50B5-84A8-2EE8-A51E81D65133}
+		{B114EC8D-7A16-887F-080F-ED90CE10FF59} = {56B9566A-5DC1-5AE6-B61A-3D4881CCA276}
+		{8CC13807-7648-5A91-A761-FF46AF5F16D1} = {56B9566A-5DC1-5AE6-B61A-3D4881CCA276}
+		{FEA8F32A-76AB-69C5-8C7A-EE7A033536D9} = {56B9566A-5DC1-5AE6-B61A-3D4881CCA276}
+		{85A9E228-2D4B-57C7-A712-AE5A4A972DE0} = {56B9566A-5DC1-5AE6-B61A-3D4881CCA276}
+		{8FD46565-B069-3AA7-5A3C-B95608CE873A} = {96C5D728-50B5-84A8-2EE8-A51E81D65133}
+		{CD7B7AE6-14D4-BD72-9859-4EB283B6E3F1} = {8FD46565-B069-3AA7-5A3C-B95608CE873A}
+		{CFF48AAE-5595-6496-9740-514FDCA22564} = {8FD46565-B069-3AA7-5A3C-B95608CE873A}
 	EndGlobalSection
 EndGlobal
