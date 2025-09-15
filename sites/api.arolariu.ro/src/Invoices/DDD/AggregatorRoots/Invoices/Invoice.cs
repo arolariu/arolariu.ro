@@ -39,10 +39,10 @@ public sealed class Invoice : NamedEntity<Guid>
 	public InvoiceCategory Category { get; set; } = InvoiceCategory.NOT_DEFINED;
 
 	/// <summary>
-	/// The invoice photo location.
+	/// The invoice scan location (URL).
 	/// </summary>
 	[JsonPropertyOrder(6)]
-	public required Uri PhotoLocation { get; set; } = new Uri("https://arolariu.ro");
+	public required Uri ScanLocation { get; set; } = new Uri("https://arolariu.ro");
 
 	/// <summary>
 	/// Payment information (currency, total amount, total tax).

@@ -58,7 +58,7 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
 		var operation = await client.AnalyzeDocumentFromUriAsync(
 			WaitUntil.Completed,
 			"prebuilt-receipt",
-			invoice.PhotoLocation)
+			invoice.ScanLocation)
 			.ConfigureAwait(false);
 
 		var result = operation.Value;

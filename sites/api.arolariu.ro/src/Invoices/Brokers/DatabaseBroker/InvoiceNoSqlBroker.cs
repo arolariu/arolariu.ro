@@ -51,7 +51,7 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 			entity.Property(i => i.Description).HasConversion<string>();
 			entity.Property(i => i.NumberOfUpdates).HasConversion<int>();
 			entity.Property(i => i.LastUpdatedBy).HasConversion<string>();
-			entity.Property(i => i.PhotoLocation).HasConversion<string>();
+			entity.Property(i => i.ScanLocation).HasConversion<string>();
 			entity.Property(i => i.MerchantReference).HasConversion<string>();
 			entity.Property(i => i.CreatedAt).HasConversion<DateTimeOffset>();
 			entity.Property(i => i.LastUpdatedAt).HasConversion<DateTimeOffset>();

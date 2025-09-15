@@ -415,6 +415,218 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		Merchant merchant,
 		ClaimsPrincipal principal);
+
+	/// <summary>
+	/// Creates a new invoice scan.
+	/// </summary>
+	/// <param name="invoiceProcessingService"></param>
+	/// <param name="httpContext"></param>
+	/// <param name="id"></param>
+	/// <param name="invoiceScanDto"></param>
+	/// <param name="principal"></param>
+	/// <returns></returns>
+	[SwaggerOperation(
+		Summary = "Creates a new invoice scan in the system.",
+		Description = "This request will create a new invoice scan in the Invoice Management System. " +
+		"This endpoint will validate that the input (Invoice Scan DTO) is valid, " +
+		"and then will perform a series of operations to onboard the invoice scan into the Invoice Management System.",
+		OperationId = nameof(CreateInvoiceScanAsync),
+		Tags = [EndpointNameTag])]
+	[SwaggerResponse(StatusCodes.Status201Created, "The invoice scan was created successfully in the system.", typeof(InvoiceScanDto))]
+	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice scan DTO (payload) is not valid. Please respect the request body.", typeof(ValidationProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to create a new invoice scan in the system.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status409Conflict, "The invoice scan could not be created due to a conflict (there is another invoice scan with the same id).", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The invoice scan could not be created due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice scan could not be created due to an internal service error.", typeof(ProblemDetails))]
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+	[Authorize]
+	internal static partial Task<IResult> CreateInvoiceScanAsync(
+		IInvoiceProcessingService invoiceProcessingService,
+		IHttpContextAccessor httpContext,
+		Guid id,
+		InvoiceScanDto invoiceScanDto,
+		ClaimsPrincipal principal);
+
+	/// <summary>
+	/// Retrieves a specific invoice scan.
+	/// </summary>
+	/// <param name="invoiceProcessingService"></param>
+	/// <param name="httpContext"></param>
+	/// <param name="id"></param>
+	/// <param name="principal"></param>
+	/// <returns></returns>
+	[SwaggerOperation(
+		Summary = "Retrieves a specific invoice scan from the system.",
+		Description = "Retrieves a specific invoice scan from the Invoice Management System. " +
+		"If the invoice scan identifier passed into the route is valid, the server will retrieve the invoice scan, given that the user is allowed to see this invoice scan.",
+		OperationId = nameof(RetrieveInvoiceScanAsync),
+		Tags = [EndpointNameTag])]
+	[SwaggerResponse(StatusCodes.Status200OK, "The invoice scan was retrieved successfully from the system.", typeof(InvoiceScanDto))]
+	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice scan identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access this invoice scan.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The invoice scan could not be retrieved due to the invoice scan not being found.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice scan could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+	[Authorize]
+	internal static partial Task<IResult> RetrieveInvoiceScanAsync(
+		IInvoiceProcessingService invoiceProcessingService,
+		IHttpContextAccessor httpContext,
+		Guid id,
+		ClaimsPrincipal principal);
+
+	/// <summary>
+	/// Updates a specific invoice scan.
+	/// </summary>
+	/// <param name="invoiceProcessingService"></param>
+	/// <param name="httpContext"></param>
+	/// <param name="id"></param>
+	/// <param name="invoiceScanDto"></param>
+	/// <param name="principal"></param>
+	/// <returns></returns>
+	[SwaggerOperation(
+		Summary = "Updates a specific invoice scan in the system.",
+		Description = "This route will allow you to updates a specific invoice scan from the Invoice Managemnet System.",
+		OperationId = nameof(UpdateInvoiceScanAsync),
+		Tags = [EndpointNameTag])]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The invoice scan was updated successfully.", typeof(InvoiceScanDto))]
+	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice scan information is not valid (please respect the invoice scan schema).", typeof(ValidationProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The invoice scan could not be updated due to the invoice scan not being found.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice scan could not be updated due to an internal service error.", typeof(ProblemDetails))]
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+	[Authorize]
+	internal static partial Task<IResult> UpdateInvoiceScanAsync(
+		IInvoiceProcessingService invoiceProcessingService,
+		IHttpContextAccessor httpContext,
+		Guid id,
+		InvoiceScanDto invoiceScanDto,
+		ClaimsPrincipal principal);
+
+	/// <summary>
+	/// Deletes a specific invoice scan.
+	/// </summary>
+	/// <param name="invoiceProcessingService"></param>
+	/// <param name="httpContext"></param>
+	/// <param name="id"></param>
+	/// <param name="principal"></param>
+	/// <returns></returns>
+	[SwaggerOperation(
+		Summary = "Deletes a specific invoice scan from the system.",
+		Description = "Deletes a specific invoice scan from the Invoice Management System. " +
+		"If the invoice scan identifier passed to the route is valid, the server will delete the invoice scan, given that the user is allowed to delete this invoice scan.",
+		OperationId = nameof(DeleteInvoiceScanAsync),
+		Tags = [EndpointNameTag])]
+	[SwaggerResponse(StatusCodes.Status204NoContent, "The invoice scan was deleted successfully.")]
+	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice scan identifier is not valid.", typeof(ValidationProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The invoice scan could not be deleted due to the invoice scan not being found.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice scan could not be deleted due to an internal service error.", typeof(ProblemDetails))]
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+	[Authorize]
+	internal static partial Task<IResult> DeleteInvoiceScanAsync(
+		IInvoiceProcessingService invoiceProcessingService,
+		IHttpContextAccessor httpContext,
+		Guid id,
+		ClaimsPrincipal principal);
+
+	/// <summary>
+	/// Retrieves the metadata from a specific invoice.
+	/// </summary>
+	/// <param name="invoiceProcessingService"></param>
+	/// <param name="httpContext"></param>
+	/// <param name="id"></param>
+	/// <param name="principal"></param>
+	/// <returns></returns>
+	[SwaggerOperation(
+		Summary = "Retrieves the metadata from a specific invoice in the system.",
+		Description = "Retrieves the metadata from a specific invoice in the Invoice Management System. " +
+		"If the invoice identifier passed to the route is valid, the server will retrieve the metadata from the invoice, given that the user is allowed to see the metadata.",
+		OperationId = nameof(RetrieveInvoiceMetadataAsync),
+		Tags = [EndpointNameTag])]
+	[SwaggerResponse(StatusCodes.Status200OK, "The metadata was retrieved successfully from the invoice.", typeof(InvoiceMetadataDto))]
+	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access the metadata from this invoice.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The metadata could not be retrieved due to the invoice not being found.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The metadata could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+	[Authorize]
+	internal static partial Task<IResult> RetrieveInvoiceMetadataAsync(
+		IInvoiceProcessingService invoiceProcessingService,
+		IHttpContextAccessor httpContext,
+		Guid id,
+		ClaimsPrincipal principal);
+
+	/// <summary>
+	/// Patches the metadata from a specific invoice.
+	/// </summary>
+	/// <param name="invoiceProcessingService"></param>
+	/// <param name="httpContext"></param>
+	/// <param name="id"></param>
+	/// <param name="invoiceMetadataPatch"></param>
+	/// <param name="principal"></param>
+	/// <returns></returns>
+	[SwaggerOperation(
+		Summary = "Patches the metadata from a specific invoice in the system.",
+		Description = "Patches the metadata from a specific invoice in the Invoice Management System. " +
+		"If the invoice identifier passed to the route is valid, the server will patch the metadata from the invoice, given that the user is allowed to update the metadata.",
+		OperationId = nameof(PatchInvoiceMetadataAsync),
+		Tags = [EndpointNameTag])]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The metadata was patched successfully in the invoice.", typeof(InvoiceMetadataDto))]
+	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The metadata could not be patched due to the invoice not being found.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The metadata could not be patched due to an internal service error.", typeof(ProblemDetails))]
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+	[Authorize]
+	internal static partial Task<IResult> PatchInvoiceMetadataAsync(
+		IInvoiceProcessingService invoiceProcessingService,
+		IHttpContextAccessor httpContext,
+		Guid id,
+		IDictionary<string, string> invoiceMetadataPatch,
+		ClaimsPrincipal principal);
+
+	/// <summary>
+	/// Deletes specific metadata keys from a specific invoice.
+	/// </summary>
+	/// <param name="invoiceProcessingService"></param>
+	/// <param name="httpContext"></param>
+	/// <param name="id"></param>
+	/// <param name="metadataKeys"></param>
+	/// <param name="principal"></param>
+	/// <returns></returns>
+	[SwaggerOperation(
+		Summary = "Deletes specific metadata keys from a specific invoice in the system.",
+		Description = "Deletes specific metadata keys from a specific invoice in the Invoice Management System. " +
+		"If the invoice identifier passed to the route is valid, the server will delete the metadata keys from the invoice, given that the user is allowed to update the metadata.",
+		OperationId = nameof(DeleteInvoiceMetadataAsync),
+		Tags = [EndpointNameTag])]
+	[SwaggerResponse(StatusCodes.Status204NoContent, "The metadata keys were deleted successfully from the invoice.")]
+	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The metadata keys could not be deleted due to the invoice not being found.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The metadata keys could not be deleted due to an internal service error.", typeof(ProblemDetails))]
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+	[Authorize]
+	internal static partial Task<IResult> DeleteInvoiceMetadataAsync(
+		IInvoiceProcessingService invoiceProcessingService,
+		IHttpContextAccessor httpContext,
+		Guid id,
+		IEnumerable<string> metadataKeys,
+		ClaimsPrincipal principal);
 	#endregion
 
 	#region CRUD operations for the Merchant Standard Endpoints

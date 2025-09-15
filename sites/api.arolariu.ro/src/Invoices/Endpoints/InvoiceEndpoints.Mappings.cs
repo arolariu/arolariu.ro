@@ -119,6 +119,7 @@ public static partial class InvoiceEndpoints
 
 		router
 			.MapDelete("/invoices/{id}/products", RemoveProductFromInvoiceAsync)
+			.Accepts<string>("application/json")
 			.Produces<Invoice>(StatusCodes.Status204NoContent)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -187,7 +188,7 @@ public static partial class InvoiceEndpoints
 			.WithOpenApi();
 
 		router
-			.MapPatch("/invoices/{id}/merchant", UpdateMerchantInInvoiceAsync)
+			.MapPut("/invoices/{id}/merchant", UpdateMerchantInInvoiceAsync)
 			.Accepts<Merchant>("application/json")
 			.Produces<Invoice>(StatusCodes.Status202Accepted)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
@@ -197,6 +198,105 @@ public static partial class InvoiceEndpoints
 			.ProducesProblem(StatusCodes.Status429TooManyRequests)
 			.ProducesProblem(StatusCodes.Status500InternalServerError)
 			.WithName(nameof(UpdateMerchantInInvoiceAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapPost("/invoices/{id}/scan", CreateInvoiceScanAsync)
+			.Accepts<InvoiceScanDto>("application/json")
+			.Produces<Invoice>(StatusCodes.Status201Created)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status409Conflict)
+			.ProducesProblem(StatusCodes.Status413PayloadTooLarge)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(CreateInvoiceScanAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapGet("/invoices/{id}/scan", RetrieveInvoiceScanAsync)
+			.Produces<InvoiceScanDto>(StatusCodes.Status200OK)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status409Conflict)
+			.ProducesProblem(StatusCodes.Status413PayloadTooLarge)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(RetrieveInvoiceScanAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapPut("/invoices/{id}/scan", UpdateInvoiceScanAsync)
+			.Accepts<InvoiceScanDto>("application/json")
+			.Produces<Invoice>(StatusCodes.Status202Accepted)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(UpdateInvoiceScanAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapDelete("/invoices/{id}/scan", DeleteInvoiceScanAsync)
+			.Produces<Invoice>(StatusCodes.Status204NoContent)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(DeleteInvoiceScanAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapGet("/invoices/{id}/metadata", RetrieveInvoiceMetadataAsync)
+			.Produces<Dictionary<string, string>>(StatusCodes.Status200OK)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(RetrieveInvoiceMetadataAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapPatch("/invoices/{id}/metadata", PatchInvoiceMetadataAsync)
+			.Accepts<Dictionary<string, string>>("application/json")
+			.Produces<Invoice>(StatusCodes.Status202Accepted)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(PatchInvoiceMetadataAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
+			.MapDelete("/invoices/{id}/metadata", DeleteInvoiceMetadataAsync)
+			.Accepts<IEnumerable<string>>("application/json")
+			.Produces<Invoice>(StatusCodes.Status204NoContent)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(DeleteInvoiceMetadataAsync))
 			.RequireAuthorization()
 			.WithOpenApi();
 	}
