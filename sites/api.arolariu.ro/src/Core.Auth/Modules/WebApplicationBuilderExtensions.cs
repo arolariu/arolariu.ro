@@ -8,8 +8,6 @@ using arolariu.Backend.Common.Options;
 using arolariu.Backend.Core.Auth.Brokers;
 using arolariu.Backend.Core.Auth.Models;
 
-using Azure.Identity;
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
