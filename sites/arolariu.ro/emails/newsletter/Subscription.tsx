@@ -15,6 +15,7 @@ const DEVELOPMENT_PROPS: Readonly<Props> = {
  */
 export default function SubscriptionEmail(props: Readonly<Props>) {
   if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-param-reassign -- dev mode only
     props = DEVELOPMENT_PROPS;
   }
 

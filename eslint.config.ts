@@ -28,7 +28,14 @@ const eslintConfig = defineConfig(
   {
     name: "[@arolariu/website]",
     files: ["sites/arolariu.ro/**/*.{ts,tsx}"],
-    ignores: ["**/node_modules/**", "**/*.config.{js,ts}", "**/*.{test,spec,stories}.{ts,tsx}", "**/.next/**", "**/out/**"],
+    ignores: [
+      "**/node_modules/**",
+      "**/.storybook/**",
+      "**/*.config.{js,ts}",
+      "**/*.{test,spec,stories}.{ts,tsx}",
+      "**/.next/**",
+      "**/out/**",
+    ],
     languageOptions: {
       ecmaVersion: "latest",
       parser: tseslint.parser,
@@ -566,4 +573,3 @@ eslintConfig.forEach((config) => {
 });
 
 export default eslintConfig;
-

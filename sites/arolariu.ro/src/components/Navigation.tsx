@@ -239,10 +239,8 @@ export function MobileNavigation(): React.JSX.Element {
                   key={`mobile-${item.label}`}
                   item={item}
                   isOpen={openStates[item.label]}
-                  onToggle={
-                    // eslint-disable-next-line react/jsx-no-bind -- simple page
-                    () => toggleItem(item.label)
-                  }
+                  // eslint-disable-next-line react/jsx-no-bind -- simple page
+                  onToggle={() => toggleItem(item.label)}
                 />
               ))}
             </ul>
