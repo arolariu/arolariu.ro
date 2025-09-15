@@ -13,16 +13,15 @@ RUN addgroup --system --gid 1001 nodejs && \
 # Stage 1: Install dependencies
 FROM base AS deps
 WORKDIR /app
-COPY package.json yarn.lock ./
-RUN yarn config set nodeLinker node-modules && \
-      yarn install --immutable
+COPY package.json ./
+RUN npm install
 
 # Stage 2: Build the application
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN yarn build
+RUN npm run build
 
 # Stage 3: Prepare the production image
 FROM base AS runner
