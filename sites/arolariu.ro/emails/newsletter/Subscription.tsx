@@ -56,16 +56,16 @@ export default function SubscriptionEmail(props: Readonly<Props>) {
               </Row>
               <Row>
                 <Text>
-                  You've been subscribed to the <code className='font-mono'>arolariu.ro</code> newsletter! 🎉🎉
+                  You&apos;ve been subscribed to the <code className='font-mono'>arolariu.ro</code> newsletter! 🎉🎉
                 </Text>
                 <Text>
-                  You'll receive updates on new events, articles, and other interesting updates to the platform. The cadence of these
+                  You&apos;ll receive updates on new events, articles, and other interesting updates to the platform. The cadence of these
                   e-mails should be somewhere between 1 to 2 e-mails per calendar year quarter.
                 </Text>
               </Row>
               <Row>
                 <Text>
-                  If you have any questions or concerns, please don't hesitate to contact the author of the platform at
+                  If you have any questions or concerns, please don&apos;t hesitate to contact the author of the platform at
                   <Link href='mailto:admin@arolariu.ro'> admin@arolariu.ro</Link>.
                 </Text>
               </Row>

@@ -22,6 +22,7 @@
   },
   "exclude": [
     ".storybook/**",
+    "**/*.{test,stories}.{ts,tsx}",
     "node_modules"
   ],
   "include": [

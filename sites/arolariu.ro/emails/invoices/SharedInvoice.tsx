@@ -1,10 +1,14 @@
 import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
 type Props = {
+  fromUsername: string;
+  toUsername: string;
   identifier: string;
 };
 
 const DEVELOPMENT_PROPS: Readonly<Props> = {
+  fromUsername: "testuser",
+  toUsername: "recipientuser",
   identifier: "0123-4567-8901",
 };
 
@@ -18,7 +22,7 @@ export default function SharedInvoice(props: Readonly<Props>) {
     props = DEVELOPMENT_PROPS;
   }
 
-  const {identifier} = props;
+  const {fromUsername, toUsername, identifier} = props;
 
   return (
     <Html>
@@ -50,10 +54,10 @@ export default function SharedInvoice(props: Readonly<Props>) {
             </Link>
             <Section>
               <Row>
-                <Text className='font-bold'>{`Hello there, ${props.identifier}`}</Text>
+                <Text className='font-bold'>{`Hello there, ${toUsername}`}</Text>
               </Row>
               <Row>
-                <Text>Somebody has shared an invoice with you! 🎉🎉</Text>
+                <Text>{`${fromUsername} has shared an invoice with you! 🎉🎉`}</Text>
                 <Text>
                   You can check it out by{" "}
                   <Link href={`https://arolariu.ro/domains/invoices/view-invoice/${identifier}`}>clicking here</Link>.

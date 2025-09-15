@@ -31,7 +31,7 @@ export default function InvoiceFeedback(props: Readonly<Props>) {
   return (
     <Html>
       <Head>
-        <title>{`arolariu.ro | Feedback submitted!`}</title>
+        <title>arolariu.ro | Feedback submitted!</title>
         <Font
           fontFamily='Caudex'
           fallbackFontFamily='Verdana'

@@ -13,7 +13,7 @@ const DEVELOPMENT_PROPS: Readonly<Props> = {
 /**
  * This email template will be sent when an invoice has been deleted.
  * @param username The username of the recipient.
- * @param invoiceId The ID of the deleted invoice.
+ * @param invoiceId The ID of the invoice that will be soft-deleted.
  * @returns The email template as a React JSX template.
  */
 export default function DeletedInvoice(props: Readonly<Props>) {
