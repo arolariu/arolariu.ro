@@ -51,7 +51,6 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 			entity.Property(i => i.Description).HasConversion<string>();
 			entity.Property(i => i.NumberOfUpdates).HasConversion<int>();
 			entity.Property(i => i.LastUpdatedBy).HasConversion<string>();
-			entity.Property(i => i.Scan).HasConversion<string>();
 			entity.Property(i => i.MerchantReference).HasConversion<string>();
 			entity.Property(i => i.CreatedAt).HasConversion<DateTimeOffset>();
 			entity.Property(i => i.LastUpdatedAt).HasConversion<DateTimeOffset>();
@@ -114,9 +113,9 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 				.ToJsonProperty("Description")
 				.HasConversion<string>();
 
-				recipes.Property(recipe => recipe.Duration)
-				.ToJsonProperty("Duration")
-				.HasConversion<TimeOnly>();
+				recipes.Property(recipe => recipe.ApproximateTotalDuration)
+				.ToJsonProperty("ApproximateTotalDuration")
+				.HasConversion<int>();
 
 				recipes.Property(recipe => recipe.Complexity)
 				.ToJsonProperty("Complexity")
@@ -124,7 +123,7 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 
 				recipes.Property(recipe => recipe.Ingredients)
 				.ToJsonProperty("Ingredients")
-				.HasConversion(new ValueConverterForIEnumerableOf<Product>());
+				.HasConversion(new ValueConverterForIEnumerableOf<string>());
 
 				recipes.Property(recipe => recipe.ReferenceForMoreDetails)
 				.ToJsonProperty("ReferenceForMoreDetails")

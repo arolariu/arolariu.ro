@@ -29,7 +29,7 @@ public partial class InvoiceProcessingService
 
 	private delegate Task<IEnumerable<Merchant>> CallbackFunctionForTasksWithMerchantListReturn();
 
-	private delegate Task<IDictionary<string, string>> CallbackFunctionForTasksWithMetadataReturn();
+	private delegate Task<IDictionary<string, object>> CallbackFunctionForTasksWithMetadataReturn();
 
 	private delegate Task<InvoiceScan> CallbackFunctionForTasksWithInvoiceScanReturn();
 	#endregion
@@ -231,7 +231,7 @@ public partial class InvoiceProcessingService
 		}
 	}
 
-	private async Task<IDictionary<string, string>> TryCatchAsync(CallbackFunctionForTasksWithMetadataReturn callbackFunction)
+	private async Task<IDictionary<string, object>> TryCatchAsync(CallbackFunctionForTasksWithMetadataReturn callbackFunction)
 	{
 		try
 		{

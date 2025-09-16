@@ -78,7 +78,7 @@ public sealed class Invoice : NamedEntity<Guid>
 	/// </summary>
 	[JsonPropertyOrder(11)]
 	[SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Set is only exposed for tests.")]
-	public IDictionary<string, string> AdditionalMetadata { get; set; } = new Dictionary<string, string>();
+	public IDictionary<string, object> AdditionalMetadata { get; set; } = new Dictionary<string, object>();
 
 	/// <summary>
 	/// Creates a new instance of the Invoice with default values.
@@ -94,7 +94,7 @@ public sealed class Invoice : NamedEntity<Guid>
 			Scan = InvoiceScan.Default(),
 			PaymentInformation = new PaymentInformation(),
 			MerchantReference = Guid.Empty,
-			AdditionalMetadata = new Dictionary<string, string>(),
+			AdditionalMetadata = new Dictionary<string, object>(),
 		};
 	}
 
@@ -126,7 +126,7 @@ public sealed class Invoice : NamedEntity<Guid>
 
 		if (partialUpdates.AdditionalMetadata is not null && partialUpdates.AdditionalMetadata.Count > 0)
 		{
-			newInvoice.AdditionalMetadata = new Dictionary<string, string>(original.AdditionalMetadata);
+			newInvoice.AdditionalMetadata = new Dictionary<string, object>(original.AdditionalMetadata);
 			foreach (var (key, value) in partialUpdates.AdditionalMetadata)
 			{
 				newInvoice.AdditionalMetadata[key] = value;

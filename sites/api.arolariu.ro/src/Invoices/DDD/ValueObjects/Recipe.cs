@@ -4,8 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-
 /// <summary>
 /// Recipe model.
 /// </summary>
@@ -25,7 +23,7 @@ public sealed record Recipe
 	/// <summary>
 	/// The recipe estimated duration.
 	/// </summary>
-	public TimeOnly Duration { get; set; } = new TimeOnly(0, 0, 0);
+	public int ApproximateTotalDuration { get; set; } = -1;
 
 	/// <summary>
 	/// The recipe complexity.
@@ -35,7 +33,7 @@ public sealed record Recipe
 	/// <summary>
 	/// The recipe ingredients.
 	/// </summary>
-	public ICollection<Product> Ingredients { get; init; } = new List<Product>();
+	public ICollection<string> Ingredients { get; init; } = new List<string>();
 
 	/// <summary>
 	/// The recipe learn more address.
@@ -47,18 +45,18 @@ public sealed record Recipe
 	/// </summary>
 	/// <param name="name"></param>
 	/// <param name="description"></param>
-	/// <param name="duration"></param>
+	/// <param name="approximateTotalDuration"></param>
 	/// <param name="complexity"></param>
 	/// <param name="ingredients"></param>
 	/// <param name="referenceForMoreDetails"></param>
 	public Recipe(
-		string name, string description, TimeOnly duration,
-		RecipeComplexity complexity, ICollection<Product> ingredients,
+		string name, string description, int approximateTotalDuration,
+		RecipeComplexity complexity, ICollection<string> ingredients,
 		Uri referenceForMoreDetails) : this()
 	{
 		Name = name;
 		Description = description;
-		Duration = duration;
+		ApproximateTotalDuration = approximateTotalDuration;
 		Complexity = complexity;
 		Ingredients = ingredients;
 		ReferenceForMoreDetails = referenceForMoreDetails;
@@ -71,9 +69,9 @@ public sealed record Recipe
 	{
 		Name = string.Empty;
 		Description = string.Empty;
-		Duration = new TimeOnly(0, 0, 0);
+		ApproximateTotalDuration = -1;
 		Complexity = RecipeComplexity.UNKNOWN;
-		Ingredients = new List<Product>();
+		Ingredients = new List<string>();
 		ReferenceForMoreDetails = new Uri("https://arolariu.ro");
 	}
 }

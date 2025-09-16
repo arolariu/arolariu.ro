@@ -103,7 +103,7 @@ public static partial class InvoiceEndpoints
 
 		router // Delete a specific invoice, given its identifier.
 			.MapDelete("/invoices/{id}", DeleteInvoiceAsync)
-			.Produces<Invoice>(StatusCodes.Status204NoContent)
+			.Produces(StatusCodes.Status204NoContent)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
@@ -301,7 +301,7 @@ public static partial class InvoiceEndpoints
 		router // Update the invoice metadata for a given invoice.
 			.MapPatch("/invoices/{id}/metadata", PatchInvoiceMetadataAsync)
 			.Accepts<Dictionary<string, string>>("application/json")
-			.Produces(StatusCodes.Status202Accepted)
+			.Produces<Dictionary<string, string>>(StatusCodes.Status202Accepted)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status403Forbidden)

@@ -188,7 +188,7 @@ public interface IInvoiceProcessingService
 	/// <param name="invoiceIdentifier"></param>
 	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
-	public Task AddMetadataToInvoice(IDictionary<string, string> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null);
+	public Task AddMetadataToInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null);
 	#endregion
 
 	#region Update Invoice Metadata API
@@ -199,7 +199,7 @@ public interface IInvoiceProcessingService
 	/// <param name="invoiceIdentifier"></param>
 	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
-	public Task<IDictionary<string, string>> UpdateMetadataOnInvoice(IDictionary<string, string> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null);
+	public Task<IDictionary<string, object>> UpdateMetadataOnInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null);
 	#endregion
 
 	#region Get Invoice Metadata API
@@ -209,7 +209,7 @@ public interface IInvoiceProcessingService
 	/// <param name="invoiceIdentifier"></param>
 	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
-	public Task<IDictionary<string, string>> GetMetadataFromInvoice(Guid invoiceIdentifier, Guid? userIdentifier = null);
+	public Task<IDictionary<string, object>> GetMetadataFromInvoice(Guid invoiceIdentifier, Guid? userIdentifier = null);
 	#endregion
 
 	#region Delete Invoice Metadata API

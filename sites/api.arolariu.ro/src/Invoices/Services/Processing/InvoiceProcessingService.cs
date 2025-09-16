@@ -371,7 +371,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
 	#region Add Invoice Metadata API
 	/// <inheritdoc/>
-	public async Task AddMetadataToInvoice(IDictionary<string, string> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null) =>
+	public async Task AddMetadataToInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(AddMetadataToInvoice));
@@ -392,7 +392,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
 	#region Update Invoice Metadata API
 	/// <inheritdoc/>
-	public async Task<IDictionary<string, string>> UpdateMetadataOnInvoice(IDictionary<string, string> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null) =>
+	public async Task<IDictionary<string, object>> UpdateMetadataOnInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMetadataOnInvoice));
@@ -414,7 +414,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
 	#region Get Invoice Metadata API
 	/// <inheritdoc/>
-	public async Task<IDictionary<string, string>> GetMetadataFromInvoice(Guid invoiceIdentifier, Guid? userIdentifier = null) =>
+	public async Task<IDictionary<string, object>> GetMetadataFromInvoice(Guid invoiceIdentifier, Guid? userIdentifier = null) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(GetMetadataFromInvoice));

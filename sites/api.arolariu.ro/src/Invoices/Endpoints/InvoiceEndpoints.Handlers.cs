@@ -37,7 +37,7 @@ public static partial class InvoiceEndpoints
 				.CreateInvoice(invoice)
 				.ConfigureAwait(false);
 
-			return TypedResults.Created($"/rest/invoices/{invoice.id}", invoice);
+			return TypedResults.Created($"/rest/v1/invoices/{invoice.id}", invoice);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -142,8 +142,8 @@ public static partial class InvoiceEndpoints
 			var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
 
 			var possibleInvoices = await invoiceProcessingService
-								.ReadInvoices(potentialUserIdentifier)
-								.ConfigureAwait(false);
+				.ReadInvoices(potentialUserIdentifier)
+				.ConfigureAwait(false);
 
 			if (possibleInvoices is null) return TypedResults.NotFound();
 			else return TypedResults.Ok(possibleInvoices);
@@ -194,7 +194,10 @@ public static partial class InvoiceEndpoints
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoicesAsync), ActivityKind.Server);
 			var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
-			await invoiceProcessingService.DeleteInvoices(potentialUserIdentifier).ConfigureAwait(false);
+
+			await invoiceProcessingService
+				.DeleteInvoices(potentialUserIdentifier)
+				.ConfigureAwait(false);
 			return TypedResults.NoContent();
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
@@ -252,9 +255,9 @@ public static partial class InvoiceEndpoints
 			if (possibleInvoice is null) return TypedResults.NotFound();
 
 			var updatedInvoice = await invoiceProcessingService
-				.UpdateInvoice(invoicePayload, potentialUserIdentifier)
+				.UpdateInvoice(invoicePayload, id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-			return TypedResults.Ok(value: updatedInvoice);
+			return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: updatedInvoice);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -312,10 +315,28 @@ public static partial class InvoiceEndpoints
 
 			var newInvoice = Invoice.Merge(possibleInvoice, invoicePayload);
 
+			// If the merchant reference was updated, we need to validate the new merchant reference.
+			if (newInvoice.MerchantReference != possibleInvoice.MerchantReference)
+			{
+				var possibleMerchant = await invoiceProcessingService
+					.ReadMerchant(newInvoice.MerchantReference)
+					.ConfigureAwait(false);
+				if (possibleMerchant is null) return TypedResults.BadRequest($"The merchant with id {invoicePayload.MerchantReference} does not exist.");
+
+				if (!possibleMerchant.ReferencedInvoices.Contains(id))
+				{
+					possibleMerchant.ReferencedInvoices.Add(id);
+					await invoiceProcessingService
+						.UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId)
+						.ConfigureAwait(false);
+				}
+			}
+
 			var updatedInvoice = await invoiceProcessingService
-				.UpdateInvoice(newInvoice, potentialUserIdentifier)
+				.UpdateInvoice(newInvoice, id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-			return TypedResults.Ok(value: updatedInvoice);
+
+			return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: updatedInvoice);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -368,10 +389,11 @@ public static partial class InvoiceEndpoints
 			var possibleInvoice = await invoiceProcessingService
 				.ReadInvoice(id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-
 			if (possibleInvoice is null) return TypedResults.NotFound();
 
-			await invoiceProcessingService.DeleteInvoice(id, potentialUserIdentifier).ConfigureAwait(false);
+			await invoiceProcessingService
+				.DeleteInvoice(id, potentialUserIdentifier)
+				.ConfigureAwait(false);
 			return TypedResults.NoContent();
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
@@ -426,14 +448,12 @@ public static partial class InvoiceEndpoints
 			var possibleInvoice = await invoiceProcessingService
 				.ReadInvoice(id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-
 			if (possibleInvoice is null) return TypedResults.NotFound();
 
 			await invoiceProcessingService
 				.AddProduct(product, id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-
-			return TypedResults.Ok(value: possibleInvoice);
+			return TypedResults.Created(uri: $"/rest/v1/invoices/{id}/products", value: product);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -486,9 +506,9 @@ public static partial class InvoiceEndpoints
 			var possibleInvoice = await invoiceProcessingService
 				.ReadInvoice(id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-
 			if (possibleInvoice is null) return TypedResults.NotFound();
-			else return TypedResults.Ok(value: possibleInvoice.Items);
+
+			return TypedResults.Ok(possibleInvoice.Items);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -542,9 +562,11 @@ public static partial class InvoiceEndpoints
 			var possibleProduct = await invoiceProcessingService
 				.GetProduct(productName, id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-
 			if (possibleProduct is null) return TypedResults.NotFound();
-			await invoiceProcessingService.DeleteProduct(productName, id, potentialUserIdentifier).ConfigureAwait(false);
+
+			await invoiceProcessingService
+				.DeleteProduct(productName, id, potentialUserIdentifier)
+				.ConfigureAwait(false);
 			return TypedResults.NoContent();
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
@@ -600,13 +622,11 @@ public static partial class InvoiceEndpoints
 			var possibleInvoice = await invoiceProcessingService
 				.ReadInvoice(id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-
 			if (possibleInvoice is null) return TypedResults.NotFound();
 
 			var possibleProduct = await invoiceProcessingService
-												.GetProduct(productName, id, potentialUserIdentifier)
-												.ConfigureAwait(false);
-
+				.GetProduct(productName, id, potentialUserIdentifier)
+				.ConfigureAwait(false);
 			if (possibleProduct is null) return TypedResults.NotFound();
 
 			await invoiceProcessingService
@@ -617,7 +637,7 @@ public static partial class InvoiceEndpoints
 				.AddProduct(productInformation, id, potentialUserIdentifier)
 				.ConfigureAwait(false);
 
-			return TypedResults.Ok(value: possibleInvoice);
+			return TypedResults.Accepted($"/rest/v1/invoices/{id}/products", value: productInformation);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -670,14 +690,15 @@ public static partial class InvoiceEndpoints
 			var possibleInvoice = await invoiceProcessingService
 				.ReadInvoice(id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-
 			if (possibleInvoice is null) return TypedResults.NotFound();
+			if (possibleInvoice.MerchantReference == Guid.Empty) return TypedResults.NotFound();
+
 			var possibleMerchant = await invoiceProcessingService
 				.ReadMerchant(possibleInvoice.MerchantReference)
 				.ConfigureAwait(false);
-
 			if (possibleMerchant is null) return TypedResults.NotFound();
-			else return TypedResults.Ok(value: possibleMerchant);
+
+			return TypedResults.Ok(possibleMerchant);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -736,11 +757,17 @@ public static partial class InvoiceEndpoints
 			if (possibleInvoice.MerchantReference != Guid.Empty) return TypedResults.Conflict();
 
 			possibleInvoice.MerchantReference = merchant.id;
-			var updatedInvoice = await invoiceProcessingService
+			merchant.ReferencedInvoices.Add(possibleInvoice.id);
+
+			await invoiceProcessingService
 				.UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
 				.ConfigureAwait(false);
 
-			return TypedResults.Accepted(uri: $"rest/invoices/{possibleInvoice.id}", value: possibleInvoice);
+			await invoiceProcessingService
+				.CreateMerchant(merchant)
+				.ConfigureAwait(false);
+
+			return TypedResults.Created(uri: $"/rest/v1/merchants/{merchant.id}", merchant);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -794,15 +821,26 @@ public static partial class InvoiceEndpoints
 			var possibleInvoice = await invoiceProcessingService
 				.ReadInvoice(id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-
 			if (possibleInvoice is null) return TypedResults.NotFound();
 			if (possibleInvoice.MerchantReference == Guid.Empty) return TypedResults.Conflict();
-			possibleInvoice.MerchantReference = Guid.Empty;
 
-			var updatedInvoice = await invoiceProcessingService
+			var possibleMerchant = await invoiceProcessingService
+				.ReadMerchant(possibleInvoice.MerchantReference)
+				.ConfigureAwait(false);
+			if (possibleMerchant is null) return TypedResults.NotFound();
+
+			possibleInvoice.MerchantReference = Guid.Empty;
+			possibleMerchant.ReferencedInvoices.Remove(possibleInvoice.id);
+
+			await invoiceProcessingService
 				.UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-			return TypedResults.Accepted(uri: $"rest/invoices/{possibleInvoice.id}", value: possibleInvoice);
+
+			await invoiceProcessingService
+				.UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId)
+				.ConfigureAwait(false);
+
+			return TypedResults.NoContent();
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -856,14 +894,31 @@ public static partial class InvoiceEndpoints
 			var possibleInvoice = await invoiceProcessingService
 				.ReadInvoice(id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-
 			if (possibleInvoice is null) return TypedResults.NotFound();
-			possibleInvoice.MerchantReference = merchant.id;
 
-			var updatedInvoice = await invoiceProcessingService
+			var oldPossibleMerchant = await invoiceProcessingService
+				.ReadMerchant(possibleInvoice.MerchantReference)
+				.ConfigureAwait(false);
+			if (oldPossibleMerchant is not null)
+			{
+				oldPossibleMerchant.ReferencedInvoices.Remove(possibleInvoice.id);
+				await invoiceProcessingService
+					.UpdateMerchant(oldPossibleMerchant, oldPossibleMerchant.id, oldPossibleMerchant.ParentCompanyId)
+					.ConfigureAwait(false);
+			}
+
+			possibleInvoice.MerchantReference = merchant.id;
+			merchant.ReferencedInvoices.Add(possibleInvoice.id);
+
+			await invoiceProcessingService
 				.UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-			return TypedResults.Accepted(uri: $"rest/invoices/{possibleInvoice.id}", value: possibleInvoice);
+
+			await invoiceProcessingService
+				.UpdateMerchant(merchant, merchant.id, merchant.ParentCompanyId)
+				.ConfigureAwait(false);
+
+			return TypedResults.Accepted(uri: $"/rest/v1/merchants/{merchant.id}", value: merchant);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -917,7 +972,6 @@ public static partial class InvoiceEndpoints
 			var possibleInvoice = await invoiceProcessingService
 				.ReadInvoice(id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-
 			if (possibleInvoice is null) return TypedResults.NotFound();
 
 			var possibleInvoiceScan = await invoiceProcessingService
@@ -928,7 +982,8 @@ public static partial class InvoiceEndpoints
 			await invoiceProcessingService
 				.UpdateInvoiceScan(invoiceScanDto, id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-			return TypedResults.Created(uri: $"rest/invoices/{possibleInvoice.id}/scan", value: possibleInvoice);
+
+			return TypedResults.Created();
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -987,7 +1042,8 @@ public static partial class InvoiceEndpoints
 				.ReadInvoiceScan(id, potentialUserIdentifier)
 				.ConfigureAwait(false);
 			if (InvoiceScan.NotDefault(possibleInvoiceScan)) return TypedResults.Ok(value: possibleInvoiceScan);
-			else return TypedResults.NotFound();
+
+			return TypedResults.NotFound();
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1051,7 +1107,7 @@ public static partial class InvoiceEndpoints
 			await invoiceProcessingService
 				.UpdateInvoiceScan(invoiceScanDto, id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-			return TypedResults.Ok(value: possibleInvoice);
+			return TypedResults.Accepted($"/rest/v1/invoices/{id}/scan", invoiceScanDto);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1232,7 +1288,7 @@ public static partial class InvoiceEndpoints
 			var updatedInvoice = await invoiceProcessingService
 				.UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-			return TypedResults.Ok(value: updatedInvoice);
+			return TypedResults.Accepted($"/rest/v1/invoices/{id}/metadata", updatedInvoice.AdditionalMetadata);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1296,7 +1352,7 @@ public static partial class InvoiceEndpoints
 			var updatedInvoice = await invoiceProcessingService
 				.UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-			return TypedResults.Ok(value: updatedInvoice);
+			return TypedResults.NoContent();
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1347,13 +1403,12 @@ public static partial class InvoiceEndpoints
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(CreateNewMerchantAsync), ActivityKind.Server);
-			var merchant = merchantDto.ToMerchant();
 			var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
 
+			var merchant = merchantDto.ToMerchant();
 			await invoiceProcessingService
 					.CreateMerchant(merchant)
 					.ConfigureAwait(false);
-
 			return TypedResults.Created($"/rest/merchants/{merchant.id}", merchant);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
@@ -1464,7 +1519,6 @@ public static partial class InvoiceEndpoints
 			var possibleMerchant = await invoiceProcessingService
 				.ReadMerchant(id, parentCompanyId)
 				.ConfigureAwait(false);
-
 			if (possibleMerchant is null) return TypedResults.NotFound();
 			return TypedResults.Ok(possibleMerchant);
 		}
@@ -1525,7 +1579,7 @@ public static partial class InvoiceEndpoints
 			await invoiceProcessingService
 				.UpdateMerchant(merchantPayload, id)
 				.ConfigureAwait(false);
-			return TypedResults.Accepted($"/rest/merchants/{merchantPayload.id}", merchantPayload);
+			return TypedResults.Accepted($"/rest/v1/merchants/{id}", merchantPayload);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1580,6 +1634,21 @@ public static partial class InvoiceEndpoints
 				.ReadMerchant(id, parentCompanyId)
 				.ConfigureAwait(false);
 			if (possibleMerchant is null) return TypedResults.NotFound();
+
+			// Before deleting the merchant, we need to remove the reference from all invoices that reference this merchant.
+			foreach (var invoiceIdentifier in possibleMerchant.ReferencedInvoices)
+			{
+				var possibleInvoice = await invoiceProcessingService
+					.ReadInvoice(invoiceIdentifier)
+					.ConfigureAwait(false);
+				if (possibleInvoice is not null)
+				{
+					possibleInvoice.MerchantReference = Guid.Empty;
+					await invoiceProcessingService
+						.UpdateInvoice(possibleInvoice, possibleInvoice.id)
+						.ConfigureAwait(false);
+				}
+			}
 
 			await invoiceProcessingService
 				.DeleteMerchant(id, parentCompanyId)
@@ -1651,7 +1720,7 @@ public static partial class InvoiceEndpoints
 			}
 
 			if (listOfConcreteInvoices.Count == 0) return TypedResults.NotFound();
-			else return TypedResults.Ok(listOfConcreteInvoices);
+			return TypedResults.Ok(listOfConcreteInvoices);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1726,7 +1795,7 @@ public static partial class InvoiceEndpoints
 				.UpdateMerchant(possibleMerchant, possibleMerchant.id)
 				.ConfigureAwait(false);
 
-			return TypedResults.Accepted($"rest/merchants/{possibleMerchant.id}", possibleMerchant);
+			return TypedResults.Accepted($"/rest/v1/merchants/{id}", possibleMerchant);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1802,7 +1871,7 @@ public static partial class InvoiceEndpoints
 			await invoiceProcessingService
 				.UpdateMerchant(possibleMerchant, possibleMerchant.id)
 				.ConfigureAwait(false);
-			return TypedResults.Accepted($"rest/merchants/{possibleMerchant.id}", possibleMerchant);
+			return TypedResults.NoContent();
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1940,7 +2009,7 @@ public static partial class InvoiceEndpoints
 			var analyzedInvoice = await invoiceProcessingService
 				.ReadInvoice(id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-			return TypedResults.Accepted($"rest/invoices/{id}", analyzedInvoice);
+			return TypedResults.Ok(analyzedInvoice);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
