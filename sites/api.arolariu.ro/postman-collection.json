@@ -109,7 +109,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -119,7 +119,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}"
+                "{{invoiceIdentifier}}"
               ],
               "query": [],
               "variable": []
@@ -137,7 +137,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -147,14 +147,14 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}"
+                "{{invoiceIdentifier}}"
               ],
               "query": [],
               "variable": []
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"isImportant\": true,\n  \"name\": \"Test 123\",\n  \"description\": \"Testing testing testing...\",\n  \"id\": \"{{id}}\",\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"sharedWith\": [\n    \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"\n  ],\n  \"category\": 3,\n  \"scan\": {\n    \"type\": 5,\n    \"location\": \"https://arolariu.ro/test\",\n    \"metadata\": {\n      \"TestString\": \"test 1\",\n      \"Test_Number\": 2,\n      \"T35T Boolean\": false\n    }\n  },\n  \"paymentInformation\": {\n    \"transactionDate\": \"2025-09-16T15:02:42.388Z\",\n    \"paymentType\": 0,\n    \"currency\": {\n      \"name\": \"Leu romanesc\",\n      \"code\": \"RON\",\n      \"symbol\": \"RON\"\n    },\n    \"totalCostAmount\": 123.17,\n    \"totalTaxAmount\": 20.1\n  },\n  \"merchantReference\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"items\": [\n    {\n      \"rawName\": \"Strugure\",\n      \"genericName\": \"Strugaria\",\n      \"category\": 1,\n      \"quantity\": 13,\n      \"quantityUnit\": \"buc\",\n      \"productCode\": \"10001\",\n      \"price\": 13.17,\n      \"detectedAllergens\": [\n        {\n          \"name\": \"Soare\",\n          \"description\": \"Sun sun sun\",\n          \"learnMoreAddress\": \"https://arolariu.ro/test\"\n        }\n      ],\n      \"metadata\": {\n        \"isEdited\": true,\n        \"isComplete\": true,\n        \"isSoftDeleted\": false\n      }\n    }\n  ],\n  \"possibleRecipes\": [\n    {\n      \"name\": \"Reteta #1\",\n      \"description\": \"Strugure test\",\n      \"duration\": \"15:02:42.388Z\",\n      \"complexity\": 2,\n      \"ingredients\": [\n        \"Strugure\"\n      ],\n      \"referenceForMoreDetails\": \"https://arolariu.ro/test\"\n    }\n  ],\n  \"additionalMetadata\": {\n    \"bamboo\":\"bamboo\",\n    \"TestString1234\": \"test 121\",\n    \"Test_Number1234\": 201,\n    \"T35T Boolean 1234\": true\n  }\n}",
+              "raw": "{\n  \"isImportant\": true,\n  \"name\": \"Test 123\",\n  \"description\": \"Testing testing testing...\",\n  \"id\": \"{{invoiceIdentifier}}\",\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"sharedWith\": [\n    \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"\n  ],\n  \"category\": 3,\n  \"scan\": {\n    \"type\": 5,\n    \"location\": \"https://arolariu.ro/test\",\n    \"metadata\": {\n      \"TestString\": \"test 1\",\n      \"Test_Number\": 2,\n      \"T35T Boolean\": false\n    }\n  },\n  \"paymentInformation\": {\n    \"transactionDate\": \"2025-09-16T15:02:42.388Z\",\n    \"paymentType\": 0,\n    \"currency\": {\n      \"name\": \"Leu romanesc\",\n      \"code\": \"RON\",\n      \"symbol\": \"RON\"\n    },\n    \"totalCostAmount\": 123.17,\n    \"totalTaxAmount\": 20.1\n  },\n  \"merchantReference\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"items\": [\n    {\n      \"rawName\": \"Strugure\",\n      \"genericName\": \"Strugaria\",\n      \"category\": 1,\n      \"quantity\": 13,\n      \"quantityUnit\": \"buc\",\n      \"productCode\": \"10001\",\n      \"price\": 13.17,\n      \"detectedAllergens\": [\n        {\n          \"name\": \"Soare\",\n          \"description\": \"Sun sun sun\",\n          \"learnMoreAddress\": \"https://arolariu.ro/test\"\n        }\n      ],\n      \"metadata\": {\n        \"isEdited\": true,\n        \"isComplete\": true,\n        \"isSoftDeleted\": false\n      }\n    }\n  ],\n  \"possibleRecipes\": [\n    {\n      \"name\": \"Reteta #1\",\n      \"description\": \"Strugure test\",\n      \"duration\": \"15:02:42.388Z\",\n      \"complexity\": 2,\n      \"ingredients\": [\n        \"Strugure\"\n      ],\n      \"referenceForMoreDetails\": \"https://arolariu.ro/test\"\n    }\n  ],\n  \"additionalMetadata\": {\n    \"bamboo\":\"bamboo\",\n    \"TestString1234\": \"test 121\",\n    \"Test_Number1234\": 201,\n    \"T35T Boolean 1234\": true\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -174,7 +174,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -184,7 +184,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}"
+                "{{invoiceIdentifier}}"
               ],
               "query": [],
               "variable": []
@@ -202,7 +202,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -212,7 +212,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}"
+                "{{invoiceIdentifier}}"
               ],
               "query": [],
               "variable": []
@@ -239,7 +239,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -249,7 +249,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "products"
               ],
               "query": [],
@@ -268,7 +268,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -278,7 +278,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "products"
               ],
               "query": [],
@@ -306,7 +306,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -316,7 +316,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "products"
               ],
               "query": [],
@@ -344,7 +344,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -354,7 +354,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "products"
               ],
               "query": [],
@@ -373,7 +373,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -383,7 +383,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "products"
               ],
               "query": [],
@@ -411,7 +411,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -421,7 +421,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "products"
               ],
               "query": [],
@@ -449,7 +449,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -459,7 +459,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "products"
               ],
               "query": [],
@@ -478,7 +478,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -488,7 +488,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}"
+                "{{invoiceIdentifier}}"
               ],
               "query": [],
               "variable": []
@@ -506,7 +506,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/merchant",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -516,7 +516,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "merchant"
               ],
               "query": [],
@@ -535,7 +535,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/merchant",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -545,7 +545,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "merchant"
               ],
               "query": [],
@@ -564,7 +564,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/merchant",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -574,7 +574,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "merchant"
               ],
               "query": [],
@@ -593,7 +593,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/merchant",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -603,7 +603,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "merchant"
               ],
               "query": [],
@@ -622,7 +622,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/merchant",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -632,7 +632,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "merchant"
               ],
               "query": [],
@@ -651,7 +651,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -661,7 +661,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "scan"
               ],
               "query": [],
@@ -680,7 +680,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -690,7 +690,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "scan"
               ],
               "query": [],
@@ -709,7 +709,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -719,7 +719,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "scan"
               ],
               "query": [],
@@ -738,7 +738,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -748,7 +748,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "scan"
               ],
               "query": [],
@@ -767,7 +767,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -777,7 +777,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "scan"
               ],
               "query": [],
@@ -796,7 +796,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -806,7 +806,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "scan"
               ],
               "query": [],
@@ -825,7 +825,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/metadata",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -835,7 +835,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "metadata"
               ],
               "query": [],
@@ -854,7 +854,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/metadata",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -864,7 +864,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "metadata"
               ],
               "query": [],
@@ -883,7 +883,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/metadata",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -893,7 +893,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "metadata"
               ],
               "query": [],
@@ -912,7 +912,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/metadata",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -922,7 +922,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "metadata"
               ],
               "query": [],
@@ -941,7 +941,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/metadata",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -951,7 +951,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "metadata"
               ],
               "query": [],
@@ -970,7 +970,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -980,7 +980,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}"
+                "{{invoiceIdentifier}}"
               ],
               "query": [],
               "variable": []
@@ -998,7 +998,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1008,7 +1008,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}"
+                "{{invoiceIdentifier}}"
               ],
               "query": [],
               "variable": []
@@ -1026,7 +1026,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1036,7 +1036,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "products"
               ],
               "query": [],
@@ -1055,7 +1055,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1065,7 +1065,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "products"
               ],
               "query": [],
@@ -1084,7 +1084,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1094,7 +1094,7 @@
                 "rest",
                 "v1",
                 "invoices",
-                "{{id}}",
+                "{{invoiceIdentifier}}",
                 "scan"
               ],
               "query": [],
@@ -1226,7 +1226,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1236,7 +1236,7 @@
                 "rest",
                 "v1",
                 "merchants",
-                "{{id}}"
+                "{{merchantIdentifier}}"
               ],
               "query": [],
               "variable": []
@@ -1254,7 +1254,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1264,7 +1264,7 @@
                 "rest",
                 "v1",
                 "merchants",
-                "{{id}}"
+                "{{merchantIdentifier}}"
               ],
               "query": [],
               "variable": []
@@ -1282,7 +1282,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1292,7 +1292,7 @@
                 "rest",
                 "v1",
                 "merchants",
-                "{{id}}"
+                "{{merchantIdentifier}}"
               ],
               "query": [],
               "variable": []
@@ -1346,7 +1346,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/invoices",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1356,7 +1356,7 @@
                 "rest",
                 "v1",
                 "merchants",
-                "{{id}}",
+                "{{merchantIdentifier}}",
                 "invoices"
               ],
               "query": [],
@@ -1375,7 +1375,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/invoices",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1385,7 +1385,7 @@
                 "rest",
                 "v1",
                 "merchants",
-                "{{id}}",
+                "{{merchantIdentifier}}",
                 "invoices"
               ],
               "query": [],
@@ -1404,7 +1404,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/invoices",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1414,7 +1414,7 @@
                 "rest",
                 "v1",
                 "merchants",
-                "{{id}}",
+                "{{merchantIdentifier}}",
                 "invoices"
               ],
               "query": [],
@@ -1433,7 +1433,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/invoices",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1443,7 +1443,7 @@
                 "rest",
                 "v1",
                 "merchants",
-                "{{id}}",
+                "{{merchantIdentifier}}",
                 "invoices"
               ],
               "query": [],
@@ -1462,7 +1462,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/products",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/products",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1472,7 +1472,7 @@
                 "rest",
                 "v1",
                 "merchants",
-                "{{id}}",
+                "{{merchantIdentifier}}",
                 "products"
               ],
               "query": [],
@@ -1491,7 +1491,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/invoices",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1501,7 +1501,7 @@
                 "rest",
                 "v1",
                 "merchants",
-                "{{id}}",
+                "{{merchantIdentifier}}",
                 "invoices"
               ],
               "query": [],
@@ -1548,7 +1548,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1558,7 +1558,7 @@
                 "rest",
                 "v1",
                 "merchants",
-                "{{id}}"
+                "{{merchantIdentifier}}"
               ],
               "query": [],
               "variable": []
@@ -1576,7 +1576,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/products",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/products",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1586,7 +1586,7 @@
                 "rest",
                 "v1",
                 "merchants",
-                "{{id}}",
+                "{{merchantIdentifier}}",
                 "products"
               ],
               "query": [],
@@ -1605,7 +1605,7 @@
             },
             "description": "",
             "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
@@ -1615,7 +1615,7 @@
                 "rest",
                 "v1",
                 "merchants",
-                "{{id}}"
+                "{{merchantIdentifier}}"
               ],
               "query": [],
               "variable": []
@@ -1654,7 +1654,12 @@
   ],
   "variable": [
     {
-      "key": "id",
+      "key": "invoiceIdentifier",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "merchantIdentifier",
       "value": "",
       "type": "default"
     },
