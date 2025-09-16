@@ -21,6 +21,7 @@ using Swashbuckle.AspNetCore.Annotations;
 public static partial class InvoiceEndpoints
 {
 	#region CRUD operations for the Invoice Standard Endpoints
+	#region HTTP POST /rest/v1/invoices
 	/// <summary>
 	/// Creates a new invoice.
 	/// </summary>
@@ -36,7 +37,7 @@ public static partial class InvoiceEndpoints
 		"and then will perform a series of operations to onboard the invoice into the Invoice Management System.",
 		OperationId = nameof(CreateNewInvoiceAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status201Created, "The invoice was created successfully in the system.", typeof(Invoice))]
+	[SwaggerResponse(StatusCodes.Status201Created, "The invoice was created successfully in the system.")]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice DTO (payload) is not valid. Please respect the request body.", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to create a new invoice in the system.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
@@ -51,7 +52,9 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		CreateInvoiceDto invoiceDto,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP GET /rest/v1/invoices/{id}
 	/// <summary>
 	/// Retrieves a specific invoice.
 	/// </summary>
@@ -80,7 +83,9 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		Guid id,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP GET /rest/v1/invoices
 	/// <summary>
 	/// Retrieves all invoices.
 	/// </summary>
@@ -106,7 +111,9 @@ public static partial class InvoiceEndpoints
 		IInvoiceProcessingService invoiceProcessingService,
 		IHttpContextAccessor httpContext,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP PUT /rest/v1/invoices/{id}
 	/// <summary>
 	/// Updates a specific invoice.
 	/// </summary>
@@ -136,7 +143,9 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		Invoice invoicePayload,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP DELETE /rest/v1/invoices/{id}
 	/// <summary>
 	/// Deletes a specific invoice.
 	/// </summary>
@@ -165,7 +174,9 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		Guid id,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP DELETE /rest/v1/invoices
 	/// <summary>
 	/// Deletes all invoices from a specific user.
 	/// </summary>
@@ -194,7 +205,9 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		Guid userIdentifier,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP PATCH /rest/v1/invoices/{id}/products
 	/// <summary>
 	/// Adds a product to a specific invoice.
 	/// </summary>
@@ -210,7 +223,7 @@ public static partial class InvoiceEndpoints
 		"If the invoice identifier passed to the route is valid, the server will add the product to the invoice, given that the user is allowed to add products to this invoice.",
 		OperationId = nameof(AddProductToInvoiceAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status202Accepted, "The product was added to the invoice successfully.", typeof(Invoice))]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The product was added to the invoice successfully.")]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The product information is not valid (please respect the product schema).", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status404NotFound, "The product could not be added to the invoice due to the invoice not being found.", typeof(ProblemDetails))]
@@ -226,7 +239,9 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		Product product,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP GET /rest/v1/invoices/{id}/products
 	/// <summary>
 	/// Retrieves all products from a specific invoice.
 	/// </summary>
@@ -255,7 +270,9 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		Guid id,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP DELETE /rest/v1/invoices/{id}/products
 	/// <summary>
 	/// Removes a product from a specific invoice.
 	/// </summary>
@@ -271,7 +288,7 @@ public static partial class InvoiceEndpoints
 		"If the invoice identifier passed to the route is valid, the server will remove the product from the invoice, given that the user is allowed to remove products from this invoice.",
 		OperationId = nameof(RemoveProductFromInvoiceAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status202Accepted, "The product was removed from the invoice successfully.", typeof(Invoice))]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The product was removed from the invoice successfully.")]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The product information is not valid (please respect the product schema).", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status404NotFound, "The product could not be removed from the invoice due to the invoice not being found.", typeof(ProblemDetails))]
@@ -287,7 +304,9 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		string productName,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP PUT /rest/v1/invoices/{id}/products
 	/// <summary>
 	/// Updates a product in a specific invoice.
 	/// </summary>
@@ -304,7 +323,7 @@ public static partial class InvoiceEndpoints
 		"If the invoice identifier passed to the route is valid, the server will update the product in the invoice, given that the user is allowed to update products in this invoice.",
 		OperationId = nameof(UpdateProductInInvoiceAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status202Accepted, "The product was updated in the invoice successfully.", typeof(Invoice))]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The product was updated in the invoice successfully.")]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The product information is not valid (please respect the product schema).", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status404NotFound, "The product could not be updated in the invoice due to the invoice not being found.", typeof(ProblemDetails))]
@@ -321,7 +340,9 @@ public static partial class InvoiceEndpoints
 		string productName,
 		Product productInformation,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP GET /rest/v1/invoices/{id}/merchant
 	/// <summary>
 	/// Retrieves the merchant from an invoice.
 	/// </summary>
@@ -350,7 +371,9 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		Guid id,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP POST /rest/v1/invoices/{id}/merchant
 	/// <summary>
 	/// Adds a merchant to an invoice.
 	/// </summary>
@@ -382,7 +405,9 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		Merchant merchant,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP DELETE /rest/v1/invoices/{id}/merchant
 	/// <summary>
 	/// Removes a merchant from an invoice.
 	/// </summary>
@@ -397,7 +422,7 @@ public static partial class InvoiceEndpoints
 		"If the invoice identifier passed to the route is valid, the server will remove the merchant from the invoice, given that the user is allowed to remove merchants from this invoice.",
 		OperationId = nameof(RemoveMerchantFromInvoiceAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status204NoContent, "The merchant was removed from the invoice successfully.", typeof(Invoice))]
+	[SwaggerResponse(StatusCodes.Status204NoContent, "The merchant was removed from the invoice successfully.")]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant information is not valid (please respect the merchant schema).", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status404NotFound, "The merchant could not be removed from the invoice due to the invoice not being found.", typeof(ProblemDetails))]
@@ -412,7 +437,9 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		Guid id,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP PUT /rest/v1/invoices/{id}/merchant
 	/// <summary>
 	/// Updates the merchant in an invoice.
 	/// </summary>
@@ -444,7 +471,9 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		Merchant merchant,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP POST /rest/v1/invoices/{id}/scan
 	/// <summary>
 	/// Creates a new invoice scan.
 	/// </summary>
@@ -461,7 +490,7 @@ public static partial class InvoiceEndpoints
 		"and then will perform a series of operations to onboard the invoice scan into the Invoice Management System.",
 		OperationId = nameof(CreateInvoiceScanAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status201Created, "The invoice scan was created successfully in the system.", typeof(InvoiceScan))]
+	[SwaggerResponse(StatusCodes.Status201Created, "The invoice scan was created successfully in the system.")]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice scan DTO (payload) is not valid. Please respect the request body.", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to create a new invoice scan in the system.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
@@ -477,7 +506,9 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		InvoiceScan invoiceScanDto,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP GET /rest/v1/invoices/{id}/scan
 	/// <summary>
 	/// Retrieves a specific invoice scan.
 	/// </summary>
@@ -506,7 +537,9 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		Guid id,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP PUT /rest/v1/invoices/{id}/scan
 	/// <summary>
 	/// Updates a specific invoice scan.
 	/// </summary>
@@ -536,7 +569,9 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		InvoiceScan invoiceScanDto,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP DELETE /rest/v1/invoices/{id}/scan
 	/// <summary>
 	/// Deletes a specific invoice scan.
 	/// </summary>
@@ -565,7 +600,9 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		Guid id,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP GET /rest/v1/invoices/{id}/metadata
 	/// <summary>
 	/// Retrieves the metadata from a specific invoice.
 	/// </summary>
@@ -594,7 +631,9 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		Guid id,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP PATCH /rest/v1/invoices/{id}/metadata
 	/// <summary>
 	/// Patches the metadata from a specific invoice.
 	/// </summary>
@@ -610,7 +649,7 @@ public static partial class InvoiceEndpoints
 		"If the invoice identifier passed to the route is valid, the server will patch the metadata from the invoice, given that the user is allowed to update the metadata.",
 		OperationId = nameof(PatchInvoiceMetadataAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status202Accepted, "The metadata was patched successfully in the invoice.", typeof(IDictionary<string, string>))]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The metadata was patched successfully in the invoice.")]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
@@ -625,7 +664,9 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		IDictionary<string, string> invoiceMetadataPatch,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP DELETE /rest/v1/invoices/{id}/metadata
 	/// <summary>
 	/// Deletes specific metadata keys from a specific invoice.
 	/// </summary>
@@ -657,8 +698,10 @@ public static partial class InvoiceEndpoints
 		IEnumerable<string> metadataKeys,
 		ClaimsPrincipal principal);
 	#endregion
+	#endregion
 
 	#region CRUD operations for the Merchant Standard Endpoints
+	#region HTTP POST /rest/v1/merchants
 	/// <summary>
 	/// Creates a new merchant.
 	/// </summary>
@@ -674,7 +717,7 @@ public static partial class InvoiceEndpoints
 		"and then will perform a series of operations to onboard the merchant into the Merchant Management System.",
 		OperationId = nameof(CreateNewMerchantAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status201Created, "The merchant was created successfully in the system.", typeof(Merchant))]
+	[SwaggerResponse(StatusCodes.Status201Created, "The merchant was created successfully in the system.")]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant DTO (payload) is not valid. Please respect the request body.", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to create a new merchant in the system.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
@@ -689,7 +732,9 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		CreateMerchantDto merchantDto,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP GET /rest/v1/merchants
 	/// <summary>
 	/// Retrieves all merchants.
 	/// </summary>
@@ -715,7 +760,9 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		Guid parentCompanyId,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP GET /rest/v1/merchants/{id}
 	/// <summary>
 	/// Retrieves a specific merchant.
 	/// </summary>
@@ -745,7 +792,9 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		Guid parentCompanyId,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP PUT /rest/v1/merchants/{id}
 	/// <summary>
 	/// Updates a specific merchant.
 	/// </summary>
@@ -775,7 +824,9 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		Merchant merchantPayload,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP DELETE /rest/v1/merchants/{id}
 	/// <summary>
 	/// Deletes a specific merchant.
 	/// </summary>
@@ -805,7 +856,9 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		Guid parentCompanyId,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP GET /rest/v1/merchants/{id}/invoices
 	/// <summary>
 	/// Retrieves all invoices from a specific merchant.
 	/// </summary>
@@ -834,7 +887,9 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		Guid id,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP PATCH /rest/v1/merchants/{id}/invoices
 	/// <summary>
 	/// Adds invoice(s) to a specific merchant.
 	/// </summary>
@@ -850,7 +905,7 @@ public static partial class InvoiceEndpoints
 		"If the merchant identifier passed to the route is valid, the server will add the invoice(s) to the merchant, given that the user is allowed to add invoices to this merchant.",
 		OperationId = nameof(AddInvoiceToMerchantAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status202Accepted, "The invoice(s) were added to the merchant successfully.", typeof(Merchant))]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The invoice(s) were added to the merchant successfully.")]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to add invoices to this merchant.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status404NotFound, "The invoices could not be added to the merchant due to the merchant not being found.", typeof(ProblemDetails))]
@@ -866,7 +921,9 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		IEnumerable<Guid> invoiceIdentifiers,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP DELETE /rest/v1/merchants/{id}/invoices
 	/// <summary>
 	/// Removes invoice(s) from a specific merchant.
 	/// </summary>
@@ -882,7 +939,7 @@ public static partial class InvoiceEndpoints
 		"If the merchant identifier passed to the route is valid, the server will remove the invoice(s) from the merchant, given that the user is allowed to remove invoices from this merchant.",
 		OperationId = nameof(RemoveInvoiceFromMerchantAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status202Accepted, "The invoice(s) were removed from the merchant successfully.", typeof(Merchant))]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The invoice(s) were removed from the merchant successfully.")]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to remove invoices from this merchant.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status404NotFound, "The invoices could not be removed from the merchant due to the merchant not being found.", typeof(ProblemDetails))]
@@ -898,7 +955,9 @@ public static partial class InvoiceEndpoints
 		Guid id,
 		IEnumerable<Guid> invoiceIdentifiers,
 		ClaimsPrincipal principal);
+	#endregion
 
+	#region HTTP GET /rest/v1/merchants/{id}/products
 	/// <summary>
 	/// Retrieves all products from a specific merchant.
 	/// </summary>
@@ -927,6 +986,7 @@ public static partial class InvoiceEndpoints
 		IHttpContextAccessor httpContext,
 		Guid id,
 		ClaimsPrincipal principal);
+	#endregion
 	#endregion
 
 	/// <summary>
