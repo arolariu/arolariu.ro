@@ -93,7 +93,6 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObject));
 		ValidateMerchantIdentifierIsSet(identifier);
-		ValidateParentCompanyIdentifierIsSet(parentCompanyId);
 
 		var merchant = await invoiceNoSqlBroker
 			.ReadMerchantAsync(identifier)

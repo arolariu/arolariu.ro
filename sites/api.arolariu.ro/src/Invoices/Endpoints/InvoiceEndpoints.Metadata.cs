@@ -469,40 +469,6 @@ public static partial class InvoiceEndpoints
 		ClaimsPrincipal principal);
 	#endregion
 
-	#region HTTP PUT /rest/v1/invoices/{id}/merchant
-	/// <summary>
-	/// Updates the merchant in an invoice.
-	/// </summary>
-	/// <param name="invoiceProcessingService"></param>
-	/// <param name="httpContext"></param>
-	/// <param name="id"></param>
-	/// <param name="merchant"></param>
-	/// <param name="principal"></param>
-	/// <returns></returns>
-	[SwaggerOperation(
-		Summary = "Updates the merchant in an invoice in the system.",
-		Description = "Updates the merchant in an invoice in the Invoice Management System. " +
-		"If the invoice identifier passed to the route is valid, the server will update the merchant in the invoice, given that the user is allowed to update merchants in this invoice.",
-		OperationId = nameof(UpdateMerchantInInvoiceAsync),
-		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status202Accepted, "The merchant was updated in the invoice successfully.", typeof(Invoice))]
-	[SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant information is not valid (please respect the merchant schema).", typeof(ValidationProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status404NotFound, "The merchant could not be updated in the invoice due to the invoice not being found.", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status409Conflict, "The merchant could not be updated in the invoice due to a conflict (the merchant is not in the invoice).", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The merchant could not be updated in the invoice due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The merchant could not be updated due to an internal service error", typeof(ProblemDetails))]
-	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
-	[Authorize]
-	internal static partial Task<IResult> UpdateMerchantInInvoiceAsync(
-		IInvoiceProcessingService invoiceProcessingService,
-		IHttpContextAccessor httpContext,
-		Guid id,
-		Merchant merchant,
-		ClaimsPrincipal principal);
-	#endregion
-
 	#region HTTP POST /rest/v1/invoices/{id}/scan
 	/// <summary>
 	/// Creates a new invoice scan.

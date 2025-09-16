@@ -213,20 +213,6 @@ public static partial class InvoiceEndpoints
 			.RequireAuthorization()
 			.WithOpenApi();
 
-		router // Update the merchant in a given invoice.
-			.MapPut("/invoices/{id}/merchant", UpdateMerchantInInvoiceAsync)
-			.Accepts<Merchant>("application/json")
-			.Produces(StatusCodes.Status202Accepted)
-			.ProducesProblem(StatusCodes.Status400BadRequest)
-			.ProducesProblem(StatusCodes.Status401Unauthorized)
-			.ProducesProblem(StatusCodes.Status403Forbidden)
-			.ProducesProblem(StatusCodes.Status404NotFound)
-			.ProducesProblem(StatusCodes.Status429TooManyRequests)
-			.ProducesProblem(StatusCodes.Status500InternalServerError)
-			.WithName(nameof(UpdateMerchantInInvoiceAsync))
-			.RequireAuthorization()
-			.WithOpenApi();
-
 		router // Create the invoice scan for a given invoice.
 			.MapPost("/invoices/{id}/scan", CreateInvoiceScanAsync)
 			.Accepts<InvoiceScan>("application/json")

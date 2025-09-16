@@ -551,7 +551,7 @@ public static partial class InvoiceEndpoints
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
 		[FromRoute] Guid id,
-		[FromQuery] string productName,
+		[FromBody] string productName,
 		ClaimsPrincipal principal)
 	{
 		try
@@ -841,84 +841,6 @@ public static partial class InvoiceEndpoints
 				.ConfigureAwait(false);
 
 			return TypedResults.NoContent();
-		}
-		catch (InvoiceProcessingServiceValidationException exception)
-		{
-			return TypedResults.Problem(
-				detail: exception.Message + exception.Source,
-				statusCode: StatusCodes.Status500InternalServerError,
-				title: "The service encountered a processing service validation error.");
-		}
-		catch (InvoiceProcessingServiceDependencyException exception)
-		{
-			return TypedResults.Problem(
-				detail: exception.Message + exception.Source,
-				statusCode: StatusCodes.Status500InternalServerError,
-				title: "The service encountered a processing service dependency error.");
-		}
-		catch (InvoiceProcessingServiceDependencyValidationException exception)
-		{
-			return TypedResults.Problem(
-				detail: exception.Message + exception.Source,
-				statusCode: StatusCodes.Status500InternalServerError,
-				title: "The service encountered a processing service dependency validation error.");
-		}
-		catch (InvoiceProcessingServiceException exception)
-		{
-			return TypedResults.Problem(
-				detail: exception.Message + exception.Source,
-				statusCode: StatusCodes.Status500InternalServerError,
-				title: "The service encountered a processing service error.");
-		}
-		catch (Exception exception)
-		{
-			return TypedResults.Problem(
-				detail: exception.Message + exception.Source,
-				statusCode: StatusCodes.Status500InternalServerError,
-				title: "The service encountered an unexpected internal service error.");
-		}
-	}
-
-	internal static async partial Task<IResult> UpdateMerchantInInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] Merchant merchant,
-		ClaimsPrincipal principal)
-	{
-		try
-		{
-			using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantInInvoiceAsync), ActivityKind.Server);
-			var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
-
-			var possibleInvoice = await invoiceProcessingService
-				.ReadInvoice(id, potentialUserIdentifier)
-				.ConfigureAwait(false);
-			if (possibleInvoice is null) return TypedResults.NotFound();
-
-			var oldPossibleMerchant = await invoiceProcessingService
-				.ReadMerchant(possibleInvoice.MerchantReference)
-				.ConfigureAwait(false);
-			if (oldPossibleMerchant is not null)
-			{
-				oldPossibleMerchant.ReferencedInvoices.Remove(possibleInvoice.id);
-				await invoiceProcessingService
-					.UpdateMerchant(oldPossibleMerchant, oldPossibleMerchant.id, oldPossibleMerchant.ParentCompanyId)
-					.ConfigureAwait(false);
-			}
-
-			possibleInvoice.MerchantReference = merchant.id;
-			merchant.ReferencedInvoices.Add(possibleInvoice.id);
-
-			await invoiceProcessingService
-				.UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
-				.ConfigureAwait(false);
-
-			await invoiceProcessingService
-				.UpdateMerchant(merchant, merchant.id, merchant.ParentCompanyId)
-				.ConfigureAwait(false);
-
-			return TypedResults.Accepted(uri: $"/rest/v1/merchants/{merchant.id}", value: merchant);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{

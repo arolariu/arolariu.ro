@@ -30,7 +30,7 @@ public interface IInvoiceNoSqlBroker
 	/// </summary>
 	/// <param name="invoiceIdentifier"></param>
 	/// <returns></returns>
-	public ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier);
+	public ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier);
 
 	/// <summary>
 	/// Reads an invoice.
@@ -40,7 +40,7 @@ public interface IInvoiceNoSqlBroker
 	/// <param name="invoiceIdentifier"></param>
 	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
-	public ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
+	public ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
 
 	/// <summary>
 	/// Reads all the invoices.

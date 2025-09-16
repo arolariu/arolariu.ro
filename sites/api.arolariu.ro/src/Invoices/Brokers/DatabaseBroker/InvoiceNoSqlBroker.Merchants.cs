@@ -23,7 +23,9 @@ public partial class InvoiceNoSqlBroker
 		var response = await container
 			.CreateItemAsync(merchant)
 			.ConfigureAwait(false);
-		return response.Resource;
+
+		var insertedMerchant = response.Resource;
+		return insertedMerchant;
 	}
 
 	/// <inheritdoc/>
@@ -41,8 +43,7 @@ public partial class InvoiceNoSqlBroker
 		var response = await iterator.ReadNextAsync().ConfigureAwait(false);
 
 		var merchant = response.Resource.Any() ? response.Resource.First() : null;
-		ArgumentNullException.ThrowIfNull(merchant);
-		if (merchant.IsSoftDeleted) throw new InvalidOperationException($"The merchant with identifier {merchantIdentifier} has been deleted.");
+		if (merchant is not null && merchant.IsSoftDeleted) throw new InvalidOperationException($"The merchant with identifier {merchantIdentifier} has been deleted.");
 		return merchant;
 	}
 

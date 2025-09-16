@@ -23,11 +23,12 @@ public partial class InvoiceNoSqlBroker
 			.CreateItemAsync(invoice)
 			.ConfigureAwait(false);
 
-		return response.Resource;
+		var insertedInvoice = response.Resource;
+		return insertedInvoice;
 	}
 
 	/// <inheritdoc/>
-	public async ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier)
+	public async ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier)
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceAsync));
 		var database = CosmosClient.GetDatabase("primary");
@@ -37,12 +38,12 @@ public partial class InvoiceNoSqlBroker
 		var response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey).ConfigureAwait(false);
 
 		var invoice = response.Resource;
-		if (invoice.IsSoftDeleted) throw new InvalidOperationException($"The invoice with identifier {invoiceIdentifier} has been deleted.");
+		if (invoice is not null && invoice.IsSoftDeleted) throw new InvalidOperationException($"The invoice with identifier {invoiceIdentifier} has been deleted.");
 		return invoice;
 	}
 
 	/// <inheritdoc/>
-	public async ValueTask<Invoice> ReadInvoiceAsync(Guid invoiceIdentifier)
+	public async ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier)
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceAsync));
 		var database = CosmosClient.GetDatabase("primary");
@@ -56,8 +57,7 @@ public partial class InvoiceNoSqlBroker
 		var response = await iterator.ReadNextAsync().ConfigureAwait(false);
 
 		var invoice = response.Resource.Any() ? response.Resource.First() : null;
-		ArgumentNullException.ThrowIfNull(invoice);
-		if (invoice.IsSoftDeleted) throw new InvalidOperationException($"The invoice with identifier {invoiceIdentifier} has been deleted.");
+		if (invoice is not null && invoice.IsSoftDeleted) throw new InvalidOperationException($"The invoice with identifier {invoiceIdentifier} has been deleted.");
 		return invoice;
 	}
 
@@ -111,20 +111,16 @@ public partial class InvoiceNoSqlBroker
 	public async ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice)
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
-		var currentInvoice = await ReadInvoiceAsync(invoiceIdentifier).ConfigureAwait(false);
-
 		var database = CosmosClient.GetDatabase("primary");
 		var container = database.GetContainer("invoices");
 
-		var invoiceKey = invoiceIdentifier.ToString();
-		var partitionKey = new PartitionKey(currentInvoice.UserIdentifier.ToString());
-
+		var partitionKey = new PartitionKey(updatedInvoice?.UserIdentifier.ToString());
 		var response = await container
-			.ReplaceItemAsync(updatedInvoice, invoiceKey, partitionKey)
+			.UpsertItemAsync(updatedInvoice, partitionKey)
 			.ConfigureAwait(false);
 
 		var invoice = response.Resource;
-		return invoice;
+		return invoice!;
 	}
 
 	/// <inheritdoc/>
@@ -133,17 +129,15 @@ public partial class InvoiceNoSqlBroker
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceAsync));
 		var database = CosmosClient.GetDatabase("primary");
 		var invoicesContainer = database.GetContainer("invoices");
-		var merchantContainer = database.GetContainer("merchants");
 
-		var invoiceKey = currentInvoice?.id.ToString();
-		var partitionKeyForInvoice = new PartitionKey(currentInvoice?.UserIdentifier.ToString());
+		var partitionKeyForInvoice = new PartitionKey(updatedInvoice?.UserIdentifier.ToString());
 
 		var response = await invoicesContainer
-			.ReplaceItemAsync(updatedInvoice, invoiceKey, partitionKeyForInvoice)
+			.UpsertItemAsync(updatedInvoice, partitionKeyForInvoice)
 			.ConfigureAwait(false);
 
 		var invoice = response.Resource;
-		return invoice;
+		return invoice!;
 	}
 
 	/// <inheritdoc/>
