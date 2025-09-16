@@ -19,11 +19,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -45,11 +46,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -80,11 +82,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -106,11 +109,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -133,11 +137,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -169,11 +174,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -196,11 +202,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -232,11 +239,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -260,11 +268,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -297,11 +306,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -334,11 +344,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -362,11 +373,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -399,11 +411,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -436,11 +449,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -464,11 +478,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -491,11 +506,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/merchant",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/merchant",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -519,11 +535,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/merchant",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/merchant",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -547,11 +564,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/merchant",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/merchant",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -575,11 +593,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/merchant",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/merchant",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -603,11 +622,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/merchant",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/merchant",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -631,11 +651,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -659,11 +680,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -687,11 +709,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -715,11 +738,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -743,11 +767,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -771,11 +796,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -799,11 +825,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/metadata",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/metadata",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -827,11 +854,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/metadata",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/metadata",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -855,11 +883,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/metadata",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/metadata",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -883,11 +912,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/metadata",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/metadata",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -911,11 +941,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/metadata",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/metadata",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -939,11 +970,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -966,11 +998,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -993,11 +1026,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1021,11 +1055,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/products",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1049,11 +1084,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}/scan",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1077,11 +1113,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1108,11 +1145,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchants",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1134,11 +1172,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchants",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1160,11 +1199,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchants",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1186,15 +1226,16 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
-                "merchant",
+                "merchants",
                 "{{id}}"
               ],
               "query": [],
@@ -1213,15 +1254,16 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
-                "merchant",
+                "merchants",
                 "{{id}}"
               ],
               "query": [],
@@ -1240,15 +1282,16 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
-                "merchant",
+                "merchants",
                 "{{id}}"
               ],
               "query": [],
@@ -1267,11 +1310,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1302,15 +1346,16 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/invoices",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/invoices",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
-                "merchant",
+                "merchants",
                 "{{id}}",
                 "invoices"
               ],
@@ -1330,15 +1375,16 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/invoices",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/invoices",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
-                "merchant",
+                "merchants",
                 "{{id}}",
                 "invoices"
               ],
@@ -1358,15 +1404,16 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/invoices",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/invoices",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
-                "merchant",
+                "merchants",
                 "{{id}}",
                 "invoices"
               ],
@@ -1386,15 +1433,16 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/invoices",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/invoices",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
-                "merchant",
+                "merchants",
                 "{{id}}",
                 "invoices"
               ],
@@ -1414,15 +1462,16 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/products",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/products",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
-                "merchant",
+                "merchants",
                 "{{id}}",
                 "products"
               ],
@@ -1442,15 +1491,16 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/invoices",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/invoices",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
-                "merchant",
+                "merchants",
                 "{{id}}",
                 "invoices"
               ],
@@ -1470,11 +1520,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1497,15 +1548,16 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
-                "merchant",
+                "merchants",
                 "{{id}}"
               ],
               "query": [],
@@ -1524,15 +1576,16 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/products",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}/products",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
-                "merchant",
+                "merchants",
                 "{{id}}",
                 "products"
               ],
@@ -1552,11 +1605,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchants/{{id}}",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{id}}",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1579,11 +1633,12 @@
             },
             "description": "",
             "url": {
-              "raw": "https://localhost:5001/rest/v1/merchants",
-              "protocol": "https",
+              "raw": "{{baseUrl}}/rest/v1/merchants",
+              "protocol": "{{baseProtocol}}",
               "host": [
-                "localhost:5001"
+                "{{baseHost}}"
               ],
+              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1606,6 +1661,26 @@
     {
       "key": "userIdentifier",
       "value": "",
+      "type": "default"
+    },
+    {
+      "key": "baseUrl",
+      "value": "{{baseProtocol}}://{{baseHost}}:{{basePort}}",
+      "type": "default"
+    },
+    {
+      "key": "baseHost",
+      "value": "localhost",
+      "type": "default"
+    },
+    {
+      "key": "basePort",
+      "value": "5001",
+      "type": "default"
+    },
+    {
+      "key": "baseProtocol",
+      "value": "https",
       "type": "default"
     }
   ]
