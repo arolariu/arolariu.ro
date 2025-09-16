@@ -1,4 +1,4 @@
-# Don't commit transient artifacts
+# Transient artifacts:
 **/tmp/**
 **/node_modules/**
 **/_site/**
@@ -16,6 +16,10 @@
 **/.next/**
 **/**/.DS_Store
 
-# Don't commit env variables:
+# Exceptions:
+!.vs/settings.vssettings
+
+
+# Environment variables:
 **/.env
 **/.env.*
