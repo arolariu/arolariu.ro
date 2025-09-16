@@ -1,0 +1,1612 @@
+{
+  "info": {
+    "name": "api.arolariu.ro",
+    "description": "",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Invoices",
+      "item": [
+        {
+          "name": "Get Invoices",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Create Invoice",
+          "event": [],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userIdentifier\": \"fafa1779-d0d9-4442-bba6-cbf0e2bf6d7a\",\n  \"metadata\": {\n    \"author\": \"Alexandru\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Invoices 2",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Update Invoice",
+          "event": [],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isImportant\": true,\n  \"name\": \"Test 123\",\n  \"description\": \"Testing testing testing...\",\n  \"id\": \"{{id}}\",\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"sharedWith\": [\n    \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"\n  ],\n  \"category\": 3,\n  \"scan\": {\n    \"type\": 5,\n    \"location\": \"https://arolariu.ro/test\",\n    \"metadata\": {\n      \"TestString\": \"test 1\",\n      \"Test_Number\": 2,\n      \"T35T Boolean\": false\n    }\n  },\n  \"paymentInformation\": {\n    \"transactionDate\": \"2025-09-16T15:02:42.388Z\",\n    \"paymentType\": 0,\n    \"currency\": {\n      \"name\": \"Leu romanesc\",\n      \"code\": \"RON\",\n      \"symbol\": \"RON\"\n    },\n    \"totalCostAmount\": 123.17,\n    \"totalTaxAmount\": 20.1\n  },\n  \"merchantReference\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"items\": [\n    {\n      \"rawName\": \"Strugure\",\n      \"genericName\": \"Strugaria\",\n      \"category\": 1,\n      \"quantity\": 13,\n      \"quantityUnit\": \"buc\",\n      \"productCode\": \"10001\",\n      \"price\": 13.17,\n      \"detectedAllergens\": [\n        {\n          \"name\": \"Soare\",\n          \"description\": \"Sun sun sun\",\n          \"learnMoreAddress\": \"https://arolariu.ro/test\"\n        }\n      ],\n      \"metadata\": {\n        \"isEdited\": true,\n        \"isComplete\": true,\n        \"isSoftDeleted\": false\n      }\n    }\n  ],\n  \"possibleRecipes\": [\n    {\n      \"name\": \"Reteta #1\",\n      \"description\": \"Strugure test\",\n      \"duration\": \"15:02:42.388Z\",\n      \"complexity\": 2,\n      \"ingredients\": [\n        \"Strugure\"\n      ],\n      \"referenceForMoreDetails\": \"https://arolariu.ro/test\"\n    }\n  ],\n  \"additionalMetadata\": {\n    \"bamboo\":\"bamboo\",\n    \"TestString1234\": \"test 121\",\n    \"Test_Number1234\": 201,\n    \"T35T Boolean 1234\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Invoice",
+          "event": [],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Patch Invoice",
+          "event": [],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{id}}\",\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"isImportant\": false,\n  \"name\": \"Test 999\",\n  \"items\": [\n    {\n      \"rawName\": \"Marar\",\n      \"genericName\": \"Marar mar\",\n      \"category\": 1,\n      \"quantity\": 13,\n      \"quantityUnit\": \"buc\",\n      \"productCode\": \"10002\",\n      \"price\": 3.14,\n      \"detectedAllergens\": [\n        {\n          \"name\": \"Nectar\",\n          \"description\": \"be he he\",\n          \"learnMoreAddress\": \"https://arolariu.ro/test\"\n        }\n      ],\n      \"metadata\": {\n        \"isEdited\": true,\n        \"isComplete\": true,\n        \"isSoftDeleted\": false\n      }\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Invoice Products",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Create Invoice Product",
+          "event": [],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rawName\": \"Bezea\",\n  \"genericName\": \"Bezele yummy!\",\n  \"category\": 2,\n  \"quantity\": 100,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"100\",\n  \"price\": 131.93\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Invoice Product",
+          "event": [],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "\"Bezea\"",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Invoice Products 2",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Create Invoice Product 2",
+          "event": [],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rawName\": \"Bezea\",\n  \"genericName\": \"Bezele yummy!\",\n  \"category\": 2,\n  \"quantity\": 100,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"100\",\n  \"price\": 131.93\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Patch Invoice Product",
+          "event": [],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rawName\": \"Bezea\",\n  \"genericName\": \"Bezele yucky yuck!\",\n  \"category\": 1,\n  \"quantity\": 50,\n  \"price\": 19.8000000000000000001\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Invoice Products 3",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice 2",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Merchant",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/merchant",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "merchant"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Delete Invoice's Merchant",
+          "event": [],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/merchant",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "merchant"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Create Invoice's Merchant",
+          "event": [],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/merchant",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "merchant"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Merchant 2",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/merchant",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "merchant"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Merchant 3",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/merchant",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "merchant"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Scan",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Create Invoice's Scan",
+          "event": [],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Scan 2",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Update Invoice's Scan",
+          "event": [],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Scan 3",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Delete Invoice's Scan",
+          "event": [],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Metadata",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/metadata",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "metadata"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Patch Invoice's Metadata",
+          "event": [],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/metadata",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "metadata"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Metadata 2",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/metadata",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "metadata"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Delete Invoice's Metadata",
+          "event": [],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/metadata",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "metadata"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Metadata 3",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/metadata",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "metadata"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice 3",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice 4",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice Products 4",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice Products 5",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/products",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Scan 4",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}/scan",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoices 3",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Merchants",
+      "item": [
+        {
+          "name": "Get Merchants",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchants",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchants"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Create Merchant",
+          "event": [],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchants",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchants"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Merchants 2",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchants",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchants"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Merchant",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchant",
+                "{{id}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Update Merchant",
+          "event": [],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchant",
+                "{{id}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Merchant 2",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchant",
+                "{{id}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Create Invoice",
+          "event": [],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userIdentifier\": \"fafa1779-d0d9-4442-bba6-cbf0e2bf6d7a\",\n  \"metadata\": {\n    \"author\": \"Alexandru\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Merchant's Invoices",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/invoices",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchant",
+                "{{id}}",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Add Merchant's Invoice",
+          "event": [],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/invoices",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchant",
+                "{{id}}",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Merchant's Invoices 2",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/invoices",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchant",
+                "{{id}}",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Delete Merchant's Invoice",
+          "event": [],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/invoices",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchant",
+                "{{id}}",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Merchant's Invoices Products",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/products",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchant",
+                "{{id}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Merchant's Invoices 3",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/invoices",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchant",
+                "{{id}}",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Delete Invoice",
+          "event": [],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/invoices/{{id}}",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{id}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Merchant 3",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchant",
+                "{{id}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Merchant's Invoices Products 2",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchant/{{id}}/products",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchant",
+                "{{id}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Delete Merchant",
+          "event": [],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchants/{{id}}",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchants",
+                "{{id}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Merchants 3",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "",
+            "url": {
+              "raw": "https://localhost:5001/rest/v1/merchants",
+              "protocol": "https",
+              "host": [
+                "localhost:5001"
+              ],
+              "path": [
+                "rest",
+                "v1",
+                "merchants"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "id",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "userIdentifier",
+      "value": "",
+      "type": "default"
+    }
+  ]
+}
