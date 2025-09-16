@@ -182,7 +182,6 @@ public static partial class InvoiceEndpoints
 	/// </summary>
 	/// <param name="invoiceProcessingService"></param>
 	/// <param name="httpContext"></param>
-	/// <param name="userIdentifier"></param>
 	/// <param name="principal"></param>
 	/// <returns></returns>
 	[SwaggerOperation(
@@ -203,7 +202,6 @@ public static partial class InvoiceEndpoints
 	internal static partial Task<IResult> DeleteInvoicesAsync(
 		IInvoiceProcessingService invoiceProcessingService,
 		IHttpContextAccessor httpContext,
-		Guid userIdentifier,
 		ClaimsPrincipal principal);
 	#endregion
 

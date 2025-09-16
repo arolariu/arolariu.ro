@@ -188,14 +188,13 @@ public static partial class InvoiceEndpoints
 	internal static async partial Task<IResult> DeleteInvoicesAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
-		[FromBody] Guid userIdentifier,
 		ClaimsPrincipal principal)
 	{
 		try
 		{
 			using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoicesAsync), ActivityKind.Server);
 			var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
-			await invoiceProcessingService.DeleteInvoices(userIdentifier).ConfigureAwait(false);
+			await invoiceProcessingService.DeleteInvoices(potentialUserIdentifier).ConfigureAwait(false);
 			return TypedResults.NoContent();
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
