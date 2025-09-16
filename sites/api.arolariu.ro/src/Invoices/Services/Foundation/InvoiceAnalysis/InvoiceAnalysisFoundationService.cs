@@ -1,5 +1,6 @@
 namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 
+using System;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;
@@ -40,7 +41,7 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
 	}
 
 	/// <inheritdoc/>
-	public async Task<Invoice> AnalyzeInvoiceAsync(Invoice invoice, AnalysisOptions options) =>
+	public async Task<Invoice> AnalyzeInvoiceAsync(AnalysisOptions options, Invoice invoice) =>
 	await TryCatchAsync(async () =>
 	{
 		invoice = await PerformOcrAnalysis(invoice, options).ConfigureAwait(false);

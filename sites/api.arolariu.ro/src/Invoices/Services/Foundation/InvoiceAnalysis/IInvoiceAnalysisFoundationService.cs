@@ -1,5 +1,6 @@
 namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 
+using System;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -13,8 +14,8 @@ public interface IInvoiceAnalysisFoundationService
 	/// <summary>
 	/// Analyze an invoice.
 	/// </summary>
-	/// <param name="invoice"></param>
 	/// <param name="options"></param>
+	/// <param name="invoice"></param>
 	/// <returns></returns>
-	public Task<Invoice> AnalyzeInvoiceAsync(Invoice invoice, AnalysisOptions options);
+	public Task<Invoice> AnalyzeInvoiceAsync(AnalysisOptions options, Invoice invoice);
 }

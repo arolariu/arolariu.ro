@@ -16,7 +16,10 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 [ExcludeFromCodeCoverage]
 public static partial class InvoiceEndpoints
 {
-	private const string SemanticVersioning = "2.0.0";
+	private const string SemanticVersioning = "3.0.0";
+
+	[SuppressMessage("Performance", "IDE0051:Avoid unused private fields", Justification = "False. Partial implementation.")]
+	[SuppressMessage("Performance", "CA1823:Avoid unused private fields", Justification = "False. Partial implementation.")]
 	private const string EndpointNameTag = "Invoices Management System v" + SemanticVersioning;
 
 	/// <summary>
@@ -40,9 +43,9 @@ public static partial class InvoiceEndpoints
 	/// </summary>
 	/// <param name="principal"></param>
 	/// <returns></returns>
-	private static Guid RetrieveUserIdentifierFromPrincipal(ClaimsPrincipal principal)
+	private static Guid RetrieveUserIdentifierClaimFromPrincipal(ClaimsPrincipal principal)
 	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveUserIdentifierFromPrincipal));
+		using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveUserIdentifierClaimFromPrincipal));
 		var userIdentifierClaim = principal.Claims.FirstOrDefault(
 				predicate: claim => claim.Type == "userIdentifier",
 				defaultValue: new Claim(type: "userIdentifier", value: Guid.Empty.ToString()));

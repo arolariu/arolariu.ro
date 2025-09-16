@@ -4,6 +4,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
+using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 /// <summary>
@@ -30,7 +31,7 @@ public readonly record struct CreateMerchantDto(
 		var merchant = new Merchant()
 		{
 			id = Guid.NewGuid(),
-			Address = Address,
+			Address = new ContactInformation(),
 			Category = MerchantCategory.OTHER,
 			CreatedAt = DateTime.Now,
 			Description = Description,

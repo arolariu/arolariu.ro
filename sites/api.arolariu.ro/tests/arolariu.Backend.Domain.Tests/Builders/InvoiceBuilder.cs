@@ -3,9 +3,11 @@ namespace arolariu.Backend.Domain.Tests.Builders;
 using System;
 using System.Collections.Generic;
 
+using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Xunit;
 
@@ -24,7 +26,7 @@ public static class InvoiceBuilder
 			Name = GetRandomString(),
 			Description = GetRandomString(),
 			Category = InvoiceCategory.FAST_FOOD,
-			ScanLocation = new Uri($"https://example.com/{GetRandomString()}.jpg"),
+			Scan = InvoiceScan.Default(),
 			IsImportant = Random.Next(0, 2) == 1,
 			CreatedBy = Guid.NewGuid(),
 			CreatedAt = GetRandomDateTimeOffset(),
@@ -52,7 +54,7 @@ public static class InvoiceBuilder
 			Name = name ?? invoice.Name,
 			Description = description ?? invoice.Description,
 			Category = invoice.Category,
-			ScanLocation = invoice.ScanLocation,
+			Scan = invoice.Scan,
 			IsImportant = invoice.IsImportant,
 			CreatedBy = invoice.CreatedBy,
 			CreatedAt = invoice.CreatedAt,

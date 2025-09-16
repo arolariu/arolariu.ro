@@ -41,116 +41,87 @@ public partial class InvoiceOrchestrationService : IInvoiceOrchestrationService
 		logger = loggerFactory.CreateLogger<IInvoiceOrchestrationService>();
 	}
 
+	#region Analyze Invoice API
 	/// <inheritdoc/>
-	public async Task AnalyzeInvoiceWithOptions(Invoice invoice, AnalysisOptions options) =>
+	public async Task AnalyzeInvoiceWithOptions(AnalysisOptions options, Guid invoiceIdentifier, Guid? userIdentifier = null) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceWithOptions));
-		var analyzedInvoice = await invoiceAnalysisFoundationService.AnalyzeInvoiceAsync(invoice, options)
-																			.ConfigureAwait(false);
+		Invoice currentInvoice = await invoiceStorageFoundationService
+			.ReadInvoiceObject(invoiceIdentifier, userIdentifier)
+			.ConfigureAwait(false);
 
-		await invoiceStorageFoundationService.UpdateInvoiceObject(invoice, analyzedInvoice)
-												.ConfigureAwait(false);
+		Invoice analyzedInvoice = await invoiceAnalysisFoundationService
+			.AnalyzeInvoiceAsync(options, currentInvoice)
+			.ConfigureAwait(false);
+
+		await invoiceStorageFoundationService
+			.UpdateInvoiceObject(analyzedInvoice, invoiceIdentifier, userIdentifier)
+			.ConfigureAwait(false);
 	}).ConfigureAwait(false);
+	#endregion
 
+	#region Create Invoice API
 	/// <inheritdoc/>
-	public async Task<Invoice> CreateInvoiceObject(Invoice invoice) =>
+	public async Task<Invoice> CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
 		await invoiceStorageFoundationService
-			.CreateInvoiceObject(invoice)
+			.CreateInvoiceObject(invoice, userIdentifier)
 			.ConfigureAwait(false);
-
 		return invoice;
 	}).ConfigureAwait(false);
+	#endregion
 
+	#region Delete Invoice API
 	/// <inheritdoc/>
-	public async Task DeleteInvoiceObject(Guid identifier, Guid userIdentifier) =>
+	public async Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
-		var invoice = await ReadInvoiceObject(identifier, userIdentifier).ConfigureAwait(false);
-		await invoiceStorageFoundationService.DeleteInvoiceObject(invoice.id, userIdentifier).ConfigureAwait(false);
+		await invoiceStorageFoundationService
+			.DeleteInvoiceObject(identifier, userIdentifier)
+			.ConfigureAwait(false);
 	}).ConfigureAwait(false);
+	#endregion
 
+	#region Read Invoices API
 	/// <inheritdoc/>
-	public async Task DeleteInvoiceObject(Guid identifier) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
-		var invoice = await ReadInvoiceObject(identifier).ConfigureAwait(false);
-		await invoiceStorageFoundationService.DeleteInvoiceObject(invoice.id).ConfigureAwait(false);
-	}).ConfigureAwait(false);
-
-
-	/// <inheritdoc/>
-	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier) =>
+	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid? userIdentifier = null) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
 		var invoices = await invoiceStorageFoundationService
 			.ReadAllInvoiceObjects(userIdentifier)
 			.ConfigureAwait(false);
-
 		return invoices;
 	}).ConfigureAwait(false);
+	#endregion
 
+	#region Read Invoice API
 	/// <inheritdoc/>
-	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects() =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
-		var invoices = await invoiceStorageFoundationService
-			.ReadAllInvoiceObjects()
-			.ConfigureAwait(false);
-
-		return invoices;
-	}).ConfigureAwait(false);
-
-	/// <inheritdoc/>
-	public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid userIdentifier) =>
+	public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
 		var invoice = await invoiceStorageFoundationService
 			.ReadInvoiceObject(identifier, userIdentifier)
 			.ConfigureAwait(false);
-
 		return invoice;
 	}).ConfigureAwait(false);
+	#endregion
 
+	#region Update Invoice API
 	/// <inheritdoc/>
-	public async Task<Invoice> ReadInvoiceObject(Guid identifier) =>
+	public async Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null) =>
 	await TryCatchAsync(async () =>
 	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
-		var invoice = await invoiceStorageFoundationService
-			.ReadInvoiceObject(identifier)
+		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
+		var updatedInvoiceObject = await invoiceStorageFoundationService
+			.UpdateInvoiceObject(updatedInvoice, invoiceIdentifier, userIdentifier)
 			.ConfigureAwait(false);
-
-		return invoice;
-	}).ConfigureAwait(false);
-
-	/// <inheritdoc/>
-	public async Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
-		var invoice = await invoiceStorageFoundationService.UpdateInvoiceObject(currentInvoice, updatedInvoice)
-																.ConfigureAwait(false);
-
-		return invoice;
-	}).ConfigureAwait(false);
-
-	/// <inheritdoc/>
-	public async Task<Invoice> UpdateInvoiceObject(Guid invoiceIdentifier, Invoice updatedInvoice) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
-		var invoice = await ReadInvoiceObject(invoiceIdentifier).ConfigureAwait(false);
-		var updatedInvoiceObject = await invoiceStorageFoundationService.UpdateInvoiceObject(invoice, updatedInvoice)
-																			.ConfigureAwait(false);
 		return updatedInvoiceObject;
 	}).ConfigureAwait(false);
+	#endregion
 }

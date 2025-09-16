@@ -16,7 +16,6 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 [ExcludeFromCodeCoverage] // DTOs are not tested - they are used to transfer data between the client and the server.
 public readonly record struct CreateInvoiceDto(
 	[Required] Guid UserIdentifier,
-	Uri? ScanLocation,
 	IDictionary<string, object>? Metadata)
 {
 	/// <summary>
@@ -25,14 +24,8 @@ public readonly record struct CreateInvoiceDto(
 	/// <returns></returns>
 	public Invoice ToInvoice()
 	{
-		Invoice invoice = new Invoice()
-		{
-			id = Guid.CreateVersion7(),
-			UserIdentifier = UserIdentifier,
-			Category = InvoiceCategory.NOT_DEFINED,
-			ScanLocation = ScanLocation ?? new Uri("https://arolariu.ro"),
-			CreatedBy = UserIdentifier,
-		};
+		Invoice invoice = Invoice.Default();
+		invoice.UserIdentifier = UserIdentifier;
 
 		if (Metadata is not null)
 		{

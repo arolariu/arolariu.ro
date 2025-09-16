@@ -8,6 +8,7 @@ using System.Text.Json.Serialization;
 using arolariu.Backend.Common.DDD.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DTOs;
 
 /// <summary>
 /// The Invoice model as "represented" in the Application Domain.
@@ -18,7 +19,7 @@ public sealed class Invoice : NamedEntity<Guid>
 	/// <inheritdoc/>
 	[JsonPropertyName("id")]
 	[JsonPropertyOrder(0)]
-	public override required Guid id { get; init; } = Guid.NewGuid();
+	public override required Guid id { get; init; } = Guid.CreateVersion7();
 
 	/// <summary>
 	/// The invoice 1:1 user relationship (owner).
@@ -39,10 +40,10 @@ public sealed class Invoice : NamedEntity<Guid>
 	public InvoiceCategory Category { get; set; } = InvoiceCategory.NOT_DEFINED;
 
 	/// <summary>
-	/// The invoice scan location (URL).
+	/// The invoice scan value object.
 	/// </summary>
 	[JsonPropertyOrder(6)]
-	public required Uri ScanLocation { get; set; } = new Uri("https://arolariu.ro");
+	public InvoiceScan Scan { get; set; } = InvoiceScan.Default();
 
 	/// <summary>
 	/// Payment information (currency, total amount, total tax).
@@ -75,4 +76,22 @@ public sealed class Invoice : NamedEntity<Guid>
 	/// </summary>
 	[JsonPropertyOrder(11)]
 	public IDictionary<string, string> AdditionalMetadata { get; private set; } = new Dictionary<string, string>();
+
+	/// <summary>
+	/// Creates a new instance of the Invoice with default values.
+	/// </summary>
+	/// <returns></returns>
+	internal static Invoice Default()
+	{
+		return new Invoice
+		{
+			id = Guid.CreateVersion7(),
+			UserIdentifier = Guid.Empty,
+			Category = InvoiceCategory.NOT_DEFINED,
+			Scan = InvoiceScan.Default(),
+			PaymentInformation = new PaymentInformation(),
+			MerchantReference = Guid.Empty,
+			AdditionalMetadata = new Dictionary<string, string>(),
+		};
+	}
 }

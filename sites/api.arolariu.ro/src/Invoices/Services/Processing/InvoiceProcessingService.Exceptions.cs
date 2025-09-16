@@ -10,6 +10,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.O
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
+using arolariu.Backend.Domain.Invoices.DTOs;
 
 public partial class InvoiceProcessingService
 {
@@ -27,6 +28,10 @@ public partial class InvoiceProcessingService
 	private delegate Task<Merchant> CallbackFunctionForTasksWithMerchantReturn();
 
 	private delegate Task<IEnumerable<Merchant>> CallbackFunctionForTasksWithMerchantListReturn();
+
+	private delegate Task<IDictionary<string, string>> CallbackFunctionForTasksWithMetadataReturn();
+
+	private delegate Task<InvoiceScan> CallbackFunctionForTasksWithInvoiceScanReturn();
 	#endregion
 
 	#region TryCatchAync method
@@ -217,6 +222,62 @@ public partial class InvoiceProcessingService
 			throw CreateAndLogDependencyValidationException(exception.InnerException!);
 		}
 		catch (MerchantOrchestrationServiceException exception)
+		{
+			throw CreateAndLogServiceException(exception.InnerException!);
+		}
+		catch (Exception exception)
+		{
+			throw CreateAndLogServiceException(exception);
+		}
+	}
+
+	private async Task<IDictionary<string, string>> TryCatchAsync(CallbackFunctionForTasksWithMetadataReturn callbackFunction)
+	{
+		try
+		{
+			return await callbackFunction().ConfigureAwait(false);
+		}
+		catch (InvoiceOrchestrationValidationException exception)
+		{
+			throw CreateAndLogValidationException(exception.InnerException!);
+		}
+		catch (InvoiceOrchestrationDependencyException exception)
+		{
+			throw CreateAndLogDependencyException(exception.InnerException!);
+		}
+		catch (InvoiceOrchestrationDependencyValidationException exception)
+		{
+			throw CreateAndLogDependencyValidationException(exception.InnerException!);
+		}
+		catch (InvoiceOrchestrationServiceException exception)
+		{
+			throw CreateAndLogServiceException(exception.InnerException!);
+		}
+		catch (Exception exception)
+		{
+			throw CreateAndLogServiceException(exception);
+		}
+	}
+
+	private async Task<InvoiceScan> TryCatchAsync(CallbackFunctionForTasksWithInvoiceScanReturn callbackFunction)
+	{
+		try
+		{
+			return await callbackFunction().ConfigureAwait(false);
+		}
+		catch (InvoiceOrchestrationValidationException exception)
+		{
+			throw CreateAndLogValidationException(exception.InnerException!);
+		}
+		catch (InvoiceOrchestrationDependencyException exception)
+		{
+			throw CreateAndLogDependencyException(exception.InnerException!);
+		}
+		catch (InvoiceOrchestrationDependencyValidationException exception)
+		{
+			throw CreateAndLogDependencyValidationException(exception.InnerException!);
+		}
+		catch (InvoiceOrchestrationServiceException exception)
 		{
 			throw CreateAndLogServiceException(exception.InnerException!);
 		}

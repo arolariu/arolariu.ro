@@ -32,11 +32,17 @@ public sealed partial class AzureFormRecognizerBroker
 		{
 			if (merchantAddressField.FieldType is DocumentFieldType.String)
 			{
-				merchant.Address = merchantAddressField.Value.AsString();
+				merchant.Address = merchant.Address with
+				{
+					Address = merchantAddressField.Value.AsString()
+				};
 			}
 			else if (merchantAddressField.FieldType is DocumentFieldType.Address)
 			{
-				merchant.Address = merchantAddressField.Content;
+				merchant.Address = merchant.Address with
+				{
+					Address = merchantAddressField.Content
+				};
 			}
 		}
 
@@ -46,7 +52,10 @@ public sealed partial class AzureFormRecognizerBroker
 			&& (merchantPhoneNumberField.FieldType is DocumentFieldType.PhoneNumber
 				|| merchantPhoneNumberField.FieldType is DocumentFieldType.String))
 		{
-			merchant.PhoneNumber = merchantPhoneNumberField.Value.AsPhoneNumber();
+			merchant.Address = merchant.Address with
+			{
+				PhoneNumber = merchantPhoneNumberField.Value.AsPhoneNumber()
+			};
 		}
 
 		return merchant;

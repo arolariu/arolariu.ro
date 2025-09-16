@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Tests.Builders;
 using System;
 using System.Collections.Generic;
 
+using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 using Xunit;
@@ -22,8 +23,7 @@ public static class MerchantTestDataBuilder
 			Name = GetRandomString(),
 			Description = GetRandomString(),
 			Category = MerchantCategory.ONLINE_SHOP,
-			Address = GetRandomString(),
-			PhoneNumber = GetRandomString(),
+			Address = new ContactInformation(),
 			IsImportant = Random.Next(0, 2) == 1,
 			CreatedBy = Guid.NewGuid(),
 			CreatedAt = GetRandomDateTimeOffset(),
@@ -47,7 +47,6 @@ public static class MerchantTestDataBuilder
 			Description = merchant.Description,
 			Category = merchant.Category,
 			Address = merchant.Address,
-			PhoneNumber = merchant.PhoneNumber,
 			IsImportant = merchant.IsImportant,
 			CreatedBy = merchant.CreatedBy,
 			CreatedAt = merchant.CreatedAt,

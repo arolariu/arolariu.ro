@@ -98,6 +98,15 @@ public interface IInvoiceNoSqlBroker
 	/// <param name="userIdentifier"></param>
 	/// <returns></returns>
 	public ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
+
+	/// <summary>
+	/// Deletes all the invoices for a given user.
+	/// This method is used to delete all the invoices for a given user from the database.
+	/// The invoices are identified by the user identifier (partition key).
+	/// </summary>
+	/// <param name="userIdentifier"></param>
+	/// <returns></returns>
+	public ValueTask DeleteInvoicesAsync(Guid userIdentifier);
 	#endregion
 
 	#region Merchant Storage Broker

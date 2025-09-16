@@ -167,6 +167,35 @@ public static partial class InvoiceEndpoints
 		ClaimsPrincipal principal);
 
 	/// <summary>
+	/// Deletes all invoices from a specific user.
+	/// </summary>
+	/// <param name="invoiceProcessingService"></param>
+	/// <param name="httpContext"></param>
+	/// <param name="userIdentifier"></param>
+	/// <param name="principal"></param>
+	/// <returns></returns>
+	[SwaggerOperation(
+		Summary = "Deletes all invoices from a specific user in the system.",
+		Description = "Deletes all invoices from a specific user in the Invoice Management System. " +
+		"If the user identifier passed to the route is valid, the server will delete all invoices from that user, given that the user is allowed to delete these invoices.",
+		OperationId = nameof(DeleteInvoicesAsync),
+		Tags = [EndpointNameTag])]
+	[SwaggerResponse(StatusCodes.Status204NoContent, "The invoices were deleted successfully.")]
+	[SwaggerResponse(StatusCodes.Status400BadRequest, "The user identifier is not valid.", typeof(ValidationProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The invoices could not be deleted due to the user not being found.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could not be deleted due to an internal service error.", typeof(ProblemDetails))]
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+	[Authorize]
+	internal static partial Task<IResult> DeleteInvoicesAsync(
+		IInvoiceProcessingService invoiceProcessingService,
+		IHttpContextAccessor httpContext,
+		Guid userIdentifier,
+		ClaimsPrincipal principal);
+
+	/// <summary>
 	/// Adds a product to a specific invoice.
 	/// </summary>
 	/// <param name="invoiceProcessingService"></param>
@@ -432,7 +461,7 @@ public static partial class InvoiceEndpoints
 		"and then will perform a series of operations to onboard the invoice scan into the Invoice Management System.",
 		OperationId = nameof(CreateInvoiceScanAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status201Created, "The invoice scan was created successfully in the system.", typeof(InvoiceScanDto))]
+	[SwaggerResponse(StatusCodes.Status201Created, "The invoice scan was created successfully in the system.", typeof(InvoiceScan))]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice scan DTO (payload) is not valid. Please respect the request body.", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to create a new invoice scan in the system.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
@@ -446,7 +475,7 @@ public static partial class InvoiceEndpoints
 		IInvoiceProcessingService invoiceProcessingService,
 		IHttpContextAccessor httpContext,
 		Guid id,
-		InvoiceScanDto invoiceScanDto,
+		InvoiceScan invoiceScanDto,
 		ClaimsPrincipal principal);
 
 	/// <summary>
@@ -463,7 +492,7 @@ public static partial class InvoiceEndpoints
 		"If the invoice scan identifier passed into the route is valid, the server will retrieve the invoice scan, given that the user is allowed to see this invoice scan.",
 		OperationId = nameof(RetrieveInvoiceScanAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status200OK, "The invoice scan was retrieved successfully from the system.", typeof(InvoiceScanDto))]
+	[SwaggerResponse(StatusCodes.Status200OK, "The invoice scan was retrieved successfully from the system.", typeof(InvoiceScan))]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice scan identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access this invoice scan.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
@@ -492,7 +521,7 @@ public static partial class InvoiceEndpoints
 		Description = "This route will allow you to updates a specific invoice scan from the Invoice Managemnet System.",
 		OperationId = nameof(UpdateInvoiceScanAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status202Accepted, "The invoice scan was updated successfully.", typeof(InvoiceScanDto))]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The invoice scan was updated successfully.", typeof(InvoiceScan))]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice scan information is not valid (please respect the invoice scan schema).", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
@@ -505,7 +534,7 @@ public static partial class InvoiceEndpoints
 		IInvoiceProcessingService invoiceProcessingService,
 		IHttpContextAccessor httpContext,
 		Guid id,
-		InvoiceScanDto invoiceScanDto,
+		InvoiceScan invoiceScanDto,
 		ClaimsPrincipal principal);
 
 	/// <summary>
@@ -551,7 +580,7 @@ public static partial class InvoiceEndpoints
 		"If the invoice identifier passed to the route is valid, the server will retrieve the metadata from the invoice, given that the user is allowed to see the metadata.",
 		OperationId = nameof(RetrieveInvoiceMetadataAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status200OK, "The metadata was retrieved successfully from the invoice.", typeof(InvoiceMetadataDto))]
+	[SwaggerResponse(StatusCodes.Status200OK, "The metadata was retrieved successfully from the invoice.", typeof(IDictionary<string, string>))]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access the metadata from this invoice.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
@@ -581,7 +610,7 @@ public static partial class InvoiceEndpoints
 		"If the invoice identifier passed to the route is valid, the server will patch the metadata from the invoice, given that the user is allowed to update the metadata.",
 		OperationId = nameof(PatchInvoiceMetadataAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status202Accepted, "The metadata was patched successfully in the invoice.", typeof(InvoiceMetadataDto))]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The metadata was patched successfully in the invoice.", typeof(IDictionary<string, string>))]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]

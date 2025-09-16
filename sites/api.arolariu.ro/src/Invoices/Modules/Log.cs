@@ -212,4 +212,13 @@ public static partial class Log
 	public static partial void LogMerchantStorageServiceException(this ILogger logger, string exceptionMessage);
 	#endregion
 	#endregion
+
+	#region General Validation and Exception Logging Methods
+	/// <summary>
+	/// Auto-generated method for logging the user identifier not set warning.
+	/// </summary>
+	/// <param name="logger"></param>
+	[LoggerMessage(100_200, LogLevel.Warning, "User identifier is not set in the current context.")]
+	public static partial void LogUserIdentifierNotSetWarning(this ILogger logger);
+	#endregion
 }

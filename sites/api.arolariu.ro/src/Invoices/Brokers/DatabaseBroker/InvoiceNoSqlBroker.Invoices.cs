@@ -192,4 +192,32 @@ public partial class InvoiceNoSqlBroker
 		// Update the invoice and the products.
 		await container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey).ConfigureAwait(false);
 	}
+
+	/// <inheritdoc/>
+	public async ValueTask DeleteInvoicesAsync(Guid userIdentifier)
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoicesAsync));
+		var database = CosmosClient.GetDatabase("arolariu");
+		var container = database.GetContainer("invoices");
+		var partitionKey = new PartitionKey(userIdentifier.ToString());
+		var query = new QueryDefinition("SELECT * FROM c WHERE c.UserIdentifier = @userIdentifier")
+			.WithParameter("@userIdentifier", userIdentifier);
+
+		var iterator = container.GetItemQueryIterator<Invoice>(query, requestOptions: new QueryRequestOptions { PartitionKey = partitionKey });
+		while (iterator.HasMoreResults)
+		{
+			var response = await iterator.ReadNextAsync().ConfigureAwait(false);
+			foreach (var invoice in response)
+			{
+				invoice.SoftDelete();
+				// Mark the invoice products as soft-deleted.
+				foreach (var product in invoice.Items)
+				{
+					product.Metadata = product.Metadata with { IsSoftDeleted = true };
+				}
+				// Update the invoice and the products.
+				await container.ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey).ConfigureAwait(false);
+			}
+		}
+	}
 }

@@ -3,6 +3,8 @@ namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using System;
 using System.Diagnostics.CodeAnalysis;
 
+using arolariu.Backend.Common.DDD.ValueObjects;
+
 /// <summary>
 /// The payment information record.
 /// </summary>
@@ -22,7 +24,7 @@ public sealed record PaymentInformation
 	/// <summary>
 	/// The original currency.
 	/// </summary>
-	public Currency Currency { get; set; } = new Currency();
+	public Currency Currency { get; set; } = new Currency("Romanian Leu", "RON", "lei");
 
 	/// <summary>
 	/// The total amount, in the original currency.

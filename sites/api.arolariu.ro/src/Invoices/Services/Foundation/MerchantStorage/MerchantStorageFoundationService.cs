@@ -34,106 +34,77 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 		this.logger = loggerFactory.CreateLogger<IMerchantStorageFoundationService>();
 	}
 
+	#region Create Merchant Object API
 	/// <inheritdoc/>
-	public async Task<Merchant> CreateMerchantObject(Merchant merchant) =>
+	public async Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId = null) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateMerchantObject));
-
 		ValidateMerchantIdentifierIsSet(merchant.id);
 
-		await invoiceNoSqlBroker.CreateMerchantAsync(merchant).ConfigureAwait(false);
-		var retrievedMerchant = await invoiceNoSqlBroker
-				.ReadMerchantAsync(merchant.id)
+		await invoiceNoSqlBroker
+			.CreateMerchantAsync(merchant)
+			.ConfigureAwait(false);
+	}).ConfigureAwait(false);
+	#endregion
+
+	#region Delete Merchant Object API
+	/// <inheritdoc/>
+	public async Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId = null) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantObject));
+
+		ValidateMerchantIdentifierIsSet(identifier);
+		ValidateParentCompanyIdentifierIsSet(parentCompanyId);
+
+		await invoiceNoSqlBroker.DeleteMerchantAsync(identifier).ConfigureAwait(false);
+	}).ConfigureAwait(false);
+	#endregion
+
+	#region Read Merchant Objects API
+	/// <inheritdoc/>
+	public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid? parentCompanyId = null) =>
+	await TryCatchAsync(async () =>
+	{
+		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllMerchantObjects));
+
+		if (parentCompanyId is null)
+		{
+			IEnumerable<Merchant> allMerchants = await invoiceNoSqlBroker
+				.ReadMerchantsAsync()
 				.ConfigureAwait(false);
-
-		return retrievedMerchant!;
+			return allMerchants;
+		}
+		else
+		{
+			IEnumerable<Merchant> merchants = await invoiceNoSqlBroker
+				.ReadMerchantsAsync((Guid)parentCompanyId)
+				.ConfigureAwait(false);
+			return merchants;
+		}
 	}).ConfigureAwait(false);
+	#endregion
 
+	#region Read Merchant Object API
 	/// <inheritdoc/>
-	public async Task DeleteMerchantObject(Guid identifier, Guid parentCompanyId) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantObject));
-
-		ValidateMerchantIdentifierIsSet(identifier);
-		ValidateParentCompanyIdentifierIsSet(parentCompanyId);
-
-		await invoiceNoSqlBroker.DeleteMerchantAsync(identifier).ConfigureAwait(false);
-	}).ConfigureAwait(false);
-
-	/// <inheritdoc/>
-	public async Task DeleteMerchantObject(Guid identifier) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantObject));
-
-		ValidateMerchantIdentifierIsSet(identifier);
-
-		await invoiceNoSqlBroker.DeleteMerchantAsync(identifier).ConfigureAwait(false);
-	}).ConfigureAwait(false);
-
-	/// <inheritdoc/>
-	public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllMerchantObjects));
-		var merchants = await invoiceNoSqlBroker.ReadMerchantsAsync(parentCompanyId).ConfigureAwait(false);
-
-		return merchants;
-	}).ConfigureAwait(false);
-
-	/// <inheritdoc/>
-	public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects() =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllMerchantObjects));
-		var merchants = await invoiceNoSqlBroker.ReadMerchantsAsync().ConfigureAwait(false);
-
-		return merchants;
-	}).ConfigureAwait(false);
-
-	/// <inheritdoc/>
-	public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid parentCompanyId) =>
+	public async Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId = null) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObject));
-
 		ValidateMerchantIdentifierIsSet(identifier);
 		ValidateParentCompanyIdentifierIsSet(parentCompanyId);
-
-		var merchant = await invoiceNoSqlBroker.ReadMerchantAsync(identifier).ConfigureAwait(false);
-
-		return merchant!;
-	}).ConfigureAwait(false);
-
-	/// <inheritdoc/>
-	public async Task<Merchant> ReadMerchantObject(Guid identifier) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObject));
-
-		ValidateMerchantIdentifierIsSet(identifier);
-
-		var merchant = await invoiceNoSqlBroker.ReadMerchantAsync(identifier).ConfigureAwait(false);
-		return merchant!;
-	}).ConfigureAwait(false);
-
-	/// <inheritdoc/>
-	public async Task<Merchant> UpdateMerchantObject(Merchant currentMerchant, Merchant updatedMerchant) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
 
 		var merchant = await invoiceNoSqlBroker
-			.UpdateMerchantAsync(currentMerchant, updatedMerchant)
+			.ReadMerchantAsync(identifier)
 			.ConfigureAwait(false);
-
-		return merchant;
+		return merchant!;
 	}).ConfigureAwait(false);
+	#endregion
 
+	#region Update Merchant Object API
 	/// <inheritdoc/>
-	public async Task<Merchant> UpdateMerchantObject(Guid merchantIdentifier, Merchant updatedMerchant) =>
+	public async Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId = null) =>
 	await TryCatchAsync(async () =>
 	{
 		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
@@ -146,4 +117,5 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
 
 		return newMerchant;
 	}).ConfigureAwait(false);
+	#endregion
 }

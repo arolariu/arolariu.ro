@@ -49,6 +49,19 @@ public static partial class InvoiceEndpoints
 			.WithOpenApi();
 
 		router
+			.MapDelete("/invoices", DeleteInvoicesAsync)
+			.Accepts<Guid>("application/json")
+			.Produces(StatusCodes.Status204NoContent)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(DeleteInvoicesAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
+		router
 			.MapGet("/invoices/{id}", RetrieveSpecificInvoiceAsync)
 			.Produces<Invoice>(StatusCodes.Status200OK)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
@@ -203,7 +216,7 @@ public static partial class InvoiceEndpoints
 
 		router
 			.MapPost("/invoices/{id}/scan", CreateInvoiceScanAsync)
-			.Accepts<InvoiceScanDto>("application/json")
+			.Accepts<InvoiceScan>("application/json")
 			.Produces<Invoice>(StatusCodes.Status201Created)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -219,7 +232,7 @@ public static partial class InvoiceEndpoints
 
 		router
 			.MapGet("/invoices/{id}/scan", RetrieveInvoiceScanAsync)
-			.Produces<InvoiceScanDto>(StatusCodes.Status200OK)
+			.Produces<InvoiceScan>(StatusCodes.Status200OK)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status403Forbidden)
@@ -234,7 +247,7 @@ public static partial class InvoiceEndpoints
 
 		router
 			.MapPut("/invoices/{id}/scan", UpdateInvoiceScanAsync)
-			.Accepts<InvoiceScanDto>("application/json")
+			.Accepts<InvoiceScan>("application/json")
 			.Produces<Invoice>(StatusCodes.Status202Accepted)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)

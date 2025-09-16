@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 using arolariu.Backend.Common.DDD.Contracts;
+using arolariu.Backend.Common.DDD.ValueObjects;
 
 /// <summary>
 /// The invoice merchant record class represents the merchant information from the invoice.
@@ -30,23 +31,23 @@ public sealed class Merchant : NamedEntity<Guid>
 	/// The merchant address.
 	/// </summary>
 	[JsonPropertyOrder(4)]
-	public string Address { get; set; } = string.Empty;
-
-	/// <summary>
-	/// The merchant phone number.
-	/// </summary>
-	[JsonPropertyOrder(5)]
-	public string PhoneNumber { get; set; } = string.Empty;
+	public ContactInformation Address { get; set; } = new ContactInformation();
 
 	/// <summary>
 	/// The merchant parent company.
 	/// </summary>
-	[JsonPropertyOrder(6)]
+	[JsonPropertyOrder(5)]
 	public Guid ParentCompanyId { get; set; } = Guid.Empty;
 
 	/// <summary>
 	/// The list of invoices that reference this merchant.
 	/// </summary>
-	[JsonPropertyOrder(7)]
+	[JsonPropertyOrder(6)]
 	public ICollection<Guid> ReferencedInvoices { get; init; } = new List<Guid>();
+
+	/// <summary>
+	/// Additional metadata about the merchant.
+	/// </summary>
+	[JsonPropertyOrder(7)]
+	public IDictionary<string, string> AdditionalMetadata { get; init; } = new Dictionary<string, string>();
 }
