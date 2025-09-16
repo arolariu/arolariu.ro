@@ -87,6 +87,20 @@ public static partial class InvoiceEndpoints
 			.RequireAuthorization()
 			.WithOpenApi();
 
+		router // Partially update a specific invoice, given its identifier.
+			.MapPatch("/invoices/{id}", PatchSpecificInvoiceAsync)
+			.Accepts<Invoice>("application/json")
+			.Produces<Invoice>(StatusCodes.Status202Accepted)
+			.ProducesProblem(StatusCodes.Status400BadRequest)
+			.ProducesProblem(StatusCodes.Status401Unauthorized)
+			.ProducesProblem(StatusCodes.Status403Forbidden)
+			.ProducesProblem(StatusCodes.Status404NotFound)
+			.ProducesProblem(StatusCodes.Status429TooManyRequests)
+			.ProducesProblem(StatusCodes.Status500InternalServerError)
+			.WithName(nameof(PatchSpecificInvoiceAsync))
+			.RequireAuthorization()
+			.WithOpenApi();
+
 		router // Delete a specific invoice, given its identifier.
 			.MapDelete("/invoices/{id}", DeleteInvoiceAsync)
 			.Produces<Invoice>(StatusCodes.Status204NoContent)

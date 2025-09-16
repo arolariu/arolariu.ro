@@ -249,9 +249,73 @@ public static partial class InvoiceEndpoints
 			var possibleInvoice = await invoiceProcessingService
 				.ReadInvoice(id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-
 			if (possibleInvoice is null) return TypedResults.NotFound();
-			else return TypedResults.Ok(possibleInvoice);
+
+			var updatedInvoice = await invoiceProcessingService
+				.UpdateInvoice(invoicePayload, potentialUserIdentifier)
+				.ConfigureAwait(false);
+			return TypedResults.Ok(value: updatedInvoice);
+		}
+		catch (InvoiceProcessingServiceValidationException exception)
+		{
+			return TypedResults.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service validation error.");
+		}
+		catch (InvoiceProcessingServiceDependencyException exception)
+		{
+			return TypedResults.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency error.");
+		}
+		catch (InvoiceProcessingServiceDependencyValidationException exception)
+		{
+			return TypedResults.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service dependency validation error.");
+		}
+		catch (InvoiceProcessingServiceException exception)
+		{
+			return TypedResults.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered a processing service error.");
+		}
+		catch (Exception exception)
+		{
+			return TypedResults.Problem(
+				detail: exception.Message + exception.Source,
+				statusCode: StatusCodes.Status500InternalServerError,
+				title: "The service encountered an unexpected internal service error.");
+		}
+	}
+
+	internal static async partial Task<IResult> PatchSpecificInvoiceAsync(
+		[FromServices] IInvoiceProcessingService invoiceProcessingService,
+		[FromServices] IHttpContextAccessor httpContext,
+		[FromRoute] Guid id,
+		[FromBody] Invoice invoicePayload,
+		ClaimsPrincipal principal)
+	{
+		try
+		{
+			using var activity = InvoicePackageTracing.StartActivity(nameof(PatchSpecificInvoiceAsync), ActivityKind.Server);
+			var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+
+			var possibleInvoice = await invoiceProcessingService
+				.ReadInvoice(id, potentialUserIdentifier)
+				.ConfigureAwait(false);
+			if (possibleInvoice is null) return TypedResults.NotFound();
+
+			var newInvoice = Invoice.Merge(possibleInvoice, invoicePayload);
+
+			var updatedInvoice = await invoiceProcessingService
+				.UpdateInvoice(newInvoice, potentialUserIdentifier)
+				.ConfigureAwait(false);
+			return TypedResults.Ok(value: updatedInvoice);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{

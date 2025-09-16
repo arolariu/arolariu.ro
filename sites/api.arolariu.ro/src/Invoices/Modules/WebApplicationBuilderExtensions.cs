@@ -82,7 +82,7 @@ public static class WebApplicationBuilderExtensions
 										.GetApplicationOptions()
 										.NoSqlConnectionString);
 
-			options.UseCosmos(connectionString, "arolariu", noSqlOptions =>
+			options.UseCosmos(connectionString, "primary", noSqlOptions =>
 			{
 
 			});

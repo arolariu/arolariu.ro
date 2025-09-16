@@ -145,6 +145,38 @@ public static partial class InvoiceEndpoints
 		ClaimsPrincipal principal);
 	#endregion
 
+	#region HTTP PATCH /rest/v1/invoices/{id}
+	/// <summary>
+	/// Patches a specific invoice, given a partial invoice payload.
+	/// </summary>
+	/// <param name="invoiceProcessingService"></param>
+	/// <param name="httpContext"></param>
+	/// <param name="id"></param>
+	/// <param name="invoicePayload"></param>
+	/// <param name="principal"></param>
+	/// <returns></returns>
+	[SwaggerOperation(
+		Summary = "Patches a specific invoice in the system.",
+		Description = "This route will allow you to patch a specific invoice from the Invoice Managemnet System.",
+		OperationId = nameof(PatchSpecificInvoiceAsync),
+		Tags = [EndpointNameTag])]
+	[SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was patched successfully.", typeof(Invoice))]
+	[SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice information is not valid (please respect the invoice schema).", typeof(ValidationProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be patched due to the invoice not being found.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be patched due to an internal service error.", typeof(ProblemDetails))]
+	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+	[Authorize]
+	internal static partial Task<IResult> PatchSpecificInvoiceAsync(
+		IInvoiceProcessingService invoiceProcessingService,
+		IHttpContextAccessor httpContext,
+		Guid id,
+		Invoice invoicePayload,
+		ClaimsPrincipal principal);
+	#endregion
+
 	#region HTTP DELETE /rest/v1/invoices/{id}
 	/// <summary>
 	/// Deletes a specific invoice.
