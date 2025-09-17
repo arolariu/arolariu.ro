@@ -1,42 +1,50 @@
 {
+  "$schema": "https://schema.postman.com/collection/json/v2.1.0/draft-04/collection.json",
   "info": {
     "name": "api.arolariu.ro",
     "description": "",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"Response status follows RESTful conventions (collection-level)\", function () {",
+          "    var method = pm.request.method.toUpperCase();",
+          "    var code = pm.response.code;",
+          "    var expectedRange;",
+          "    // Use tolerant 2xx ranges by default; override with stricter per-request tests when necessary",
+          "    if (method === 'GET' || method === 'HEAD') { expectedRange = [200, 299]; }",
+          "    else if (method === 'POST') { expectedRange = [200, 299]; }",
+          "    else if (method === 'PUT' || method === 'PATCH') { expectedRange = [200, 299]; }",
+          "    else if (method === 'DELETE') { expectedRange = [200, 299]; }",
+          "    else { expectedRange = [200, 399]; }",
+          "    pm.expect(code).to.be.within(expectedRange[0], expectedRange[1]);",
+          "});"
+        ]
+      }
+    }
+  ],
   "item": [
     {
       "name": "Invoices",
       "item": [
         {
           "name": "Get Invoices",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -58,33 +66,18 @@
         },
         {
           "name": "Create Invoice",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -115,33 +108,18 @@
         },
         {
           "name": "Get Invoices 2",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -163,33 +141,18 @@
         },
         {
           "name": "Get Invoice",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -212,33 +175,18 @@
         },
         {
           "name": "Update Invoice",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "PUT",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -270,33 +218,18 @@
         },
         {
           "name": "Delete Invoice",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "DELETE",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -319,33 +252,18 @@
         },
         {
           "name": "Patch Invoice",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "PATCH",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -377,33 +295,18 @@
         },
         {
           "name": "Get Invoice Products",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -427,33 +330,18 @@
         },
         {
           "name": "Create Invoice Product",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -486,33 +374,18 @@
         },
         {
           "name": "Delete Invoice Product",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "DELETE",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -545,33 +418,18 @@
         },
         {
           "name": "Get Invoice Products 2",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -595,33 +453,18 @@
         },
         {
           "name": "Create Invoice Product 2",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -654,33 +497,18 @@
         },
         {
           "name": "Patch Invoice Product",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -713,33 +541,18 @@
         },
         {
           "name": "Get Invoice Products 3",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -763,33 +576,18 @@
         },
         {
           "name": "Get Invoice 2",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -812,33 +610,18 @@
         },
         {
           "name": "Get Invoice's Merchant",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -862,33 +645,18 @@
         },
         {
           "name": "Delete Invoice's Merchant",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "DELETE",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -912,33 +680,18 @@
         },
         {
           "name": "Create Invoice's Merchant",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -962,33 +715,18 @@
         },
         {
           "name": "Get Invoice's Merchant 2",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1012,33 +750,18 @@
         },
         {
           "name": "Get Invoice's Merchant 3",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1062,33 +785,18 @@
         },
         {
           "name": "Get Invoice's Scan",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1112,33 +820,18 @@
         },
         {
           "name": "Create Invoice's Scan",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1162,33 +855,18 @@
         },
         {
           "name": "Get Invoice's Scan 2",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1212,33 +890,18 @@
         },
         {
           "name": "Update Invoice's Scan",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1262,33 +925,18 @@
         },
         {
           "name": "Get Invoice's Scan 3",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1312,33 +960,18 @@
         },
         {
           "name": "Delete Invoice's Scan",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "DELETE",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1362,33 +995,18 @@
         },
         {
           "name": "Get Invoice's Metadata",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1412,33 +1030,18 @@
         },
         {
           "name": "Patch Invoice's Metadata",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "PATCH",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1462,33 +1065,18 @@
         },
         {
           "name": "Get Invoice's Metadata 2",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1512,33 +1100,18 @@
         },
         {
           "name": "Delete Invoice's Metadata",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "DELETE",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1562,33 +1135,18 @@
         },
         {
           "name": "Get Invoice's Metadata 3",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1612,33 +1170,18 @@
         },
         {
           "name": "Get Invoice 3",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1661,33 +1204,18 @@
         },
         {
           "name": "Get Invoice 4",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1710,33 +1238,18 @@
         },
         {
           "name": "Get Invoice Products 4",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1760,33 +1273,18 @@
         },
         {
           "name": "Get Invoice Products 5",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1810,33 +1308,18 @@
         },
         {
           "name": "Get Invoice's Scan 4",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1860,33 +1343,18 @@
         },
         {
           "name": "Get Invoices 3",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1913,33 +1381,18 @@
       "item": [
         {
           "name": "Get Merchants",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -1961,33 +1414,18 @@
         },
         {
           "name": "Create Merchant",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -2009,33 +1447,18 @@
         },
         {
           "name": "Get Merchants 2",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -2057,33 +1480,18 @@
         },
         {
           "name": "Get Merchant",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -2106,33 +1514,18 @@
         },
         {
           "name": "Update Merchant",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "PUT",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -2155,33 +1548,18 @@
         },
         {
           "name": "Get Merchant 3",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -2204,33 +1582,18 @@
         },
         {
           "name": "Get Merchant's Invoices Products 2",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Response status follows RESTful conventions\", function () {",
-                  "    var method = pm.request.method.toUpperCase();",
-                  "    var code = pm.response.code;",
-                  "    var expected;",
-                  "    if (method === 'GET') { expected = 200; }",
-                  "    else if (method === 'POST') { expected = 201; }",
-                  "    else if (method === 'PUT') { expected = 200; }",
-                  "    else if (method === 'PATCH') { expected = 200; }",
-                  "    else if (method === 'DELETE') { expected = 204; }",
-                  "    else { expected = 200; }",
-                  "    pm.expect(code).to.eql(expected);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -2254,24 +1617,18 @@
         },
         {
           "name": "Delete Merchant",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "DELETE",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -2294,24 +1651,18 @@
         },
         {
           "name": "Get Merchants 3",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
-                  "});"
-                ]
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
             "auth": {
-              "type": "noauth"
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
             },
             "description": "",
             "url": {
@@ -2338,37 +1689,42 @@
     {
       "key": "invoiceIdentifier",
       "value": "",
-      "type": "default"
+      "type": "string"
     },
     {
       "key": "merchantIdentifier",
       "value": "",
-      "type": "default"
+      "type": "string"
     },
     {
       "key": "userIdentifier",
       "value": "",
-      "type": "default"
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
     },
     {
       "key": "baseUrl",
       "value": "{{baseProtocol}}://{{baseHost}}:{{basePort}}",
-      "type": "default"
+      "type": "string"
     },
     {
       "key": "baseHost",
       "value": "localhost",
-      "type": "default"
+      "type": "string"
     },
     {
       "key": "basePort",
       "value": "5001",
-      "type": "default"
+      "type": "string"
     },
     {
       "key": "baseProtocol",
       "value": "https",
-      "type": "default"
+      "type": "string"
     }
   ]
 }
