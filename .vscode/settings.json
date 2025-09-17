@@ -774,7 +774,7 @@
   "yaml.format.proseWrap": "preserve",
   "yaml.format.singleQuote": false,
   "yaml.hover": true,
-  "yaml.keyOrdering": true,
+  "yaml.keyOrdering": false,
   "yaml.maxItemsComputed": 5000,
   "yaml.schemas": {},
   "yaml.schemaStore.enable": true,
