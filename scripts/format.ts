@@ -97,7 +97,7 @@ async function startDotnet(formatTarget: Exclude<FormatTarget, "packages" | "web
 
 export async function main(arg?: string): Promise<number> {
   if (!arg) {
-    console.error("Missing target. Usage: format <all|packages|website|cv>");
+    console.error("Missing target. Usage: format <all|packages|website|cv|api>");
     return 1;
   }
 
@@ -119,7 +119,7 @@ export async function main(arg?: string): Promise<number> {
       await startDotnet("api");
       break;
     default:
-      console.error("Invalid or missing target. Usage: format <packages|website|cv>");
+      console.error("Invalid or missing target. Usage: format <packages|website|cv|api>");
   }
 
   return 0;
