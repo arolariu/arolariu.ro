@@ -1,0 +1,38 @@
+{
+  "recommendations": [
+    // Azure Resource Manager (ARM) tooling
+    "bencoleman.armview",
+    "msazurermtools.azurerm-vscode-tools",
+    "ms-azuretools.vscode-azureresourcegroups",
+
+    // Azure Bicep tooling (Infrastructure as Code)
+    "ms-azuretools.vscode-bicep",
+
+    // Formatting extensions
+    "editorconfig.editorconfig",
+    "tombonnike.vscode-status-bar-format-toggle",
+
+    // GitHub integration
+    "github.vscode-github-actions",
+    "github.copilot",
+    "github.copilot-chat",
+    "github.vscode-pull-request-github",
+    "github.github-vscode-theme",
+    "visualstudioexptteam.vscodeintellicode",
+    "visualstudioexptteam.intellicode-api-usage-examples",
+
+    // Frontend support
+    "graphql.vscode-graphql-syntax",
+    "yoavbls.pretty-ts-errors",
+    "svelte.svelte-vscode",
+    "bradlc.vscode-tailwindcss",
+    "pranaygp.vscode-css-peek",
+    "esbenp.prettier-vscode",
+    "usernamehw.errorlens",
+
+
+    // Backlog grooming and task tracking
+    "gruntfuggly.todo-tree",
+    "wayou.vscode-todo-highlight",
+  ]
+}
