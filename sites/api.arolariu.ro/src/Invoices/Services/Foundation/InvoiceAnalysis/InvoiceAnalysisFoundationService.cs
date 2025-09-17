@@ -1,6 +1,5 @@
 namespace arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis;
 
-using System;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker;

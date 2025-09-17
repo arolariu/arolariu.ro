@@ -11,8 +11,21 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 /// <summary>
-/// The Invoice model as "represented" in the Application Domain.
+/// Represents the invoice aggregate root controlling line items, merchant linkage, payment details, scan data, AI enrichment artifacts (recipes, categorization)
+/// and arbitrary extensible metadata within the bounded invoices context.
 /// </summary>
+/// <remarks>
+/// <para>This aggregate encapsulates the canonical mutable state of an invoice. Identity (<c>id</c>) is immutable (Version 7 GUID) and is never reassigned.</para>
+/// <para>Collections (<c>Items</c>, <c>PossibleRecipes</c>, <c>SharedWith</c>) preserve insertion order and allow duplicates. There is currently
+/// no de-duplication or concurrency token; last writer wins on updates. Future optimization may introduce distinct filtering.</para>
+/// <para><b>Soft Delete Lifecycle:</b> When soft-deleted at the storage layer, the invoice and each contained product are marked; queries exclude
+/// soft-deleted entities unless explicitly overridden. See service layer deletion logic for cascade behavior.</para>
+/// <para><b>Sentinel Defaults:</b> <c>Guid.Empty</c> for <c>UserIdentifier</c> and <c>MerchantReference</c>, <c>InvoiceCategory.NOT_DEFINED</c> for <c>Category</c>,
+/// and <c>InvoiceScan.Default()</c> for <c>Scan</c> indicate an unenriched or unlinked state. These SHOULD be replaced by upstream enrichment / user input
+/// flows prior to final analytical usage.</para>
+/// <para><b>Merge Semantics:</b> See <see cref="Merge(Invoice, Invoice)"/> for partial update precedence rules.</para>
+/// <para><b>Thread-safety:</b> Not thread-safe. Do not share instances across threads without external synchronization.</para>
+/// </remarks>
 [ExcludeFromCodeCoverage] // Entities are not tested - they are used to represent the data in the application domain.
 public sealed class Invoice : NamedEntity<Guid>
 {
@@ -81,9 +94,15 @@ public sealed class Invoice : NamedEntity<Guid>
 	public IDictionary<string, object> AdditionalMetadata { get; set; } = new Dictionary<string, object>();
 
 	/// <summary>
-	/// Creates a new instance of the Invoice with default values.
+	/// Factory producing a new invoice aggregate initialized with sentinel defaults.
 	/// </summary>
-	/// <returns></returns>
+	/// <remarks>
+	/// <para>Assigned identity is a Version 7 GUID for chronological ordering. All relationship references and enrichment
+	/// fields are initialized to sentinel states (see aggregate remarks). This method does not persist the entity.</para>
+	/// <para>Use this factory when constructing a brand new invoice prior to population via OCR / AI enrichment
+	/// or user-submitted metadata.</para>
+	/// </remarks>
+	/// <returns>A new <see cref="Invoice"/> instance with immutable identity and sentinel defaults.</returns>
 	internal static Invoice Default()
 	{
 		return new Invoice
@@ -99,12 +118,37 @@ public sealed class Invoice : NamedEntity<Guid>
 	}
 
 	/// <summary>
-	/// Static method that merges two invoices, the original and the partial updates.
-	/// The method returns a new invoice that is the result of merging the two invoices.
+	/// Produces a new invoice aggregate representing a non-destructive merge of an original invoice and a set of partial updates.
 	/// </summary>
-	/// <param name="original"></param>
-	/// <param name="partialUpdates"></param>
-	/// <returns></returns>
+	/// <remarks>
+	/// <para><b>Identity:</b> The original <c>id</c> is preserved.</para>
+	/// <para><b>Precedence Rules:</b> A field in <paramref name="partialUpdates"/> replaces the original when it is non-sentinel / non-empty;
+	/// otherwise the original value is retained. Collections are <em>concatenated</em> (original first unless otherwise stated) without de-duplication.
+	/// <c>NumberOfUpdates</c> is incremented. <c>LastUpdatedAt</c> is set to <see cref="DateTime.UtcNow"/>.</para>
+	/// <list type="table">
+	/// <listheader>
+	/// <term>Field</term><term>Partial Considered Non-Default When</term><term>Merge Behavior</term><term>Notes</term>
+	/// </listheader>
+	/// <item><term>UserIdentifier</term><term>!= Guid.Empty</term><term>Replace</term><term>Owner transfer possible; no authorization guard here.</term></item>
+	/// <item><term>Category</term><term>!= InvoiceCategory.NOT_DEFINED</term><term>Replace</term><term>Category enrichment applied late.</term></item>
+	/// <item><term>Name</term><term>!IsNullOrWhiteSpace</term><term>Replace</term><term>Whitespace-only ignored.</term></item>
+	/// <item><term>Description</term><term>!IsNullOrWhiteSpace</term><term>Replace</term><term>Trimming not currently applied.</term></item>
+	/// <item><term>IsImportant</term><term>Value differs</term><term>Replace</term><term>Boolean toggle recognized.</term></item>
+	/// <item><term>Scan</term><term><see cref="InvoiceScan.NotDefault(InvoiceScan)"/> true</term><term>Replace</term><term>Scan treated as value object snapshot.</term></item>
+	/// <item><term>PaymentInformation</term><term>Not null</term><term>Replace</term><term>Whole object replacement; no deep merge.</term></item>
+	/// <item><term>MerchantReference</term><term>!= Guid.Empty</term><term>Replace</term><term>Caller responsible for referential validity.</term></item>
+	/// <item><term>Items</term><term>Count > 0</term><term>Concatenate (original + partial)</term><term>No de-duplication; may introduce duplicates.</term></item>
+	/// <item><term>PossibleRecipes</term><term>Count > 0</term><term>Concatenate (original + partial)</term><term>Recipes appended; duplicates possible.</term></item>
+	/// <item><term>SharedWith</term><term>Count > 0</term><term>Concatenate (partial + original)</term><term>Order chosen to prioritize newly added principals.</term></item>
+	/// <item><term>AdditionalMetadata</term><term>Count > 0</term><term>Key-wise overwrite</term><term>Last writer wins per key.</term></item>
+	/// </list>
+	/// <para><b>Side Effects:</b> Original instances are left unmodified (pure functional merge). Returned instance has updated
+	/// audit counters (<c>NumberOfUpdates</c>, <c>LastUpdatedAt</c>).</para>
+	/// <para><b>Thread-safety:</b> Not thread-safe; callers must ensure exclusive access to original references during merge decision workflow.</para>
+	/// </remarks>
+	/// <param name="original">The persisted (authoritative) invoice snapshot.</param>
+	/// <param name="partialUpdates">A partially populated invoice carrying candidate replacement values.</param>
+	/// <returns>A new <see cref="Invoice"/> representing the merged state.</returns>
 	internal static Invoice Merge(Invoice original, Invoice partialUpdates)
 	{
 		var newInvoice = new Invoice

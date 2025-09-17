@@ -14,18 +14,39 @@ using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
 
 /// <summary>
-/// The Entity Framework Invoice SQL broker.
+/// Entity Framework Core (Cosmos provider) context implementing the <see cref="IInvoiceNoSqlBroker"/> contract for invoice and merchant aggregates.
 /// </summary>
+/// <remarks>
+/// <para><b>Responsibilities:</b> Configures entity-to-container mappings, JSON property names, value conversions for strongly typed / value object
+/// members, owned collections, and partition key assignments. Performs no domain validation or business rule enforcement.</para>
+/// <para><b>Containers:</b> Invoices mapped to <c>invoices</c> (partitioned by <c>UserIdentifier</c>); Merchants mapped to <c>merchants</c>
+/// (partitioned by <c>ParentCompanyId</c>).</para>
+/// <para><b>Owned Types:</b> <c>Items</c> (products), <c>PossibleRecipes</c>, and <c>PaymentInformation</c> configured as owned to ensure embedded
+/// document structure in Cosmos JSON.</para>
+/// <para><b>Soft Delete:</b> Relies on <c>IsSoftDeleted</c> flags (invoice and product metadata) — filtering is applied by higher layer query logic; the context
+/// does not automatically filter them out.</para>
+/// <para><b>Performance:</b> Explicit JSON property names and conversions reduce implicit reflection cost and ensure stable persisted schema.</para>
+/// <para><b>Thread-safety:</b> Inherits EF Core DbContext non-thread-safe semantics. Scope per logical unit-of-work.</para>
+/// </remarks>
 [ExcludeFromCodeCoverage]
 public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 {
+	/// <summary>
+	/// Underlying Azure Cosmos DB client used for low-level container operations (point reads, queries outside EF tracking pipeline in partial implementations).
+	/// </summary>
+	/// <remarks><para>Injected externally to allow pooling and centralized configuration (retry policies, diagnostics).</para></remarks>
 	private CosmosClient CosmosClient { get; }
 
 	/// <summary>
-	/// Entity Framework Invoice NoSQL broker constructor.
+	/// Initializes the broker DbContext with a pre-configured Cosmos DB client and EF Core options.
 	/// </summary>
-	/// <param name="client"></param>
-	/// <param name="options"></param>
+	/// <remarks>
+	/// <para>Does not open connections eagerly; defers to EF Core lazy initialization. Ensures required dependencies are non-null.</para>
+	/// <para><b>Diagnostics:</b> Upstream configuration may attach logging / tracing interceptors; this constructor performs no instrumentation itself.</para>
+	/// </remarks>
+	/// <param name="client">Shared <see cref="CosmosClient"/> instance (pooled / singleton at composition root).</param>
+	/// <param name="options">EF Core options including provider configuration (database name, connection mode).</param>
+	/// <exception cref="ArgumentNullException">Thrown when <paramref name="client"/> or <paramref name="options"/> is null.</exception>
 	public InvoiceNoSqlBroker(CosmosClient client, DbContextOptions<InvoiceNoSqlBroker> options) : base(options)
 	{
 		ArgumentNullException.ThrowIfNull(client);
@@ -33,6 +54,15 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 		CosmosClient = client;
 	}
 
+	/// <summary>
+	/// Configures the <see cref="Invoice"/> aggregate mapping for the Cosmos provider.
+	/// </summary>
+	/// <remarks>
+	/// <para>Defines container name, partition key (<c>UserIdentifier</c>), JSON property naming, value conversions (including enumerable converters for
+	/// collection serialization), indices and owned navigations (products, recipes, payment information).</para>
+	/// <para><b>Design Notes:</b> <c>HasNoDiscriminator()</c> used to avoid adding a synthetic type field as only a single aggregate type resides in the container.</para>
+	/// </remarks>
+	/// <param name="modelBuilder">The mutable model builder.</param>
 	private static void SetModelReferencesForInvoiceModel(ModelBuilder modelBuilder)
 	{
 		modelBuilder.Entity<Invoice>(entity =>
@@ -156,6 +186,14 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 			});
 	}
 
+	/// <summary>
+	/// Configures the <see cref="Merchant"/> entity mapping for the Cosmos provider.
+	/// </summary>
+	/// <remarks>
+	/// <para>Defines container name, partition key (<c>ParentCompanyId</c>), JSON property conversions and indexing strategy on <c>id</c>.</para>
+	/// <para>Currently no owned sub-collections. Soft delete flag present at entity level for parity with invoices (future enablement).</para>
+	/// </remarks>
+	/// <param name="modelBuilder">The mutable model builder.</param>
 	private static void SetModelReferencesForMerchantModel(ModelBuilder modelBuilder)
 	{
 		modelBuilder.Entity<Merchant>(entity =>
@@ -184,6 +222,13 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 		});
 	}
 
+	/// <summary>
+	/// Orchestrates model configuration for all aggregates/entities in this broker context.
+	/// </summary>
+	/// <remarks>
+	/// <para>Delegates to specialized configuration methods to maintain separation of concerns and reduce method length.</para>
+	/// </remarks>
+	/// <param name="modelBuilder">The mutable model builder.</param>
 	private static void SetModelReferences(ModelBuilder modelBuilder)
 	{
 		ArgumentNullException.ThrowIfNull(modelBuilder);
@@ -196,6 +241,9 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
 	}
 
 	/// <inheritdoc/>
+	/// <remarks>
+	/// <para>Adds custom entity and owned-type mapping after base configuration. Intentionally idempotent and safe for repeated model cache usage.</para>
+	/// </remarks>
 	protected override void OnModelCreating(ModelBuilder modelBuilder)
 	{
 		base.OnModelCreating(modelBuilder);

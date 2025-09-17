@@ -3,85 +3,59 @@ namespace arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
-/// The invoice item category enum represents the available categories for an invoice item.
-/// This enum is used to categorize the invoice items.
-/// The categories are used to generate the invoice statistics.
+/// Classifies individual line items for enrichment, allergen aggregation, nutritional analytics and budgeting segmentation.
 /// </summary>
-[SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification = "<Pending>")]
+/// <remarks>
+/// <para><b>Extensibility:</b> Maintain numeric spacing (increments of 100) so downstream analytical exports relying on ordered ranges remain stable.</para>
+/// <para><b>Sentinel:</b> <see cref="NOT_DEFINED"/> indicates classification pending (OCR / AI enrichment or user override has not yet supplied a definitive category). SHOULD be transient.</para>
+/// <para><b>Domain Usage:</b> Categories drive recipe suggestion relevance, allergen risk surfacing, basket composition insights and planned per-category spend trends.</para>
+/// <para><b>Thread-safety:</b> Enum is immutable and inherently thread-safe.</para>
+/// </remarks>
+[SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification = "Domain sentinel and grouped constants use underscores for clarity.")]
 public enum ProductCategory
 {
-	/// <summary>
-	/// Not defined = the item category was not defined.
-	/// </summary>
+	/// <summary>Sentinel; item category not yet classified.</summary>
 	NOT_DEFINED = 0,
 
-	/// <summary>
-	/// Bakery = the item is a baked good.
-	/// </summary>
+	/// <summary>Baked goods (bread, pastries, cakes, confectionery).</summary>
 	BAKED_GOODS = 100,
 
-	/// <summary>
-	/// Groceries = the item is a grocery.
-	/// </summary>
+	/// <summary>General grocery staples and uncategorized pantry items.</summary>
 	GROCERIES = 200,
 
-	/// <summary>
-	/// Dairy = the item is a dairy product.
-	/// </summary>
+	/// <summary>Dairy products (milk, cheese, yogurt, butter).</summary>
 	DAIRY = 300,
 
-	/// <summary>
-	/// Meat = the item is a meat product.
-	/// </summary>
+	/// <summary>Meat products (red / white raw or processed).</summary>
 	MEAT = 400,
 
-	/// <summary>
-	/// Fish = the item is a fish product.
-	/// </summary>
+	/// <summary>Fish and seafood products.</summary>
 	FISH = 500,
 
-	/// <summary>
-	/// Fruit = the item is a fruit product.
-	/// </summary>
+	/// <summary>Fruit produce (fresh, dried or minimally processed).</summary>
 	FRUITS = 600,
 
-	/// <summary>
-	/// Vegetables = the item is a vegetable product.
-	/// </summary>
+	/// <summary>Vegetable produce (fresh, dried or minimally processed).</summary>
 	VEGETABLES = 700,
 
-	/// <summary>
-	/// Beverages = the item is a beverage product.
-	/// </summary>
+	/// <summary>Non-alcoholic beverages (soft drinks, juices, water, energy drinks).</summary>
 	BEVERAGES = 800,
 
-	/// <summary>
-	/// Alcoholic beverages = the item is an alcoholic beverage product.
-	/// </summary>
+	/// <summary>Alcoholic beverages (beer, wine, spirits, mixed alcohol).</summary>
 	ALCOHOLIC_BEVERAGES = 900,
 
-	/// <summary>
-	/// Tobacco = the item is a tobacco product.
-	/// </summary>
+	/// <summary>Tobacco products and smoking accessories.</summary>
 	TOBACCO = 1000,
 
-	/// <summary>
-	/// Cleaning supplies = the item is a cleaning supply product.
-	/// </summary>
+	/// <summary>Cleaning and household maintenance supplies.</summary>
 	CLEANING_SUPPLIES = 1100,
 
-	/// <summary>
-	/// Personal care = the item is a personal care product.
-	/// </summary>
+	/// <summary>Personal hygiene and grooming products.</summary>
 	PERSONAL_CARE = 1200,
 
-	/// <summary>
-	/// Medicine = the item is a medicine product.
-	/// </summary>
+	/// <summary>Over-the-counter or prescribed medicinal / pharmaceutical items.</summary>
 	MEDICINE = 1300,
 
-	/// <summary>
-	/// Other = the item is not defined.
-	/// </summary>
+	/// <summary>Fallback when no defined category applies; minimize long-term usage.</summary>
 	OTHER = 9999,
 }

@@ -8,156 +8,211 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 
 /// <summary>
-/// The invoice NoSQL broker interface.
-/// This interface is used to interact with the database.
-/// This is the low level interface used to interact with the database.
+/// Low-level (broker) persistence contract for invoice and merchant aggregates backed by Azure Cosmos DB (NoSQL).
 /// </summary>
+/// <remarks>
+/// <para><b>Role (The Standard):</b> A broker is a thin abstraction over an external dependency (Cosmos DB). It exposes primitive CRUD /
+/// query operations with minimal translation. It MUST NOT implement domain validation, cross-aggregate orchestration, authorization,
+/// business workflow branching, or exception classification beyond direct dependency errors.</para>
+/// <para><b>Responsibilities:</b>
+/// <list type="bullet">
+///   <item><description>Persist (create / upsert) invoice and merchant aggregates.</description></item>
+///   <item><description>Retrieve single or multiple aggregates (optionally partition-scoped for RU efficiency).</description></item>
+///   <item><description>Apply soft delete semantics for invoices (and future merchants) by flagging rather than removing.</description></item>
+/// </list></para>
+/// <para><b>Exclusions:</b> No invariant checking, no ownership / tenancy authorization, no retry / circuit breaker policy (to be added via
+/// delegating handlers or higher resilience layer), no pagination abstraction, no projection shaping (callers handle filtering / shaping).</para>
+/// <para><b>Partitioning:</b> Invoices partitioned by <c>UserIdentifier</c>; merchants by <c>ParentCompanyId</c>. Overloads lacking an explicit
+/// partition key perform cross-partition (fan-out) operations and SHOULD be reserved for administrative / analytical scenarios due to higher RU cost.</para>
+/// <para><b>Soft Delete (Invoices):</b> Implemented via <c>IsSoftDeleted</c> flags on invoice and contained products. Broker read methods return only
+/// non-soft-deleted documents. Bulk hard-deletion is intentionally avoided for audit and recovery concerns (future backlog: retention policy enforcement).</para>
+/// <para><b>Idempotency:</b>
+/// <list type="bullet">
+///   <item><description>Create operations are NOT idempotent (duplicate IDs depend on upstream id assignment strategy).</description></item>
+///   <item><description>Soft-delete operations are idempotent (repeated calls yield same terminal state).</description></item>
+///   <item><description>Read operations are naturally idempotent.</description></item>
+/// </list></para>
+/// <para><b>Concurrency:</b> No optimistic concurrency (ETag) handling is implemented yet (backlog: introduce access conditions to prevent lost updates).</para>
+/// <para><b>Performance Notes:</b> Prefer partition-aware overloads. Cross-partition queries should be monitored (add RU telemetry in higher layers).
+/// Upsert patterns may incur additional RU vs targeted replace (evaluate once concurrency tokens introduced).</para>
+/// <para><b>Thread Safety:</b> Implementations (e.g., EF Core DbContext wrapper) are typically NOT thread-safe; consumers should scope instances per unit-of-work.</para>
+/// <para><b>Cancellation:</b> No cancellation tokens yet (backlog: add overloads with <c>CancellationToken</c> to support request abort and timeouts).</para>
+/// <para><b>Backlog:</b> Pagination / continuation tokens, optimistic concurrency, projection queries (selective field retrieval),
+/// bulk operations (transactional batch for co-partitioned items), telemetry hooks, and soft-delete for merchants.</para>
+/// </remarks>
 public interface IInvoiceNoSqlBroker
 {
 	#region Invoice Storage Broker
-	/// <summary>
-	/// Creates a new invoice.
-	/// This method is used to create a new invoice in the database.
-	/// </summary>
-	/// <param name="invoice"></param>
-	/// <returns></returns>
-	public ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice);
 
 	/// <summary>
-	/// Reads an invoice.
-	/// This method is used to read an invoice from the database.
-	/// The invoice is identified by the invoice identifier.
+	/// Persists a new invoice document.
 	/// </summary>
-	/// <param name="invoiceIdentifier"></param>
-	/// <returns></returns>
-	public ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier);
+	/// <remarks>
+	/// <para>Asynchronous I/O-bound single write operation. Assumes the invoice aggregate has been fully validated upstream.</para>
+	/// </remarks>
+	/// <param name="invoice">Fully populated invoice aggregate (identity may be reassigned by upstream factory prior to call).</param>
+	/// <returns>The persisted invoice including any storage-generated metadata.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="invoice"/> is null.</exception>
+	ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice);
 
 	/// <summary>
-	/// Reads an invoice.
-	/// This method is used to read an invoice from the database.
-	/// The invoice is identified by the invoice identifier.
+	/// Retrieves a single invoice by identifier using a cross-partition (greedy) lookup.
 	/// </summary>
-	/// <param name="invoiceIdentifier"></param>
-	/// <param name="userIdentifier"></param>
-	/// <returns></returns>
-	public ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
+	/// <remarks>
+	/// <para>Performs a non-partition-scoped query (higher RU cost). Use the partition-aware overload when the user / owner identifier is available.</para>
+	/// <para>Returns null when not found or soft-deleted.</para>
+	/// </remarks>
+	/// <param name="invoiceIdentifier">Invoice aggregate identity (GUID).</param>
+	/// <returns>The matching invoice or null.</returns>
+	ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier);
 
 	/// <summary>
-	/// Reads all the invoices.
-	/// This method is used to read all the invoices from the database.
-	/// The invoices are returned as an enumerable.
+	/// Retrieves a single invoice by identifier scoped to its partition (preferred form).
 	/// </summary>
-	/// <returns></returns>
-	public ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync();
+	/// <remarks>
+	/// <para>Provides efficient point read when both invoice id and owner (<paramref name="userIdentifier"/>) are known.</para>
+	/// <para>Returns null when not found or soft-deleted.</para>
+	/// </remarks>
+	/// <param name="invoiceIdentifier">Invoice aggregate identity (GUID).</param>
+	/// <param name="userIdentifier">Owner / partition key.</param>
+	/// <returns>The matching invoice or null.</returns>
+	ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
 
 	/// <summary>
-	/// Reads all the invoices.
-	/// This method is used to read all the invoices from the database.
-	/// The invoices are returned as an enumerable.
+	/// Lists all non soft-deleted invoices across all partitions (cross-partition enumeration).
 	/// </summary>
-	/// <param name="userIdentifier"></param>
-	/// <returns></returns>
-	public ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier);
+	/// <remarks>
+	/// <para>Potentially expensive operation; intended for administrative or analytical scenarios, not per-request user flows.</para>
+	/// </remarks>
+	/// <returns>An enumerable of invoices (may be empty).</returns>
+	ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync();
 
 	/// <summary>
-	/// Updates an invoice.
-	/// This method is used to update an invoice in the database.
-	/// The invoice is identified by the invoice identifier.
+	/// Lists all non soft-deleted invoices for a specific user/partition.
 	/// </summary>
-	/// <param name="invoiceIdentifier"></param>
-	/// <param name="updatedInvoice"></param>
-	/// <returns></returns>
-
-	public ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice);
+	/// <param name="userIdentifier">Partition key / owner identity.</param>
+	/// <returns>An enumerable of invoices (may be empty).</returns>
+	ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync(Guid userIdentifier);
 
 	/// <summary>
-	/// Updates an invoice.
-	/// This method is used to update an invoice in the database.
-	/// The invoice is identified by the invoice identifier.
+	/// Replaces (upserts) an invoice by identifier (partition inferred from <paramref name="updatedInvoice"/>).
 	/// </summary>
-	/// <param name="currentInvoice"></param>
-	/// <param name="updatedInvoice"></param>
-	/// <returns></returns>
-	public ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice);
+	/// <remarks>
+	/// <para>Assumes <paramref name="updatedInvoice"/> carries the correct <c>UserIdentifier</c>. Does not perform concurrency (ETag) checks.</para>
+	/// </remarks>
+	/// <param name="invoiceIdentifier">Target invoice identity.</param>
+	/// <param name="updatedInvoice">Updated invoice aggregate snapshot.</param>
+	/// <returns>The persisted invoice after update.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="updatedInvoice"/> is null.</exception>
+	ValueTask<Invoice> UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice);
 
 	/// <summary>
-	/// Deletes an invoice.
-	/// This method is used to delete an invoice from the database.
-	/// The invoice is identified by the invoice identifier.
+	/// Replaces (upserts) an invoice using current and updated aggregate snapshots.
 	/// </summary>
-	/// <param name="invoiceIdentifier"></param>
-	/// <returns></returns>
-	public ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier);
+	/// <remarks>
+	/// <para><paramref name="currentInvoice"/> is not modified; only <paramref name="updatedInvoice"/> is persisted. No optimistic concurrency token applied.</para>
+	/// </remarks>
+	/// <param name="currentInvoice">Current persisted invoice snapshot (not validated here).</param>
+	/// <param name="updatedInvoice">Updated invoice aggregate snapshot.</param>
+	/// <returns>The persisted invoice after update.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="currentInvoice"/> or <paramref name="updatedInvoice"/> is null.</exception>
+	ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice);
 
 	/// <summary>
-	/// Deletes an invoice.
-	/// This method is used to delete an invoice from the database.
-	/// The invoice is identified by the invoice identifier.
+	/// Soft-deletes an invoice by identifier (cross-partition lookup).
 	/// </summary>
-	/// <param name="invoiceIdentifier"></param>
-	/// <param name="userIdentifier"></param>
-	/// <returns></returns>
-	public ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
+	/// <remarks>
+	/// <para>Marks invoice and contained products as soft-deleted if found. No-op when not found.</para>
+	/// </remarks>
+	/// <param name="invoiceIdentifier">Invoice identity.</param>
+	ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier);
 
 	/// <summary>
-	/// Deletes all the invoices for a given user.
-	/// This method is used to delete all the invoices for a given user from the database.
-	/// The invoices are identified by the user identifier (partition key).
+	/// Soft-deletes an invoice by identifier within a known partition.
 	/// </summary>
-	/// <param name="userIdentifier"></param>
-	/// <returns></returns>
-	public ValueTask DeleteInvoicesAsync(Guid userIdentifier);
+	/// <remarks>
+	/// <para>More efficient than cross-partition delete variant. Marks invoice and contained products as soft-deleted.</para>
+	/// </remarks>
+	/// <param name="invoiceIdentifier">Invoice identity.</param>
+	/// <param name="userIdentifier">Partition (owner) identity.</param>
+	ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
+
+	/// <summary>
+	/// Soft-deletes all invoices for a given user partition.
+	/// </summary>
+	/// <remarks>
+	/// <para>Iterates all partition documents; may incur significant RU charges for large partitions.</para>
+	/// </remarks>
+	/// <param name="userIdentifier">Partition (owner) identity whose invoices will be soft-deleted.</param>
+	ValueTask DeleteInvoicesAsync(Guid userIdentifier);
+
 	#endregion
 
 	#region Merchant Storage Broker
-	/// <summary>
-	///	Creates a new merchant.
-	/// </summary>
-	/// <param name="merchant"></param>
-	/// <returns></returns>
-	public ValueTask<Merchant> CreateMerchantAsync(Merchant merchant);
 
 	/// <summary>
-	/// Reads a merchant.
+	/// Persists a new merchant entity.
 	/// </summary>
-	/// <param name="merchantIdentifier"></param>
-	/// <returns></returns>
-	public ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier);
+	/// <remarks>
+	/// <para>Performs a single write operation. Caller must ensure uniqueness and upstream validation of fields.</para>
+	/// </remarks>
+	/// <param name="merchant">Merchant entity to persist.</param>
+	/// <returns>The persisted merchant.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="merchant"/> is null.</exception>
+	ValueTask<Merchant> CreateMerchantAsync(Merchant merchant);
 
 	/// <summary>
-	/// Reads all the merchants.
+	/// Retrieves a merchant by identifier via cross-partition (greedy) search.
 	/// </summary>
-	/// <returns></returns>
-	public ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync();
+	/// <remarks>
+	/// <para>Use partition-aware read patterns (parent company id) where possible to reduce RU consumption.</para>
+	/// </remarks>
+	/// <param name="merchantIdentifier">Merchant identity.</param>
+	/// <returns>The merchant or null if not found or soft-deleted (if soft-delete introduced later).</returns>
+	ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier);
 
 	/// <summary>
-	/// Reads all the merchants.
+	/// Lists all merchants (cross-partition enumeration).
 	/// </summary>
-	/// <param name="parentCompanyId"></param>
-	/// <returns></returns>
-	public ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId);
+	/// <remarks>
+	/// <para>Potentially expensive; intended for administrative / analytical operations.</para>
+	/// </remarks>
+	/// <returns>An enumerable of merchants (may be empty).</returns>
+	ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync();
 
 	/// <summary>
-	/// Updates a merchant.
+	/// Lists merchants filtered by parent company partition.
 	/// </summary>
-	/// <param name="merchantIdentifier"></param>
-	/// <param name="updatedMerchant"></param>
-	/// <returns></returns>
-	public ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant);
+	/// <param name="parentCompanyId">Partition key representing the parent company identifier.</param>
+	/// <returns>An enumerable of merchants (may be empty).</returns>
+	ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync(Guid parentCompanyId);
 
 	/// <summary>
-	/// Updates a merchant.
+	/// Replaces (upserts) a merchant by identifier (partition inferred via existing document lookup).
 	/// </summary>
-	/// <param name="currentMerchant"></param>
-	/// <param name="updatedMerchant"></param>
-	/// <returns></returns>
-	public ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant);
+	/// <param name="merchantIdentifier">Merchant identity.</param>
+	/// <param name="updatedMerchant">Updated merchant snapshot.</param>
+	/// <returns>The persisted merchant.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="updatedMerchant"/> is null.</exception>
+	ValueTask<Merchant> UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant);
 
 	/// <summary>
-	/// Deletes a merchant.
+	/// Replaces (upserts) a merchant using its current and updated snapshots.
 	/// </summary>
-	/// <param name="merchantIdentifier"></param>
-	/// <returns></returns>
-	public ValueTask DeleteMerchantAsync(Guid merchantIdentifier);
+	/// <param name="currentMerchant">Current persisted merchant (not modified).</param>
+	/// <param name="updatedMerchant">Updated merchant snapshot to persist.</param>
+	/// <returns>The persisted merchant.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="currentMerchant"/> or <paramref name="updatedMerchant"/> is null.</exception>
+	ValueTask<Merchant> UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant);
+
+	/// <summary>
+	/// Soft-deletes (or physically replaces) a merchant by identifier via cross-partition search.
+	/// </summary>
+	/// <remarks>
+	/// <para>Current implementation performs a greedy query. If soft-delete is later introduced for merchants, implementation should mark a flag rather than remove.</para>
+	/// </remarks>
+	/// <param name="merchantIdentifier">Merchant identity.</param>
+	ValueTask DeleteMerchantAsync(Guid merchantIdentifier);
+
 	#endregion
 }

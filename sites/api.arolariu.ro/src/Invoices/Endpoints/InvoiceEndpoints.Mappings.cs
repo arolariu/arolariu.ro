@@ -15,9 +15,25 @@ using Microsoft.AspNetCore.Routing;
 public static partial class InvoiceEndpoints
 {
 	/// <summary>
-	/// Maps the standard invoice endpoints for the web application.
+	/// Registers CRUD + ancillary resource routes for the Invoice aggregate and its owned / associated sub-resources.
 	/// </summary>
-	/// <param name="router">The <see cref="IEndpointRouteBuilder"/> used for mapping the endpoints.</param>
+	/// <remarks>
+	/// <para><b>Scope:</b> Core invoice lifecycle (create, read single/many, full replace, partial update, delete), product collection management, merchant association,
+	/// scan (OCR source asset) management and arbitrary metadata dictionary operations.</para>
+	/// <para><b>Design:</b> Separate route declarations from handler implementations to keep a clean composition boundary (OpenAPI metadata, auth policies, media types).</para>
+	/// <para><b>Security:</b> All endpoints require authentication; fine‑grained authorization (roles / ownership) enforced in handler / service layers.</para>
+	/// <para><b>Status Code Policy:</b> Uses:
+	/// <list type="bullet">
+	///   <item><description><c>201 Created</c> for create operations producing new aggregates or sub-resources.</description></item>
+	///   <item><description><c>202 Accepted</c> for idempotent mutations that conceptually could become async (update / patch).</description></item>
+	///   <item><description><c>204 No Content</c> for destructive operations (delete).</description></item>
+	///   <item><description><c>409 Conflict</c> when attempting to create an already existing singular subordinate resource (e.g. scan already present).</description></item>
+	/// </list></para>
+	/// <para><b>OpenAPI:</b> Names each endpoint with handler method name via <see cref="EndpointNameMetadata"/> for consistent client generation keys.</para>
+	/// <para><b>Extensibility:</b> Future concerns (pagination on list endpoints, ETag concurrency, conditional requests) SHOULD extend this mapping with additional
+	/// metadata (e.g. <c>.WithMetadata(new ResponseCacheAttribute())</c> or custom filters) rather than modifying handlers.</para>
+	/// </remarks>
+	/// <param name="router">Route builder used during startup; MUST NOT be null.</param>
 	private static void MapStandardInvoiceEndpoints(this IEndpointRouteBuilder router)
 	{
 		router // Create a new invoice for a given user (extracted from principal context).
@@ -314,9 +330,17 @@ public static partial class InvoiceEndpoints
 	}
 
 	/// <summary>
-	/// Maps the merchant endpoints for the web application.
+	/// Registers merchant aggregate endpoints and cross-aggregate relationship management routes (merchant ↔ invoice, merchant ↔ products via invoices).
 	/// </summary>
-	/// <param name="router">The <see cref="IEndpointRouteBuilder"/> used for mapping the endpoints.</param>
+	/// <remarks>
+	/// <para><b>Scope:</b> Merchant CRUD plus association / dissociation of invoices and retrieval of transitive product collections.</para>
+	/// <para><b>Consistency:</b> Association endpoints (patch / delete on invoices relationship) maintain bidirectional integrity (merchant reference on invoice
+	/// and invoice id in merchant’s reference list) in handler layer; future refactor may move to domain service for transactional cohesion.</para>
+	/// <para><b>Performance:</b> Retrieval of products across all merchant invoices performs N invoice reads; future optimization backlog: fan-out query or projection
+	/// in persistence layer.</para>
+	/// <para><b>Status Codes:</b> Mirrors invoice conventions; PATCH used for additive invoice linkage to avoid misuse of PUT semantics.</para>
+	/// </remarks>
+	/// <param name="router">Route builder used at startup configuration time.</param>
 	private static void MapStandardMerchantEndpoints(this IEndpointRouteBuilder router)
 	{
 		router // Retrieve all merchants.
@@ -444,9 +468,15 @@ public static partial class InvoiceEndpoints
 	}
 
 	/// <summary>
-	/// The invoice analysis endpoints.
+	/// Registers invoice analysis endpoints (computational enrichment and AI / OCR driven classification).
 	/// </summary>
-	/// <param name="router">The <see cref="IEndpointRouteBuilder"/> used for mapping the endpoints.</param>
+	/// <remarks>
+	/// <para><b>Operation:</b> Current surface exposes a single POST analyze route performing synchronous orchestration then returning <c>202 Accepted</c>.</para>
+	/// <para><b>Backlog:</b> Potential evolution to long‑running asynchronous workflow (introduce operation status resource, webhooks or push notifications).</para>
+	/// <para><b>Charging / Billing:</b> Includes <c>402 PaymentRequired</c> problem mapping placeholder for future usage-based billing enforcement.</para>
+	/// <para><b>Idempotency:</b> Re-analysis overwrites prior enrichment; idempotent only when source inputs have not changed.</para>
+	/// </remarks>
+	/// <param name="router">Route builder instance.</param>
 	private static void MapInvoiceAnalysisEndpoints(this IEndpointRouteBuilder router)
 	{
 		router // Analyze a specific invoice, given its identifier.
