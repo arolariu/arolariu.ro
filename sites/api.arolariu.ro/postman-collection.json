@@ -104,7 +104,35 @@
                 }
               }
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected status 201 Created\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(201);",
+                  "});",
+                  "// Extract created resource id from response body and persist for reuse\n",
+                  "try {",
+                  "    var body = pm.response.json();",
+                  "    var id = body && (body.id || body.invoiceIdentifier || body.invoiceId);",
+                  "    if (id) {",
+                  "        // Store in collection + environment for subsequent requests\n",
+                  "        pm.collectionVariables.set('invoiceIdentifier', String(id));",
+                  "        pm.environment.set('invoiceIdentifier', String(id));",
+                  "        console.log('Stored invoiceIdentifier = ' + id);",
+                  "    } else {",
+                  "        console.warn('Create Invoice response did not include an id field');",
+                  "    }",
+                  "} catch (e) {",
+                  "    console.warn('Could not parse response body to extract id: ' + e);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get Invoices 2",
@@ -1443,7 +1471,34 @@
               "query": [],
               "variable": []
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected status 201 Created\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(201);",
+                  "});",
+                  "// Extract created merchant id from response body and persist for reuse\n",
+                  "try {",
+                  "    var body = pm.response.json();",
+                  "    var id = body && (body.id || body.merchantIdentifier || body.merchantId);",
+                  "    if (id) {",
+                  "        pm.collectionVariables.set('merchantIdentifier', String(id));",
+                  "        pm.environment.set('merchantIdentifier', String(id));",
+                  "        console.log('Stored merchantIdentifier = ' + id);",
+                  "    } else {",
+                  "        console.warn('Create Merchant response did not include an id field');",
+                  "    }",
+                  "} catch (e) {",
+                  "    console.warn('Could not parse response body to extract id: ' + e);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get Merchants 2",
