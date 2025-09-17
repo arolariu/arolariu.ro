@@ -88,7 +88,6 @@ async function startDotnet(formatTarget: Exclude<FormatTarget, "packages" | "web
       } catch (formatError) {
         console.error("Encountered error when formatting with dotnet format, error:", formatError);
       }
-      console.debug("error:", error);
     }
   } else {
     console.error("Invalid target for dotnet format. Only 'all' or 'api' is supported.");
