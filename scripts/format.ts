@@ -119,7 +119,7 @@ export async function main(arg?: string): Promise<number> {
       await startDotnet("api");
       break;
     default:
-      console.error("Invalid or missing target. Usage: format <packages|website|cv|api>");
+      console.error("Invalid or missing target. Usage: format <all|packages|website|cv|api>");
   }
 
   return 0;
