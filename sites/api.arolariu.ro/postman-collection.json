@@ -16,8 +16,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -55,8 +64,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -103,8 +121,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -142,8 +169,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -182,8 +218,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -231,8 +276,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -271,8 +325,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -320,8 +383,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -361,8 +433,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -411,8 +492,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -461,8 +551,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -502,8 +601,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -552,8 +660,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -602,8 +719,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -643,8 +769,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -683,8 +818,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -724,8 +868,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -765,8 +918,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -806,8 +968,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -847,8 +1018,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -888,8 +1068,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -929,8 +1118,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -970,8 +1168,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1011,8 +1218,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1052,8 +1268,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1093,8 +1318,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1134,8 +1368,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1175,8 +1418,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1216,8 +1468,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1257,8 +1518,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1298,8 +1568,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1339,8 +1618,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1379,8 +1667,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1419,8 +1716,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1460,8 +1766,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1501,8 +1816,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1542,8 +1866,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1586,8 +1919,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1625,8 +1967,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1664,8 +2015,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1703,8 +2063,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1743,8 +2112,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -1776,380 +2154,6 @@
           }
         },
         {
-          "name": "Get Merchant 2",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
-              "protocol": "{{baseProtocol}}",
-              "host": [
-                "{{baseHost}}"
-              ],
-              "port": "{{basePort}}",
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}"
-              ],
-              "query": [],
-              "variable": []
-            }
-          }
-        },
-        {
-          "name": "Create Invoice",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices",
-              "protocol": "{{baseProtocol}}",
-              "host": [
-                "{{baseHost}}"
-              ],
-              "port": "{{basePort}}",
-              "path": [
-                "rest",
-                "v1",
-                "invoices"
-              ],
-              "query": [],
-              "variable": []
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"userIdentifier\": \"fafa1779-d0d9-4442-bba6-cbf0e2bf6d7a\",\n  \"metadata\": {\n    \"author\": \"Alexandru\"\n  }\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "Get Merchant's Invoices",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "protocol": "{{baseProtocol}}",
-              "host": [
-                "{{baseHost}}"
-              ],
-              "port": "{{basePort}}",
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "invoices"
-              ],
-              "query": [],
-              "variable": []
-            }
-          }
-        },
-        {
-          "name": "Add Merchant's Invoice",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "protocol": "{{baseProtocol}}",
-              "host": [
-                "{{baseHost}}"
-              ],
-              "port": "{{basePort}}",
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "invoices"
-              ],
-              "query": [],
-              "variable": []
-            }
-          }
-        },
-        {
-          "name": "Get Merchant's Invoices 2",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "protocol": "{{baseProtocol}}",
-              "host": [
-                "{{baseHost}}"
-              ],
-              "port": "{{basePort}}",
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "invoices"
-              ],
-              "query": [],
-              "variable": []
-            }
-          }
-        },
-        {
-          "name": "Delete Merchant's Invoice",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "protocol": "{{baseProtocol}}",
-              "host": [
-                "{{baseHost}}"
-              ],
-              "port": "{{basePort}}",
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "invoices"
-              ],
-              "query": [],
-              "variable": []
-            }
-          }
-        },
-        {
-          "name": "Get Merchant's Invoices Products",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/products",
-              "protocol": "{{baseProtocol}}",
-              "host": [
-                "{{baseHost}}"
-              ],
-              "port": "{{basePort}}",
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "products"
-              ],
-              "query": [],
-              "variable": []
-            }
-          }
-        },
-        {
-          "name": "Get Merchant's Invoices 3",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/invoices",
-              "protocol": "{{baseProtocol}}",
-              "host": [
-                "{{baseHost}}"
-              ],
-              "port": "{{basePort}}",
-              "path": [
-                "rest",
-                "v1",
-                "merchants",
-                "{{merchantIdentifier}}",
-                "invoices"
-              ],
-              "query": [],
-              "variable": []
-            }
-          }
-        },
-        {
-          "name": "Delete Invoice",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "DELETE",
-            "header": [],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "",
-            "url": {
-              "raw": "{{baseUrl}}/rest/v1/invoices/{{id}}",
-              "protocol": "{{baseProtocol}}",
-              "host": [
-                "{{baseHost}}"
-              ],
-              "port": "{{basePort}}",
-              "path": [
-                "rest",
-                "v1",
-                "invoices",
-                "{{id}}"
-              ],
-              "query": [],
-              "variable": []
-            }
-          }
-        },
-        {
           "name": "Get Merchant 3",
           "event": [
             {
@@ -2157,8 +2161,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
@@ -2197,8 +2210,17 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 2xx\", function () {",
-                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "pm.test(\"Response status follows RESTful conventions\", function () {",
+                  "    var method = pm.request.method.toUpperCase();",
+                  "    var code = pm.response.code;",
+                  "    var expected;",
+                  "    if (method === 'GET') { expected = 200; }",
+                  "    else if (method === 'POST') { expected = 201; }",
+                  "    else if (method === 'PUT') { expected = 200; }",
+                  "    else if (method === 'PATCH') { expected = 200; }",
+                  "    else if (method === 'DELETE') { expected = 204; }",
+                  "    else { expected = 200; }",
+                  "    pm.expect(code).to.eql(expected);",
                   "});"
                 ]
               }
