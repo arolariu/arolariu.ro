@@ -158,7 +158,7 @@ public static partial class InvoiceEndpoints
 			.WithOpenApi();
 
 		router // Update a product in a given invoice.
-			.MapPatch("/invoices/{id}/products", UpdateProductInInvoiceAsync)
+			.MapPut("/invoices/{id}/products", UpdateProductInInvoiceAsync)
 			.Accepts<Product>("application/json")
 			.Produces<Product>(StatusCodes.Status202Accepted)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
@@ -452,7 +452,7 @@ public static partial class InvoiceEndpoints
 		router // Analyze a specific invoice, given its identifier.
 			.MapPost("/invoices/{id}/analyze", AnalyzeInvoiceAsync)
 			.Accepts<AnalysisOptions>("application/json")
-			.Produces(StatusCodes.Status200OK)
+			.Produces(StatusCodes.Status202Accepted)
 			.ProducesProblem(StatusCodes.Status400BadRequest)
 			.ProducesProblem(StatusCodes.Status401Unauthorized)
 			.ProducesProblem(StatusCodes.Status402PaymentRequired)

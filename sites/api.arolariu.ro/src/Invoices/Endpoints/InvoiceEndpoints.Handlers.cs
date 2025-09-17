@@ -453,7 +453,7 @@ public static partial class InvoiceEndpoints
 			await invoiceProcessingService
 				.AddProduct(product, id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-			return TypedResults.Created(uri: $"/rest/v1/invoices/{id}/products", value: product);
+			return TypedResults.Accepted(uri: $"/rest/v1/invoices/{id}/products", value: product);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1331,7 +1331,7 @@ public static partial class InvoiceEndpoints
 			await invoiceProcessingService
 					.CreateMerchant(merchant)
 					.ConfigureAwait(false);
-			return TypedResults.Created($"/rest/merchants/{merchant.id}", merchant);
+			return TypedResults.Created($"/rest/v1/merchants/{merchant.id}", merchant);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{
@@ -1373,7 +1373,7 @@ public static partial class InvoiceEndpoints
 	internal static async partial Task<IResult> RetrieveAllMerchantsAsync(
 		[FromServices] IInvoiceProcessingService invoiceProcessingService,
 		[FromServices] IHttpContextAccessor httpContext,
-		[FromBody] Guid parentCompanyId,
+		[FromQuery] Guid parentCompanyId,
 		ClaimsPrincipal principal)
 	{
 		try
@@ -1696,7 +1696,7 @@ public static partial class InvoiceEndpoints
 			var possibleMerchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
 			if (possibleMerchant is null) return TypedResults.NotFound();
 
-			var listOfValidInvoices = new List<Invoice>();
+			var listOfValidInvoices = new HashSet<Invoice>();
 			foreach (var identifier in invoiceIdentifiers)
 			{
 				var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
@@ -1931,7 +1931,7 @@ public static partial class InvoiceEndpoints
 			var analyzedInvoice = await invoiceProcessingService
 				.ReadInvoice(id, potentialUserIdentifier)
 				.ConfigureAwait(false);
-			return TypedResults.Ok(analyzedInvoice);
+			return TypedResults.Accepted($"/rest/v1/invoices/{id}", analyzedInvoice);
 		}
 		catch (InvoiceProcessingServiceValidationException exception)
 		{

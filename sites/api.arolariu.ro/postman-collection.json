@@ -526,7 +526,7 @@
         {
           "name": "Patch Invoice Product",
           "request": {
-            "method": "POST",
+            "method": "PATCH",
             "header": [],
             "auth": {
               "type": "bearer",

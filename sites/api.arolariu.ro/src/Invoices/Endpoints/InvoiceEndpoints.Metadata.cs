@@ -103,6 +103,7 @@ public static partial class InvoiceEndpoints
 	[SwaggerResponse(StatusCodes.Status200OK, "The invoices were retrieved successfully from the system.", typeof(Invoice[]))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this route.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The invoices could not be found.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
 	[SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
@@ -318,7 +319,7 @@ public static partial class InvoiceEndpoints
 		"If the invoice identifier passed to the route is valid, the server will remove the product from the invoice, given that the user is allowed to remove products from this invoice.",
 		OperationId = nameof(RemoveProductFromInvoiceAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status202Accepted, "The product was removed from the invoice successfully.")]
+	[SwaggerResponse(StatusCodes.Status204NoContent, "The product was removed from the invoice successfully.")]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The product information is not valid (please respect the product schema).", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status404NotFound, "The product could not be removed from the invoice due to the invoice not being found.", typeof(ProblemDetails))]
@@ -422,8 +423,8 @@ public static partial class InvoiceEndpoints
 	[SwaggerResponse(StatusCodes.Status201Created, "The merchant was added to the invoice successfully.", typeof(Invoice))]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant information is not valid (please respect the merchant schema).", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status404NotFound, "The merchant could not be added to the invoice due to the invoice not being found.", typeof(ProblemDetails))]
-	[SwaggerResponse(StatusCodes.Status409Conflict, "The merchant could not be added to the invoice due to a conflict (the merchant is not in the invoice).", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status404NotFound, "The merchant could not be added to the invoice due to either not being found.", typeof(ProblemDetails))]
+	[SwaggerResponse(StatusCodes.Status409Conflict, "The merchant could not be added to the invoice due to a conflict.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The merchant could not be added to the invoice due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status500InternalServerError, "The merchant could not be added to the invoice due to an internal service error", typeof(ProblemDetails))]
@@ -935,7 +936,7 @@ public static partial class InvoiceEndpoints
 		"If the merchant identifier passed to the route is valid, the server will remove the invoice(s) from the merchant, given that the user is allowed to remove invoices from this merchant.",
 		OperationId = nameof(RemoveInvoiceFromMerchantAsync),
 		Tags = [EndpointNameTag])]
-	[SwaggerResponse(StatusCodes.Status202Accepted, "The invoice(s) were removed from the merchant successfully.")]
+	[SwaggerResponse(StatusCodes.Status204NoContent, "The invoice(s) were removed from the merchant successfully.")]
 	[SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to remove invoices from this merchant.", typeof(ProblemDetails))]
 	[SwaggerResponse(StatusCodes.Status404NotFound, "The invoices could not be removed from the merchant due to the merchant not being found.", typeof(ProblemDetails))]
