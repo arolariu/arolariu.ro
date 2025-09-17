@@ -79,7 +79,7 @@
                 }
               ]
             },
-            "description": "Create a new invoice attached to the specified user identifier and provided metadata.",
+            "description": "Create a new invoice (receipt) in the system. Expected success: 201 Created.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices",
               "protocol": "{{baseProtocol}}",
@@ -188,7 +188,7 @@
                 }
               ]
             },
-            "description": "Replace the invoice identified by invoiceIdentifier with the provided full payload.",
+            "description": "Updates a specific invoice in the system. Expected success: 202 Accepted.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
               "protocol": "{{baseProtocol}}",
@@ -693,7 +693,7 @@
                 }
               ]
             },
-            "description": "Create merchant data associated with a specific invoice.",
+            "description": "Adds a merchant to an invoice in the system. Expected success: 201 Created.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
               "protocol": "{{baseProtocol}}",
@@ -833,7 +833,7 @@
                 }
               ]
             },
-            "description": "Upload or register a scan resource and associate it with an invoice.",
+            "description": "Creates a new invoice scan in the system. Expected success: 201 Created.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
               "protocol": "{{baseProtocol}}",
@@ -891,7 +891,7 @@
         {
           "name": "Update Invoice's Scan",
           "request": {
-            "method": "POST",
+            "method": "PUT",
             "header": [],
             "auth": {
               "type": "bearer",
@@ -903,7 +903,7 @@
                 }
               ]
             },
-            "description": "Update metadata or replace the scan resource attached to the invoice.",
+            "description": "Updates a specific invoice scan in the system. Expected success: 202 Accepted.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
               "protocol": "{{baseProtocol}}",
@@ -973,7 +973,7 @@
                 }
               ]
             },
-            "description": "Delete the scan resource associated with the invoice.",
+            "description": "Deletes a specific invoice scan from the system. Expected success: 204 No Content.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
               "protocol": "{{baseProtocol}}",
@@ -1043,7 +1043,7 @@
                 }
               ]
             },
-            "description": "Partially update invoice metadata fields without replacing all metadata.",
+            "description": "Patches the metadata from a specific invoice in the system. Expected success: 202 Accepted.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
               "protocol": "{{baseProtocol}}",
@@ -1113,7 +1113,7 @@
                 }
               ]
             },
-            "description": "Remove metadata or a specific metadata key from the invoice.",
+            "description": "Deletes specific metadata keys from a specific invoice in the system. Expected success: 204 No Content.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
               "protocol": "{{baseProtocol}}",
@@ -1427,7 +1427,7 @@
                 }
               ]
             },
-            "description": "Create a new merchant record used to group invoices or transactions.",
+            "description": "Creates a new merchant in the system. Expected success: 201 Created.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants",
               "protocol": "{{baseProtocol}}",
@@ -1527,7 +1527,7 @@
                 }
               ]
             },
-            "description": "Update merchant information and attributes.",
+            "description": "Updates a specific merchant in the system. Expected success: 202 Accepted.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
               "protocol": "{{baseProtocol}}",
@@ -1630,7 +1630,7 @@
                 }
               ]
             },
-            "description": "Delete a merchant and optionally cascade-clean related resources.",
+            "description": "Deletes a specific merchant from the system. Expected success: 204 No Content.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
               "protocol": "{{baseProtocol}}",
