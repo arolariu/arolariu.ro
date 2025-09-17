@@ -58,17 +58,17 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
 		if (userIdentifier is null)
 		{
 			logger.LogUserIdentifierNotSetWarning();
-			Invoice invoice = await invoiceNoSqlBroker
+			var invoice = await invoiceNoSqlBroker
 				.ReadInvoiceAsync(identifier)
 				.ConfigureAwait(false);
-			return invoice;
+			return invoice!;
 		}
 		else
 		{
-			Invoice invoice = await invoiceNoSqlBroker
+			var invoice = await invoiceNoSqlBroker
 				.ReadInvoiceAsync(identifier, (Guid)userIdentifier)
 				.ConfigureAwait(false);
-			return invoice;
+			return invoice!;
 		}
 	}).ConfigureAwait(false);
 	#endregion

@@ -48,6 +48,7 @@
     "format:components": "node scripts/format.ts packages",
     "format:cv": "node scripts/format.ts cv",
     "format:website": "node scripts/format.ts website",
+    "format:api": "node scripts/format.ts api",
     "lint": "node scripts/lint.ts all",
     "lint:components": "node scripts/lint.ts packages",
     "lint:cv": "node scripts/lint.ts cv",
