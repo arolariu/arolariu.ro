@@ -26,27 +26,27 @@ using Microsoft.AspNetCore.Routing;
 [ExcludeFromCodeCoverage]
 public static partial class AuthEndpoints
 {
-	private const string SemanticVersioning = "0.1.0-rc1";
-	private const string EndpointNameTag = "Auth Management System v" + SemanticVersioning;
+  private const string SemanticVersioning = "0.1.0-rc1";
+  private const string EndpointNameTag = "Auth Management System v" + SemanticVersioning;
 
-	/// <summary>
-	/// Maps authentication endpoints to the application's routing system.
-	/// This method configures all authentication-related API endpoints for user management operations.
-	/// </summary>
-	/// <param name="router">
-	/// The <see cref="IEndpointRouteBuilder"/> used to define API routes and endpoints.
-	/// This builder provides access to the application's routing configuration.
-	/// </param>
-	/// <remarks>
-	/// This method configures:
-	/// - Built-in ASP.NET Core Identity endpoints for standard authentication operations
-	/// - Custom authentication endpoints for extended functionality
-	/// - Proper versioning and tagging for API documentation
-	/// - Security policies and authorization requirements
-	/// </remarks>
-	public static void MapAuthEndpoints(this IEndpointRouteBuilder router)
-	{
-		// This group contains the already built-in identity auth endpoints
-		MapIdentityBuiltinEndpoints(router);
-	}
+  /// <summary>
+  /// Maps authentication endpoints to the application's routing system.
+  /// This method configures all authentication-related API endpoints for user management operations.
+  /// </summary>
+  /// <param name="router">
+  /// The <see cref="IEndpointRouteBuilder"/> used to define API routes and endpoints.
+  /// This builder provides access to the application's routing configuration.
+  /// </param>
+  /// <remarks>
+  /// This method configures:
+  /// - Built-in ASP.NET Core Identity endpoints for standard authentication operations
+  /// - Custom authentication endpoints for extended functionality
+  /// - Proper versioning and tagging for API documentation
+  /// - Security policies and authorization requirements
+  /// </remarks>
+  public static void MapAuthEndpoints(this IEndpointRouteBuilder router)
+  {
+    // This group contains the already built-in identity auth endpoints
+    MapIdentityBuiltinEndpoints(router);
+  }
 }

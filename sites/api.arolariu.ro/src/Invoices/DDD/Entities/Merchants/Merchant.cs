@@ -23,43 +23,43 @@ using arolariu.Backend.Common.DDD.ValueObjects;
 [ExcludeFromCodeCoverage]
 public sealed class Merchant : NamedEntity<Guid>
 {
-	/// <summary>Immutable merchant identity.</summary>
-	/// <remarks>
-	/// <para>Generated via <see cref="Guid.NewGuid()"/>; no ordering guarantees. Consider Version 7 GUID if chronological sorting becomes a requirement.</para>
-	/// </remarks>
-	[JsonPropertyName("id")]
-	[JsonPropertyOrder(0)]
-	public override Guid id { get; init; } = Guid.NewGuid();
+  /// <summary>Immutable merchant identity.</summary>
+  /// <remarks>
+  /// <para>Generated via <see cref="Guid.NewGuid()"/>; no ordering guarantees. Consider Version 7 GUID if chronological sorting becomes a requirement.</para>
+  /// </remarks>
+  [JsonPropertyName("id")]
+  [JsonPropertyOrder(0)]
+  public override Guid id { get; init; } = Guid.NewGuid();
 
-	/// <summary>Domain classification used for analytics, grouping and enrichment heuristics.</summary>
-	/// <remarks><para>Defaults to <see cref="MerchantCategory.OTHER"/> when unclassified. Downstream enrichment processes SHOULD minimize long-term usage of OTHER.</para></remarks>
-	[JsonPropertyOrder(3)]
-	public MerchantCategory Category { get; set; } = MerchantCategory.OTHER;
+  /// <summary>Domain classification used for analytics, grouping and enrichment heuristics.</summary>
+  /// <remarks><para>Defaults to <see cref="MerchantCategory.OTHER"/> when unclassified. Downstream enrichment processes SHOULD minimize long-term usage of OTHER.</para></remarks>
+  [JsonPropertyOrder(3)]
+  public MerchantCategory Category { get; set; } = MerchantCategory.OTHER;
 
-	/// <summary>Structured contact / address information.</summary>
-	/// <remarks><para>Represents a value object snapshot. Entire object is typically replaced on update; no deep merge semantics currently.</para></remarks>
-	[JsonPropertyOrder(4)]
-	public ContactInformation Address { get; set; } = new ContactInformation();
+  /// <summary>Structured contact / address information.</summary>
+  /// <remarks><para>Represents a value object snapshot. Entire object is typically replaced on update; no deep merge semantics currently.</para></remarks>
+  [JsonPropertyOrder(4)]
+  public ContactInformation Address { get; set; } = new ContactInformation();
 
-	/// <summary>Optional linkage to a parent company (hierarchical reporting / consolidation).</summary>
-	/// <remarks><para><c>Guid.Empty</c> indicates no parent company assigned.</para></remarks>
-	[JsonPropertyOrder(5)]
-	public Guid ParentCompanyId { get; set; } = Guid.Empty;
+  /// <summary>Optional linkage to a parent company (hierarchical reporting / consolidation).</summary>
+  /// <remarks><para><c>Guid.Empty</c> indicates no parent company assigned.</para></remarks>
+  [JsonPropertyOrder(5)]
+  public Guid ParentCompanyId { get; set; } = Guid.Empty;
 
-	/// <summary>Reverse references to invoices that currently point to this merchant.</summary>
-	/// <remarks>
-	/// <para>Maintained for read-optimization / analytics. Contents are not automatically pruned on invoice deletion; reconciliation job may be required.</para>
-	/// <para>Order reflects insertion order; duplicates are not automatically filtered (caller MUST prevent duplicate insertion).</para>
-	/// </remarks>
-	[JsonPropertyOrder(6)]
-	public ICollection<Guid> ReferencedInvoices { get; init; } = new List<Guid>();
+  /// <summary>Reverse references to invoices that currently point to this merchant.</summary>
+  /// <remarks>
+  /// <para>Maintained for read-optimization / analytics. Contents are not automatically pruned on invoice deletion; reconciliation job may be required.</para>
+  /// <para>Order reflects insertion order; duplicates are not automatically filtered (caller MUST prevent duplicate insertion).</para>
+  /// </remarks>
+  [JsonPropertyOrder(6)]
+  public ICollection<Guid> ReferencedInvoices { get; init; } = [];
 
-	/// <summary>Extensible key/value metadata (lightweight tagging / enrichment layer).</summary>
-	/// <remarks>
-	/// <para>Key namespaces SHOULD use a dotted convention (e.g. <c>ai.confidence</c>, <c>user.note</c>, <c>integration.source</c>).</para>
-	/// <para>Values are stored as strings for portability; upstream systems must handle serialization of complex types.</para>
-	/// <para>Write Semantics: Last writer wins per key; no historical versioning.</para>
-	/// </remarks>
-	[JsonPropertyOrder(7)]
-	public IDictionary<string, string> AdditionalMetadata { get; init; } = new Dictionary<string, string>();
+  /// <summary>Extensible key/value metadata (lightweight tagging / enrichment layer).</summary>
+  /// <remarks>
+  /// <para>Key namespaces SHOULD use a dotted convention (e.g. <c>ai.confidence</c>, <c>user.note</c>, <c>integration.source</c>).</para>
+  /// <para>Values are stored as strings for portability; upstream systems must handle serialization of complex types.</para>
+  /// <para>Write Semantics: Last writer wins per key; no historical versioning.</para>
+  /// </remarks>
+  [JsonPropertyOrder(7)]
+  public IDictionary<string, string> AdditionalMetadata { get; init; } = new Dictionary<string, string>();
 }

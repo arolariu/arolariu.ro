@@ -29,82 +29,82 @@ using Microsoft.Extensions.DependencyInjection;
 [ExcludeFromCodeCoverage] // This class is not tested because it is a simple extension class.
 public static class WebApplicationBuilderExtensions
 {
-	/// <summary>
-	/// Adds invoices domain configurations to the WebApplicationBuilder instance.
-	/// </summary>
-	/// <param name="builder">The WebApplicationBuilder instance.</param>
-	/// <returns>The modified IServiceCollection instance.</returns>
-	/// <remarks>
-	/// This method configures services related to the invoices domain.
-	/// It adds singleton instances of the invoice SQL broker, invoice reader service,
-	/// invoice storage service, and invoice foundation service.
-	/// </remarks>
-	/// <example>
-	/// <code>
-	/// // Configure invoices domain configurations
-	/// services.AddInvoicesDomainConfiguration(builder);
-	/// </code>
-	/// </example>
-	/// <seealso cref="WebApplicationBuilder"/>
-	/// <seealso cref="IServiceCollection"/>
-	public static void AddInvoicesDomainConfiguration(this WebApplicationBuilder builder)
-	{
-		ArgumentNullException.ThrowIfNull(builder);
-		var services = builder.Services;
-		var configuration = builder.Configuration;
+  /// <summary>
+  /// Adds invoices domain configurations to the WebApplicationBuilder instance.
+  /// </summary>
+  /// <param name="builder">The WebApplicationBuilder instance.</param>
+  /// <returns>The modified IServiceCollection instance.</returns>
+  /// <remarks>
+  /// This method configures services related to the invoices domain.
+  /// It adds singleton instances of the invoice SQL broker, invoice reader service,
+  /// invoice storage service, and invoice foundation service.
+  /// </remarks>
+  /// <example>
+  /// <code>
+  /// // Configure invoices domain configurations
+  /// services.AddInvoicesDomainConfiguration(builder);
+  /// </code>
+  /// </example>
+  /// <seealso cref="WebApplicationBuilder"/>
+  /// <seealso cref="IServiceCollection"/>
+  public static void AddInvoicesDomainConfiguration(this WebApplicationBuilder builder)
+  {
+    ArgumentNullException.ThrowIfNull(builder);
+    var services = builder.Services;
+    var configuration = builder.Configuration;
 
-		// Add Cosmos Client and Entity Framework Core --- data layer services.
-		services.AddSingleton<CosmosClient>(options =>
-		{
-			using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
-			string connectionString = new string(optionsManager
-										.GetRequiredService<IOptionsManager>()
-										.GetApplicationOptions()
-										.NoSqlConnectionString);
-			var credentials = new DefaultAzureCredential(
+    // Add Cosmos Client and Entity Framework Core --- data layer services.
+    services.AddSingleton<CosmosClient>(options =>
+    {
+      using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
+      string connectionString = new string(optionsManager
+                    .GetRequiredService<IOptionsManager>()
+                    .GetApplicationOptions()
+                    .NoSqlConnectionString);
+      var credentials = new DefaultAzureCredential(
 #if !DEBUG
 			new DefaultAzureCredentialOptions
 			{
 				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
 			}
 #endif
-			);
+      );
 
-			var cosmosClient = new CosmosClient(connectionString, credentials);
-			return cosmosClient;
-		});
+      var cosmosClient = new CosmosClient(connectionString, credentials);
+      return cosmosClient;
+    });
 
-		services.AddDbContext<InvoiceNoSqlBroker>(options =>
-		{
-			using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
-			string connectionString = new string(optionsManager
-										.GetRequiredService<IOptionsManager>()
-										.GetApplicationOptions()
-										.NoSqlConnectionString);
+    services.AddDbContext<InvoiceNoSqlBroker>(options =>
+    {
+      using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
+      string connectionString = new string(optionsManager
+                    .GetRequiredService<IOptionsManager>()
+                    .GetApplicationOptions()
+                    .NoSqlConnectionString);
 
-			options.UseCosmos(connectionString, "primary", noSqlOptions =>
-			{
+      options.UseCosmos(connectionString, "primary", noSqlOptions =>
+      {
 
-			});
-			options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-		});
+      });
+      options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+    });
 
-		// Broker services:
-		services.AddScoped<IOpenAiBroker, AzureOpenAiBroker>();
-		services.AddScoped<IFormRecognizerBroker, AzureFormRecognizerBroker>();
-		services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
-		services.AddScoped<ITranslatorBroker, AzureTranslatorBroker>();
+    // Broker services:
+    services.AddScoped<IOpenAiBroker, AzureOpenAiBroker>();
+    services.AddScoped<IFormRecognizerBroker, AzureFormRecognizerBroker>();
+    services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
+    services.AddScoped<ITranslatorBroker, AzureTranslatorBroker>();
 
-		// Foundation services:
-		services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
-		services.AddScoped<IInvoiceAnalysisFoundationService, InvoiceAnalysisFoundationService>();
-		services.AddScoped<IMerchantStorageFoundationService, MerchantStorageFoundationService>();
+    // Foundation services:
+    services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
+    services.AddScoped<IInvoiceAnalysisFoundationService, InvoiceAnalysisFoundationService>();
+    services.AddScoped<IMerchantStorageFoundationService, MerchantStorageFoundationService>();
 
-		// Orchestration services:
-		services.AddScoped<IInvoiceOrchestrationService, InvoiceOrchestrationService>();
-		services.AddScoped<IMerchantOrchestrationService, MerchantOrchestrationService>();
+    // Orchestration services:
+    services.AddScoped<IInvoiceOrchestrationService, InvoiceOrchestrationService>();
+    services.AddScoped<IMerchantOrchestrationService, MerchantOrchestrationService>();
 
-		// Processing services:
-		services.AddScoped<IInvoiceProcessingService, InvoiceProcessingService>();
-	}
+    // Processing services:
+    services.AddScoped<IInvoiceProcessingService, InvoiceProcessingService>();
+  }
 }

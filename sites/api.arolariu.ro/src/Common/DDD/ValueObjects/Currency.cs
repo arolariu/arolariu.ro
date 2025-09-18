@@ -5,7 +5,7 @@ namespace arolariu.Backend.Common.DDD.ValueObjects;
 ///	This object adheres to the ISO 4217 standard.
 /// </summary>
 public readonly record struct Currency
-	(string Name, string Code, string Symbol)
+  (string Name, string Code, string Symbol)
 {
 
 }

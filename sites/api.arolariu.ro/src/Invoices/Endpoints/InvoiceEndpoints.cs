@@ -26,66 +26,66 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 [ExcludeFromCodeCoverage]
 public static partial class InvoiceEndpoints
 {
-	private const string SemanticVersioning = "3.0.0";
+  private const string SemanticVersioning = "3.0.0";
 
-	[SuppressMessage("Performance", "IDE0051:Avoid unused private fields", Justification = "False. Partial implementation.")]
-	[SuppressMessage("Performance", "CA1823:Avoid unused private fields", Justification = "False. Partial implementation.")]
-	private const string EndpointNameTag = "Invoices Management System v" + SemanticVersioning;
+  [SuppressMessage("Performance", "IDE0051:Avoid unused private fields", Justification = "False. Partial implementation.")]
+  [SuppressMessage("Performance", "CA1823:Avoid unused private fields", Justification = "False. Partial implementation.")]
+  private const string EndpointNameTag = "Invoices Management System v" + SemanticVersioning;
 
-	/// <summary>
-	/// Registers all invoice, invoice analysis and merchant endpoint groups into the application's routing pipeline.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Grouping Strategy:</b> Consolidates related endpoints under the base path segment <c>rest/v1</c>. Each subgroup (standard invoice, analysis, merchant)
-	/// is defined in a corresponding partial implementation method (<c>MapStandardInvoiceEndpoints</c>, <c>MapInvoiceAnalysisEndpoints</c>, <c>MapStandardMerchantEndpoints</c>).</para>
-	/// <para><b>Idempotency:</b> Safe to invoke once during startup; repeated invocation would register duplicate endpoints (DO NOT call multiple times).</para>
-	/// <para><b>Versioning Policy:</b> Route segment version (<c>v1</c>) DOES NOT auto-track semantic constant <c>SemanticVersioning</c>; bump URI only on public breaking changes.</para>
-	/// <para><b>Cross-Cutting Concerns:</b> Authentication, authorization, validation, caching, and OpenAPI metadata are applied in handler / metadata partials to keep this method declarative.</para>
-	/// </remarks>
-	/// <param name="router">Endpoint route builder (must be non-null) used during application startup.</param>
-	public static void MapInvoiceEndpoints(this IEndpointRouteBuilder router)
-	{
-		router.MapGroup("rest/v1").MapStandardInvoiceEndpoints();
-		router.MapGroup("rest/v1").MapInvoiceAnalysisEndpoints();
-		router.MapGroup("rest/v1").MapStandardMerchantEndpoints();
-	}
+  /// <summary>
+  /// Registers all invoice, invoice analysis and merchant endpoint groups into the application's routing pipeline.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Grouping Strategy:</b> Consolidates related endpoints under the base path segment <c>rest/v1</c>. Each subgroup (standard invoice, analysis, merchant)
+  /// is defined in a corresponding partial implementation method (<c>MapStandardInvoiceEndpoints</c>, <c>MapInvoiceAnalysisEndpoints</c>, <c>MapStandardMerchantEndpoints</c>).</para>
+  /// <para><b>Idempotency:</b> Safe to invoke once during startup; repeated invocation would register duplicate endpoints (DO NOT call multiple times).</para>
+  /// <para><b>Versioning Policy:</b> Route segment version (<c>v1</c>) DOES NOT auto-track semantic constant <c>SemanticVersioning</c>; bump URI only on public breaking changes.</para>
+  /// <para><b>Cross-Cutting Concerns:</b> Authentication, authorization, validation, caching, and OpenAPI metadata are applied in handler / metadata partials to keep this method declarative.</para>
+  /// </remarks>
+  /// <param name="router">Endpoint route builder (must be non-null) used during application startup.</param>
+  public static void MapInvoiceEndpoints(this IEndpointRouteBuilder router)
+  {
+    router.MapGroup("rest/v1").MapStandardInvoiceEndpoints();
+    router.MapGroup("rest/v1").MapInvoiceAnalysisEndpoints();
+    router.MapGroup("rest/v1").MapStandardMerchantEndpoints();
+  }
 
-	/// <summary>
-	/// Extracts the domain user identifier (GUID) from the authenticated <see cref="ClaimsPrincipal"/>.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Expected Claim:</b> <c>userIdentifier</c> claim containing a valid GUID string.</para>
-	/// <para><b>Fallback:</b> Returns <c>Guid.Empty</c> if claim missing or unparsable (will propagate to downstream validation layers which SHOULD reject).</para>
-	/// <para><b>Telemetry:</b> Starts an Activity span for diagnostic correlation of identity resolution.</para>
-	/// <para><b>Performance:</b> Single-pass LINQ search over claim collection; negligible overhead for typical principal sizes.</para>
-	/// </remarks>
-	/// <param name="principal">Authenticated principal (must not be null).</param>
-	/// <returns>Resolved user GUID or <c>Guid.Empty</c> when claim absent / invalid.</returns>
-	private static Guid RetrieveUserIdentifierClaimFromPrincipal(ClaimsPrincipal principal)
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveUserIdentifierClaimFromPrincipal));
-		var userIdentifierClaim = principal.Claims.FirstOrDefault(
-				predicate: claim => claim.Type == "userIdentifier",
-				defaultValue: new Claim(type: "userIdentifier", value: Guid.Empty.ToString()));
+  /// <summary>
+  /// Extracts the domain user identifier (GUID) from the authenticated <see cref="ClaimsPrincipal"/>.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Expected Claim:</b> <c>userIdentifier</c> claim containing a valid GUID string.</para>
+  /// <para><b>Fallback:</b> Returns <c>Guid.Empty</c> if claim missing or unparsable (will propagate to downstream validation layers which SHOULD reject).</para>
+  /// <para><b>Telemetry:</b> Starts an Activity span for diagnostic correlation of identity resolution.</para>
+  /// <para><b>Performance:</b> Single-pass LINQ search over claim collection; negligible overhead for typical principal sizes.</para>
+  /// </remarks>
+  /// <param name="principal">Authenticated principal (must not be null).</param>
+  /// <returns>Resolved user GUID or <c>Guid.Empty</c> when claim absent / invalid.</returns>
+  private static Guid RetrieveUserIdentifierClaimFromPrincipal(ClaimsPrincipal principal)
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveUserIdentifierClaimFromPrincipal));
+    var userIdentifierClaim = principal.Claims.FirstOrDefault(
+        predicate: claim => claim.Type == "userIdentifier",
+        defaultValue: new Claim(type: "userIdentifier", value: Guid.Empty.ToString()));
 
-		var potentialUserIdentifier = Guid.Parse(userIdentifierClaim.Value);
-		return potentialUserIdentifier;
-	}
+    var potentialUserIdentifier = Guid.Parse(userIdentifierClaim.Value);
+    return potentialUserIdentifier;
+  }
 
-	/// <summary>
-	/// Determines whether the authenticated principal possesses elevated (super user) privileges.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Status:</b> Placeholder implementation returning <c>true</c>; to be replaced with role / claim inspection (e.g. role = "superuser").</para>
-	/// <para><b>Future Implementation Notes:</b> Introduce policy constants, cache high-privilege evaluation, and surface explicit audit logging on positive elevation.</para>
-	/// <para><b>Security:</b> Must be implemented prior to exposing admin-tier endpoint behaviors; current stub risks privilege over-grant if used unsafely.</para>
-	/// <para><b>Telemetry:</b> Activity span added for future diagnostic correlation of elevation checks.</para>
-	/// </remarks>
-	/// <param name="principal">Authenticated principal to evaluate.</param>
-	/// <returns><c>true</c> when super user (always true in current stub); will become conditional after implementation.</returns>
-	private static bool IsPrincipalSuperUser(ClaimsPrincipal principal)
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(IsPrincipalSuperUser));
-		return true; // TODO: implement this method.
-	}
+  /// <summary>
+  /// Determines whether the authenticated principal possesses elevated (super user) privileges.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Status:</b> Placeholder implementation returning <c>true</c>; to be replaced with role / claim inspection (e.g. role = "superuser").</para>
+  /// <para><b>Future Implementation Notes:</b> Introduce policy constants, cache high-privilege evaluation, and surface explicit audit logging on positive elevation.</para>
+  /// <para><b>Security:</b> Must be implemented prior to exposing admin-tier endpoint behaviors; current stub risks privilege over-grant if used unsafely.</para>
+  /// <para><b>Telemetry:</b> Activity span added for future diagnostic correlation of elevation checks.</para>
+  /// </remarks>
+  /// <param name="principal">Authenticated principal to evaluate.</param>
+  /// <returns><c>true</c> when super user (always true in current stub); will become conditional after implementation.</returns>
+  private static bool IsPrincipalSuperUser(ClaimsPrincipal principal)
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(IsPrincipalSuperUser));
+    return true; // TODO: implement this method.
+  }
 }

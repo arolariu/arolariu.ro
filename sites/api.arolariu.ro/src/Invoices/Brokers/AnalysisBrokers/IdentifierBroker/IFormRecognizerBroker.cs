@@ -25,21 +25,21 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 /// </remarks>
 public interface IFormRecognizerBroker
 {
-	/// <summary>
-	/// Performs optical character recognition + structural field extraction on a single invoice scan and projects results into the provided aggregate.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Mutation:</b> The passed <paramref name="invoice"/> instance is enriched in-place (merchant, items, payment, metadata hooks)
-	/// and then returned. Callers requiring immutability SHOULD clone prior to invocation.</para>
-	/// <para><b>Model:</b> Uses the Azure prebuilt receipt model (identifier: <c>prebuilt-receipt</c>). This may evolve; callers SHOULD NOT hard‑code assumptions
-	/// about recognition fidelity or field naming beyond domain mapping provided here.</para>
-	/// <para><b>Failure Handling:</b> Argument null results in <see cref="System.ArgumentNullException"/>. Provider / transport exceptions bubble for higher-layer
-	/// classification (retry / circuit breaker). Partial extraction never throws.</para>
-	/// <para><b>Options:</b> The <paramref name="options"/> parameter allows higher orchestration to toggle OCR participation within a larger enrichment pipeline.</para>
-	/// </remarks>
-	/// <param name="invoice">Target invoice aggregate to enrich (MUST NOT be null; MUST have initialized collections).</param>
-	/// <param name="options">Analysis directives controlling which enrichment phases are active (broker may short-circuit when disabled).</param>
-	/// <returns>The enriched invoice aggregate (same instance reference).</returns>
-	/// <exception cref="System.ArgumentNullException">Thrown when <paramref name="invoice"/> is null.</exception>
-	ValueTask<Invoice> PerformOcrAnalysisOnSingleInvoice(Invoice invoice, AnalysisOptions options);
+  /// <summary>
+  /// Performs optical character recognition + structural field extraction on a single invoice scan and projects results into the provided aggregate.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Mutation:</b> The passed <paramref name="invoice"/> instance is enriched in-place (merchant, items, payment, metadata hooks)
+  /// and then returned. Callers requiring immutability SHOULD clone prior to invocation.</para>
+  /// <para><b>Model:</b> Uses the Azure prebuilt receipt model (identifier: <c>prebuilt-receipt</c>). This may evolve; callers SHOULD NOT hard‑code assumptions
+  /// about recognition fidelity or field naming beyond domain mapping provided here.</para>
+  /// <para><b>Failure Handling:</b> Argument null results in <see cref="System.ArgumentNullException"/>. Provider / transport exceptions bubble for higher-layer
+  /// classification (retry / circuit breaker). Partial extraction never throws.</para>
+  /// <para><b>Options:</b> The <paramref name="options"/> parameter allows higher orchestration to toggle OCR participation within a larger enrichment pipeline.</para>
+  /// </remarks>
+  /// <param name="invoice">Target invoice aggregate to enrich (MUST NOT be null; MUST have initialized collections).</param>
+  /// <param name="options">Analysis directives controlling which enrichment phases are active (broker may short-circuit when disabled).</param>
+  /// <returns>The enriched invoice aggregate (same instance reference).</returns>
+  /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="invoice"/> is null.</exception>
+  ValueTask<Invoice> PerformOcrAnalysisOnSingleInvoice(Invoice invoice, AnalysisOptions options);
 }

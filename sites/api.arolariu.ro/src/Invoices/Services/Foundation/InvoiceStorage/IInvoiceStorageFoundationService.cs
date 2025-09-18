@@ -26,74 +26,74 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// </remarks>
 public interface IInvoiceStorageFoundationService
 {
-	#region Store Invoice Object API
-	/// <summary>
-	/// Persists a new <see cref="Invoice"/> aggregate.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Validation:</b> Ensures invoice id is non-empty, required collections initialized, and monetary totals non-negative.</para>
-	/// <para><b>Failure Modes:</b> Throws validation exception on invariant breach; throws dependency / dependency validation exceptions on broker failures or conflicts.</para>
-	/// </remarks>
-	/// <param name="invoice">Fully formed invoice aggregate to persist.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context for the invoice (acts as partition key).</param>
-	/// <returns>Asynchronous task.</returns>
-	/// <exception cref="ArgumentNullException">If <paramref name="invoice"/> is null.</exception>
-	public Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null);
-	#endregion
+  #region Store Invoice Object API
+  /// <summary>
+  /// Persists a new <see cref="Invoice"/> aggregate.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Validation:</b> Ensures invoice id is non-empty, required collections initialized, and monetary totals non-negative.</para>
+  /// <para><b>Failure Modes:</b> Throws validation exception on invariant breach; throws dependency / dependency validation exceptions on broker failures or conflicts.</para>
+  /// </remarks>
+  /// <param name="invoice">Fully formed invoice aggregate to persist.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context for the invoice (acts as partition key).</param>
+  /// <returns>Asynchronous task.</returns>
+  /// <exception cref="ArgumentNullException">If <paramref name="invoice"/> is null.</exception>
+  Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null);
+  #endregion
 
-	#region Read Invoice Object API
-	/// <summary>
-	/// Retrieves a single invoice by its identifier (and optional partition).
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Return:</b> Returns the invoice or <c>null</c> if not found (depending on implementation; may alternatively throw a not-found validation exception per policy).</para>
-	/// <para><b>Performance:</b> Single point read; SHOULD leverage partition for optimal cost.</para>
-	/// </remarks>
-	/// <param name="identifier">Invoice aggregate identifier.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	/// <returns>Invoice instance or null.</returns>
-	public Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null);
-	#endregion
+  #region Read Invoice Object API
+  /// <summary>
+  /// Retrieves a single invoice by its identifier (and optional partition).
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Return:</b> Returns the invoice or <c>null</c> if not found (depending on implementation; may alternatively throw a not-found validation exception per policy).</para>
+  /// <para><b>Performance:</b> Single point read; SHOULD leverage partition for optimal cost.</para>
+  /// </remarks>
+  /// <param name="identifier">Invoice aggregate identifier.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  /// <returns>Invoice instance or null.</returns>
+  Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Read Invoice Objects API
-	/// <summary>
-	/// Enumerates all invoices for a given partition (or across partitions if none supplied).
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Pagination:</b> Not yet implemented; large result sets may incur high RU / memory usage (backlog item).</para>
-	/// <para><b>Soft Delete:</b> Implementations SHOULD filter out soft-deleted invoices unless a diagnostic flag is added in future.</para>
-	/// </remarks>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	/// <returns>Enumerable collection (empty if none).</returns>
-	public Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid? userIdentifier = null);
-	#endregion
+  #region Read Invoice Objects API
+  /// <summary>
+  /// Enumerates all invoices for a given partition (or across partitions if none supplied).
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Pagination:</b> Not yet implemented; large result sets may incur high RU / memory usage (backlog item).</para>
+  /// <para><b>Soft Delete:</b> Implementations SHOULD filter out soft-deleted invoices unless a diagnostic flag is added in future.</para>
+  /// </remarks>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  /// <returns>Enumerable collection (empty if none).</returns>
+  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid? userIdentifier = null);
+  #endregion
 
-	#region Update Invoice Object API
-	/// <summary>
-	/// Replaces an existing invoice with updated state.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Preconditions:</b> Target invoice must exist; invariants on updated aggregate re-validated.</para>
-	/// <para><b>Concurrency:</b> No optimistic concurrency (ETag) yet; future enhancement may add concurrency token handling.</para>
-	/// </remarks>
-	/// <param name="updatedInvoice">Proposed new aggregate state.</param>
-	/// <param name="invoiceIdentifier">Identity of the invoice being updated (must match <c>updatedInvoice.id</c> if enforced).</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	/// <returns>Updated invoice instance.</returns>
-	public Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  #region Update Invoice Object API
+  /// <summary>
+  /// Replaces an existing invoice with updated state.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Preconditions:</b> Target invoice must exist; invariants on updated aggregate re-validated.</para>
+  /// <para><b>Concurrency:</b> No optimistic concurrency (ETag) yet; future enhancement may add concurrency token handling.</para>
+  /// </remarks>
+  /// <param name="updatedInvoice">Proposed new aggregate state.</param>
+  /// <param name="invoiceIdentifier">Identity of the invoice being updated (must match <c>updatedInvoice.id</c> if enforced).</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  /// <returns>Updated invoice instance.</returns>
+  Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Delete Invoice Object API
-	/// <summary>
-	/// Performs a logical or physical delete (implementation-defined) of an invoice.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Soft Delete Policy:</b> If soft delete is implemented, method SHOULD mark state and retain for audit; otherwise physically remove.</para>
-	/// <para><b>Idempotency:</b> Multiple invocations with same identifier yield same terminal state (absent or marked deleted).</para>
-	/// </remarks>
-	/// <param name="identifier">Invoice identifier.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	/// <returns>Asynchronous task.</returns>
-	public Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null);
-	#endregion
+  #region Delete Invoice Object API
+  /// <summary>
+  /// Performs a logical or physical delete (implementation-defined) of an invoice.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Soft Delete Policy:</b> If soft delete is implemented, method SHOULD mark state and retain for audit; otherwise physically remove.</para>
+  /// <para><b>Idempotency:</b> Multiple invocations with same identifier yield same terminal state (absent or marked deleted).</para>
+  /// </remarks>
+  /// <param name="identifier">Invoice identifier.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  /// <returns>Asynchronous task.</returns>
+  Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null);
+  #endregion
 }

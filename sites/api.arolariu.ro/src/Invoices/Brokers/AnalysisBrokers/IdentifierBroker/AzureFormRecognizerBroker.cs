@@ -36,88 +36,88 @@ using Azure.Identity;
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
 public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
 {
-	private readonly DocumentAnalysisClient client;
+  private readonly DocumentAnalysisClient client;
 
-	/// <summary>
-	/// Initializes the broker with configured Azure Cognitive Services (Document Intelligence) endpoint credentials.
-	/// </summary>
-	/// <remarks>
-	/// <para>Builds a single <see cref="DocumentAnalysisClient"/> using <see cref="DefaultAzureCredential"/>. In non-DEBUG builds a managed identity
-	/// client id is injected (federated workload identity). Throws fast on null dependency to fail early in composition root.</para>
-	/// <para>No network calls are made during construction; the client performs lazy connection initialization on first request.</para>
-	/// </remarks>
-	/// <param name="optionsManager">Abstraction providing strongly typed application options (endpoint + key context; key unused when MI is present).</param>
-	/// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> is null.</exception>
-	public AzureFormRecognizerBroker(IOptionsManager optionsManager)
-	{
-		ArgumentNullException.ThrowIfNull(optionsManager);
-		ApplicationOptions options = optionsManager.GetApplicationOptions();
+  /// <summary>
+  /// Initializes the broker with configured Azure Cognitive Services (Document Intelligence) endpoint credentials.
+  /// </summary>
+  /// <remarks>
+  /// <para>Builds a single <see cref="DocumentAnalysisClient"/> using <see cref="DefaultAzureCredential"/>. In non-DEBUG builds a managed identity
+  /// client id is injected (federated workload identity). Throws fast on null dependency to fail early in composition root.</para>
+  /// <para>No network calls are made during construction; the client performs lazy connection initialization on first request.</para>
+  /// </remarks>
+  /// <param name="optionsManager">Abstraction providing strongly typed application options (endpoint + key context; key unused when MI is present).</param>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> is null.</exception>
+  public AzureFormRecognizerBroker(IOptionsManager optionsManager)
+  {
+    ArgumentNullException.ThrowIfNull(optionsManager);
+    ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-		var documentIntelligenceEndpoint = options.CognitiveServicesEndpoint;
-		var documentIntelligenceKey = options.CognitiveServicesKey;
-		var credentials = new DefaultAzureCredential(
+    var documentIntelligenceEndpoint = options.CognitiveServicesEndpoint;
+    var documentIntelligenceKey = options.CognitiveServicesKey;
+    var credentials = new DefaultAzureCredential(
 #if !DEBUG
 			new DefaultAzureCredentialOptions
 			{
 				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
 			}
 #endif
-		);
+    );
 
-		client = new DocumentAnalysisClient(
-			endpoint: new Uri(documentIntelligenceEndpoint),
-			credential: credentials);
-	}
+    client = new DocumentAnalysisClient(
+      endpoint: new Uri(documentIntelligenceEndpoint),
+      credential: credentials);
+  }
 
 
-	/// <summary>
-	/// Executes OCR + structured field extraction against the invoice's scan URI and merges recognized data into the provided aggregate.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Model:</b> Invokes <c>AnalyzeDocumentFromUriAsync("prebuilt-receipt")</c>. Assumes <see cref="Invoice.Scan"/> contains a resolvable, accessible URI.</para>
-	/// <para><b>Mutation:</b> Populates (or overwrites) <c>MerchantReference</c>, <c>Items</c>, and <c>PaymentInformation</c> via internal transformation helpers.
-	/// Existing collection contents are appended (current implementation performs additive population; upstream deduplication MAY be required).</para>
-	/// <para><b>Failure Handling:</b> Throws on null invoice argument and propagates Azure SDK exceptions (network/service) without translation.
-	/// Partial field absence results in sentinel defaults without exception.</para>
-	/// <para><b>Options:</b> Current implementation does not conditionally short‑circuit based on <paramref name="options"/> (backlog: selectively disable OCR stage).</para>
-	/// </remarks>
-	/// <param name="invoice">Target invoice aggregate (MUST NOT be null; MUST contain a <c>Scan.Location</c> URI).</param>
-	/// <param name="options">Analysis directives (currently advisory placeholder).</param>
-	/// <returns>Same <paramref name="invoice"/> instance enriched with recognized data.</returns>
-	/// <exception cref="ArgumentNullException">Thrown when <paramref name="invoice"/> is null.</exception>
-	public async ValueTask<Invoice> PerformOcrAnalysisOnSingleInvoice(Invoice invoice, AnalysisOptions options)
-	{
-		ArgumentNullException.ThrowIfNull(invoice);
+  /// <summary>
+  /// Executes OCR + structured field extraction against the invoice's scan URI and merges recognized data into the provided aggregate.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Model:</b> Invokes <c>AnalyzeDocumentFromUriAsync("prebuilt-receipt")</c>. Assumes <see cref="Invoice.Scan"/> contains a resolvable, accessible URI.</para>
+  /// <para><b>Mutation:</b> Populates (or overwrites) <c>MerchantReference</c>, <c>Items</c>, and <c>PaymentInformation</c> via internal transformation helpers.
+  /// Existing collection contents are appended (current implementation performs additive population; upstream deduplication MAY be required).</para>
+  /// <para><b>Failure Handling:</b> Throws on null invoice argument and propagates Azure SDK exceptions (network/service) without translation.
+  /// Partial field absence results in sentinel defaults without exception.</para>
+  /// <para><b>Options:</b> Current implementation does not conditionally short‑circuit based on <paramref name="options"/> (backlog: selectively disable OCR stage).</para>
+  /// </remarks>
+  /// <param name="invoice">Target invoice aggregate (MUST NOT be null; MUST contain a <c>Scan.Location</c> URI).</param>
+  /// <param name="options">Analysis directives (currently advisory placeholder).</param>
+  /// <returns>Same <paramref name="invoice"/> instance enriched with recognized data.</returns>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="invoice"/> is null.</exception>
+  public async ValueTask<Invoice> PerformOcrAnalysisOnSingleInvoice(Invoice invoice, AnalysisOptions options)
+  {
+    ArgumentNullException.ThrowIfNull(invoice);
 
-		var operation = await client.AnalyzeDocumentFromUriAsync(
-			WaitUntil.Completed,
-			"prebuilt-receipt",
-			invoice.Scan.Location)
-			.ConfigureAwait(false);
+    var operation = await client.AnalyzeDocumentFromUriAsync(
+      WaitUntil.Completed,
+      "prebuilt-receipt",
+      invoice.Scan.Location)
+      .ConfigureAwait(false);
 
-		var result = operation.Value;
-		var receipt = result.Documents[0];
+    var result = operation.Value;
+    var receipt = result.Documents[0];
 
-		return TransformOcrDataToInvoiceData(receipt, invoice);
-	}
+    return TransformOcrDataToInvoiceData(receipt, invoice);
+  }
 
-	private static Invoice TransformOcrDataToInvoiceData(AnalyzedDocument ocrData, Invoice invoice)
-	{
-		var merchant = IdentifyMerchant(ocrData);
-		var products = IdentifyProducts(ocrData);
-		var payment = IdentifyPaymentInformation(ocrData);
+  private static Invoice TransformOcrDataToInvoiceData(AnalyzedDocument ocrData, Invoice invoice)
+  {
+    var merchant = IdentifyMerchant(ocrData);
+    var products = IdentifyProducts(ocrData);
+    var payment = IdentifyPaymentInformation(ocrData);
 
-		invoice.MerchantReference = merchant.id;
+    invoice.MerchantReference = merchant.id;
 
-		#region Populate the items array:
-		foreach (var product in products)
-		{
-			invoice.Items.Add(product);
-		}
-		#endregion
+    #region Populate the items array:
+    foreach (var product in products)
+    {
+      invoice.Items.Add(product);
+    }
+    #endregion
 
-		invoice.PaymentInformation = payment;
+    invoice.PaymentInformation = payment;
 
-		return invoice;
-	}
+    return invoice;
+  }
 }

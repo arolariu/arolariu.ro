@@ -31,114 +31,114 @@ using Azure.Identity;
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
 public class AzureTranslatorBroker : ITranslatorBroker
 {
-	private readonly TextTranslationClient textTranslationClient;
+  private readonly TextTranslationClient textTranslationClient;
 
-	/// <summary>
-	/// Initializes the broker with application configuration and builds a <see cref="TextTranslationClient"/> using default Azure credentials.
-	/// </summary>
-	/// <remarks>
-	/// <para>Construction is side‑effect free (no network calls). The client is thread-safe; the broker instance is suitable for scoped
-	/// or singleton lifetimes depending on broader DI design.</para>
-	/// </remarks>
-	/// <param name="optionsManager">Options source providing <c>CognitiveServicesEndpoint</c> (required). Key material unused when managed identity is active.</param>
-	/// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> is null.</exception>
-	public AzureTranslatorBroker(IOptionsManager optionsManager)
-	{
-		ArgumentNullException.ThrowIfNull(optionsManager);
-		ApplicationOptions options = optionsManager.GetApplicationOptions();
+  /// <summary>
+  /// Initializes the broker with application configuration and builds a <see cref="TextTranslationClient"/> using default Azure credentials.
+  /// </summary>
+  /// <remarks>
+  /// <para>Construction is side‑effect free (no network calls). The client is thread-safe; the broker instance is suitable for scoped
+  /// or singleton lifetimes depending on broader DI design.</para>
+  /// </remarks>
+  /// <param name="optionsManager">Options source providing <c>CognitiveServicesEndpoint</c> (required). Key material unused when managed identity is active.</param>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> is null.</exception>
+  public AzureTranslatorBroker(IOptionsManager optionsManager)
+  {
+    ArgumentNullException.ThrowIfNull(optionsManager);
+    ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-		var cognitiveServicesEndpoint = options.CognitiveServicesEndpoint;
-		var cognitiveServicesApiKey = options.CognitiveServicesKey;
-		var credentials = new DefaultAzureCredential(
+    var cognitiveServicesEndpoint = options.CognitiveServicesEndpoint;
+    var cognitiveServicesApiKey = options.CognitiveServicesKey;
+    var credentials = new DefaultAzureCredential(
 #if !DEBUG
 			new DefaultAzureCredentialOptions
 			{
 				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
 			}
 #endif
-		);
+    );
 
-		textTranslationClient = new TextTranslationClient(
-			credential: credentials,
-			endpoint: new Uri(cognitiveServicesEndpoint));
-	}
+    textTranslationClient = new TextTranslationClient(
+      credential: credentials,
+      endpoint: new Uri(cognitiveServicesEndpoint));
+  }
 
-	/// <summary>
-	/// Initializes the broker with a custom <see cref="HttpClient"/> transport (primarily for testing or advanced pipeline customization).
-	/// </summary>
-	/// <remarks>
-	/// <para>Allows injection of a fake or instrumented HTTP pipeline (e.g. for deterministic integration tests, chaos experiments,
-	/// or distributed tracing enrichment). All other semantics match the primary constructor.</para>
-	/// </remarks>
-	/// <param name="optionsManager">Options source (MUST NOT be null).</param>
-	/// <param name="httpClient">Pre-configured HTTP client instance (MUST NOT be null). Caller owns its lifecycle.</param>
-	/// <exception cref="ArgumentNullException">Thrown when any dependency is null.</exception>
-	public AzureTranslatorBroker(IOptionsManager optionsManager, HttpClient httpClient)
-	{
-		ArgumentNullException.ThrowIfNull(optionsManager);
-		ArgumentNullException.ThrowIfNull(httpClient);
-		ApplicationOptions options = optionsManager.GetApplicationOptions();
+  /// <summary>
+  /// Initializes the broker with a custom <see cref="HttpClient"/> transport (primarily for testing or advanced pipeline customization).
+  /// </summary>
+  /// <remarks>
+  /// <para>Allows injection of a fake or instrumented HTTP pipeline (e.g. for deterministic integration tests, chaos experiments,
+  /// or distributed tracing enrichment). All other semantics match the primary constructor.</para>
+  /// </remarks>
+  /// <param name="optionsManager">Options source (MUST NOT be null).</param>
+  /// <param name="httpClient">Pre-configured HTTP client instance (MUST NOT be null). Caller owns its lifecycle.</param>
+  /// <exception cref="ArgumentNullException">Thrown when any dependency is null.</exception>
+  public AzureTranslatorBroker(IOptionsManager optionsManager, HttpClient httpClient)
+  {
+    ArgumentNullException.ThrowIfNull(optionsManager);
+    ArgumentNullException.ThrowIfNull(httpClient);
+    ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-		var cognitiveServicesEndpoint = options.CognitiveServicesEndpoint;
-		var cognitiveServicesApiKey = options.CognitiveServicesKey;
-		var credentials = new DefaultAzureCredential(
+    var cognitiveServicesEndpoint = options.CognitiveServicesEndpoint;
+    var cognitiveServicesApiKey = options.CognitiveServicesKey;
+    var credentials = new DefaultAzureCredential(
 #if !DEBUG
 			new DefaultAzureCredentialOptions
 			{
 				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
 			}
 #endif
-		);
+    );
 
-		textTranslationClient = new TextTranslationClient(
-			credential: credentials,
-			endpoint: new Uri(cognitiveServicesEndpoint),
-			options: new TextTranslationClientOptions
-			{
-				Transport = new HttpClientTransport(httpClient)
-			}
-		);
-	}
+    textTranslationClient = new TextTranslationClient(
+      credential: credentials,
+      endpoint: new Uri(cognitiveServicesEndpoint),
+      options: new TextTranslationClientOptions
+      {
+        Transport = new HttpClientTransport(httpClient)
+      }
+    );
+  }
 
-	/// <summary>
-	/// Translates source text into a target locale (default: English).
-	/// </summary>
-	/// <remarks>
-	/// <para><b>API Call:</b> Single request to Azure Translation service. No batching or caching performed.</para>
-	/// <para><b>Fallback:</b> Returns empty string when translation array is unexpectedly empty (graceful degradation pattern).</para>
-	/// <para><b>Validation:</b> Caller SHOULD ensure <paramref name="text"/> is non-empty; this method does not trim or sanitize.</para>
-	/// </remarks>
-	/// <param name="text">Source text to translate.</param>
-	/// <param name="language">Target BCP‑47 language code (e.g. "en", "ro", "de").</param>
-	/// <returns>Translated text or empty string if none returned.</returns>
-	public async Task<string> Translate(string text, string language = "en")
-	{
-		var response = await textTranslationClient
-			.TranslateAsync(language, text)
-			.ConfigureAwait(false);
+  /// <summary>
+  /// Translates source text into a target locale (default: English).
+  /// </summary>
+  /// <remarks>
+  /// <para><b>API Call:</b> Single request to Azure Translation service. No batching or caching performed.</para>
+  /// <para><b>Fallback:</b> Returns empty string when translation array is unexpectedly empty (graceful degradation pattern).</para>
+  /// <para><b>Validation:</b> Caller SHOULD ensure <paramref name="text"/> is non-empty; this method does not trim or sanitize.</para>
+  /// </remarks>
+  /// <param name="text">Source text to translate.</param>
+  /// <param name="language">Target BCP‑47 language code (e.g. "en", "ro", "de").</param>
+  /// <returns>Translated text or empty string if none returned.</returns>
+  public async Task<string> Translate(string text, string language = "en")
+  {
+    var response = await textTranslationClient
+      .TranslateAsync(language, text)
+      .ConfigureAwait(false);
 
-		var translation = response.Value[0];
-		var result = translation?.Translations[0]?.Text ?? string.Empty;
-		return result;
-	}
+    var translation = response.Value[0];
+    var result = translation?.Translations[0]?.Text ?? string.Empty;
+    return result;
+  }
 
-	/// <summary>
-	/// Infers the most probable language of the supplied text.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Mechanism:</b> Performs a translation call (target English) and inspects the detected language metadata returned with the translation batch.</para>
-	/// <para><b>Limitations:</b> Very short or mixed-language inputs may yield low-confidence or generic results; confidence score is not currently exposed.</para>
-	/// </remarks>
-	/// <param name="text">Text whose language should be identified.</param>
-	/// <returns>Detected BCP‑47 language code (e.g. "en", "ro").</returns>
-	public async Task<string> DetectLanguage(string text)
-	{
-		var translatedText = await textTranslationClient
-			.TranslateAsync(text, "en")
-			.ConfigureAwait(false);
+  /// <summary>
+  /// Infers the most probable language of the supplied text.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Mechanism:</b> Performs a translation call (target English) and inspects the detected language metadata returned with the translation batch.</para>
+  /// <para><b>Limitations:</b> Very short or mixed-language inputs may yield low-confidence or generic results; confidence score is not currently exposed.</para>
+  /// </remarks>
+  /// <param name="text">Text whose language should be identified.</param>
+  /// <returns>Detected BCP‑47 language code (e.g. "en", "ro").</returns>
+  public async Task<string> DetectLanguage(string text)
+  {
+    var translatedText = await textTranslationClient
+      .TranslateAsync(text, "en")
+      .ConfigureAwait(false);
 
-		var translation = translatedText.Value[0];
-		var detectedLanguage = translation.DetectedLanguage.Language;
-		return detectedLanguage;
-	}
+    var translation = translatedText.Value[0];
+    var detectedLanguage = translation.DetectedLanguage.Language;
+    return detectedLanguage;
+  }
 }

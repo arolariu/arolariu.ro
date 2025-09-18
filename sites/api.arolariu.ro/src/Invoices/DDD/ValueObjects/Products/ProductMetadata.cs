@@ -18,15 +18,15 @@ using System.Diagnostics.CodeAnalysis;
 [ExcludeFromCodeCoverage]
 public record struct ProductMetadata
 {
-	/// <summary>Indicates the product has been user- or system-modified post-ingestion.</summary>
-	/// <remarks><para>Used to surface UI indicators and enable differential audit logging.</para></remarks>
-	public bool IsEdited { get; set; }
+  /// <summary>Indicates the product has been user- or system-modified post-ingestion.</summary>
+  /// <remarks><para>Used to surface UI indicators and enable differential audit logging.</para></remarks>
+  public bool IsEdited { get; set; }
 
-	/// <summary>Signals that required enrichment / validation steps have completed for this product.</summary>
-	/// <remarks><para>Downstream analytics may exclude products where this flag is false to avoid skew.</para></remarks>
-	public bool IsComplete { get; set; }
+  /// <summary>Signals that required enrichment / validation steps have completed for this product.</summary>
+  /// <remarks><para>Downstream analytics may exclude products where this flag is false to avoid skew.</para></remarks>
+  public bool IsComplete { get; set; }
 
-	/// <summary>Logical deletion marker (soft delete) retaining historical context.</summary>
-	/// <remarks><para>Soft-deleted products remain persisted; aggregate-level queries are expected to exclude them unless explicitly overridden.</para></remarks>
-	public bool IsSoftDeleted { get; set; }
+  /// <summary>Logical deletion marker (soft delete) retaining historical context.</summary>
+  /// <remarks><para>Soft-deleted products remain persisted; aggregate-level queries are expected to exclude them unless explicitly overridden.</para></remarks>
+  public bool IsSoftDeleted { get; set; }
 }

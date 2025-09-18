@@ -19,27 +19,27 @@ using System.Threading.Tasks;
 /// </remarks>
 public interface ITranslatorBroker
 {
-	/// <summary>
-	/// Translates raw user/domain text into a target BCP‑47 language (default: English).
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Mutation:</b> Pure function; returns a translated string (empty string on provider partial failure may be an implementation choice).</para>
-	/// <para><b>Safety:</b> Caller SHOULD trim or sanitize input prior to translation if required (this method does not escape or filter content).</para>
-	/// <para><b>Fallback:</b> Implementations MAY return empty string on provider fault; upstream layers SHOULD treat empty output as non-fatal.</para>
-	/// </remarks>
-	/// <param name="text">Source text to translate (SHOULD NOT be null or empty).</param>
-	/// <param name="language">Target locale code (BCP‑47, e.g. "en", "ro", "de"). Defaults to "en".</param>
-	/// <returns>Translated text (may be empty on graceful degradation strategy).</returns>
-	Task<string> Translate(string text, string language = "en");
+  /// <summary>
+  /// Translates raw user/domain text into a target BCP‑47 language (default: English).
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Mutation:</b> Pure function; returns a translated string (empty string on provider partial failure may be an implementation choice).</para>
+  /// <para><b>Safety:</b> Caller SHOULD trim or sanitize input prior to translation if required (this method does not escape or filter content).</para>
+  /// <para><b>Fallback:</b> Implementations MAY return empty string on provider fault; upstream layers SHOULD treat empty output as non-fatal.</para>
+  /// </remarks>
+  /// <param name="text">Source text to translate (SHOULD NOT be null or empty).</param>
+  /// <param name="language">Target locale code (BCP‑47, e.g. "en", "ro", "de"). Defaults to "en".</param>
+  /// <returns>Translated text (may be empty on graceful degradation strategy).</returns>
+  Task<string> Translate(string text, string language = "en");
 
-	/// <summary>
-	/// Detects the most probable language for a given text sample.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Heuristics:</b> Underlying service may require minimum character length for high confidence. Very short inputs may return generic or unexpected codes.</para>
-	/// <para><b>Stability:</b> Detection confidence is not surfaced here (future enhancement: return composite result including score).</para>
-	/// </remarks>
-	/// <param name="text">Source text whose language should be inferred.</param>
-	/// <returns>Detected BCP‑47 language tag (e.g. "en", "ro").</returns>
-	Task<string> DetectLanguage(string text);
+  /// <summary>
+  /// Detects the most probable language for a given text sample.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Heuristics:</b> Underlying service may require minimum character length for high confidence. Very short inputs may return generic or unexpected codes.</para>
+  /// <para><b>Stability:</b> Detection confidence is not surfaced here (future enhancement: return composite result including score).</para>
+  /// </remarks>
+  /// <param name="text">Source text whose language should be inferred.</param>
+  /// <returns>Detected BCP‑47 language tag (e.g. "en", "ro").</returns>
+  Task<string> DetectLanguage(string text);
 }

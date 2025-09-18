@@ -19,25 +19,25 @@ using arolariu.Backend.Common.DDD.ValueObjects;
 [ExcludeFromCodeCoverage]
 public sealed record PaymentInformation
 {
-	/// <summary>Point-in-time at which the purchase was executed (store local time).</summary>
-	/// <remarks><para>May differ from ingestion time. Use for chronological analytics and interval bucketing.</para></remarks>
-	public DateTimeOffset TransactionDate { get; set; } = DateTimeOffset.Now;
+  /// <summary>Point-in-time at which the purchase was executed (store local time).</summary>
+  /// <remarks><para>May differ from ingestion time. Use for chronological analytics and interval bucketing.</para></remarks>
+  public DateTimeOffset TransactionDate { get; set; } = DateTimeOffset.Now;
 
-	/// <summary>Mode / instrument used to settle the transaction.</summary>
-	/// <remarks><para>Defaults to <see cref="PaymentType.UNKNOWN"/> when not inferable from OCR or receipt metadata.</para></remarks>
-	public PaymentType PaymentType { get; set; } = PaymentType.UNKNOWN;
+  /// <summary>Mode / instrument used to settle the transaction.</summary>
+  /// <remarks><para>Defaults to <see cref="PaymentType.UNKNOWN"/> when not inferable from OCR or receipt metadata.</para></remarks>
+  public PaymentType PaymentType { get; set; } = PaymentType.UNKNOWN;
 
-	/// <summary>Original settlement currency.</summary>
-	/// <remarks><para>Represents ISO-like metadata (name, code, symbol). Values SHOULD remain stable for historical financial accuracy.</para></remarks>
-	public Currency Currency { get; set; } = new Currency("Romanian Leu", "RON", "lei");
+  /// <summary>Original settlement currency.</summary>
+  /// <remarks><para>Represents ISO-like metadata (name, code, symbol). Values SHOULD remain stable for historical financial accuracy.</para></remarks>
+  public Currency Currency { get; set; } = new Currency("Romanian Leu", "RON", "lei");
 
-	/// <summary>Gross total payable amount (inclusive of tax) expressed in <see cref="Currency"/>.</summary>
-	/// <remarks><para>Non-negative. Zero indicates incomplete enrichment or parsing failure.</para></remarks>
-	public decimal TotalCostAmount { get; set; } = 0.0m;
+  /// <summary>Gross total payable amount (inclusive of tax) expressed in <see cref="Currency"/>.</summary>
+  /// <remarks><para>Non-negative. Zero indicates incomplete enrichment or parsing failure.</para></remarks>
+  public decimal TotalCostAmount { get; set; } = 0.0m;
 
-	/// <summary>Tax component of the total amount in <see cref="Currency"/>.</summary>
-	/// <remarks><para>May be zero for tax-exempt purchases or when parsing failed to isolate tax line items.</para></remarks>
-	public decimal TotalTaxAmount { get; set; } = 0.0m;
+  /// <summary>Tax component of the total amount in <see cref="Currency"/>.</summary>
+  /// <remarks><para>May be zero for tax-exempt purchases or when parsing failed to isolate tax line items.</para></remarks>
+  public decimal TotalTaxAmount { get; set; } = 0.0m;
 }
 
 /// <summary>
@@ -49,24 +49,24 @@ public sealed record PaymentInformation
 /// </remarks>
 public enum PaymentType
 {
-	/// <summary>Sentinel; payment method not resolved from source.</summary>
-	UNKNOWN = 0,
+  /// <summary>Sentinel; payment method not resolved from source.</summary>
+  UNKNOWN = 0,
 
-	/// <summary>Physical cash tender.</summary>
-	CASH = 100,
+  /// <summary>Physical cash tender.</summary>
+  CASH = 100,
 
-	/// <summary>Payment card (credit / debit).</summary>
-	CARD = 200,
+  /// <summary>Payment card (credit / debit).</summary>
+  CARD = 200,
 
-	/// <summary>Bank (wire / ACH / SEPA-like) transfer.</summary>
-	TRANSFER = 300,
+  /// <summary>Bank (wire / ACH / SEPA-like) transfer.</summary>
+  TRANSFER = 300,
 
-	/// <summary>Mobile wallet / NFC application (e.g. device-based tokenized payment).</summary>
-	MOBILEPAYMENT = 400,
+  /// <summary>Mobile wallet / NFC application (e.g. device-based tokenized payment).</summary>
+  MOBILEPAYMENT = 400,
 
-	/// <summary>Voucher / coupon / prepaid certificate redemption.</summary>
-	VOUCHER = 500,
+  /// <summary>Voucher / coupon / prepaid certificate redemption.</summary>
+  VOUCHER = 500,
 
-	/// <summary>Fallback when no defined payment method applies.</summary>
-	Other = 9999,
+  /// <summary>Fallback when no defined payment method applies.</summary>
+  Other = 9999,
 }

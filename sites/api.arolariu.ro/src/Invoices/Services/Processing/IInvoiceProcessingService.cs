@@ -28,258 +28,258 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 /// </remarks>
 public interface IInvoiceProcessingService
 {
-	#region Invoice Orchestration Service
+  #region Invoice Orchestration Service
 
-	#region Analyze Invoice API
-	/// <summary>
-	/// Performs analysis / enrichment over a single invoice according to option flags.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Behavior:</b> Retrieves (if not already forwarded), validates and applies analysis steps (classification, normalization, tagging).
-	/// Delegates deterministic enrichment to foundation analysis service; may invoke external AI/OCR via brokers indirectly in future.</para>
-	/// <para><b>Side Effects:</b> Does not currently persist changes (future: optional persistence flag).</para>
-	/// </remarks>
-	/// <param name="options">Directive flags specifying which enrichment steps to perform (MUST NOT be null).</param>
-	/// <param name="identifier">Invoice identifier.</param>
-	/// <param name="userIdentifier">Optional tenant / partition context.</param>
-	public Task AnalyzeInvoice(AnalysisOptions options, Guid identifier, Guid? userIdentifier = null);
-	#endregion
+  #region Analyze Invoice API
+  /// <summary>
+  /// Performs analysis / enrichment over a single invoice according to option flags.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Behavior:</b> Retrieves (if not already forwarded), validates and applies analysis steps (classification, normalization, tagging).
+  /// Delegates deterministic enrichment to foundation analysis service; may invoke external AI/OCR via brokers indirectly in future.</para>
+  /// <para><b>Side Effects:</b> Does not currently persist changes (future: optional persistence flag).</para>
+  /// </remarks>
+  /// <param name="options">Directive flags specifying which enrichment steps to perform (MUST NOT be null).</param>
+  /// <param name="identifier">Invoice identifier.</param>
+  /// <param name="userIdentifier">Optional tenant / partition context.</param>
+  Task AnalyzeInvoice(AnalysisOptions options, Guid identifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Create Invoice API
-	/// <summary>
-	/// Persists a new invoice aggregate (delegates persistence to foundation layer).
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Workflow:</b> Validate aggregate invariants → call foundation storage → perform optional post-create enrichment (future).</para>
-	/// </remarks>
-	/// <param name="invoice">Invoice aggregate to create (MUST NOT be null).</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task CreateInvoice(Invoice invoice, Guid? userIdentifier = null);
-	#endregion
+  #region Create Invoice API
+  /// <summary>
+  /// Persists a new invoice aggregate (delegates persistence to foundation layer).
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Workflow:</b> Validate aggregate invariants → call foundation storage → perform optional post-create enrichment (future).</para>
+  /// </remarks>
+  /// <param name="invoice">Invoice aggregate to create (MUST NOT be null).</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task CreateInvoice(Invoice invoice, Guid? userIdentifier = null);
+  #endregion
 
-	#region Read Invoice API
-	/// <summary>
-	/// Retrieves a single invoice aggregate.
-	/// </summary>
-	/// <param name="identifier">Invoice identifier.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	/// <returns>The invoice or null / exception depending on implementation policy.</returns>
-	public Task<Invoice> ReadInvoice(Guid identifier, Guid? userIdentifier = null);
-	#endregion
+  #region Read Invoice API
+  /// <summary>
+  /// Retrieves a single invoice aggregate.
+  /// </summary>
+  /// <param name="identifier">Invoice identifier.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  /// <returns>The invoice or null / exception depending on implementation policy.</returns>
+  Task<Invoice> ReadInvoice(Guid identifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Read Invoices API
-	/// <summary>
-	/// Enumerates invoices within an optional partition scope.
-	/// </summary>
-	/// <remarks><b>Pagination:</b> Not implemented (backlog).</remarks>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task<IEnumerable<Invoice>> ReadInvoices(Guid? userIdentifier = null);
-	#endregion
+  #region Read Invoices API
+  /// <summary>
+  /// Enumerates invoices within an optional partition scope.
+  /// </summary>
+  /// <remarks><b>Pagination:</b> Not implemented (backlog).</remarks>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task<IEnumerable<Invoice>> ReadInvoices(Guid? userIdentifier = null);
+  #endregion
 
-	#region Update Invoice API
-	/// <summary>
-	/// Replaces an existing invoice aggregate with updated state.
-	/// </summary>
-	/// <param name="updatedInvoice">New aggregate state.</param>
-	/// <param name="invoiceIdentifier">Identifier of target invoice.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	/// <returns>Updated invoice.</returns>
-	public Task<Invoice> UpdateInvoice(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  #region Update Invoice API
+  /// <summary>
+  /// Replaces an existing invoice aggregate with updated state.
+  /// </summary>
+  /// <param name="updatedInvoice">New aggregate state.</param>
+  /// <param name="invoiceIdentifier">Identifier of target invoice.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  /// <returns>Updated invoice.</returns>
+  Task<Invoice> UpdateInvoice(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Delete Invoice API
-	/// <summary>
-	/// Deletes a single invoice (logical or physical per foundation implementation).
-	/// </summary>
-	/// <param name="identifier">Invoice identifier.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task DeleteInvoice(Guid identifier, Guid? userIdentifier = null);
-	#endregion
+  #region Delete Invoice API
+  /// <summary>
+  /// Deletes a single invoice (logical or physical per foundation implementation).
+  /// </summary>
+  /// <param name="identifier">Invoice identifier.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task DeleteInvoice(Guid identifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Delete Invoices API
-	/// <summary>
-	/// Deletes all invoices for a specified partition / user.
-	/// </summary>
-	/// <remarks><b>Caution:</b> Potentially expensive operation (fan‑out deletes). Backlog: replace with batch / soft-delete flag.</remarks>
-	/// <param name="userIdentifier">Partition / user identifier (MUST NOT be empty).</param>
-	public Task DeleteInvoices(Guid userIdentifier);
-	#endregion
+  #region Delete Invoices API
+  /// <summary>
+  /// Deletes all invoices for a specified partition / user.
+  /// </summary>
+  /// <remarks><b>Caution:</b> Potentially expensive operation (fan‑out deletes). Backlog: replace with batch / soft-delete flag.</remarks>
+  /// <param name="userIdentifier">Partition / user identifier (MUST NOT be empty).</param>
+  Task DeleteInvoices(Guid userIdentifier);
+  #endregion
 
-	#region Add Invoice Product API
-	/// <summary>
-	/// Adds (appends or merges) a product into an invoice's product collection.
-	/// </summary>
-	/// <param name="product">Product to add.</param>
-	/// <param name="invoiceIdentifier">Target invoice id.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task AddProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  #region Add Invoice Product API
+  /// <summary>
+  /// Adds (appends or merges) a product into an invoice's product collection.
+  /// </summary>
+  /// <param name="product">Product to add.</param>
+  /// <param name="invoiceIdentifier">Target invoice id.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task AddProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Get Invoice Products API
-	/// <summary>
-	/// Retrieves all products belonging to an invoice.
-	/// </summary>
-	/// <param name="invoiceIdentifier">Invoice id.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  #region Get Invoice Products API
+  /// <summary>
+  /// Retrieves all products belonging to an invoice.
+  /// </summary>
+  /// <param name="invoiceIdentifier">Invoice id.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task<IEnumerable<Product>> GetProducts(Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Get Invoice Product API
-	/// <summary>
-	/// Retrieves a single product by name from an invoice.
-	/// </summary>
-	/// <param name="productName">Product name (case sensitivity policy defined by implementation).</param>
-	/// <param name="invoiceIdentifier">Invoice id.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task<Product> GetProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  #region Get Invoice Product API
+  /// <summary>
+  /// Retrieves a single product by name from an invoice.
+  /// </summary>
+  /// <param name="productName">Product name (case sensitivity policy defined by implementation).</param>
+  /// <param name="invoiceIdentifier">Invoice id.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task<Product> GetProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Delete Invoice Product API
-	/// <summary>
-	/// Deletes a product from an invoice by name.
-	/// </summary>
-	/// <param name="productName">Product name.</param>
-	/// <param name="invoiceIdentifier">Invoice id.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task DeleteProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #region Delete Invoice Product API
+  /// <summary>
+  /// Deletes a product from an invoice by name.
+  /// </summary>
+  /// <param name="productName">Product name.</param>
+  /// <param name="invoiceIdentifier">Invoice id.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task DeleteProduct(string productName, Guid invoiceIdentifier, Guid? userIdentifier = null);
 
-	/// <summary>
-	/// Deletes a product from an invoice using the product value object.
-	/// </summary>
-	/// <param name="product">Product instance to remove (matched by identifying fields).</param>
-	/// <param name="invoiceIdentifier">Invoice id.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task DeleteProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  /// <summary>
+  /// Deletes a product from an invoice using the product value object.
+  /// </summary>
+  /// <param name="product">Product instance to remove (matched by identifying fields).</param>
+  /// <param name="invoiceIdentifier">Invoice id.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task DeleteProduct(Product product, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Create Invoice Scan API
-	/// <summary>
-	/// Creates (persists) a scan resource associated with an invoice.
-	/// </summary>
-	/// <param name="scan">Scan data (raw / encoded representation).</param>
-	/// <param name="invoiceIdentifier">Invoice id.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task CreateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  #region Create Invoice Scan API
+  /// <summary>
+  /// Creates (persists) a scan resource associated with an invoice.
+  /// </summary>
+  /// <param name="scan">Scan data (raw / encoded representation).</param>
+  /// <param name="invoiceIdentifier">Invoice id.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task CreateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Read Invoice Scan API
-	/// <summary>
-	/// Retrieves the current scan associated with an invoice.
-	/// </summary>
-	/// <param name="invoiceIdentifier">Invoice id.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task<InvoiceScan> ReadInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  #region Read Invoice Scan API
+  /// <summary>
+  /// Retrieves the current scan associated with an invoice.
+  /// </summary>
+  /// <param name="invoiceIdentifier">Invoice id.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task<InvoiceScan> ReadInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Update Invoice Scan API
-	/// <summary>
-	/// Replaces existing scan data for an invoice.
-	/// </summary>
-	/// <param name="scan">New scan data object.</param>
-	/// <param name="invoiceIdentifier">Invoice id.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	/// <returns>Updated scan instance.</returns>
-	public Task<InvoiceScan> UpdateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  #region Update Invoice Scan API
+  /// <summary>
+  /// Replaces existing scan data for an invoice.
+  /// </summary>
+  /// <param name="scan">New scan data object.</param>
+  /// <param name="invoiceIdentifier">Invoice id.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  /// <returns>Updated scan instance.</returns>
+  Task<InvoiceScan> UpdateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Delete Invoice Scan API
-	/// <summary>
-	/// Deletes the scan resource for an invoice.
-	/// </summary>
-	/// <param name="invoiceIdentifier">Invoice id.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task DeleteInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  #region Delete Invoice Scan API
+  /// <summary>
+  /// Deletes the scan resource for an invoice.
+  /// </summary>
+  /// <param name="invoiceIdentifier">Invoice id.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task DeleteInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Create Invoice Metadata API
-	/// <summary>
-	/// Adds or merges metadata entries into an invoice's metadata dictionary.
-	/// </summary>
-	/// <param name="metadata">Key/value pairs to add or overwrite.</param>
-	/// <param name="invoiceIdentifier">Invoice id.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task AddMetadataToInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  #region Create Invoice Metadata API
+  /// <summary>
+  /// Adds or merges metadata entries into an invoice's metadata dictionary.
+  /// </summary>
+  /// <param name="metadata">Key/value pairs to add or overwrite.</param>
+  /// <param name="invoiceIdentifier">Invoice id.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task AddMetadataToInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Update Invoice Metadata API
-	/// <summary>
-	/// Upserts metadata entries on an invoice (adds new keys, overwrites existing ones).
-	/// </summary>
-	/// <param name="metadata">Key/value pairs to upsert.</param>
-	/// <param name="invoiceIdentifier">Invoice id.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	/// <returns>Updated metadata dictionary snapshot.</returns>
-	public Task<IDictionary<string, object>> UpdateMetadataOnInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  #region Update Invoice Metadata API
+  /// <summary>
+  /// Upserts metadata entries on an invoice (adds new keys, overwrites existing ones).
+  /// </summary>
+  /// <param name="metadata">Key/value pairs to upsert.</param>
+  /// <param name="invoiceIdentifier">Invoice id.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  /// <returns>Updated metadata dictionary snapshot.</returns>
+  Task<IDictionary<string, object>> UpdateMetadataOnInvoice(IDictionary<string, object> metadata, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Get Invoice Metadata API
-	/// <summary>
-	/// Retrieves all metadata entries attached to an invoice.
-	/// </summary>
-	/// <param name="invoiceIdentifier">Invoice id.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task<IDictionary<string, object>> GetMetadataFromInvoice(Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  #region Get Invoice Metadata API
+  /// <summary>
+  /// Retrieves all metadata entries attached to an invoice.
+  /// </summary>
+  /// <param name="invoiceIdentifier">Invoice id.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task<IDictionary<string, object>> GetMetadataFromInvoice(Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#region Delete Invoice Metadata API
-	/// <summary>
-	/// Removes specific metadata keys from an invoice.
-	/// </summary>
-	/// <param name="metadataKeys">Keys to remove.</param>
-	/// <param name="invoiceIdentifier">Invoice id.</param>
-	/// <param name="userIdentifier">Optional partition / tenant context.</param>
-	public Task DeleteMetadataFromInvoice(IEnumerable<string> metadataKeys, Guid invoiceIdentifier, Guid? userIdentifier = null);
-	#endregion
+  #region Delete Invoice Metadata API
+  /// <summary>
+  /// Removes specific metadata keys from an invoice.
+  /// </summary>
+  /// <param name="metadataKeys">Keys to remove.</param>
+  /// <param name="invoiceIdentifier">Invoice id.</param>
+  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  Task DeleteMetadataFromInvoice(IEnumerable<string> metadataKeys, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  #endregion
 
-	#endregion
+  #endregion
 
-	#region Merchant Orchestration Service
+  #region Merchant Orchestration Service
 
-	#region Create Merchant API
-	/// <summary>
-	/// Persists a new merchant aggregate (delegates to foundation storage).
-	/// </summary>
-	/// <param name="merchant">Merchant aggregate.</param>
-	/// <param name="parentCompanyId">Optional partition / company scope.</param>
-	public Task CreateMerchant(Merchant merchant, Guid? parentCompanyId = null);
-	#endregion
+  #region Create Merchant API
+  /// <summary>
+  /// Persists a new merchant aggregate (delegates to foundation storage).
+  /// </summary>
+  /// <param name="merchant">Merchant aggregate.</param>
+  /// <param name="parentCompanyId">Optional partition / company scope.</param>
+  Task CreateMerchant(Merchant merchant, Guid? parentCompanyId = null);
+  #endregion
 
-	#region Read Merchant API
-	/// <summary>
-	/// Retrieves a merchant aggregate by identifier.
-	/// </summary>
-	/// <param name="identifier">Merchant id.</param>
-	/// <param name="parentCompanyId">Optional partition / company scope.</param>
-	public Task<Merchant> ReadMerchant(Guid identifier, Guid? parentCompanyId = null);
-	#endregion
+  #region Read Merchant API
+  /// <summary>
+  /// Retrieves a merchant aggregate by identifier.
+  /// </summary>
+  /// <param name="identifier">Merchant id.</param>
+  /// <param name="parentCompanyId">Optional partition / company scope.</param>
+  Task<Merchant> ReadMerchant(Guid identifier, Guid? parentCompanyId = null);
+  #endregion
 
-	#region Read Merchants API
-	/// <summary>
-	/// Enumerates merchants optionally filtered by partition / company scope.
-	/// </summary>
-	/// <param name="parentCompanyId">Optional company / partition scope.</param>
-	public Task<IEnumerable<Merchant>> ReadMerchants(Guid? parentCompanyId = null);
-	#endregion
+  #region Read Merchants API
+  /// <summary>
+  /// Enumerates merchants optionally filtered by partition / company scope.
+  /// </summary>
+  /// <param name="parentCompanyId">Optional company / partition scope.</param>
+  Task<IEnumerable<Merchant>> ReadMerchants(Guid? parentCompanyId = null);
+  #endregion
 
-	#region Update Merchant API
-	/// <summary>
-	/// Replaces an existing merchant aggregate with updated state.
-	/// </summary>
-	/// <param name="updatedMerchant">New merchant state.</param>
-	/// <param name="identifier">Merchant id.</param>
-	/// <param name="parentCompanyId">Optional company / partition scope.</param>
-	/// <returns>Updated merchant.</returns>
-	public Task<Merchant> UpdateMerchant(Merchant updatedMerchant, Guid identifier, Guid? parentCompanyId = null);
-	#endregion
+  #region Update Merchant API
+  /// <summary>
+  /// Replaces an existing merchant aggregate with updated state.
+  /// </summary>
+  /// <param name="updatedMerchant">New merchant state.</param>
+  /// <param name="identifier">Merchant id.</param>
+  /// <param name="parentCompanyId">Optional company / partition scope.</param>
+  /// <returns>Updated merchant.</returns>
+  Task<Merchant> UpdateMerchant(Merchant updatedMerchant, Guid identifier, Guid? parentCompanyId = null);
+  #endregion
 
-	#region Delete Merchant API
-	/// <summary>
-	/// Deletes a merchant aggregate.
-	/// </summary>
-	/// <param name="identifier">Merchant id.</param>
-	/// <param name="parentCompanyId">Optional company / partition scope.</param>
-	public Task DeleteMerchant(Guid identifier, Guid? parentCompanyId = null);
-	#endregion
+  #region Delete Merchant API
+  /// <summary>
+  /// Deletes a merchant aggregate.
+  /// </summary>
+  /// <param name="identifier">Merchant id.</param>
+  /// <param name="parentCompanyId">Optional company / partition scope.</param>
+  Task DeleteMerchant(Guid identifier, Guid? parentCompanyId = null);
+  #endregion
 
-	#endregion
+  #endregion
 }

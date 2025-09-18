@@ -25,73 +25,73 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// </remarks>
 public interface IMerchantStorageFoundationService
 {
-	#region Create Merchant Object API
-	/// <summary>
-	/// Persists a new <see cref="Merchant"/> aggregate.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Validation:</b> Ensures merchant id not empty, required collections (e.g. <c>ReferencedInvoices</c>) initialized, and category values within allowed domain.</para>
-	/// <para><b>Failure Modes:</b> Throws validation exceptions on invariant breach, dependency / dependency validation exceptions on broker-level persistence failures (conflicts, connectivity, serialization).</para>
-	/// </remarks>
-	/// <param name="merchant">Merchant aggregate to persist (MUST NOT be null).</param>
-	/// <param name="parentCompanyId">Optional tenancy / partition discriminator.</param>
-	/// <returns>Asynchronous task.</returns>
-	public Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId = null);
-	#endregion
+  #region Create Merchant Object API
+  /// <summary>
+  /// Persists a new <see cref="Merchant"/> aggregate.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Validation:</b> Ensures merchant id not empty, required collections (e.g. <c>ReferencedInvoices</c>) initialized, and category values within allowed domain.</para>
+  /// <para><b>Failure Modes:</b> Throws validation exceptions on invariant breach, dependency / dependency validation exceptions on broker-level persistence failures (conflicts, connectivity, serialization).</para>
+  /// </remarks>
+  /// <param name="merchant">Merchant aggregate to persist (MUST NOT be null).</param>
+  /// <param name="parentCompanyId">Optional tenancy / partition discriminator.</param>
+  /// <returns>Asynchronous task.</returns>
+  Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId = null);
+  #endregion
 
-	#region Read Merchant Object API
-	/// <summary>
-	/// Retrieves a merchant by identifier (and optional partition).
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Return Semantics:</b> Returns merchant or null if not found (implementations MAY alternatively raise a not-found validation exception depending on policy consistency with invoice storage).</para>
-	/// <para><b>Performance:</b> SHOULD use point read within partition; cross-partition read when <c>parentCompanyId</c> absent may degrade throughput.</para>
-	/// </remarks>
-	/// <param name="identifier">Merchant identifier.</param>
-	/// <param name="parentCompanyId">Optional partition discriminator.</param>
-	/// <returns>The merchant or null.</returns>
-	public Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId = null);
-	#endregion
+  #region Read Merchant Object API
+  /// <summary>
+  /// Retrieves a merchant by identifier (and optional partition).
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Return Semantics:</b> Returns merchant or null if not found (implementations MAY alternatively raise a not-found validation exception depending on policy consistency with invoice storage).</para>
+  /// <para><b>Performance:</b> SHOULD use point read within partition; cross-partition read when <c>parentCompanyId</c> absent may degrade throughput.</para>
+  /// </remarks>
+  /// <param name="identifier">Merchant identifier.</param>
+  /// <param name="parentCompanyId">Optional partition discriminator.</param>
+  /// <returns>The merchant or null.</returns>
+  Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId = null);
+  #endregion
 
-	#region Read Merchant Objects API
-	/// <summary>
-	/// Enumerates all merchants under a partition (or across all when partition omitted).
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Pagination:</b> Not implemented; large sets could be expensive (backlog: add paging and continuation tokens).</para>
-	/// <para><b>Filtering:</b> Soft-deleted entities SHOULD be excluded if soft delete introduced.</para>
-	/// </remarks>
-	/// <param name="parentCompanyId">Partition discriminator; null may imply cross-partition enumeration.</param>
-	/// <returns>Enumerable (empty if none).</returns>
-	public Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid? parentCompanyId = null);
-	#endregion
+  #region Read Merchant Objects API
+  /// <summary>
+  /// Enumerates all merchants under a partition (or across all when partition omitted).
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Pagination:</b> Not implemented; large sets could be expensive (backlog: add paging and continuation tokens).</para>
+  /// <para><b>Filtering:</b> Soft-deleted entities SHOULD be excluded if soft delete introduced.</para>
+  /// </remarks>
+  /// <param name="parentCompanyId">Partition discriminator; null may imply cross-partition enumeration.</param>
+  /// <returns>Enumerable (empty if none).</returns>
+  Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid? parentCompanyId = null);
+  #endregion
 
-	#region Update Merchant Object API
-	/// <summary>
-	/// Replaces existing merchant state with provided aggregate.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Preconditions:</b> Merchant MUST already exist; invariants re-validated for updated state.</para>
-	/// <para><b>Concurrency:</b> No optimistic concurrency yet (backlog: ETag / version field).</para>
-	/// </remarks>
-	/// <param name="updatedMerchant">New merchant state.</param>
-	/// <param name="merchantIdentifier">Identifier of merchant being updated.</param>
-	/// <param name="parentCompanyId">Optional partition discriminator.</param>
-	/// <returns>Updated merchant.</returns>
-	public Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId = null);
-	#endregion
+  #region Update Merchant Object API
+  /// <summary>
+  /// Replaces existing merchant state with provided aggregate.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Preconditions:</b> Merchant MUST already exist; invariants re-validated for updated state.</para>
+  /// <para><b>Concurrency:</b> No optimistic concurrency yet (backlog: ETag / version field).</para>
+  /// </remarks>
+  /// <param name="updatedMerchant">New merchant state.</param>
+  /// <param name="merchantIdentifier">Identifier of merchant being updated.</param>
+  /// <param name="parentCompanyId">Optional partition discriminator.</param>
+  /// <returns>Updated merchant.</returns>
+  Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId = null);
+  #endregion
 
-	#region Delete Merchant Object API
-	/// <summary>
-	/// Deletes (logical or physical) a merchant.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Idempotency:</b> Repeated deletes yield same terminal state (absent / marked deleted).</para>
-	/// <para><b>Referential Integrity:</b> This layer DOES NOT cascade / clean invoice references (belongs to orchestration / processing layers).</para>
-	/// </remarks>
-	/// <param name="identifier">Merchant identifier.</param>
-	/// <param name="parentCompanyId">Optional partition discriminator.</param>
-	/// <returns>Asynchronous task.</returns>
-	public Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId = null);
-	#endregion
+  #region Delete Merchant Object API
+  /// <summary>
+  /// Deletes (logical or physical) a merchant.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Idempotency:</b> Repeated deletes yield same terminal state (absent / marked deleted).</para>
+  /// <para><b>Referential Integrity:</b> This layer DOES NOT cascade / clean invoice references (belongs to orchestration / processing layers).</para>
+  /// </remarks>
+  /// <param name="identifier">Merchant identifier.</param>
+  /// <param name="parentCompanyId">Optional partition discriminator.</param>
+  /// <returns>Asynchronous task.</returns>
+  Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId = null);
+  #endregion
 }

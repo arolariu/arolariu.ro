@@ -4,7 +4,7 @@ namespace arolariu.Backend.Common.DDD.ValueObjects;
 /// Contact information value object.
 /// </summary>
 public readonly record struct ContactInformation
-	(string FullName, string Address, string PhoneNumber, string EmailAddress, string Website)
+  (string FullName, string Address, string PhoneNumber, string EmailAddress, string Website)
 {
 
 }

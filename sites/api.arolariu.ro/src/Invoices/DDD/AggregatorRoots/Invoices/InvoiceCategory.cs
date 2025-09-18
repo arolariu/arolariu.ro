@@ -14,33 +14,33 @@ using System.Diagnostics.CodeAnalysis;
 [SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification = "Domain sentinel uses underscore for emphasis.")]
 public enum InvoiceCategory
 {
-	/// <summary>
-	/// Sentinel; category not yet assigned (pre-enrichment / pre-classification state).
-	/// </summary>
-	NOT_DEFINED = 0,
+  /// <summary>
+  /// Sentinel; category not yet assigned (pre-enrichment / pre-classification state).
+  /// </summary>
+  NOT_DEFINED = 0,
 
-	/// <summary>
-	/// Predominantly household food / consumable products (general pantry and grocery analytics).
-	/// </summary>
-	GROCERY = 100,
+  /// <summary>
+  /// Predominantly household food / consumable products (general pantry and grocery analytics).
+  /// </summary>
+  GROCERY = 100,
 
-	/// <summary>
-	/// Prepared or takeaway-oriented fast food items (low / no home preparation).
-	/// </summary>
-	FAST_FOOD = 200,
+  /// <summary>
+  /// Prepared or takeaway-oriented fast food items (low / no home preparation).
+  /// </summary>
+  FAST_FOOD = 200,
 
-	/// <summary>
-	/// Household cleaning / maintenance and related chemical products and supplies.
-	/// </summary>
-	HOME_CLEANING = 300,
+  /// <summary>
+  /// Household cleaning / maintenance and related chemical products and supplies.
+  /// </summary>
+  HOME_CLEANING = 300,
 
-	/// <summary>
-	/// Automotive parts, consumables or service-related line items.
-	/// </summary>
-	CAR_AUTO = 400,
+  /// <summary>
+  /// Automotive parts, consumables or service-related line items.
+  /// </summary>
+  CAR_AUTO = 400,
 
-	/// <summary>
-	/// Fallback when an invoice does not map to any defined domain category; minimize long-term usage.
-	/// </summary>
-	OTHER = 9999,
+  /// <summary>
+  /// Fallback when an invoice does not map to any defined domain category; minimize long-term usage.
+  /// </summary>
+  OTHER = 9999,
 }

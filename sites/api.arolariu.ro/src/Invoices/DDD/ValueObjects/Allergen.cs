@@ -15,15 +15,15 @@ using System.Diagnostics.CodeAnalysis;
 [ExcludeFromCodeCoverage]
 public sealed record Allergen
 {
-	/// <summary>Canonical allergen display name (e.g. "Peanuts", "Gluten").</summary>
-	/// <remarks><para>Empty string denotes unresolved extraction; SHOULD be populated by enrichment pipeline.</para></remarks>
-	public string Name { get; set; } = string.Empty;
+  /// <summary>Canonical allergen display name (e.g. "Peanuts", "Gluten").</summary>
+  /// <remarks><para>Empty string denotes unresolved extraction; SHOULD be populated by enrichment pipeline.</para></remarks>
+  public string Name { get; set; } = string.Empty;
 
-	/// <summary>Human-readable descriptive context for the allergen.</summary>
-	/// <remarks><para>Intended for UI tooltips and accessibility narration. MAY be empty if not yet enriched.</para></remarks>
-	public string Description { get; set; } = string.Empty;
+  /// <summary>Human-readable descriptive context for the allergen.</summary>
+  /// <remarks><para>Intended for UI tooltips and accessibility narration. MAY be empty if not yet enriched.</para></remarks>
+  public string Description { get; set; } = string.Empty;
 
-	/// <summary>Reference URI for authoritative or supplemental allergen information.</summary>
-	/// <remarks><para>Defaults to project documentation site. SHOULD be replaced with domain knowledge base / medical authority link when available.</para></remarks>
-	public Uri LearnMoreAddress { get; set; } = new Uri("https://arolariu.ro");
+  /// <summary>Reference URI for authoritative or supplemental allergen information.</summary>
+  /// <remarks><para>Defaults to project documentation site. SHOULD be replaced with domain knowledge base / medical authority link when available.</para></remarks>
+  public Uri LearnMoreAddress { get; set; } = new Uri("https://arolariu.ro");
 }

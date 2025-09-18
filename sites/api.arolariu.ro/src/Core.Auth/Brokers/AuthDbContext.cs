@@ -39,33 +39,33 @@ using Microsoft.EntityFrameworkCore;
 /// </example>
 public class AuthDbContext : IdentityDbContext<AuthenticatedUser, AuthenticatedUserRole, Guid>
 {
-	/// <summary>
-	/// Initializes a new instance of the <see cref="AuthDbContext"/> class with the specified options.
-	/// This constructor is used by dependency injection to provide database configuration.
-	/// </summary>
-	/// <param name="options">
-	/// The <see cref="DbContextOptions{AuthDbContext}"/> containing database connection and configuration settings.
-	/// These options typically include connection string, database provider, and performance settings.
-	/// </param>
-	/// <remarks>
-	/// The options parameter configures:
-	/// - Database connection string and provider (SQL Server, PostgreSQL, etc.)
-	/// - Connection retry policies for resilience
-	/// - Performance settings like lazy loading and change tracking
-	/// - Migration and schema management options
-	/// </remarks>
-	public AuthDbContext(DbContextOptions<AuthDbContext> options) : base(options) { }
+  /// <summary>
+  /// Initializes a new instance of the <see cref="AuthDbContext"/> class with the specified options.
+  /// This constructor is used by dependency injection to provide database configuration.
+  /// </summary>
+  /// <param name="options">
+  /// The <see cref="DbContextOptions{AuthDbContext}"/> containing database connection and configuration settings.
+  /// These options typically include connection string, database provider, and performance settings.
+  /// </param>
+  /// <remarks>
+  /// The options parameter configures:
+  /// - Database connection string and provider (SQL Server, PostgreSQL, etc.)
+  /// - Connection retry policies for resilience
+  /// - Performance settings like lazy loading and change tracking
+  /// - Migration and schema management options
+  /// </remarks>
+  public AuthDbContext(DbContextOptions<AuthDbContext> options) : base(options) { }
 
-	/// <summary>
-	/// Initializes a new instance of the <see cref="AuthDbContext"/> class without options.
-	/// This parameterless constructor is required for Entity Framework migrations and design-time operations.
-	/// </summary>
-	/// <remarks>
-	/// This constructor is used by:
-	/// - Entity Framework migration tools during database schema generation
-	/// - Design-time operations like scaffolding and reverse engineering
-	/// - Testing scenarios where options are configured separately
-	/// - Third-party tools that require parameterless constructors
-	/// </remarks>
-	public AuthDbContext() { }
+  /// <summary>
+  /// Initializes a new instance of the <see cref="AuthDbContext"/> class without options.
+  /// This parameterless constructor is required for Entity Framework migrations and design-time operations.
+  /// </summary>
+  /// <remarks>
+  /// This constructor is used by:
+  /// - Entity Framework migration tools during database schema generation
+  /// - Design-time operations like scaffolding and reverse engineering
+  /// - Testing scenarios where options are configured separately
+  /// - Third-party tools that require parameterless constructors
+  /// </remarks>
+  public AuthDbContext() { }
 }

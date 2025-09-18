@@ -87,196 +87,196 @@ using System.Threading.Tasks;
 /// </example>
 public interface IKeyVaultService
 {
-	/// <summary>
-	/// Retrieves a secret from the secure storage system synchronously.
-	/// This method blocks the calling thread until the secret is retrieved or an error occurs.
-	/// </summary>
-	/// <param name="secretName">
-	/// The name or identifier of the secret to retrieve from the secure storage.
-	/// Secret names should follow the naming conventions of the underlying storage system
-	/// (e.g., Azure Key Vault naming rules: alphanumeric characters and hyphens only).
-	/// </param>
-	/// <returns>
-	/// The value of the requested secret as a string.
-	/// The returned value should never be null - implementations should throw exceptions for missing secrets.
-	/// </returns>
-	/// <remarks>
-	/// <para>
-	/// <strong>Synchronous Operation:</strong>
-	/// This method provides synchronous access to secrets for scenarios where:
-	/// - Secrets are needed during application startup
-	/// - Legacy synchronous code requires secret access
-	/// - Simple configuration loading scenarios
-	/// </para>
-	/// <para>
-	/// <strong>Performance Impact:</strong>
-	/// - Blocks the calling thread until completion
-	/// - May cause thread pool starvation in high-concurrency scenarios
-	/// - Should be avoided in ASP.NET request processing pipelines
-	/// - Consider using <see cref="TryGetSecretAsync(string)"/> for better performance
-	/// </para>
-	/// <para>
-	/// <strong>Caching Behavior:</strong>
-	/// Implementations should implement appropriate caching to:
-	/// - Minimize external service calls and network latency
-	/// - Reduce costs associated with Key Vault operations
-	/// - Improve application performance and responsiveness
-	/// - Balance cache duration with security requirements
-	/// </para>
-	/// <para>
-	/// <strong>Error Handling:</strong>
-	/// This method should handle various error scenarios:
-	/// - Network connectivity issues with external secret stores
-	/// - Authentication and authorization failures
-	/// - Missing or deleted secrets
-	/// - Service quota limitations and throttling
-	/// </para>
-	/// </remarks>
-	/// <exception cref="System.ArgumentNullException">
-	/// Thrown when <paramref name="secretName"/> is null or empty.
-	/// </exception>
-	/// <exception cref="System.ArgumentException">
-	/// Thrown when <paramref name="secretName"/> contains invalid characters or format.
-	/// </exception>
-	/// <exception cref="System.Security.Authentication.AuthenticationException">
-	/// Thrown when the service lacks permissions to access the requested secret.
-	/// </exception>
-	/// <exception cref="System.Net.Http.HttpRequestException">
-	/// Thrown when network connectivity issues prevent secret retrieval.
-	/// </exception>
-	/// <exception cref="System.InvalidOperationException">
-	/// Thrown when the secret does not exist or has been deleted.
-	/// </exception>
-	/// <example>
-	/// <code>
-	/// // Basic synchronous usage
-	/// var connectionString = keyVaultService.TryGetSecret("database-connection");
-	///
-	/// // With error handling
-	/// try
-	/// {
-	///     var jwtSecret = keyVaultService.TryGetSecret("jwt-signing-key");
-	///     // Configure JWT authentication
-	/// }
-	/// catch (InvalidOperationException)
-	/// {
-	///     // Handle missing secret
-	///     throw new ConfigurationException("JWT signing key not configured");
-	/// }
-	/// </code>
-	/// </example>
-	public string TryGetSecret(string secretName);
+  /// <summary>
+  /// Retrieves a secret from the secure storage system synchronously.
+  /// This method blocks the calling thread until the secret is retrieved or an error occurs.
+  /// </summary>
+  /// <param name="secretName">
+  /// The name or identifier of the secret to retrieve from the secure storage.
+  /// Secret names should follow the naming conventions of the underlying storage system
+  /// (e.g., Azure Key Vault naming rules: alphanumeric characters and hyphens only).
+  /// </param>
+  /// <returns>
+  /// The value of the requested secret as a string.
+  /// The returned value should never be null - implementations should throw exceptions for missing secrets.
+  /// </returns>
+  /// <remarks>
+  /// <para>
+  /// <strong>Synchronous Operation:</strong>
+  /// This method provides synchronous access to secrets for scenarios where:
+  /// - Secrets are needed during application startup
+  /// - Legacy synchronous code requires secret access
+  /// - Simple configuration loading scenarios
+  /// </para>
+  /// <para>
+  /// <strong>Performance Impact:</strong>
+  /// - Blocks the calling thread until completion
+  /// - May cause thread pool starvation in high-concurrency scenarios
+  /// - Should be avoided in ASP.NET request processing pipelines
+  /// - Consider using <see cref="TryGetSecretAsync(string)"/> for better performance
+  /// </para>
+  /// <para>
+  /// <strong>Caching Behavior:</strong>
+  /// Implementations should implement appropriate caching to:
+  /// - Minimize external service calls and network latency
+  /// - Reduce costs associated with Key Vault operations
+  /// - Improve application performance and responsiveness
+  /// - Balance cache duration with security requirements
+  /// </para>
+  /// <para>
+  /// <strong>Error Handling:</strong>
+  /// This method should handle various error scenarios:
+  /// - Network connectivity issues with external secret stores
+  /// - Authentication and authorization failures
+  /// - Missing or deleted secrets
+  /// - Service quota limitations and throttling
+  /// </para>
+  /// </remarks>
+  /// <exception cref="System.ArgumentNullException">
+  /// Thrown when <paramref name="secretName"/> is null or empty.
+  /// </exception>
+  /// <exception cref="System.ArgumentException">
+  /// Thrown when <paramref name="secretName"/> contains invalid characters or format.
+  /// </exception>
+  /// <exception cref="System.Security.Authentication.AuthenticationException">
+  /// Thrown when the service lacks permissions to access the requested secret.
+  /// </exception>
+  /// <exception cref="System.Net.Http.HttpRequestException">
+  /// Thrown when network connectivity issues prevent secret retrieval.
+  /// </exception>
+  /// <exception cref="System.InvalidOperationException">
+  /// Thrown when the secret does not exist or has been deleted.
+  /// </exception>
+  /// <example>
+  /// <code>
+  /// // Basic synchronous usage
+  /// var connectionString = keyVaultService.TryGetSecret("database-connection");
+  ///
+  /// // With error handling
+  /// try
+  /// {
+  ///     var jwtSecret = keyVaultService.TryGetSecret("jwt-signing-key");
+  ///     // Configure JWT authentication
+  /// }
+  /// catch (InvalidOperationException)
+  /// {
+  ///     // Handle missing secret
+  ///     throw new ConfigurationException("JWT signing key not configured");
+  /// }
+  /// </code>
+  /// </example>
+  string TryGetSecret(string secretName);
 
-	/// <summary>
-	/// Retrieves a secret from the secure storage system asynchronously.
-	/// This method provides non-blocking access to secrets, making it suitable for high-performance scenarios
-	/// and modern asynchronous programming patterns.
-	/// </summary>
-	/// <param name="secretName">
-	/// The name or identifier of the secret to retrieve from the secure storage.
-	/// Secret names should follow the naming conventions of the underlying storage system
-	/// and should be validated before making the request to prevent unnecessary service calls.
-	/// </param>
-	/// <returns>
-	/// A <see cref="Task{String}"/> representing the asynchronous secret retrieval operation.
-	/// The task result contains the value of the requested secret as a string.
-	/// The task may be faulted if secret retrieval fails due to authentication, network, or configuration issues.
-	/// </returns>
-	/// <remarks>
-	/// <para>
-	/// <strong>Asynchronous Benefits:</strong>
-	/// This method is recommended for production scenarios because it:
-	/// - Prevents thread pool exhaustion in high-concurrency applications
-	/// - Integrates seamlessly with ASP.NET Core request processing
-	/// - Enables better resource utilization and application scalability
-	/// - Supports cancellation and timeout scenarios through async patterns
-	/// </para>
-	/// <para>
-	/// <strong>Performance Optimization:</strong>
-	/// Async secret retrieval enables:
-	/// - Concurrent secret loading during application startup
-	/// - Non-blocking I/O operations for better throughput
-	/// - Integration with async middleware and service pipelines
-	/// - Efficient resource utilization in containerized environments
-	/// </para>
-	/// <para>
-	/// <strong>Resilience Patterns:</strong>
-	/// Implementations should support:
-	/// - Retry policies with exponential backoff for transient failures
-	/// - Circuit breaker patterns to prevent cascade failures
-	/// - Timeout configuration to prevent hanging operations
-	/// - Fallback mechanisms for service degradation scenarios
-	/// </para>
-	/// <para>
-	/// <strong>Security Considerations:</strong>
-	/// - Secrets should be retrieved over encrypted connections (HTTPS/TLS)
-	/// - Authentication tokens should be cached securely and refreshed automatically
-	/// - Secret values should never appear in logs, traces, or error messages
-	/// - Access patterns should be monitored for security auditing
-	/// </para>
-	/// </remarks>
-	/// <exception cref="System.ArgumentNullException">
-	/// Thrown when <paramref name="secretName"/> is null or empty.
-	/// </exception>
-	/// <exception cref="System.ArgumentException">
-	/// Thrown when <paramref name="secretName"/> contains invalid characters or exceeds length limits.
-	/// </exception>
-	/// <exception cref="System.Security.Authentication.AuthenticationException">
-	/// Thrown when the application lacks sufficient permissions to access the requested secret.
-	/// </exception>
-	/// <exception cref="System.Net.Http.HttpRequestException">
-	/// Thrown when network connectivity issues prevent communication with the secret storage service.
-	/// </exception>
-	/// <exception cref="System.InvalidOperationException">
-	/// Thrown when the requested secret does not exist, has been deleted, or is in an invalid state.
-	/// </exception>
-	/// <exception cref="System.OperationCanceledException">
-	/// Thrown when the operation is cancelled due to timeout or explicit cancellation.
-	/// </exception>
-	/// <example>
-	/// <code>
-	/// // Basic asynchronous usage
-	/// var storageKey = await keyVaultService.TryGetSecretAsync("storage-account-key");
-	///
-	/// // Integration with configuration loading
-	/// public async Task&lt;ApplicationOptions&gt; LoadConfigurationAsync()
-	/// {
-	///     var options = new ApplicationOptions();
-	///
-	///     // Load multiple secrets concurrently
-	///     var secretTasks = new[]
-	///     {
-	///         keyVaultService.TryGetSecretAsync("sql-connection"),
-	///         keyVaultService.TryGetSecretAsync("cosmos-connection"),
-	///         keyVaultService.TryGetSecretAsync("jwt-secret")
-	///     };
-	///
-	///     var secrets = await Task.WhenAll(secretTasks);
-	///
-	///     options.SqlConnectionString = secrets[0];
-	///     options.NoSqlConnectionString = secrets[1];
-	///     options.JwtSecret = secrets[2];
-	///
-	///     return options;
-	/// }
-	///
-	/// // Error handling with specific exception types
-	/// try
-	/// {
-	///     var apiKey = await keyVaultService.TryGetSecretAsync("third-party-api-key");
-	///     return new ExternalApiClient(apiKey);
-	/// }
-	/// catch (AuthenticationException ex)
-	/// {
-	///     logger.LogError(ex, "Access denied to Key Vault secret");
-	///     throw new ConfigurationException("Insufficient permissions for secret access");
-	/// }
-	/// catch (InvalidOperationException ex)
-	/// {
-	///     logger.LogError(ex, "Secret not found in Key Vault");
-	///     throw new ConfigurationException("Required API key not configured");
-	/// }
-	/// </code>
-	/// </example>
-	public Task<string> TryGetSecretAsync(string secretName);
+  /// <summary>
+  /// Retrieves a secret from the secure storage system asynchronously.
+  /// This method provides non-blocking access to secrets, making it suitable for high-performance scenarios
+  /// and modern asynchronous programming patterns.
+  /// </summary>
+  /// <param name="secretName">
+  /// The name or identifier of the secret to retrieve from the secure storage.
+  /// Secret names should follow the naming conventions of the underlying storage system
+  /// and should be validated before making the request to prevent unnecessary service calls.
+  /// </param>
+  /// <returns>
+  /// A <see cref="Task{String}"/> representing the asynchronous secret retrieval operation.
+  /// The task result contains the value of the requested secret as a string.
+  /// The task may be faulted if secret retrieval fails due to authentication, network, or configuration issues.
+  /// </returns>
+  /// <remarks>
+  /// <para>
+  /// <strong>Asynchronous Benefits:</strong>
+  /// This method is recommended for production scenarios because it:
+  /// - Prevents thread pool exhaustion in high-concurrency applications
+  /// - Integrates seamlessly with ASP.NET Core request processing
+  /// - Enables better resource utilization and application scalability
+  /// - Supports cancellation and timeout scenarios through async patterns
+  /// </para>
+  /// <para>
+  /// <strong>Performance Optimization:</strong>
+  /// Async secret retrieval enables:
+  /// - Concurrent secret loading during application startup
+  /// - Non-blocking I/O operations for better throughput
+  /// - Integration with async middleware and service pipelines
+  /// - Efficient resource utilization in containerized environments
+  /// </para>
+  /// <para>
+  /// <strong>Resilience Patterns:</strong>
+  /// Implementations should support:
+  /// - Retry policies with exponential backoff for transient failures
+  /// - Circuit breaker patterns to prevent cascade failures
+  /// - Timeout configuration to prevent hanging operations
+  /// - Fallback mechanisms for service degradation scenarios
+  /// </para>
+  /// <para>
+  /// <strong>Security Considerations:</strong>
+  /// - Secrets should be retrieved over encrypted connections (HTTPS/TLS)
+  /// - Authentication tokens should be cached securely and refreshed automatically
+  /// - Secret values should never appear in logs, traces, or error messages
+  /// - Access patterns should be monitored for security auditing
+  /// </para>
+  /// </remarks>
+  /// <exception cref="System.ArgumentNullException">
+  /// Thrown when <paramref name="secretName"/> is null or empty.
+  /// </exception>
+  /// <exception cref="System.ArgumentException">
+  /// Thrown when <paramref name="secretName"/> contains invalid characters or exceeds length limits.
+  /// </exception>
+  /// <exception cref="System.Security.Authentication.AuthenticationException">
+  /// Thrown when the application lacks sufficient permissions to access the requested secret.
+  /// </exception>
+  /// <exception cref="System.Net.Http.HttpRequestException">
+  /// Thrown when network connectivity issues prevent communication with the secret storage service.
+  /// </exception>
+  /// <exception cref="System.InvalidOperationException">
+  /// Thrown when the requested secret does not exist, has been deleted, or is in an invalid state.
+  /// </exception>
+  /// <exception cref="System.OperationCanceledException">
+  /// Thrown when the operation is cancelled due to timeout or explicit cancellation.
+  /// </exception>
+  /// <example>
+  /// <code>
+  /// // Basic asynchronous usage
+  /// var storageKey = await keyVaultService.TryGetSecretAsync("storage-account-key");
+  ///
+  /// // Integration with configuration loading
+  /// public async Task&lt;ApplicationOptions&gt; LoadConfigurationAsync()
+  /// {
+  ///     var options = new ApplicationOptions();
+  ///
+  ///     // Load multiple secrets concurrently
+  ///     var secretTasks = new[]
+  ///     {
+  ///         keyVaultService.TryGetSecretAsync("sql-connection"),
+  ///         keyVaultService.TryGetSecretAsync("cosmos-connection"),
+  ///         keyVaultService.TryGetSecretAsync("jwt-secret")
+  ///     };
+  ///
+  ///     var secrets = await Task.WhenAll(secretTasks);
+  ///
+  ///     options.SqlConnectionString = secrets[0];
+  ///     options.NoSqlConnectionString = secrets[1];
+  ///     options.JwtSecret = secrets[2];
+  ///
+  ///     return options;
+  /// }
+  ///
+  /// // Error handling with specific exception types
+  /// try
+  /// {
+  ///     var apiKey = await keyVaultService.TryGetSecretAsync("third-party-api-key");
+  ///     return new ExternalApiClient(apiKey);
+  /// }
+  /// catch (AuthenticationException ex)
+  /// {
+  ///     logger.LogError(ex, "Access denied to Key Vault secret");
+  ///     throw new ConfigurationException("Insufficient permissions for secret access");
+  /// }
+  /// catch (InvalidOperationException ex)
+  /// {
+  ///     logger.LogError(ex, "Secret not found in Key Vault");
+  ///     throw new ConfigurationException("Required API key not configured");
+  /// }
+  /// </code>
+  /// </example>
+  Task<string> TryGetSecretAsync(string secretName);
 }

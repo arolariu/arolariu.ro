@@ -14,48 +14,48 @@ using System.Diagnostics.CodeAnalysis;
 [SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification = "Domain sentinel and grouped constants use underscores for clarity.")]
 public enum ProductCategory
 {
-	/// <summary>Sentinel; item category not yet classified.</summary>
-	NOT_DEFINED = 0,
+  /// <summary>Sentinel; item category not yet classified.</summary>
+  NOT_DEFINED = 0,
 
-	/// <summary>Baked goods (bread, pastries, cakes, confectionery).</summary>
-	BAKED_GOODS = 100,
+  /// <summary>Baked goods (bread, pastries, cakes, confectionery).</summary>
+  BAKED_GOODS = 100,
 
-	/// <summary>General grocery staples and uncategorized pantry items.</summary>
-	GROCERIES = 200,
+  /// <summary>General grocery staples and uncategorized pantry items.</summary>
+  GROCERIES = 200,
 
-	/// <summary>Dairy products (milk, cheese, yogurt, butter).</summary>
-	DAIRY = 300,
+  /// <summary>Dairy products (milk, cheese, yogurt, butter).</summary>
+  DAIRY = 300,
 
-	/// <summary>Meat products (red / white raw or processed).</summary>
-	MEAT = 400,
+  /// <summary>Meat products (red / white raw or processed).</summary>
+  MEAT = 400,
 
-	/// <summary>Fish and seafood products.</summary>
-	FISH = 500,
+  /// <summary>Fish and seafood products.</summary>
+  FISH = 500,
 
-	/// <summary>Fruit produce (fresh, dried or minimally processed).</summary>
-	FRUITS = 600,
+  /// <summary>Fruit produce (fresh, dried or minimally processed).</summary>
+  FRUITS = 600,
 
-	/// <summary>Vegetable produce (fresh, dried or minimally processed).</summary>
-	VEGETABLES = 700,
+  /// <summary>Vegetable produce (fresh, dried or minimally processed).</summary>
+  VEGETABLES = 700,
 
-	/// <summary>Non-alcoholic beverages (soft drinks, juices, water, energy drinks).</summary>
-	BEVERAGES = 800,
+  /// <summary>Non-alcoholic beverages (soft drinks, juices, water, energy drinks).</summary>
+  BEVERAGES = 800,
 
-	/// <summary>Alcoholic beverages (beer, wine, spirits, mixed alcohol).</summary>
-	ALCOHOLIC_BEVERAGES = 900,
+  /// <summary>Alcoholic beverages (beer, wine, spirits, mixed alcohol).</summary>
+  ALCOHOLIC_BEVERAGES = 900,
 
-	/// <summary>Tobacco products and smoking accessories.</summary>
-	TOBACCO = 1000,
+  /// <summary>Tobacco products and smoking accessories.</summary>
+  TOBACCO = 1000,
 
-	/// <summary>Cleaning and household maintenance supplies.</summary>
-	CLEANING_SUPPLIES = 1100,
+  /// <summary>Cleaning and household maintenance supplies.</summary>
+  CLEANING_SUPPLIES = 1100,
 
-	/// <summary>Personal hygiene and grooming products.</summary>
-	PERSONAL_CARE = 1200,
+  /// <summary>Personal hygiene and grooming products.</summary>
+  PERSONAL_CARE = 1200,
 
-	/// <summary>Over-the-counter or prescribed medicinal / pharmaceutical items.</summary>
-	MEDICINE = 1300,
+  /// <summary>Over-the-counter or prescribed medicinal / pharmaceutical items.</summary>
+  MEDICINE = 1300,
 
-	/// <summary>Fallback when no defined category applies; minimize long-term usage.</summary>
-	OTHER = 9999,
+  /// <summary>Fallback when no defined category applies; minimize long-term usage.</summary>
+  OTHER = 9999,
 }

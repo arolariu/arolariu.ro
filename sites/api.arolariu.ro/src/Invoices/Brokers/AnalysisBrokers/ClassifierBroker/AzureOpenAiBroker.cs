@@ -33,83 +33,83 @@ using Azure.Identity;
 #pragma warning disable OPENAI001 // acknowledge the fact that the OpenAI API is not yet stable
 public sealed partial class AzureOpenAiBroker : IOpenAiBroker
 {
-	private readonly AzureOpenAIClient openAIClient;
+  private readonly AzureOpenAIClient openAIClient;
 
-	/// <summary>
-	/// Initializes the broker with configuration-driven Azure OpenAI client settings.
-	/// </summary>
-	/// <remarks>
-	/// <para>Retrieves application options via <paramref name="optionsManager"/> (endpoint + credentials context) and builds a single
-	/// long‑lived <see cref="AzureOpenAIClient"/> instance. In non-DEBUG builds a managed identity client id is injected to support
-	/// workload identity / federated credentials in Azure.</para>
-	/// <para>Throws fast on null dependency to fail early in composition root.</para>
-	/// </remarks>
-	/// <param name="optionsManager">Abstraction supplying strongly typed application options (MUST NOT be null).</param>
-	/// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> is null.</exception>
-	public AzureOpenAiBroker(IOptionsManager optionsManager)
-	{
-		ArgumentNullException.ThrowIfNull(optionsManager);
-		ApplicationOptions options = optionsManager.GetApplicationOptions();
+  /// <summary>
+  /// Initializes the broker with configuration-driven Azure OpenAI client settings.
+  /// </summary>
+  /// <remarks>
+  /// <para>Retrieves application options via <paramref name="optionsManager"/> (endpoint + credentials context) and builds a single
+  /// long‑lived <see cref="AzureOpenAIClient"/> instance. In non-DEBUG builds a managed identity client id is injected to support
+  /// workload identity / federated credentials in Azure.</para>
+  /// <para>Throws fast on null dependency to fail early in composition root.</para>
+  /// </remarks>
+  /// <param name="optionsManager">Abstraction supplying strongly typed application options (MUST NOT be null).</param>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="optionsManager"/> is null.</exception>
+  public AzureOpenAiBroker(IOptionsManager optionsManager)
+  {
+    ArgumentNullException.ThrowIfNull(optionsManager);
+    ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-		var openAiEndpoint = options.OpenAIEndpoint;
-		var openAiApiKey = options.OpenAIKey;
-		var credentials = new DefaultAzureCredential(
+    var openAiEndpoint = options.OpenAIEndpoint;
+    var openAiApiKey = options.OpenAIKey;
+    var credentials = new DefaultAzureCredential(
 #if !DEBUG
 			new DefaultAzureCredentialOptions
 			{
 				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
 			}
 #endif
-		);
+    );
 
-		openAIClient = new AzureOpenAIClient(
-			endpoint: new Uri(openAiEndpoint),
-			credential: credentials);
-	}
+    openAIClient = new AzureOpenAIClient(
+      endpoint: new Uri(openAiEndpoint),
+      credential: credentials);
+  }
 
-	/// <summary>
-	/// Executes the full enrichment sequence over a single invoice aggregate.
-	/// </summary>
-	/// <remarks>
-	/// <para><b>Sequence:</b> Name → Description → Product loop (category + allergens) → Recipes → Invoice category.</para>
-	/// <para><b>Graceful Degradation:</b> Each discrete LLM call is isolated; on content filter or transient provider exception the step
-	/// yields a default and processing continues. No aggregate rollback is attempted.</para>
-	/// <para><b>Mutation:</b> Operates on the supplied <paramref name="invoice"/> instance in-place (returns same reference) to avoid
-	/// unnecessary allocations. Callers expecting immutability SHOULD clone prior to invocation.</para>
-	/// <para><b>Options:</b> Current implementation does not yet conditionally branch by <paramref name="options"/> flags (backlog: selective
-	/// enrichment to reduce token spend).</para>
-	/// </remarks>
-	/// <param name="invoice">Invoice aggregate to enrich (MUST NOT be null; MUST have initialized <c>Items</c> collection).</param>
-	/// <param name="options">Analysis directives (currently advisory; future selective gating).</param>
-	/// <returns>Mutated invoice aggregate (same instance) after best-effort enrichment.</returns>
-	/// <exception cref="ArgumentNullException">Thrown when <paramref name="invoice"/> is null.</exception>
-	public async ValueTask<Invoice> PerformGptAnalysisOnSingleInvoice(Invoice invoice, AnalysisOptions options)
-	{
-		ArgumentNullException.ThrowIfNull(invoice);
+  /// <summary>
+  /// Executes the full enrichment sequence over a single invoice aggregate.
+  /// </summary>
+  /// <remarks>
+  /// <para><b>Sequence:</b> Name → Description → Product loop (category + allergens) → Recipes → Invoice category.</para>
+  /// <para><b>Graceful Degradation:</b> Each discrete LLM call is isolated; on content filter or transient provider exception the step
+  /// yields a default and processing continues. No aggregate rollback is attempted.</para>
+  /// <para><b>Mutation:</b> Operates on the supplied <paramref name="invoice"/> instance in-place (returns same reference) to avoid
+  /// unnecessary allocations. Callers expecting immutability SHOULD clone prior to invocation.</para>
+  /// <para><b>Options:</b> Current implementation does not yet conditionally branch by <paramref name="options"/> flags (backlog: selective
+  /// enrichment to reduce token spend).</para>
+  /// </remarks>
+  /// <param name="invoice">Invoice aggregate to enrich (MUST NOT be null; MUST have initialized <c>Items</c> collection).</param>
+  /// <param name="options">Analysis directives (currently advisory; future selective gating).</param>
+  /// <returns>Mutated invoice aggregate (same instance) after best-effort enrichment.</returns>
+  /// <exception cref="ArgumentNullException">Thrown when <paramref name="invoice"/> is null.</exception>
+  public async ValueTask<Invoice> PerformGptAnalysisOnSingleInvoice(Invoice invoice, AnalysisOptions options)
+  {
+    ArgumentNullException.ThrowIfNull(invoice);
 
-		invoice.Name = await GenerateInvoiceName(invoice).ConfigureAwait(false);
-		invoice.Description = await GenerateInvoiceDescription(invoice).ConfigureAwait(false);
+    invoice.Name = await GenerateInvoiceName(invoice).ConfigureAwait(false);
+    invoice.Description = await GenerateInvoiceDescription(invoice).ConfigureAwait(false);
 
-		#region Generate possible products
-		foreach (var product in invoice.Items)
-		{
-			// TODO: further processing of the product.
-			product.Category = await GenerateProductCategory(product).ConfigureAwait(false);
-			product.DetectedAllergens = await GenerateProductAllergens(product).ConfigureAwait(false);
-		}
-		#endregion
+    #region Generate possible products
+    foreach (var product in invoice.Items)
+    {
+      // TODO: further processing of the product.
+      product.Category = await GenerateProductCategory(product).ConfigureAwait(false);
+      product.DetectedAllergens = await GenerateProductAllergens(product).ConfigureAwait(false);
+    }
+    #endregion
 
-		#region Generate possible recipes.
-		var possibleRecipesCollection = await GenerateInvoiceRecipes(invoice).ConfigureAwait(false);
-		foreach (var recipe in possibleRecipesCollection)
-		{
-			// TODO: further processing of the recipe.
-			invoice.PossibleRecipes.Add(recipe);
-		}
-		#endregion
-		// TODO: further processing of the invoice.
+    #region Generate possible recipes.
+    var possibleRecipesCollection = await GenerateInvoiceRecipes(invoice).ConfigureAwait(false);
+    foreach (var recipe in possibleRecipesCollection)
+    {
+      // TODO: further processing of the recipe.
+      invoice.PossibleRecipes.Add(recipe);
+    }
+    #endregion
+    // TODO: further processing of the invoice.
 
-		invoice.Category = await GenerateInvoiceCategory(invoice).ConfigureAwait(false);
-		return invoice;
-	}
+    invoice.Category = await GenerateInvoiceCategory(invoice).ConfigureAwait(false);
+    return invoice;
+  }
 }

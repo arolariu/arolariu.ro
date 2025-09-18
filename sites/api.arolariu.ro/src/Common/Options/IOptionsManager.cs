@@ -68,77 +68,77 @@ using System;
 /// </example>
 public interface IOptionsManager
 {
-	/// <summary>
-	/// Retrieves the complete application configuration options.
-	/// This method provides access to all configuration settings required by the application,
-	/// including service endpoints, authentication settings, and operational parameters.
-	/// </summary>
-	/// <returns>
-	/// An <see cref="ApplicationOptions"/> instance containing all application configuration values.
-	/// The returned object includes settings for databases, external services, authentication,
-	/// and application metadata.
-	/// </returns>
-	/// <remarks>
-	/// <para>
-	/// This method should return a fully populated configuration object with values retrieved
-	/// from the appropriate sources for the current environment. The implementation is responsible for:
-	/// </para>
-	/// <para>
-	/// <strong>Configuration Retrieval:</strong>
-	/// - Merging values from multiple configuration sources
-	/// - Applying environment-specific overrides
-	/// - Resolving configuration references and dependencies
-	/// - Handling missing or invalid configuration gracefully
-	/// </para>
-	/// <para>
-	/// <strong>Security Considerations:</strong>
-	/// - Retrieving sensitive values from secure storage (Azure Key Vault)
-	/// - Avoiding exposure of secrets in logs or error messages
-	/// - Implementing proper authentication for configuration access
-	/// - Validating configuration integrity and authenticity
-	/// </para>
-	/// <para>
-	/// <strong>Performance Considerations:</strong>
-	/// - Caching configuration values to minimize external calls
-	/// - Implementing refresh mechanisms for dynamic configuration
-	/// - Handling configuration service outages gracefully
-	/// - Minimizing startup time through efficient configuration loading
-	/// </para>
-	/// <para>
-	/// <strong>Error Handling:</strong>
-	/// The method should handle configuration errors appropriately:
-	/// - Provide meaningful error messages for missing required configuration
-	/// - Implement fallback mechanisms for non-critical settings
-	/// - Log configuration issues for troubleshooting
-	/// - Fail fast for invalid or incompatible configuration
-	/// </para>
-	/// </remarks>
-	/// <example>
-	/// <code>
-	/// // Basic usage
-	/// var options = optionsManager.GetApplicationOptions();
-	///
-	/// // Access specific configuration sections
-	/// var databaseConnection = options.SqlConnectionString;
-	/// var jwtSettings = new
-	/// {
-	///     Issuer = options.JwtIssuer,
-	///     Audience = options.JwtAudience,
-	///     Secret = options.JwtSecret
-	/// };
-	///
-	/// // Use configuration for service initialization
-	/// var storageClient = new BlobServiceClient(options.StorageAccountEndpoint);
-	/// </code>
-	/// </example>
-	/// <exception cref="InvalidOperationException">
-	/// Thrown when required configuration values are missing or invalid.
-	/// </exception>
-	/// <exception cref="UnauthorizedAccessException">
-	/// Thrown when the application lacks permissions to access configuration sources.
-	/// </exception>
-	/// <exception cref="System.Net.Http.HttpRequestException">
-	/// Thrown when external configuration services are unavailable or return errors.
-	/// </exception>
-	ApplicationOptions GetApplicationOptions();
+  /// <summary>
+  /// Retrieves the complete application configuration options.
+  /// This method provides access to all configuration settings required by the application,
+  /// including service endpoints, authentication settings, and operational parameters.
+  /// </summary>
+  /// <returns>
+  /// An <see cref="ApplicationOptions"/> instance containing all application configuration values.
+  /// The returned object includes settings for databases, external services, authentication,
+  /// and application metadata.
+  /// </returns>
+  /// <remarks>
+  /// <para>
+  /// This method should return a fully populated configuration object with values retrieved
+  /// from the appropriate sources for the current environment. The implementation is responsible for:
+  /// </para>
+  /// <para>
+  /// <strong>Configuration Retrieval:</strong>
+  /// - Merging values from multiple configuration sources
+  /// - Applying environment-specific overrides
+  /// - Resolving configuration references and dependencies
+  /// - Handling missing or invalid configuration gracefully
+  /// </para>
+  /// <para>
+  /// <strong>Security Considerations:</strong>
+  /// - Retrieving sensitive values from secure storage (Azure Key Vault)
+  /// - Avoiding exposure of secrets in logs or error messages
+  /// - Implementing proper authentication for configuration access
+  /// - Validating configuration integrity and authenticity
+  /// </para>
+  /// <para>
+  /// <strong>Performance Considerations:</strong>
+  /// - Caching configuration values to minimize external calls
+  /// - Implementing refresh mechanisms for dynamic configuration
+  /// - Handling configuration service outages gracefully
+  /// - Minimizing startup time through efficient configuration loading
+  /// </para>
+  /// <para>
+  /// <strong>Error Handling:</strong>
+  /// The method should handle configuration errors appropriately:
+  /// - Provide meaningful error messages for missing required configuration
+  /// - Implement fallback mechanisms for non-critical settings
+  /// - Log configuration issues for troubleshooting
+  /// - Fail fast for invalid or incompatible configuration
+  /// </para>
+  /// </remarks>
+  /// <example>
+  /// <code>
+  /// // Basic usage
+  /// var options = optionsManager.GetApplicationOptions();
+  ///
+  /// // Access specific configuration sections
+  /// var databaseConnection = options.SqlConnectionString;
+  /// var jwtSettings = new
+  /// {
+  ///     Issuer = options.JwtIssuer,
+  ///     Audience = options.JwtAudience,
+  ///     Secret = options.JwtSecret
+  /// };
+  ///
+  /// // Use configuration for service initialization
+  /// var storageClient = new BlobServiceClient(options.StorageAccountEndpoint);
+  /// </code>
+  /// </example>
+  /// <exception cref="InvalidOperationException">
+  /// Thrown when required configuration values are missing or invalid.
+  /// </exception>
+  /// <exception cref="UnauthorizedAccessException">
+  /// Thrown when the application lacks permissions to access configuration sources.
+  /// </exception>
+  /// <exception cref="System.Net.Http.HttpRequestException">
+  /// Thrown when external configuration services are unavailable or return errors.
+  /// </exception>
+  ApplicationOptions GetApplicationOptions();
 }

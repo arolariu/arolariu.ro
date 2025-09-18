@@ -10,35 +10,35 @@ using System.Diagnostics.CodeAnalysis;
 /// </summary>
 public enum ScanType
 {
-	/// <summary>
-	/// JPG format.
-	/// </summary>
-	JPG,
+  /// <summary>
+  /// JPG format.
+  /// </summary>
+  JPG,
 
-	/// <summary>
-	/// JPEG format.
-	/// </summary>
-	JPEG,
+  /// <summary>
+  /// JPEG format.
+  /// </summary>
+  JPEG,
 
-	/// <summary>
-	/// PNG format.
-	/// </summary>
-	PNG,
+  /// <summary>
+  /// PNG format.
+  /// </summary>
+  PNG,
 
-	/// <summary>
-	/// PDF format.
-	/// </summary>
-	PDF,
+  /// <summary>
+  /// PDF format.
+  /// </summary>
+  PDF,
 
-	/// <summary>
-	/// Other format.
-	/// </summary>
-	OTHER,
+  /// <summary>
+  /// Other format.
+  /// </summary>
+  OTHER,
 
-	/// <summary>
-	/// Unknown format.
-	/// </summary>
-	UNKNOWN,
+  /// <summary>
+  /// Unknown format.
+  /// </summary>
+  UNKNOWN,
 }
 
 
@@ -52,29 +52,29 @@ public enum ScanType
 [Serializable]
 [ExcludeFromCodeCoverage] // DTOs are not tested - they are used to transfer data between the client and the server.
 public readonly record struct InvoiceScan(
-	[Required] ScanType Type,
-	[Required] Uri Location,
-	IDictionary<string, object>? Metadata)
+  [Required] ScanType Type,
+  [Required] Uri Location,
+  IDictionary<string, object>? Metadata)
 {
-	/// <summary>
-	/// Static method to create a new instance of the InvoiceScan with default values.
-	/// </summary>
-	/// <returns></returns>
-	public static InvoiceScan Default()
-	{
-		return new InvoiceScan
-		{
-			Type = ScanType.UNKNOWN,
-			Location = new Uri("https://arolariu.ro"),
-			Metadata = new Dictionary<string, object>(),
-		};
-	}
+  /// <summary>
+  /// Static method to create a new instance of the InvoiceScan with default values.
+  /// </summary>
+  /// <returns></returns>
+  public static InvoiceScan Default()
+  {
+    return new InvoiceScan
+    {
+      Type = ScanType.UNKNOWN,
+      Location = new Uri("https://arolariu.ro"),
+      Metadata = new Dictionary<string, object>(),
+    };
+  }
 
-	/// <summary>
-	/// Static method to determine if the scan is not new (i.e. has been set to something else than the default values).
-	/// </summary>
-	/// <param name="scan"></param>
-	/// <returns></returns>
-	public static bool NotDefault(InvoiceScan scan) =>
-		scan.Type != ScanType.UNKNOWN && scan.Location != new Uri("https://arolariu.ro");
+  /// <summary>
+  /// Static method to determine if the scan is not new (i.e. has been set to something else than the default values).
+  /// </summary>
+  /// <param name="scan"></param>
+  /// <returns></returns>
+  public static bool NotDefault(InvoiceScan scan) =>
+    scan.Type != ScanType.UNKNOWN && scan.Location != new Uri("https://arolariu.ro");
 }

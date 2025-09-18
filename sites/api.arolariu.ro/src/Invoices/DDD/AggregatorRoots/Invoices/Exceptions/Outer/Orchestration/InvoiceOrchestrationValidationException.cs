@@ -12,52 +12,52 @@ using System.Runtime.Serialization;
 #pragma warning disable SYSLIB0051 // Type or member is obsolete
 public class InvoiceOrchestrationValidationException : Exception
 {
-	/// <summary>
-	/// Initializes a new instance of the <see cref="InvoiceOrchestrationValidationException"/>
-	/// </summary>
-	/// <param name="innerException"></param>
-	public InvoiceOrchestrationValidationException(Exception innerException)
-		: base(
-			message: "Invoice Orchestration Validation Exception",
-			innerException)
-	{
-	}
+  /// <summary>
+  /// Initializes a new instance of the <see cref="InvoiceOrchestrationValidationException"/>
+  /// </summary>
+  /// <param name="innerException"></param>
+  public InvoiceOrchestrationValidationException(Exception innerException)
+    : base(
+      message: "Invoice Orchestration Validation Exception",
+      innerException)
+  {
+  }
 
-	/// <summary>
-	/// Serialization constructor
-	/// </summary>
-	/// <param name="info"></param>
-	/// <param name="context"></param>
-	protected InvoiceOrchestrationValidationException(SerializationInfo info, StreamingContext context)
-		: base(info, context)
-	{
-	}
+  /// <summary>
+  /// Serialization constructor
+  /// </summary>
+  /// <param name="info"></param>
+  /// <param name="context"></param>
+  protected InvoiceOrchestrationValidationException(SerializationInfo info, StreamingContext context)
+    : base(info, context)
+  {
+  }
 
-	/// <summary>
-	/// Base constructor
-	/// </summary>
-	public InvoiceOrchestrationValidationException()
-		: base()
-	{
-	}
+  /// <summary>
+  /// Base constructor
+  /// </summary>
+  public InvoiceOrchestrationValidationException()
+    : base()
+  {
+  }
 
-	/// <summary>
-	/// Constructor with message
-	/// </summary>
-	/// <param name="message"></param>
-	protected InvoiceOrchestrationValidationException(string? message) : base(message)
-	{
-	}
+  /// <summary>
+  /// Constructor with message
+  /// </summary>
+  /// <param name="message"></param>
+  protected InvoiceOrchestrationValidationException(string? message) : base(message)
+  {
+  }
 
-	/// <summary>
-	/// Constructor with message and inner exception
-	/// </summary>
-	/// <param name="message"></param>
-	/// <param name="innerException"></param>
-	protected InvoiceOrchestrationValidationException(string? message, Exception? innerException)
-		: base(message, innerException)
-	{
-	}
+  /// <summary>
+  /// Constructor with message and inner exception
+  /// </summary>
+  /// <param name="message"></param>
+  /// <param name="innerException"></param>
+  protected InvoiceOrchestrationValidationException(string? message, Exception? innerException)
+    : base(message, innerException)
+  {
+  }
 }
 #pragma warning restore SYSLIB0051 // Type or member is obsolete
 
