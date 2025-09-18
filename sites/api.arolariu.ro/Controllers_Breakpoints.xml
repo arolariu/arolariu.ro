@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <BreakpointCollection xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Breakpoints>
     <Breakpoint>
@@ -87,11 +87,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.CreateNewInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromBody] CreateInvoiceDto invoiceDto,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.CreateNewInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromBody] CreateInvoiceDto invoiceDto,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -150,12 +152,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AddProductToInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] Product product,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AddProductToInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] Product product,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -214,11 +218,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveProductsFromInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveProductsFromInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -277,11 +283,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RemoveMerchantFromInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RemoveMerchantFromInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -340,11 +348,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveSpecificInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveSpecificInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -403,12 +413,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AddMerchantToInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] Merchant merchant,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AddMerchantToInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] Merchant merchant,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -467,11 +479,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveInvoiceScanAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveInvoiceScanAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -530,12 +544,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateInvoiceScanAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] InvoiceScan invoiceScanDto,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateInvoiceScanAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] InvoiceScan invoiceScanDto,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -594,11 +610,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveMerchantFromInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveMerchantFromInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -657,10 +675,12 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveAllInvoicesAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveAllInvoicesAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>6</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -719,12 +739,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateSpecificInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] Invoice invoicePayload,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateSpecificInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] Invoice invoicePayload,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -783,12 +805,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.CreateInvoiceScanAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] InvoiceScan invoiceScanDto,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.CreateInvoiceScanAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] InvoiceScan invoiceScanDto,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -847,12 +871,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RemoveProductFromInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromQuery] string productName,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RemoveProductFromInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromQuery] string productName,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -911,11 +937,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -974,13 +1002,15 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateProductInInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromQuery] string productName,
-		[FromBody] Product productInformation,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateProductInInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromQuery] string productName,
+        [FromBody] Product productInformation,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>9</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -1039,12 +1069,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.PatchInvoiceMetadataAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] IDictionary&lt;string, string&gt; invoiceMetadataPatch,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.PatchInvoiceMetadataAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] IDictionary&lt;string, string&gt; invoiceMetadataPatch,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -1103,12 +1135,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RemoveInvoiceFromMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] IEnumerable&lt;Guid&gt; invoiceIdentifiers,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RemoveInvoiceFromMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] IEnumerable&lt;Guid&gt; invoiceIdentifiers,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -1167,11 +1201,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveInvoiceMetadataAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveInvoiceMetadataAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -1230,12 +1266,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AddInvoiceToMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] IEnumerable&lt;Guid&gt; invoiceIdentifiers,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AddInvoiceToMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] IEnumerable&lt;Guid&gt; invoiceIdentifiers,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -1353,11 +1391,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteInvoiceScanAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteInvoiceScanAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -1593,12 +1633,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateSpecificMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] Merchant merchantPayload,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateSpecificMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] Merchant merchantPayload,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -1657,11 +1699,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteInvoicesAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromBody] Guid userIdentifier,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteInvoicesAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromBody] Guid userIdentifier,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -1720,11 +1764,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveAllMerchantsAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromBody] Guid parentCompanyId,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveAllMerchantsAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromBody] Guid parentCompanyId,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -1842,11 +1888,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveInvoicesFromMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveInvoicesFromMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -1964,12 +2012,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromQuery] Guid parentCompanyId,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromQuery] Guid parentCompanyId,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -2028,12 +2078,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveSpecificMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromQuery] Guid parentCompanyId,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveSpecificMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromQuery] Guid parentCompanyId,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -2092,11 +2144,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveProductsFromMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveProductsFromMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -2155,12 +2209,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteInvoiceMetadataAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] IEnumerable&lt;string&gt; metadataKeys,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteInvoiceMetadataAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] IEnumerable&lt;string&gt; metadataKeys,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -2514,12 +2570,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AnalyzeInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] AnalysisOptions options,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AnalyzeInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] AnalysisOptions options,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -2873,12 +2931,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.PatchSpecificInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] Invoice invoicePayload,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.PatchSpecificInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] Invoice invoicePayload,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
