@@ -1,7 +1,7 @@
 @import 'tailwindcss';
+@config '../../tailwind.config.ts';
 @plugin "daisyui";
 
-@config '../../tailwind.config.ts';
 
 /*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,

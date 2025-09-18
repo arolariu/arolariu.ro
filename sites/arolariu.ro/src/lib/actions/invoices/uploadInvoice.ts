@@ -1,5 +1,3 @@
-/** @format */
-
 "use server";
 
 import type {UserInformation} from "@/types";
@@ -40,8 +38,11 @@ export default async function uploadInvoice({blobInformation, userInformation}: 
 
     const photoMetadata = {dateOfUploadToServer: new Date().toISOString()} as Record<string, string>;
 
+    // eslint-disable-next-line guard-for-in -- we care for all metadata keys.
     for (const metadataKey in storageResponse.blobMetadata) {
+      // eslint-disable-next-line security/detect-object-injection -- this is safe.
       const metadataValue = storageResponse.blobMetadata[metadataKey] as string;
+      // eslint-disable-next-line security/detect-object-injection -- this is safe.
       photoMetadata[metadataKey] = metadataValue;
     }
 

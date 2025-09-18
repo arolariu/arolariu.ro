@@ -1,8 +1,6 @@
-/** @format */
-
 "use client";
 
-import {TypewriterText} from "@/presentation/Text";
+import {TypewriterTextSmooth} from "@arolariu/components";
 import {motion, useScroll, useTransform} from "motion/react";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
@@ -30,7 +28,7 @@ export default function Hero(): React.JSX.Element {
     .split(" ")
     .map((word) => ({
       text: word,
-      className: "inline-block text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-purple-500",
+      className: "text-xl text-center inline-block text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-purple-500",
     }));
 
   return (
@@ -55,8 +53,8 @@ export default function Hero(): React.JSX.Element {
           />
         </motion.div>
 
-        <motion.div>
-          <TypewriterText
+        <motion.div className='text-center'>
+          <TypewriterTextSmooth
             words={words}
             className='text-center text-4xl font-bold md:text-6xl'
             cursorClassName='hidden'

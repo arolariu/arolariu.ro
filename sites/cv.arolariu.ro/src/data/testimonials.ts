@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Testimonial} from "@/types";
 
 type TestimonialKeys =
@@ -13,7 +11,7 @@ type TestimonialKeys =
   | "perspectiveFromYZ"
   | "perspectiveFromZ";
 
-type Testimonials = Record<TestimonialKeys, Testimonial>;
+type Testimonials = Readonly<Record<TestimonialKeys, Testimonial>>;
 
 /**
  * Collection of testimonials from colleagues and peers.

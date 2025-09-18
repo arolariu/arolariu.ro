@@ -1,15 +1,7 @@
+import type {Meta, StoryObj} from "@storybook/react";
 import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import {
-  Card,
-  CardContent,
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-} from "../dist";
-import type { CarouselApi } from "../dist"; // Import the type
+import type {CarouselApi} from "../dist"; // Import the type
+import {Card, CardContent, Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious} from "../dist";
 
 const meta: Meta<typeof Carousel> = {
   title: "Design System/Carousel",
@@ -46,21 +38,19 @@ See the [shadcn/ui Carousel documentation](https://ui.shadcn.com/docs/components
   argTypes: {
     orientation: {
       options: ["horizontal", "vertical"],
-      control: { type: "radio" },
+      control: {type: "radio"},
       description: "The orientation of the carousel.",
       table: {
-        defaultValue: { summary: "horizontal" },
+        defaultValue: {summary: "horizontal"},
       },
     },
     opts: {
       control: "object",
-      description:
-        "Options passed directly to the underlying Embla Carousel instance (e.g., `{ loop: true, align: 'start' }`).",
+      description: "Options passed directly to the underlying Embla Carousel instance (e.g., `{ loop: true, align: 'start' }`).",
     },
     setApi: {
       action: "apiSet",
-      description:
-        "Callback to get the underlying Embla Carousel API instance.",
+      description: "Callback to get the underlying Embla Carousel API instance.",
     },
     // Other props like className are available
   },
@@ -80,15 +70,15 @@ export const Basic: Story = {
     },
   },
   render: () => (
-    <div className="w-full max-w-xs mx-auto">
+    <div className='mx-auto w-full max-w-xs'>
       <Carousel>
         <CarouselContent>
-          {Array.from({ length: 5 }).map((_, index) => (
+          {Array.from({length: 5}).map((_, index) => (
             <CarouselItem key={index}>
-              <div className="p-1">
+              <div className='p-1'>
                 <Card>
-                  <CardContent className="flex aspect-square items-center justify-center p-6">
-                    <span className="text-4xl font-semibold">{index + 1}</span>
+                  <CardContent className='flex aspect-square items-center justify-center p-6'>
+                    <span className='text-4xl font-semibold'>{index + 1}</span>
                   </CardContent>
                 </Card>
               </div>
@@ -113,23 +103,21 @@ export const MultipleItems: Story = {
     },
   },
   render: () => (
-    <div className="w-full max-w-sm mx-auto">
+    <div className='mx-auto w-full max-w-sm'>
       <Carousel
         opts={{
           align: "start",
           loop: true,
-        }}
-      >
-        <CarouselContent className="-ml-1">
-          {Array.from({ length: 10 }).map((_, index) => (
+        }}>
+        <CarouselContent className='-ml-1'>
+          {Array.from({length: 10}).map((_, index) => (
             <CarouselItem
               key={index}
-              className="pl-1 md:basis-1/2 lg:basis-1/3"
-            >
-              <div className="p-1">
+              className='pl-1 md:basis-1/2 lg:basis-1/3'>
+              <div className='p-1'>
                 <Card>
-                  <CardContent className="flex aspect-square items-center justify-center p-6">
-                    <span className="text-2xl font-semibold">{index + 1}</span>
+                  <CardContent className='flex aspect-square items-center justify-center p-6'>
+                    <span className='text-2xl font-semibold'>{index + 1}</span>
                   </CardContent>
                 </Card>
               </div>
@@ -151,21 +139,24 @@ export const Vertical: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "A carousel oriented vertically by setting `orientation='vertical'`.",
+        story: "A carousel oriented vertically by setting `orientation='vertical'`.",
       },
     },
   },
   render: (args) => (
-    <div className="w-full max-w-xs mx-auto">
-      <Carousel {...args} className="h-[300px] w-full max-w-xs">
-        <CarouselContent className="-mt-1">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <CarouselItem key={index} className="pt-1">
-              <div className="p-1">
+    <div className='mx-auto w-full max-w-xs'>
+      <Carousel
+        {...args}
+        className='h-[300px] w-full max-w-xs'>
+        <CarouselContent className='-mt-1'>
+          {Array.from({length: 5}).map((_, index) => (
+            <CarouselItem
+              key={index}
+              className='pt-1'>
+              <div className='p-1'>
                 <Card>
-                  <CardContent className="flex aspect-video items-center justify-center p-6">
-                    <span className="text-4xl font-semibold">{index + 1}</span>
+                  <CardContent className='flex aspect-video items-center justify-center p-6'>
+                    <span className='text-4xl font-semibold'>{index + 1}</span>
                   </CardContent>
                 </Card>
               </div>
@@ -211,14 +202,14 @@ export const APIExample: Story = {
     }, [api]);
 
     return (
-      <div className="w-full max-w-xs mx-auto">
+      <div className='mx-auto w-full max-w-xs'>
         <Carousel setApi={setApi}>
           <CarouselContent>
-            {Array.from({ length: 5 }).map((_, index) => (
+            {Array.from({length: 5}).map((_, index) => (
               <CarouselItem key={index}>
                 <Card>
-                  <CardContent className="flex aspect-square items-center justify-center p-6">
-                    <span className="text-4xl font-semibold">{index + 1}</span>
+                  <CardContent className='flex aspect-square items-center justify-center p-6'>
+                    <span className='text-4xl font-semibold'>{index + 1}</span>
                   </CardContent>
                 </Card>
               </CarouselItem>
@@ -227,7 +218,7 @@ export const APIExample: Story = {
           <CarouselPrevious />
           <CarouselNext />
         </Carousel>
-        <div className="py-2 text-center text-sm text-muted-foreground">
+        <div className='text-muted-foreground py-2 text-center text-sm'>
           Slide {current} of {count}
         </div>
       </div>
@@ -240,36 +231,30 @@ export const ImageCarousel: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "A common use case: displaying images within a carousel. Uses `opts={{ loop: true }}`.",
+        story: "A common use case: displaying images within a carousel. Uses `opts={{ loop: true }}`.",
       },
     },
   },
   render: () => (
-    <div className="w-full max-w-lg mx-auto">
-      <Carousel opts={{ loop: true }}>
+    <div className='mx-auto w-full max-w-lg'>
+      <Carousel opts={{loop: true}}>
         <CarouselContent>
-          {[
-            "/mountains-1.jpg",
-            "/mountains-2.jpg",
-            "/mountains-3.jpg",
-            "/mountains-4.jpg",
-          ].map((src, index) => (
+          {["/mountains-1.jpg", "/mountains-2.jpg", "/mountains-3.jpg", "/mountains-4.jpg"].map((src, index) => (
             <CarouselItem key={index}>
-              <Card className="border-0 overflow-hidden">
-                <div className="aspect-video w-full overflow-hidden rounded-lg">
+              <Card className='overflow-hidden border-0'>
+                <div className='aspect-video w-full overflow-hidden rounded-lg'>
                   <img
                     src={`https://source.unsplash.com/random/800x450?mountains&${index}`}
                     alt={`Mountain landscape ${index + 1}`}
-                    className="h-full w-full object-cover"
+                    className='h-full w-full object-cover'
                   />
                 </div>
               </Card>
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="left-2" />
-        <CarouselNext className="right-2" />
+        <CarouselPrevious className='left-2' />
+        <CarouselNext className='right-2' />
       </Carousel>
     </div>
   ),
@@ -286,15 +271,15 @@ export const CustomNavigation: Story = {
     },
   },
   render: () => (
-    <div className="w-full max-w-xs mx-auto">
+    <div className='mx-auto w-full max-w-xs'>
       <Carousel>
         <CarouselContent>
-          {Array.from({ length: 5 }).map((_, index) => (
+          {Array.from({length: 5}).map((_, index) => (
             <CarouselItem key={index}>
-              <div className="p-1">
+              <div className='p-1'>
                 <Card>
-                  <CardContent className="flex aspect-square items-center justify-center p-6">
-                    <span className="text-4xl font-semibold">{index + 1}</span>
+                  <CardContent className='flex aspect-square items-center justify-center p-6'>
+                    <span className='text-4xl font-semibold'>{index + 1}</span>
                   </CardContent>
                 </Card>
               </div>
@@ -302,12 +287,12 @@ export const CustomNavigation: Story = {
           ))}
         </CarouselContent>
         <CarouselPrevious
-          variant="ghost"
-          className="left-2 hover:bg-neutral-100/50 dark:hover:bg-neutral-900/50"
+          variant='ghost'
+          className='left-2 hover:bg-neutral-100/50 dark:hover:bg-neutral-900/50'
         />
         <CarouselNext
-          variant="ghost"
-          className="right-2 hover:bg-neutral-100/50 dark:hover:bg-neutral-900/50"
+          variant='ghost'
+          className='right-2 hover:bg-neutral-100/50 dark:hover:bg-neutral-900/50'
         />
       </Carousel>
     </div>

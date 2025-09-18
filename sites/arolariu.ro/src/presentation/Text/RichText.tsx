@@ -1,10 +1,13 @@
-/** @format */
+// We're turning off react/no-unstable-nested-components -- This is a false positive with the i18n lib.
+/* eslint react/no-unstable-nested-components: 0 */
 
 "use client";
 
 import {Messages, NamespaceKeys, useTranslations} from "next-intl";
+import React from "react";
 
 type Props = {
+  className?: string;
   sectionKey: string;
   textKey: string;
 };
@@ -23,13 +26,13 @@ type Props = {
  * <RichText a11ySectionKey="about" a11yTextKey="description" />
  * ```
  */
-export default function RichText({sectionKey, textKey}: Readonly<Props>) {
+export function RichText({className, sectionKey, textKey}: Readonly<Props>) {
   const t = useTranslations<NamespaceKeys<Messages, string>>(sectionKey as any);
   const isTextKeyInNamespace = t.has(textKey as any);
 
   if (isTextKeyInNamespace) {
     // @ts-expect-error -- This is a known issue with the library
-    return t.rich(textKey, {
+    const text = t.rich(textKey, {
       strong: (chunks: React.ReactNode) => <strong>{chunks}</strong>,
       em: (chunks: React.ReactNode) => <em>{chunks}</em>,
       br: (chunks: React.ReactNode) => (
@@ -43,6 +46,8 @@ export default function RichText({sectionKey, textKey}: Readonly<Props>) {
       li: (chunks: React.ReactNode) => <li>{chunks}</li>,
       span: (chunks: React.ReactNode) => <span>{chunks}</span>,
     });
+
+    return <span className={className}>{text}</span>;
   }
 
   throw new Error(`The key ${textKey} is not in the namespace ${sectionKey}`);

@@ -13,34 +13,34 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 [SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Not applicable.")]
 public class ValueConverterForIEnumerableOf<T> : ValueConverter<IEnumerable<T>, string>
 {
-	/// <summary>
-	/// The constructor for <see cref="ValueConverterForIEnumerableOf{T}"/>
-	/// </summary>
-	public ValueConverterForIEnumerableOf() : base(
-	fromEnumerableOfT => ConvertToString(fromEnumerableOfT),
-	toEnumerableOfT => ConvertFromString(toEnumerableOfT))
-	{
-	}
+  /// <summary>
+  /// The constructor for <see cref="ValueConverterForIEnumerableOf{T}"/>
+  /// </summary>
+  public ValueConverterForIEnumerableOf() : base(
+  fromEnumerableOfT => ConvertToString(fromEnumerableOfT),
+  toEnumerableOfT => ConvertFromString(toEnumerableOfT))
+  {
+  }
 
-	private static string ConvertToString(IEnumerable<T> @object)
-	{
-		@object ??= new List<T>();
-		var json = JsonSerializer.Serialize(@object);
-		return json;
-	}
+  private static string ConvertToString(IEnumerable<T> @object)
+  {
+    @object ??= [];
+    var json = JsonSerializer.Serialize(@object);
+    return json;
+  }
 
-	private static IEnumerable<T> ConvertFromString(string @object)
-	{
-		IEnumerable<T>? result = new List<T>();
-		try
-		{
-			result = JsonSerializer.Deserialize<IEnumerable<T>>(@object);
-		}
-		catch (JsonException)
-		{
-			// ignored
-		}
+  private static IEnumerable<T> ConvertFromString(string @object)
+  {
+    IEnumerable<T>? result = [];
+    try
+    {
+      result = JsonSerializer.Deserialize<IEnumerable<T>>(@object);
+    }
+    catch (JsonException)
+    {
+      // ignored
+    }
 
-		return result!;
-	}
+    return result!;
+  }
 }

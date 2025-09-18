@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import {useTheme} from "@/hooks/useTheme.svelte";
   const {toggle} = useTheme();

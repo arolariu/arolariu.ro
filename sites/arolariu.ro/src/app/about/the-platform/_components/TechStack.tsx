@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {Card, CardContent} from "@arolariu/components/card";
@@ -132,7 +130,9 @@ export default function TechStack(): React.JSX.Element {
                       scale: 1.05,
                       transition: {duration: 0.2},
                     }}
+                    // eslint-disable-next-line react/jsx-no-bind -- simple page
                     onHoverStart={() => setHoveredTech(tech.name)}
+                    // eslint-disable-next-line react/jsx-no-bind -- simple page
                     onHoverEnd={() => setHoveredTech(null)}>
                     <Card
                       className={`h-full overflow-hidden transition-all duration-300 hover:shadow-md ${hoveredTech === tech.name ? "border-primary" : "hover:border-primary/30"}`}>
@@ -163,3 +163,4 @@ export default function TechStack(): React.JSX.Element {
     </section>
   );
 }
+

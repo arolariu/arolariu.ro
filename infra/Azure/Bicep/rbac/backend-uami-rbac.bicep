@@ -16,6 +16,7 @@ var roleDefinitions = {
   storageQueueContributor: '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
   storageTableContributor: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
   sqlDbContributor: '9b7fa17d-e63e-47b0-bb0a-15c516ac86ec'
+  noSqlDbOperator: '230815da-be43-4aae-9cb4-875f7bd000aa'
   appConfigContributor: 'fe86443c-f201-4fc4-9d2a-ac61149fbda0'
   openAiContributor: 'a001fd3d-188f-4b5d-821b-7da978bf7442'
   keyVaultContributor: 'f25e0fa2-a7c8-4377-a976-54943a77a395'
@@ -91,6 +92,17 @@ resource backendSqlDbContributorRoleAssignment 'Microsoft.Authorization/roleAssi
     principalId: backendIdentity.principalId
     principalType: 'ServicePrincipal'
     description: 'Backend managed identity access to SQL Database management'
+  }
+}
+
+// NoSQL Database Operator role assignment for backend managed identity
+resource backendNoSqlDbOperatorRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, backendIdentity.principalId, roleDefinitions.noSqlDbOperator)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleDefinitions.noSqlDbOperator)
+    principalId: backendIdentity.principalId
+    principalType: 'ServicePrincipal'
+    description: 'Backend managed identity access to NoSQL Database management'
   }
 }
 

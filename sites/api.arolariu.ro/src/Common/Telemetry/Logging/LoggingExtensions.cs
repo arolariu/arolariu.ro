@@ -34,55 +34,55 @@ using OpenTelemetry.Logs;
 /// </example>
 public static class LoggingExtensions
 {
-	/// <summary>
-	/// Configures OpenTelemetry logging with Azure Monitor export capabilities.
-	/// This method sets up structured logging that automatically exports to Azure Application Insights
-	/// and includes console output during debugging.
-	/// </summary>
-	/// <param name="builder">The <see cref="WebApplicationBuilder"/> to configure with OpenTelemetry logging.</param>
-	/// <remarks>
-	/// This method configures:
-	/// - Formatted message inclusion for readable log entries
-	/// - Scope inclusion to capture logging context and correlation
-	/// - Console exporter when debugger is attached for development
-	/// - Azure Monitor exporter with Application Insights integration
-	/// - Managed Identity authentication for secure cloud access
-	/// </remarks>
-	/// <exception cref="ArgumentNullException">
-	/// Thrown when <paramref name="builder"/> is null.
-	/// </exception>
-	public static void AddOTelLogging(this WebApplicationBuilder builder)
-	{
-		ArgumentNullException.ThrowIfNull(builder);
+  /// <summary>
+  /// Configures OpenTelemetry logging with Azure Monitor export capabilities.
+  /// This method sets up structured logging that automatically exports to Azure Application Insights
+  /// and includes console output during debugging.
+  /// </summary>
+  /// <param name="builder">The <see cref="WebApplicationBuilder"/> to configure with OpenTelemetry logging.</param>
+  /// <remarks>
+  /// This method configures:
+  /// - Formatted message inclusion for readable log entries
+  /// - Scope inclusion to capture logging context and correlation
+  /// - Console exporter when debugger is attached for development
+  /// - Azure Monitor exporter with Application Insights integration
+  /// - Managed Identity authentication for secure cloud access
+  /// </remarks>
+  /// <exception cref="ArgumentNullException">
+  /// Thrown when <paramref name="builder"/> is null.
+  /// </exception>
+  public static void AddOTelLogging(this WebApplicationBuilder builder)
+  {
+    ArgumentNullException.ThrowIfNull(builder);
 
-		builder.Logging.AddOpenTelemetry(otelOptions =>
-		{
-			otelOptions.IncludeFormattedMessage = true;
-			otelOptions.IncludeScopes = true;
+    builder.Logging.AddOpenTelemetry(otelOptions =>
+    {
+      otelOptions.IncludeFormattedMessage = true;
+      otelOptions.IncludeScopes = true;
 
-			if (Debugger.IsAttached)
-			{
-				otelOptions.AddConsoleExporter();
-			}
+      if (Debugger.IsAttached)
+      {
+        otelOptions.AddConsoleExporter();
+      }
 
-			otelOptions.AddAzureMonitorLogExporter(monitorOptions =>
-			{
-				using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
-				string instrumentationKey = new string(optionsManager
-					.GetRequiredService<IOptionsManager>()
-					.GetApplicationOptions()
-					.ApplicationInsightsEndpoint);
+      otelOptions.AddAzureMonitorLogExporter(monitorOptions =>
+      {
+        using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
+        string instrumentationKey = new string(optionsManager
+          .GetRequiredService<IOptionsManager>()
+          .GetApplicationOptions()
+          .ApplicationInsightsEndpoint);
 
-				monitorOptions.ConnectionString = instrumentationKey;
-				monitorOptions.Credential = new DefaultAzureCredential(
+        monitorOptions.ConnectionString = instrumentationKey;
+        monitorOptions.Credential = new DefaultAzureCredential(
 #if !DEBUG
                     new DefaultAzureCredentialOptions
                     {
                         ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
                     }
 #endif
-				);
-			});
-		});
-	}
+        );
+      });
+    });
+  }
 }

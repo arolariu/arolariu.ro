@@ -1,5 +1,3 @@
-/** @format */
-
 import ForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Meta, StoryObj} from "@storybook/react";
 

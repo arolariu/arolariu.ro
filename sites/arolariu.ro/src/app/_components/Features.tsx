@@ -1,32 +1,11 @@
-/** @format */
-
 "use client";
 
-import {TypewriterText} from "@/presentation/Text";
+import {TypewriterTextSmooth} from "@arolariu/components";
 import {Card, CardContent, CardHeader} from "@arolariu/components/card";
 import {useTranslations} from "next-intl";
 import Link from "next/link";
 
 import {TbBinoculars, TbBrandAzure, TbBrandCSharp, TbBrandGithub, TbBrandNextjs, TbBrandSvelte} from "react-icons/tb";
-
-type Props = {
-  title: string;
-  icon: React.ReactNode;
-  description: string;
-};
-
-const Feature = ({title, icon, description}: Readonly<Props>): React.JSX.Element => {
-  return (
-    <Card className='rounded-xl border border-gray-800 p-8 shadow-xl transition hover:border-pink-500/10 hover:shadow-pink-500/10'>
-      <CardHeader className='items-center pb-4'>
-        {icon} <span className='ml-2 text-xl'>{title}</span>
-      </CardHeader>
-      <CardContent>
-        <span className='text-md mt-3 text-gray-500'>{description}</span>
-      </CardContent>
-    </Card>
-  );
-};
 
 /**
  * This component renders the features section of the homepage.
@@ -72,8 +51,13 @@ export default function FeaturesSection(): React.JSX.Element {
   return (
     <section className='py-12 sm:pb-16 lg:pb-20 xl:pb-24'>
       <article className='mx-auto max-w-(--breakpoint-xl) px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16'>
-        <TypewriterText
-          words={[...t("title")]}
+        <TypewriterTextSmooth
+          words={t("title")
+            .split(" ")
+            .map((word) => ({
+              text: word,
+              className: "inline-block text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-purple-500",
+            }))}
           className='text-5xl font-bold'
           cursorClassName='h-10 2xsm:hidden md:block'
         />
@@ -81,12 +65,16 @@ export default function FeaturesSection(): React.JSX.Element {
 
         <div className='mt-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3'>
           {features.map((feature) => (
-            <Feature
+            <Card
               key={feature.title}
-              title={feature.title}
-              icon={feature.icon}
-              description={feature.description}
-            />
+              className='rounded-xl border border-gray-800 p-8 shadow-xl transition hover:border-pink-500/10 hover:shadow-pink-500/10'>
+              <CardHeader className='items-center pb-4'>
+                {feature.icon} <span className='ml-2 text-xl'>{feature.title}</span>
+              </CardHeader>
+              <CardContent>
+                <span className='text-md mt-3 text-gray-500'>{feature.description}</span>
+              </CardContent>
+            </Card>
           ))}
         </div>
         <Link

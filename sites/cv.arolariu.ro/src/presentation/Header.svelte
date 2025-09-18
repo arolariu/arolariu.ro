@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import {goto} from "$app/navigation";
   import ThemeToggle from "../components/ThemeToggle.svelte";

@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
@@ -66,7 +64,8 @@ export default function InvoicesHeader(): React.JSX.Element {
                 variant='outline'
                 size='sm'
                 className='cursor-pointer gap-1'
-                onClick={() => {}}>
+                // eslint-disable-next-line react/jsx-handler-names -- not applicable.
+                onClick={globalThis.window.print}>
                 <TbPrinter className='h-4 w-4' />
                 <span className='hidden sm:inline'>Print</span>
               </Button>

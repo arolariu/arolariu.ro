@@ -1,25 +1,8 @@
-/** @format */
-
+import {RichText} from "@/presentation/Text";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
-
-const Description = () => {
-  const t = useTranslations("Domains.services.invoices.service.main-page");
-  return (
-    <>
-      {t.rich("description", {
-        br: (chunks: React.ReactNode) => (
-          <>
-            <br />
-            {chunks}
-          </>
-        ),
-      })}
-    </>
-  );
-};
 
 const Steps = () => {
   const t = useTranslations("Domains.services.invoices.service.main-page.steps");
@@ -128,7 +111,7 @@ const Steps = () => {
           className='relative flex pb-12'
           key={step.title}>
           <div className='absolute inset-0 flex h-full w-10 items-center justify-center'>
-            {step != steps.at(-1) && <div className='pointer-events-none h-full w-1 bg-gray-200' />}
+            {step !== steps.at(-1) && <div className='pointer-events-none h-full w-1 bg-gray-200' />}
           </div>
           <div className='relative z-10 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-500'>
             {step.icon}
@@ -172,7 +155,10 @@ export default function RenderInvoiceDomainScreen({isAuthenticated}: Readonly<Pr
             {t("title")}
           </h1>
           <article className='mb-8 leading-relaxed'>
-            <Description />
+            <RichText
+              sectionKey='Domains.services.invoices.service.main-page'
+              textKey='description'
+            />
           </article>
           <div className='flex flex-col items-center justify-center justify-items-center gap-4 md:flex-row'>
             <Link

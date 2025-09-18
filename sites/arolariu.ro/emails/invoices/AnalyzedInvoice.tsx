@@ -1,11 +1,31 @@
-/** @format */
-
 import {FakeInvoice} from "@/data/mocks/invoices";
 import type {Invoice} from "@/types/invoices";
 import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
-export default function AnalyzedInvoice({username, invoice}: Readonly<{username: string; invoice: Invoice}>) {
-  if (process.env.NODE_ENV === "development") invoice = FakeInvoice;
+type Props = {
+  username: string;
+  invoice: Invoice;
+};
+
+const DEVELOPMENT_PROPS: Readonly<Props> = {
+  username: "testuser",
+  invoice: FakeInvoice,
+};
+
+/**
+ * This email template will be sent when an invoice has been fully analyzed.
+ * It contains a link to view the analyzed invoice.
+ * @param username The username of the recipient.
+ * @param invoice The analyzed invoice object.
+ * @returns The email template as a React JSX template.
+ */
+export default function AnalyzedInvoice(props: Readonly<Props>) {
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-param-reassign -- dev mode only
+    props = DEVELOPMENT_PROPS;
+  }
+
+  const {username, invoice} = props;
 
   return (
     <Html>

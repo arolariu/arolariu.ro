@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {SignedIn, SignedOut, SignInButton, UserButton, useUser} from "@clerk/nextjs";
@@ -14,7 +12,9 @@ const LoadingButton = () => <div className='h-8 w-8 animate-pulse rounded-full b
  */
 function AuthButton(): React.JSX.Element {
   const {isSignedIn, isLoaded} = useUser();
-  if (!isLoaded) return <LoadingButton />;
+  if (!isLoaded) {
+    return <LoadingButton />;
+  }
 
   if (isSignedIn) {
     return (

@@ -47,7 +47,7 @@ src/
 #### 1. Functional Components with TypeScript
 
 ```tsx
-/** @format */
+
 
 import type { ReactNode } from "react";
 
@@ -261,7 +261,7 @@ import { ComponentName } from "./ComponentName";
 ### 2. Component Structure
 
 ```tsx
-/** @format */
+
 
 // Imports (ordered as above)
 

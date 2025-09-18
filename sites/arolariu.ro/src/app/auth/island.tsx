@@ -1,5 +1,3 @@
-/** @format */
-
 import {useTranslations} from "next-intl";
 import AuthCard from "./_components/AuthCard";
 

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import { Slider } from "../dist";
+import type {Meta, StoryObj} from "@storybook/react";
+import {useState} from "react";
+import {Slider} from "../dist";
 
 const meta: Meta<typeof Slider> = {
   title: "Design System/Slider",
@@ -42,12 +42,16 @@ type Story = StoryObj<typeof Slider>;
 
 // Basic slider
 export const Basic: Story = {
-  render: () => <Slider defaultValue={[50]} className="w-[300px]" />,
+  render: () => (
+    <Slider
+      defaultValue={[50]}
+      className='w-[300px]'
+    />
+  ),
   parameters: {
     docs: {
       description: {
-        story:
-          "A basic Slider allowing selection of a single value within the default range (0-100).",
+        story: "A basic Slider allowing selection of a single value within the default range (0-100).",
       },
     },
   },
@@ -55,12 +59,16 @@ export const Basic: Story = {
 
 // Range slider
 export const Range: Story = {
-  render: () => <Slider defaultValue={[25, 75]} className="w-[300px]" />,
+  render: () => (
+    <Slider
+      defaultValue={[25, 75]}
+      className='w-[300px]'
+    />
+  ),
   parameters: {
     docs: {
       description: {
-        story:
-          "A Slider configured to select a range of values, indicated by two thumbs on the track.",
+        story: "A Slider configured to select a range of values, indicated by two thumbs on the track.",
       },
     },
   },
@@ -72,19 +80,22 @@ export const WithValueDisplay: Story = {
     const [value, setValue] = useState<number[]>([50]);
 
     return (
-      <div className="space-y-4 w-[300px]">
-        <div className="flex justify-between">
-          <span className="text-sm">Value: {value}</span>
+      <div className='w-[300px] space-y-4'>
+        <div className='flex justify-between'>
+          <span className='text-sm'>Value: {value}</span>
         </div>
-        <Slider value={value} onValueChange={setValue} className="w-full" />
+        <Slider
+          value={value}
+          onValueChange={setValue}
+          className='w-full'
+        />
       </div>
     );
   },
   parameters: {
     docs: {
       description: {
-        story:
-          "An example of a controlled Slider where the selected value(s) are managed by React state.",
+        story: "An example of a controlled Slider where the selected value(s) are managed by React state.",
       },
     },
   },
@@ -96,20 +107,23 @@ export const RangeWithValueDisplay: Story = {
     const [range, setRange] = useState<number[]>([25, 75]);
 
     return (
-      <div className="space-y-4 w-[300px]">
-        <div className="flex justify-between">
-          <span className="text-sm">Min: {range[0]}</span>
-          <span className="text-sm">Max: {range[1]}</span>
+      <div className='w-[300px] space-y-4'>
+        <div className='flex justify-between'>
+          <span className='text-sm'>Min: {range[0]}</span>
+          <span className='text-sm'>Max: {range[1]}</span>
         </div>
-        <Slider value={range} onValueChange={setRange} className="w-full" />
+        <Slider
+          value={range}
+          onValueChange={setRange}
+          className='w-full'
+        />
       </div>
     );
   },
   parameters: {
     docs: {
       description: {
-        story:
-          "An example of a controlled Slider where the selected value(s) are managed by React state.",
+        story: "An example of a controlled Slider where the selected value(s) are managed by React state.",
       },
     },
   },
@@ -121,19 +135,19 @@ export const Stepped: Story = {
     const [value, setValue] = useState<number[]>([40]);
 
     return (
-      <div className="space-y-4 w-[300px]">
-        <div className="flex justify-between">
-          <span className="text-sm">Value: {value}</span>
+      <div className='w-[300px] space-y-4'>
+        <div className='flex justify-between'>
+          <span className='text-sm'>Value: {value}</span>
         </div>
         <Slider
           value={value}
           onValueChange={setValue}
-          className="w-full"
+          className='w-full'
           step={10}
           min={0}
           max={100}
         />
-        <div className="flex justify-between px-1 text-xs text-neutral-500">
+        <div className='flex justify-between px-1 text-xs text-neutral-500'>
           <span>0</span>
           <span>20</span>
           <span>40</span>
@@ -147,8 +161,7 @@ export const Stepped: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "A Slider with a defined step value, restricting the selectable values to specific increments.",
+        story: "A Slider with a defined step value, restricting the selectable values to specific increments.",
       },
     },
   },
@@ -158,31 +171,34 @@ export const Stepped: Story = {
 export const CustomStyled: Story = {
   render: function CustomStyledSlider() {
     return (
-      <div className="space-y-8 w-[300px]">
-        <div className="space-y-2">
-          <div className="text-sm font-medium">Default</div>
-          <Slider defaultValue={[50]} className="w-full" />
-        </div>
-
-        <div className="space-y-2">
-          <div className="text-sm font-medium">Blue</div>
+      <div className='w-[300px] space-y-8'>
+        <div className='space-y-2'>
+          <div className='text-sm font-medium'>Default</div>
           <Slider
             defaultValue={[50]}
-            className="w-full"
-            trackClassName="bg-blue-100 dark:bg-blue-900/30"
-            rangeClassName="bg-blue-600 dark:bg-blue-500"
-            thumbClassName="border-blue-600 ring-blue-500/20"
+            className='w-full'
           />
         </div>
 
-        <div className="space-y-2">
-          <div className="text-sm font-medium">Green</div>
+        <div className='space-y-2'>
+          <div className='text-sm font-medium'>Blue</div>
           <Slider
             defaultValue={[50]}
-            className="w-full"
-            trackClassName="bg-green-100 dark:bg-green-900/30"
-            rangeClassName="bg-green-600 dark:bg-green-500"
-            thumbClassName="border-green-600 ring-green-500/20"
+            className='w-full'
+            trackClassName='bg-blue-100 dark:bg-blue-900/30'
+            rangeClassName='bg-blue-600 dark:bg-blue-500'
+            thumbClassName='border-blue-600 ring-blue-500/20'
+          />
+        </div>
+
+        <div className='space-y-2'>
+          <div className='text-sm font-medium'>Green</div>
+          <Slider
+            defaultValue={[50]}
+            className='w-full'
+            trackClassName='bg-green-100 dark:bg-green-900/30'
+            rangeClassName='bg-green-600 dark:bg-green-500'
+            thumbClassName='border-green-600 ring-green-500/20'
           />
         </div>
       </div>
@@ -193,15 +209,17 @@ export const CustomStyled: Story = {
 // Vertical slider
 export const Vertical: Story = {
   render: () => (
-    <div className="h-[200px]">
-      <Slider defaultValue={[50]} orientation="vertical" />
+    <div className='h-[200px]'>
+      <Slider
+        defaultValue={[50]}
+        orientation='vertical'
+      />
     </div>
   ),
   parameters: {
     docs: {
       description: {
-        story:
-          "A Slider oriented vertically instead of the default horizontal layout.",
+        story: "A Slider oriented vertically instead of the default horizontal layout.",
       },
     },
   },
@@ -209,7 +227,13 @@ export const Vertical: Story = {
 
 // Disabled slider
 export const Disabled: Story = {
-  render: () => <Slider defaultValue={[30]} disabled className="w-[300px]" />,
+  render: () => (
+    <Slider
+      defaultValue={[30]}
+      disabled
+      className='w-[300px]'
+    />
+  ),
   parameters: {
     docs: {
       description: {

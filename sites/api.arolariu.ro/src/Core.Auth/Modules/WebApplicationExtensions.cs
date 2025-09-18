@@ -25,59 +25,59 @@ using Microsoft.AspNetCore.Builder;
 /// </example>
 public static class WebApplicationExtensions
 {
-	/// <summary>
-	/// Configures the application to use comprehensive authentication and authorization middleware.
-	/// This method sets up the complete authentication pipeline including endpoints and middleware.
-	/// </summary>
-	/// <param name="app">The <see cref="WebApplication"/> to configure with authentication services.</param>
-	/// <remarks>
-	/// This method configures the authentication pipeline in the proper sequence:
-	/// - Maps authentication endpoints for user operations (login, logout, registration)
-	/// - Enables authentication middleware for request identity validation
-	/// - Enables authorization middleware for role and policy-based access control
-	/// </remarks>
-	/// <exception cref="ArgumentNullException">
-	/// Thrown when <paramref name="app"/> is null.
-	/// </exception>
-	public static void UseAuthServices(this WebApplication app)
-	{
-		ArgumentNullException.ThrowIfNull(app);
-		app.MapAuthEndpoints();
-		app.UseAuthN();
-		app.UseAuthZ();
-	}
+  /// <summary>
+  /// Configures the application to use comprehensive authentication and authorization middleware.
+  /// This method sets up the complete authentication pipeline including endpoints and middleware.
+  /// </summary>
+  /// <param name="app">The <see cref="WebApplication"/> to configure with authentication services.</param>
+  /// <remarks>
+  /// This method configures the authentication pipeline in the proper sequence:
+  /// - Maps authentication endpoints for user operations (login, logout, registration)
+  /// - Enables authentication middleware for request identity validation
+  /// - Enables authorization middleware for role and policy-based access control
+  /// </remarks>
+  /// <exception cref="ArgumentNullException">
+  /// Thrown when <paramref name="app"/> is null.
+  /// </exception>
+  public static void UseAuthServices(this WebApplication app)
+  {
+    ArgumentNullException.ThrowIfNull(app);
+    app.MapAuthEndpoints();
+    app.UseAuthN();
+    app.UseAuthZ();
+  }
 
-	/// <summary>
-	/// Configures the application to use authentication middleware.
-	/// This method enables request identity validation and token processing.
-	/// </summary>
-	/// <param name="app">The <see cref="WebApplication"/> to configure with authentication middleware.</param>
-	/// <remarks>
-	/// Authentication middleware:
-	/// - Validates JWT tokens in request headers
-	/// - Establishes user identity from valid tokens
-	/// - Sets HttpContext.User for downstream middleware
-	/// - Must be called before authorization middleware
-	/// </remarks>
-	private static void UseAuthN(this WebApplication app)
-	{
-		app.UseAuthentication();
-	}
+  /// <summary>
+  /// Configures the application to use authentication middleware.
+  /// This method enables request identity validation and token processing.
+  /// </summary>
+  /// <param name="app">The <see cref="WebApplication"/> to configure with authentication middleware.</param>
+  /// <remarks>
+  /// Authentication middleware:
+  /// - Validates JWT tokens in request headers
+  /// - Establishes user identity from valid tokens
+  /// - Sets HttpContext.User for downstream middleware
+  /// - Must be called before authorization middleware
+  /// </remarks>
+  private static void UseAuthN(this WebApplication app)
+  {
+    app.UseAuthentication();
+  }
 
-	/// <summary>
-	/// Configures the application to use authorization middleware.
-	/// This method enables role-based and policy-based access control.
-	/// </summary>
-	/// <param name="app">The <see cref="WebApplication"/> to configure with authorization middleware.</param>
-	/// <remarks>
-	/// Authorization middleware:
-	/// - Evaluates user permissions against endpoint requirements
-	/// - Enforces role-based access control (RBAC)
-	/// - Applies policy-based authorization rules
-	/// - Must be called after authentication middleware
-	/// </remarks>
-	private static void UseAuthZ(this WebApplication app)
-	{
-		app.UseAuthorization();
-	}
+  /// <summary>
+  /// Configures the application to use authorization middleware.
+  /// This method enables role-based and policy-based access control.
+  /// </summary>
+  /// <param name="app">The <see cref="WebApplication"/> to configure with authorization middleware.</param>
+  /// <remarks>
+  /// Authorization middleware:
+  /// - Evaluates user permissions against endpoint requirements
+  /// - Enforces role-based access control (RBAC)
+  /// - Applies policy-based authorization rules
+  /// - Must be called after authentication middleware
+  /// </remarks>
+  private static void UseAuthZ(this WebApplication app)
+  {
+    app.UseAuthorization();
+  }
 }

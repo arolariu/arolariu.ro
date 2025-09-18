@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <BreakpointCollection xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Breakpoints>
     <Breakpoint>
@@ -12,11 +12,11 @@
       <LocationType>SourceLocation</LocationType>
       <TextPosition>
         <Version>4</Version>
-        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.cs</FileName>
-        <startLine>62</startLine>
-        <StartColumn>8</StartColumn>
-        <EndLine>62</EndLine>
-        <EndColumn>89</EndColumn>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Merchants.cs</FileName>
+        <startLine>32</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>32</EndLine>
+        <EndColumn>2</EndColumn>
         <MarkerId>0</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -28,8 +28,8 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.IsPrincipalSuperUser(ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>2</NamedLocationLine>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.ReadMerchantAsync(Guid merchantIdentifier)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
       <HitCountTarget>1</HitCountTarget>
@@ -56,9 +56,9 @@
       <SnapshotCountTarget>1</SnapshotCountTarget>
       <parentIndex>-1</parentIndex>
       <IsTemporary>0</IsTemporary>
-      <BreakpointId>8</BreakpointId>
+      <BreakpointId>46</BreakpointId>
       <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>8</BreakpointIdForGroup>
+      <BreakpointIdForGroup>46</BreakpointIdForGroup>
     </Breakpoint>
     <Breakpoint>
       <Version>65536</Version>
@@ -72,10 +72,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>27</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>27</EndLine>
-        <EndColumn>2</EndColumn>
+        <startLine>31</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>31</EndLine>
+        <EndColumn>3</EndColumn>
         <MarkerId>0</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -87,519 +87,13 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.CreateNewInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromBody] CreateInvoiceDto invoiceDto,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>5</NamedLocationLine>
-      <NamedLocationColumn>0</NamedLocationColumn>
-      <HitCountType>NoHitCount</HitCountType>
-      <HitCountTarget>1</HitCountTarget>
-      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
-      <IsMapped>0</IsMapped>
-      <BreakpointType>PendingBreakpoint</BreakpointType>
-      <AddressLocation>
-        <Version>0</Version>
-        <MarkerId>0</MarkerId>
-        <FunctionLine>0</FunctionLine>
-        <FunctionColumn>0</FunctionColumn>
-        <Language>00000000-0000-0000-0000-000000000000</Language>
-      </AddressLocation>
-      <DataCount>4</DataCount>
-      <IsTracepointActive>0</IsTracepointActive>
-      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
-      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
-      <IsBreakWhenHit>1</IsBreakWhenHit>
-      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
-      <UseChecksum>1</UseChecksum>
-      <Labels />
-      <RequestRemapped>0</RequestRemapped>
-      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
-      <SnapshotCountTarget>1</SnapshotCountTarget>
-      <parentIndex>-1</parentIndex>
-      <IsTemporary>0</IsTemporary>
-      <BreakpointId>13</BreakpointId>
-      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>13</BreakpointIdForGroup>
-    </Breakpoint>
-    <Breakpoint>
-      <Version>65536</Version>
-      <IsEnabled>1</IsEnabled>
-      <IsVisible>1</IsVisible>
-      <IsEmulated>0</IsEmulated>
-      <IsCondition>0</IsCondition>
-      <IsProductionBps>0</IsProductionBps>
-      <ConditionType>WhenTrue</ConditionType>
-      <LocationType>SourceLocation</LocationType>
-      <TextPosition>
-        <Version>4</Version>
-        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>81</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>81</EndLine>
-        <EndColumn>2</EndColumn>
-        <MarkerId>0</MarkerId>
-        <IsLineBased>0</IsLineBased>
-        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
-        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
-        <Checksum>
-          <Version>1</Version>
-          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
-          <ByteCount>0</ByteCount>
-          <Bytes />
-        </Checksum>
-      </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveSpecificInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>5</NamedLocationLine>
-      <NamedLocationColumn>0</NamedLocationColumn>
-      <HitCountType>NoHitCount</HitCountType>
-      <HitCountTarget>1</HitCountTarget>
-      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
-      <IsMapped>0</IsMapped>
-      <BreakpointType>PendingBreakpoint</BreakpointType>
-      <AddressLocation>
-        <Version>0</Version>
-        <MarkerId>0</MarkerId>
-        <FunctionLine>0</FunctionLine>
-        <FunctionColumn>0</FunctionColumn>
-        <Language>00000000-0000-0000-0000-000000000000</Language>
-      </AddressLocation>
-      <DataCount>4</DataCount>
-      <IsTracepointActive>0</IsTracepointActive>
-      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
-      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
-      <IsBreakWhenHit>1</IsBreakWhenHit>
-      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
-      <UseChecksum>1</UseChecksum>
-      <Labels />
-      <RequestRemapped>0</RequestRemapped>
-      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
-      <SnapshotCountTarget>1</SnapshotCountTarget>
-      <parentIndex>-1</parentIndex>
-      <IsTemporary>0</IsTemporary>
-      <BreakpointId>14</BreakpointId>
-      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>14</BreakpointIdForGroup>
-    </Breakpoint>
-    <Breakpoint>
-      <Version>65536</Version>
-      <IsEnabled>1</IsEnabled>
-      <IsVisible>1</IsVisible>
-      <IsEmulated>0</IsEmulated>
-      <IsCondition>0</IsCondition>
-      <IsProductionBps>0</IsProductionBps>
-      <ConditionType>WhenTrue</ConditionType>
-      <LocationType>SourceLocation</LocationType>
-      <TextPosition>
-        <Version>4</Version>
-        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>165</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>165</EndLine>
-        <EndColumn>2</EndColumn>
-        <MarkerId>0</MarkerId>
-        <IsLineBased>0</IsLineBased>
-        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
-        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
-        <Checksum>
-          <Version>1</Version>
-          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
-          <ByteCount>0</ByteCount>
-          <Bytes />
-        </Checksum>
-      </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveAllInvoicesAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>4</NamedLocationLine>
-      <NamedLocationColumn>0</NamedLocationColumn>
-      <HitCountType>NoHitCount</HitCountType>
-      <HitCountTarget>1</HitCountTarget>
-      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
-      <IsMapped>0</IsMapped>
-      <BreakpointType>PendingBreakpoint</BreakpointType>
-      <AddressLocation>
-        <Version>0</Version>
-        <MarkerId>0</MarkerId>
-        <FunctionLine>0</FunctionLine>
-        <FunctionColumn>0</FunctionColumn>
-        <Language>00000000-0000-0000-0000-000000000000</Language>
-      </AddressLocation>
-      <DataCount>4</DataCount>
-      <IsTracepointActive>0</IsTracepointActive>
-      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
-      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
-      <IsBreakWhenHit>1</IsBreakWhenHit>
-      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
-      <UseChecksum>1</UseChecksum>
-      <Labels />
-      <RequestRemapped>0</RequestRemapped>
-      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
-      <SnapshotCountTarget>1</SnapshotCountTarget>
-      <parentIndex>-1</parentIndex>
-      <IsTemporary>0</IsTemporary>
-      <BreakpointId>15</BreakpointId>
-      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>15</BreakpointIdForGroup>
-    </Breakpoint>
-    <Breakpoint>
-      <Version>65536</Version>
-      <IsEnabled>1</IsEnabled>
-      <IsVisible>1</IsVisible>
-      <IsEmulated>0</IsEmulated>
-      <IsCondition>0</IsCondition>
-      <IsProductionBps>0</IsProductionBps>
-      <ConditionType>WhenTrue</ConditionType>
-      <LocationType>SourceLocation</LocationType>
-      <TextPosition>
-        <Version>4</Version>
-        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>236</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>236</EndLine>
-        <EndColumn>2</EndColumn>
-        <MarkerId>0</MarkerId>
-        <IsLineBased>0</IsLineBased>
-        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
-        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
-        <Checksum>
-          <Version>1</Version>
-          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
-          <ByteCount>0</ByteCount>
-          <Bytes />
-        </Checksum>
-      </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateSpecificInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] Invoice invoicePayload,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>6</NamedLocationLine>
-      <NamedLocationColumn>0</NamedLocationColumn>
-      <HitCountType>NoHitCount</HitCountType>
-      <HitCountTarget>1</HitCountTarget>
-      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
-      <IsMapped>0</IsMapped>
-      <BreakpointType>PendingBreakpoint</BreakpointType>
-      <AddressLocation>
-        <Version>0</Version>
-        <MarkerId>0</MarkerId>
-        <FunctionLine>0</FunctionLine>
-        <FunctionColumn>0</FunctionColumn>
-        <Language>00000000-0000-0000-0000-000000000000</Language>
-      </AddressLocation>
-      <DataCount>4</DataCount>
-      <IsTracepointActive>0</IsTracepointActive>
-      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
-      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
-      <IsBreakWhenHit>1</IsBreakWhenHit>
-      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
-      <UseChecksum>1</UseChecksum>
-      <Labels />
-      <RequestRemapped>0</RequestRemapped>
-      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
-      <SnapshotCountTarget>1</SnapshotCountTarget>
-      <parentIndex>-1</parentIndex>
-      <IsTemporary>0</IsTemporary>
-      <BreakpointId>16</BreakpointId>
-      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>16</BreakpointIdForGroup>
-    </Breakpoint>
-    <Breakpoint>
-      <Version>65536</Version>
-      <IsEnabled>1</IsEnabled>
-      <IsVisible>1</IsVisible>
-      <IsEmulated>0</IsEmulated>
-      <IsCondition>0</IsCondition>
-      <IsProductionBps>0</IsProductionBps>
-      <ConditionType>WhenTrue</ConditionType>
-      <LocationType>SourceLocation</LocationType>
-      <TextPosition>
-        <Version>4</Version>
-        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>317</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>317</EndLine>
-        <EndColumn>2</EndColumn>
-        <MarkerId>0</MarkerId>
-        <IsLineBased>0</IsLineBased>
-        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
-        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
-        <Checksum>
-          <Version>1</Version>
-          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
-          <ByteCount>0</ByteCount>
-          <Bytes />
-        </Checksum>
-      </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>5</NamedLocationLine>
-      <NamedLocationColumn>0</NamedLocationColumn>
-      <HitCountType>NoHitCount</HitCountType>
-      <HitCountTarget>1</HitCountTarget>
-      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
-      <IsMapped>0</IsMapped>
-      <BreakpointType>PendingBreakpoint</BreakpointType>
-      <AddressLocation>
-        <Version>0</Version>
-        <MarkerId>0</MarkerId>
-        <FunctionLine>0</FunctionLine>
-        <FunctionColumn>0</FunctionColumn>
-        <Language>00000000-0000-0000-0000-000000000000</Language>
-      </AddressLocation>
-      <DataCount>4</DataCount>
-      <IsTracepointActive>0</IsTracepointActive>
-      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
-      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
-      <IsBreakWhenHit>1</IsBreakWhenHit>
-      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
-      <UseChecksum>1</UseChecksum>
-      <Labels />
-      <RequestRemapped>0</RequestRemapped>
-      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
-      <SnapshotCountTarget>1</SnapshotCountTarget>
-      <parentIndex>-1</parentIndex>
-      <IsTemporary>0</IsTemporary>
-      <BreakpointId>17</BreakpointId>
-      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>17</BreakpointIdForGroup>
-    </Breakpoint>
-    <Breakpoint>
-      <Version>65536</Version>
-      <IsEnabled>1</IsEnabled>
-      <IsVisible>1</IsVisible>
-      <IsEmulated>0</IsEmulated>
-      <IsCondition>0</IsCondition>
-      <IsProductionBps>0</IsProductionBps>
-      <ConditionType>WhenTrue</ConditionType>
-      <LocationType>SourceLocation</LocationType>
-      <TextPosition>
-        <Version>4</Version>
-        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>405</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>405</EndLine>
-        <EndColumn>2</EndColumn>
-        <MarkerId>0</MarkerId>
-        <IsLineBased>0</IsLineBased>
-        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
-        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
-        <Checksum>
-          <Version>1</Version>
-          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
-          <ByteCount>0</ByteCount>
-          <Bytes />
-        </Checksum>
-      </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AddProductToInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] Product product,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>6</NamedLocationLine>
-      <NamedLocationColumn>0</NamedLocationColumn>
-      <HitCountType>NoHitCount</HitCountType>
-      <HitCountTarget>1</HitCountTarget>
-      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
-      <IsMapped>0</IsMapped>
-      <BreakpointType>PendingBreakpoint</BreakpointType>
-      <AddressLocation>
-        <Version>0</Version>
-        <MarkerId>0</MarkerId>
-        <FunctionLine>0</FunctionLine>
-        <FunctionColumn>0</FunctionColumn>
-        <Language>00000000-0000-0000-0000-000000000000</Language>
-      </AddressLocation>
-      <DataCount>4</DataCount>
-      <IsTracepointActive>0</IsTracepointActive>
-      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
-      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
-      <IsBreakWhenHit>1</IsBreakWhenHit>
-      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
-      <UseChecksum>1</UseChecksum>
-      <Labels />
-      <RequestRemapped>0</RequestRemapped>
-      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
-      <SnapshotCountTarget>1</SnapshotCountTarget>
-      <parentIndex>-1</parentIndex>
-      <IsTemporary>0</IsTemporary>
-      <BreakpointId>18</BreakpointId>
-      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>18</BreakpointIdForGroup>
-    </Breakpoint>
-    <Breakpoint>
-      <Version>65536</Version>
-      <IsEnabled>1</IsEnabled>
-      <IsVisible>1</IsVisible>
-      <IsEmulated>0</IsEmulated>
-      <IsCondition>0</IsCondition>
-      <IsProductionBps>0</IsProductionBps>
-      <ConditionType>WhenTrue</ConditionType>
-      <LocationType>SourceLocation</LocationType>
-      <TextPosition>
-        <Version>4</Version>
-        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>486</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>486</EndLine>
-        <EndColumn>2</EndColumn>
-        <MarkerId>0</MarkerId>
-        <IsLineBased>0</IsLineBased>
-        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
-        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
-        <Checksum>
-          <Version>1</Version>
-          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
-          <ByteCount>0</ByteCount>
-          <Bytes />
-        </Checksum>
-      </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveProductsFromInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>5</NamedLocationLine>
-      <NamedLocationColumn>0</NamedLocationColumn>
-      <HitCountType>NoHitCount</HitCountType>
-      <HitCountTarget>1</HitCountTarget>
-      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
-      <IsMapped>0</IsMapped>
-      <BreakpointType>PendingBreakpoint</BreakpointType>
-      <AddressLocation>
-        <Version>0</Version>
-        <MarkerId>0</MarkerId>
-        <FunctionLine>0</FunctionLine>
-        <FunctionColumn>0</FunctionColumn>
-        <Language>00000000-0000-0000-0000-000000000000</Language>
-      </AddressLocation>
-      <DataCount>4</DataCount>
-      <IsTracepointActive>0</IsTracepointActive>
-      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
-      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
-      <IsBreakWhenHit>1</IsBreakWhenHit>
-      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
-      <UseChecksum>1</UseChecksum>
-      <Labels />
-      <RequestRemapped>0</RequestRemapped>
-      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
-      <SnapshotCountTarget>1</SnapshotCountTarget>
-      <parentIndex>-1</parentIndex>
-      <IsTemporary>0</IsTemporary>
-      <BreakpointId>19</BreakpointId>
-      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>19</BreakpointIdForGroup>
-    </Breakpoint>
-    <Breakpoint>
-      <Version>65536</Version>
-      <IsEnabled>1</IsEnabled>
-      <IsVisible>1</IsVisible>
-      <IsEmulated>0</IsEmulated>
-      <IsCondition>0</IsCondition>
-      <IsProductionBps>0</IsProductionBps>
-      <ConditionType>WhenTrue</ConditionType>
-      <LocationType>SourceLocation</LocationType>
-      <TextPosition>
-        <Version>4</Version>
-        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>586</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>586</EndLine>
-        <EndColumn>2</EndColumn>
-        <MarkerId>0</MarkerId>
-        <IsLineBased>0</IsLineBased>
-        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
-        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
-        <Checksum>
-          <Version>1</Version>
-          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
-          <ByteCount>0</ByteCount>
-          <Bytes />
-        </Checksum>
-      </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RemoveProductFromInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromQuery] string productName,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>6</NamedLocationLine>
-      <NamedLocationColumn>0</NamedLocationColumn>
-      <HitCountType>NoHitCount</HitCountType>
-      <HitCountTarget>1</HitCountTarget>
-      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
-      <IsMapped>0</IsMapped>
-      <BreakpointType>PendingBreakpoint</BreakpointType>
-      <AddressLocation>
-        <Version>0</Version>
-        <MarkerId>0</MarkerId>
-        <FunctionLine>0</FunctionLine>
-        <FunctionColumn>0</FunctionColumn>
-        <Language>00000000-0000-0000-0000-000000000000</Language>
-      </AddressLocation>
-      <DataCount>4</DataCount>
-      <IsTracepointActive>0</IsTracepointActive>
-      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
-      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
-      <IsBreakWhenHit>1</IsBreakWhenHit>
-      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
-      <UseChecksum>1</UseChecksum>
-      <Labels />
-      <RequestRemapped>0</RequestRemapped>
-      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
-      <SnapshotCountTarget>1</SnapshotCountTarget>
-      <parentIndex>-1</parentIndex>
-      <IsTemporary>0</IsTemporary>
-      <BreakpointId>20</BreakpointId>
-      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>20</BreakpointIdForGroup>
-    </Breakpoint>
-    <Breakpoint>
-      <Version>65536</Version>
-      <IsEnabled>1</IsEnabled>
-      <IsVisible>1</IsVisible>
-      <IsEmulated>0</IsEmulated>
-      <IsCondition>0</IsCondition>
-      <IsProductionBps>0</IsProductionBps>
-      <ConditionType>WhenTrue</ConditionType>
-      <LocationType>SourceLocation</LocationType>
-      <TextPosition>
-        <Version>4</Version>
-        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>679</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>679</EndLine>
-        <EndColumn>2</EndColumn>
-        <MarkerId>0</MarkerId>
-        <IsLineBased>0</IsLineBased>
-        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
-        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
-        <Checksum>
-          <Version>1</Version>
-          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
-          <ByteCount>0</ByteCount>
-          <Bytes />
-        </Checksum>
-      </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateProductInInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromQuery] string productName,
-		[FromBody] Product productInformation,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.CreateNewInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromBody] CreateInvoiceDto invoiceDto,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -643,10 +137,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>778</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>778</EndLine>
-        <EndColumn>2</EndColumn>
+        <startLine>443</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>443</EndLine>
+        <EndColumn>3</EndColumn>
         <MarkerId>0</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -658,139 +152,15 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveMerchantFromInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>5</NamedLocationLine>
-      <NamedLocationColumn>0</NamedLocationColumn>
-      <HitCountType>NoHitCount</HitCountType>
-      <HitCountTarget>1</HitCountTarget>
-      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
-      <IsMapped>0</IsMapped>
-      <BreakpointType>PendingBreakpoint</BreakpointType>
-      <AddressLocation>
-        <Version>0</Version>
-        <MarkerId>0</MarkerId>
-        <FunctionLine>0</FunctionLine>
-        <FunctionColumn>0</FunctionColumn>
-        <Language>00000000-0000-0000-0000-000000000000</Language>
-      </AddressLocation>
-      <DataCount>4</DataCount>
-      <IsTracepointActive>0</IsTracepointActive>
-      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
-      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
-      <IsBreakWhenHit>1</IsBreakWhenHit>
-      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
-      <UseChecksum>1</UseChecksum>
-      <Labels />
-      <RequestRemapped>0</RequestRemapped>
-      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
-      <SnapshotCountTarget>1</SnapshotCountTarget>
-      <parentIndex>-1</parentIndex>
-      <IsTemporary>0</IsTemporary>
-      <BreakpointId>21</BreakpointId>
-      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>21</BreakpointIdForGroup>
-    </Breakpoint>
-    <Breakpoint>
-      <Version>65536</Version>
-      <IsEnabled>1</IsEnabled>
-      <IsVisible>1</IsVisible>
-      <IsEmulated>0</IsEmulated>
-      <IsCondition>0</IsCondition>
-      <IsProductionBps>0</IsProductionBps>
-      <ConditionType>WhenTrue</ConditionType>
-      <LocationType>SourceLocation</LocationType>
-      <TextPosition>
-        <Version>4</Version>
-        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>889</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>889</EndLine>
-        <EndColumn>2</EndColumn>
-        <MarkerId>0</MarkerId>
-        <IsLineBased>0</IsLineBased>
-        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
-        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
-        <Checksum>
-          <Version>1</Version>
-          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
-          <ByteCount>0</ByteCount>
-          <Bytes />
-        </Checksum>
-      </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AddMerchantToInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] Merchant merchant,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>6</NamedLocationLine>
-      <NamedLocationColumn>0</NamedLocationColumn>
-      <HitCountType>NoHitCount</HitCountType>
-      <HitCountTarget>1</HitCountTarget>
-      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
-      <IsMapped>0</IsMapped>
-      <BreakpointType>PendingBreakpoint</BreakpointType>
-      <AddressLocation>
-        <Version>0</Version>
-        <MarkerId>0</MarkerId>
-        <FunctionLine>0</FunctionLine>
-        <FunctionColumn>0</FunctionColumn>
-        <Language>00000000-0000-0000-0000-000000000000</Language>
-      </AddressLocation>
-      <DataCount>4</DataCount>
-      <IsTracepointActive>0</IsTracepointActive>
-      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
-      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
-      <IsBreakWhenHit>1</IsBreakWhenHit>
-      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
-      <UseChecksum>1</UseChecksum>
-      <Labels />
-      <RequestRemapped>0</RequestRemapped>
-      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
-      <SnapshotCountTarget>1</SnapshotCountTarget>
-      <parentIndex>-1</parentIndex>
-      <IsTemporary>0</IsTemporary>
-      <BreakpointId>22</BreakpointId>
-      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>22</BreakpointIdForGroup>
-    </Breakpoint>
-    <Breakpoint>
-      <Version>65536</Version>
-      <IsEnabled>1</IsEnabled>
-      <IsVisible>1</IsVisible>
-      <IsEmulated>0</IsEmulated>
-      <IsCondition>0</IsCondition>
-      <IsProductionBps>0</IsProductionBps>
-      <ConditionType>WhenTrue</ConditionType>
-      <LocationType>SourceLocation</LocationType>
-      <TextPosition>
-        <Version>4</Version>
-        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>979</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>979</EndLine>
-        <EndColumn>2</EndColumn>
-        <MarkerId>0</MarkerId>
-        <IsLineBased>0</IsLineBased>
-        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
-        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
-        <Checksum>
-          <Version>1</Version>
-          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
-          <ByteCount>0</ByteCount>
-          <Bytes />
-        </Checksum>
-      </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RemoveMerchantFromInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>5</NamedLocationLine>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AddProductToInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] Product product,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
       <HitCountTarget>1</HitCountTarget>
@@ -833,10 +203,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>1070</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>1070</EndLine>
-        <EndColumn>2</EndColumn>
+        <startLine>501</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>501</EndLine>
+        <EndColumn>3</EndColumn>
         <MarkerId>0</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -848,13 +218,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateMerchantInInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] Merchant merchant,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>6</NamedLocationLine>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveProductsFromInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
       <HitCountTarget>1</HitCountTarget>
@@ -881,9 +252,9 @@
       <SnapshotCountTarget>1</SnapshotCountTarget>
       <parentIndex>-1</parentIndex>
       <IsTemporary>0</IsTemporary>
-      <BreakpointId>23</BreakpointId>
+      <BreakpointId>8</BreakpointId>
       <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>23</BreakpointIdForGroup>
+      <BreakpointIdForGroup>8</BreakpointIdForGroup>
     </Breakpoint>
     <Breakpoint>
       <Version>65536</Version>
@@ -897,10 +268,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>1160</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>1160</EndLine>
-        <EndColumn>2</EndColumn>
+        <startLine>815</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>815</EndLine>
+        <EndColumn>3</EndColumn>
         <MarkerId>0</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -912,12 +283,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.CreateNewMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromBody] CreateMerchantDto merchantDto,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>5</NamedLocationLine>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RemoveMerchantFromInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
       <HitCountTarget>1</HitCountTarget>
@@ -944,9 +317,9 @@
       <SnapshotCountTarget>1</SnapshotCountTarget>
       <parentIndex>-1</parentIndex>
       <IsTemporary>0</IsTemporary>
-      <BreakpointId>24</BreakpointId>
+      <BreakpointId>13</BreakpointId>
       <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>24</BreakpointIdForGroup>
+      <BreakpointIdForGroup>13</BreakpointIdForGroup>
     </Breakpoint>
     <Breakpoint>
       <Version>65536</Version>
@@ -960,10 +333,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>1232</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>1232</EndLine>
-        <EndColumn>2</EndColumn>
+        <startLine>85</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>85</EndLine>
+        <EndColumn>3</EndColumn>
         <MarkerId>0</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -975,12 +348,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveAllMerchantsAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromBody] Guid parentCompanyId,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>5</NamedLocationLine>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveSpecificInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
       <HitCountTarget>1</HitCountTarget>
@@ -1023,10 +398,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>1305</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>1305</EndLine>
-        <EndColumn>2</EndColumn>
+        <startLine>747</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>747</EndLine>
+        <EndColumn>3</EndColumn>
         <MarkerId>0</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -1038,12 +413,274 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveSpecificMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromQuery] Guid parentCompanyId,
-		ClaimsPrincipal principal)</NamedLocationText>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AddMerchantToInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] Merchant merchant,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>12</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>12</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>953</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>953</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveInvoiceScanAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>7</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>15</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>15</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>1014</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1014</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateInvoiceScanAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] InvoiceScan invoiceScanDto,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>16</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>16</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>685</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>685</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveMerchantFromInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>7</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>11</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>11</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>139</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>139</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveAllInvoicesAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
       <NamedLocationLine>6</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
@@ -1087,10 +724,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>1379</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>1379</EndLine>
-        <EndColumn>2</EndColumn>
+        <startLine>247</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>247</EndLine>
+        <EndColumn>3</EndColumn>
         <MarkerId>0</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -1102,77 +739,15 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateSpecificMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] Merchant merchantPayload,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>6</NamedLocationLine>
-      <NamedLocationColumn>0</NamedLocationColumn>
-      <HitCountType>NoHitCount</HitCountType>
-      <HitCountTarget>1</HitCountTarget>
-      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
-      <IsMapped>0</IsMapped>
-      <BreakpointType>PendingBreakpoint</BreakpointType>
-      <AddressLocation>
-        <Version>0</Version>
-        <MarkerId>0</MarkerId>
-        <FunctionLine>0</FunctionLine>
-        <FunctionColumn>0</FunctionColumn>
-        <Language>00000000-0000-0000-0000-000000000000</Language>
-      </AddressLocation>
-      <DataCount>4</DataCount>
-      <IsTracepointActive>0</IsTracepointActive>
-      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
-      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
-      <IsBreakWhenHit>1</IsBreakWhenHit>
-      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
-      <UseChecksum>1</UseChecksum>
-      <Labels />
-      <RequestRemapped>0</RequestRemapped>
-      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
-      <SnapshotCountTarget>1</SnapshotCountTarget>
-      <parentIndex>-1</parentIndex>
-      <IsTemporary>0</IsTemporary>
-      <BreakpointId>4</BreakpointId>
-      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>4</BreakpointIdForGroup>
-    </Breakpoint>
-    <Breakpoint>
-      <Version>65536</Version>
-      <IsEnabled>1</IsEnabled>
-      <IsVisible>1</IsVisible>
-      <IsEmulated>0</IsEmulated>
-      <IsCondition>0</IsCondition>
-      <IsProductionBps>0</IsProductionBps>
-      <ConditionType>WhenTrue</ConditionType>
-      <LocationType>SourceLocation</LocationType>
-      <TextPosition>
-        <Version>4</Version>
-        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>1461</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>1461</EndLine>
-        <EndColumn>2</EndColumn>
-        <MarkerId>0</MarkerId>
-        <IsLineBased>0</IsLineBased>
-        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
-        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
-        <Checksum>
-          <Version>1</Version>
-          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
-          <ByteCount>0</ByteCount>
-          <Bytes />
-        </Checksum>
-      </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromQuery] Guid parentCompanyId,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>6</NamedLocationLine>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateSpecificInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] Invoice invoicePayload,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
       <HitCountTarget>1</HitCountTarget>
@@ -1215,10 +790,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>1542</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>1542</EndLine>
-        <EndColumn>2</EndColumn>
+        <startLine>889</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>889</EndLine>
+        <EndColumn>3</EndColumn>
         <MarkerId>0</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -1230,12 +805,81 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveInvoicesFromMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>5</NamedLocationLine>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.CreateInvoiceScanAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] InvoiceScan invoiceScanDto,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>14</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>14</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>557</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>557</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RemoveProductFromInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromQuery] string productName,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
       <HitCountTarget>1</HitCountTarget>
@@ -1278,10 +922,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>1591</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>1591</EndLine>
-        <EndColumn>2</EndColumn>
+        <startLine>384</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>384</EndLine>
+        <EndColumn>3</EndColumn>
         <MarkerId>0</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -1293,13 +937,81 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AddInvoiceToMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid merchantId,
-		[FromBody] IEnumerable&lt;Guid&gt; invoiceIdentifiers,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>6</NamedLocationLine>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>7</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>6</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>6</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>617</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>617</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateProductInInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromQuery] string productName,
+        [FromBody] Product productInformation,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>9</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
       <HitCountTarget>1</HitCountTarget>
@@ -1342,10 +1054,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>1640</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>1640</EndLine>
-        <EndColumn>2</EndColumn>
+        <startLine>1195</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1195</EndLine>
+        <EndColumn>3</EndColumn>
         <MarkerId>0</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -1357,13 +1069,15 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RemoveInvoiceFromMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid merchantId,
-		[FromBody] IEnumerable&lt;Guid&gt; invoiceIdentifiers,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>6</NamedLocationLine>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.PatchInvoiceMetadataAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] IDictionary&lt;string, string&gt; invoiceMetadataPatch,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
       <HitCountTarget>1</HitCountTarget>
@@ -1390,9 +1104,9 @@
       <SnapshotCountTarget>1</SnapshotCountTarget>
       <parentIndex>-1</parentIndex>
       <IsTemporary>0</IsTemporary>
-      <BreakpointId>11</BreakpointId>
+      <BreakpointId>19</BreakpointId>
       <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>11</BreakpointIdForGroup>
+      <BreakpointIdForGroup>19</BreakpointIdForGroup>
     </Breakpoint>
     <Breakpoint>
       <Version>65536</Version>
@@ -1406,10 +1120,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>1688</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>1688</EndLine>
-        <EndColumn>2</EndColumn>
+        <startLine>1766</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1766</EndLine>
+        <EndColumn>3</EndColumn>
         <MarkerId>0</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -1421,12 +1135,15 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveProductsFromMerchantAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid merchantId,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>5</NamedLocationLine>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RemoveInvoiceFromMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] IEnumerable&lt;Guid&gt; invoiceIdentifiers,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
       <HitCountTarget>1</HitCountTarget>
@@ -1453,9 +1170,9 @@
       <SnapshotCountTarget>1</SnapshotCountTarget>
       <parentIndex>-1</parentIndex>
       <IsTemporary>0</IsTemporary>
-      <BreakpointId>12</BreakpointId>
+      <BreakpointId>27</BreakpointId>
       <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>12</BreakpointIdForGroup>
+      <BreakpointIdForGroup>27</BreakpointIdForGroup>
     </Breakpoint>
     <Breakpoint>
       <Version>65536</Version>
@@ -1469,10 +1186,10 @@
       <TextPosition>
         <Version>4</Version>
         <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
-        <startLine>1739</startLine>
-        <StartColumn>1</StartColumn>
-        <EndLine>1739</EndLine>
-        <EndColumn>2</EndColumn>
+        <startLine>1140</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1140</EndLine>
+        <EndColumn>3</EndColumn>
         <MarkerId>0</MarkerId>
         <IsLineBased>0</IsLineBased>
         <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
@@ -1484,13 +1201,14 @@
           <Bytes />
         </Checksum>
       </TextPosition>
-      <NamedLocationText>arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AnalyzeInvoiceAsync(
-		[FromServices] IInvoiceProcessingService invoiceProcessingService,
-		[FromServices] IHttpContextAccessor httpContext,
-		[FromRoute] Guid id,
-		[FromBody] AnalysisOptions options,
-		ClaimsPrincipal principal)</NamedLocationText>
-      <NamedLocationLine>6</NamedLocationLine>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveInvoiceMetadataAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>7</NamedLocationLine>
       <NamedLocationColumn>0</NamedLocationColumn>
       <HitCountType>NoHitCount</HitCountType>
       <HitCountTarget>1</HitCountTarget>
@@ -1517,9 +1235,1740 @@
       <SnapshotCountTarget>1</SnapshotCountTarget>
       <parentIndex>-1</parentIndex>
       <IsTemporary>0</IsTemporary>
-      <BreakpointId>6</BreakpointId>
+      <BreakpointId>18</BreakpointId>
       <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
-      <BreakpointIdForGroup>6</BreakpointIdForGroup>
+      <BreakpointIdForGroup>18</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>1691</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1691</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AddInvoiceToMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] IEnumerable&lt;Guid&gt; invoiceIdentifiers,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>26</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>26</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Merchants.cs</FileName>
+        <startLine>113</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>113</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.UpdateMerchantAsync(Merchant currentMerchant, Merchant updatedMerchant)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>42</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>42</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>1077</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1077</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteInvoiceScanAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>7</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>17</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>17</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Invoices.cs</FileName>
+        <startLine>46</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>46</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.ReadInvoiceAsync(Guid invoiceIdentifier)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>32</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>32</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Invoices.cs</FileName>
+        <startLine>127</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>127</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>36</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>36</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Invoices.cs</FileName>
+        <startLine>144</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>144</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.DeleteInvoiceAsync(Guid invoiceIdentifier)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>37</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>37</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>1491</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1491</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.UpdateSpecificMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] Merchant merchantPayload,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>23</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>23</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>193</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>193</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteInvoicesAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromBody] Guid userIdentifier,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>7</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>4</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>4</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>1379</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1379</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveAllMerchantsAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromBody] Guid parentCompanyId,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>7</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>21</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>21</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Invoices.cs</FileName>
+        <startLine>87</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>87</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.ReadInvoicesAsync(Guid userIdentifier)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>34</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>34</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>1623</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1623</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveInvoicesFromMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>7</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>25</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>25</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Merchants.cs</FileName>
+        <startLine>51</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>51</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.ReadMerchantsAsync()</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>45</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>45</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>1550</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1550</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromQuery] Guid parentCompanyId,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>24</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>24</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>1436</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1436</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveSpecificMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromQuery] Guid parentCompanyId,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>22</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>22</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>1841</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1841</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.RetrieveProductsFromMerchantAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>7</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>28</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>28</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>1259</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1259</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.DeleteInvoiceMetadataAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] IEnumerable&lt;string&gt; metadataKeys,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>20</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>20</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Merchants.cs</FileName>
+        <startLine>129</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>129</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.DeleteMerchantAsync(Guid merchantIdentifier)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>41</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>41</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Merchants.cs</FileName>
+        <startLine>72</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>72</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.ReadMerchantsAsync(Guid parentCompanyId)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>44</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>44</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Merchants.cs</FileName>
+        <startLine>18</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>18</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.CreateMerchantAsync(Merchant merchant)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>47</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>47</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Merchants.cs</FileName>
+        <startLine>95</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>95</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.UpdateMerchantAsync(Guid merchantIdentifier, Merchant updatedMerchant)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>43</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>43</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Invoices.cs</FileName>
+        <startLine>111</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>111</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.UpdateInvoiceAsync(Guid invoiceIdentifier, Invoice updatedInvoice)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>35</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>35</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>1917</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>1917</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.AnalyzeInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] AnalysisOptions options,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>29</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>29</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Invoices.cs</FileName>
+        <startLine>31</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>31</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>31</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>31</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Invoices.cs</FileName>
+        <startLine>204</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>204</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.DeleteInvoicesAsync(Guid userIdentifier)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>39</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>39</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Invoices.cs</FileName>
+        <startLine>65</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>65</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.ReadInvoicesAsync()</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>33</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>33</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Invoices.cs</FileName>
+        <startLine>17</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>17</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.CreateInvoiceAsync(Invoice invoice)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>30</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>30</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Brokers\DatabaseBroker\InvoiceNoSqlBroker.Invoices.cs</FileName>
+        <startLine>179</startLine>
+        <StartColumn>1</StartColumn>
+        <EndLine>179</EndLine>
+        <EndColumn>2</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker.DeleteInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier)</NamedLocationText>
+      <NamedLocationLine>1</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>38</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>38</BreakpointIdForGroup>
+    </Breakpoint>
+    <Breakpoint>
+      <Version>65536</Version>
+      <IsEnabled>1</IsEnabled>
+      <IsVisible>1</IsVisible>
+      <IsEmulated>0</IsEmulated>
+      <IsCondition>0</IsCondition>
+      <IsProductionBps>0</IsProductionBps>
+      <ConditionType>WhenTrue</ConditionType>
+      <LocationType>SourceLocation</LocationType>
+      <TextPosition>
+        <Version>4</Version>
+        <FileName>.\sites\api.arolariu.ro\src\Invoices\Endpoints\InvoiceEndpoints.Handlers.cs</FileName>
+        <startLine>306</startLine>
+        <StartColumn>2</StartColumn>
+        <EndLine>306</EndLine>
+        <EndColumn>3</EndColumn>
+        <MarkerId>0</MarkerId>
+        <IsLineBased>0</IsLineBased>
+        <IsDocumentPathNotFound>0</IsDocumentPathNotFound>
+        <ShouldUpdateTextSpan>1</ShouldUpdateTextSpan>
+        <Checksum>
+          <Version>1</Version>
+          <Algorithm>00000000-0000-0000-0000-000000000000</Algorithm>
+          <ByteCount>0</ByteCount>
+          <Bytes />
+        </Checksum>
+      </TextPosition>
+      <NamedLocationText>
+        arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints.PatchSpecificInvoiceAsync(
+        [FromServices] IInvoiceProcessingService invoiceProcessingService,
+        [FromServices] IHttpContextAccessor httpContext,
+        [FromRoute] Guid id,
+        [FromBody] Invoice invoicePayload,
+        ClaimsPrincipal principal)
+      </NamedLocationText>
+      <NamedLocationLine>8</NamedLocationLine>
+      <NamedLocationColumn>0</NamedLocationColumn>
+      <HitCountType>NoHitCount</HitCountType>
+      <HitCountTarget>1</HitCountTarget>
+      <Language>3f5162f8-07c6-11d3-9053-00c04fa302a1</Language>
+      <IsMapped>0</IsMapped>
+      <BreakpointType>PendingBreakpoint</BreakpointType>
+      <AddressLocation>
+        <Version>0</Version>
+        <MarkerId>0</MarkerId>
+        <FunctionLine>0</FunctionLine>
+        <FunctionColumn>0</FunctionColumn>
+        <Language>00000000-0000-0000-0000-000000000000</Language>
+      </AddressLocation>
+      <DataCount>4</DataCount>
+      <IsTracepointActive>0</IsTracepointActive>
+      <TracepointTargetType>VsOutputWindow</TracepointTargetType>
+      <TimeTravelTraceMarker>NoTracing</TimeTravelTraceMarker>
+      <IsBreakWhenHit>1</IsBreakWhenHit>
+      <IsRunMacroWhenHit>0</IsRunMacroWhenHit>
+      <UseChecksum>1</UseChecksum>
+      <Labels />
+      <RequestRemapped>0</RequestRemapped>
+      <IsSnapshotWhenHit>1</IsSnapshotWhenHit>
+      <SnapshotCountTarget>1</SnapshotCountTarget>
+      <parentIndex>-1</parentIndex>
+      <IsTemporary>0</IsTemporary>
+      <BreakpointId>40</BreakpointId>
+      <PrerequisiteBreakpointId>0</PrerequisiteBreakpointId>
+      <BreakpointIdForGroup>40</BreakpointIdForGroup>
     </Breakpoint>
   </Breakpoints>
 </BreakpointCollection>

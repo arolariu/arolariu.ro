@@ -9,19 +9,73 @@
   <url>
     <loc>https://arolariu.ro/about</loc>
     <lastmod>2025-05-16</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://arolariu.ro/about/the-author</loc>
+    <lastmod>2025-05-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://arolariu.ro/about/the-platform</loc>
+    <lastmod>2025-05-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://arolariu.ro/auth</loc>
+    <lastmod>2025-05-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://arolariu.ro/auth/sign-in</loc>
+    <lastmod>2025-05-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://arolariu.ro/auth/sign-up</loc>
+    <lastmod>2025-05-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
   </url>
   <url>
     <loc>https://arolariu.ro/domains</loc>
     <lastmod>2025-05-16</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://arolariu.ro/privacy-and-terms</loc>
+    <loc>https://arolariu.ro/domains/invoices</loc>
     <lastmod>2025-05-16</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://arolariu.ro/domains/invoices/create-invoice</loc>
+    <lastmod>2025-05-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://arolariu.ro/domains/invoices/view-invoices</loc>
+    <lastmod>2025-05-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://arolariu.ro/privacy-policy</loc>
+    <lastmod>2025-05-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://arolariu.ro/terms-of-service</loc>
+    <lastmod>2025-05-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>

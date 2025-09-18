@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {useFontContext} from "@/contexts/FontContext";
@@ -41,8 +39,14 @@ function Commander(): React.JSX.Element {
   const {setFont} = useFontContext();
   const [open, setOpen] = useState<boolean>(false);
 
+  // Helper to close the palette and run a command action
+  const runCommand = useCallback((command: () => void) => {
+    setOpen(false);
+    command();
+  }, []);
+
   const handleRainbowEffect = useCallback(() => {
-    const headings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+    const headings = globalThis.document.querySelectorAll("h1, h2, h3, h4, h5, h6");
 
     for (const heading of headings) {
       const originalColor = globalThis.getComputedStyle(heading).color;
@@ -61,7 +65,7 @@ function Commander(): React.JSX.Element {
 
   const handleDiscoEffect = useCallback(() => {
     const colors = ["#FF5733", "#33FF57", "#3357FF", "#F333FF", "#FF33F3", "#33FFF3"];
-    const elements = document.querySelectorAll("section");
+    const elements = globalThis.document.querySelectorAll("section");
 
     // Store original backgrounds using map
     const originalBackgrounds = [...elements].map((element) => {
@@ -80,7 +84,6 @@ function Commander(): React.JSX.Element {
     // Reset after 10 seconds
     setTimeout(() => {
       clearInterval(discoInterval);
-      // eslint-disable-next-line unicorn/no-array-for-each -- readability
       elements.forEach((el, index) => {
         el.style.background = originalBackgrounds.at(index) ?? "#FF5733";
       });
@@ -88,7 +91,7 @@ function Commander(): React.JSX.Element {
   }, []);
 
   const handleMatrixEffect = useCallback(() => {
-    const canvas = document.createElement("canvas");
+    const canvas = globalThis.document.createElement("canvas");
 
     canvas.width = globalThis.innerWidth;
     canvas.height = globalThis.innerHeight;
@@ -98,10 +101,12 @@ function Commander(): React.JSX.Element {
     canvas.style.zIndex = "9999";
     canvas.style.pointerEvents = "none";
 
-    document.body.append(canvas);
+    globalThis.document.body.append(canvas);
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) {
+      return;
+    }
 
     const matrix = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%";
     const fontSize = 10;
@@ -111,14 +116,16 @@ function Commander(): React.JSX.Element {
     const drops: number[] = Array.from({length: columns}, () => 1);
 
     const draw = () => {
-      if (!ctx) return;
+      if (!ctx) {
+        return;
+      }
 
       ctx.fillStyle = "rgba(0, 0, 0, 0.04)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = "#0F0";
 
-      ctx.font = fontSize + "px monospace";
+      ctx.font = `${fontSize}px monospace`;
 
       // Create a new array by mapping over the drop positions
       const newDrops = drops.map((drop, index) => {
@@ -163,14 +170,112 @@ function Commander(): React.JSX.Element {
       }
     };
 
-    document.addEventListener("keydown", handleCommandsKey);
-    return () => document.removeEventListener("keydown", handleCommandsKey);
+    globalThis.document.addEventListener("keydown", handleCommandsKey);
+    return () => globalThis.document.removeEventListener("keydown", handleCommandsKey);
   }, []);
 
-  const runCommand = useCallback((command: () => void) => {
-    setOpen(false);
-    command();
-  }, []);
+  // Memoized onSelect handlers to avoid inline arrow functions in JSX
+  const onSelectHome = useCallback(
+    (_: string) => {
+      runCommand(() => {
+        router.replace("/");
+      });
+    },
+    [router, runCommand],
+  );
+
+  const onSelectThemeLight = useCallback(
+    (_: string) => {
+      runCommand(() => {
+        setTheme("light");
+      });
+    },
+    [setTheme, runCommand],
+  );
+
+  const onSelectThemeDark = useCallback(
+    (_: string) => {
+      runCommand(() => {
+        setTheme("dark");
+      });
+    },
+    [setTheme, runCommand],
+  );
+
+  const onSelectThemeSystem = useCallback(
+    (_: string) => {
+      runCommand(() => {
+        setTheme("system");
+      });
+    },
+    [setTheme, runCommand],
+  );
+
+  const onSelectLangEnglish = useCallback(
+    (_: string) => {
+      runCommand(() => {
+        void setCookie("locale", "en");
+      });
+    },
+    [runCommand],
+  );
+
+  const onSelectLangRomanian = useCallback(
+    (_: string) => {
+      runCommand(() => {
+        void setCookie("locale", "ro");
+      });
+    },
+    [runCommand],
+  );
+
+  const onSelectFontNormal = useCallback(
+    (_: string) => {
+      runCommand(() => {
+        setFont("normal");
+      });
+    },
+    [setFont, runCommand],
+  );
+
+  const onSelectFontDyslexic = useCallback(
+    (_: string) => {
+      runCommand(() => {
+        setFont("dyslexic");
+      });
+    },
+    [setFont, runCommand],
+  );
+
+  const onSelectRainbow = useCallback(
+    (_: string) => {
+      runCommand(handleRainbowEffect);
+    },
+    [runCommand, handleRainbowEffect],
+  );
+
+  const onSelectDisco = useCallback(
+    (_: string) => {
+      runCommand(handleDiscoEffect);
+    },
+    [runCommand, handleDiscoEffect],
+  );
+
+  const onSelectMatrix = useCallback(
+    (_: string) => {
+      runCommand(handleMatrixEffect);
+    },
+    [runCommand, handleMatrixEffect],
+  );
+
+  const onSelectGithub = useCallback(
+    (_: string) => {
+      runCommand(() => {
+        globalThis.open("https://github.com/arolariu", "_blank", "noopener");
+      });
+    },
+    [runCommand],
+  );
 
   return (
     <CommandDialog
@@ -183,111 +288,66 @@ function Commander(): React.JSX.Element {
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading='Navigation'>
-          <CommandItem
-            onSelect={() =>
-              runCommand(() => {
-                router.replace("/");
-              })
-            }>
+          <CommandItem onSelect={onSelectHome}>
             <TbHome className='mr-2 h-4 w-4' />
             <span>Homepage</span>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading='Set Theme'>
-          <CommandItem
-            onSelect={() =>
-              runCommand(() => {
-                setTheme("light");
-              })
-            }>
+          <CommandItem onSelect={onSelectThemeLight}>
             <TbSun className='mr-2 h-4 w-4' />
             <span>Light</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              runCommand(() => {
-                setTheme("dark");
-              })
-            }>
+          <CommandItem onSelect={onSelectThemeDark}>
             <TbMoon className='mr-2 h-4 w-4' />
             <span>Dark</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              runCommand(() => {
-                setTheme("system");
-              })
-            }>
+          <CommandItem onSelect={onSelectThemeSystem}>
             <TbSettings className='mr-2 h-4 w-4' />
             <span>System</span>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading='Set Language'>
-          <CommandItem
-            onSelect={() =>
-              runCommand(() => {
-                void setCookie("locale", "en");
-              })
-            }>
+          <CommandItem onSelect={onSelectLangEnglish}>
             <TbLanguage className='mr-2 h-4 w-4' />
             <span>English</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              runCommand(() => {
-                void setCookie("locale", "ro");
-              })
-            }>
+          <CommandItem onSelect={onSelectLangRomanian}>
             <TbLanguage className='mr-2 h-4 w-4' />
             <span>Romanian</span>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading='Set Font'>
-          <CommandItem
-            onSelect={() =>
-              runCommand(() => {
-                setFont("normal");
-              })
-            }>
+          <CommandItem onSelect={onSelectFontNormal}>
             <TbTypeface className='mr-2 h-4 w-4' />
             <span>Normal</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() =>
-              runCommand(() => {
-                setFont("dyslexic");
-              })
-            }>
+          <CommandItem onSelect={onSelectFontDyslexic}>
             <TbAccessible className='mr-2 h-4 w-4' />
             <span>Dyslexic</span>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading='Easter Eggs'>
-          <CommandItem onSelect={() => runCommand(handleRainbowEffect)}>
+          <CommandItem onSelect={onSelectRainbow}>
             <TbCpu className='mr-2 h-4 w-4' />
             <span>Rainbow Mode</span>
           </CommandItem>
-          <CommandItem onSelect={() => runCommand(handleDiscoEffect)}>
+          <CommandItem onSelect={onSelectDisco}>
             <TbCalculator className='mr-2 h-4 w-4' />
             <span>Disco Mode</span>
           </CommandItem>
-          <CommandItem onSelect={() => runCommand(handleMatrixEffect)}>
+          <CommandItem onSelect={onSelectMatrix}>
             <TbCalendar className='mr-2 h-4 w-4' />
             <span>Matrix Mode</span>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading='Links'>
-          <CommandItem
-            onSelect={() =>
-              runCommand(() => {
-                globalThis.open("https://github.com/arolariu", "_blank", "noopener");
-              })
-            }>
+          <CommandItem onSelect={onSelectGithub}>
             <TbBrandGithub className='mr-2 h-4 w-4' />
             <span>GitHub</span>
           </CommandItem>

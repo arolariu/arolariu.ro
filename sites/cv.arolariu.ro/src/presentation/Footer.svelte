@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import {footer} from "@/data";
 </script>

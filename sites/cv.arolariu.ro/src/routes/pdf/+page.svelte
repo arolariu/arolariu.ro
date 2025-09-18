@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import PdfView from "@/lib/views/PdfView.svelte";
 </script>

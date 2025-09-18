@@ -1,14 +1,6 @@
-import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import { Button } from "../dist";
-import {
-  BellIcon,
-  CheckIcon,
-  PlusIcon,
-  TrashIcon,
-  ArrowRightIcon,
-  LoaderCircleIcon,
-} from "lucide-react";
+import type {Meta, StoryObj} from "@storybook/react";
+import {ArrowRightIcon, BellIcon, CheckIcon, LoaderCircleIcon, PlusIcon, TrashIcon} from "lucide-react";
+import {Button} from "../dist";
 
 const meta: Meta<typeof Button> = {
   title: "Design System/Buttons/Button",
@@ -49,32 +41,25 @@ See the [shadcn/ui Button documentation](https://ui.shadcn.com/docs/components/b
   },
   argTypes: {
     variant: {
-      options: [
-        "default",
-        "destructive",
-        "outline",
-        "secondary",
-        "ghost",
-        "link",
-      ],
-      control: { type: "select" },
+      options: ["default", "destructive", "outline", "secondary", "ghost", "link"],
+      control: {type: "select"},
     },
     size: {
       options: ["default", "sm", "lg", "icon"],
-      control: { type: "select" },
+      control: {type: "select"},
     },
     asChild: {
       control: "boolean",
       description: "Render as the child component instead of a <button>.",
       table: {
-        defaultValue: { summary: "false" },
+        defaultValue: {summary: "false"},
       },
     },
     disabled: {
       control: "boolean",
       description: "Disable the button, making it non-interactive.",
       table: {
-        defaultValue: { summary: "false" },
+        defaultValue: {summary: "false"},
       },
     },
   },
@@ -108,13 +93,13 @@ export const AllVariants: Story = {
     },
   },
   render: () => (
-    <div className="flex flex-wrap gap-4">
-      <Button variant="default">Default</Button>
-      <Button variant="destructive">Destructive</Button>
-      <Button variant="outline">Outline</Button>
-      <Button variant="secondary">Secondary</Button>
-      <Button variant="ghost">Ghost</Button>
-      <Button variant="link">Link</Button>
+    <div className='flex flex-wrap gap-4'>
+      <Button variant='default'>Default</Button>
+      <Button variant='destructive'>Destructive</Button>
+      <Button variant='outline'>Outline</Button>
+      <Button variant='secondary'>Secondary</Button>
+      <Button variant='ghost'>Ghost</Button>
+      <Button variant='link'>Link</Button>
     </div>
   ),
 };
@@ -124,17 +109,16 @@ export const Sizes: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstrates the different button sizes: `sm`, `default`, `lg`, and `icon`.",
+        story: "Demonstrates the different button sizes: `sm`, `default`, `lg`, and `icon`.",
       },
     },
   },
   render: () => (
-    <div className="flex flex-wrap items-center gap-4">
-      <Button size="sm">Small</Button>
-      <Button size="default">Default</Button>
-      <Button size="lg">Large</Button>
-      <Button size="icon">
+    <div className='flex flex-wrap items-center gap-4'>
+      <Button size='sm'>Small</Button>
+      <Button size='default'>Default</Button>
+      <Button size='lg'>Large</Button>
+      <Button size='icon'>
         <PlusIcon />
       </Button>
     </div>
@@ -151,20 +135,20 @@ export const WithIcons: Story = {
     },
   },
   render: () => (
-    <div className="flex flex-wrap gap-4">
+    <div className='flex flex-wrap gap-4'>
       <Button>
         <BellIcon />
         Notifications
       </Button>
-      <Button variant="outline">
+      <Button variant='outline'>
         <CheckIcon />
         Confirm
       </Button>
-      <Button variant="destructive">
+      <Button variant='destructive'>
         <TrashIcon />
         Delete
       </Button>
-      <Button variant="secondary">
+      <Button variant='secondary'>
         Next
         <ArrowRightIcon />
       </Button>
@@ -177,32 +161,41 @@ export const IconButtons: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Buttons that contain only an icon, typically used for toolbars or compact UIs. Requires `size='icon'`.",
+        story: "Buttons that contain only an icon, typically used for toolbars or compact UIs. Requires `size='icon'`.",
       },
     },
   },
   render: () => (
-    <div className="flex flex-wrap gap-4">
-      <Button size="icon" variant="default">
+    <div className='flex flex-wrap gap-4'>
+      <Button
+        size='icon'
+        variant='default'>
         <PlusIcon />
-        <span className="sr-only">Add item</span>
+        <span className='sr-only'>Add item</span>
       </Button>
-      <Button size="icon" variant="outline">
+      <Button
+        size='icon'
+        variant='outline'>
         <CheckIcon />
-        <span className="sr-only">Confirm</span>
+        <span className='sr-only'>Confirm</span>
       </Button>
-      <Button size="icon" variant="destructive">
+      <Button
+        size='icon'
+        variant='destructive'>
         <TrashIcon />
-        <span className="sr-only">Delete</span>
+        <span className='sr-only'>Delete</span>
       </Button>
-      <Button size="icon" variant="secondary">
+      <Button
+        size='icon'
+        variant='secondary'>
         <ArrowRightIcon />
-        <span className="sr-only">Next</span>
+        <span className='sr-only'>Next</span>
       </Button>
-      <Button size="icon" variant="ghost">
+      <Button
+        size='icon'
+        variant='ghost'>
         <BellIcon />
-        <span className="sr-only">Notifications</span>
+        <span className='sr-only'>Notifications</span>
       </Button>
     </div>
   ),
@@ -217,27 +210,36 @@ export const Disabled: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstrates the appearance of buttons in the disabled state across different variants.",
+        story: "Demonstrates the appearance of buttons in the disabled state across different variants.",
       },
     },
   },
   render: () => (
-    <div className="flex flex-wrap gap-4">
+    <div className='flex flex-wrap gap-4'>
       <Button disabled>Disabled</Button>
-      <Button disabled variant="destructive">
+      <Button
+        disabled
+        variant='destructive'>
         Disabled
       </Button>
-      <Button disabled variant="outline">
+      <Button
+        disabled
+        variant='outline'>
         Disabled
       </Button>
-      <Button disabled variant="secondary">
+      <Button
+        disabled
+        variant='secondary'>
         Disabled
       </Button>
-      <Button disabled variant="ghost">
+      <Button
+        disabled
+        variant='ghost'>
         Disabled
       </Button>
-      <Button disabled variant="link">
+      <Button
+        disabled
+        variant='link'>
         Disabled
       </Button>
     </div>
@@ -256,17 +258,21 @@ export const Loading: Story = {
   },
   render: function LoadingButtons() {
     return (
-      <div className="flex flex-wrap gap-4">
+      <div className='flex flex-wrap gap-4'>
         <Button disabled>
-          <LoaderCircleIcon className="mr-2 size-4 animate-spin" />
+          <LoaderCircleIcon className='mr-2 size-4 animate-spin' />
           Loading
         </Button>
-        <Button disabled variant="destructive">
-          <LoaderCircleIcon className="mr-2 size-4 animate-spin" />
+        <Button
+          disabled
+          variant='destructive'>
+          <LoaderCircleIcon className='mr-2 size-4 animate-spin' />
           Loading
         </Button>
-        <Button disabled variant="outline">
-          <LoaderCircleIcon className="mr-2 size-4 animate-spin" />
+        <Button
+          disabled
+          variant='outline'>
+          <LoaderCircleIcon className='mr-2 size-4 animate-spin' />
           Loading
         </Button>
       </div>
@@ -279,18 +285,19 @@ export const AsChild: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Using the `asChild` prop to render an anchor tag (`<a>`) styled as a button.",
+        story: "Using the `asChild` prop to render an anchor tag (`<a>`) styled as a button.",
       },
     },
   },
   render: () => (
-    <div className="flex flex-wrap gap-4">
+    <div className='flex flex-wrap gap-4'>
       <Button asChild>
-        <a href="#">Link that looks like a button</a>
+        <a href='#'>Link that looks like a button</a>
       </Button>
-      <Button variant="outline" asChild>
-        <a href="#">Outline link</a>
+      <Button
+        variant='outline'
+        asChild>
+        <a href='#'>Outline link</a>
       </Button>
     </div>
   ),
@@ -301,16 +308,15 @@ export const ButtonGroup: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "An example showing how buttons can be grouped visually, often using a container with specific styling.",
+        story: "An example showing how buttons can be grouped visually, often using a container with specific styling.",
       },
     },
   },
   render: () => (
-    <div className="inline-flex flex-wrap gap-1 rounded-md border p-1">
-      <Button variant="secondary">Profile</Button>
-      <Button variant="ghost">Settings</Button>
-      <Button variant="ghost">Messages</Button>
+    <div className='inline-flex flex-wrap gap-1 rounded-md border p-1'>
+      <Button variant='secondary'>Profile</Button>
+      <Button variant='ghost'>Settings</Button>
+      <Button variant='ghost'>Messages</Button>
     </div>
   ),
 };
@@ -320,20 +326,17 @@ export const CustomStyled: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstrates applying custom CSS classes to override or extend the default button styles.",
+        story: "Demonstrates applying custom CSS classes to override or extend the default button styles.",
       },
     },
   },
   render: () => (
-    <div className="flex flex-wrap gap-4">
-      <Button className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800">
-        <PlusIcon className="size-4" />
+    <div className='flex flex-wrap gap-4'>
+      <Button className='bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800'>
+        <PlusIcon className='size-4' />
         Custom Blue
       </Button>
-      <Button className="bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600">
-        Gradient
-      </Button>
+      <Button className='bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:from-pink-600 hover:to-purple-600'>Gradient</Button>
     </div>
   ),
 };

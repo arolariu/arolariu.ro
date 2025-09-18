@@ -1,8 +1,22 @@
-import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
+import type {Meta, StoryObj} from "@storybook/react";
 import {
+  BellIcon,
+  CloudIcon,
+  ComputerIcon,
+  CreditCardIcon,
+  GlobeIcon,
+  KeyIcon,
+  LifeBuoyIcon,
+  LogOutIcon,
+  MenuIcon,
+  SettingsIcon,
+  ShieldIcon,
+  SmartphoneIcon,
+  UserIcon,
+} from "lucide-react";
+import {
+  Button,
   DropDrawer,
-  DropDrawerTrigger,
   DropDrawerContent,
   DropDrawerFooter,
   DropDrawerGroup,
@@ -12,23 +26,8 @@ import {
   DropDrawerSub,
   DropDrawerSubContent,
   DropDrawerSubTrigger,
-  Button,
+  DropDrawerTrigger,
 } from "../dist";
-import {
-  UserIcon,
-  SettingsIcon,
-  LogOutIcon,
-  CreditCardIcon,
-  CloudIcon,
-  GlobeIcon,
-  BellIcon,
-  MenuIcon,
-  LifeBuoyIcon,
-  ShieldIcon,
-  KeyIcon,
-  SmartphoneIcon,
-  ComputerIcon,
-} from "lucide-react";
 
 const meta: Meta<typeof DropDrawer> = {
   title: "Design System/DropDrawer",
@@ -81,21 +80,21 @@ export const Basic: Story = {
   render: () => (
     <DropDrawer>
       <DropDrawerTrigger asChild>
-        <Button variant="outline">Open Menu</Button>
+        <Button variant='outline'>Open Menu</Button>
       </DropDrawerTrigger>
       <DropDrawerContent>
         <DropDrawerLabel>My Account</DropDrawerLabel>
         <DropDrawerItem>
-          <UserIcon className="mr-2 h-4 w-4" />
+          <UserIcon className='mr-2 h-4 w-4' />
           Profile
         </DropDrawerItem>
         <DropDrawerItem>
-          <SettingsIcon className="mr-2 h-4 w-4" />
+          <SettingsIcon className='mr-2 h-4 w-4' />
           Settings
         </DropDrawerItem>
         <DropDrawerSeparator />
-        <DropDrawerItem variant="destructive">
-          <LogOutIcon className="mr-2 h-4 w-4" />
+        <DropDrawerItem variant='destructive'>
+          <LogOutIcon className='mr-2 h-4 w-4' />
           Logout
         </DropDrawerItem>
       </DropDrawerContent>
@@ -104,8 +103,7 @@ export const Basic: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "A basic implementation of the DropDrawer component with simple menu items.",
+        story: "A basic implementation of the DropDrawer component with simple menu items.",
       },
     },
   },
@@ -116,24 +114,24 @@ export const WithGroups: Story = {
   render: () => (
     <DropDrawer>
       <DropDrawerTrigger asChild>
-        <Button variant="outline">
-          <MenuIcon className="mr-2 h-4 w-4" />
+        <Button variant='outline'>
+          <MenuIcon className='mr-2 h-4 w-4' />
           Menu with Groups
         </Button>
       </DropDrawerTrigger>
-      <DropDrawerContent className="w-56">
+      <DropDrawerContent className='w-56'>
         <DropDrawerLabel>Account</DropDrawerLabel>
         <DropDrawerGroup>
           <DropDrawerItem>
-            <UserIcon className="mr-2 h-4 w-4" />
+            <UserIcon className='mr-2 h-4 w-4' />
             Profile
           </DropDrawerItem>
           <DropDrawerItem>
-            <CreditCardIcon className="mr-2 h-4 w-4" />
+            <CreditCardIcon className='mr-2 h-4 w-4' />
             Billing
           </DropDrawerItem>
           <DropDrawerItem>
-            <SettingsIcon className="mr-2 h-4 w-4" />
+            <SettingsIcon className='mr-2 h-4 w-4' />
             Settings
           </DropDrawerItem>
         </DropDrawerGroup>
@@ -141,17 +139,17 @@ export const WithGroups: Story = {
         <DropDrawerLabel>Support</DropDrawerLabel>
         <DropDrawerGroup>
           <DropDrawerItem>
-            <LifeBuoyIcon className="mr-2 h-4 w-4" />
+            <LifeBuoyIcon className='mr-2 h-4 w-4' />
             Help Center
           </DropDrawerItem>
           <DropDrawerItem>
-            <BellIcon className="mr-2 h-4 w-4" />
+            <BellIcon className='mr-2 h-4 w-4' />
             Notifications
           </DropDrawerItem>
         </DropDrawerGroup>
         <DropDrawerSeparator />
-        <DropDrawerItem variant="destructive">
-          <LogOutIcon className="mr-2 h-4 w-4" />
+        <DropDrawerItem variant='destructive'>
+          <LogOutIcon className='mr-2 h-4 w-4' />
           Logout
         </DropDrawerItem>
       </DropDrawerContent>
@@ -171,31 +169,31 @@ export const WithSubmenus: Story = {
   render: () => (
     <DropDrawer>
       <DropDrawerTrigger asChild>
-        <Button variant="outline">
-          <MenuIcon className="mr-2 h-4 w-4" />
+        <Button variant='outline'>
+          <MenuIcon className='mr-2 h-4 w-4' />
           Menu with Submenus
         </Button>
       </DropDrawerTrigger>
-      <DropDrawerContent className="w-56">
+      <DropDrawerContent className='w-56'>
         <DropDrawerLabel>Account</DropDrawerLabel>
         <DropDrawerItem>
-          <UserIcon className="mr-2 h-4 w-4" />
+          <UserIcon className='mr-2 h-4 w-4' />
           Profile
         </DropDrawerItem>
         <DropDrawerSeparator />
 
         <DropDrawerSub>
           <DropDrawerSubTrigger>
-            <ShieldIcon className="mr-2 h-4 w-4" />
+            <ShieldIcon className='mr-2 h-4 w-4' />
             Security
           </DropDrawerSubTrigger>
           <DropDrawerSubContent>
             <DropDrawerItem>
-              <KeyIcon className="mr-2 h-4 w-4" />
+              <KeyIcon className='mr-2 h-4 w-4' />
               Password
             </DropDrawerItem>
             <DropDrawerItem>
-              <SmartphoneIcon className="mr-2 h-4 w-4" />
+              <SmartphoneIcon className='mr-2 h-4 w-4' />
               Two-factor Auth
             </DropDrawerItem>
           </DropDrawerSubContent>
@@ -203,21 +201,21 @@ export const WithSubmenus: Story = {
 
         <DropDrawerSub>
           <DropDrawerSubTrigger>
-            <CloudIcon className="mr-2 h-4 w-4" />
+            <CloudIcon className='mr-2 h-4 w-4' />
             Cloud Services
           </DropDrawerSubTrigger>
           <DropDrawerSubContent>
             <DropDrawerItem>
-              <GlobeIcon className="mr-2 h-4 w-4" />
+              <GlobeIcon className='mr-2 h-4 w-4' />
               CDN
             </DropDrawerItem>
             <DropDrawerItem>
-              <ComputerIcon className="mr-2 h-4 w-4" />
+              <ComputerIcon className='mr-2 h-4 w-4' />
               Hosting
             </DropDrawerItem>
             <DropDrawerSub>
               <DropDrawerSubTrigger>
-                <DatabaseIcon className="mr-2 h-4 w-4" />
+                <DatabaseIcon className='mr-2 h-4 w-4' />
                 Databases
               </DropDrawerSubTrigger>
               <DropDrawerSubContent>
@@ -231,11 +229,11 @@ export const WithSubmenus: Story = {
 
         <DropDrawerSeparator />
         <DropDrawerItem>
-          <SettingsIcon className="mr-2 h-4 w-4" />
+          <SettingsIcon className='mr-2 h-4 w-4' />
           Settings
         </DropDrawerItem>
-        <DropDrawerItem variant="destructive">
-          <LogOutIcon className="mr-2 h-4 w-4" />
+        <DropDrawerItem variant='destructive'>
+          <LogOutIcon className='mr-2 h-4 w-4' />
           Logout
         </DropDrawerItem>
       </DropDrawerContent>
@@ -244,8 +242,7 @@ export const WithSubmenus: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "DropDrawer with multi-level nested submenus, showcasing the nested navigation capability.",
+        story: "DropDrawer with multi-level nested submenus, showcasing the nested navigation capability.",
       },
     },
   },
@@ -256,9 +253,9 @@ export const WithFooter: Story = {
   render: () => (
     <DropDrawer>
       <DropDrawerTrigger asChild>
-        <Button variant="outline">Menu with Footer</Button>
+        <Button variant='outline'>Menu with Footer</Button>
       </DropDrawerTrigger>
-      <DropDrawerContent className="w-56">
+      <DropDrawerContent className='w-56'>
         <DropDrawerLabel>Navigation</DropDrawerLabel>
         <DropDrawerItem>Dashboard</DropDrawerItem>
         <DropDrawerItem>Projects</DropDrawerItem>
@@ -266,7 +263,7 @@ export const WithFooter: Story = {
         <DropDrawerSeparator />
         <DropDrawerItem>Settings</DropDrawerItem>
         <DropDrawerFooter>
-          <Button className="w-full">New Project</Button>
+          <Button className='w-full'>New Project</Button>
         </DropDrawerFooter>
       </DropDrawerContent>
     </DropDrawer>
@@ -286,28 +283,28 @@ export const MobileDrawerVariant: Story = {
     return (
       <DropDrawer>
         <DropDrawerTrigger asChild>
-          <Button variant="outline">Open Mobile Menu</Button>
+          <Button variant='outline'>Open Mobile Menu</Button>
         </DropDrawerTrigger>
         <DropDrawerContent>
           <DropDrawerLabel>Mobile Navigation</DropDrawerLabel>
           <DropDrawerItem>
-            <UserIcon className="mr-2 h-4 w-4" />
+            <UserIcon className='mr-2 h-4 w-4' />
             Profile
           </DropDrawerItem>
           <DropDrawerGroup>
             <DropDrawerItem>
-              <BellIcon className="mr-2 h-4 w-4" />
+              <BellIcon className='mr-2 h-4 w-4' />
               Notifications
             </DropDrawerItem>
             <DropDrawerItem>
-              <SettingsIcon className="mr-2 h-4 w-4" />
+              <SettingsIcon className='mr-2 h-4 w-4' />
               Settings
             </DropDrawerItem>
           </DropDrawerGroup>
           <DropDrawerSeparator />
           <DropDrawerSub>
             <DropDrawerSubTrigger>
-              <CloudIcon className="mr-2 h-4 w-4" />
+              <CloudIcon className='mr-2 h-4 w-4' />
               Services
             </DropDrawerSubTrigger>
             <DropDrawerSubContent>
@@ -317,8 +314,10 @@ export const MobileDrawerVariant: Story = {
             </DropDrawerSubContent>
           </DropDrawerSub>
           <DropDrawerFooter>
-            <Button variant="destructive" className="w-full">
-              <LogOutIcon className="mr-2 h-4 w-4" />
+            <Button
+              variant='destructive'
+              className='w-full'>
+              <LogOutIcon className='mr-2 h-4 w-4' />
               Logout
             </Button>
           </DropDrawerFooter>
@@ -329,8 +328,7 @@ export const MobileDrawerVariant: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstration of the DropDrawer in mobile mode where it renders as a drawer instead of a dropdown.",
+        story: "Demonstration of the DropDrawer in mobile mode where it renders as a drawer instead of a dropdown.",
       },
     },
     viewport: {
@@ -344,25 +342,22 @@ export const ItemVariants: Story = {
   render: () => (
     <DropDrawer>
       <DropDrawerTrigger asChild>
-        <Button variant="outline">Item Variants</Button>
+        <Button variant='outline'>Item Variants</Button>
       </DropDrawerTrigger>
-      <DropDrawerContent className="w-56">
+      <DropDrawerContent className='w-56'>
         <DropDrawerLabel>Item Variants</DropDrawerLabel>
         <DropDrawerItem>Default Item</DropDrawerItem>
-        <DropDrawerItem variant="destructive">Destructive Item</DropDrawerItem>
+        <DropDrawerItem variant='destructive'>Destructive Item</DropDrawerItem>
         <DropDrawerItem inset>Inset Item (Indented)</DropDrawerItem>
         <DropDrawerItem disabled>Disabled Item</DropDrawerItem>
-        <DropDrawerItem icon={<BellIcon className="h-4 w-4" />}>
-          With Icon on Right
-        </DropDrawerItem>
+        <DropDrawerItem icon={<BellIcon className='h-4 w-4' />}>With Icon on Right</DropDrawerItem>
       </DropDrawerContent>
     </DropDrawer>
   ),
   parameters: {
     docs: {
       description: {
-        story:
-          "Showcasing the different variants and styles available for DropDrawerItem.",
+        story: "Showcasing the different variants and styles available for DropDrawerItem.",
       },
     },
   },
@@ -374,20 +369,18 @@ export const ComplexExample: Story = {
     <DropDrawer>
       <DropDrawerTrigger asChild>
         <Button>
-          <MenuIcon className="mr-2 h-4 w-4" />
+          <MenuIcon className='mr-2 h-4 w-4' />
           Complete Menu
         </Button>
       </DropDrawerTrigger>
-      <DropDrawerContent className="w-64">
+      <DropDrawerContent className='w-64'>
         <DropDrawerLabel>Account Management</DropDrawerLabel>
         <DropDrawerGroup>
           <DropDrawerItem>
-            <UserIcon className="mr-2 h-4 w-4" />
+            <UserIcon className='mr-2 h-4 w-4' />
             View Profile
           </DropDrawerItem>
-          <DropDrawerItem icon={<SettingsIcon className="h-4 w-4" />}>
-            Account Settings
-          </DropDrawerItem>
+          <DropDrawerItem icon={<SettingsIcon className='h-4 w-4' />}>Account Settings</DropDrawerItem>
         </DropDrawerGroup>
 
         <DropDrawerSeparator />
@@ -395,7 +388,7 @@ export const ComplexExample: Story = {
 
         <DropDrawerSub>
           <DropDrawerSubTrigger>
-            <CloudIcon className="mr-2 h-4 w-4" />
+            <CloudIcon className='mr-2 h-4 w-4' />
             Cloud Resources
           </DropDrawerSubTrigger>
           <DropDrawerSubContent>
@@ -407,24 +400,26 @@ export const ComplexExample: Story = {
 
         <DropDrawerSub>
           <DropDrawerSubTrigger>
-            <ShieldIcon className="mr-2 h-4 w-4" />
+            <ShieldIcon className='mr-2 h-4 w-4' />
             Security Center
           </DropDrawerSubTrigger>
           <DropDrawerSubContent>
             <DropDrawerItem>
-              <KeyIcon className="mr-2 h-4 w-4" />
+              <KeyIcon className='mr-2 h-4 w-4' />
               Password Manager
             </DropDrawerItem>
             <DropDrawerSeparator />
             <DropDrawerSub>
               <DropDrawerSubTrigger>
-                <BellIcon className="mr-2 h-4 w-4" />
+                <BellIcon className='mr-2 h-4 w-4' />
                 Notifications
               </DropDrawerSubTrigger>
               <DropDrawerSubContent>
                 <DropDrawerItem inset>Email Alerts</DropDrawerItem>
                 <DropDrawerItem inset>Push Notifications</DropDrawerItem>
-                <DropDrawerItem inset disabled>
+                <DropDrawerItem
+                  inset
+                  disabled>
                   SMS Alerts (Coming Soon)
                 </DropDrawerItem>
               </DropDrawerSubContent>
@@ -435,20 +430,20 @@ export const ComplexExample: Story = {
         <DropDrawerSeparator />
         <DropDrawerGroup>
           <DropDrawerItem>
-            <LifeBuoyIcon className="mr-2 h-4 w-4" />
+            <LifeBuoyIcon className='mr-2 h-4 w-4' />
             Help & Support
           </DropDrawerItem>
-          <DropDrawerItem variant="destructive">
-            <LogOutIcon className="mr-2 h-4 w-4" />
+          <DropDrawerItem variant='destructive'>
+            <LogOutIcon className='mr-2 h-4 w-4' />
             Sign Out
           </DropDrawerItem>
         </DropDrawerGroup>
 
         <DropDrawerFooter>
-          <p className="text-xs text-center text-muted-foreground pb-2">
-            Signed in as admin@example.com
-          </p>
-          <Button variant="outline" className="w-full">
+          <p className='text-muted-foreground pb-2 text-center text-xs'>Signed in as admin@example.com</p>
+          <Button
+            variant='outline'
+            className='w-full'>
             Switch Account
           </Button>
         </DropDrawerFooter>

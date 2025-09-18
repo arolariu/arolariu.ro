@@ -1,11 +1,8 @@
-/** @format */
-
 "use client";
 
 import {FakeInvoice, FakeMerchant} from "@/data/mocks/invoices";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {AnimatePresence, motion, type Variants} from "motion/react";
-import {useRef} from "react";
 import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
 import DialogContainer from "../../_contexts/DialogContainer";
 import {DialogProvider} from "../../_contexts/DialogContext";
@@ -16,13 +13,31 @@ import SidebarSection from "./_components/sidebar/SidebarSection";
 import MetadataTab from "./_components/tabs/MetadataTab";
 import RecipesTab from "./_components/tabs/RecipesTab";
 
+const containerVariants: Variants = {
+  hidden: {opacity: 0},
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: {y: 20, opacity: 0},
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {type: "spring", stiffness: 300, damping: 24},
+  },
+};
+
 /**
  * This function renders the view invoice page.
  * @returns The JSX for the view invoice page.
  */
 export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
   console.log(">>> invoiceIdentifier", invoiceIdentifier);
-  const printRef = useRef<HTMLDivElement>(null);
 
   // Invoice data (mocked for this example)
   const invoice = FakeInvoice;
@@ -30,36 +45,11 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
   // Merchant data (mocked for this example)
   const merchant = FakeMerchant;
 
-  // Animation variants for Framer Motion
-  const containerVariants = {
-    hidden: {opacity: 0},
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  } satisfies Variants;
-
-  const itemVariants = {
-    hidden: {y: 20, opacity: 0},
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {type: "spring", stiffness: 300, damping: 24},
-    },
-  } satisfies Variants;
-
   return (
     <DialogProvider>
-      <section
-        className='container mx-auto py-12'
-        ref={printRef}>
+      <section className='container mx-auto py-12'>
         {/* Header */}
-        <InvoiceHeader
-          invoice={invoice}
-          onPrint={() => {}}
-        />
+        <InvoiceHeader invoice={invoice} />
 
         <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
           <motion.div

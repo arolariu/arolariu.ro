@@ -1,0 +1,67 @@
+{
+  "name": "@arolariu/components",
+  "$schema": "https://raw.githubusercontent.com/nrwl/nx/refs/heads/master/packages/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/components",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run build",
+        "cwd": "packages/components"
+      },
+      "outputs": [
+        "{projectRoot}/dist"
+      ]
+    },
+    "build:clean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run build:clean",
+        "cwd": "packages/components"
+      }
+    },
+    "build:exports": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run build:exports",
+        "cwd": "packages/components"
+      }
+    },
+    "build:storybook": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run build:storybook",
+        "cwd": "packages/components"
+      },
+      "outputs": [
+        "{projectRoot}/storybook-static"
+      ]
+    },
+    "storybook": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run storybook",
+        "cwd": "packages/components"
+      }
+    },
+    "clean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run build:clean",
+        "cwd": "packages/components"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run storybook",
+        "cwd": "packages/components"
+      }
+    }
+  },
+  "tags": [
+    "scope:components",
+    "type:lib"
+  ]
+}

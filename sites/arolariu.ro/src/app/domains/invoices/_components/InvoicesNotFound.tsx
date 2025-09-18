@@ -1,5 +1,3 @@
-/** @format */
-
 import Link from "next/link";
 
 /**

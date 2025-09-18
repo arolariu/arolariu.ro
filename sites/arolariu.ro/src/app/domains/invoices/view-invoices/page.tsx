@@ -1,5 +1,3 @@
-/** @format */
-
 import {FakeInvoiceBigList} from "@/data/mocks/invoices";
 import {fetchUser} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";

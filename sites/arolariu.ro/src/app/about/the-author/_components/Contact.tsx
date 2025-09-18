@@ -1,13 +1,56 @@
-/** @format */
-
 "use client";
 
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
-import {motion} from "motion/react";
+import {motion, useInView, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
-import {useCallback, useState} from "react";
+import {useCallback, useRef, useState} from "react";
 import {TbBrandGithub, TbBrandLinkedin, TbCheck, TbCopy, TbExternalLink, TbMail, TbWorld} from "react-icons/tb";
-import {useInView} from "react-intersection-observer";
+
+const contactLinks = [
+  {
+    id: "email",
+    label: "admin@arolariu.ro",
+    icon: <TbMail className='h-5 w-5' />,
+    href: "mailto:admin@arolariu.ro",
+    color: "#D14836",
+  },
+  {
+    id: "linkedin",
+    label: "/olariu-alexandru",
+    icon: <TbBrandLinkedin className='h-5 w-5' />,
+    href: "https://www.linkedin.com/in/olariu-alexandru/",
+    color: "#0077B5",
+  },
+  {
+    id: "github",
+    label: "/arolariu",
+    icon: <TbBrandGithub className='h-5 w-5' />,
+    href: "https://github.com/arolariu",
+    color: "#333",
+  },
+  {
+    id: "website",
+    label: "arolariu.ro",
+    icon: <TbWorld className='h-5 w-5' />,
+    href: "https://arolariu.ro",
+    color: "#1e90ff",
+  },
+];
+
+const containerVariants: Variants = {
+  hidden: {opacity: 0},
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: {opacity: 0, y: 20},
+  visible: {opacity: 1, y: 0, transition: {duration: 0.6}},
+};
 
 /**
  * @description CSR'ed component that displays the author's contact information and collaboration interests.
@@ -15,65 +58,27 @@ import {useInView} from "react-intersection-observer";
  */
 export default function Contact(): React.JSX.Element {
   const t = useTranslations("About.Author.Contact");
-  const [ref, inView] = useInView({
-    triggerOnce: false,
-    threshold: 0.1,
-  });
-
-  const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+  const sectionRef = useRef<HTMLDivElement | null>(null);
+  const inView = useInView(sectionRef, {amount: 0.1, once: false});
   const [copiedEmail, setCopiedEmail] = useState<boolean>(false);
+  const [hoveredLink, setHoveredLink] = useState<string | null>(null);
 
   const copyEmail = useCallback(() => {
-    navigator.clipboard.writeText("olariu.alexandru@pm.me");
+    navigator.clipboard.writeText("admin@arolariu.ro");
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2000);
   }, []);
 
-  const contactLinks = [
-    {
-      id: "email",
-      label: "olariu.alexandru@pm.me",
-      icon: <TbMail className='h-5 w-5' />,
-      href: "mailto:olariu.alexandru@pm.me",
-      color: "#D14836",
-    },
-    {
-      id: "linkedin",
-      label: "/olariu-alexandru",
-      icon: <TbBrandLinkedin className='h-5 w-5' />,
-      href: "https://www.linkedin.com/in/olariu-alexandru/",
-      color: "#0077B5",
-    },
-    {
-      id: "github",
-      label: "/arolariu",
-      icon: <TbBrandGithub className='h-5 w-5' />,
-      href: "https://github.com/arolariu",
-      color: "#333",
-    },
-    {
-      id: "website",
-      label: "arolariu.ro",
-      icon: <TbWorld className='h-5 w-5' />,
-      href: "https://arolariu.ro",
-      color: "#1e90ff",
-    },
-  ];
+  const handleLinkMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const {id} = (e.currentTarget as HTMLDivElement).dataset;
+    if (id) {
+      setHoveredLink(id);
+    }
+  }, []);
 
-  const containerVariants = {
-    hidden: {opacity: 0},
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: {opacity: 0, y: 20},
-    visible: {opacity: 1, y: 0, transition: {duration: 0.6}},
-  };
+  const handleLinkMouseLeave = useCallback(() => {
+    setHoveredLink(null);
+  }, []);
 
   return (
     <section className='mx-auto max-w-6xl px-4 py-20 md:px-8'>
@@ -87,7 +92,7 @@ export default function Contact(): React.JSX.Element {
       </motion.div>
 
       <motion.div
-        ref={ref}
+        ref={sectionRef}
         variants={containerVariants}
         initial='hidden'
         animate={inView ? "visible" : "hidden"}
@@ -109,8 +114,9 @@ export default function Contact(): React.JSX.Element {
                     initial={{opacity: 0, x: -20}}
                     animate={{opacity: 1, x: 0}}
                     transition={{delay: index * 0.1, duration: 0.5}}
-                    onHoverStart={() => setHoveredLink(link.id)}
-                    onHoverEnd={() => setHoveredLink(null)}
+                    data-id={link.id}
+                    onMouseEnter={handleLinkMouseEnter}
+                    onMouseLeave={handleLinkMouseLeave}
                     className='relative'>
                     <div
                       className={`absolute inset-0 rounded-lg opacity-0 transition-opacity duration-300 ${hoveredLink === link.id ? "opacity-10" : ""}`}

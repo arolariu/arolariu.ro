@@ -1,29 +1,13 @@
-/** @format */
 "use client";
 
 import type {NavigationItem} from "@/types";
-import {
-  Button,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@arolariu/components";
 
-import {motion} from "motion/react";
+import {Button} from "@arolariu/components";
 import Link from "next/link";
 import React, {useCallback, useState} from "react";
 import {TbChevronDown, TbMenu} from "react-icons/tb";
 
-const navigationItems: NavigationItem[] = [
+const navigationItems: ReadonlyArray<NavigationItem> = [
   {
     label: "Domains",
     href: "/domains",
@@ -31,6 +15,7 @@ const navigationItems: NavigationItem[] = [
       {
         label: "Invoices",
         href: "/domains/invoices",
+
         children: [
           {
             label: "Create",
@@ -60,137 +45,108 @@ const navigationItems: NavigationItem[] = [
   },
 ] as const;
 
-// Stateless desktop navigation components
-const DesktopNavigationItem = ({
-  item,
-  isOpen,
-  onOpenChange,
-}: Readonly<{
-  item: NavigationItem;
-  isOpen?: boolean;
-  onOpenChange?: (isOpen: boolean) => void;
-}>): React.JSX.Element => {
-  if (!item.children) {
-    return (
-      <Button
-        variant='ghost'
-        asChild
-        className='hover:bg-accent/50 h-9 px-3 py-2 text-sm font-medium'>
-        <Link href={item.href}>{item.label}</Link>
-      </Button>
-    );
-  }
+// Desktop helper components
+const DesktopNavigationChild = ({child}: Readonly<{child: NavigationItem}>): React.JSX.Element => (
+  <div>
+    <Link
+      href={child.href}
+      className='mb-2 block text-sm font-semibold text-gray-900'>
+      {child.label}
+    </Link>
 
-  return (
-    <DropdownMenu
-      open={isOpen}
-      onOpenChange={onOpenChange}>
-      <div className='flex items-center gap-0.5'>
-        <Link
-          href={item.href}
-          className='hover:bg-accent/50 focus:bg-accent/50 rounded-l-md px-3 py-2 text-sm font-medium transition-colors focus:outline-hidden'>
-          {item.label}
-        </Link>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant='ghost'
-            size='sm'
-            className='hover:bg-accent/50 focus:bg-accent/50 h-9 w-8 rounded-r-md p-0 focus:outline-hidden'>
-            <motion.div
-              animate={{rotate: isOpen ? 180 : 0}}
-              transition={{duration: 0.2}}>
-              <TbChevronDown className='h-4 w-4' />
-            </motion.div>
-            <span className='sr-only'>Show {item.label} menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-      </div>
-      <DropdownMenuContent
-        className='w-56'
-        align='center'
-        asChild>
-        <motion.div
-          initial={{opacity: 0, y: -10}}
-          animate={{opacity: 1, y: 0}}
-          exit={{opacity: 0, y: -10}}
-          transition={{duration: 0.2}}>
-          {item.children.map((child) => (
-            <DesktopNavigationChildItem
-              key={`desktop-child-${child.label}`}
-              child={child}
+    {Boolean(child.children) && (
+      <ul className='space-y-1'>
+        {child.children!.map((link) => (
+          <li key={`desktop-grand-${link.label}`}>
+            <Link
+              href={link.href}
+              className='block rounded px-2 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-indigo-600'>
+              {link.label}
+              <span
+                aria-hidden
+                className='ml-2 text-xs'>
+                →
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+);
+
+const DesktopNavigationItem = ({item}: Readonly<{item: NavigationItem}>): React.JSX.Element => (
+  <li className='group relative'>
+    <Link
+      href={item.href}
+      className='px-3 py-2 text-sm font-medium hover:text-indigo-600'>
+      {item.label}
+    </Link>
+
+    {Boolean(item.children) && (
+      <div className='invisible absolute left-0 z-40 mt-2 rounded-xl bg-white opacity-0 transition-opacity duration-150 group-hover:visible group-hover:opacity-100'>
+        <div className='space-y-4 p-4'>
+          {item.children!.map((col) => (
+            <DesktopNavigationChild
+              key={`col-${col.label}`}
+              child={col}
             />
           ))}
-        </motion.div>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
-
-const DesktopNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>): React.JSX.Element => {
-  const [isSubOpen, setIsSubOpen] = useState(false); // State needs to be at this level
-
-  if (!child.children) {
-    return (
-      <DropdownMenuItem
-        asChild
-        className='focus:bg-accent/50 cursor-pointer'>
-        <Link href={child.href}>{child.label}</Link>
-      </DropdownMenuItem>
-    );
-  }
-
-  return (
-    <DropdownMenuItem
-      asChild
-      className='p-0'>
-      <div className='relative flex w-full justify-between'>
-        <Link
-          href={child.href}
-          className='hover:bg-accent/50 flex-1 rounded-l-md px-2 py-1.5 text-sm'>
-          {child.label}
-        </Link>
-        <DropdownMenu
-          open={isSubOpen}
-          onOpenChange={setIsSubOpen}>
-          <DropdownMenuTrigger className='hover:bg-accent/50 rounded-r-md p-1'>
-            <motion.div
-              animate={{rotate: isSubOpen ? 180 : 0}}
-              transition={{duration: 0.2}}>
-              <TbChevronDown className='h-4 w-4' />
-            </motion.div>
-            <span className='sr-only'>Show {child.label} submenu</span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            side='right'
-            align='start'
-            className='w-48'
-            asChild>
-            <motion.div
-              initial={{opacity: 0, x: -10}}
-              animate={{opacity: 1, x: 0}}
-              exit={{opacity: 0, x: -10}}
-              transition={{duration: 0.2}}>
-              {child.children.map((grandchild) => (
-                <DropdownMenuItem
-                  key={`desktop-grandchild-${grandchild.label}`}
-                  asChild
-                  className='focus:bg-accent/50 cursor-pointer'>
-                  <Link
-                    href={grandchild.href}
-                    className='w-full'>
-                    {grandchild.label}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </motion.div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        </div>
       </div>
-    </DropdownMenuItem>
-  );
-};
+    )}
+  </li>
+);
 
-// Stateless mobile navigation components
+/**
+ * This component renders the desktop navigation.
+ * @returns The desktop navigation component.
+ */
+export function DesktopNavigation(): React.JSX.Element {
+  return (
+    <div className='mx-auto px-4 dark:text-white'>
+      <ul className='flex items-center gap-6'>
+        {navigationItems.map((item) => (
+          <DesktopNavigationItem
+            key={`nav-${item.label}`}
+            item={item}
+          />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// Mobile helper components
+const MobileNavigationChild = ({col}: Readonly<{col: NavigationItem}>): React.JSX.Element => (
+  <div className='mb-1 text-black'>
+    <Link
+      href={col.href}
+      className='mb-2 block text-sm font-medium hover:underline'>
+      {col.label}
+    </Link>
+
+    {Boolean(col.children) && (
+      <ul className='space-y-3'>
+        {col.children!.map((link) => (
+          <li key={`m-grand-${link.label}`}>
+            <span
+              aria-hidden
+              className='ml-2 inline text-xs'>
+              →
+            </span>
+            <Link
+              href={link.href}
+              className='inline rounded px-2 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-50 hover:text-indigo-600'>
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+);
+
 const MobileNavigationItem = ({
   item,
   isOpen,
@@ -199,204 +155,99 @@ const MobileNavigationItem = ({
   item: NavigationItem;
   isOpen?: boolean;
   onToggle?: () => void;
-}>): React.JSX.Element => {
-  if (!item.children) {
-    return (
-      <Button
-        variant='ghost'
-        asChild
-        className='hover:bg-accent/50 h-auto w-full justify-start rounded-lg border px-4 py-3 font-medium'>
-        <Link href={item.href}>{item.label}</Link>
-      </Button>
-    );
-  }
-
-  return (
-    <Collapsible className='bg-background/50 mb-2 w-full overflow-hidden rounded-lg border backdrop-blur-xs'>
-      <div className='flex items-center'>
-        <Link
-          href={item.href}
-          className='flex-1 px-4 py-3 font-medium hover:underline'>
-          {item.label}
-        </Link>
-        <CollapsibleTrigger asChild>
-          <Button
-            onClick={onToggle}
-            variant='ghost'
-            size='sm'
-            className='hover:bg-accent/50 mr-2 h-8 w-8 rounded-full p-0'>
-            <motion.div
-              animate={{rotate: isOpen ? 180 : 0}}
-              transition={{duration: 0.2}}>
-              <TbChevronDown className='h-4 w-4' />
-            </motion.div>
-            <span className='sr-only'>Toggle {item.label} menu</span>
-          </Button>
-        </CollapsibleTrigger>
-      </div>
-      <CollapsibleContent className='border-t'>
-        <motion.div
-          initial={{opacity: 0, height: 0}}
-          animate={{opacity: 1, height: "auto"}}
-          exit={{opacity: 0, height: 0}}
-          transition={{duration: 0.2}}
-          className='bg-muted/30 flex flex-col space-y-1 p-2'>
-          {item.children.map((child) => (
-            <MobileNavigationChildItem
-              key={`mobile-child-${child.label}`}
-              child={child}
-            />
-          ))}
-        </motion.div>
-      </CollapsibleContent>
-    </Collapsible>
-  );
-};
-
-const MobileNavigationChildItem = ({child}: Readonly<{child: NavigationItem}>): React.JSX.Element => {
-  const [isSubOpen, setIsSubOpen] = useState(false); // State needs to be at this level
-
-  const handleSubToggle = useCallback(() => {
-    setIsSubOpen((prev) => !prev);
-  }, []);
-
-  if (!child.children) {
-    return (
+}>): React.JSX.Element => (
+  <li className='py-2'>
+    <div className='flex items-center justify-between py-3'>
       <Link
-        href={child.href}
-        className='hover:bg-accent/50 rounded-md px-3 py-2 transition-colors'>
-        {child.label}
+        href={item.href}
+        className='text-base font-semibold text-gray-900 transition-colors hover:text-indigo-600'>
+        {item.label}
       </Link>
-    );
-  }
 
-  return (
-    <Collapsible className='w-full overflow-hidden rounded-md border'>
-      <div className='flex items-center'>
-        <Link
-          href={child.href}
-          className='flex-1 px-3 py-2 text-sm font-medium hover:underline'>
-          {child.label}
-        </Link>
-        <CollapsibleTrigger asChild>
-          <Button
-            onClick={handleSubToggle}
-            variant='ghost'
-            size='sm'
-            className='hover:bg-accent/50 mr-1 h-7 w-7 rounded-full p-0'>
-            <motion.div
-              animate={{rotate: isSubOpen ? 180 : 0}}
-              transition={{duration: 0.2}}>
-              <TbChevronDown className='h-3.5 w-3.5' />
-            </motion.div>
-            <span className='sr-only'>Toggle {child.label} submenu</span>
-          </Button>
-        </CollapsibleTrigger>
-      </div>
-      <CollapsibleContent className='cursor-pointer border-t'>
-        <motion.div
-          initial={{opacity: 0, height: 0}}
-          animate={{opacity: 1, height: "auto"}}
-          exit={{opacity: 0, height: 0}}
-          transition={{duration: 0.2}}
-          className='bg-muted/50 flex flex-col space-y-1 p-2'>
-          {child.children.map((grandchild) => (
-            <Link
-              key={`mobile-grandchild-${grandchild.label}`}
-              href={grandchild.href}
-              className='hover:bg-accent/50 rounded-md px-3 py-1.5 text-sm transition-colors'>
-              {grandchild.label}
-            </Link>
-          ))}
-        </motion.div>
-      </CollapsibleContent>
-    </Collapsible>
-  );
-};
-
-/**
- * This component renders the desktop navigation.
- * @returns The desktop navigation component.
- */
-export function DesktopNavigation(): React.JSX.Element {
-  // Store open states for top-level items
-  const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
-
-  const handleOpenChange = useCallback((label: string, isOpen: boolean) => {
-    setOpenStates((prev) => ({...prev, [label]: isOpen}));
-  }, []);
-
-  return (
-    <div className='z-20 flex flex-row items-center justify-center justify-items-center space-x-1 text-center'>
-      {navigationItems.map((item) => (
-        <div
-          key={`desktop-${item.label}`}
-          className='relative'>
-          <DesktopNavigationItem
-            item={item}
-            isOpen={openStates[item.label]}
-            onOpenChange={(isOpen) => handleOpenChange(item.label, isOpen)}
-          />
-        </div>
-      ))}
+      {Boolean(item.children) && (
+        <Button
+          onClick={onToggle}
+          aria-expanded={Boolean(isOpen)}
+          variant='ghost'
+          className='cursor-pointer p-1 text-gray-500 hover:text-gray-700'>
+          <TbChevronDown className={`h-5 w-5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+        </Button>
+      )}
     </div>
-  );
-}
+
+    {Boolean(item.children) && Boolean(isOpen) && (
+      <div className='mt-3 space-y-3 rounded-md bg-gray-50 p-3 pl-4'>
+        {item.children!.map((col) => (
+          <MobileNavigationChild
+            key={`m-col-${col.label}`}
+            col={col}
+          />
+        ))}
+      </div>
+    )}
+  </li>
+);
 
 /**
  * This component renders the mobile navigation.
  * @returns The mobile navigation component.
  */
 export function MobileNavigation(): React.JSX.Element {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  // Store open states for top-level items
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [openStates, setOpenStates] = useState<Record<string, boolean>>({});
 
-  const handleToggle = useCallback((label: string) => {
-    setOpenStates((prev) => {
-      // eslint-disable-next-line security/detect-object-injection -- we know the label exists in the state
-      const currentState = prev?.[label] ?? false;
-      return {...prev, [label]: !currentState};
-    });
+  const toggleMobile = useCallback(() => setMobileOpen((v) => !v), []);
+  const toggleItem = useCallback((label: string) => {
+    // eslint-disable-next-line security/detect-object-injection -- safe.
+    setOpenStates((prev) => ({...prev, [label]: !prev[label]}));
   }, []);
 
   return (
-    <Sheet
-      open={isOpen}
-      onOpenChange={setIsOpen}>
-      <SheetTrigger
-        asChild
-        className='lg:hidden'>
-        <Button
-          variant='outline'
-          size='icon'
-          className='hover:bg-accent/50 transition-colors'>
-          <TbMenu className='h-5 w-5' />
-          <span className='sr-only'>Toggle menu</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent
-        side='left'
-        className='w-80 border-r sm:w-96'>
-        <SheetHeader>
-          <SheetTitle className='text-left'>Navigation</SheetTitle>
-        </SheetHeader>
-        <div className='px-2 py-6'>
-          <div className='space-y-2'>
-            {navigationItems.map((item) => (
-              <div
-                key={`mobile-${item.label}`}
-                className='py-1'>
+    <>
+      <Button
+        onClick={toggleMobile}
+        aria-expanded={mobileOpen}
+        aria-controls='mobile-navigation'
+        className='inline-flex cursor-pointer items-center justify-center rounded-md p-2 hover:bg-gray-100 sm:hidden'>
+        <span className='sr-only'>Open navigation</span>
+        <TbMenu className='h-6 w-6' />
+      </Button>
+
+      {Boolean(mobileOpen) && (
+        <div className='fixed inset-0 z-50 flex'>
+          <div
+            className='fixed inset-0 bg-black/40'
+            onClick={toggleMobile}
+            aria-hidden
+          />
+          <aside
+            id='mobile-navigation'
+            className='relative w-80 max-w-full overflow-auto rounded-r-lg bg-white p-6 shadow-xl'>
+            <div className='mb-4 flex items-center justify-between'>
+              <h3 className='text-lg font-semibold tracking-tight text-black'>Navigation</h3>
+              <Button
+                onClick={toggleMobile}
+                aria-label='Close navigation'
+                className='cursor-pointer p-2 text-gray-500 hover:text-gray-700'>
+                ✕
+              </Button>
+            </div>
+
+            <ul className='space-y-2 divide-y divide-gray-100'>
+              {navigationItems.map((item) => (
                 <MobileNavigationItem
+                  key={`mobile-${item.label}`}
                   item={item}
                   isOpen={openStates[item.label]}
-                  onToggle={() => handleToggle(item.label)}
+                  // eslint-disable-next-line react/jsx-no-bind -- simple page
+                  onToggle={() => toggleItem(item.label)}
                 />
-              </div>
-            ))}
-          </div>
+              ))}
+            </ul>
+          </aside>
         </div>
-      </SheetContent>
-    </Sheet>
+      )}
+    </>
   );
 }
+

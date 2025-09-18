@@ -1,4 +1,3 @@
-<!-- @format -->
 <script lang="ts">
   import Footer from "@/presentation/Footer.svelte";
   import Header from "@/presentation/Header.svelte";

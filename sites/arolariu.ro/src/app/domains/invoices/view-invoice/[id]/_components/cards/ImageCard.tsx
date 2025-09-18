@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Invoice} from "@/types/invoices";
 import {Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Tooltip, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";

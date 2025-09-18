@@ -1,18 +1,18 @@
+import type {Meta, StoryObj} from "@storybook/react";
+import {GripVertical} from "lucide-react";
 import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
 import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
+  Button,
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
   CardDescription,
   CardFooter,
-  Button,
+  CardHeader,
+  CardTitle,
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
 } from "../dist";
-import { GripVertical } from "lucide-react";
 
 const meta: Meta<typeof ResizablePanelGroup> = {
   title: "Design System/Resizable",
@@ -62,20 +62,21 @@ export const BasicHorizontal: Story = {
     },
   },
   render: () => (
-    <div className="h-[500px] max-w-[800px] rounded-lg border">
+    <div className='h-[500px] max-w-[800px] rounded-lg border'>
       <ResizablePanelGroup
-        direction="horizontal"
-        className="h-full rounded-lg border"
-      >
-        <ResizablePanel defaultSize={25} minSize={20}>
-          <div className="flex h-full items-center justify-center p-6">
-            <span className="font-semibold">Sidebar</span>
+        direction='horizontal'
+        className='h-full rounded-lg border'>
+        <ResizablePanel
+          defaultSize={25}
+          minSize={20}>
+          <div className='flex h-full items-center justify-center p-6'>
+            <span className='font-semibold'>Sidebar</span>
           </div>
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel defaultSize={75}>
-          <div className="flex h-full items-center justify-center p-6">
-            <span className="font-semibold">Main Content</span>
+          <div className='flex h-full items-center justify-center p-6'>
+            <span className='font-semibold'>Main Content</span>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
@@ -94,26 +95,27 @@ export const BasicVertical: Story = {
     },
   },
   render: () => (
-    <div className="h-[500px] max-w-[800px] rounded-lg border">
+    <div className='h-[500px] max-w-[800px] rounded-lg border'>
       <ResizablePanelGroup
-        direction="vertical"
-        className="h-full rounded-lg border"
-      >
-        <ResizablePanel defaultSize={25} minSize={15}>
-          <div className="flex h-full items-center justify-center p-6">
-            <span className="font-semibold">Header</span>
+        direction='vertical'
+        className='h-full rounded-lg border'>
+        <ResizablePanel
+          defaultSize={25}
+          minSize={15}>
+          <div className='flex h-full items-center justify-center p-6'>
+            <span className='font-semibold'>Header</span>
           </div>
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel defaultSize={60}>
-          <div className="flex h-full items-center justify-center p-6">
-            <span className="font-semibold">Content</span>
+          <div className='flex h-full items-center justify-center p-6'>
+            <span className='font-semibold'>Content</span>
           </div>
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel defaultSize={15}>
-          <div className="flex h-full items-center justify-center p-6">
-            <span className="font-semibold">Footer</span>
+          <div className='flex h-full items-center justify-center p-6'>
+            <span className='font-semibold'>Footer</span>
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
@@ -126,50 +128,45 @@ export const MultipleResizablePanels: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "An example of nesting ResizablePanelGroups to create more complex, multi-dimensional resizable layouts.",
+        story: "An example of nesting ResizablePanelGroups to create more complex, multi-dimensional resizable layouts.",
       },
     },
   },
   render: () => (
-    <div className="h-[500px] max-w-[800px] rounded-lg border">
+    <div className='h-[500px] max-w-[800px] rounded-lg border'>
       <ResizablePanelGroup
-        direction="horizontal"
-        className="h-full rounded-lg border"
-      >
-        <ResizablePanel defaultSize={20} minSize={15}>
-          <div className="flex h-full flex-col bg-neutral-50 dark:bg-neutral-900">
-            <div className="p-4 font-medium">Navigation</div>
-            <div className="flex-1 overflow-auto p-4">
-              <nav className="grid gap-2">
+        direction='horizontal'
+        className='h-full rounded-lg border'>
+        <ResizablePanel
+          defaultSize={20}
+          minSize={15}>
+          <div className='flex h-full flex-col bg-neutral-50 dark:bg-neutral-900'>
+            <div className='p-4 font-medium'>Navigation</div>
+            <div className='flex-1 overflow-auto p-4'>
+              <nav className='grid gap-2'>
                 <a
-                  href="#"
-                  className="block rounded-md px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                >
+                  href='#'
+                  className='block rounded-md px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800'>
                   Dashboard
                 </a>
                 <a
-                  href="#"
-                  className="block rounded-md px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                >
+                  href='#'
+                  className='block rounded-md px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800'>
                   Products
                 </a>
                 <a
-                  href="#"
-                  className="block rounded-md px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                >
+                  href='#'
+                  className='block rounded-md px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800'>
                   Customers
                 </a>
                 <a
-                  href="#"
-                  className="block rounded-md px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                >
+                  href='#'
+                  className='block rounded-md px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800'>
                   Orders
                 </a>
                 <a
-                  href="#"
-                  className="block rounded-md px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                >
+                  href='#'
+                  className='block rounded-md px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800'>
                   Settings
                 </a>
               </nav>
@@ -178,30 +175,27 @@ export const MultipleResizablePanels: Story = {
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={60}>
-          <ResizablePanelGroup direction="vertical">
+          <ResizablePanelGroup direction='vertical'>
             <ResizablePanel defaultSize={70}>
-              <div className="flex h-full flex-col">
-                <div className="border-b p-4 font-medium">Main Content</div>
-                <div className="flex-1 overflow-auto p-4">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Dashboard</h3>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      This is the main content area. You can resize both the
-                      sidebar and the details panel to customize your workspace.
+              <div className='flex h-full flex-col'>
+                <div className='border-b p-4 font-medium'>Main Content</div>
+                <div className='flex-1 overflow-auto p-4'>
+                  <div className='space-y-4'>
+                    <h3 className='text-lg font-medium'>Dashboard</h3>
+                    <p className='text-sm text-neutral-500 dark:text-neutral-400'>
+                      This is the main content area. You can resize both the sidebar and the details panel to customize your workspace.
                     </p>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      Drag the handles to resize the panels.
-                    </p>
+                    <p className='text-sm text-neutral-500 dark:text-neutral-400'>Drag the handles to resize the panels.</p>
                   </div>
                 </div>
               </div>
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={30}>
-              <div className="flex h-full flex-col">
-                <div className="border-b p-4 font-medium">Console</div>
-                <div className="flex-1 overflow-auto p-4 bg-neutral-900 text-neutral-200 font-mono text-sm">
-                  <div className="space-y-2">
+              <div className='flex h-full flex-col'>
+                <div className='border-b p-4 font-medium'>Console</div>
+                <div className='flex-1 overflow-auto bg-neutral-900 p-4 font-mono text-sm text-neutral-200'>
+                  <div className='space-y-2'>
                     <div> System initialized</div>
                     <div> Loading components</div>
                     <div> Ready</div>
@@ -212,28 +206,24 @@ export const MultipleResizablePanels: Story = {
           </ResizablePanelGroup>
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={20} minSize={15}>
-          <div className="flex h-full flex-col bg-neutral-50 dark:bg-neutral-900">
-            <div className="p-4 font-medium">Details</div>
-            <div className="flex-1 overflow-auto p-4">
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <div className="text-sm font-medium">Selected Item</div>
-                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                    None
-                  </div>
+        <ResizablePanel
+          defaultSize={20}
+          minSize={15}>
+          <div className='flex h-full flex-col bg-neutral-50 dark:bg-neutral-900'>
+            <div className='p-4 font-medium'>Details</div>
+            <div className='flex-1 overflow-auto p-4'>
+              <div className='space-y-4'>
+                <div className='space-y-1'>
+                  <div className='text-sm font-medium'>Selected Item</div>
+                  <div className='text-sm text-neutral-500 dark:text-neutral-400'>None</div>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-sm font-medium">Size</div>
-                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                    --
-                  </div>
+                <div className='space-y-1'>
+                  <div className='text-sm font-medium'>Size</div>
+                  <div className='text-sm text-neutral-500 dark:text-neutral-400'>--</div>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-sm font-medium">Last Modified</div>
-                  <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                    --
-                  </div>
+                <div className='space-y-1'>
+                  <div className='text-sm font-medium'>Last Modified</div>
+                  <div className='text-sm text-neutral-500 dark:text-neutral-400'>--</div>
                 </div>
               </div>
             </div>
@@ -249,63 +239,61 @@ export const IDELayout: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Illustrates setting initial default sizes for the panels within the ResizablePanelGroup.",
+        story: "Illustrates setting initial default sizes for the panels within the ResizablePanelGroup.",
       },
     },
   },
   render: () => (
-    <div className="h-[600px] max-w-[1200px] rounded-lg border">
+    <div className='h-[600px] max-w-[1200px] rounded-lg border'>
       <ResizablePanelGroup
-        direction="vertical"
-        className="h-full rounded-lg border"
-      >
-        <ResizablePanel defaultSize={10} minSize={8}>
-          <div className="flex h-full items-center bg-neutral-100 px-4 dark:bg-neutral-800">
-            <div className="flex w-full justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="h-3 w-3 rounded-full bg-red-500" />
-                <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                <div className="h-3 w-3 rounded-full bg-green-500" />
+        direction='vertical'
+        className='h-full rounded-lg border'>
+        <ResizablePanel
+          defaultSize={10}
+          minSize={8}>
+          <div className='flex h-full items-center bg-neutral-100 px-4 dark:bg-neutral-800'>
+            <div className='flex w-full justify-between'>
+              <div className='flex items-center space-x-2'>
+                <div className='h-3 w-3 rounded-full bg-red-500' />
+                <div className='h-3 w-3 rounded-full bg-yellow-500' />
+                <div className='h-3 w-3 rounded-full bg-green-500' />
               </div>
-              <div className="font-mono text-sm text-neutral-600 dark:text-neutral-300">
-                MyProject.tsx
-              </div>
-              <div className="w-16" />
+              <div className='font-mono text-sm text-neutral-600 dark:text-neutral-300'>MyProject.tsx</div>
+              <div className='w-16' />
             </div>
           </div>
         </ResizablePanel>
         <ResizableHandle />
         <ResizablePanel defaultSize={75}>
-          <ResizablePanelGroup direction="horizontal">
-            <ResizablePanel defaultSize={20} minSize={15}>
-              <div className="flex h-full flex-col bg-neutral-100 dark:bg-neutral-800">
-                <div className="p-2 font-mono text-xs text-neutral-500 dark:text-neutral-400">
-                  EXPLORER
-                </div>
-                <div className="flex-1 p-2">
-                  <div className="space-y-1">
-                    <div className="font-mono text-xs cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 px-2 py-1 rounded">
+          <ResizablePanelGroup direction='horizontal'>
+            <ResizablePanel
+              defaultSize={20}
+              minSize={15}>
+              <div className='flex h-full flex-col bg-neutral-100 dark:bg-neutral-800'>
+                <div className='p-2 font-mono text-xs text-neutral-500 dark:text-neutral-400'>EXPLORER</div>
+                <div className='flex-1 p-2'>
+                  <div className='space-y-1'>
+                    <div className='cursor-pointer rounded px-2 py-1 font-mono text-xs hover:bg-neutral-200 dark:hover:bg-neutral-700'>
                       📁 src
                     </div>
-                    <div className="pl-4 space-y-1">
-                      <div className="font-mono text-xs cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 px-2 py-1 rounded">
+                    <div className='space-y-1 pl-4'>
+                      <div className='cursor-pointer rounded px-2 py-1 font-mono text-xs hover:bg-neutral-200 dark:hover:bg-neutral-700'>
                         📁 components
                       </div>
-                      <div className="font-mono text-xs cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 px-2 py-1 rounded">
+                      <div className='cursor-pointer rounded px-2 py-1 font-mono text-xs hover:bg-neutral-200 dark:hover:bg-neutral-700'>
                         📁 pages
                       </div>
-                      <div className="font-mono text-xs cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 px-2 py-1 rounded">
+                      <div className='cursor-pointer rounded px-2 py-1 font-mono text-xs hover:bg-neutral-200 dark:hover:bg-neutral-700'>
                         📄 App.tsx
                       </div>
-                      <div className="font-mono text-xs cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 px-2 py-1 rounded">
+                      <div className='cursor-pointer rounded px-2 py-1 font-mono text-xs hover:bg-neutral-200 dark:hover:bg-neutral-700'>
                         📄 main.tsx
                       </div>
                     </div>
-                    <div className="font-mono text-xs cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 px-2 py-1 rounded">
+                    <div className='cursor-pointer rounded px-2 py-1 font-mono text-xs hover:bg-neutral-200 dark:hover:bg-neutral-700'>
                       📄 package.json
                     </div>
-                    <div className="font-mono text-xs cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 px-2 py-1 rounded">
+                    <div className='cursor-pointer rounded px-2 py-1 font-mono text-xs hover:bg-neutral-200 dark:hover:bg-neutral-700'>
                       📄 tsconfig.json
                     </div>
                   </div>
@@ -314,84 +302,64 @@ export const IDELayout: Story = {
             </ResizablePanel>
             <ResizableHandle />
             <ResizablePanel defaultSize={60}>
-              <div className="h-full bg-white p-4 dark:bg-neutral-900">
-                <pre className="font-mono text-sm">
-                  <span className="text-neutral-500">1</span>{" "}
-                  <span className="text-blue-500">import</span>{" "}
-                  <span className="text-neutral-200">React</span>{" "}
-                  <span className="text-blue-500">from</span>{" "}
-                  <span className="text-amber-400">"react"</span>;<br />
-                  <span className="text-neutral-500">2</span> <br />
-                  <span className="text-neutral-500">3</span>{" "}
-                  <span className="text-blue-500">export</span>{" "}
-                  <span className="text-blue-500">default</span>{" "}
-                  <span className="text-blue-500">function</span>{" "}
-                  <span className="text-green-400">App</span>() {"{"}
+              <div className='h-full bg-white p-4 dark:bg-neutral-900'>
+                <pre className='font-mono text-sm'>
+                  <span className='text-neutral-500'>1</span> <span className='text-blue-500'>import</span>{" "}
+                  <span className='text-neutral-200'>React</span> <span className='text-blue-500'>from</span>{" "}
+                  <span className='text-amber-400'>"react"</span>;<br />
+                  <span className='text-neutral-500'>2</span> <br />
+                  <span className='text-neutral-500'>3</span> <span className='text-blue-500'>export</span>{" "}
+                  <span className='text-blue-500'>default</span> <span className='text-blue-500'>function</span>{" "}
+                  <span className='text-green-400'>App</span>() {"{"}
                   <br />
-                  <span className="text-neutral-500">4</span>{" "}
-                  <span className="text-blue-500">return</span> (<br />
-                  <span className="text-neutral-500">5</span>{" "}
-                  <span className="text-amber-400">&lt;div</span>{" "}
-                  <span className="text-green-400">className</span>=
-                  <span className="text-amber-400">"App"</span>
-                  <span className="text-amber-400">&gt;</span>
+                  <span className='text-neutral-500'>4</span> <span className='text-blue-500'>return</span> (<br />
+                  <span className='text-neutral-500'>5</span> <span className='text-amber-400'>&lt;div</span>{" "}
+                  <span className='text-green-400'>className</span>=<span className='text-amber-400'>"App"</span>
+                  <span className='text-amber-400'>&gt;</span>
                   <br />
-                  <span className="text-neutral-500">6</span>{" "}
-                  <span className="text-amber-400">&lt;header</span>{" "}
-                  <span className="text-green-400">className</span>=
-                  <span className="text-amber-400">"App-header"</span>
-                  <span className="text-amber-400">&gt;</span>
+                  <span className='text-neutral-500'>6</span> <span className='text-amber-400'>&lt;header</span>{" "}
+                  <span className='text-green-400'>className</span>=<span className='text-amber-400'>"App-header"</span>
+                  <span className='text-amber-400'>&gt;</span>
                   <br />
-                  <span className="text-neutral-500">7</span>{" "}
-                  <span className="text-amber-400">&lt;h1&gt;</span>Hello World
-                  <span className="text-amber-400">&lt;/h1&gt;</span>
+                  <span className='text-neutral-500'>7</span> <span className='text-amber-400'>&lt;h1&gt;</span>Hello World
+                  <span className='text-amber-400'>&lt;/h1&gt;</span>
                   <br />
-                  <span className="text-neutral-500">8</span>{" "}
-                  <span className="text-amber-400">&lt;/header&gt;</span>
+                  <span className='text-neutral-500'>8</span> <span className='text-amber-400'>&lt;/header&gt;</span>
                   <br />
-                  <span className="text-neutral-500">9</span>{" "}
-                  <span className="text-amber-400">&lt;/div&gt;</span>
+                  <span className='text-neutral-500'>9</span> <span className='text-amber-400'>&lt;/div&gt;</span>
                   <br />
-                  <span className="text-neutral-500">10</span> );
+                  <span className='text-neutral-500'>10</span> );
                   <br />
-                  <span className="text-neutral-500">11</span> {"}"}
+                  <span className='text-neutral-500'>11</span> {"}"}
                   <br />
                 </pre>
               </div>
             </ResizablePanel>
             <ResizableHandle />
             <ResizablePanel defaultSize={20}>
-              <div className="flex h-full flex-col">
-                <div className="border-b p-2 font-mono text-xs text-neutral-500 dark:text-neutral-400">
-                  PROBLEMS
+              <div className='flex h-full flex-col'>
+                <div className='border-b p-2 font-mono text-xs text-neutral-500 dark:text-neutral-400'>PROBLEMS</div>
+                <div className='flex-1 p-2'>
+                  <div className='text-xs text-neutral-400 dark:text-neutral-500'>No problems detected</div>
                 </div>
-                <div className="flex-1 p-2">
-                  <div className="text-xs text-neutral-400 dark:text-neutral-500">
-                    No problems detected
-                  </div>
-                </div>
-                <div className="border-t p-2 font-mono text-xs text-neutral-500 dark:text-neutral-400">
-                  OUTPUT
-                </div>
+                <div className='border-t p-2 font-mono text-xs text-neutral-500 dark:text-neutral-400'>OUTPUT</div>
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel defaultSize={15} minSize={10}>
-          <div className="flex h-full flex-col bg-neutral-100 dark:bg-neutral-800">
-            <div className="border-b p-2 font-mono text-xs text-neutral-500 dark:text-neutral-400">
-              TERMINAL
-            </div>
-            <div className="flex-1 overflow-auto p-2">
-              <pre className="font-mono text-xs text-neutral-700 dark:text-neutral-300">
+        <ResizablePanel
+          defaultSize={15}
+          minSize={10}>
+          <div className='flex h-full flex-col bg-neutral-100 dark:bg-neutral-800'>
+            <div className='border-b p-2 font-mono text-xs text-neutral-500 dark:text-neutral-400'>TERMINAL</div>
+            <div className='flex-1 overflow-auto p-2'>
+              <pre className='font-mono text-xs text-neutral-700 dark:text-neutral-300'>
                 $ npm start
                 <br />
-                <span className="text-green-500">
-                  Starting development server...
-                </span>
+                <span className='text-green-500'>Starting development server...</span>
                 <br />
-                <span className="text-green-500">Compiled successfully!</span>
+                <span className='text-green-500'>Compiled successfully!</span>
                 <br />
                 <br />
                 You can now view my-app in the browser.
@@ -407,8 +375,7 @@ export const IDELayout: Story = {
                 To create a production build, use npm run build.
                 <br />
                 <br />
-                webpack compiled{" "}
-                <span className="text-green-500">successfully</span>
+                webpack compiled <span className='text-green-500'>successfully</span>
                 <br />
               </pre>
             </div>
@@ -430,33 +397,30 @@ export const CustomHandle: Story = {
     },
   },
   render: () => (
-    <div className="h-[400px] max-w-[800px] rounded-lg border">
+    <div className='h-[400px] max-w-[800px] rounded-lg border'>
       <ResizablePanelGroup
-        direction="horizontal"
-        className="h-full rounded-lg border"
-      >
-        <ResizablePanel defaultSize={30} minSize={20}>
-          <div className="flex h-full items-center justify-center p-6">
-            <div className="text-center">
-              <h3 className="mb-2 font-semibold">Sidebar</h3>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                This panel has a custom resize handle
-              </p>
+        direction='horizontal'
+        className='h-full rounded-lg border'>
+        <ResizablePanel
+          defaultSize={30}
+          minSize={20}>
+          <div className='flex h-full items-center justify-center p-6'>
+            <div className='text-center'>
+              <h3 className='mb-2 font-semibold'>Sidebar</h3>
+              <p className='text-sm text-neutral-500 dark:text-neutral-400'>This panel has a custom resize handle</p>
             </div>
           </div>
         </ResizablePanel>
         <ResizableHandle>
-          <div className="flex h-full w-6 items-center justify-center bg-neutral-100 dark:bg-neutral-800">
-            <GripVertical className="h-4 w-4 text-neutral-500" />
+          <div className='flex h-full w-6 items-center justify-center bg-neutral-100 dark:bg-neutral-800'>
+            <GripVertical className='h-4 w-4 text-neutral-500' />
           </div>
         </ResizableHandle>
         <ResizablePanel defaultSize={70}>
-          <div className="flex h-full items-center justify-center p-6">
-            <div className="text-center">
-              <h3 className="mb-2 font-semibold">Content</h3>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                Try resizing using the custom handle
-              </p>
+          <div className='flex h-full items-center justify-center p-6'>
+            <div className='text-center'>
+              <h3 className='mb-2 font-semibold'>Content</h3>
+              <p className='text-sm text-neutral-500 dark:text-neutral-400'>Try resizing using the custom handle</p>
             </div>
           </div>
         </ResizablePanel>
@@ -470,8 +434,7 @@ export const CollapsiblePanels: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Shows a panel within the group that can be collapsed to a minimum size (or zero) and potentially expanded again.",
+        story: "Shows a panel within the group that can be collapsed to a minimum size (or zero) and potentially expanded again.",
       },
     },
   },
@@ -479,11 +442,10 @@ export const CollapsiblePanels: Story = {
     const [isCollapsed, setIsCollapsed] = React.useState(false);
 
     return (
-      <div className="h-[400px] max-w-[800px] rounded-lg border">
+      <div className='h-[400px] max-w-[800px] rounded-lg border'>
         <ResizablePanelGroup
-          direction="horizontal"
-          className="h-full rounded-lg border"
-        >
+          direction='horizontal'
+          className='h-full rounded-lg border'>
           <ResizablePanel
             defaultSize={30}
             minSize={15}
@@ -491,53 +453,46 @@ export const CollapsiblePanels: Story = {
             collapsedSize={5}
             onCollapse={() => setIsCollapsed(true)}
             onExpand={() => setIsCollapsed(false)}
-            className={
-              isCollapsed
-                ? "min-w-12 transition-all duration-300 ease-in-out"
-                : "transition-all duration-300 ease-in-out"
-            }
-          >
-            <div className="flex h-full flex-col">
-              <div className="flex h-12 items-center justify-center border-b">
+            className={isCollapsed ? "min-w-12 transition-all duration-300 ease-in-out" : "transition-all duration-300 ease-in-out"}>
+            <div className='flex h-full flex-col'>
+              <div className='flex h-12 items-center justify-center border-b'>
                 {isCollapsed ? (
                   <Button
-                    variant="ghost"
-                    className="h-8 w-8 p-0"
-                    onClick={() => setIsCollapsed(false)}
-                  >
-                    <span className="sr-only">Expand</span>
+                    variant='ghost'
+                    className='h-8 w-8 p-0'
+                    onClick={() => setIsCollapsed(false)}>
+                    <span className='sr-only'>Expand</span>
                     <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-4 w-4"
-                    >
-                      <path d="m9 18 6-6-6-6" />
+                      xmlns='http://www.w3.org/2000/svg'
+                      viewBox='0 0 24 24'
+                      fill='none'
+                      stroke='currentColor'
+                      strokeWidth='2'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      className='h-4 w-4'>
+                      <path d='m9 18 6-6-6-6' />
                     </svg>
                   </Button>
                 ) : (
-                  <div className="px-4 font-medium">Sidebar</div>
+                  <div className='px-4 font-medium'>Sidebar</div>
                 )}
               </div>
               <div className={isCollapsed ? "hidden" : "p-4"}>
-                <div className="space-y-4">
+                <div className='space-y-4'>
                   <Card>
-                    <CardHeader className="p-2">
-                      <CardTitle className="text-sm">Item 1</CardTitle>
+                    <CardHeader className='p-2'>
+                      <CardTitle className='text-sm'>Item 1</CardTitle>
                     </CardHeader>
-                    <CardContent className="p-2 text-xs">
+                    <CardContent className='p-2 text-xs'>
                       <p>This is collapsible</p>
                     </CardContent>
                   </Card>
                   <Card>
-                    <CardHeader className="p-2">
-                      <CardTitle className="text-sm">Item 2</CardTitle>
+                    <CardHeader className='p-2'>
+                      <CardTitle className='text-sm'>Item 2</CardTitle>
                     </CardHeader>
-                    <CardContent className="p-2 text-xs">
+                    <CardContent className='p-2 text-xs'>
                       <p>Try the collapse button</p>
                     </CardContent>
                   </Card>
@@ -547,30 +502,24 @@ export const CollapsiblePanels: Story = {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={70}>
-            <div className="flex h-full flex-col">
-              <div className="flex h-12 items-center border-b px-4 font-medium">
-                Content
-              </div>
-              <div className="p-4">
+            <div className='flex h-full flex-col'>
+              <div className='flex h-12 items-center border-b px-4 font-medium'>Content</div>
+              <div className='p-4'>
                 <Card>
                   <CardHeader>
                     <CardTitle>Main Content</CardTitle>
-                    <CardDescription>
-                      The sidebar panel can be collapsed
-                    </CardDescription>
+                    <CardDescription>The sidebar panel can be collapsed</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      This example shows a collapsible panel. Try clicking the
-                      button in the sidebar header to collapse it. When
-                      collapsed, it takes minimal space but remains accessible.
+                    <p className='text-sm text-neutral-500 dark:text-neutral-400'>
+                      This example shows a collapsible panel. Try clicking the button in the sidebar header to collapse it. When collapsed,
+                      it takes minimal space but remains accessible.
                     </p>
                   </CardContent>
                   <CardFooter>
                     <Button
-                      variant="outline"
-                      onClick={() => setIsCollapsed(!isCollapsed)}
-                    >
+                      variant='outline'
+                      onClick={() => setIsCollapsed(!isCollapsed)}>
                       {isCollapsed ? "Expand" : "Collapse"} Sidebar
                     </Button>
                   </CardFooter>

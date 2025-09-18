@@ -1,9 +1,10 @@
-import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import {zodResolver} from "@hookform/resolvers/zod";
+import type {Meta, StoryObj} from "@storybook/react";
+import {useForm} from "react-hook-form";
 import * as z from "zod";
 import {
+  Button,
+  Checkbox,
   Form,
   FormControl,
   FormDescription,
@@ -11,9 +12,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  Button,
   Input,
-  Checkbox,
   RadioGroup,
   RadioGroupItem,
   Select,
@@ -21,8 +20,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Textarea,
   Switch,
+  Textarea,
   toast,
 } from "../dist";
 
@@ -80,7 +79,7 @@ export const LoginForm: Story = {
   render: function LoginFormExample() {
     // Define form schema
     const formSchema = z.object({
-      email: z.string().email({ message: "Invalid email address" }),
+      email: z.string().email({message: "Invalid email address"}),
       password: z.string().min(6, {
         message: "Password must be at least 6 characters",
       }),
@@ -102,7 +101,7 @@ export const LoginForm: Story = {
       toast({
         title: "Form submitted",
         description: (
-          <pre className="mt-2 w-full rounded-md bg-neutral-100 p-2 dark:bg-neutral-900">
+          <pre className='mt-2 w-full rounded-md bg-neutral-100 p-2 dark:bg-neutral-900'>
             <code>{JSON.stringify(values, null, 2)}</code>
           </pre>
         ),
@@ -113,32 +112,36 @@ export const LoginForm: Story = {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-6 w-[350px]"
-        >
+          className='w-[350px] space-y-6'>
           <FormField
             control={form.control}
-            name="email"
-            render={({ field }) => (
+            name='email'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="Email" {...field} />
+                  <Input
+                    placeholder='Email'
+                    {...field}
+                  />
                 </FormControl>
-                <FormDescription>
-                  Enter your email address to log in.
-                </FormDescription>
+                <FormDescription>Enter your email address to log in.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
           <FormField
             control={form.control}
-            name="password"
-            render={({ field }) => (
+            name='password'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="Password" {...field} />
+                  <Input
+                    type='password'
+                    placeholder='Password'
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -146,25 +149,25 @@ export const LoginForm: Story = {
           />
           <FormField
             control={form.control}
-            name="rememberMe"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+            name='rememberMe'
+            render={({field}) => (
+              <FormItem className='flex flex-row items-center space-y-0 space-x-3 rounded-md border p-4'>
                 <FormControl>
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
-                <div className="space-y-1 leading-none">
+                <div className='space-y-1 leading-none'>
                   <FormLabel>Remember me</FormLabel>
-                  <FormDescription>
-                    Stay logged in on this device
-                  </FormDescription>
+                  <FormDescription>Stay logged in on this device</FormDescription>
                 </div>
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full">
+          <Button
+            type='submit'
+            className='w-full'>
             Log in
           </Button>
         </form>
@@ -187,10 +190,8 @@ export const RegistrationForm: Story = {
     // Define form schema
     const formSchema = z
       .object({
-        name: z
-          .string()
-          .min(2, { message: "Name must be at least 2 characters" }),
-        email: z.string().email({ message: "Invalid email address" }),
+        name: z.string().min(2, {message: "Name must be at least 2 characters"}),
+        email: z.string().email({message: "Invalid email address"}),
         password: z.string().min(8, {
           message: "Password must be at least 8 characters",
         }),
@@ -234,16 +235,18 @@ export const RegistrationForm: Story = {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-6 w-[400px]"
-        >
+          className='w-[400px] space-y-6'>
           <FormField
             control={form.control}
-            name="name"
-            render={({ field }) => (
+            name='name'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Full Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="John Doe" {...field} />
+                  <Input
+                    placeholder='John Doe'
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -251,26 +254,33 @@ export const RegistrationForm: Story = {
           />
           <FormField
             control={form.control}
-            name="email"
-            render={({ field }) => (
+            name='email'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="john.doe@example.com" {...field} />
+                  <Input
+                    placeholder='john.doe@example.com'
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <div className="grid grid-cols-2 gap-4">
+          <div className='grid grid-cols-2 gap-4'>
             <FormField
               control={form.control}
-              name="password"
-              render={({ field }) => (
+              name='password'
+              render={({field}) => (
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Password" {...field} />
+                    <Input
+                      type='password'
+                      placeholder='Password'
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -278,14 +288,14 @@ export const RegistrationForm: Story = {
             />
             <FormField
               control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
+              name='confirmPassword'
+              render={({field}) => (
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
                     <Input
-                      type="password"
-                      placeholder="Confirm Password"
+                      type='password'
+                      placeholder='Confirm Password'
                       {...field}
                     />
                   </FormControl>
@@ -296,23 +306,22 @@ export const RegistrationForm: Story = {
           </div>
           <FormField
             control={form.control}
-            name="role"
-            render={({ field }) => (
+            name='role'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Role</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+                  defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
+                      <SelectValue placeholder='Select a role' />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value='user'>User</SelectItem>
+                    <SelectItem value='admin'>Admin</SelectItem>
+                    <SelectItem value='manager'>Manager</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -321,46 +330,42 @@ export const RegistrationForm: Story = {
           />
           <FormField
             control={form.control}
-            name="bio"
-            render={({ field }) => (
+            name='bio'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Bio</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Tell us about yourself"
-                    className="h-20 resize-none"
+                    placeholder='Tell us about yourself'
+                    className='h-20 resize-none'
                     {...field}
                   />
                 </FormControl>
-                <FormDescription>
-                  Brief description for your profile (optional)
-                </FormDescription>
+                <FormDescription>Brief description for your profile (optional)</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
           <FormField
             control={form.control}
-            name="terms"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+            name='terms'
+            render={({field}) => (
+              <FormItem className='flex flex-row items-start space-y-0 space-x-3 rounded-md border p-4'>
                 <FormControl>
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
-                <div className="space-y-1 leading-none">
+                <div className='space-y-1 leading-none'>
                   <FormLabel>Accept terms and conditions</FormLabel>
-                  <FormDescription>
-                    You agree to our terms of service and privacy policy.
-                  </FormDescription>
+                  <FormDescription>You agree to our terms of service and privacy policy.</FormDescription>
                 </div>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button type="submit">Create account</Button>
+          <Button type='submit'>Create account</Button>
         </form>
       </Form>
     );
@@ -406,7 +411,7 @@ export const DifferentFieldTypes: Story = {
       toast({
         title: "Form submitted",
         description: (
-          <pre className="mt-2 w-full rounded-md bg-neutral-100 p-2 dark:bg-neutral-900">
+          <pre className='mt-2 w-full rounded-md bg-neutral-100 p-2 dark:bg-neutral-900'>
             <code>{JSON.stringify(values, null, 2)}</code>
           </pre>
         ),
@@ -417,16 +422,18 @@ export const DifferentFieldTypes: Story = {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-6 w-[400px]"
-        >
+          className='w-[400px] space-y-6'>
           <FormField
             control={form.control}
-            name="textInput"
-            render={({ field }) => (
+            name='textInput'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Text Input</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter some text" {...field} />
+                  <Input
+                    placeholder='Enter some text'
+                    {...field}
+                  />
                 </FormControl>
                 <FormDescription>Standard text input field</FormDescription>
                 <FormMessage />
@@ -435,14 +442,14 @@ export const DifferentFieldTypes: Story = {
           />
           <FormField
             control={form.control}
-            name="textarea"
-            render={({ field }) => (
+            name='textarea'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Textarea</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Type your message here"
-                    className="h-20 resize-none"
+                    placeholder='Type your message here'
+                    className='h-20 resize-none'
                     {...field}
                   />
                 </FormControl>
@@ -453,64 +460,59 @@ export const DifferentFieldTypes: Story = {
           />
           <FormField
             control={form.control}
-            name="select"
-            render={({ field }) => (
+            name='select'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Select</FormLabel>
                 <Select
                   onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+                  defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select an option" />
+                      <SelectValue placeholder='Select an option' />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="option1">Option 1</SelectItem>
-                    <SelectItem value="option2">Option 2</SelectItem>
-                    <SelectItem value="option3">Option 3</SelectItem>
+                    <SelectItem value='option1'>Option 1</SelectItem>
+                    <SelectItem value='option2'>Option 2</SelectItem>
+                    <SelectItem value='option3'>Option 3</SelectItem>
                   </SelectContent>
                 </Select>
-                <FormDescription>
-                  Select from predefined options
-                </FormDescription>
+                <FormDescription>Select from predefined options</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
           <FormField
             control={form.control}
-            name="checkbox"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+            name='checkbox'
+            render={({field}) => (
+              <FormItem className='flex flex-row items-center space-y-0 space-x-3 rounded-md border p-4'>
                 <FormControl>
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
-                <div className="space-y-1 leading-none">
+                <div className='space-y-1 leading-none'>
                   <FormLabel>Checkbox</FormLabel>
-                  <FormDescription>
-                    Boolean selection (true/false)
-                  </FormDescription>
+                  <FormDescription>Boolean selection (true/false)</FormDescription>
                 </div>
               </FormItem>
             )}
           />
           <FormField
             control={form.control}
-            name="switch"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+            name='switch'
+            render={({field}) => (
+              <FormItem className='flex flex-row items-center space-y-0 space-x-3 rounded-md border p-4'>
                 <FormControl>
                   <Switch
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
-                <div className="space-y-1 leading-none">
+                <div className='space-y-1 leading-none'>
                   <FormLabel>Switch</FormLabel>
                   <FormDescription>Toggle switch (on/off)</FormDescription>
                 </div>
@@ -519,44 +521,41 @@ export const DifferentFieldTypes: Story = {
           />
           <FormField
             control={form.control}
-            name="radioGroup"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
+            name='radioGroup'
+            render={({field}) => (
+              <FormItem className='space-y-3'>
                 <FormLabel>Radio Group</FormLabel>
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    className="flex flex-col space-y-1"
-                  >
-                    <FormItem className="flex items-center space-x-3 space-y-0">
+                    className='flex flex-col space-y-1'>
+                    <FormItem className='flex items-center space-y-0 space-x-3'>
                       <FormControl>
-                        <RadioGroupItem value="option1" />
+                        <RadioGroupItem value='option1' />
                       </FormControl>
-                      <FormLabel className="font-normal">Option 1</FormLabel>
+                      <FormLabel className='font-normal'>Option 1</FormLabel>
                     </FormItem>
-                    <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormItem className='flex items-center space-y-0 space-x-3'>
                       <FormControl>
-                        <RadioGroupItem value="option2" />
+                        <RadioGroupItem value='option2' />
                       </FormControl>
-                      <FormLabel className="font-normal">Option 2</FormLabel>
+                      <FormLabel className='font-normal'>Option 2</FormLabel>
                     </FormItem>
-                    <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormItem className='flex items-center space-y-0 space-x-3'>
                       <FormControl>
-                        <RadioGroupItem value="option3" />
+                        <RadioGroupItem value='option3' />
                       </FormControl>
-                      <FormLabel className="font-normal">Option 3</FormLabel>
+                      <FormLabel className='font-normal'>Option 3</FormLabel>
                     </FormItem>
                   </RadioGroup>
                 </FormControl>
-                <FormDescription>
-                  Select one option from a group
-                </FormDescription>
+                <FormDescription>Select one option from a group</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button type="submit">Submit</Button>
+          <Button type='submit'>Submit</Button>
         </form>
       </Form>
     );
@@ -578,16 +577,12 @@ export const ValidationForm: Story = {
     const formSchema = z.object({
       username: z
         .string()
-        .min(3, { message: "Username must be at least 3 characters" })
-        .max(20, { message: "Username cannot exceed 20 characters" })
+        .min(3, {message: "Username must be at least 3 characters"})
+        .max(20, {message: "Username cannot exceed 20 characters"})
         .regex(/^[a-z0-9_-]+$/, {
-          message:
-            "Username can only contain lowercase letters, numbers, underscores and hyphens",
+          message: "Username can only contain lowercase letters, numbers, underscores and hyphens",
         }),
-      email: z
-        .string()
-        .min(1, { message: "Email is required" })
-        .email({ message: "Invalid email address" }),
+      email: z.string().min(1, {message: "Email is required"}).email({message: "Invalid email address"}),
       age: z
         .string()
         .refine((val) => !isNaN(parseInt(val)), {
@@ -596,11 +591,7 @@ export const ValidationForm: Story = {
         .refine((val) => parseInt(val) >= 18, {
           message: "You must be at least 18 years old",
         }),
-      url: z
-        .string()
-        .url({ message: "Please enter a valid URL" })
-        .optional()
-        .or(z.literal("")),
+      url: z.string().url({message: "Please enter a valid URL"}).optional().or(z.literal("")),
       acceptTerms: z.boolean().refine((val) => val === true, {
         message: "You must accept the terms and conditions",
       }),
@@ -631,94 +622,95 @@ export const ValidationForm: Story = {
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-6 w-[400px]"
-        >
+          className='w-[400px] space-y-6'>
           <FormField
             control={form.control}
-            name="username"
-            render={({ field }) => (
+            name='username'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Username</FormLabel>
                 <FormControl>
-                  <Input placeholder="johndoe" {...field} />
+                  <Input
+                    placeholder='johndoe'
+                    {...field}
+                  />
                 </FormControl>
-                <FormDescription>
-                  Your unique username (3-20 characters)
-                </FormDescription>
+                <FormDescription>Your unique username (3-20 characters)</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
           <FormField
             control={form.control}
-            name="email"
-            render={({ field }) => (
+            name='email'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Email Address</FormLabel>
                 <FormControl>
-                  <Input placeholder="john.doe@example.com" {...field} />
+                  <Input
+                    placeholder='john.doe@example.com'
+                    {...field}
+                  />
                 </FormControl>
-                <FormDescription>
-                  Your email address will be verified
-                </FormDescription>
+                <FormDescription>Your email address will be verified</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
           <FormField
             control={form.control}
-            name="age"
-            render={({ field }) => (
+            name='age'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Age</FormLabel>
                 <FormControl>
-                  <Input placeholder="25" {...field} />
+                  <Input
+                    placeholder='25'
+                    {...field}
+                  />
                 </FormControl>
-                <FormDescription>
-                  You must be at least 18 years old
-                </FormDescription>
+                <FormDescription>You must be at least 18 years old</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
           <FormField
             control={form.control}
-            name="url"
-            render={({ field }) => (
+            name='url'
+            render={({field}) => (
               <FormItem>
                 <FormLabel>Website URL (optional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="https://example.com" {...field} />
+                  <Input
+                    placeholder='https://example.com'
+                    {...field}
+                  />
                 </FormControl>
-                <FormDescription>
-                  Your personal or company website
-                </FormDescription>
+                <FormDescription>Your personal or company website</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
           <FormField
             control={form.control}
-            name="acceptTerms"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+            name='acceptTerms'
+            render={({field}) => (
+              <FormItem className='flex flex-row items-start space-y-0 space-x-3 rounded-md border p-4'>
                 <FormControl>
                   <Checkbox
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
-                <div className="space-y-1 leading-none">
+                <div className='space-y-1 leading-none'>
                   <FormLabel>Accept terms and conditions</FormLabel>
-                  <FormDescription>
-                    By checking this, you agree to our terms of service.
-                  </FormDescription>
+                  <FormDescription>By checking this, you agree to our terms of service.</FormDescription>
                 </div>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button type="submit">Submit</Button>
+          <Button type='submit'>Submit</Button>
         </form>
       </Form>
     );

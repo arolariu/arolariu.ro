@@ -1,0 +1,1785 @@
+{
+  "$schema": "https://schema.postman.com/collection/json/v2.1.0/draft-04/collection.json",
+  "info": {
+    "name": "api.arolariu.ro",
+    "description": "",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"Response status follows RESTful conventions (collection-level)\", function () {",
+          "    var method = pm.request.method.toUpperCase();",
+          "    var code = pm.response.code;",
+          "    var expectedRange;",
+          "    // Use tolerant 2xx ranges by default; override with stricter per-request tests when necessary",
+          "    if (method === 'GET' || method === 'HEAD') { expectedRange = [200, 299]; }",
+          "    else if (method === 'POST') { expectedRange = [200, 299]; }",
+          "    else if (method === 'PUT' || method === 'PATCH') { expectedRange = [200, 299]; }",
+          "    else if (method === 'DELETE') { expectedRange = [200, 299]; }",
+          "    else { expectedRange = [200, 399]; }",
+          "    pm.expect(code).to.be.within(expectedRange[0], expectedRange[1]);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Invoices",
+      "item": [
+        {
+          "name": "Get Invoices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Retrieve a list of invoices for the current user or tenant. Supports pagination and filters.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Create Invoice",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Create a new invoice (receipt) in the system. Expected success: 201 Created.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userIdentifier\": \"fafa1779-d0d9-4442-bba6-cbf0e2bf6d7a\",\n  \"metadata\": {\n    \"author\": \"Alexandru\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected status 201 Created\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(201);",
+                  "});",
+                  "// Extract created resource id from response body and persist for reuse\n",
+                  "try {",
+                  "    var body = pm.response.json();",
+                  "    var id = body && (body.id || body.invoiceIdentifier || body.invoiceId);",
+                  "    if (id) {",
+                  "        // Store in collection + environment for subsequent requests\n",
+                  "        pm.collectionVariables.set('invoiceIdentifier', String(id));",
+                  "        pm.environment.set('invoiceIdentifier', String(id));",
+                  "        console.log('Stored invoiceIdentifier = ' + id);",
+                  "    } else {",
+                  "        console.warn('Create Invoice response did not include an id field');",
+                  "    }",
+                  "} catch (e) {",
+                  "    console.warn('Could not parse response body to extract id: ' + e);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Invoices 2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Alias of 'Get Invoices' used for a different test case or parameter set.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Retrieve a single invoice by its identifier, including items and metadata.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Update Invoice",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Updates a specific invoice in the system. Expected success: 202 Accepted.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isImportant\": true,\n  \"name\": \"Test 123\",\n  \"description\": \"Testing testing testing...\",\n  \"id\": \"{{invoiceIdentifier}}\",\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"sharedWith\": [\n    \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"\n  ],\n  \"category\": 3,\n  \"scan\": {\n    \"type\": 5,\n    \"location\": \"https://arolariu.ro/test\",\n    \"metadata\": {\n      \"TestString\": \"test 1\",\n      \"Test_Number\": 2,\n      \"T35T Boolean\": false\n    }\n  },\n  \"paymentInformation\": {\n    \"transactionDate\": \"2025-09-16T15:02:42.388Z\",\n    \"paymentType\": 0,\n    \"currency\": {\n      \"name\": \"Leu romanesc\",\n      \"code\": \"RON\",\n      \"symbol\": \"RON\"\n    },\n    \"totalCostAmount\": 123.17,\n    \"totalTaxAmount\": 20.1\n  },\n  \"merchantReference\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"items\": [\n    {\n      \"rawName\": \"Strugure\",\n      \"genericName\": \"Strugaria\",\n      \"category\": 1,\n      \"quantity\": 13,\n      \"quantityUnit\": \"buc\",\n      \"productCode\": \"10001\",\n      \"price\": 13.17,\n      \"detectedAllergens\": [\n        {\n          \"name\": \"Soare\",\n          \"description\": \"Sun sun sun\",\n          \"learnMoreAddress\": \"https://arolariu.ro/test\"\n        }\n      ],\n      \"metadata\": {\n        \"isEdited\": true,\n        \"isComplete\": true,\n        \"isSoftDeleted\": false\n      }\n    }\n  ],\n  \"possibleRecipes\": [\n    {\n      \"name\": \"Reteta #1\",\n      \"description\": \"Strugure test\",\n      \"duration\": \"15:02:42.388Z\",\n      \"complexity\": 2,\n      \"ingredients\": [\n        \"Strugure\"\n      ],\n      \"referenceForMoreDetails\": \"https://arolariu.ro/test\"\n    }\n  ],\n  \"additionalMetadata\": {\n    \"bamboo\":\"bamboo\",\n    \"TestString1234\": \"test 121\",\n    \"Test_Number1234\": 201,\n    \"T35T Boolean 1234\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Invoice",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Delete an invoice by its identifier. May be a soft delete depending on backend behavior.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Patch Invoice",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Apply a partial update to specific fields of an existing invoice.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{id}}\",\n  \"userIdentifier\": \"{{userIdentifier}}\",\n  \"isImportant\": false,\n  \"name\": \"Test 999\",\n  \"items\": [\n    {\n      \"rawName\": \"Marar\",\n      \"genericName\": \"Marar mar\",\n      \"category\": 1,\n      \"quantity\": 13,\n      \"quantityUnit\": \"buc\",\n      \"productCode\": \"10002\",\n      \"price\": 3.14,\n      \"detectedAllergens\": [\n        {\n          \"name\": \"Nectar\",\n          \"description\": \"be he he\",\n          \"learnMoreAddress\": \"https://arolariu.ro/test\"\n        }\n      ],\n      \"metadata\": {\n        \"isEdited\": true,\n        \"isComplete\": true,\n        \"isSoftDeleted\": false\n      }\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Invoice Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "List product/items associated with the specified invoice.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Create Invoice Product",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Add a new product/item to the specified invoice.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rawName\": \"Bezea\",\n  \"genericName\": \"Bezele yummy!\",\n  \"category\": 2,\n  \"quantity\": 100,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"100\",\n  \"price\": 131.93\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Invoice Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Remove a named product or item from the invoice by identifier or name.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "\"Bezea\"",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Invoice Products 2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Repeat/variant of 'Get Invoice Products' used for additional test coverage.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Create Invoice Product 2",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Alternate payload variant for creating an invoice product.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rawName\": \"Bezea\",\n  \"genericName\": \"Bezele yummy!\",\n  \"category\": 2,\n  \"quantity\": 100,\n  \"quantityUnit\": \"kg\",\n  \"productCode\": \"100\",\n  \"price\": 131.93\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Patch Invoice Product",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Update fields of an existing invoice product (quantity, price, metadata).",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rawName\": \"Bezea\",\n  \"genericName\": \"Bezele yucky yuck!\",\n  \"category\": 1,\n  \"quantity\": 50,\n  \"price\": 19.8000000000000000001\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Invoice Products 3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Another GET variant to validate product listing after modifications.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice 2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Alternate path to fetch invoice details (duplicate test case).",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Merchant",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Fetch the merchant entity associated with the invoice.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "merchant"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Delete Invoice's Merchant",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Disassociate or remove the merchant linked to the invoice.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "merchant"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Create Invoice's Merchant",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Adds a merchant to an invoice in the system. Expected success: 201 Created.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "merchant"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Merchant 2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Duplicate/variant of 'Get Invoice\u2019s Merchant' for test coverage.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "merchant"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Merchant 3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Additional variant for merchant retrieval to validate edge cases.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "merchant"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Scan",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Retrieve the scanned document/resource (image/pdf) for an invoice.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Create Invoice's Scan",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Creates a new invoice scan in the system. Expected success: 201 Created.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Scan 2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Variant of scan retrieval for idempotence and caching checks.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Update Invoice's Scan",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Updates a specific invoice scan in the system. Expected success: 202 Accepted.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Scan 3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Additional retrieval variant of invoice scan resource.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Delete Invoice's Scan",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Deletes a specific invoice scan from the system. Expected success: 204 No Content.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Metadata",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Fetch additional metadata (free-form key/value) for the invoice.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "metadata"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Patch Invoice's Metadata",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Patches the metadata from a specific invoice in the system. Expected success: 202 Accepted.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "metadata"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Metadata 2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Duplicate variant for invoice metadata retrieval.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "metadata"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Delete Invoice's Metadata",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Deletes specific metadata keys from a specific invoice in the system. Expected success: 204 No Content.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "metadata"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Metadata 3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Extra variant to validate metadata endpoints under different conditions.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/metadata",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "metadata"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice 3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Another invoice retrieval variant used in different test scenarios.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice 4",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Yet another GET invoice variant for load/consistency checks.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice Products 4",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Variant of product listing to exercise different code paths.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice Products 5",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Additional product-listing test to validate pagination and sorting.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/products",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoice's Scan 4",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Extra scan retrieval test used in larger workflows.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/scan",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices",
+                "{{invoiceIdentifier}}",
+                "scan"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Invoices 3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Another listing variant to validate filtering and edge cases.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/invoices",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "invoices"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Merchants",
+      "item": [
+        {
+          "name": "Get Merchants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Retrieve a list of merchants for the current user or tenant.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/merchants",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "merchants"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Create Merchant",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Creates a new merchant in the system. Expected success: 201 Created.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/merchants",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "merchants"
+              ],
+              "query": [],
+              "variable": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Expected status 201 Created\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(201);",
+                  "});",
+                  "// Extract created merchant id from response body and persist for reuse\n",
+                  "try {",
+                  "    var body = pm.response.json();",
+                  "    var id = body && (body.id || body.merchantIdentifier || body.merchantId);",
+                  "    if (id) {",
+                  "        pm.collectionVariables.set('merchantIdentifier', String(id));",
+                  "        pm.environment.set('merchantIdentifier', String(id));",
+                  "        console.log('Stored merchantIdentifier = ' + id);",
+                  "    } else {",
+                  "        console.warn('Create Merchant response did not include an id field');",
+                  "    }",
+                  "} catch (e) {",
+                  "    console.warn('Could not parse response body to extract id: ' + e);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Merchants 2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Alternate merchant listing call used for variant testing.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/merchants",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "merchants"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Merchant",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Retrieve details of a merchant identified by merchantIdentifier.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "merchants",
+                "{{merchantIdentifier}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Update Merchant",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Updates a specific merchant in the system. Expected success: 202 Accepted.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "merchants",
+                "{{merchantIdentifier}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Merchant 3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Additional merchant retrieval variant for test coverage.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "merchants",
+                "{{merchantIdentifier}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Merchant's Invoices Products 2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Fetch products across invoices for a merchant to analyze merchant-level inventory.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}/products",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "merchants",
+                "{{merchantIdentifier}}",
+                "products"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Delete Merchant",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Deletes a specific merchant from the system. Expected success: 204 No Content.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/merchants/{{merchantIdentifier}}",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "merchants",
+                "{{merchantIdentifier}}"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get Merchants 3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Another merchant listing variant to test edge conditions.",
+            "url": {
+              "raw": "{{baseUrl}}/rest/v1/merchants",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "port": "{{basePort}}",
+              "path": [
+                "rest",
+                "v1",
+                "merchants"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "invoiceIdentifier",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "merchantIdentifier",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userIdentifier",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "baseUrl",
+      "value": "{{baseProtocol}}://{{baseHost}}:{{basePort}}",
+      "type": "string"
+    },
+    {
+      "key": "baseHost",
+      "value": "localhost",
+      "type": "string"
+    },
+    {
+      "key": "basePort",
+      "value": "5001",
+      "type": "string"
+    },
+    {
+      "key": "baseProtocol",
+      "value": "https",
+      "type": "string"
+    }
+  ]
+}

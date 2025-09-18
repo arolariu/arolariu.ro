@@ -33,56 +33,56 @@ using OpenTelemetry.Trace;
 /// </example>
 public static class TracingExtensions
 {
-	/// <summary>
-	/// Configures OpenTelemetry distributed tracing with comprehensive instrumentation and Azure Monitor export.
-	/// This method enables end-to-end request tracing across all application layers and external dependencies.
-	/// </summary>
-	/// <param name="builder">The <see cref="WebApplicationBuilder"/> to configure with OpenTelemetry tracing.</param>
-	/// <remarks>
-	/// This method configures tracing instrumentation for:
-	/// - ASP.NET Core: HTTP request spans with timing, status codes, and routing information
-	/// - HTTP Client: Outbound request tracing for dependency monitoring and performance analysis
-	/// - Entity Framework Core: Database query tracing with SQL execution times and connection details
-	/// - Console export during debugging for immediate trace visibility
-	/// - Azure Monitor export for production distributed tracing and correlation
-	/// - Managed Identity authentication for secure Azure integration
-	/// </remarks>
-	/// <exception cref="ArgumentNullException">
-	/// Thrown when <paramref name="builder"/> is null.
-	/// </exception>
-	public static void AddOTelTracing(this WebApplicationBuilder builder)
-	{
-		ArgumentNullException.ThrowIfNull(builder);
+  /// <summary>
+  /// Configures OpenTelemetry distributed tracing with comprehensive instrumentation and Azure Monitor export.
+  /// This method enables end-to-end request tracing across all application layers and external dependencies.
+  /// </summary>
+  /// <param name="builder">The <see cref="WebApplicationBuilder"/> to configure with OpenTelemetry tracing.</param>
+  /// <remarks>
+  /// This method configures tracing instrumentation for:
+  /// - ASP.NET Core: HTTP request spans with timing, status codes, and routing information
+  /// - HTTP Client: Outbound request tracing for dependency monitoring and performance analysis
+  /// - Entity Framework Core: Database query tracing with SQL execution times and connection details
+  /// - Console export during debugging for immediate trace visibility
+  /// - Azure Monitor export for production distributed tracing and correlation
+  /// - Managed Identity authentication for secure Azure integration
+  /// </remarks>
+  /// <exception cref="ArgumentNullException">
+  /// Thrown when <paramref name="builder"/> is null.
+  /// </exception>
+  public static void AddOTelTracing(this WebApplicationBuilder builder)
+  {
+    ArgumentNullException.ThrowIfNull(builder);
 
-		builder.Services.AddOpenTelemetry().WithTracing(tracingOptions =>
-		{
-			tracingOptions.AddAspNetCoreInstrumentation();
-			tracingOptions.AddHttpClientInstrumentation();
-			tracingOptions.AddEntityFrameworkCoreInstrumentation();
+    builder.Services.AddOpenTelemetry().WithTracing(tracingOptions =>
+    {
+      tracingOptions.AddAspNetCoreInstrumentation();
+      tracingOptions.AddHttpClientInstrumentation();
+      tracingOptions.AddEntityFrameworkCoreInstrumentation();
 
-			if (Debugger.IsAttached)
-			{
-				tracingOptions.AddConsoleExporter();
-			}
+      if (Debugger.IsAttached)
+      {
+        tracingOptions.AddConsoleExporter();
+      }
 
-			tracingOptions.AddAzureMonitorTraceExporter(monitorOptions =>
-			{
-				using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
-				string instrumentationKey = new string(optionsManager
-					.GetRequiredService<IOptionsManager>()
-					.GetApplicationOptions()
-					.ApplicationInsightsEndpoint);
+      tracingOptions.AddAzureMonitorTraceExporter(monitorOptions =>
+      {
+        using ServiceProvider optionsManager = builder.Services.BuildServiceProvider();
+        string instrumentationKey = new string(optionsManager
+          .GetRequiredService<IOptionsManager>()
+          .GetApplicationOptions()
+          .ApplicationInsightsEndpoint);
 
-				monitorOptions.ConnectionString = instrumentationKey;
-				monitorOptions.Credential = new DefaultAzureCredential(
+        monitorOptions.ConnectionString = instrumentationKey;
+        monitorOptions.Credential = new DefaultAzureCredential(
 #if !DEBUG
                     new DefaultAzureCredentialOptions
                     {
                         ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
                     }
 #endif
-				);
-			});
-		});
-	}
+        );
+      });
+    });
+  }
 }

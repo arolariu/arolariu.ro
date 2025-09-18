@@ -8,15 +8,15 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.I
 
 public partial class InvoiceStorageFoundationService
 {
-	private static void ValidateIdentifierIsSet(Guid? identifier)
-	{
-		Validator.ValidateAndThrow<Guid?, InvoiceIdNotSetException>(identifier, identifier => identifier is not null, "Identifier not set!");
-		Validator.ValidateAndThrow<Guid?, InvoiceIdNotSetException>(identifier, identifier => identifier != Guid.Empty, "Identifier not set!");
-		Validator.ValidateAndThrow<Guid?, InvoiceIdNotSetException>(identifier, identifier => identifier != default, "Identifier not set!");
-	}
+  private static void ValidateIdentifierIsSet(Guid? identifier)
+  {
+    Validator.ValidateAndThrow<Guid?, InvoiceIdNotSetException>(identifier, identifier => identifier is not null, "Identifier not set!");
+    Validator.ValidateAndThrow<Guid?, InvoiceIdNotSetException>(identifier, identifier => identifier != Guid.Empty, "Identifier not set!");
+    Validator.ValidateAndThrow<Guid?, InvoiceIdNotSetException>(identifier, identifier => identifier != default, "Identifier not set!");
+  }
 
-	private static void ValidateInvoiceInformationIsValid(Invoice invoice)
-	{
-		// TODO: complete in the future, if needed.
-	}
+  private static void ValidateInvoiceInformationIsValid(Invoice invoice)
+  {
+    // TODO: complete in the future, if needed.
+  }
 }

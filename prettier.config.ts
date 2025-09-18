@@ -1,0 +1,47 @@
+import type {Config} from "prettier";
+
+const prettierConfig: Config = {
+  arrowParens: "always",
+  bracketSameLine: true,
+  bracketSpacing: false,
+  endOfLine: "crlf",
+  experimentalTernaries: false,
+  experimentalOperatorPosition: "start",
+  htmlWhitespaceSensitivity: "strict",
+  checkIgnorePragma: true,
+  insertPragma: false,
+  jsxSingleQuote: true,
+  parser: "typescript",
+  plugins: [
+    "@prettier/plugin-oxc",
+    "@prettier/plugin-hermes",
+    "prettier-plugin-organize-imports",
+    "prettier-plugin-tailwindcss",
+    "prettier-plugin-svelte",
+  ],
+  printWidth: 140,
+  proseWrap: "always",
+  semi: true,
+  singleAttributePerLine: true,
+  singleQuote: false,
+  tabWidth: 2,
+  trailingComma: "all",
+  useTabs: false,
+  overrides: [
+    {
+      files: "*.svelte",
+      options: {
+        parser: "svelte",
+      },
+    },
+    {
+      files: "*.html",
+      options: {
+        parser: "html",
+      },
+    },
+  ],
+};
+
+export default prettierConfig;
+

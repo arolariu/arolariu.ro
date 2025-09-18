@@ -1,5 +1,3 @@
-/** @format */
-
 import {expect, Page, test} from "@playwright/test";
 
 // Helper function to check link attributes for external links

@@ -1,15 +1,6 @@
-import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-  BreadcrumbEllipsis,
-} from "../dist";
-import { FolderIcon, HomeIcon, FileIcon } from "lucide-react";
+import type {Meta, StoryObj} from "@storybook/react";
+import {FileIcon, FolderIcon, HomeIcon} from "lucide-react";
+import {Breadcrumb, BreadcrumbEllipsis, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator} from "../dist";
 
 const meta: Meta<typeof Breadcrumb> = {
   title: "Design System/Breadcrumb",
@@ -54,8 +45,7 @@ export const Basic: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "A standard breadcrumb trail showing navigation hierarchy with links and the current page.",
+        story: "A standard breadcrumb trail showing navigation hierarchy with links and the current page.",
       },
     },
   },
@@ -63,11 +53,11 @@ export const Basic: Story = {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink href="/">Home</BreadcrumbLink>
+          <BreadcrumbLink href='/'>Home</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href="/products">Products</BreadcrumbLink>
+          <BreadcrumbLink href='/products'>Products</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
@@ -83,8 +73,7 @@ export const WithIcons: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Breadcrumb items can include icons alongside text for better visual representation.",
+        story: "Breadcrumb items can include icons alongside text for better visual representation.",
       },
     },
   },
@@ -92,22 +81,22 @@ export const WithIcons: Story = {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink href="/">
-            <HomeIcon className="size-4" />
+          <BreadcrumbLink href='/'>
+            <HomeIcon className='size-4' />
             <span>Home</span>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href="/documents">
-            <FolderIcon className="size-4" />
+          <BreadcrumbLink href='/documents'>
+            <FolderIcon className='size-4' />
             <span>Documents</span>
           </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
           <BreadcrumbPage>
-            <FileIcon className="size-4" />
+            <FileIcon className='size-4' />
             <span>report.pdf</span>
           </BreadcrumbPage>
         </BreadcrumbItem>
@@ -121,8 +110,7 @@ export const WithEllipsis: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Uses \`<BreadcrumbEllipsis>\` to shorten long breadcrumb trails, often used in responsive designs to save space.",
+        story: "Uses \`<BreadcrumbEllipsis>\` to shorten long breadcrumb trails, often used in responsive designs to save space.",
       },
     },
   },
@@ -130,11 +118,11 @@ export const WithEllipsis: Story = {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink href="/">Home</BreadcrumbLink>
+          <BreadcrumbLink href='/'>Home</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href="/products">Products</BreadcrumbLink>
+          <BreadcrumbLink href='/products'>Products</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
@@ -142,9 +130,7 @@ export const WithEllipsis: Story = {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href="/products/electronics/computers">
-            Computers
-          </BreadcrumbLink>
+          <BreadcrumbLink href='/products/electronics/computers'>Computers</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
@@ -160,8 +146,7 @@ export const CustomSeparator: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstrates replacing the default separator (slash) with custom content or styling within \`<BreadcrumbSeparator>\`.",
+        story: "Demonstrates replacing the default separator (slash) with custom content or styling within \`<BreadcrumbSeparator>\`.",
       },
     },
   },
@@ -169,16 +154,16 @@ export const CustomSeparator: Story = {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink href="/">Home</BreadcrumbLink>
+          <BreadcrumbLink href='/'>Home</BreadcrumbLink>
         </BreadcrumbItem>
-        <BreadcrumbSeparator className="text-blue-500">
+        <BreadcrumbSeparator className='text-blue-500'>
           {/* Custom separator using a forward slash */}
           <span>/</span>
         </BreadcrumbSeparator>
         <BreadcrumbItem>
-          <BreadcrumbLink href="/products">Products</BreadcrumbLink>
+          <BreadcrumbLink href='/products'>Products</BreadcrumbLink>
         </BreadcrumbItem>
-        <BreadcrumbSeparator className="text-blue-500">
+        <BreadcrumbSeparator className='text-blue-500'>
           <span>/</span>
         </BreadcrumbSeparator>
         <BreadcrumbItem>
@@ -194,22 +179,21 @@ export const Responsive: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Shows a common pattern for responsive breadcrumbs, collapsing intermediate items into an ellipsis on smaller screens.",
+        story: "Shows a common pattern for responsive breadcrumbs, collapsing intermediate items into an ellipsis on smaller screens.",
       },
     },
   },
   render: () => (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       <div>
-        <p className="text-sm font-medium mb-1">Mobile view (collapsed)</p>
-        <div className="max-w-[250px]">
+        <p className='mb-1 text-sm font-medium'>Mobile view (collapsed)</p>
+        <div className='max-w-[250px]'>
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/">
-                  <HomeIcon className="size-4" />
-                  <span className="sr-only">Home</span>
+                <BreadcrumbLink href='/'>
+                  <HomeIcon className='size-4' />
+                  <span className='sr-only'>Home</span>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -226,24 +210,22 @@ export const Responsive: Story = {
       </div>
 
       <div>
-        <p className="text-sm font-medium mb-1">Desktop view (expanded)</p>
+        <p className='mb-1 text-sm font-medium'>Desktop view (expanded)</p>
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/">
-                <HomeIcon className="size-4" />
-                <span className="hidden sm:inline-block ml-1">Home</span>
+              <BreadcrumbLink href='/'>
+                <HomeIcon className='size-4' />
+                <span className='ml-1 hidden sm:inline-block'>Home</span>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink href="/products">Products</BreadcrumbLink>
+              <BreadcrumbLink href='/products'>Products</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink href="/products/electronics">
-                Electronics
-              </BreadcrumbLink>
+              <BreadcrumbLink href='/products/electronics'>Electronics</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
@@ -261,41 +243,36 @@ export const CustomStyled: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Example of applying custom styles (background, text colors, etc.) to the breadcrumb components.",
+        story: "Example of applying custom styles (background, text colors, etc.) to the breadcrumb components.",
       },
     },
   },
   render: () => (
     <Breadcrumb>
-      <BreadcrumbList className="bg-blue-50 dark:bg-blue-950/30 px-3 py-2 rounded-lg">
+      <BreadcrumbList className='rounded-lg bg-blue-50 px-3 py-2 dark:bg-blue-950/30'>
         <BreadcrumbItem>
           <BreadcrumbLink
-            href="/"
-            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-          >
-            <HomeIcon className="size-4" />
-            <span className="ml-1">Home</span>
+            href='/'
+            className='text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300'>
+            <HomeIcon className='size-4' />
+            <span className='ml-1'>Home</span>
           </BreadcrumbLink>
         </BreadcrumbItem>
-        <BreadcrumbSeparator className="text-blue-400">
+        <BreadcrumbSeparator className='text-blue-400'>
           <span>/</span>
         </BreadcrumbSeparator>
         <BreadcrumbItem>
           <BreadcrumbLink
-            href="/products"
-            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-          >
+            href='/products'
+            className='text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300'>
             Products
           </BreadcrumbLink>
         </BreadcrumbItem>
-        <BreadcrumbSeparator className="text-blue-400">
+        <BreadcrumbSeparator className='text-blue-400'>
           <span>/</span>
         </BreadcrumbSeparator>
         <BreadcrumbItem>
-          <BreadcrumbPage className="text-blue-900 font-medium dark:text-blue-200">
-            Category
-          </BreadcrumbPage>
+          <BreadcrumbPage className='font-medium text-blue-900 dark:text-blue-200'>Category</BreadcrumbPage>
         </BreadcrumbItem>
       </BreadcrumbList>
     </Breadcrumb>

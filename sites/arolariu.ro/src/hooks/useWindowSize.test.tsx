@@ -1,5 +1,3 @@
-/** @format */
-
 import {act, renderHook} from "@testing-library/react";
 import {useWindowSize} from "./useWindowSize";
 

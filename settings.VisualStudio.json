@@ -1,0 +1,12 @@
+{
+  "environment.tabs.documentTabs.multiRowTabs": true,
+  "texteditor.general.enablesynthetictext": true,
+  "textEditor.advanced.showFileLevelCodeLens": true,
+  "textEditor.codeCleanup.profile": "profile1",
+  "textEditor.codeCompletions.general.codeCompletionsProviders": [
+    "copilot-completions",
+    "copilot-nes",
+    "intellicode"
+  ],
+  "debugging.general.stopOnExceptionCrossingManagedBoundary": true
+}

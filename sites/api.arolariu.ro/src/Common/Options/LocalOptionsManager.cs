@@ -82,111 +82,111 @@ using Microsoft.Extensions.Options;
 /// </example>
 public class LocalOptionsManager(IOptionsMonitor<LocalOptions> localOptionsMonitor) : IOptionsManager
 {
-	/// <summary>
-	/// Monitors local configuration options and provides file-based configuration management.
-	/// This monitor tracks changes to local configuration files and environment variables.
-	/// </summary>
-	/// <value>
-	/// An <see cref="IOptionsMonitor{TOptions}"/> instance that tracks <see cref="LocalOptions"/> configuration.
-	/// This monitor automatically reloads configuration when local files change during development.
-	/// </value>
-	/// <remarks>
-	/// <para>
-	/// The local options monitor provides development-focused capabilities:
-	/// </para>
-	/// <para>
-	/// <strong>File-based Configuration Management:</strong>
-	/// - Monitors appsettings.json and environment-specific files for changes
-	/// - Automatically reloads configuration when files are modified during development
-	/// - Supports hot-reload scenarios for rapid development iteration
-	/// - Maintains configuration hierarchy: command-line > environment variables > files
-	/// </para>
-	/// <para>
-	/// <strong>Development Workflow Integration:</strong>
-	/// - Works with Visual Studio and VS Code configuration reload features
-	/// - Supports user secrets for sensitive development data
-	/// - Integrates with .NET configuration providers for consistent behavior
-	/// - Enables configuration debugging through standard .NET logging
-	/// </para>
-	/// <para>
-	/// <strong>Local Service Support:</strong>
-	/// - Configured for local emulators (Azurite, Cosmos DB Emulator, SQL LocalDB)
-	/// - Default connections to localhost services and development databases
-	/// - Mock or development endpoints for external services
-	/// - Simplified authentication using development keys or tokens
-	/// </para>
-	/// <para>
-	/// <strong>Performance Characteristics:</strong>
-	/// - Fast configuration access (file-based, no network calls)
-	/// - Immediate reload when configuration files change
-	/// - Minimal memory footprint for development scenarios
-	/// - No external service dependencies or network latency
-	/// </para>
-	/// </remarks>
-	/// <exception cref="ArgumentNullException">
-	/// Thrown when the localOptionsMonitor parameter is null during construction.
-	/// </exception>
-	private readonly IOptionsMonitor<LocalOptions> LocalOptionsMonitor =
-		localOptionsMonitor ?? throw new ArgumentNullException(nameof(localOptionsMonitor));
+  /// <summary>
+  /// Monitors local configuration options and provides file-based configuration management.
+  /// This monitor tracks changes to local configuration files and environment variables.
+  /// </summary>
+  /// <value>
+  /// An <see cref="IOptionsMonitor{TOptions}"/> instance that tracks <see cref="LocalOptions"/> configuration.
+  /// This monitor automatically reloads configuration when local files change during development.
+  /// </value>
+  /// <remarks>
+  /// <para>
+  /// The local options monitor provides development-focused capabilities:
+  /// </para>
+  /// <para>
+  /// <strong>File-based Configuration Management:</strong>
+  /// - Monitors appsettings.json and environment-specific files for changes
+  /// - Automatically reloads configuration when files are modified during development
+  /// - Supports hot-reload scenarios for rapid development iteration
+  /// - Maintains configuration hierarchy: command-line > environment variables > files
+  /// </para>
+  /// <para>
+  /// <strong>Development Workflow Integration:</strong>
+  /// - Works with Visual Studio and VS Code configuration reload features
+  /// - Supports user secrets for sensitive development data
+  /// - Integrates with .NET configuration providers for consistent behavior
+  /// - Enables configuration debugging through standard .NET logging
+  /// </para>
+  /// <para>
+  /// <strong>Local Service Support:</strong>
+  /// - Configured for local emulators (Azurite, Cosmos DB Emulator, SQL LocalDB)
+  /// - Default connections to localhost services and development databases
+  /// - Mock or development endpoints for external services
+  /// - Simplified authentication using development keys or tokens
+  /// </para>
+  /// <para>
+  /// <strong>Performance Characteristics:</strong>
+  /// - Fast configuration access (file-based, no network calls)
+  /// - Immediate reload when configuration files change
+  /// - Minimal memory footprint for development scenarios
+  /// - No external service dependencies or network latency
+  /// </para>
+  /// </remarks>
+  /// <exception cref="ArgumentNullException">
+  /// Thrown when the localOptionsMonitor parameter is null during construction.
+  /// </exception>
+  private readonly IOptionsMonitor<LocalOptions> LocalOptionsMonitor =
+    localOptionsMonitor ?? throw new ArgumentNullException(nameof(localOptionsMonitor));
 
-	/// <inheritdoc/>
-	/// <remarks>
-	/// <para>
-	/// This implementation retrieves local configuration options from file-based sources
-	/// and environment variables. The configuration is optimized for development and testing scenarios:
-	/// </para>
-	/// <para>
-	/// <strong>Configuration Sources (in order of precedence):</strong>
-	/// 1. Command-line arguments (highest precedence)
-	/// 2. Environment variables
-	/// 3. User secrets (for development)
-	/// 4. appsettings.{Environment}.json (e.g., appsettings.Development.json)
-	/// 5. appsettings.json (base configuration)
-	/// </para>
-	/// <para>
-	/// <strong>Local Development Features:</strong>
-	/// - Automatic configuration reload when files change
-	/// - Support for development-specific connection strings and endpoints
-	/// - Integration with local emulators and development databases
-	/// - Simplified configuration for rapid development iteration
-	/// </para>
-	/// <para>
-	/// <strong>Typical Local Configuration Values:</strong>
-	/// - SQL Server LocalDB or SQL Server Express connections
-	/// - Cosmos DB Emulator endpoints (https://localhost:8081/)
-	/// - Azurite blob storage emulator (http://127.0.0.1:10000/)
-	/// - Development-specific API keys and endpoints
-	/// - Mock service URLs for external dependencies
-	/// </para>
-	/// <para>
-	/// <strong>Performance and Reliability:</strong>
-	/// - No network dependencies for configuration retrieval
-	/// - Immediate access to configuration values (file-based)
-	/// - Reliable operation in offline development scenarios
-	/// - Consistent behavior across development team members
-	/// </para>
-	/// </remarks>
-	/// <returns>
-	/// An <see cref="ApplicationOptions"/> instance containing local development configuration values.
-	/// The returned object includes settings optimized for development and testing environments.
-	/// </returns>
-	/// <example>
-	/// <code>
-	/// // Get local development configuration
-	/// var options = localOptionsManager.GetApplicationOptions();
-	///
-	/// // Access local development endpoints
-	/// var localDbConnection = options.SqlConnectionString;
-	/// // Example: "Server=(localdb)\\mssqllocaldb;Database=ArolariumDev;Trusted_Connection=true;"
-	///
-	/// var cosmosEmulator = options.NoSqlConnectionString;
-	/// // Example: "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7..."
-	///
-	/// var azuriteStorage = options.StorageAccountEndpoint;
-	/// // Example: "http://127.0.0.1:10000/devstoreaccount1"
-	///
-	/// // Configuration updates automatically when appsettings files change
-	/// </code>
-	/// </example>
-	public ApplicationOptions GetApplicationOptions() => LocalOptionsMonitor.CurrentValue;
+  /// <inheritdoc/>
+  /// <remarks>
+  /// <para>
+  /// This implementation retrieves local configuration options from file-based sources
+  /// and environment variables. The configuration is optimized for development and testing scenarios:
+  /// </para>
+  /// <para>
+  /// <strong>Configuration Sources (in order of precedence):</strong>
+  /// 1. Command-line arguments (highest precedence)
+  /// 2. Environment variables
+  /// 3. User secrets (for development)
+  /// 4. appsettings.{Environment}.json (e.g., appsettings.Development.json)
+  /// 5. appsettings.json (base configuration)
+  /// </para>
+  /// <para>
+  /// <strong>Local Development Features:</strong>
+  /// - Automatic configuration reload when files change
+  /// - Support for development-specific connection strings and endpoints
+  /// - Integration with local emulators and development databases
+  /// - Simplified configuration for rapid development iteration
+  /// </para>
+  /// <para>
+  /// <strong>Typical Local Configuration Values:</strong>
+  /// - SQL Server LocalDB or SQL Server Express connections
+  /// - Cosmos DB Emulator endpoints (https://localhost:8081/)
+  /// - Azurite blob storage emulator (http://127.0.0.1:10000/)
+  /// - Development-specific API keys and endpoints
+  /// - Mock service URLs for external dependencies
+  /// </para>
+  /// <para>
+  /// <strong>Performance and Reliability:</strong>
+  /// - No network dependencies for configuration retrieval
+  /// - Immediate access to configuration values (file-based)
+  /// - Reliable operation in offline development scenarios
+  /// - Consistent behavior across development team members
+  /// </para>
+  /// </remarks>
+  /// <returns>
+  /// An <see cref="ApplicationOptions"/> instance containing local development configuration values.
+  /// The returned object includes settings optimized for development and testing environments.
+  /// </returns>
+  /// <example>
+  /// <code>
+  /// // Get local development configuration
+  /// var options = localOptionsManager.GetApplicationOptions();
+  ///
+  /// // Access local development endpoints
+  /// var localDbConnection = options.SqlConnectionString;
+  /// // Example: "Server=(localdb)\\mssqllocaldb;Database=ArolariumDev;Trusted_Connection=true;"
+  ///
+  /// var cosmosEmulator = options.NoSqlConnectionString;
+  /// // Example: "AccountEndpoint=https://localhost:8081/;AccountKey=C2y6yDjf5/R+ob0N8A7..."
+  ///
+  /// var azuriteStorage = options.StorageAccountEndpoint;
+  /// // Example: "http://127.0.0.1:10000/devstoreaccount1"
+  ///
+  /// // Configuration updates automatically when appsettings files change
+  /// </code>
+  /// </example>
+  public ApplicationOptions GetApplicationOptions() => LocalOptionsMonitor.CurrentValue;
 }

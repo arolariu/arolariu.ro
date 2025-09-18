@@ -1,5 +1,3 @@
-/** @format */
-
 import InvoiceFeedback from "@/../emails/invoices/InvoiceFeedback";
 import {resend} from "@/lib/utils.server";
 import {NextRequest, NextResponse} from "next/server";

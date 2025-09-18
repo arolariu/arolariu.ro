@@ -1,19 +1,7 @@
+import type {Meta, StoryObj} from "@storybook/react";
+import {ArrowUpDown, ChevronDown, MoreHorizontal} from "lucide-react";
 import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableFooter,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableCaption,
-  Button,
-  Checkbox,
-  Badge,
-} from "../dist";
-import { ArrowUpDown, MoreHorizontal, ChevronDown, Check } from "lucide-react";
+import {Badge, Button, Checkbox, Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "../dist";
 
 const meta: Meta<typeof Table> = {
   title: "Design System/Table",
@@ -162,7 +150,7 @@ export const Basic: Story = {
     },
   },
   render: () => (
-    <div className="rounded-md border w-[600px]">
+    <div className='w-[600px] rounded-md border'>
       <Table>
         <TableCaption>A list of your recent invoices.</TableCaption>
         <TableHeader>
@@ -170,18 +158,16 @@ export const Basic: Story = {
             <TableHead>Invoice</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Method</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
+            <TableHead className='text-right'>Amount</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {invoices.map((invoice) => (
             <TableRow key={invoice.id}>
-              <TableCell className="font-medium">{invoice.id}</TableCell>
+              <TableCell className='font-medium'>{invoice.id}</TableCell>
               <TableCell>{invoice.paymentStatus}</TableCell>
               <TableCell>{invoice.paymentMethod}</TableCell>
-              <TableCell className="text-right">
-                {invoice.totalAmount}
-              </TableCell>
+              <TableCell className='text-right'>{invoice.totalAmount}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -195,71 +181,42 @@ export const CustomStyling: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstrates adding striped rows to the Table for improved readability using CSS classes on `TableRow`.",
+        story: "Demonstrates adding striped rows to the Table for improved readability using CSS classes on `TableRow`.",
       },
     },
   },
   render: () => (
-    <div className="rounded-md border w-[600px]">
+    <div className='w-[600px] rounded-md border'>
       <Table>
-        <TableHeader className="bg-neutral-100 dark:bg-neutral-800">
-          <TableRow className="hover:bg-transparent border-0">
-            <TableHead className="text-center font-semibold text-neutral-700 dark:text-neutral-300">
-              Invoice
-            </TableHead>
-            <TableHead className="text-center font-semibold text-neutral-700 dark:text-neutral-300">
-              Status
-            </TableHead>
-            <TableHead className="text-center font-semibold text-neutral-700 dark:text-neutral-300">
-              Method
-            </TableHead>
-            <TableHead className="text-center font-semibold text-neutral-700 dark:text-neutral-300">
-              Amount
-            </TableHead>
+        <TableHeader className='bg-neutral-100 dark:bg-neutral-800'>
+          <TableRow className='border-0 hover:bg-transparent'>
+            <TableHead className='text-center font-semibold text-neutral-700 dark:text-neutral-300'>Invoice</TableHead>
+            <TableHead className='text-center font-semibold text-neutral-700 dark:text-neutral-300'>Status</TableHead>
+            <TableHead className='text-center font-semibold text-neutral-700 dark:text-neutral-300'>Method</TableHead>
+            <TableHead className='text-center font-semibold text-neutral-700 dark:text-neutral-300'>Amount</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {invoices.map((invoice, index) => (
             <TableRow
               key={invoice.id}
-              className={
-                index % 2 === 0
-                  ? "bg-white dark:bg-neutral-950"
-                  : "bg-neutral-50 dark:bg-neutral-900"
-              }
-            >
-              <TableCell className="font-medium text-center">
-                {invoice.id}
-              </TableCell>
-              <TableCell className="text-center">
+              className={index % 2 === 0 ? "bg-white dark:bg-neutral-950" : "bg-neutral-50 dark:bg-neutral-900"}>
+              <TableCell className='text-center font-medium'>{invoice.id}</TableCell>
+              <TableCell className='text-center'>
                 <Badge
-                  variant={
-                    invoice.paymentStatus === "Paid"
-                      ? "default"
-                      : invoice.paymentStatus === "Pending"
-                        ? "outline"
-                        : "destructive"
-                  }
-                >
+                  variant={invoice.paymentStatus === "Paid" ? "default" : invoice.paymentStatus === "Pending" ? "outline" : "destructive"}>
                   {invoice.paymentStatus}
                 </Badge>
               </TableCell>
-              <TableCell className="text-center">
-                {invoice.paymentMethod}
-              </TableCell>
-              <TableCell className="text-center font-mono">
-                {invoice.totalAmount}
-              </TableCell>
+              <TableCell className='text-center'>{invoice.paymentMethod}</TableCell>
+              <TableCell className='text-center font-mono'>{invoice.totalAmount}</TableCell>
             </TableRow>
           ))}
         </TableBody>
         <TableFooter>
           <TableRow>
             <TableCell colSpan={3}>Total</TableCell>
-            <TableCell className="text-center font-mono font-semibold">
-              $1,750.00
-            </TableCell>
+            <TableCell className='text-center font-mono font-semibold'>$1,750.00</TableCell>
           </TableRow>
         </TableFooter>
       </Table>
@@ -272,24 +229,23 @@ export const WithSelection: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Shows a Table where rows highlight on hover, providing visual feedback.",
+        story: "Shows a Table where rows highlight on hover, providing visual feedback.",
       },
     },
   },
   render: () => (
-    <div className="rounded-md border w-[700px]">
+    <div className='w-[700px] rounded-md border'>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[50px]">
-              <Checkbox aria-label="Select all" />
+            <TableHead className='w-[50px]'>
+              <Checkbox aria-label='Select all' />
             </TableHead>
-            <TableHead className="w-[200px]">Name</TableHead>
+            <TableHead className='w-[200px]'>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Role</TableHead>
-            <TableHead className="text-center">Status</TableHead>
-            <TableHead className="w-[100px]"></TableHead>
+            <TableHead className='text-center'>Status</TableHead>
+            <TableHead className='w-[100px]'></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -298,22 +254,21 @@ export const WithSelection: Story = {
               <TableCell>
                 <Checkbox aria-label={`Select ${user.name}`} />
               </TableCell>
-              <TableCell className="font-medium">{user.name}</TableCell>
+              <TableCell className='font-medium'>{user.name}</TableCell>
               <TableCell>{user.email}</TableCell>
               <TableCell>{user.role}</TableCell>
-              <TableCell className="text-center">
-                <div className="flex justify-center">
-                  <Badge
-                    variant={user.status === "Active" ? "default" : "secondary"}
-                  >
-                    {user.status}
-                  </Badge>
+              <TableCell className='text-center'>
+                <div className='flex justify-center'>
+                  <Badge variant={user.status === "Active" ? "default" : "secondary"}>{user.status}</Badge>
                 </div>
               </TableCell>
               <TableCell>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  className='h-8 w-8 p-0'>
+                  <span className='sr-only'>Open menu</span>
+                  <MoreHorizontal className='h-4 w-4' />
                 </Button>
               </TableCell>
             </TableRow>
@@ -334,32 +289,32 @@ export const SortableColumns: Story = {
     },
   },
   render: () => (
-    <div className="rounded-md border w-[700px]">
+    <div className='w-[700px] rounded-md border'>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>
-              <div className="flex items-center gap-1 cursor-pointer select-none">
+              <div className='flex cursor-pointer items-center gap-1 select-none'>
                 Product
-                <ArrowUpDown className="h-4 w-4" />
+                <ArrowUpDown className='h-4 w-4' />
               </div>
             </TableHead>
             <TableHead>
-              <div className="flex items-center gap-1 cursor-pointer select-none">
+              <div className='flex cursor-pointer items-center gap-1 select-none'>
                 Category
-                <ArrowUpDown className="h-4 w-4" />
+                <ArrowUpDown className='h-4 w-4' />
               </div>
             </TableHead>
             <TableHead>
-              <div className="flex items-center gap-1 cursor-pointer select-none">
+              <div className='flex cursor-pointer items-center gap-1 select-none'>
                 Stock
-                <ArrowUpDown className="h-4 w-4" />
+                <ArrowUpDown className='h-4 w-4' />
               </div>
             </TableHead>
             <TableHead>
-              <div className="flex items-center gap-1 cursor-pointer select-none">
+              <div className='flex cursor-pointer items-center gap-1 select-none'>
                 Price
-                <ArrowUpDown className="h-4 w-4" />
+                <ArrowUpDown className='h-4 w-4' />
               </div>
             </TableHead>
           </TableRow>
@@ -367,13 +322,11 @@ export const SortableColumns: Story = {
         <TableBody>
           {products.map((product) => (
             <TableRow key={product.id}>
-              <TableCell className="font-medium">{product.name}</TableCell>
+              <TableCell className='font-medium'>{product.name}</TableCell>
               <TableCell>{product.category}</TableCell>
               <TableCell>
                 <Badge variant={product.stock > 0 ? "default" : "destructive"}>
-                  {product.stock > 0
-                    ? `${product.stock} in stock`
-                    : "Out of stock"}
+                  {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
                 </Badge>
               </TableCell>
               <TableCell>{product.price}</TableCell>
@@ -390,15 +343,12 @@ export const ExpandableRows: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Illustrates a more compact Table layout with reduced cell padding.",
+        story: "Illustrates a more compact Table layout with reduced cell padding.",
       },
     },
   },
   render: function ExpandableTable() {
-    const [expandedRows, setExpandedRows] = React.useState<
-      Record<string, boolean>
-    >({});
+    const [expandedRows, setExpandedRows] = React.useState<Record<string, boolean>>({});
 
     const toggleRow = (id: string) => {
       setExpandedRows((prev) => ({
@@ -408,7 +358,7 @@ export const ExpandableRows: Story = {
     };
 
     return (
-      <div className="rounded-md border w-[700px]">
+      <div className='w-[700px] rounded-md border'>
         <Table>
           <TableHeader>
             <TableRow>
@@ -416,53 +366,41 @@ export const ExpandableRows: Story = {
               <TableHead>Invoice</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Method</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
+              <TableHead className='text-right'>Amount</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {invoices.map((invoice) => (
               <React.Fragment key={invoice.id}>
                 <TableRow>
-                  <TableCell className="w-[50px]">
+                  <TableCell className='w-[50px]'>
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      variant='ghost'
+                      size='icon'
                       onClick={() => toggleRow(invoice.id)}
-                      aria-label={`${
-                        expandedRows[invoice.id] ? "Collapse" : "Expand"
-                      } row`}
-                    >
-                      <ChevronDown
-                        className={`h-4 w-4 transition-transform ${
-                          expandedRows[invoice.id] ? "rotate-180" : ""
-                        }`}
-                      />
+                      aria-label={`${expandedRows[invoice.id] ? "Collapse" : "Expand"} row`}>
+                      <ChevronDown className={`h-4 w-4 transition-transform ${expandedRows[invoice.id] ? "rotate-180" : ""}`} />
                     </Button>
                   </TableCell>
-                  <TableCell className="font-medium">{invoice.id}</TableCell>
+                  <TableCell className='font-medium'>{invoice.id}</TableCell>
                   <TableCell>
                     <Badge
                       variant={
-                        invoice.paymentStatus === "Paid"
-                          ? "default"
-                          : invoice.paymentStatus === "Pending"
-                            ? "outline"
-                            : "destructive"
-                      }
-                    >
+                        invoice.paymentStatus === "Paid" ? "default" : invoice.paymentStatus === "Pending" ? "outline" : "destructive"
+                      }>
                       {invoice.paymentStatus}
                     </Badge>
                   </TableCell>
                   <TableCell>{invoice.paymentMethod}</TableCell>
-                  <TableCell className="text-right">
-                    {invoice.totalAmount}
-                  </TableCell>
+                  <TableCell className='text-right'>{invoice.totalAmount}</TableCell>
                 </TableRow>
                 {expandedRows[invoice.id] && (
-                  <TableRow className="bg-neutral-50 dark:bg-neutral-900">
+                  <TableRow className='bg-neutral-50 dark:bg-neutral-900'>
                     <TableCell></TableCell>
-                    <TableCell colSpan={4} className="p-4">
-                      <div className="text-sm space-y-2">
+                    <TableCell
+                      colSpan={4}
+                      className='p-4'>
+                      <div className='space-y-2 text-sm'>
                         <p>
                           <strong>Invoice Details</strong>
                         </p>

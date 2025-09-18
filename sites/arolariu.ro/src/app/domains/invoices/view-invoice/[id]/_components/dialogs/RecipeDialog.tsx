@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 // TODO: refactor.
@@ -277,6 +275,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md md:max-w-lg'>
         <DialogHeader>
@@ -367,6 +366,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-lg md:max-w-6xl'>
         <DialogHeader>
@@ -576,6 +576,7 @@ const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
   return (
     <AlertDialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <AlertDialogContent>
         <AlertDialogHeader>

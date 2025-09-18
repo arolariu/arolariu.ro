@@ -1,9 +1,9 @@
-/** @format */
-
 "use client";
 
+import {RichText} from "@/presentation/Text";
 import {useTranslations} from "next-intl";
-import DomainServiceCard from "./_components/DomainServiceCard";
+import Image from "next/image";
+import Link from "next/link";
 
 /**
  * The Domains screen, client side rendered.
@@ -24,27 +24,46 @@ export default function RenderDomainsScreen(): React.JSX.Element {
             {t("title")}
           </h1>
           <article className='2xsm:mt-8 pl-0 leading-relaxed sm:w-3/5 sm:pl-10 md:mt-0'>
-            {t.rich("subtitle", {
-              br: (chunks: React.ReactNode) => (
-                <>
-                  <br />
-                  {chunks}
-                </>
-              ),
-              code: (chunks: React.ReactNode) => <code className='font-extrabold text-blue-400'>{chunks}</code>,
-            })}
+            <RichText
+              sectionKey='Domains'
+              textKey='subtitle'
+            />
           </article>
         </div>
       </section>
 
       <section className='2xsm:items-center 2xsm:justify-center 2xsm:justify-items-center flex flex-row flex-wrap gap-4 md:items-baseline md:justify-normal md:justify-items-start'>
-        <DomainServiceCard
-          title={t("services.invoices.card.title")}
-          description={t("services.invoices.card.description")}
-          linkTo='/domains/invoices'
-          imageUrl='/images/domains/invoice-management-system.png'
-          callToAction={t("services.callToAction")}
-        />
+        {/* Service Card for IMS. */}
+        <section className='mb-6 max-w-80 rounded-xl border p-4 sm:mb-0'>
+          <article className='h-64 overflow-hidden rounded-lg'>
+            <Image
+              alt='content'
+              className='h-full w-full object-cover object-center'
+              src='/images/domains/invoice-management-system.png'
+              width='600'
+              height='400'
+            />
+          </article>
+          <article>
+            <h2 className='title-font mt-5 text-center text-xl font-medium dark:text-gray-300'>{t("services.invoices.card.title")}</h2>
+            <p className='mt-2 text-base leading-relaxed italic'>{t("services.invoices.card.description")}</p>
+            <Link
+              href='/domains/invoices'
+              className='mt-3 inline-flex items-center text-indigo-500'>
+              {t("services.callToAction")}
+              <svg
+                fill='none'
+                stroke='currentColor'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth='2'
+                className='ml-2 h-4 w-4'
+                viewBox='0 0 24 24'>
+                <path d='M5 12h14M12 5l7 7-7 7' />
+              </svg>
+            </Link>
+          </article>
+        </section>
       </section>
     </main>
   );

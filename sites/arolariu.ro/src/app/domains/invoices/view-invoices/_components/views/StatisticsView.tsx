@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Invoice} from "@/types/invoices";
 
 type Props = {

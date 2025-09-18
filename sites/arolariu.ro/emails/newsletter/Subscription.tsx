@@ -1,8 +1,26 @@
-/** @format */
-
 import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
-export default function SubscriptionEmail({username}: Readonly<{username: string}>) {
+type Props = {
+  username: string;
+};
+
+const DEVELOPMENT_PROPS: Readonly<Props> = {
+  username: "testuser",
+};
+
+/**
+ * Subscription email template.
+ * @param username The username of the recipient.
+ * @returns The email template as a React JSX template.
+ */
+export default function SubscriptionEmail(props: Readonly<Props>) {
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-param-reassign -- dev mode only
+    props = DEVELOPMENT_PROPS;
+  }
+
+  const {username} = props;
+
   return (
     <Html>
       <Head>
@@ -35,20 +53,20 @@ export default function SubscriptionEmail({username}: Readonly<{username: string
             </Link>
             <Section>
               <Row>
-                <Text className='font-bold'>Hello {username ?? "there"}!</Text>
+                <Text className='font-bold'>{`Hello ${username ?? "there"}!`}</Text>
               </Row>
               <Row>
                 <Text>
-                  You've been subscribed to the <code className='font-mono'>arolariu.ro</code> newsletter! 🎉🎉
+                  You&apos;ve been subscribed to the <code className='font-mono'>arolariu.ro</code> newsletter! 🎉🎉
                 </Text>
                 <Text>
-                  You'll receive updates on new events, articles, and other interesting updates to the platform. The cadence of these
+                  You&apos;ll receive updates on new events, articles, and other interesting updates to the platform. The cadence of these
                   e-mails should be somewhere between 1 to 2 e-mails per calendar year quarter.
                 </Text>
               </Row>
               <Row>
                 <Text>
-                  If you have any questions or concerns, please don't hesitate to contact the author of the platform at
+                  If you have any questions or concerns, please don&apos;t hesitate to contact the author of the platform at
                   <Link href='mailto:admin@arolariu.ro'> admin@arolariu.ro</Link>.
                 </Text>
               </Row>
@@ -91,3 +109,4 @@ export default function SubscriptionEmail({username}: Readonly<{username: string
     </Html>
   );
 }
+

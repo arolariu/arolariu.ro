@@ -1,11 +1,24 @@
-/** @format */
-
 "use client";
 
-import {motion} from "motion/react";
+import {motion, useInView, type Variants} from "motion/react";
 import {useTranslations} from "next-intl";
+import {useRef} from "react";
 import {TbBook2, TbBrain, TbCalculator, TbCheck, TbTestPipe, TbUsers} from "react-icons/tb";
-import {useInView} from "react-intersection-observer";
+
+const containerVariants: Variants = {
+  hidden: {opacity: 0},
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants: Variants = {
+  hidden: {opacity: 0, y: 20},
+  visible: {opacity: 1, y: 0, transition: {duration: 0.5}},
+};
 
 /**
  * @description Component for displaying the author's professional skill set.
@@ -16,10 +29,8 @@ import {useInView} from "react-intersection-observer";
  */
 export default function Competencies(): React.JSX.Element {
   const t = useTranslations("About.Author.Competencies");
-  const [ref, inView] = useInView({
-    triggerOnce: false,
-    threshold: 0.1,
-  });
+  const sectionRef = useRef<HTMLDivElement | null>(null);
+  const inView = useInView(sectionRef, {amount: 0.1, once: false});
 
   const skills = [
     {
@@ -54,21 +65,6 @@ export default function Competencies(): React.JSX.Element {
     },
   ];
 
-  const containerVariants = {
-    hidden: {opacity: 0},
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: {opacity: 0, y: 20},
-    visible: {opacity: 1, y: 0, transition: {duration: 0.5}},
-  };
-
   return (
     <section className='mx-auto max-w-6xl px-4 py-20 md:px-8'>
       <motion.div
@@ -81,7 +77,7 @@ export default function Competencies(): React.JSX.Element {
       </motion.div>
 
       <motion.div
-        ref={ref}
+        ref={sectionRef}
         variants={containerVariants}
         initial='hidden'
         animate={inView ? "visible" : "hidden"}

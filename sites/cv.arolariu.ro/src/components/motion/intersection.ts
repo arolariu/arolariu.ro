@@ -1,36 +1,38 @@
-/** @format */
+/* eslint-disable no-unused-vars */
+/* eslint-disable no-magic-numbers */
 
-export interface IntersectParams {
+// eslint-disable-next-line functional/type-declaration-immutability -- broken, fix.
+type IntersectParameters = Readonly<{
   threshold?: number | number[];
   root?: Element | Document | null;
   rootMargin?: string;
   once?: boolean;
-  onEnter?: (entry: IntersectionObserverEntry) => void;
-  onLeave?: (entry: IntersectionObserverEntry) => void;
-}
+  onEnter?: (_: IntersectionObserverEntry) => void;
+  onLeave?: (_: IntersectionObserverEntry) => void;
+}>;
 
-export function intersect(node: HTMLElement, params: IntersectParams = {}) {
+export function intersect(node: HTMLElement, parameters: IntersectParameters = {}) {
   // Keep a stable observer and hot-swap callbacks to avoid missing initial entries
   let observer: IntersectionObserver | null = null;
 
   // Current effective options (with defaults applied)
   let current = {
-    threshold: params.threshold ?? 0.1,
-    root: params.root ?? (null as Element | Document | null),
-    rootMargin: params.rootMargin ?? "0px",
-    once: params.once ?? true,
+    threshold: parameters.threshold ?? 0.1,
+    root: parameters.root ?? (null as Element | Document | null),
+    rootMargin: parameters.rootMargin ?? "0px",
+    once: parameters.once ?? true,
   };
 
   // Hot-swappable callbacks
-  let onEnterCb: ((entry: IntersectionObserverEntry) => void) | undefined = params.onEnter;
-  let onLeaveCb: ((entry: IntersectionObserverEntry) => void) | undefined = params.onLeave;
+  let onEnterCallback: ((entry: IntersectionObserverEntry) => void) | undefined = parameters.onEnter;
+  let onLeaveCallback: ((entry: IntersectionObserverEntry) => void) | undefined = parameters.onLeave;
 
   function cleanup() {
     observer?.disconnect();
     observer = null;
   }
 
-  function optionsChanged(next: IntersectParams) {
+  function optionsChanged(next: IntersectParameters) {
     return (
       (current.threshold ?? 0.1) !== (next.threshold ?? 0.1)
       || current.root !== (next.root ?? null)
@@ -43,13 +45,14 @@ export function intersect(node: HTMLElement, params: IntersectParams = {}) {
     cleanup();
     observer = new IntersectionObserver(
       (entries) => {
+        // eslint-disable-next-line functional/no-loop-statements -- readability
         for (const entry of entries) {
           if (entry.target !== node) continue;
           if (entry.isIntersecting) {
-            onEnterCb?.(entry);
+            onEnterCallback?.(entry);
             if (current.once) observer?.unobserve(node);
           } else {
-            onLeaveCb?.(entry);
+            onLeaveCallback?.(entry);
           }
         }
       },
@@ -62,10 +65,10 @@ export function intersect(node: HTMLElement, params: IntersectParams = {}) {
   initObserver();
 
   return {
-    update(next: IntersectParams) {
+    update(next: IntersectParameters) {
       // Update callbacks without recreating observer
-      onEnterCb = next.onEnter;
-      onLeaveCb = next.onLeave;
+      onEnterCallback = next.onEnter;
+      onLeaveCallback = next.onLeave;
 
       // Recreate observer only if structural options changed
       if (optionsChanged(next)) {
@@ -83,3 +86,4 @@ export function intersect(node: HTMLElement, params: IntersectParams = {}) {
     },
   };
 }
+

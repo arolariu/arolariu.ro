@@ -1,5 +1,3 @@
-/** @format */
-
 import {fetchUser} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
 import {getLocale, getTranslations} from "next-intl/server";

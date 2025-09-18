@@ -1,5 +1,3 @@
-/** @format */
-
 import type {BaseEntity} from "./";
 
 /**

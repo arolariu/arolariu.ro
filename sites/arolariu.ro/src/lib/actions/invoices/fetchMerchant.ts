@@ -1,5 +1,3 @@
-/** @format */
-
 "use server";
 
 import type {Merchant} from "@/types/invoices";
@@ -22,8 +20,11 @@ export default async function fetchMerchant(id: string, authToken: string): Prom
       },
     });
 
-    if (response.ok) return response.json() as Promise<Merchant>;
-    else throw new Error(`Failed to fetch merchant. Status: ${response.status}`);
+    if (response.ok) {
+      return response.json() as Promise<Merchant>;
+    } else {
+      throw new Error(`Failed to fetch merchant. Status: ${response.status}`);
+    }
   } catch (error) {
     console.error("Error fetching the merchant from the server:", error);
     throw error;

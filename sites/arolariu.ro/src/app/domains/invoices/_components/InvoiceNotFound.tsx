@@ -1,5 +1,3 @@
-/** @format */
-
 /**
  * This component is used to display a message when an invoice is not found.
  * @returns The JSX for the invoice not found view.

@@ -1,5 +1,3 @@
-/** @format */
-
 "use server";
 
 import {API_URL} from "@/lib/utils.server";

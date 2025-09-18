@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import EnhancedLegalArticles from "../_components/EnhancedLegalArticles";

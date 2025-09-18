@@ -1,6 +1,8 @@
+import type {Meta, StoryObj} from "@storybook/react";
+import {CalendarIcon, GearIcon, PaletteIcon, PersonIcon, SearchIcon} from "lucide-react";
 import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
 import {
+  Button,
   Command,
   CommandDialog,
   CommandEmpty,
@@ -10,15 +12,7 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-  Button,
 } from "../dist";
-import {
-  CalendarIcon,
-  GearIcon,
-  PaletteIcon,
-  PersonIcon,
-  SearchIcon,
-} from "lucide-react";
 
 const meta: Meta<typeof Command> = {
   title: "Design System/Command",
@@ -64,34 +58,34 @@ type Story = StoryObj<typeof Command>;
 // Basic command menu
 export const Basic: Story = {
   render: () => (
-    <Command className="rounded-lg border shadow-md">
-      <CommandInput placeholder="Type a command or search..." />
+    <Command className='rounded-lg border shadow-md'>
+      <CommandInput placeholder='Type a command or search...' />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
-        <CommandGroup heading="Suggestions">
+        <CommandGroup heading='Suggestions'>
           <CommandItem>
-            <CalendarIcon className="mr-2 h-4 w-4" />
+            <CalendarIcon className='mr-2 h-4 w-4' />
             <span>Calendar</span>
           </CommandItem>
           <CommandItem>
-            <SearchIcon className="mr-2 h-4 w-4" />
+            <SearchIcon className='mr-2 h-4 w-4' />
             <span>Search</span>
           </CommandItem>
           <CommandItem>
-            <PersonIcon className="mr-2 h-4 w-4" />
+            <PersonIcon className='mr-2 h-4 w-4' />
             <span>Profile</span>
             <CommandShortcut>⌘P</CommandShortcut>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
-        <CommandGroup heading="Settings">
+        <CommandGroup heading='Settings'>
           <CommandItem>
-            <GearIcon className="mr-2 h-4 w-4" />
+            <GearIcon className='mr-2 h-4 w-4' />
             <span>Settings</span>
             <CommandShortcut>⌘S</CommandShortcut>
           </CommandItem>
           <CommandItem>
-            <PaletteIcon className="mr-2 h-4 w-4" />
+            <PaletteIcon className='mr-2 h-4 w-4' />
             <span>Theme</span>
             <CommandShortcut>⌘T</CommandShortcut>
           </CommandItem>
@@ -109,15 +103,17 @@ export const WithDialog: Story = {
     return (
       <>
         <Button onClick={() => setOpen(true)}>
-          <SearchIcon className="mr-2 h-4 w-4" />
+          <SearchIcon className='mr-2 h-4 w-4' />
           Open Command Menu
         </Button>
-        <CommandDialog open={open} onOpenChange={setOpen}>
+        <CommandDialog
+          open={open}
+          onOpenChange={setOpen}>
           <Command>
-            <CommandInput placeholder="Type a command or search..." />
+            <CommandInput placeholder='Type a command or search...' />
             <CommandList>
               <CommandEmpty>No results found.</CommandEmpty>
-              <CommandGroup heading="Documents">
+              <CommandGroup heading='Documents'>
                 <CommandItem>
                   <span>Annual Report.pdf</span>
                 </CommandItem>
@@ -129,7 +125,7 @@ export const WithDialog: Story = {
                 </CommandItem>
               </CommandGroup>
               <CommandSeparator />
-              <CommandGroup heading="Recent">
+              <CommandGroup heading='Recent'>
                 <CommandItem>
                   <span>Project Proposal</span>
                   <CommandShortcut>5d ago</CommandShortcut>
@@ -156,7 +152,7 @@ export const ComplexExample: Story = {
         category: "Documentation",
         items: ["API Reference", "Getting Started", "Tutorials"],
       },
-      { category: "Projects", items: ["Dashboard", "E-commerce", "Analytics"] },
+      {category: "Projects", items: ["Dashboard", "E-commerce", "Analytics"]},
       {
         category: "Tools",
         items: ["Color Picker", "Icon Browser", "Code Generator"],
@@ -171,17 +167,15 @@ export const ComplexExample: Story = {
       return bookmarks
         .map((category) => ({
           category: category.category,
-          items: category.items.filter((item) =>
-            item.toLowerCase().includes(search.toLowerCase()),
-          ),
+          items: category.items.filter((item) => item.toLowerCase().includes(search.toLowerCase())),
         }))
         .filter((category) => category.items.length > 0);
     }, [search, bookmarks]);
 
     return (
-      <Command className="rounded-lg border shadow-md w-[400px]">
+      <Command className='w-[400px] rounded-lg border shadow-md'>
         <CommandInput
-          placeholder="Search bookmarks..."
+          placeholder='Search bookmarks...'
           value={search}
           onValueChange={setSearch}
         />
@@ -193,8 +187,7 @@ export const ComplexExample: Story = {
                 {categoryData.items.map((item) => (
                   <CommandItem
                     key={item}
-                    onSelect={() => console.log(`Selected: ${item}`)}
-                  >
+                    onSelect={() => console.log(`Selected: ${item}`)}>
                     <span>{item}</span>
                   </CommandItem>
                 ))}
@@ -202,12 +195,12 @@ export const ComplexExample: Story = {
               <CommandSeparator />
             </React.Fragment>
           ))}
-          <CommandGroup heading="Actions">
-            <CommandItem className="text-blue-600">
+          <CommandGroup heading='Actions'>
+            <CommandItem className='text-blue-600'>
               <span>Add new bookmark</span>
               <CommandShortcut>⌘B</CommandShortcut>
             </CommandItem>
-            <CommandItem className="text-blue-600">
+            <CommandItem className='text-blue-600'>
               <span>Manage categories</span>
             </CommandItem>
           </CommandGroup>

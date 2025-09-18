@@ -1,60 +1,31 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "allowUnreachableCode": false,
-    "allowUnusedLabels": false,
+    "baseUrl": "./",
+    "exactOptionalPropertyTypes": false,
     "allowArbitraryExtensions": true,
-    "allowImportingTsExtensions": true,
-    "alwaysStrict": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitAny": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noErrorTruncation": true,
-    "strict": true,
-    "strictBindCallApply": true,
-    "strictFunctionTypes": true,
-    "strictNullChecks": true,
-    "strictPropertyInitialization": true,
-    "noEmit": true,
-    "removeComments": true,
-    "allowJs": true,
-    "checkJs": true,
-    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
-    "target": "esnext",
-    "diagnostics": true,
-    "extendedDiagnostics": true,
-    "pretty": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "incremental": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "resolvePackageJsonExports": true,
-    "resolvePackageJsonImports": true,
-    "isolatedModules": true,
-    "jsx": "preserve",
-    "disableSizeLimit": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
     "plugins": [
       {
         "name": "next"
       }
     ],
-    "baseUrl": "./",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "types": ["@types/node", "@types/react", "@types/react-dom"],
-    "stripInternal": true
+    "types": [
+      "@types/node",
+      "@types/react",
+      "@types/react-dom"
+    ]
   },
+  "exclude": [
+    ".storybook/**",
+    "**/*.{test,stories}.{ts,tsx}",
+    "node_modules"
+  ],
   "include": [
     "**/*.d.ts",
     "**/*.ts",
@@ -62,6 +33,5 @@
     ".next/types/**/*.ts",
     "next.config.ts",
     "postcss.config.js"
-  ],
-  "exclude": ["node_modules"]
+  ]
 }

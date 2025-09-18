@@ -1,5 +1,3 @@
-/** @format */
-
 import {useUserInformation} from "@/hooks";
 import type {Invoice} from "@/types/invoices";
 import {

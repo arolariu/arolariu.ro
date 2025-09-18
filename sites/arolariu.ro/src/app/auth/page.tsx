@@ -1,5 +1,3 @@
-/** @format */
-
 import {fetchUser} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
 import {getLocale, getTranslations} from "next-intl/server";
@@ -27,6 +25,8 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function AuthPage(): Promise<React.JSX.Element> {
   const {isAuthenticated} = await fetchUser();
-  if (isAuthenticated) return redirect("/");
+  if (isAuthenticated) {
+    return redirect("/");
+  }
   return <RenderAuthScreen />;
 }

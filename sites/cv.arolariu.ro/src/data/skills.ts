@@ -1,15 +1,14 @@
-/** @format */
-
 import type {Skill} from "@/types";
 
-type SkillAreas = "Frontend" | "Backend" | "Tools & Technologies" | "Architecture & Design";
+type SkillAreas = Readonly<"Frontend" | "Backend" | "Tools & Technologies" | "Architecture & Design">;
 
-type SkillStructure = {
-  title: SkillAreas;
-  skills: Skill[];
-};
+// eslint-disable-next-line functional/type-declaration-immutability -- broken, fix.
+type SkillStructure = Readonly<{
+  title: Readonly<SkillAreas>;
+  skills: ReadonlyArray<Skill>;
+}>;
 
-export const skills: SkillStructure[] = [
+export const skills: ReadonlyArray<SkillStructure> = [
   {
     title: "Frontend",
     skills: [
@@ -46,3 +45,4 @@ export const skills: SkillStructure[] = [
     ],
   },
 ];
+

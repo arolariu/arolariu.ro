@@ -1,18 +1,6 @@
-import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-  Button,
-} from "../dist";
-import {
-  InfoIcon,
-  Settings2Icon,
-  HelpCircleIcon,
-  AlertCircleIcon,
-} from "lucide-react";
+import type {Meta, StoryObj} from "@storybook/react";
+import {AlertCircleIcon, HelpCircleIcon, InfoIcon, Settings2Icon} from "lucide-react";
+import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "../dist";
 
 const meta: Meta<typeof TooltipProvider> = {
   title: "Design System/Tooltip",
@@ -67,15 +55,14 @@ export const Basic: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "A basic Tooltip that appears when hovering over or focusing the trigger button. Displays simple text content.",
+        story: "A basic Tooltip that appears when hovering over or focusing the trigger button. Displays simple text content.",
       },
     },
   },
   render: () => (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button variant="outline">Hover Me</Button>
+        <Button variant='outline'>Hover Me</Button>
       </TooltipTrigger>
       <TooltipContent>
         <p>This is a basic tooltip</p>
@@ -94,10 +81,10 @@ export const WithIconTrigger: Story = {
     },
   },
   render: () => (
-    <div className="flex gap-8">
+    <div className='flex gap-8'>
       <Tooltip>
         <TooltipTrigger asChild>
-          <InfoIcon className="h-5 w-5 cursor-pointer text-blue-500" />
+          <InfoIcon className='h-5 w-5 cursor-pointer text-blue-500' />
         </TooltipTrigger>
         <TooltipContent>
           <p>Information tooltip</p>
@@ -106,7 +93,7 @@ export const WithIconTrigger: Story = {
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Settings2Icon className="h-5 w-5 cursor-pointer text-gray-500" />
+          <Settings2Icon className='h-5 w-5 cursor-pointer text-gray-500' />
         </TooltipTrigger>
         <TooltipContent>
           <p>Settings tooltip</p>
@@ -115,7 +102,7 @@ export const WithIconTrigger: Story = {
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <HelpCircleIcon className="h-5 w-5 cursor-pointer text-purple-500" />
+          <HelpCircleIcon className='h-5 w-5 cursor-pointer text-purple-500' />
         </TooltipTrigger>
         <TooltipContent>
           <p>Help tooltip</p>
@@ -130,45 +117,44 @@ export const Positioning: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Demonstrates configuring the Tooltip to appear in different positions relative to the trigger element.",
+        story: "Demonstrates configuring the Tooltip to appear in different positions relative to the trigger element.",
       },
     },
   },
   render: () => (
-    <div className="grid grid-cols-2 gap-8">
+    <div className='grid grid-cols-2 gap-8'>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="outline">Top (Default)</Button>
+          <Button variant='outline'>Top (Default)</Button>
         </TooltipTrigger>
-        <TooltipContent side="top">
+        <TooltipContent side='top'>
           <p>Tooltip positioned on top</p>
         </TooltipContent>
       </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="outline">Right</Button>
+          <Button variant='outline'>Right</Button>
         </TooltipTrigger>
-        <TooltipContent side="right">
+        <TooltipContent side='right'>
           <p>Tooltip positioned on right</p>
         </TooltipContent>
       </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="outline">Bottom</Button>
+          <Button variant='outline'>Bottom</Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">
+        <TooltipContent side='bottom'>
           <p>Tooltip positioned on bottom</p>
         </TooltipContent>
       </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="outline">Left</Button>
+          <Button variant='outline'>Left</Button>
         </TooltipTrigger>
-        <TooltipContent side="left">
+        <TooltipContent side='left'>
           <p>Tooltip positioned on left</p>
         </TooltipContent>
       </Tooltip>
@@ -186,23 +172,23 @@ export const CustomStyling: Story = {
     },
   },
   render: () => (
-    <div className="flex gap-8">
+    <div className='flex gap-8'>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="outline">Styled Tooltip</Button>
+          <Button variant='outline'>Styled Tooltip</Button>
         </TooltipTrigger>
-        <TooltipContent className="bg-blue-600 text-white">
+        <TooltipContent className='bg-blue-600 text-white'>
           <p>Custom blue tooltip</p>
         </TooltipContent>
       </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="outline">Warning</Button>
+          <Button variant='outline'>Warning</Button>
         </TooltipTrigger>
-        <TooltipContent className="bg-amber-500 text-black">
-          <div className="flex items-center gap-2">
-            <AlertCircleIcon className="h-4 w-4" />
+        <TooltipContent className='bg-amber-500 text-black'>
+          <div className='flex items-center gap-2'>
+            <AlertCircleIcon className='h-4 w-4' />
             <p>Warning tooltip</p>
           </div>
         </TooltipContent>
@@ -210,9 +196,9 @@ export const CustomStyling: Story = {
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button variant="outline">Error</Button>
+          <Button variant='outline'>Error</Button>
         </TooltipTrigger>
-        <TooltipContent className="bg-red-500">
+        <TooltipContent className='bg-red-500'>
           <p>Error message</p>
         </TooltipContent>
       </Tooltip>
@@ -225,17 +211,16 @@ export const WithDelay: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Shows a Tooltip configured with a delay before it appears on hover/focus.",
+        story: "Shows a Tooltip configured with a delay before it appears on hover/focus.",
       },
     },
   },
   render: () => (
     <TooltipProvider delayDuration={1000}>
-      <div className="flex gap-4">
+      <div className='flex gap-4'>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline">1000ms Delay</Button>
+            <Button variant='outline'>1000ms Delay</Button>
           </TooltipTrigger>
           <TooltipContent>
             <p>This tooltip has a 1 second delay</p>
@@ -251,26 +236,20 @@ export const ComplexContent: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "Illustrates using custom React components or richer content within the Tooltip instead of just plain text.",
+        story: "Illustrates using custom React components or richer content within the Tooltip instead of just plain text.",
       },
     },
   },
   render: () => (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button variant="outline">Rich Tooltip</Button>
+        <Button variant='outline'>Rich Tooltip</Button>
       </TooltipTrigger>
-      <TooltipContent className="w-[200px] p-2">
-        <div className="space-y-2">
-          <h4 className="font-medium">Tooltip Title</h4>
-          <p className="text-xs">
-            This is a more detailed tooltip with multiple lines of text and
-            formatting.
-          </p>
-          <div className="border-t pt-1 text-xs text-neutral-400">
-            Press ESC to dismiss
-          </div>
+      <TooltipContent className='w-[200px] p-2'>
+        <div className='space-y-2'>
+          <h4 className='font-medium'>Tooltip Title</h4>
+          <p className='text-xs'>This is a more detailed tooltip with multiple lines of text and formatting.</p>
+          <div className='border-t pt-1 text-xs text-neutral-400'>Press ESC to dismiss</div>
         </div>
       </TooltipContent>
     </Tooltip>

@@ -1,4 +1,3 @@
-/** @format */
 "use client";
 
 import type {Invoice} from "@/types/invoices";
@@ -15,9 +14,8 @@ import {
   TabsTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useEffect, useRef, useState} from "react";
+import {useRef, useState} from "react";
 import {TbHelpCircle, TbMessage, TbSettings} from "react-icons/tb";
-import {MessageInput} from "../MessageInput";
 import {MessageList} from "../MessageList";
 
 type Message = {
@@ -45,60 +43,10 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
       timestamp: new Date().toISOString(),
     },
   ]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // todo: complete this.
   console.log(invoices);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({behavior: "smooth"});
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim()) return;
-
-    // Add user message
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content,
-      role: "user",
-      timestamp: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setIsLoading(true);
-
-    try {
-      // Add AI message
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: `TODO: "Implement AI response generation"`,
-        role: "assistant",
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      console.error("Error generating AI response:", error);
-
-      // Add error message
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "Sorry, I encountered an error processing your request. Please try again.",
-        role: "assistant",
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <motion.div
@@ -153,12 +101,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
                   <MessageList messages={messages} />
                   <div ref={messagesEndRef} />
                 </div>
-                <div className='border-t p-4'>
-                  <MessageInput
-                    onSendMessage={handleSendMessage}
-                    isLoading={isLoading}
-                  />
-                </div>
+                <div className='border-t p-4' />
               </div>
             </CardContent>
           </Card>

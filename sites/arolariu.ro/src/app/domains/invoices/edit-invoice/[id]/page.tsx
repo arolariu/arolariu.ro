@@ -1,10 +1,6 @@
-/** @format */
-
 import {fetchUser} from "@/lib/actions/user/fetchUser";
 import ForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";
-
-type Props = {params: Promise<{id: string}>};
 
 export const metadata: Metadata = {
   title: "Invoice Management System - Edit Invoice",
@@ -16,13 +12,17 @@ export const metadata: Metadata = {
  * This page uses a dynamic route to display a specific invoice.
  * @returns The edit invoice page, SSR'ed.
  */
-export default async function EditInvoicePage({params}: Readonly<Props>) {
-  const pageParams = await params;
+export default async function EditInvoicePage(
+  props: Readonly<PageProps<"/domains/invoices/edit-invoice/[id]">>,
+): Promise<React.JSX.Element> {
+  const pageParams = await props.params;
   const invoiceIdentifier = pageParams.id;
   console.log("Invoice ID:", invoiceIdentifier);
 
   const {isAuthenticated} = await fetchUser();
-  if (!isAuthenticated) return <ForbiddenScreen />;
+  if (!isAuthenticated) {
+    return <ForbiddenScreen />;
+  }
 
   return (
     <main className='px-5 py-24'>

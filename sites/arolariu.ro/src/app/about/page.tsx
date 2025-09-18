@@ -1,5 +1,3 @@
-/** @format */
-
 import {createMetadata} from "@/metadata";
 import {getLocale, getTranslations} from "next-intl/server";
 import type {Metadata} from "next/types";
@@ -22,6 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /**
  * This is the about page.
  * It is a simple page that displays some information about the application.
+ * @returns The about page, rendered as a React component, server-side.
  */
 export default async function AboutPage(): Promise<React.JSX.Element> {
   return (

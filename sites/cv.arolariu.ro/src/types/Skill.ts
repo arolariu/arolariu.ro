@@ -1,6 +1,4 @@
-/** @format */
-
-export type Skill = {
+export type Skill = Readonly<{
   name: string;
   level: number;
-};
+}>;

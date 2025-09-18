@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {Button} from "@arolariu/components/button";
@@ -141,7 +139,7 @@ export default function Hero(): React.JSX.Element {
               whileTap={{scale: 0.95}}>
               <Button
                 size='lg'
-                className='group relative gap-2 overflow-hidden'>
+                className='group relative cursor-pointer gap-2 overflow-hidden'>
                 <TbCode className='h-4 w-4' />
                 <span>Explore Projects</span>
                 <motion.span
@@ -175,3 +173,4 @@ export default function Hero(): React.JSX.Element {
     </section>
   );
 }
+

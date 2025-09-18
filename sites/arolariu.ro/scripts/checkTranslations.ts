@@ -1,4 +1,4 @@
-/** @format */
+/* eslint-disable */
 
 import fs from "node:fs";
 import path from "node:path";
@@ -241,3 +241,4 @@ export async function main(verbose: boolean = false) {
 }
 
 main();
+

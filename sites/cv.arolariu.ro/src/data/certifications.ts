@@ -1,9 +1,7 @@
-/** @format */
-
 import type {Certificate} from "@/types";
 
 type CertificationKeys = "az900" | "ai900" | "sc900";
-type Certifications = Record<CertificationKeys, Certificate>;
+type Certifications = Readonly<Record<CertificationKeys, Certificate>>;
 
 /**
  * This object contains the certifications obtained by the individual.

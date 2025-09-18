@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {type Recipe, RecipeComplexity} from "@/types/invoices";
@@ -48,9 +46,14 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
   const complexityAsString = RecipeComplexity[complexityKey as keyof typeof RecipeComplexity];
 
   const getBadgeVariant = () => {
-    if (complexity === RecipeComplexity.Easy) return "default";
-    if (complexity === RecipeComplexity.Normal) return "secondary";
-    return "destructive";
+    switch (complexity) {
+      case RecipeComplexity.Easy:
+        return "default";
+      case RecipeComplexity.Normal:
+        return "secondary";
+      default:
+        return "destructive";
+    }
   };
 
   const {open: openEditDialog} = useDialog("INVOICE_RECIPE", "edit", recipe);

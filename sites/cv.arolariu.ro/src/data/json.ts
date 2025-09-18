@@ -1,5 +1,3 @@
-/** @format */
-
 import {author} from "./author";
 import {testimonials} from "./testimonials";
 

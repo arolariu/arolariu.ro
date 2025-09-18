@@ -1,5 +1,3 @@
-/** @format */
-
 "use server";
 
 import {CONFIG_STORE} from "@/lib/utils.generic";

@@ -1,5 +1,5 @@
-import { defineConfig } from "@rslib/core";
-import { pluginReact } from "@rsbuild/plugin-react";
+import {pluginReact} from "@rsbuild/plugin-react";
+import {defineConfig} from "@rslib/core";
 import path from "node:path";
 
 /**

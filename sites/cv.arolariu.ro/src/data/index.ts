@@ -1,5 +1,3 @@
-/** @format */
-
 // UI-related exports
 export {ui} from "./viewdata";
 
@@ -28,7 +26,7 @@ export {skills} from "./skills";
 export {testimonials} from "./testimonials";
 
 // Landing page and navigation exports
-export {landing, help} from "./landing";
+export {help, landing} from "./landing";
 
 // Technical information exports
-export {techInfo, footer} from "./technical";
+export {footer, techInfo} from "./technical";

@@ -1,5 +1,3 @@
-/** @format */
-
 import type {StorybookConfig} from "@storybook/nextjs";
 
 const storybookConfig: StorybookConfig = {

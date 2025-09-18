@@ -1,17 +1,13 @@
 {
   "inputs": [
     {
-      "type": "promptString",
-      "id": "github_token",
       "description": "GitHub Personal Access Token (PAT) for MCP auth.",
-      "password": true
+      "id": "github_token",
+      "password": true,
+      "type": "promptString"
     }
   ],
   "servers": {
-    "playwright-mcp-server": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"]
-    },
     "github-mcp-server": {
       "command": "docker",
       "args": [
@@ -25,6 +21,16 @@
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github_token}"
       }
+    },
+    "microsoft-docs-server": {
+      "type": "http",
+      "url": "https://learn.microsoft.com/api/mcp"
+    },
+    "playwright-mcp-server": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest"
+      ]
     }
   }
 }

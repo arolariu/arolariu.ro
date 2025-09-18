@@ -1,21 +1,29 @@
-/** @format */
-
 import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
 type Props = {
+  fromUsername: string;
+  toUsername: string;
   identifier: string;
 };
 
-const DEVELOPMENT_PROPS = {
+const DEVELOPMENT_PROPS: Readonly<Props> = {
+  fromUsername: "testuser",
+  toUsername: "recipientuser",
   identifier: "0123-4567-8901",
-} satisfies Props;
+};
 
+/**
+ * Shared invoice email template.
+ * @param props The props for the shared invoice email.
+ * @returns The email template as a React JSX template.
+ */
 export default function SharedInvoice(props: Readonly<Props>) {
   if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-param-reassign -- dev mode only
     props = DEVELOPMENT_PROPS;
   }
 
-  const {identifier} = props;
+  const {fromUsername, toUsername, identifier} = props;
 
   return (
     <Html>
@@ -47,10 +55,10 @@ export default function SharedInvoice(props: Readonly<Props>) {
             </Link>
             <Section>
               <Row>
-                <Text className='font-bold'>{`Hello there,`}</Text>
+                <Text className='font-bold'>{`Hello there, ${toUsername}`}</Text>
               </Row>
               <Row>
-                <Text>Somebody has shared an invoice with you! 🎉🎉</Text>
+                <Text>{`${fromUsername} has shared an invoice with you! 🎉🎉`}</Text>
                 <Text>
                   You can check it out by{" "}
                   <Link href={`https://arolariu.ro/domains/invoices/view-invoice/${identifier}`}>clicking here</Link>.
@@ -87,3 +95,4 @@ export default function SharedInvoice(props: Readonly<Props>) {
     </Html>
   );
 }
+

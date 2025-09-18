@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import type {Invoice, Merchant} from "@/types/invoices";

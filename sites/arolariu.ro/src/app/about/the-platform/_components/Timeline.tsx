@@ -1,11 +1,9 @@
-/** @format */
-
 "use client";
 
 import {Badge} from "@arolariu/components/badge";
 import {Card, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
-import {motion} from "motion/react";
-import {useState} from "react";
+import {motion, type EventInfo} from "motion/react";
+import {useCallback, useState} from "react";
 import {TbCalendar, TbCode, TbRocket, TbServer, TbTools, TbUser} from "react-icons/tb";
 
 /**
@@ -14,6 +12,18 @@ import {TbCalendar, TbCode, TbRocket, TbServer, TbTools, TbUser} from "react-ico
  */
 export default function Timeline(): React.JSX.Element {
   const [hoveredEvent, setHoveredEvent] = useState<number | null>(null);
+  const handleHoverStart = useCallback((e: MouseEvent, _info: EventInfo): void => {
+    const target = e.currentTarget as HTMLElement | null;
+    const idxStr = target?.dataset?.["index"];
+    const idx = typeof idxStr === "string" ? Number(idxStr) : null;
+    if (idx !== null && !Number.isNaN(idx)) {
+      setHoveredEvent(idx);
+    }
+  }, []);
+
+  const handleHoverEnd = useCallback((_e: MouseEvent, _info: EventInfo): void => {
+    setHoveredEvent(null);
+  }, []);
 
   const timelineEvents = [
     {
@@ -87,8 +97,9 @@ export default function Timeline(): React.JSX.Element {
               initial={{opacity: 0, y: 50}}
               animate={{opacity: 1, y: 0}}
               transition={{duration: 0.5, delay: index * 0.1}}
-              onHoverStart={() => setHoveredEvent(index)}
-              onHoverEnd={() => setHoveredEvent(null)}>
+              data-index={index}
+              onHoverStart={handleHoverStart}
+              onHoverEnd={handleHoverEnd}>
               <motion.div
                 className={`absolute left-1/2 z-10 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 transform items-center justify-center rounded-full ${event.color}`}
                 animate={{

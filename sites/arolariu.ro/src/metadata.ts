@@ -1,5 +1,3 @@
-/** @format */
-
 import type {Metadata} from "next";
 import type {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
 import type {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";
@@ -154,10 +152,10 @@ type PartialMetadata = Readonly<
 export const createMetadata = (partialMetadata: PartialMetadata): Readonly<Metadata> => {
   const {title, description, openGraph, twitter, locale, ...rest} = partialMetadata;
 
-  const localeMap: Readonly<Record<string, string>> = {
-    en: "en_US",
-    ro: "ro_RO",
-  };
+  const LOCALE_ALTERNATES: ReadonlyMap<string, string> = new Map<string, string>([
+    ["en", "en_US"],
+    ["ro", "ro_RO"],
+  ]);
 
   return {
     ...metadata,
@@ -169,7 +167,7 @@ export const createMetadata = (partialMetadata: PartialMetadata): Readonly<Metad
       ...openGraph,
       ...(title && {title}),
       ...(description && {description}),
-      ...(locale && {locale, alternateLocale: localeMap[locale] ?? "en_US"}),
+      ...(locale && {locale, alternateLocale: LOCALE_ALTERNATES.get(locale) ?? "en_US"}),
     },
     twitter: {
       ...metadata.twitter,

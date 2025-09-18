@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {formatCurrency} from "@/lib/utils.generic";
@@ -11,6 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  ChartContainer,
   Tabs,
   TabsContent,
   TabsList,
@@ -18,8 +17,8 @@ import {
 } from "@arolariu/components";
 import {memo, useMemo} from "react";
 import {TbChartBar, TbChartCandle, TbChartPie, TbMessage, TbShare} from "react-icons/tb";
+import {BarChart, LineChart, PieChart} from "recharts";
 import {useDialog} from "../../../../_contexts/DialogContext";
-import {BarChart, ChartContainer, LineChart, PieChart} from "../charts";
 
 type Props = {
   invoice: Invoice;
@@ -40,8 +39,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
       const isCurrentMonth = i === currentMonth;
       const isPastMonth = i < currentMonth;
 
-      // eslint-disable-next-line sonarjs/pseudo-random
-      const baseAmount = 2 * (0.7 + Math.random() * 0.6);
+      const baseAmount = 2 * 3;
       const amount = isPastMonth || isCurrentMonth ? baseAmount : 0;
 
       return {
@@ -58,12 +56,11 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
 
     return categories.map((cat) => {
       const isCurrentCategory = cat.toUpperCase() === currentCategory;
-      // eslint-disable-next-line sonarjs/pseudo-random
-      const value = isCurrentCategory ? 2 : 3 * (0.2 + Math.random() * 0.5);
+      const value = isCurrentCategory ? 2 : 3;
 
       return {
         name: cat,
-        value: value,
+        value,
       };
     });
   }, []);
@@ -74,12 +71,11 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
     const merchantName = merchant.name.toUpperCase();
     return merchants.map((merchant) => {
       const isCurrentMerchant = merchant === merchantName;
-      // eslint-disable-next-line sonarjs/pseudo-random
-      const value = isCurrentMerchant ? 2 : 3 * (0.6 + Math.random() * 0.8);
+      const value = isCurrentMerchant ? 2 : 3;
 
       return {
         name: merchant,
-        value: value,
+        value,
       };
     });
   }, [merchant.name]);
@@ -145,17 +141,7 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
                     color: "hsl(var(--chart-1))",
                   },
                 }}>
-                <LineChart
-                  data={monthlyData}
-                  index='name'
-                  categories={["value"]}
-                  colors={["hsl(var(--chart-1))"]}
-                  valueFormatter={(value) => formatCurrency(value)}
-                  showLegend={false}
-                  showXAxis
-                  showYAxis
-                  showGridLines
-                />
+                <LineChart data={monthlyData} />
               </ChartContainer>
             </div>
             <div className='mt-4 grid grid-cols-2 gap-4'>
@@ -182,32 +168,10 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
                     color: "hsl(var(--chart-2))",
                   },
                 }}>
-                <BarChart
-                  data={merchantComparisonData}
-                  index='name'
-                  categories={["value"]}
-                  colors={["hsl(var(--chart-2))"]}
-                  valueFormatter={(value) => formatCurrency(value)}
-                  showLegend={false}
-                  showXAxis
-                  showYAxis
-                  showGridLines
-                />
+                <BarChart data={merchantComparisonData} />
               </ChartContainer>
             </div>
-            <div className='text-muted-foreground mt-2 text-sm'>
-              {merchant.name} is{" "}
-              {
-                // eslint-disable-next-line sonarjs/pseudo-random
-                Math.round(Math.random() * 20 + 10)
-              }
-              %{" "}
-              {
-                // eslint-disable-next-line sonarjs/pseudo-random
-                Math.random() > 0.5 ? "higher" : "lower"
-              }{" "}
-              than average for similar merchants
-            </div>
+            <div className='text-muted-foreground mt-2 text-sm'>{merchant.name} is 25% lower than average for similar merchants</div>
           </TabsContent>
 
           <TabsContent
@@ -222,31 +186,10 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
                     color: "hsl(var(--chart-3))",
                   },
                 }}>
-                <PieChart
-                  data={categoryData}
-                  index='name'
-                  categories={["value"]}
-                  colors={[
-                    "hsl(var(--chart-1))",
-                    "hsl(var(--chart-2))",
-                    "hsl(var(--chart-3))",
-                    "hsl(var(--chart-4))",
-                    "hsl(var(--chart-5))",
-                  ]}
-                  valueFormatter={(value) => formatCurrency(value)}
-                  showLegend
-                  showAnimation
-                />
+                <PieChart data={categoryData} />
               </ChartContainer>
             </div>
-            <div className='text-muted-foreground mt-2 text-sm'>
-              category represents{" "}
-              {Math.round(
-                // eslint-disable-next-line sonarjs/pseudo-random
-                Math.random() * 20 + 15,
-              )}
-              % of your total monthly spending
-            </div>
+            <div className='text-muted-foreground mt-2 text-sm'>category represents 30 % of your total monthly spending</div>
           </TabsContent>
         </Tabs>
       </CardContent>

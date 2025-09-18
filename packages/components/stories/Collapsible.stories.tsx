@@ -1,12 +1,7 @@
+import type {Meta, StoryObj} from "@storybook/react";
+import {ChevronDownIcon} from "lucide-react";
 import React from "react";
-import type { Meta, StoryObj } from "@storybook/react";
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-  Button,
-} from "../dist";
-import { ChevronDownIcon } from "lucide-react";
+import {Button, Collapsible, CollapsibleContent, CollapsibleTrigger} from "../dist";
 
 const meta: Meta<typeof Collapsible> = {
   title: "Design System/Collapsible",
@@ -53,7 +48,7 @@ See the [shadcn/ui Collapsible documentation](https://ui.shadcn.com/docs/compone
       control: "boolean",
       description: "Prevents the collapsible from being opened or closed.",
       table: {
-        defaultValue: { summary: "Lorem Ipsum" },
+        defaultValue: {summary: "Lorem Ipsum"},
       },
     },
   },
@@ -68,8 +63,7 @@ export const Basic: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          "A simple collapsible with a trigger button (using an icon) and content that toggles visibility.",
+        story: "A simple collapsible with a trigger button (using an icon) and content that toggles visibility.",
       },
     },
   },
@@ -77,24 +71,23 @@ export const Basic: Story = {
     const [isOpen, setIsOpen] = React.useState(false);
 
     return (
-      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-[350px]">
-        <div className="flex items-center justify-between px-4 py-2 border rounded-md">
-          <h4 className="text-sm font-semibold">Toggle content visibility</h4>
+      <Collapsible
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        className='w-[350px]'>
+        <div className='flex items-center justify-between rounded-md border px-4 py-2'>
+          <h4 className='text-sm font-semibold'>Toggle content visibility</h4>
           <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <ChevronDownIcon
-                className={`h-4 w-4 transition-transform ${
-                  isOpen ? "transform rotate-180" : ""
-                }`}
-              />
-              <span className="sr-only">Toggle</span>
+            <Button
+              variant='ghost'
+              size='sm'>
+              <ChevronDownIcon className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180 transform" : ""}`} />
+              <span className='sr-only'>Toggle</span>
             </Button>
           </CollapsibleTrigger>
         </div>
-        <CollapsibleContent className="px-4 py-2 text-sm border-x border-b rounded-b-md">
-          <div className="p-2">
-            This content can be collapsed and expanded with the button above.
-          </div>
+        <CollapsibleContent className='rounded-b-md border-x border-b px-4 py-2 text-sm'>
+          <div className='p-2'>This content can be collapsed and expanded with the button above.</div>
         </CollapsibleContent>
       </Collapsible>
     );
@@ -115,26 +108,24 @@ export const CustomTrigger: Story = {
     const [isOpen, setIsOpen] = React.useState(false);
 
     return (
-      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-[350px]">
-        <div className="flex items-center justify-between">
+      <Collapsible
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        className='w-[350px]'>
+        <div className='flex items-center justify-between'>
           <CollapsibleTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-1">
+            <Button
+              variant='outline'
+              className='flex items-center gap-1'>
               {isOpen ? "Hide" : "Show"} Details
-              <ChevronDownIcon
-                className={`h-4 w-4 transition-transform ${
-                  isOpen ? "transform rotate-180" : ""
-                }`}
-              />
+              <ChevronDownIcon className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180 transform" : ""}`} />
             </Button>
           </CollapsibleTrigger>
         </div>
-        <CollapsibleContent className="mt-2 rounded-md border p-4 shadow-sm">
-          <div className="space-y-2">
-            <h4 className="font-medium">Product Details</h4>
-            <p>
-              This is additional information about the product that can be
-              toggled.
-            </p>
+        <CollapsibleContent className='mt-2 rounded-md border p-4 shadow-sm'>
+          <div className='space-y-2'>
+            <h4 className='font-medium'>Product Details</h4>
+            <p>This is additional information about the product that can be toggled.</p>
             <p>Contains specifications, features, and other useful details.</p>
           </div>
         </CollapsibleContent>
@@ -168,49 +159,35 @@ export const FAQStyle: Story = {
     };
 
     return (
-      <div className="w-[500px] space-y-2">
+      <div className='w-[500px] space-y-2'>
         <Collapsible
           open={openItems["item-1"]}
           onOpenChange={() => toggleItem("item-1")}
-          className="border rounded-md"
-        >
+          className='rounded-md border'>
           <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-900">
-              <h4 className="font-medium">How do I create an account?</h4>
-              <ChevronDownIcon
-                className={`h-4 w-4 transition-transform ${
-                  openItems["item-1"] ? "transform rotate-180" : ""
-                }`}
-              />
+            <div className='flex cursor-pointer items-center justify-between p-4 hover:bg-neutral-50 dark:hover:bg-neutral-900'>
+              <h4 className='font-medium'>How do I create an account?</h4>
+              <ChevronDownIcon className={`h-4 w-4 transition-transform ${openItems["item-1"] ? "rotate-180 transform" : ""}`} />
             </div>
           </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 pt-0 text-sm border-t">
-            <p>
-              To create an account, click on the "Sign Up" button in the top
-              right corner of the page and follow the instructions.
-            </p>
+          <CollapsibleContent className='border-t p-4 pt-0 text-sm'>
+            <p>To create an account, click on the "Sign Up" button in the top right corner of the page and follow the instructions.</p>
           </CollapsibleContent>
         </Collapsible>
 
         <Collapsible
           open={openItems["item-2"]}
           onOpenChange={() => toggleItem("item-2")}
-          className="border rounded-md"
-        >
+          className='rounded-md border'>
           <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-900">
-              <h4 className="font-medium">How do I reset my password?</h4>
-              <ChevronDownIcon
-                className={`h-4 w-4 transition-transform ${
-                  openItems["item-2"] ? "transform rotate-180" : ""
-                }`}
-              />
+            <div className='flex cursor-pointer items-center justify-between p-4 hover:bg-neutral-50 dark:hover:bg-neutral-900'>
+              <h4 className='font-medium'>How do I reset my password?</h4>
+              <ChevronDownIcon className={`h-4 w-4 transition-transform ${openItems["item-2"] ? "rotate-180 transform" : ""}`} />
             </div>
           </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 pt-0 text-sm border-t">
+          <CollapsibleContent className='border-t p-4 pt-0 text-sm'>
             <p>
-              To reset your password, click on the "Forgot Password" link on the
-              login page and follow the instructions sent to your email.
+              To reset your password, click on the "Forgot Password" link on the login page and follow the instructions sent to your email.
             </p>
           </CollapsibleContent>
         </Collapsible>
@@ -218,23 +195,15 @@ export const FAQStyle: Story = {
         <Collapsible
           open={openItems["item-3"]}
           onOpenChange={() => toggleItem("item-3")}
-          className="border rounded-md"
-        >
+          className='rounded-md border'>
           <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-900">
-              <h4 className="font-medium">How do I contact support?</h4>
-              <ChevronDownIcon
-                className={`h-4 w-4 transition-transform ${
-                  openItems["item-3"] ? "transform rotate-180" : ""
-                }`}
-              />
+            <div className='flex cursor-pointer items-center justify-between p-4 hover:bg-neutral-50 dark:hover:bg-neutral-900'>
+              <h4 className='font-medium'>How do I contact support?</h4>
+              <ChevronDownIcon className={`h-4 w-4 transition-transform ${openItems["item-3"] ? "rotate-180 transform" : ""}`} />
             </div>
           </CollapsibleTrigger>
-          <CollapsibleContent className="p-4 pt-0 text-sm border-t">
-            <p>
-              You can contact our support team by sending an email to
-              support@example.com or by using the contact form on our website.
-            </p>
+          <CollapsibleContent className='border-t p-4 pt-0 text-sm'>
+            <p>You can contact our support team by sending an email to support@example.com or by using the contact form on our website.</p>
           </CollapsibleContent>
         </Collapsible>
       </div>

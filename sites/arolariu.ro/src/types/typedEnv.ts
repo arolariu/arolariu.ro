@@ -1,5 +1,3 @@
-/** @format */
-
 // Conditional types for automatic inference based on environment
 type SiteName<T extends string> = T extends "production" ? "arolariu.ro" : T extends "development" ? "dev.arolariu.ro" : never;
 

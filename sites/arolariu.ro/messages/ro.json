@@ -172,10 +172,10 @@
         "ubisoft": {
           "achievements": "# A contribuit la dezvoltarea de aplicații cloud-native folosind .NET și Azure, # A implementat arhitectura microserviciilor pentru sisteme scalabile și rezistente, # A colaborat cu echipe interfuncționale pentru a furniza soluții software de înaltă calitate, # A participat la revizuiri de cod și a îndrumat dezvoltatorii juniori",
           "company": "Ubisoft",
-          "description": "  ",
+          "description": "Am lucrat la Avatar: Frontiers of Pandora ™, un joc construit folosind cea mai recentă iterație a motorului Snowdrop (C++) de Massive Entertainment - un studio Ubisoft și testat de Ubisoft România.",
           "location": "Hibrid (România)",
           "period": "2020 - 2021",
-          "responsibilites": " ",
+          "responsibilites": " # Gestionarea regresiei, integrării și testării unităților cu software precum XRAY, TestRail, Bugzilla. # Crearea de suite de teste și planuri de teste de înaltă calitate folosind produsele Atlassian (JIRA / Confluence). # Asigurarea unor comunicații stabile și clare între echipele de producție și cele de testare.",
           "techAndSkills": "# Testare unitară # Testare de integrare # Testare A/B # Testare de performanță # Testare automată # Testare E2E",
           "title": "Inginer QA/QC"
         }

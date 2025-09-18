@@ -16,113 +16,124 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 /// </summary>
 public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundationService
 {
-	private readonly IInvoiceNoSqlBroker invoiceNoSqlBroker;
-	private readonly ILogger<IInvoiceStorageFoundationService> logger;
+  private readonly IInvoiceNoSqlBroker invoiceNoSqlBroker;
+  private readonly ILogger<IInvoiceStorageFoundationService> logger;
 
-	/// <summary>
-	/// Constructor.
-	/// </summary>
-	/// <param name="invoiceNoSqlBroker"></param>
-	/// <param name="loggerFactory"></param>
-	public InvoiceStorageFoundationService(
-		IInvoiceNoSqlBroker invoiceNoSqlBroker,
-		ILoggerFactory loggerFactory)
-	{
-		ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);
-		this.invoiceNoSqlBroker = invoiceNoSqlBroker;
-		this.logger = loggerFactory.CreateLogger<IInvoiceStorageFoundationService>();
-	}
+  /// <summary>
+  /// Constructor.
+  /// </summary>
+  /// <param name="invoiceNoSqlBroker"></param>
+  /// <param name="loggerFactory"></param>
+  public InvoiceStorageFoundationService(
+    IInvoiceNoSqlBroker invoiceNoSqlBroker,
+    ILoggerFactory loggerFactory)
+  {
+    ArgumentNullException.ThrowIfNull(invoiceNoSqlBroker);
+    this.invoiceNoSqlBroker = invoiceNoSqlBroker;
+    this.logger = loggerFactory.CreateLogger<IInvoiceStorageFoundationService>();
+  }
 
-	/// <inheritdoc/>
-	public async Task<Invoice> CreateInvoiceObject(Invoice invoice) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
-		ValidateInvoiceInformationIsValid(invoice);
+  #region Create Invoice Object API
+  /// <inheritdoc/>
+  public async Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
+    ValidateInvoiceInformationIsValid(invoice);
 
-		await invoiceNoSqlBroker.CreateInvoiceAsync(invoice).ConfigureAwait(false);
-		return invoice;
-	}).ConfigureAwait(false);
+    await invoiceNoSqlBroker
+      .CreateInvoiceAsync(invoice)
+      .ConfigureAwait(false);
+  }).ConfigureAwait(false);
+  #endregion
 
-	/// <inheritdoc/>
-	public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid userIdentifier) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
-		ValidateIdentifierIsSet(identifier);
-		var invoice = await invoiceNoSqlBroker
-			.ReadInvoiceAsync(identifier, userIdentifier)
-			.ConfigureAwait(false);
+  #region Read Invoice Object API
+  /// <inheritdoc/>
+  public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
+    ValidateIdentifierIsSet(identifier);
 
-		return invoice;
-	}).ConfigureAwait(false);
+    if (userIdentifier is null)
+    {
+      logger.LogUserIdentifierNotSetWarning();
+      var invoice = await invoiceNoSqlBroker
+        .ReadInvoiceAsync(identifier)
+        .ConfigureAwait(false);
+      return invoice!;
+    }
+    else
+    {
+      var invoice = await invoiceNoSqlBroker
+        .ReadInvoiceAsync(identifier, (Guid)userIdentifier)
+        .ConfigureAwait(false);
+      return invoice!;
+    }
+  }).ConfigureAwait(false);
+  #endregion
 
-	/// <inheritdoc/>
-	public async Task<Invoice> ReadInvoiceObject(Guid identifier) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
-		ValidateIdentifierIsSet(identifier);
-		var invoice = await invoiceNoSqlBroker
-			.ReadInvoiceAsync(identifier)
-			.ConfigureAwait(false);
+  #region Read Invoice Objects API
+  /// <inheritdoc/>
+  public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid? userIdentifier = null) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
+    if (userIdentifier is null)
+    {
+      logger.LogUserIdentifierNotSetWarning();
+      var invoices = await invoiceNoSqlBroker
+        .ReadInvoicesAsync()
+        .ConfigureAwait(false);
+      return invoices;
+    }
+    else
+    {
+      var invoices = await invoiceNoSqlBroker
+        .ReadInvoicesAsync((Guid)userIdentifier)
+        .ConfigureAwait(false);
+      return invoices;
+    }
+  }).ConfigureAwait(false);
+  #endregion
 
-		return invoice;
-	}).ConfigureAwait(false);
+  #region Update Invoice Object API
+  /// <inheritdoc/>
+  public async Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
+    ValidateIdentifierIsSet(invoiceIdentifier);
 
-	/// <inheritdoc/>
-	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects() =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
-		var invoices = await invoiceNoSqlBroker
-			.ReadInvoicesAsync()
-			.ConfigureAwait(false);
+    var newInvoice = await invoiceNoSqlBroker
+      .UpdateInvoiceAsync(invoiceIdentifier, updatedInvoice)
+      .ConfigureAwait(false);
 
-		return invoices;
-	}).ConfigureAwait(false);
+    return newInvoice!;
+  }).ConfigureAwait(false);
+  #endregion
 
-	/// <inheritdoc/>
-	public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
-		var invoices = await invoiceNoSqlBroker
-			.ReadInvoicesAsync(userIdentifier)
-			.ConfigureAwait(false);
+  #region Delete Invoice Object API
+  /// <inheritdoc/>
+  public async Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null) =>
+  await TryCatchAsync(async () =>
+  {
+    using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
+    ValidateIdentifierIsSet(identifier);
 
-		return invoices;
-	}).ConfigureAwait(false);
-
-	/// <inheritdoc/>
-	public Task<Invoice> UpdateInvoiceObject(Guid invoiceIdentifier, Invoice updatedInvoice)
-	{
-		throw new NotImplementedException();
-	}
-
-	/// <inheritdoc/>
-	public async Task<Invoice> UpdateInvoiceObject(Invoice currentInvoice, Invoice updatedInvoice) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceObject));
-		var invoice = await invoiceNoSqlBroker.UpdateInvoiceAsync(currentInvoice, updatedInvoice)
-														.ConfigureAwait(false);
-
-		return invoice;
-	}).ConfigureAwait(false);
-
-	/// <inheritdoc/>
-	public async Task DeleteInvoiceObject(Guid identifier, Guid userIdentifier) =>
-	await TryCatchAsync(async () =>
-	{
-		using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
-		ValidateIdentifierIsSet(identifier);
-		await invoiceNoSqlBroker.DeleteInvoiceAsync(identifier, userIdentifier).ConfigureAwait(false);
-	}).ConfigureAwait(false);
-
-	/// <inheritdoc/>
-	public Task DeleteInvoiceObject(Guid identifier)
-	{
-		throw new NotImplementedException();
-	}
+    if (userIdentifier is null)
+    {
+      logger.LogUserIdentifierNotSetWarning();
+      await invoiceNoSqlBroker
+        .DeleteInvoiceAsync(identifier)
+        .ConfigureAwait(false);
+    }
+    else
+    {
+      await invoiceNoSqlBroker
+        .DeleteInvoiceAsync(identifier, (Guid)userIdentifier)
+        .ConfigureAwait(false);
+    }
+  }).ConfigureAwait(false);
+  #endregion
 }

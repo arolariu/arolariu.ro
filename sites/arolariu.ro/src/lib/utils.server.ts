@@ -1,5 +1,3 @@
-/** @format */
-
 import {Blob} from "node:buffer";
 import crypto from "node:crypto";
 import {Resend} from "resend";
@@ -19,8 +17,9 @@ export const resend = new Resend(process.env["RESEND_API_KEY"]);
  * @returns The mime type, or null if not found
  */
 export function getMimeTypeFromBase64(base64String: string): string | null {
-  const match = /^data:(.*?);base64,/u.exec(base64String);
-  return match ? match.at(1)! : null;
+  // Use a named capture group for the mime type to satisfy lint rule and improve clarity
+  const match = /^data:(?<mime>[^;]+);base64,/u.exec(base64String);
+  return match?.groups?.["mime"] ?? null;
 }
 
 /**
@@ -35,7 +34,8 @@ export async function convertBase64ToBlob(base64String: string): Promise<Blob> {
   const mimeType = getMimeTypeFromBase64(base64String) as string;
 
   // Remove the mime type from the base64 string.
-  const base64 = base64String.replace(/^data:(.*?);base64,/u, "");
+  // Use a non-capturing group since we don't consume the captured value here
+  const base64 = base64String.replace(/^data:(?:[^;]+);base64,/u, "");
 
   const byteCharacters = atob(base64);
   const byteArrays = [...byteCharacters].map((char) => char.codePointAt(0) as number);

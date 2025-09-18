@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {
@@ -54,6 +52,7 @@ const AddDialog = () => {
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
@@ -108,19 +107,20 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
   const {isOpen, open, close} = useDialog("INVOICE_METADATA");
   const [editedMetadata, setEditedMetadata] = useState<Record<string, string>>(metadata);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setEditedMetadata((prev) => ({...prev, [e.target.name]: e.target.value}));
-  };
+  }, []);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     // Save the edited metadata
     console.log("Saving edited metadata:", editedMetadata);
     close();
-  };
+  }, [editedMetadata, close]);
 
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
@@ -171,15 +171,16 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
 const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
   const {isOpen, open, close} = useDialog("INVOICE_METADATA");
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     // Delete the metadata
     console.log("Deleting metadata:", metadata);
     close();
-  };
+  }, [metadata, close]);
 
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>

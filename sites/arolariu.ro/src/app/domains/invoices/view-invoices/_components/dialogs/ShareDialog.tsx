@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import type {Invoice} from "@/types/invoices";
@@ -55,7 +53,9 @@ export default function ShareDialog(): React.JSX.Element {
   const handleCopyQRCode = useCallback(async () => {
     try {
       const qrCodeElement = document.querySelector("#invoice-qr-code");
-      if (!qrCodeElement) throw new Error("QR code element not found");
+      if (!qrCodeElement) {
+        throw new Error("QR code element not found");
+      }
 
       // Create a canvas to draw the QR code
       const canvas = document.createElement("canvas");
@@ -65,7 +65,9 @@ export default function ShareDialog(): React.JSX.Element {
 
       // Get canvas context
       const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Could not create canvas context");
+      if (!ctx) {
+        throw new Error("Could not create canvas context");
+      }
 
       // Convert SVG to image
       const img = new Image();
@@ -162,9 +164,14 @@ export default function ShareDialog(): React.JSX.Element {
     [email, invoice.id],
   );
 
+  const handleEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  }, []);
+
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
@@ -237,13 +244,13 @@ export default function ShareDialog(): React.JSX.Element {
                   type='email'
                   placeholder="Enter recipient's email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={handleEmailChange}
                 />
               </div>
               <Button
                 type='submit'
                 // eslint-disable-next-line sonarjs/slow-regex -- client-side validation
-                disabled={!email || !/\S+@\S+\.\S+/.test(email)}
+                disabled={!email || !/\S+@\S+\.\S+/u.test(email)}
                 className='w-full'>
                 <TbMail className='mr-2 h-4 w-4' />
                 Send Email

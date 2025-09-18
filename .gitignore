@@ -1,17 +1,25 @@
-**/node_modules
-**/obj
-**/bin
-**/dist
-**/build
-**/package
-**/.vs
-**/.vsc
-**/.env
+# Transient artifacts:
+**/tmp/**
+**/node_modules/**
 **/_site/**
+**/obj/**
+**/bin/**
+**/dist/**
+**/build/**
+**/out/**
+**/output/**
+**/.nx/**
+**/.vs/**
+**/playwright-report/**
+**/coverage/**
+**/test-results/**
+**/.next/**
+**/**/.DS_Store
 
-# MacOS cache files
-.DS_Store
-Thumbs.db
+# Exceptions:
+!.vs/settings.vssettings
 
-# Next.js SWC cache
-.next/
+
+# Environment variables:
+**/.env
+**/.env.*

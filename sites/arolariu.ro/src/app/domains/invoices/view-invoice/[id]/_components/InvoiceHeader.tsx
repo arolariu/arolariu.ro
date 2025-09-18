@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import type {Invoice} from "@/types/invoices";
@@ -9,7 +7,6 @@ import {TbPrinter} from "react-icons/tb";
 
 type Props = {
   invoice: Invoice;
-  onPrint: () => void;
 };
 
 /**
@@ -17,7 +14,7 @@ type Props = {
  * It includes the invoice ID, name, a badge for important invoices, and a print button.
  * @returns The InvoiceHeader component, CSR'ed.
  */
-export default function InvoiceHeader({invoice, onPrint}: Readonly<Props>) {
+export default function InvoiceHeader({invoice}: Readonly<Props>) {
   return (
     <motion.div
       initial={{opacity: 0, y: -20}}
@@ -42,7 +39,8 @@ export default function InvoiceHeader({invoice, onPrint}: Readonly<Props>) {
                 className='cursor-pointer'
                 variant='outline'
                 size='sm'
-                onClick={onPrint}>
+                // eslint-disable-next-line react/jsx-handler-names -- not applicable.
+                onClick={globalThis.window.print}>
                 <TbPrinter className='mr-2 h-4 w-4' />
                 Print
               </Button>

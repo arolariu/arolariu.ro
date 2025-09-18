@@ -1,5 +1,3 @@
-/** @format */
-
 import {type Merchant, MerchantCategory} from "@/types/invoices";
 import {
   Badge,
@@ -39,6 +37,7 @@ export default function MerchantDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md md:max-w-xl'>
         <DialogHeader className='items-start justify-start justify-items-start'>

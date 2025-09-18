@@ -12,7 +12,7 @@ using System.Diagnostics.CodeAnalysis;
 [Serializable]
 [ExcludeFromCodeCoverage] // DTOs are not tested - they are used to transfer data between the client and the server.
 public readonly record struct InvoiceStatusDto(
-	[Required] int HitCount,
-	[Required] double OccupiedSpace)
+  [Required] int HitCount,
+  [Required] double OccupiedSpace)
 {
 }

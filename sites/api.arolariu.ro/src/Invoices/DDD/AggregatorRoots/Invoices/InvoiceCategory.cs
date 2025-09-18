@@ -3,38 +3,44 @@ namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using System.Diagnostics.CodeAnalysis;
 
 /// <summary>
-/// The invoice category.
+/// Classifies the high-level domain purpose / composition of an invoice for analytics, enrichment heuristics and UI grouping.
 /// </summary>
-[SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification = "<Pending>")]
+/// <remarks>
+/// <para><b>Extensibility:</b> Maintain numeric spacing (increments of 100) when adding new concrete categories to preserve stable ordering for downstream analytical exports.</para>
+/// <para><b>Sentinel:</b> <see cref="NOT_DEFINED"/> denotes an invoice whose category has not yet been user-assigned or AI-enriched and SHOULD be transient.</para>
+/// <para><b>Usage:</b> Category influences recipe suggestion relevance, allergen aggregation and future budgeting dashboards.</para>
+/// <para><b>Thread-safety:</b> Enum is immutable and inherently thread-safe.</para>
+/// </remarks>
+[SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification = "Domain sentinel uses underscore for emphasis.")]
 public enum InvoiceCategory
 {
-	/// <summary>
-	/// Not defined = the invoice category was not defined.
-	/// </summary>
-	NOT_DEFINED = 0,
+  /// <summary>
+  /// Sentinel; category not yet assigned (pre-enrichment / pre-classification state).
+  /// </summary>
+  NOT_DEFINED = 0,
 
-	/// <summary>
-	/// Grocery = the invoice is a grocery invoice.
-	/// </summary>
-	GROCERY = 100,
+  /// <summary>
+  /// Predominantly household food / consumable products (general pantry and grocery analytics).
+  /// </summary>
+  GROCERY = 100,
 
-	/// <summary>
-	/// Fast food = the invoice is a fast food invoice.
-	/// </summary>
-	FAST_FOOD = 200,
+  /// <summary>
+  /// Prepared or takeaway-oriented fast food items (low / no home preparation).
+  /// </summary>
+  FAST_FOOD = 200,
 
-	/// <summary>
-	/// Home cleaning = the invoice is made of home cleaning products.
-	/// </summary>
-	HOME_CLEANING = 300,
+  /// <summary>
+  /// Household cleaning / maintenance and related chemical products and supplies.
+  /// </summary>
+  HOME_CLEANING = 300,
 
-	/// <summary>
-	/// Car auto = the invoice is made of car parts / automotive products.
-	/// </summary>
-	CAR_AUTO = 400,
+  /// <summary>
+  /// Automotive parts, consumables or service-related line items.
+  /// </summary>
+  CAR_AUTO = 400,
 
-	/// <summary>
-	/// Other = the invoice is an other invoice.
-	/// </summary>
-	OTHER = 9999,
+  /// <summary>
+  /// Fallback when an invoice does not map to any defined domain category; minimize long-term usage.
+  /// </summary>
+  OTHER = 9999,
 }

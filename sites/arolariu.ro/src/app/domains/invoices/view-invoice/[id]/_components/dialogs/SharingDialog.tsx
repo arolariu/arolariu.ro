@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import type {Invoice} from "@/types/invoices";
@@ -53,7 +51,9 @@ export default function SharingDialog(): React.JSX.Element {
   const handleCopyQRCode = useCallback(async () => {
     try {
       const qrCodeElement = document.querySelector("#invoice-qr-code");
-      if (!qrCodeElement) throw new Error("QR code element not found");
+      if (!qrCodeElement) {
+        throw new Error("QR code element not found");
+      }
 
       // Create a canvas to draw the QR code
       const canvas = document.createElement("canvas");
@@ -63,7 +63,9 @@ export default function SharingDialog(): React.JSX.Element {
 
       // Get canvas context
       const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Could not create canvas context");
+      if (!ctx) {
+        throw new Error("Could not create canvas context");
+      }
 
       // Convert SVG to image
       const img = new Image();
@@ -113,8 +115,8 @@ export default function SharingDialog(): React.JSX.Element {
       });
 
       try {
-        // Get current user email (you might want to replace this with the actual user email from your auth system)
-        const userEmail = "ufcolonel@gmail.com"; // Leave empty to use only CC in the backend
+        // TODO: fetch user e-mail
+        const userEmail = "abc@abc.abc"; // Leave empty to use only CC in the backend
 
         // Call the API to send email
         const response = await fetch(`/api/mail/invoices/share/${invoice.id}`, {
@@ -162,6 +164,7 @@ export default function SharingDialog(): React.JSX.Element {
   return (
     <Dialog
       open={isOpen}
+      // eslint-disable-next-line react/jsx-no-bind -- this is a simple fn.
       onOpenChange={(shouldOpen) => (shouldOpen ? open() : close())}>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>
@@ -225,6 +228,7 @@ export default function SharingDialog(): React.JSX.Element {
                   type='email'
                   placeholder="Enter recipient's email"
                   value={email}
+                  // eslint-disable-next-line react/jsx-no-bind -- input always changes.
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
@@ -232,7 +236,7 @@ export default function SharingDialog(): React.JSX.Element {
               <Button
                 type='submit'
                 // eslint-disable-next-line sonarjs/slow-regex -- client-side validation
-                disabled={!email || !/\S+@\S+\.\S+/.test(email)}
+                disabled={!email || !/\S+@\S+\.\S+/u.test(email)}
                 className='w-full'>
                 <TbMail className='mr-2 h-4 w-4' />
                 Send Invitation

@@ -1,5 +1,3 @@
-/** @format */
-
 "use client";
 
 import {dumpBrowserInformation} from "@/lib/utils.client";
@@ -20,13 +18,11 @@ interface GlobalErrorProps {
  * @returns A JSX element representing the global error message and retry button.
  */
 export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>): React.JSX.Element {
-  const [mounted, setMounted] = useState(false);
   const [progress, setProgress] = useState(0);
 
   // Log the error
   useEffect(() => {
     console.error("Global error:", error);
-    setMounted(true);
   }, [error]);
 
   // Simulate progress for diagnostic animation
@@ -36,13 +32,6 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
     }, 1000);
     return () => clearTimeout(timer);
   }, []);
-
-  if (!mounted)
-    return (
-      <html lang='en'>
-        <body>Loading...</body>
-      </html>
-    );
 
   return (
     <html lang='en'>
@@ -143,6 +132,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
               </Button>
               <Button
                 variant='outline'
+                // eslint-disable-next-line react/jsx-no-bind -- this does a page refresh.
                 onClick={() => globalThis.window.location.reload()}
                 className='cursor-pointer gap-2'
                 size='lg'>
@@ -169,7 +159,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
               <div className='flex items-center gap-2'>
                 <TbArrowRight className='h-3 w-3' />
                 <span className='font-medium'>User Agent:</span>
-                <span className='text-muted-foreground truncate'>{mounted ? navigator.userAgent : "Unknown"}</span>
+                <span className='text-muted-foreground truncate'>{globalThis.navigator.userAgent ?? "Unknown"}</span>
               </div>
               <div className='flex items-center gap-2'>
                 <TbArrowRight className='h-3 w-3' />

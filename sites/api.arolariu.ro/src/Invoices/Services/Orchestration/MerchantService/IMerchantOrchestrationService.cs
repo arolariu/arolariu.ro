@@ -11,69 +11,53 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// </summary>
 public interface IMerchantOrchestrationService
 {
-	/// <summary>
-	/// Creates a merchant object.
-	/// </summary>
-	/// <param name="merchant"></param>
-	/// <returns></returns>
-	public Task<Merchant> CreateMerchantObject(Merchant merchant);
+  #region Create Merchant API
+  /// <summary>
+  /// Creates a merchant object.
+  /// </summary>
+  /// <param name="merchant"></param>
+  /// <param name="parentCompanyId"></param>
+  /// <returns></returns>
+  Task CreateMerchantObject(Merchant merchant, Guid? parentCompanyId = null);
+  #endregion
 
-	/// <summary>
-	/// Reads a merchant object.
-	/// </summary>
-	/// <param name="identifier"></param>
-	/// <returns></returns>
-	public Task<Merchant> ReadMerchantObject(Guid identifier);
+  #region Read Merchant API
+  /// <summary>
+  /// Reads a merchant object.
+  /// </summary>
+  /// <param name="identifier"></param>
+  /// <param name="parentCompanyId"></param>
+  /// <returns></returns>
+  Task<Merchant> ReadMerchantObject(Guid identifier, Guid? parentCompanyId = null);
+  #endregion
 
-	/// <summary>
-	/// Reads a merchant object.
-	/// </summary>
-	/// <param name="identifier"></param>
-	/// <param name="parentCompanyId"></param>
-	/// <returns></returns>
-	public Task<Merchant> ReadMerchantObject(Guid identifier, Guid parentCompanyId);
+  #region Read Merchants API
+  /// <summary>
+  /// Reads all merchant objects.
+  /// </summary>
+  /// <param name="parentCompanyId"></param>
+  /// <returns></returns>
+  Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid? parentCompanyId = null);
+  #endregion
 
-	/// <summary>
-	/// Reads all merchant objects.
-	/// </summary>
-	/// <returns></returns>
-	public Task<IEnumerable<Merchant>> ReadAllMerchantObjects();
+  #region Update Merchant API
+  /// <summary>
+  /// Updates a merchant object.
+  /// </summary>
+  /// <param name="updatedMerchant"></param>
+  /// <param name="merchantIdentifier"></param>
+  /// <param name="parentCompanyId"></param>
+  /// <returns></returns>
+  Task<Merchant> UpdateMerchantObject(Merchant updatedMerchant, Guid merchantIdentifier, Guid? parentCompanyId = null);
+  #endregion
 
-	/// <summary>
-	/// Reads all merchant objects.
-	/// </summary>
-	/// <param name="parentCompanyId"></param>
-	/// <returns></returns>
-	public Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId);
-
-	/// <summary>
-	/// Updates a merchant object.
-	/// </summary>
-	/// <param name="merchantIdentifier"></param>
-	/// <param name="updatedMerchant"></param>
-	/// <returns></returns>
-	public Task<Merchant> UpdateMerchantObject(Guid merchantIdentifier, Merchant updatedMerchant);
-
-	/// <summary>
-	/// Updates a merchant object.
-	/// </summary>
-	/// <param name="currentMerchant"></param>
-	/// <param name="updatedMerchant"></param>
-	/// <returns></returns>
-	public Task<Merchant> UpdateMerchantObject(Merchant currentMerchant, Merchant updatedMerchant);
-
-	/// <summary>
-	/// Deletes a merchant object.
-	/// </summary>
-	/// <param name="identifier"></param>
-	/// <returns></returns>
-	public Task DeleteMerchantObject(Guid identifier);
-
-	/// <summary>
-	/// Deletes a merchant object.
-	/// </summary>
-	/// <param name="identifier"></param>
-	/// <param name="parentCompanyId"></param>
-	/// <returns></returns>
-	public Task DeleteMerchantObject(Guid identifier, Guid parentCompanyId);
+  #region Delete Merchant API
+  /// <summary>
+  /// Deletes a merchant object.
+  /// </summary>
+  /// <param name="identifier"></param>
+  /// <param name="parentCompanyId"></param>
+  /// <returns></returns>
+  Task DeleteMerchantObject(Guid identifier, Guid? parentCompanyId = null);
+  #endregion
 }
