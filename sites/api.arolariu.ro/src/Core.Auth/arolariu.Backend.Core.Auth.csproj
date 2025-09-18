@@ -1,38 +1,37 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<OutputType>Library</OutputType>
-		<TargetFramework>net9.0</TargetFramework>
-		<Nullable>enable</Nullable>
-		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-		<AnalysisLevel>latest-all</AnalysisLevel>
-		<UserSecretsId>8a44d640-f16e-4cd4-86e6-eaf5792517cf</UserSecretsId>
-	</PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <SignAssembly>False</SignAssembly>
+  </PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+  <!-- Treat warnings as errors for `DEBUG` deployment. -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<WarningLevel>9999</WarningLevel>
 		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
 		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
 		<Deterministic>True</Deterministic>
 		<NoWarn>S1135, NU1903</NoWarn>
-		<!-- S1135 - SonarLint "Complete TODOs" -->
+    <IsTrimmable>False</IsTrimmable>
+    <IsAotCompatible>False</IsAotCompatible>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+  <!-- Treat warnings as errors for `RELEASE` deployment. -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<WarningLevel>9999</WarningLevel>
 		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
 		<CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
 		<Deterministic>True</Deterministic>
 		<NoWarn>S1135</NoWarn>
-		<!-- S1135 - SonarLint "Complete TODOs" -->
+    <IsTrimmable>False</IsTrimmable>
+    <IsAotCompatible>False</IsAotCompatible>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<Compile Remove="DTOs\**" />
-		<EmbeddedResource Remove="DTOs\**" />
-		<None Remove="DTOs\**" />
-	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.9" />

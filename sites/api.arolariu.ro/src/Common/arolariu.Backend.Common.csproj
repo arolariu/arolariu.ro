@@ -1,14 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<OutputType>Library</OutputType>
-		<TargetFramework>net9.0</TargetFramework>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>disable</ImplicitUsings>
-		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
 		<AnalysisLevel>latest-all</AnalysisLevel>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
-	</PropertyGroup>
+    <SignAssembly>False</SignAssembly>
+  </PropertyGroup>
 
 	<!-- Treat warnings as errors for `DEBUG` deployment. -->
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -19,7 +20,6 @@
 		<NoWarn>S1135, NU1903</NoWarn>
 		<IsTrimmable>True</IsTrimmable>
 		<IsAotCompatible>True</IsAotCompatible>
-		<!-- S1135 - SonarLint "Complete TODOs" -->
 	</PropertyGroup>
 
 	<!-- Treat warnings as errors for `RELEASE` deployment. -->
@@ -31,23 +31,16 @@
 		<NoWarn>S1135</NoWarn>
 		<IsTrimmable>True</IsTrimmable>
 		<IsAotCompatible>True</IsAotCompatible>
-		<!-- S1135 - SonarLint "Complete TODOs" -->
 	</PropertyGroup>
 
-	<!-- Dependency Injection & Configuration packages -->
-	<ItemGroup>
-		<PackageReference Include="Microsoft.Azure.AppConfiguration.AspNetCore" Version="8.3.0" />
+  <ItemGroup>
+    <!-- Dependency Injection & Configuration packages -->
+    <PackageReference Include="Microsoft.Azure.AppConfiguration.AspNetCore" Version="8.3.0" />
 		<PackageReference Include="Microsoft.Azure.Cosmos" Version="3.53.1" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.9" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.9" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.AzureAppConfiguration" Version="8.3.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.9" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
-	</ItemGroup>
 
-	<!-- Entity Framework -->
-	<ItemGroup>
-		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.9" />
+    <!-- Entity Framework -->
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.9" />
 		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.9" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.9" />
@@ -66,10 +59,8 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-	</ItemGroup>
 
-	<!-- Open Telemetry & Application Insights packages -->
-	<ItemGroup>
+		<!-- Open Telemetry & Application Insights packages -->
 		<PackageReference Include="OpenTelemetry" Version="1.12.0" />
 		<PackageReference Include="OpenTelemetry.Api" Version="1.12.0" />
 		<PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.12.0" />
@@ -81,20 +72,16 @@
 		<PackageReference Include="Microsoft.ApplicationInsights" Version="2.23.0" />
 		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
 		<PackageReference Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.23.0" />
-	</ItemGroup>
 
-	<!-- Swagger & OpenAPI packages -->
-	<ItemGroup>
+		<!-- Swagger & OpenAPI packages -->
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.4" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.4" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="9.0.4" />
 		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="9.0.4" />
 		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.4" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
-	</ItemGroup>
 
-	<!-- Other packages -->
-	<ItemGroup>
+		<!-- Other packages -->
 		<PackageReference Include="Azure.Core" Version="1.48.0" />
 		<PackageReference Include="Azure.Identity" Version="1.16.0" />
 		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.8.0" />
