@@ -4,9 +4,7 @@
 		<TargetFramework>net10.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
-    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-		<DockerfileContext>.</DockerfileContext>
+        <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<SignAssembly>False</SignAssembly>
 		<AnalysisLevel>latest-all</AnalysisLevel>
@@ -49,6 +47,7 @@
     <!-- Azure packages-->
 		<PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
 		<PackageReference Include="Azure.Storage.Blobs" Version="12.25.0" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0-preview.4" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	</ItemGroup>
 
@@ -58,4 +57,9 @@
 	  <ProjectReference Include="..\Invoices\arolariu.Backend.Domain.Invoices.csproj" />
 	</ItemGroup>
 
+  <PropertyGroup>
+    <DockerfileFile>..\..\Dockerfile</DockerfileFile>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <UserSecretsId>7e279eb7-fd3d-471a-893d-bd52eca63f54</UserSecretsId>
+  </PropertyGroup>
 </Project>
