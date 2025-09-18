@@ -36,7 +36,7 @@
 
   <ItemGroup>
     <!-- Health checks packages -->
-    <PackageReference Include="AspNetCore.HealthChecks.AzureKeyVault" Version="9.0.0" />
+		<PackageReference Include="AspNetCore.HealthChecks.AzureKeyVault" Version="9.0.0" />
 		<PackageReference Include="AspNetCore.HealthChecks.CosmosDb" Version="9.0.0" />
 		<PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="9.0.0" />
 		<PackageReference Include="AspNetCore.HealthChecks.AzureStorage" Version="7.0.0" />

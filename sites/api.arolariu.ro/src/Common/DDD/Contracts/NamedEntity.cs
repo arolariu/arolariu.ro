@@ -102,16 +102,6 @@ public abstract class NamedEntity<T> : BaseEntity<T>
   /// - Consider implementing change tracking if name history is important
   /// </para>
   /// </remarks>
-  /// <example>
-  /// <code>
-  /// // Setting a descriptive name
-  /// product.Name = "Wireless Bluetooth Headphones";
-  ///
-  /// // Names should be business-friendly
-  /// category.Name = "Home and Garden"; // Good
-  /// category.Name = "CAT_HG_001";    // Avoid technical codes in names
-  /// </code>
-  /// </example>
   [JsonPropertyOrder(1)]
   public string Name { get; set; } = string.Empty;
 
@@ -146,21 +136,6 @@ public abstract class NamedEntity<T> : BaseEntity<T>
   /// - May support internationalization for multi-language deployments
   /// </para>
   /// </remarks>
-  /// <example>
-  /// <code>
-  /// // Detailed product description
-  /// product.Description = "High-quality wireless headphones with noise cancellation, " +
-  ///                      "30-hour battery life, and premium audio drivers. " +
-  ///                      "Compatible with all Bluetooth-enabled devices.";
-  ///
-  /// // Simple category description
-  /// category.Description = "Products for home improvement and gardening";
-  ///
-  /// // Empty description for self-explanatory entities
-  /// status.Name = "Active";
-  /// status.Description = ""; // Name is sufficient
-  /// </code>
-  /// </example>
   [JsonPropertyOrder(2)]
   public string Description { get; set; } = string.Empty;
 }
