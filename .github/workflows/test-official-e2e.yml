@@ -116,7 +116,7 @@ jobs:
             tail -n 50 "$file" >> log-tail.md
           done
 
-      - run: cat .github/templates/live-test-template.md log-tail.md > final-issue.md
+      - run: cat .github/templates/e2e-test-template.md log-tail.md > final-issue.md
 
       - uses: peter-evans/create-issue-from-file@v5
         with:
