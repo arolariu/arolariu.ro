@@ -1,0 +1,126 @@
+name: "live-test-official"
+
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  schedule:
+    - cron: "0 * * * *" # Every hour UTC
+  workflow_dispatch:
+
+jobs:
+  frontend:
+    name: '[Frontend] End-to-End Testing (🧪)'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v5
+
+      - name: 📦 Installing Node.js...
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: 📦 Installing dependencies...
+        run: |
+          npm install
+          npm install -g newman
+
+      - name: 🚀 Running end-to-end tests...
+        run: |
+          start=$(date +%s)
+          npm run e2e:frontend 2>&1 | tee frontend-tests.log
+          end=$(date +%s)
+          echo "time=$((end-start))s" >> $GITHUB_OUTPUT
+
+      - name: 📊 Upload frontend logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-test-logs
+          path: frontend-tests.log
+
+  backend:
+    name: '[Backend] End-to-End Testing (🧪)'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v5
+
+      - name: 📦 Installing Node.js...
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: 📦 Installing dependencies...
+        run: |
+          npm install
+          npm install -g newman
+
+      - name: 🌡️ Check dependencies health
+        run: |
+          echo "Fetching backend health status..."
+          curl -s https://api.arolariu.ro/health -o backend-health.json
+          cat backend-health.json
+
+      - name: 🚀 Running end-to-end tests...
+        run: |
+          start=$(date +%s)
+          npm run e2e:backend 2>&1 | tee backend-tests.log
+          end=$(date +%s)
+          echo "time=$((end-start))s" >> $GITHUB_OUTPUT
+
+      - name: 📊 Upload backend logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-logs
+          path: |
+            backend-tests.log
+            backend-health.json
+
+  raise-issue-on-failure:
+    name: 'Raise Issue on Failure'
+    needs: [frontend, backend]
+    runs-on: ubuntu-latest
+    if: ${{ needs.frontend.result == 'failure' || needs.backend.result == 'failure' }}
+    env:
+      TZ: Europe/Bucharest
+    steps:
+      - uses: actions/checkout@v5
+      - name: 📅 Get current date
+        id: date
+        run: echo "today=$(date +'%d-%m-%Y')" >> $GITHUB_OUTPUT
+
+      - name: Download all logs
+        uses: actions/download-artifact@v5
+        with:
+          path: logs
+
+      - id: health
+        run: |
+          if [ -f logs/backend-test-logs/backend-health.json ]; then
+            echo 'json<<EOF' >> $GITHUB_OUTPUT
+            cat logs/backend-test-logs/backend-health.json >> $GITHUB_OUTPUT
+            echo 'EOF' >> $GITHUB_OUTPUT
+          else
+            echo "json=No health data available" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Prepare log tail
+        run: |
+          echo "## 🔥 Log Tail from Failed Jobs" > log-tail.md
+          for file in logs/*/*.log; do
+            echo -e "\n### $(basename "$file")" >> log-tail.md
+            tail -n 50 "$file" >> log-tail.md
+          done
+
+      - run: cat .github/templates/e2e-test-template.md log-tail.md > final-issue.md
+
+      - uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "[${{ steps.date.outputs.today }}] Hourly Live Test Failed 🚨"
+          content-filepath: final-issue.md
+          labels: bug, automated-test-failure
+          assignees: arolariu
