@@ -120,7 +120,7 @@ jobs:
 
       - uses: peter-evans/create-issue-from-file@v5
         with:
-          title: "[${{ steps.date.outputs.datetime }}] Hourly Live Test Failed 🚨"
+          title: "[${{ steps.date.outputs.today }}] Hourly Live Test Failed 🚨"
           content-filepath: final-issue.md
           labels: bug, automated-test-failure
           assignees: arolariu
