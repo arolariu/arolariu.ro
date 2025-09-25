@@ -116,11 +116,11 @@ jobs:
             tail -n 50 "$file" >> log-tail.md
           done
 
-      - run: cat .github/templates/live-test-template.md log-tail.md > final-issue.md
+      - run: cat .github/templates/e2e-test-template.md log-tail.md > final-issue.md
 
       - uses: peter-evans/create-issue-from-file@v5
         with:
-          title: "[${{ steps.date.outputs.datetime }}] Hourly Live Test Failed 🚨"
+          title: "[${{ steps.date.outputs.today }}] Hourly Live Test Failed 🚨"
           content-filepath: final-issue.md
           labels: bug, automated-test-failure
           assignees: arolariu
