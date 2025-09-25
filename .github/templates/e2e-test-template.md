@@ -4,7 +4,7 @@
 **Run ID:** [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 **Run Number:** `${{ github.run_number }}`
 **Triggered By:** `${{ github.event_name }}`
-**Execution Time (UTC):** `${{ steps.date.outputs.datetime }}`
+**Execution Time (UTC):** `${{ steps.date.outputs.today }}`
 
 ---
 
