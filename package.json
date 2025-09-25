@@ -60,7 +60,10 @@
     "test:api": "nx run api:test",
     "test:components": "nx run components:test",
     "test:cv": "nx run cv:test",
-    "test:website": "nx run website:test"
+    "test:website": "nx run website:test",
+    "test:e2e": "npm run test:e2e:backend && npm run test:e2e:frontend",
+    "test:e2e:backend": "echo \"Error: No test specified.\"",
+    "test:e2e:frontend": "echo \"Error: No test specified.\""
   },
   "devDependencies": {
     "@arolariu/components": "0.1.2",

@@ -30,7 +30,7 @@ jobs:
       - name: 🚀 Running end-to-end tests...
         run: |
           start=$(date +%s)
-          npm run e2e:frontend 2>&1 | tee frontend-tests.log
+          npm run test:e2e:frontend 2>&1 | tee frontend-tests.log
           end=$(date +%s)
           echo "time=$((end-start))s" >> $GITHUB_OUTPUT
 
@@ -67,7 +67,7 @@ jobs:
       - name: 🚀 Running end-to-end tests...
         run: |
           start=$(date +%s)
-          npm run e2e:backend 2>&1 | tee backend-tests.log
+          npm run test:e2e:backend 2>&1 | tee backend-tests.log
           end=$(date +%s)
           echo "time=$((end-start))s" >> $GITHUB_OUTPUT
 
