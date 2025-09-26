@@ -104,6 +104,7 @@ export async function main(arg?: string): Promise<number> {
       break;
     default:
       console.error("Invalid or missing target. Usage: lint <packages|website|cv>");
+      return 1;
   }
 
   return 0;
@@ -118,4 +119,3 @@ if (import.meta.main) {
       process.exit(1);
     });
 }
-

@@ -119,6 +119,7 @@ export async function main(arg?: string): Promise<number> {
       break;
     default:
       console.error("Invalid or missing target. Usage: format <all|packages|website|cv|api>");
+      return 1;
   }
 
   return 0;
@@ -133,4 +134,3 @@ if (import.meta.main) {
       process.exit(1);
     });
 }
-

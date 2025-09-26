@@ -1768,12 +1768,12 @@
     },
     {
       "key": "baseHost",
-      "value": "localhost",
+      "value": "api.arolariu.ro",
       "type": "string"
     },
     {
       "key": "basePort",
-      "value": "5001",
+      "value": "443",
       "type": "string"
     },
     {
