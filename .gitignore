@@ -8,6 +8,7 @@
 **/build/**
 **/out/**
 **/output/**
+**/code-cov/**
 **/.nx/**
 **/.vs/**
 **/playwright-report/**
@@ -23,3 +24,9 @@
 # Environment variables:
 **/.env
 **/.env.*
+
+
+# arolariu.ro specific:
+sites/arolariu.ro/certificates # SSL certificates for local HTTPS development
+sites/arolariu.ro/messages/*.d.ts # Generated TypeScript declaration files for localization messages
+sites/arolariu.ro/licenses.json # Generated SBOM file for frontend dependencies
