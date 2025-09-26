@@ -163,4 +163,3 @@ export default function TechStack(): React.JSX.Element {
     </section>
   );
 }
-

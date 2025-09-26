@@ -36,4 +36,3 @@ export async function copyText(text: string): Promise<Result<void>> {
     return error(error_ instanceof Error ? error_ : new Error(String(error_)));
   }
 }
-

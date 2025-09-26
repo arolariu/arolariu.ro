@@ -1,4 +1,3 @@
-
 <script lang="ts">
   import {Tween, prefersReducedMotion} from "svelte/motion";
   import {intersect} from "./intersection";
@@ -16,7 +15,7 @@
     id?: string;
     animation?: AnimationType;
     threshold?: number;
-  }
+  };
 
   let {children, class: className = "", delay = 0, duration = 0.7, id, animation = "fade-up", threshold = 0.1}: Props = $props();
 

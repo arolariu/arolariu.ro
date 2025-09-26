@@ -52,4 +52,3 @@ export function downloadBlob(blob: Blob, filename: string): Result<void> {
   if (!globalThis.window) return error(new Error("download not available (SSR)"));
   return triggerDownload(blob, filename);
 }
-

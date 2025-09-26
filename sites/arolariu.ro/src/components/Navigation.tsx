@@ -250,4 +250,3 @@ export function MobileNavigation(): React.JSX.Element {
     </>
   );
 }
-

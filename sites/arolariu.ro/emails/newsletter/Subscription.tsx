@@ -109,4 +109,3 @@ export default function SubscriptionEmail(props: Readonly<Props>) {
     </Html>
   );
 }
-
