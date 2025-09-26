@@ -21,7 +21,7 @@ export const TypewriterText = ({
   const wordsArray = words.map((word) => {
     return {
       ...word,
-      text: word.text.split(""),
+      text: [...word.text],
     };
   });
 
@@ -106,7 +106,7 @@ export const TypewriterTextSmooth = ({
   const wordsArray = words.map((word) => {
     return {
       ...word,
-      text: word.text.split(""),
+      text: [...word.text],
     };
   });
   const renderWords = () => {

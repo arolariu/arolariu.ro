@@ -12,6 +12,9 @@ interface HoleBackgroundProps extends React.HTMLAttributes<HTMLCanvasElement> {
   particleRGBColor?: [number, number, number];
 }
 
+const linear = (p: number) => p;
+const easeInExpo = (p: number) => (p === 0 ? 0 : 2 ** (10 * (p - 1)));
+
 const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
   (
     {strokeColor = "#737373", numberOfLines = 50, numberOfDiscs = 50, particleRGBColor = [255, 255, 255], className, children, ...props},
@@ -33,9 +36,6 @@ const HoleBackground = React.forwardRef<HTMLCanvasElement, HoleBackgroundProps>(
       particleArea: {},
       linesCanvas: null,
     });
-
-    const linear = (p: number) => p;
-    const easeInExpo = (p: number) => (p === 0 ? 0 : 2 ** (10 * (p - 1)));
 
     const tweenValue = React.useCallback((start: number, end: number, p: number, ease: "inExpo" | null = null) => {
       const delta = end - start;

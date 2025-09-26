@@ -264,10 +264,10 @@ const FireworksBackground = React.forwardRef<HTMLDivElement, FireworksBackground
 
         for (let i = fireworks.length - 1; i >= 0; i--) {
           const firework = fireworks[i];
-          if (!firework.update()) {
-            fireworks.splice(i, 1);
-          } else {
+          if (firework.update()) {
             firework.draw(ctx);
+          } else {
+            fireworks.splice(i, 1);
           }
         }
 

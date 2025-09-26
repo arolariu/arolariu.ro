@@ -14,6 +14,8 @@ interface ScratcherProps {
   gradientColors?: [string, string, string];
 }
 
+const defaultGradientColors: [string, string, string] = ["#A97CF8", "#F38CB8", "#FDCC92"];
+
 export const Scratcher: React.FC<ScratcherProps> = ({
   width,
   height,
@@ -21,7 +23,7 @@ export const Scratcher: React.FC<ScratcherProps> = ({
   onComplete,
   children,
   className,
-  gradientColors = ["#A97CF8", "#F38CB8", "#FDCC92"],
+  gradientColors = defaultGradientColors,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScratching, setIsScratching] = useState(false);
@@ -52,7 +54,8 @@ export const Scratcher: React.FC<ScratcherProps> = ({
 
     const handleDocumentTouchMove = (event: TouchEvent) => {
       if (!isScratching) return;
-      const touch = event.touches[0];
+      const [touch] = event.touches;
+      if (!touch) return;
       scratch(touch.clientX, touch.clientY);
     };
 
