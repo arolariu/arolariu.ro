@@ -33,5 +33,3 @@
 sites/arolariu.ro/certificates
 sites/arolariu.ro/messages/*.d.json.ts
 sites/arolariu.ro/licenses.json
-
-# cv.arolariu.ro specific:
