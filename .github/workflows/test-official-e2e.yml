@@ -33,6 +33,8 @@ jobs:
           npm run test:e2e:frontend 2>&1 | tee frontend-tests.log
           end=$(date +%s)
           echo "time=$((end-start))s" >> $GITHUB_OUTPUT
+        env:
+            E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
 
       - name: 📊 Upload frontend logs
         if: failure()
@@ -70,6 +72,8 @@ jobs:
           npm run test:e2e:backend 2>&1 | tee backend-tests.log
           end=$(date +%s)
           echo "time=$((end-start))s" >> $GITHUB_OUTPUT
+        env:
+            E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
 
       - name: 📊 Upload backend logs
         if: failure()
