@@ -3,6 +3,7 @@
 **/node_modules/**
 **/_site/**
 **/obj/**
+**/.svelte-kit/**
 **/bin/**
 **/dist/**
 **/build/**
@@ -30,3 +31,5 @@
 sites/arolariu.ro/certificates
 sites/arolariu.ro/messages/*.d.json.ts
 sites/arolariu.ro/licenses.json
+
+# cv.arolariu.ro specific:
