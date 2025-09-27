@@ -16,6 +16,7 @@
 **/storybook-static/**
 **/coverage/**
 **/test-results/**
+**/TestResults/**
 **/.next/**
 **/**/.DS_Store
 **/*.tsbuildinfo

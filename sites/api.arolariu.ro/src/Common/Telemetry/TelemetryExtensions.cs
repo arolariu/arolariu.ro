@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Common.Telemetry;
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.Options;
 
@@ -25,6 +26,7 @@ using Microsoft.Extensions.DependencyInjection;
 /// builder.AddTelemetry();
 /// </code>
 /// </example>
+[ExcludeFromCodeCoverage] // Infrastructure wiring; excluded to allow 100% business logic coverage
 public static class TelemetryExtensions
 {
   /// <summary>
