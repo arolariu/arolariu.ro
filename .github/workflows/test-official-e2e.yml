@@ -109,7 +109,7 @@ jobs:
     name: 'Raise Issue on Failure'
     needs: [frontend, backend]
     runs-on: ubuntu-latest
-    if: ${{ needs.frontend.result == 'failure' || needs.backend.result == 'failure' }}
+    if: ${{ always() && (needs.frontend.result == 'failure' || needs.backend.result == 'failure') }}
     env:
       TZ: Europe/Bucharest
     steps:
