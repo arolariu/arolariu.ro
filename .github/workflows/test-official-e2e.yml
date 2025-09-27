@@ -3,6 +3,7 @@ name: "live-test-official"
 permissions:
   id-token: write
   contents: read
+  issues: write
 
 on:
 #  schedule:
