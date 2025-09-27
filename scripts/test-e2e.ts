@@ -1,5 +1,5 @@
 import {execSync} from "node:child_process";
-import {writeFileSync} from "node:fs";
+import {readFileSync, writeFileSync} from "node:fs";
 
 type E2ETestTarget = "frontend" | "backend" | "all";
 
@@ -16,7 +16,7 @@ const directoryMap: Record<Exclude<E2ETestTarget, "all">, string> = {
 const injectAuthTokenIntoCollection = (collectionPath: string, token: string): void => {
   try {
     console.log(`Injecting auth token into collection at: ${collectionPath}`);
-    const collection = require(collectionPath);
+    const collection = JSON.parse(readFileSync(collectionPath, "utf-8"));
 
     const authTokenVariable = collection.variable.find((v: any) => v.key === "authToken");
     if (authTokenVariable) {
