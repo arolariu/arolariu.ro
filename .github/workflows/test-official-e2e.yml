@@ -158,7 +158,25 @@ jobs:
             tail -n 50 "$file" >> log-tail.md
           done
 
-      - run: cat .github/templates/e2e-test-template.md assertion-summaries.md log-tail.md > final-issue.md
+      - name: Populate issue template
+        id: populate-template
+        env:
+          WORKFLOW: ${{ github.workflow }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          EVENT_NAME: ${{ github.event_name }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_DATE: ${{ steps.date.outputs.today }}
+          FRONTEND_STATUS: ${{ needs.frontend.result }}
+          FRONTEND_DURATION: ${{ needs.frontend.outputs.duration }}
+          BACKEND_STATUS: ${{ needs.backend.result }}
+          BACKEND_DURATION: ${{ needs.backend.outputs.duration }}
+          HEALTH_JSON: ${{ steps.health.outputs.json }}
+        run: |
+          # Protect envsubst from literal $ in Markdown by escaping where needed
+          envsubst < .github/templates/e2e-test-template.md > populated-template.md
+          cat populated-template.md assertion-summaries.md log-tail.md > final-issue.md
 
       - uses: peter-evans/create-issue-from-file@v5
         with:
