@@ -13,10 +13,12 @@
 **/.nx/**
 **/.vs/**
 **/playwright-report/**
+**/storybook-static/**
 **/coverage/**
 **/test-results/**
 **/.next/**
 **/**/.DS_Store
+**/*.tsbuildinfo
 
 # Exceptions:
 !.vs/settings.vssettings
