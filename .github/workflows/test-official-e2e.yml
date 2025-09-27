@@ -13,6 +13,8 @@ jobs:
   frontend:
     name: '[Frontend] End-to-End Testing (🧪)'
     runs-on: ubuntu-latest
+    outputs:
+      duration: ${{ steps.test.outputs.duration }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v5
@@ -28,24 +30,35 @@ jobs:
           npm install -g newman
 
       - name: 🚀 Running end-to-end tests...
+        id: test
         run: |
+          mkdir -p e2e-logs
           start=$(date +%s)
           npm run test:e2e:frontend 2>&1 | tee frontend-tests.log
+          code=${PIPESTATUS[0]}
           end=$(date +%s)
-          echo "time=$((end-start))s" >> $GITHUB_OUTPUT
+          echo "duration=$((end-start))s" >> $GITHUB_OUTPUT
+          exit $code
         env:
-            E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
+          E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
+          NEWMAN_REPORT_DIR: e2e-logs
 
-      - name: 📊 Upload frontend logs
+      - name: 📊 Upload frontend logs and reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: frontend-test-logs
-          path: frontend-tests.log
+          path: |
+            frontend-tests.log
+            e2e-logs/newman-frontend.json
+            e2e-logs/newman-frontend.xml
+            e2e-logs/newman-frontend-summary.md
 
   backend:
     name: '[Backend] End-to-End Testing (🧪)'
     runs-on: ubuntu-latest
+    outputs:
+      duration: ${{ steps.test.outputs.duration }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v5
@@ -67,15 +80,20 @@ jobs:
           cat backend-health.json
 
       - name: 🚀 Running end-to-end tests...
+        id: test
         run: |
+          mkdir -p e2e-logs
           start=$(date +%s)
           npm run test:e2e:backend 2>&1 | tee backend-tests.log
+          code=${PIPESTATUS[0]}
           end=$(date +%s)
-          echo "time=$((end-start))s" >> $GITHUB_OUTPUT
+          echo "duration=$((end-start))s" >> $GITHUB_OUTPUT
+          exit $code
         env:
-            E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
+          E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
+          NEWMAN_REPORT_DIR: e2e-logs
 
-      - name: 📊 Upload backend logs
+      - name: 📊 Upload backend logs and reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -83,6 +101,9 @@ jobs:
           path: |
             backend-tests.log
             backend-health.json
+            e2e-logs/newman-backend.json
+            e2e-logs/newman-backend.xml
+            e2e-logs/newman-backend-summary.md
 
   raise-issue-on-failure:
     name: 'Raise Issue on Failure'
@@ -112,6 +133,20 @@ jobs:
             echo "json=No health data available" >> $GITHUB_OUTPUT
           fi
 
+      - name: Prepare assertion summaries
+        run: |
+          echo "### ❌ Assertion Summaries" > assertion-summaries.md
+          found=0
+          for f in logs/*/e2e-logs/*-summary.md; do
+            if [ -f "$f" ]; then
+              echo -e "\n#### $(basename "$f")" >> assertion-summaries.md
+              cat "$f" >> assertion-summaries.md
+              found=1
+            fi
+          done
+          if [ $found -eq 0 ]; then
+            echo "\nNo assertion summary files found." >> assertion-summaries.md
+          fi
       - name: Prepare log tail
         run: |
           echo "## 🔥 Log Tail from Failed Jobs" > log-tail.md
@@ -120,7 +155,7 @@ jobs:
             tail -n 50 "$file" >> log-tail.md
           done
 
-      - run: cat .github/templates/e2e-test-template.md log-tail.md > final-issue.md
+      - run: cat .github/templates/e2e-test-template.md assertion-summaries.md log-tail.md > final-issue.md
 
       - uses: peter-evans/create-issue-from-file@v5
         with:

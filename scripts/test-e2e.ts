@@ -1,5 +1,5 @@
 import {execSync} from "node:child_process";
-import {readFileSync, writeFileSync} from "node:fs";
+import {existsSync, mkdirSync, readFileSync, writeFileSync} from "node:fs";
 
 type E2ETestTarget = "frontend" | "backend" | "all";
 
@@ -45,12 +45,59 @@ const loadOpenAPITestCollectionPath = (target: Exclude<E2ETestTarget, "all">): s
  * Run the OpenAPI test collection using Newman via npx (npx newman run <path>).
  * @param path The file path to the OpenAPI test collection.
  */
-const runOpenAPITestCollection = async (path: string): Promise<void> => {
+const ensureReportDir = (dir: string): void => {
   try {
-    execSync(`npx newman run "${path}"`, {stdio: "inherit"});
+    mkdirSync(dir, {recursive: true});
+  } catch (e) {
+    console.error("Failed to create report directory:", dir, e);
+  }
+};
+
+const writeAssertionSummary = (target: string, reportDir: string): void => {
+  const jsonPath = `${reportDir}/newman-${target}.json`;
+  if (!existsSync(jsonPath)) {
+    console.warn("JSON report not found, cannot create summary:", jsonPath);
+    return;
+  }
+  try {
+    const data = JSON.parse(readFileSync(jsonPath, "utf-8"));
+    const failures = (data.run?.failures || []).map((f: any) => ({
+      assertion: f.assertion,
+      error: f.error?.message || f.error,
+      item: f.source?.name || f.parent?.name || f.cursor?.scriptId || "Unknown",
+    }));
+    let md = `### Failed Assertions (${target})\n`;
+    if (!failures.length) {
+      md += "No failed assertions.\n";
+    } else {
+      failures.forEach((f: any, i: number) => {
+        md += `${i + 1}. AssertionError  ${f.assertion}\n   ${f.error}\n   in "${f.item}"\n\n`;
+      });
+    }
+    writeFileSync(`${reportDir}/newman-${target}-summary.md`, md.trim() + "\n");
+  } catch (e) {
+    console.error("Error while writing assertion summary:", e);
+  }
+};
+
+const runOpenAPITestCollection = async (target: Exclude<E2ETestTarget, "all">, path: string, reportDir: string): Promise<void> => {
+  ensureReportDir(reportDir);
+  const jsonPath = `${reportDir}/newman-${target}.json`;
+  const junitPath = `${reportDir}/newman-${target}.xml`;
+  try {
+    execSync(
+      `npx newman run "${path}" --reporters cli,json,junit --reporter-json-export "${jsonPath}" --reporter-junit-export "${junitPath}"`,
+      {stdio: "inherit"},
+    );
   } catch (error) {
     console.error("Newman tests failed:", error);
     throw error;
+  } finally {
+    try {
+      writeAssertionSummary(target, reportDir);
+    } catch (e) {
+      console.error("Failed generating assertion summary:", e);
+    }
   }
 };
 
@@ -64,10 +111,11 @@ const startNewmanTesting = async (target: Exclude<E2ETestTarget, "all">): Promis
   if (!authToken) {
     throw new Error("E2E_TEST_AUTH_TOKEN environment variable is not set.");
   }
+  const reportDir = process.env["NEWMAN_REPORT_DIR"] || "e2e-logs";
 
   injectAuthTokenIntoCollection(path, authToken);
   console.log(`Starting Newman tests for target: ${target}, using collection at: ${path}`);
-  await runOpenAPITestCollection(path);
+  await runOpenAPITestCollection(target, path, reportDir);
   console.log(`Completed Newman tests for target: ${target}`);
 };
 
