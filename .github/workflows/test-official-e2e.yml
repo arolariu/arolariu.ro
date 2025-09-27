@@ -126,11 +126,13 @@ jobs:
       - id: health
         run: |
           if [ -f logs/backend-test-logs/backend-health.json ]; then
-            echo 'json<<EOF' >> $GITHUB_OUTPUT
-            cat logs/backend-test-logs/backend-health.json >> $GITHUB_OUTPUT
-            echo 'EOF' >> $GITHUB_OUTPUT
+            {
+              echo 'json<<EOF'
+              cat logs/backend-test-logs/backend-health.json
+              printf '\nEOF\n'
+            } >> "$GITHUB_OUTPUT"
           else
-            echo "json=No health data available" >> $GITHUB_OUTPUT
+            echo "json=No health data available" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Prepare assertion summaries
