@@ -55,6 +55,7 @@
     "__runner__based__commands__finish__": "✅ The above section contains commands based on NX runner.",
     "___________________________________": "",
     "__script__based__commands__start__": "⚠️ The below section contains commands based on node runner.",
+    "setup": "node scripts/setup.ts",
     "format": "node scripts/format.ts all",
     "format:components": "node scripts/format.ts packages",
     "format:cv": "node scripts/format.ts cv",
@@ -68,6 +69,7 @@
     "test:e2e": "node scripts/test-e2e.ts all",
     "test:e2e:backend": "node scripts/test-e2e.ts backend",
     "test:e2e:frontend": "node scripts/test-e2e.ts frontend",
+    "generate:env": "node scripts/generate.env.ts",
     "__script__based__commands__finish__": "✅ The above section contains commands based on node runner."
   },
   "devDependencies": {
@@ -197,6 +199,7 @@
     "next-intl": "4.3.9",
     "next-themes": "0.4.6",
     "nx": "21.5.3",
+    "picocolors": "1.1.1",
     "playwright": "1.55.1",
     "postcss": "8.5.6",
     "prettier": "3.6.2",

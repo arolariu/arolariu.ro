@@ -3,14 +3,66 @@ import {DefaultAzureCredential} from "@azure/identity";
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
-import {isSecretKey} from "../sites/arolariu.ro/scripts/utils.generic";
-import type {
-  TypedProductionEnvironmentVariablesType as TypedDevelopmentEnvironment,
-  TypedDevelopmentEnvironmentVariablesType as TypedProductionEnvironment,
-} from "../sites/arolariu.ro/src/types";
-import {getSecretFromKeyVault, isKeyVaultRef} from "./azure";
+import pc from "picocolors";
+import {getSecretFromKeyVault, isKeyVaultRef, isSecretKey} from "./azure";
 
-type AllEnvironmentVariablesKeys = keyof (TypedProductionEnvironment | TypedDevelopmentEnvironment);
+// Conditional types for automatic inference based on environment
+type SiteName<T extends string> = T extends "production" ? "arolariu.ro" : T extends "development" ? "dev.arolariu.ro" : never;
+
+type SiteUrl<T extends string> = T extends "production"
+  ? "https://arolariu.ro"
+  : T extends "development"
+    ? "https://dev.arolariu.ro"
+    : never;
+
+type ApiName<T extends string> = T extends "production" ? "arolariu-api" : never;
+
+type ApiUrl<T extends string> = T extends "production" ? "https://api.arolariu.ro" : never;
+
+// Strongly-typed environment variable definitions with automatic inference
+type SiteEnvironmentVariables<Env extends "production" | "development"> = Readonly<{
+  SITE_ENV: Uppercase<Env>;
+  SITE_NAME: SiteName<Env>;
+  SITE_URL: SiteUrl<Env>;
+}>;
+
+type ApiEnvironmentVariables<Env extends "production"> = Readonly<{
+  API_ENV: Uppercase<Env>;
+  API_NAME: ApiName<Env>;
+  API_URL: ApiUrl<Env>;
+}>;
+
+type AuthEnvironmentVariables = Readonly<{
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string;
+  CLERK_SECRET_KEY: string;
+  API_JWT: string;
+  RESEND_API_KEY: string;
+}>;
+
+type MetadataEnvironmentVariables = Readonly<{
+  TIMESTAMP: string;
+  COMMIT_SHA: string;
+  USE_CDN: boolean;
+}>;
+
+/**
+ * TypedEnvironment is a utility type that combines all environment variables
+ * for a specific site and API environment, ensuring type safety and consistency.
+ * It includes site-specific, API-specific, authentication, and metadata variables.
+ */
+export type TypedEnvironment<SiteEnv extends "production" | "development", ApiEnv extends "production"> = Readonly<
+  SiteEnvironmentVariables<SiteEnv> & ApiEnvironmentVariables<ApiEnv> & AuthEnvironmentVariables & MetadataEnvironmentVariables
+>;
+
+export type TypedProductionEnvironmentVariablesType = TypedEnvironment<"production", "production">;
+export type TypedDevelopmentEnvironmentVariablesType = TypedEnvironment<"development", "production">;
+
+export type SecretEnvironmentVariablesType = Extract<
+  keyof (TypedProductionEnvironmentVariablesType | TypedDevelopmentEnvironmentVariablesType),
+  keyof AuthEnvironmentVariables // Ensures only auth-related secrets are included
+>;
+
+type AllEnvironmentVariablesKeys = keyof (TypedProductionEnvironmentVariablesType | TypedDevelopmentEnvironmentVariablesType);
 type TypedConfigurationType = Record<AllEnvironmentVariablesKeys | (string & {}), string>;
 
 const APPCONFIG_MAPPING = {
@@ -40,23 +92,33 @@ async function fetchFromAzure(): Promise<TypedConfigurationType> {
   const config = {} as TypedConfigurationType;
   const label = isProduction ? "PRODUCTION" : "DEVELOPMENT";
 
+  console.log(pc.cyan(`\n☁️  Fetching configuration from Azure App Configuration...`));
+  console.log(pc.gray(`   Store: ${appConfigStore}`));
+  console.log(pc.gray(`   Label: ${label}\n`));
+
   for (const [key, envVar] of Object.entries(APPCONFIG_MAPPING)) {
     try {
       const setting = await client.getConfigurationSetting({key: key, label: label});
-      if (!setting.value) continue;
+      if (!setting.value) {
+        console.log(pc.yellow(`   ⚠ No value found for ${key}`));
+        continue;
+      }
 
       if (isKeyVaultRef(setting.value)) {
-        console.log(`🔑 Fetching secret for ${key} with label ${label} from Key Vault...`);
+        console.log(pc.cyan(`   🔑 Fetching secret: ${pc.bold(key)}`));
         const ref = JSON.parse(setting.value);
         config[envVar] = await getSecretFromKeyVault(ref.uri);
+        console.log(pc.green(`      ✓ Retrieved from Key Vault`));
       } else {
+        console.log(pc.gray(`   📝 Retrieved: ${key}`));
         config[envVar] = setting.value;
       }
     } catch (error) {
-      console.log(`💥 Error: Failed to fetch ${key} with label ${label}: ${JSON.stringify(error, null, 2)}`);
+      console.log(pc.red(`   ✗ Failed to fetch ${key}: ${error instanceof Error ? error.message : "Unknown error"}`));
     }
   }
 
+  console.log(pc.green(`\n   ✓ Fetched ${Object.keys(config).length} configuration values from Azure\n`));
   return config;
 }
 
@@ -65,9 +127,11 @@ function parseExistingEnvFile(): TypedConfigurationType {
   const config = {} as TypedConfigurationType;
 
   if (!fs.existsSync(envPath)) {
-    console.log("No existing .env file found");
+    console.log(pc.gray("   📄 No existing .env file found"));
     return config;
   }
+
+  console.log(pc.cyan(`\n📖 Parsing existing .env file...`));
 
   try {
     const content = fs.readFileSync(envPath, "utf-8");
@@ -88,25 +152,38 @@ function parseExistingEnvFile(): TypedConfigurationType {
       }
     }
 
-    console.log(`Parsed ${Object.keys(config).length} existing environment variables`);
+    console.log(pc.green(`   ✓ Parsed ${Object.keys(config).length} existing environment variables\n`));
   } catch (error) {
-    console.log(`Warning: Failed to parse existing .env: ${error}`);
+    console.log(pc.yellow(`   ⚠ Warning: Failed to parse existing .env: ${error}\n`));
   }
 
   return config;
 }
 
 async function promptForMissingKeys(missingKeys: AllEnvironmentVariablesKeys[]): Promise<TypedConfigurationType> {
+  console.log(pc.cyan("\n🔍 Prompting for missing environment variables...\n"));
+
+  if (missingKeys.length === 0) {
+    console.log(pc.green("   ✓ All required keys are present!\n"));
+    return {} as TypedConfigurationType;
+  }
+
+  console.log(pc.yellow(`   ⚠ Found ${missingKeys.length} missing key(s) that need to be provided:\n`));
+
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   });
 
   const config = {} as TypedConfigurationType;
+  let count = 1;
 
   for (const key of missingKeys) {
     const isSecret = isSecretKey(key);
-    const prompt = isSecret ? `Enter value for ${key} (hidden): ` : `Enter value for ${key}: `;
+    const prefix = isSecret ? pc.magenta("🔐") : pc.blue("🔑");
+    const keyLabel = isSecret ? pc.magenta(key) : pc.cyan(key);
+    const secretHint = isSecret ? pc.gray(" (hidden)") : "";
+    const prompt = `   ${prefix} [${count}/${missingKeys.length}] ${keyLabel}${secretHint}: `;
 
     const value = await new Promise<string>((resolve) => {
       if (isSecret) {
@@ -115,7 +192,7 @@ async function promptForMissingKeys(missingKeys: AllEnvironmentVariablesKeys[]):
           resolve(answer.trim());
         });
         // Hide the input by moving cursor and clearing line
-        process.stdout.write(prompt + "*".repeat(8) + "\n");
+        process.stdout.write(prompt + pc.gray("*".repeat(8)) + "\n");
       } else {
         rl.question(prompt, (answer) => {
           resolve(answer.trim());
@@ -126,15 +203,19 @@ async function promptForMissingKeys(missingKeys: AllEnvironmentVariablesKeys[]):
     if (value) {
       config[key] = value;
     } else {
-      console.log(`⚠️ Warning: Empty value provided for ${key}. Please ensure this is intentional.`);
+      console.log(pc.yellow(`      ⚠️ Warning: Empty value provided for ${key}. Please ensure this is intentional.`));
     }
+    count++;
   }
 
   rl.close();
+  console.log(pc.green("\n   ✓ All missing keys have been provided!\n"));
   return config;
 }
 
 async function ensureLocalEnv(): Promise<TypedConfigurationType> {
+  console.log(pc.cyan("\n🔧 Ensuring local environment configuration...\n"));
+
   // Parse existing .env if it exists
   const existingConfig = parseExistingEnvFile();
   const existingConfigKeys = Object.keys(existingConfig);
@@ -142,19 +223,24 @@ async function ensureLocalEnv(): Promise<TypedConfigurationType> {
   // Find missing keys from REQUIRED array
   const missingKeys = Object.values(APPCONFIG_MAPPING).filter((key) => !existingConfigKeys.includes(key));
   if (missingKeys.length === 0) {
-    console.log("✅ All required environment variables are present!");
+    console.log(pc.green("   ✅ All required environment variables are present!\n"));
     return existingConfig;
   }
 
-  console.log(`📝 Missing ${missingKeys.length} required environment variable(s): ${missingKeys.join(", ")}`);
+  console.log(pc.yellow(`   📝 Missing ${missingKeys.length} required environment variable(s):`));
+  missingKeys.forEach((key) => console.log(pc.gray(`      • ${key}`)));
+  console.log();
 
   // Prompt user for missing keys
   const newValues = await promptForMissingKeys(missingKeys);
   // Merge and return complete config
+  console.log(pc.green("   ✓ Configuration merged successfully!\n"));
   return {...existingConfig, ...newValues};
 }
 
 function generateEnvFileContent(config: TypedConfigurationType): string {
+  console.log(pc.cyan("\n📝 Generating .env file content...\n"));
+
   const lines = [
     "# Generated environment configuration",
     `# Site Environment: ${process.env["NODE_ENV"] || "development"}`,
@@ -166,6 +252,7 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
   ];
 
   // Site config
+  console.log(pc.gray("   📦 Adding Site Configuration..."));
   lines.push("# Site Configuration Start");
   ["SITE_ENV", "SITE_NAME", "SITE_URL"].forEach((key) => {
     if (config[key]) {
@@ -176,6 +263,7 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
   lines.push("# Site Configuration End");
 
   // Auth config
+  console.log(pc.gray("   🔐 Adding Authentication Configuration..."));
   lines.push("", "# Authentication Configuration Start");
   ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY", "RESEND_API_KEY"].forEach((key) => {
     if (config[key]) {
@@ -185,6 +273,7 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
   lines.push("# Authentication Configuration End");
 
   // API config
+  console.log(pc.gray("   🌐 Adding API Configuration..."));
   lines.push("", "# API Configuration Start");
   ["API_ENV", "API_NAME", "API_URL", "API_JWT"].forEach((key) => {
     if (config[key]) {
@@ -195,6 +284,7 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
   lines.push("# API Configuration End");
 
   // Metadata config
+  console.log(pc.gray("   📊 Adding Metadata Configuration..."));
   lines.push("", "# Metadata Configuration Start");
   lines.push(`TIMESTAMP=${new Date().toISOString()}`);
   lines.push(`COMMIT_SHA=${process.env["COMMIT_SHA"] ?? process.env["GITHUB_SHA"] ?? "N/A"}`);
@@ -202,37 +292,71 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
   lines.push(`USE_CDN=${config["USE_CDN"] ?? "false"}`);
   lines.push("# Metadata Configuration End");
 
+  console.log(pc.green("   ✓ File content generated successfully!\n"));
+
   return lines.join("\n");
 }
 
 export async function main(): Promise<void> {
-  console.log("Starting environment configuration generation...");
-  console.log(`Infrastructure requested: ${isAzure ? "Azure" : "Local"}`);
-  console.log(`Infrastructure environment: ${isProduction ? "production" : "development"}`);
-  console.log(`Agent is verbose: ${isVerbose ? "✅ True" : "❌ False"}`);
-  console.log(`Agent environment: ${isCI ? "CI/CD" : "Local"}`);
-  console.log(`Agent working directory: ${path.resolve(".")}`);
-  console.log(`Agent output file: .env`);
+  if (process.argv.includes("--help") || process.argv.includes("-h")) {
+    console.log(pc.magenta("\n╔══════════════════════════════════════════════════════════════════╗"));
+    console.log(pc.magenta("║       Environment Configuration Generator - Help                 ║"));
+    console.log(pc.magenta("╚══════════════════════════════════════════════════════════════════╝\n"));
+    console.log(pc.cyan("📋 Description:"));
+    console.log(pc.gray("   Generates .env file from Azure App Configuration or manual input\n"));
+    console.log(pc.cyan("🚀 Usage:"));
+    console.log(pc.gray("   npm run generate:env [options]\n"));
+    console.log(pc.cyan("⚙️  Options:"));
+    console.log(pc.gray("   --help, -h        Show this help message"));
+    console.log(pc.gray("   --verbose, -v     Enable verbose logging"));
+    console.log(pc.gray("   --azure           Fetch from Azure App Configuration"));
+    console.log(pc.gray("   --production      Use production configuration\n"));
+    console.log(pc.cyan("📦 Environment Variables:"));
+    console.log(pc.gray("   AZURE_CONFIG      Enable Azure mode (true/false)"));
+    console.log(pc.gray("   NODE_ENV          Set environment (production/development)"));
+    console.log(pc.gray("   CI                Detect CI/CD environment\n"));
+    console.log(pc.cyan("📖 Examples:"));
+    console.log(pc.gray("   npm run generate:env --azure --production"));
+    console.log(pc.gray("   npm run generate:env --verbose\n"));
+    return;
+  }
+
+  console.log(pc.magenta("\n╔══════════════════════════════════════════════════════════════════╗"));
+  console.log(pc.magenta("║       Environment Configuration Generator                        ║"));
+  console.log(pc.magenta("╚══════════════════════════════════════════════════════════════════╝\n"));
+
+  console.log(pc.cyan("🔧 Configuration:\n"));
+  console.log(pc.gray(`   Infrastructure: ${isAzure ? pc.blue("Azure") : pc.yellow("Local")}`));
+  console.log(pc.gray(`   Environment: ${isProduction ? pc.red("production") : pc.green("development")}`));
+  console.log(pc.gray(`   Verbose: ${isVerbose ? pc.green("✅ Enabled") : pc.gray("❌ Disabled")}`));
+  console.log(pc.gray(`   Agent: ${isCI ? pc.cyan("CI/CD") : pc.yellow("Local")}`));
+  console.log(pc.gray(`   Working Directory: ${pc.dim(path.resolve("."))}`));
+  console.log(pc.gray(`   Output File: ${pc.cyan(".env")}\n`));
 
   let config = {} as TypedConfigurationType;
   try {
     if (isAzure) {
-      isVerbose && console.log("Fetching configuration from Azure App Configuration...");
+      isVerbose && console.log(pc.cyan("☁️  Fetching configuration from Azure App Configuration...\n"));
       config = await fetchFromAzure();
     } else {
-      isVerbose && console.log("Populating configuration via manual input...");
+      isVerbose && console.log(pc.yellow("📝 Populating configuration via manual input...\n"));
       config = await ensureLocalEnv();
     }
   } catch (error) {
-    console.error(`❌ Error: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(pc.red(`\n✗ Error: ${error instanceof Error ? error.message : String(error)}\n`));
     process.exit(1);
   }
 
   const content = generateEnvFileContent(config);
+
+  console.log(pc.cyan("💾 Writing .env file...\n"));
   fs.writeFileSync(".env", content, {mode: 0o600});
-  console.log(`✅ Generated ${Object.keys(config).length} environment variables.`);
-  console.log(`📁 File: ${path.resolve(".env")}`);
+
+  console.log(pc.green("╔══════════════════════════════════════════════════════════════════╗"));
+  console.log(pc.green("║                    ✓ Success!                                    ║"));
+  console.log(pc.green("╚══════════════════════════════════════════════════════════════════╝\n"));
+  console.log(pc.gray(`   Generated ${pc.green(Object.keys(config).length)} environment variables`));
+  console.log(pc.gray(`   File: ${pc.cyan(path.resolve(".env"))}\n`));
 }
 
 await main();
-
