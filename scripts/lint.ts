@@ -29,8 +29,11 @@ function loadESLintConfig(lintTarget: LintTarget): Linter.Config<Linter.RulesRec
 async function runESLint(config: Linter.Config<Linter.RulesRecord>) {
   const eslint = new ESLint({
     baseConfig: config,
-    cache: false,
+    cache: true,
+    cacheLocation: ".eslintcache",
+    cacheStrategy: "content",
     errorOnUnmatchedPattern: true,
+    stats: true,
   });
 
   console.log(pc.cyan(`\n🔍 Using ESLint config: ${pc.bold(config.name || "unknown")}`));
