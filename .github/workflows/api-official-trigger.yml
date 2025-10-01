@@ -39,12 +39,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
 
       - name: 📦 Installing the .NET runtime...
-        uses: actions/setup-dotnet@v4.3.1
+        uses: actions/setup-dotnet@v5.0.0
         with:
-          dotnet-version: "9.x"
+          dotnet-version: "10.x"
 
       # - name: 🧪 Running unit tests...
       #   run: |
@@ -66,7 +66,7 @@ jobs:
     environment: ${{ inputs.environment || 'production' }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2.3.0
@@ -83,9 +83,9 @@ jobs:
           login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
       - name: 📦 Installing the .NET runtime...
-        uses: actions/setup-dotnet@v4.3.1
+        uses: actions/setup-dotnet@v5.0.0
         with:
-          dotnet-version: "9.x"
+          dotnet-version: "10.x"
 
       - name: 🏗️ Building the docker container...
         env:
@@ -124,7 +124,7 @@ jobs:
 
       - name: ⚓ Deploying docker container to Azure App Service...
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3.0.2
+        uses: azure/webapps-deploy@v3.0.6
         env:
           CONTAINER_NAME: "backend/api.arolariu"
           CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}

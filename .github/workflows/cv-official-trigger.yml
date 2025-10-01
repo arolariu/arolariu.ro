@@ -23,10 +23,10 @@ jobs:
       url: "https://cv.arolariu.ro"
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v5.0.0
 
       - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v5.0.0
         with:
           node-version: 24
 
