@@ -1,0 +1,90 @@
+{
+  "$schema": "https://schema.postman.com/collection/json/v2.1.0/draft-04/collection.json",
+  "info": {
+    "name": "arolariu.ro",
+    "description": "Frontend API route tests for arolariu.ro Next.js application",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"Response status is successful\", function () {",
+          "    pm.expect(pm.response.code).to.be.within(200, 299);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Get Root Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify the frontend root page is accessible",
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                ""
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get About Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify the about page is accessible",
+            "url": {
+              "raw": "{{baseUrl}}/about",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "about"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "baseUrl",
+      "value": "{{baseProtocol}}://{{baseHost}}",
+      "type": "string"
+    },
+    {
+      "key": "baseHost",
+      "value": "arolariu.ro",
+      "type": "string"
+    },
+    {
+      "key": "baseProtocol",
+      "value": "https",
+      "type": "string"
+    }
+  ]
+}
