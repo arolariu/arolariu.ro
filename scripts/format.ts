@@ -1,6 +1,6 @@
-import {execSync} from "child_process";
 import pc from "picocolors";
 import {resolveConfigFile} from "prettier";
+import {runWithSpinner} from "./common/index.ts";
 
 type FormatTarget = "all" | "packages" | "website" | "cv" | "api";
 
@@ -12,24 +12,181 @@ const directoryMap: Record<Exclude<FormatTarget, "all">, string> = {
 };
 
 /**
- * Checks the code formatting for a specific target using Prettier.
- * @param target The target to check (e.g., "packages", "website", "cv").
+ * Checks code for a specific target using the appropriate checker.
+ * @param target The target to check (e.g., "packages", "website", "cv", "api").
+ * @param hideOutput Whether to hide output (true for parallel execution)
+ * @returns Promise with exit code and output
+ * @throws Error if configuration cannot be resolved
  */
-async function checkCodeWithPrettier(target: Exclude<FormatTarget, "all" | "api">): Promise<1 | 0> {
-  console.log(pc.cyan(`\n🔍 Checking code format for: ${pc.bold(target)}`));
-  const directoryToCheck = directoryMap[target];
-  const configFilePath = await resolveConfigFile();
-
-  try {
-    execSync(
-      `tsx node_modules/prettier/bin/prettier.cjs --check ${directoryToCheck} --cache --config ${configFilePath} --config-precedence prefer-file --check-ignore-pragma`,
-      {
-        stdio: "inherit",
-      },
+async function checkTarget(target: Exclude<FormatTarget, "all">, hideOutput: boolean = true): Promise<{code: number; output: string}> {
+  if (target === "api") {
+    return await runWithSpinner(
+      "dotnet",
+      ["format", "arolariu.slnx", "--verify-no-changes", "--verbosity", hideOutput ? "quiet" : "detailed"],
+      `${pc.cyan("🔍")} Checking ${pc.bold(".NET API")}`,
+      hideOutput,
     );
-    console.log(pc.green(`  ✓ Code format is correct for ${target}`));
-  } catch (error) {
-    console.log(pc.yellow(`  ⚠ Code format issues detected for ${target}`));
+  }
+
+  // Prettier targets
+  const directoryToCheck = directoryMap[target];
+  if (!directoryToCheck) {
+    throw new Error(`No directory mapping found for target: ${target}`);
+  }
+
+  const configFilePath = await resolveConfigFile();
+  if (configFilePath === null) {
+    throw new Error("Could not resolve prettier configuration file!");
+  }
+
+  return await runWithSpinner(
+    "node",
+    [
+      "node_modules/prettier/bin/prettier.cjs",
+      "--check",
+      directoryToCheck,
+      "--cache",
+      "--config",
+      configFilePath,
+      "--config-precedence",
+      "prefer-file",
+      "--check-ignore-pragma",
+    ],
+    `${pc.cyan("🔍")} Checking ${pc.bold(target)}`,
+    hideOutput,
+  );
+}
+
+/**
+ * Formats code for a specific target using the appropriate formatter.
+ * @param target The target to format (e.g., "packages", "website", "cv", "api").
+ * @param hideOutput Whether to hide output (true for parallel execution)
+ * @returns Promise with exit code and output
+ * @throws Error if configuration cannot be resolved
+ */
+async function formatTarget(target: Exclude<FormatTarget, "all">, hideOutput: boolean = true): Promise<{code: number; output: string}> {
+  if (target === "api") {
+    return await runWithSpinner(
+      "dotnet",
+      ["format", "arolariu.slnx", "--verbosity", hideOutput ? "quiet" : "detailed"],
+      `${pc.cyan("🔧")} Formatting ${pc.bold(".NET API")}`,
+      hideOutput,
+    );
+  }
+
+  // Prettier targets
+  const directoryToCheck = directoryMap[target];
+  if (!directoryToCheck) {
+    throw new Error(`No directory mapping found for target: ${target}`);
+  }
+
+  const configFilePath = await resolveConfigFile();
+  if (configFilePath === null) {
+    throw new Error("Could not resolve prettier configuration file!");
+  }
+
+  return await runWithSpinner(
+    "node",
+    [
+      "node_modules/prettier/bin/prettier.cjs",
+      "--write",
+      directoryToCheck,
+      "--cache",
+      "--config",
+      configFilePath,
+      "--config-precedence",
+      "prefer-file",
+      "--check-ignore-pragma",
+    ],
+    `${pc.cyan("✨")} Formatting ${pc.bold(target)}`,
+    hideOutput,
+  );
+}
+
+/**
+ * Checks and formats code for a specific target.
+ * First checks the code, then formats only if needed.
+ * @param target The target to check and format
+ * @param hideOutput Whether to hide output (true for parallel execution)
+ * @returns Exit code (0 for success, non-zero for failure)
+ */
+async function checkAndFormatTarget(target: Exclude<FormatTarget, "all">, hideOutput: boolean = true): Promise<number> {
+  const checkResult = await checkTarget(target, hideOutput);
+
+  // If check passed, we're done
+  if (checkResult.code === 0) return 0;
+
+  // Otherwise, format the code
+  const formatResult = await formatTarget(target, hideOutput);
+  return formatResult.code;
+}
+
+/**
+ * Formats all targets in parallel - checks first, then formats if needed.
+ * @returns Exit code (0 for success, non-zero for failure)
+ * @throws Error if configuration cannot be resolved or targets are invalid
+ */
+async function runOnAllTargets(): Promise<number> {
+  console.log(pc.bold(pc.magenta("\n🧵 Phase 1: Checking all targets in parallel...\n")));
+
+  const allTargets: Exclude<FormatTarget, "all">[] = ["packages", "website", "cv", "api"];
+
+  // Phase 1: Run ALL checks in parallel using the wrapper
+  const checkPromises = allTargets.map((target) => checkTarget(target, true).then((result) => ({target, result})));
+
+  const checkResults = await Promise.allSettled(checkPromises).then((results) =>
+    results.map((result, index) => {
+      if (result.status === "fulfilled") {
+        return result.value;
+      } else {
+        const target = allTargets[index];
+        console.error(pc.red(`\n✗ Check failed for target ${target}: ${result.reason}`));
+        // Return a dummy result with error code
+        return {
+          target,
+          result: {code: 1, output: result.reason?.toString() || "Unknown error"},
+        };
+      }
+    }),
+  );
+
+  console.log(); // Add spacing after checks
+
+  // Phase 2: Format only the targets that failed checks
+  const targetsToFormat = checkResults.filter((r) => r.result.code !== 0);
+
+  if (targetsToFormat.length === 0) {
+    console.log(pc.green("✓ All targets already properly formatted!\n"));
+    return 0;
+  }
+
+  console.log(pc.bold(pc.magenta(`\n🧵 Phase 2: Formatting ${targetsToFormat.length} target(s) in parallel...\n`)));
+
+  // Phase 2: Format only failed targets using the wrapper
+  const formatPromises = targetsToFormat.map(({target}) => {
+    if (!target) {
+      throw new Error("Invalid target in format phase");
+    }
+    return formatTarget(target, true);
+  });
+
+  const formatResults = await Promise.allSettled(formatPromises).then((results) =>
+    results.map((result) => {
+      if (result.status === "fulfilled") {
+        return result.value;
+      } else {
+        console.error(pc.red(`\n✗ Format operation failed: ${result.reason}`));
+        return {code: 1, output: result.reason?.toString() || "Unknown error"};
+      }
+    }),
+  );
+
+  console.log(); // Add spacing after formatting
+
+  // Check if any formatting failed
+  const failedCount = formatResults.filter((r) => r.code !== 0).length;
+  if (failedCount > 0) {
+    console.log(pc.yellow(`\n⚠ ${failedCount} target(s) had formatting issues`));
     return 1;
   }
 
@@ -37,68 +194,15 @@ async function checkCodeWithPrettier(target: Exclude<FormatTarget, "all" | "api"
 }
 
 /**
- * Formats the code for a specific target using Prettier.
- * @param target The target to format (e.g., "packages", "website", "cv").
+ * Formats a single target with full output visibility.
+ * @param target The specific target to format (not "all")
+ * @returns Exit code (0 for success, non-zero for failure)
  */
-async function formatCodeWithPrettier(target: Exclude<FormatTarget, "all" | "api">): Promise<void> {
-  console.log(pc.cyan(`\n✨ Formatting code for: ${pc.bold(target)}`));
-  const directoryToFormat = directoryMap[target];
-  const configFilePath = await resolveConfigFile();
+async function runOnSingleTarget(target: Exclude<FormatTarget, "all">): Promise<number> {
+  console.log(pc.bold(pc.magenta(`\n🎨 Formatting: ${target}\n`)));
 
-  try {
-    execSync(
-      `tsx node_modules/prettier/bin/prettier.cjs --write ${directoryToFormat} --cache --config ${configFilePath} --config-precedence prefer-file --check-ignore-pragma`,
-      {
-        stdio: "inherit",
-      },
-    );
-    console.log(pc.green(`  ✓ Code formatted successfully for ${target}`));
-  } catch (error) {
-    console.error(pc.red(`  ✗ Encountered error when formatting ${target}:`), error);
-  }
-}
-
-async function startPrettier(formatTarget: Exclude<FormatTarget, "api">): Promise<void> {
-  console.log(pc.bold(pc.magenta(`\n🎨 Running Prettier for: ${formatTarget}`)));
-  if (formatTarget === "all") {
-    console.log(pc.yellow("⏱️  Warning: Running format on 'all' may take a while..."));
-    const targets: Exclude<FormatTarget, "all" | "api">[] = ["packages", "website", "cv"];
-    for (const target of targets) {
-      const checkCode = await checkCodeWithPrettier(target);
-      if (checkCode !== 0) await formatCodeWithPrettier(target);
-      console.log(pc.gray("\n─────────────────────────────────────────────────\n"));
-    }
-  } else {
-    const checkCode = await checkCodeWithPrettier(formatTarget);
-    if (checkCode !== 0) await formatCodeWithPrettier(formatTarget);
-  }
-}
-
-async function startDotnet(formatTarget: Exclude<FormatTarget, "packages" | "website" | "cv">): Promise<void> {
-  console.log(pc.bold(pc.magenta(`\n🔧 Running dotnet format for: ${formatTarget}`)));
-  if (formatTarget === "all" || formatTarget === "api") {
-    console.log(pc.yellow("⏱️  Warning: Running format on 'all' may take a while..."));
-    console.log(pc.cyan("\n🔍 Checking .NET code format..."));
-    try {
-      execSync(`dotnet format arolariu.slnx --verify-no-changes --verbosity detailed`, {
-        stdio: "inherit",
-      });
-      console.log(pc.green("  ✓ .NET code format is correct"));
-    } catch (error) {
-      console.log(pc.yellow("  ⚠ Code format issues detected, running dotnet format..."));
-      try {
-        execSync(`dotnet format arolariu.slnx --verbosity detailed`, {
-          stdio: "inherit",
-        });
-        console.log(pc.green("  ✓ .NET code formatted successfully"));
-      } catch (formatError) {
-        console.error(pc.red("  ✗ Encountered error when formatting with dotnet format:"), formatError);
-        throw formatError;
-      }
-    }
-  } else {
-    console.error(pc.red("  ✗ Invalid target for dotnet format. Only 'all' or 'api' is supported."));
-  }
+  // For single targets, show full output using the wrapper (hideOutput = false)
+  return await checkAndFormatTarget(target, false);
 }
 
 export async function main(arg?: string): Promise<number> {
@@ -118,22 +222,17 @@ export async function main(arg?: string): Promise<number> {
   }
 
   try {
+    let exitCode = 0;
+
     switch (arg) {
       case "all":
-        await startPrettier("all");
-        await startDotnet("all");
+        exitCode = await runOnAllTargets();
         break;
       case "packages":
-        await startPrettier("packages");
-        break;
       case "website":
-        await startPrettier("website");
-        break;
       case "cv":
-        await startPrettier("cv");
-        break;
       case "api":
-        await startDotnet("api");
+        exitCode = await runOnSingleTarget(arg);
         break;
       default:
         console.error(pc.red(`✗ Invalid target: "${arg}"`));
@@ -141,11 +240,26 @@ export async function main(arg?: string): Promise<number> {
         return 1;
     }
 
-    console.log(pc.bold(pc.green("\n✅ Formatting completed successfully!\n")));
-    return 0;
+    if (exitCode === 0) {
+      console.log(pc.bold(pc.green("✅ Formatting completed successfully!\n")));
+    } else {
+      console.log(pc.bold(pc.yellow("⚠️  Formatting completed with some issues\n")));
+    }
+
+    return exitCode;
   } catch (error) {
     console.error(pc.bold(pc.red("\n❌ Formatting failed with errors\n")));
-    console.error(pc.red(JSON.stringify(error, null, 2) || "Unknown error."));
+
+    if (error instanceof Error) {
+      console.error(pc.red(`Error: ${error.message}`));
+      if (error.stack) {
+        console.error(pc.gray(`\nStack trace:\n${error.stack}`));
+      }
+    } else {
+      console.error(pc.red(String(error)));
+    }
+
+    console.log(); // Add spacing
     return 1;
   }
 }
