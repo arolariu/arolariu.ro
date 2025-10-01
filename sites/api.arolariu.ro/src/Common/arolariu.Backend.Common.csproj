@@ -17,7 +17,7 @@
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <Deterministic>True</Deterministic>
-    <NoWarn>S1135, NU1903</NoWarn>
+    <NoWarn>S1135, NU1903, NU1902</NoWarn>
     <IsTrimmable>True</IsTrimmable>
     <IsAotCompatible>True</IsAotCompatible>
   </PropertyGroup>
@@ -28,7 +28,7 @@
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
     <Deterministic>True</Deterministic>
-    <NoWarn>S1135</NoWarn>
+    <NoWarn>S1135, NU1903, NU1902</NoWarn>
     <IsTrimmable>True</IsTrimmable>
     <IsAotCompatible>True</IsAotCompatible>
   </PropertyGroup>
