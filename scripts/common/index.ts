@@ -101,6 +101,6 @@ export async function runWithSpinner(
       });
     }
     default:
-      throw new Error("The `hideOuput` variable should NOT be undefined!");
+      throw new Error("The `hideOutput` variable should NOT be undefined!");
   }
 }
