@@ -45,4 +45,3 @@ export const skills: ReadonlyArray<SkillStructure> = [
     ],
   },
 ];
-

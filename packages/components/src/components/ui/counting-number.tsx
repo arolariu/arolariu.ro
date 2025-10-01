@@ -73,9 +73,8 @@ const CountingNumber = React.forwardRef<HTMLSpanElement, CountingNumberProps>(
     }, [springVal, decimals, padStart, number, decimalSeparator]);
 
     const finalIntLength = Math.floor(Math.abs(number)).toString().length;
-    const initialText = padStart
-      ? "0".padStart(finalIntLength, "0") + (decimals > 0 ? decimalSeparator + "0".repeat(decimals) : "")
-      : "0" + (decimals > 0 ? decimalSeparator + "0".repeat(decimals) : "");
+    const suffix = decimals > 0 ? `${decimalSeparator}${"0".repeat(decimals)}` : "";
+    const initialText = padStart ? `${"0".padStart(finalIntLength, "0")}${suffix}` : `0${suffix}`;
 
     return (
       <span

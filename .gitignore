@@ -3,18 +3,24 @@
 **/node_modules/**
 **/_site/**
 **/obj/**
+**/.svelte-kit/**
 **/bin/**
 **/dist/**
 **/build/**
 **/out/**
 **/output/**
+**/code-cov/**
 **/.nx/**
 **/.vs/**
 **/playwright-report/**
+**/storybook-static/**
 **/coverage/**
 **/test-results/**
+**/TestResults/**
 **/.next/**
 **/**/.DS_Store
+**/*.tsbuildinfo
+**/.eslintcache
 
 # Exceptions:
 !.vs/settings.vssettings
@@ -23,3 +29,9 @@
 # Environment variables:
 **/.env
 **/.env.*
+
+
+# arolariu.ro specific:
+sites/arolariu.ro/certificates
+sites/arolariu.ro/messages/*.d.json.ts
+sites/arolariu.ro/licenses.json

@@ -3,6 +3,7 @@ name: "live-test-official"
 permissions:
   id-token: write
   contents: read
+  issues: write
 
 on:
 #  schedule:
@@ -13,12 +14,14 @@ jobs:
   frontend:
     name: '[Frontend] End-to-End Testing (🧪)'
     runs-on: ubuntu-latest
+    outputs:
+      duration: ${{ steps.test.outputs.duration }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v5.0.0
 
       - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v5.0.0
         with:
           node-version: 24
 
@@ -28,28 +31,41 @@ jobs:
           npm install -g newman
 
       - name: 🚀 Running end-to-end tests...
+        id: test
         run: |
+          mkdir -p e2e-logs
           start=$(date +%s)
           npm run test:e2e:frontend 2>&1 | tee frontend-tests.log
+          code=${PIPESTATUS[0]}
           end=$(date +%s)
-          echo "time=$((end-start))s" >> $GITHUB_OUTPUT
+          echo "duration=$((end-start))s" >> $GITHUB_OUTPUT
+          exit $code
+        env:
+          E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
+          NEWMAN_REPORT_DIR: e2e-logs
 
-      - name: 📊 Upload frontend logs
+      - name: 📊 Upload frontend logs and reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: frontend-test-logs
-          path: frontend-tests.log
+          path: |
+            frontend-tests.log
+            e2e-logs/newman-frontend.json
+            e2e-logs/newman-frontend.xml
+            e2e-logs/newman-frontend-summary.md
 
   backend:
     name: '[Backend] End-to-End Testing (🧪)'
     runs-on: ubuntu-latest
+    outputs:
+      duration: ${{ steps.test.outputs.duration }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v5.0.0
 
       - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v5.0.0
         with:
           node-version: 24
 
@@ -65,49 +81,75 @@ jobs:
           cat backend-health.json
 
       - name: 🚀 Running end-to-end tests...
+        id: test
         run: |
+          mkdir -p e2e-logs
           start=$(date +%s)
           npm run test:e2e:backend 2>&1 | tee backend-tests.log
+          code=${PIPESTATUS[0]}
           end=$(date +%s)
-          echo "time=$((end-start))s" >> $GITHUB_OUTPUT
+          echo "duration=$((end-start))s" >> $GITHUB_OUTPUT
+          exit $code
+        env:
+          E2E_TEST_AUTH_TOKEN: ${{ secrets.E2E_TEST_AUTH_TOKEN }}
+          NEWMAN_REPORT_DIR: e2e-logs
 
-      - name: 📊 Upload backend logs
+      - name: 📊 Upload backend logs and reports
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: backend-test-logs
           path: |
             backend-tests.log
             backend-health.json
+            e2e-logs/newman-backend.json
+            e2e-logs/newman-backend.xml
+            e2e-logs/newman-backend-summary.md
 
   raise-issue-on-failure:
     name: 'Raise Issue on Failure'
     needs: [frontend, backend]
     runs-on: ubuntu-latest
-    if: ${{ needs.frontend.result == 'failure' || needs.backend.result == 'failure' }}
+    if: ${{ always() && (needs.frontend.result == 'failure' || needs.backend.result == 'failure') }}
     env:
       TZ: Europe/Bucharest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5.0.0
       - name: 📅 Get current date
         id: date
         run: echo "today=$(date +'%d-%m-%Y')" >> $GITHUB_OUTPUT
 
       - name: Download all logs
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v5.0.0
         with:
           path: logs
 
       - id: health
         run: |
           if [ -f logs/backend-test-logs/backend-health.json ]; then
-            echo 'json<<EOF' >> $GITHUB_OUTPUT
-            cat logs/backend-test-logs/backend-health.json >> $GITHUB_OUTPUT
-            echo 'EOF' >> $GITHUB_OUTPUT
+            {
+              echo 'json<<EOF'
+              cat logs/backend-test-logs/backend-health.json
+              printf '\nEOF\n'
+            } >> "$GITHUB_OUTPUT"
           else
-            echo "json=No health data available" >> $GITHUB_OUTPUT
+            echo "json=No health data available" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Prepare assertion summaries
+        run: |
+          echo "### ❌ Assertion Summaries" > assertion-summaries.md
+          found=0
+          for f in logs/*/e2e-logs/*-summary.md; do
+            if [ -f "$f" ]; then
+              echo -e "\n#### $(basename "$f")" >> assertion-summaries.md
+              cat "$f" >> assertion-summaries.md
+              found=1
+            fi
+          done
+          if [ $found -eq 0 ]; then
+            echo "\nNo assertion summary files found." >> assertion-summaries.md
+          fi
       - name: Prepare log tail
         run: |
           echo "## 🔥 Log Tail from Failed Jobs" > log-tail.md
@@ -116,9 +158,27 @@ jobs:
             tail -n 50 "$file" >> log-tail.md
           done
 
-      - run: cat .github/templates/e2e-test-template.md log-tail.md > final-issue.md
+      - name: Populate issue template
+        id: populate-template
+        env:
+          WORKFLOW: ${{ github.workflow }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          EVENT_NAME: ${{ github.event_name }}
+          SERVER_URL: ${{ github.server_url }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_DATE: ${{ steps.date.outputs.today }}
+          FRONTEND_STATUS: ${{ needs.frontend.result }}
+          FRONTEND_DURATION: ${{ needs.frontend.outputs.duration }}
+          BACKEND_STATUS: ${{ needs.backend.result }}
+          BACKEND_DURATION: ${{ needs.backend.outputs.duration }}
+          HEALTH_JSON: ${{ steps.health.outputs.json }}
+        run: |
+          # Protect envsubst from literal $ in Markdown by escaping where needed
+          envsubst < .github/templates/e2e-test-template.md > populated-template.md
+          cat populated-template.md assertion-summaries.md log-tail.md > final-issue.md
 
-      - uses: peter-evans/create-issue-from-file@v5
+      - uses: peter-evans/create-issue-from-file@v5.0.1
         with:
           title: "[${{ steps.date.outputs.today }}] Hourly Live Test Failed 🚨"
           content-filepath: final-issue.md

@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Dev Website",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:website"],
+      "cwd": "${workspaceFolder}",
+      "env": { "NODE_ENV": "development" },
+      "skipFiles": ["<node_internals>/**"],
+    },
+    {
+      "name": "Launch Storybook for components",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--workspace", "@arolariu/components", "run", "storybook"],
+      "cwd": "${workspaceFolder}",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Launch Storybook for website",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["storybook", "dev", "-p", "7007", "-c", "sites/arolariu.ro/.storybook"],
+      "cwd": "${workspaceFolder}",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Launch DocFX site",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "docfx",
+      "runtimeArgs": ["build", "sites/docs.arolariu.ro/docfx.json"],
+      "postDebugTask": "Launch DocFX"
+    }
+  ],
+}

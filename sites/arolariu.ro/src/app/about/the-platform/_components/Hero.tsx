@@ -173,4 +173,3 @@ export default function Hero(): React.JSX.Element {
     </section>
   );
 }
-

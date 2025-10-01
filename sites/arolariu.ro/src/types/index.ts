@@ -78,4 +78,3 @@ export type BrowserInformation = {
   navigationInformation: Partial<Record<NavigatorKeys, NavigatorValues>>;
   screenInformation: Partial<Record<ScreenKeys, ScreenValues>>;
 };
-

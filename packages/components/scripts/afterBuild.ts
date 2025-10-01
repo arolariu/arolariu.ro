@@ -3,7 +3,7 @@ export async function main() {
 
   // 1. Generate new exports using the generate-exports script
   console.info("[arolariu.ro::afterBuild] Generating exports...");
-  await import("./generate-exports").then(() => {
+  await import("./generate-exports.ts").then(() => {
     console.info("[arolariu.ro::afterBuild] Finished generating exports.");
   });
 

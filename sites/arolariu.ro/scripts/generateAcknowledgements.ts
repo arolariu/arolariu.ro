@@ -220,4 +220,3 @@ export async function main(verbose: boolean = false) {
 }
 
 main();
-

@@ -361,8 +361,7 @@ const eslintConfig = defineConfig(
       "**/.storybook/**",
       "**/*.config.{js,ts}",
       "**/*.{test,spec,stories}.{ts,tsx}",
-      "**/dist/**",
-      "**/build/**",
+      "**/{build,dist,scripts}/**",
     ],
     languageOptions: {
       ecmaVersion: "latest",

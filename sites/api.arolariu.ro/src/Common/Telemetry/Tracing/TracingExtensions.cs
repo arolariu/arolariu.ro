@@ -2,6 +2,7 @@ namespace arolariu.Backend.Common.Telemetry.Tracing;
 
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.Options;
 
@@ -31,6 +32,7 @@ using OpenTelemetry.Trace;
 /// builder.AddOTelTracing();
 /// </code>
 /// </example>
+[ExcludeFromCodeCoverage] // Infrastructure wiring; excluded to allow 100% business logic coverage
 public static class TracingExtensions
 {
   /// <summary>

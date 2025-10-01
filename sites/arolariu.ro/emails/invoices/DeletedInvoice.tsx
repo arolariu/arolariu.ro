@@ -102,4 +102,3 @@ export default function DeletedInvoice(props: Readonly<Props>) {
     </Html>
   );
 }
-

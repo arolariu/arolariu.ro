@@ -123,4 +123,3 @@ export default function CarouselDisplay(): React.JSX.Element | null {
     </div>
   );
 }
-

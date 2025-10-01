@@ -1,0 +1,76 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/refs/heads/main/schemas/devContainer.schema.json",
+  "name": "arolariu-monorepo",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-24-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/azure-cli:1": {},
+    "ghcr.io/devcontainers/features/dotnet:2": {
+      "version": "10.0"
+    }
+  },
+  "containerEnv": {
+    "PLAYWRIGHT_BROWSERS_PATH": "0",
+    "NODE_OPTIONS": "--max_old_space_size=8192",
+    "NX_CACHE_DIRECTORY": "/workspace/.nxcache"
+  },
+  "forwardPorts": [
+    3000,
+    6006,
+    7007,
+    8080,
+    9229
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js Website"
+    },
+    "6006": {
+      "label": "Storybook Components"
+    },
+    "7007": {
+      "label": "Storybook Website"
+    },
+    "8080": {
+      "label": "DocFX"
+    }
+  },
+  "mounts": [
+    "source=npm-cache,target=/workspace/.cache/npm,type=volume",
+    "source=nx-cache,target=/workspace/.nxcache,type=volume"
+  ],
+  "remoteEnv": {
+    "NPM_CONFIG_CACHE": "/workspace/.cache/npm"
+  },
+  "updateContentCommand": "corepack enable && npm ci",
+  "postCreateCommand": "dotnet tool install -g docfx && npx playwright install --with-deps || true",
+  "postStartCommand": "echo 'Devcontainer ready';",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bencoleman.armview",
+        "msazurermtools.azurerm-vscode-tools",
+        "ms-azuretools.vscode-azureresourcegroups",
+        "ms-azuretools.vscode-bicep",
+        "editorconfig.editorconfig",
+        "tombonnike.vscode-status-bar-format-toggle",
+        "github.vscode-github-actions",
+        "github.copilot",
+        "github.copilot-chat",
+        "github.vscode-pull-request-github",
+        "github.github-vscode-theme",
+        "visualstudioexptteam.vscodeintellicode",
+        "visualstudioexptteam.intellicode-api-usage-examples",
+        "graphql.vscode-graphql-syntax",
+        "yoavbls.pretty-ts-errors",
+        "svelte.svelte-vscode",
+        "bradlc.vscode-tailwindcss",
+        "pranaygp.vscode-css-peek",
+        "esbenp.prettier-vscode",
+        "usernamehw.errorlens",
+        "gruntfuggly.todo-tree",
+        "wayou.vscode-todo-highlight"
+      ]
+    }
+  }
+}

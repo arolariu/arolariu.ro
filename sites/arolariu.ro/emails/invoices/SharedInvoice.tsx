@@ -95,4 +95,3 @@ export default function SharedInvoice(props: Readonly<Props>) {
     </Html>
   );
 }
-

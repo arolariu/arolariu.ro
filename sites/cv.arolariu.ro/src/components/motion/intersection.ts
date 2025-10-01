@@ -86,4 +86,3 @@ export function intersect(node: HTMLElement, parameters: IntersectParameters = {
     },
   };
 }
-

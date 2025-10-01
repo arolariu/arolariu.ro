@@ -104,4 +104,3 @@ export default function InvoiceFeedback(props: Readonly<Props>) {
     </Html>
   );
 }
-

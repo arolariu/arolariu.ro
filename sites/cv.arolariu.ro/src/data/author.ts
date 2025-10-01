@@ -15,4 +15,3 @@ export const author: PersonalInformation = {
   region: "Romania / European Union",
   summary: "Passionate software engineer with a focus on building impactful solutions.",
 };
-
