@@ -27,7 +27,7 @@ public sealed class BaseEntityTests
     Assert.AreEqual(0, entity.NumberOfUpdates);
     // LastUpdatedAt should be very close to CreatedAt (both set during construction)
     var delta = (entity.LastUpdatedAt - entity.CreatedAt).Duration();
-    Assert.IsLessThan(1, delta.TotalSeconds, "LastUpdatedAt should initially match CreatedAt (within 1s).");
+    Assert.IsLessThan(delta.TotalSeconds, 1, "LastUpdatedAt should initially match CreatedAt (within 1s).");
   }
 
   [TestMethod]
