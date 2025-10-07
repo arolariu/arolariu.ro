@@ -53,7 +53,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -86,7 +85,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -156,7 +154,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -189,7 +186,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -223,7 +219,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -266,7 +261,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -300,7 +294,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -343,7 +336,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -378,7 +370,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -422,7 +413,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -466,7 +456,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -501,7 +490,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -545,7 +533,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -589,7 +576,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -624,7 +610,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -658,7 +643,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -693,7 +677,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -728,7 +711,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -756,14 +738,13 @@
                 }
               ]
             },
-            "description": "Duplicate/variant of 'Get Invoice\u2019s Merchant' for test coverage.",
+            "description": "Duplicate/variant of 'Get Invoice’s Merchant' for test coverage.",
             "url": {
               "raw": "{{baseUrl}}/rest/v1/invoices/{{invoiceIdentifier}}/merchant",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -798,7 +779,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -833,7 +813,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -868,7 +847,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -903,7 +881,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -938,7 +915,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -973,7 +949,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1008,7 +983,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1043,7 +1017,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1078,7 +1051,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1113,7 +1085,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1148,7 +1119,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1183,7 +1153,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1218,7 +1187,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1252,7 +1220,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1286,7 +1253,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1321,7 +1287,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1356,7 +1321,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1391,7 +1355,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1429,7 +1392,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1462,7 +1424,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1522,7 +1483,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1555,7 +1515,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1589,7 +1548,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1623,7 +1581,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1657,7 +1614,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1692,7 +1648,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1726,7 +1681,6 @@
               "host": [
                 "{{baseHost}}"
               ],
-              "port": "{{basePort}}",
               "path": [
                 "rest",
                 "v1",
@@ -1763,7 +1717,7 @@
     },
     {
       "key": "baseUrl",
-      "value": "{{baseProtocol}}://{{baseHost}}:{{basePort}}",
+      "value": "{{baseProtocol}}://{{baseHost}}",
       "type": "string"
     },
     {
@@ -1773,7 +1727,7 @@
     },
     {
       "key": "basePort",
-      "value": "443",
+      "value": "",
       "type": "string"
     },
     {

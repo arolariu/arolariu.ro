@@ -166,6 +166,39 @@ As an administrator, you can access the monitoring platform by navigating to the
 
 On the above platform you'll encountered a Grafana dashboard that provides real-time insights into the performance and availability of the front-end service. The dashboard includes metrics such as response time, error rate, and availability, as well as logs and traces from the front-end service.
 
+## E2E Testing
+
+The frontend service includes a Postman collection for end-to-end testing of public pages and health checks.
+
+### Postman Collection
+
+Location: `postman-collection.json`
+
+The collection contains basic health check tests:
+- Root page accessibility
+- About page accessibility
+
+### Running Tests
+
+#### Using npm script:
+```bash
+npm run test:e2e:frontend
+```
+
+#### Using Newman directly:
+```bash
+newman run sites/arolariu.ro/postman-collection.json
+```
+
+### Collection Variables
+
+The collection uses the following variables:
+- `baseUrl`: Constructed as `{{baseProtocol}}://{{baseHost}}`
+- `baseHost`: `arolariu.ro` (production) or your local host
+- `baseProtocol`: `https` (production) or `http` (local)
+
+**Note**: The collection intentionally omits port numbers for HTTPS (443) and HTTP (80) as these are default ports.
+
 ## Support
 
 If you encounter any issues or have any questions, please feel free to reach out to the development team at [admin@arolariu.ro](mailto:admin@arolariu.ro). We are here to help you with any questions or concerns you may have.
