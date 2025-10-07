@@ -20,6 +20,7 @@ public sealed class BaseEntityTests
     var entity = new TestEntity { CreatedBy = userId };
 
     // Assert
+    Assert.AreNotEqual(Guid.Empty, entity.Id, "Entity ID should be initialized and not Guid.Empty.");
     Assert.AreEqual(userId, entity.CreatedBy);
     Assert.IsFalse(entity.IsSoftDeleted);
     Assert.IsFalse(entity.IsImportant);
