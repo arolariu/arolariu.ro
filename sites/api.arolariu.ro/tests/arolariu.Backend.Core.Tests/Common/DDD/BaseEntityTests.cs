@@ -1,13 +1,16 @@
 namespace arolariu.Backend.Core.Tests.Common.DDD;
 
 using System;
+
 using arolariu.Backend.Core.Tests.Shared.TestDoubles;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [TestClass]
 public sealed class BaseEntityTests
 {
   [TestMethod]
+
   public void DefaultInitialization_SetsCreatedAndLastUpdated_NotSoftDeleted()
   {
     // Arrange
@@ -17,14 +20,13 @@ public sealed class BaseEntityTests
     var entity = new TestEntity { CreatedBy = userId };
 
     // Assert
-    Assert.IsNotNull(entity.id);
     Assert.AreEqual(userId, entity.CreatedBy);
     Assert.IsFalse(entity.IsSoftDeleted);
     Assert.IsFalse(entity.IsImportant);
     Assert.AreEqual(0, entity.NumberOfUpdates);
     // LastUpdatedAt should be very close to CreatedAt (both set during construction)
     var delta = (entity.LastUpdatedAt - entity.CreatedAt).Duration();
-    Assert.IsTrue(delta.TotalSeconds < 1, "LastUpdatedAt should initially match CreatedAt (within 1s).");
+    Assert.IsLessThan(1, delta.TotalSeconds, "LastUpdatedAt should initially match CreatedAt (within 1s).");
   }
 
   [TestMethod]

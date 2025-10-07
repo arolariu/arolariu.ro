@@ -400,7 +400,7 @@
   "explorer.autoOpenDroppedFile": true,
   "explorer.autoReveal": true,
   "explorer.compactFolders": true,
-  "explorer.confirmDelete": true,
+  "explorer.confirmDelete": false,
   "explorer.confirmDragAndDrop": true,
   "explorer.confirmPasteNative": true,
   "explorer.confirmUndo": "default",
