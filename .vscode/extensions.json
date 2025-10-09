@@ -22,6 +22,7 @@
     "visualstudioexptteam.intellicode-api-usage-examples",
 
     // Frontend support
+    "graphql.vscode-graphql",
     "graphql.vscode-graphql-syntax",
     "yoavbls.pretty-ts-errors",
     "svelte.svelte-vscode",
@@ -29,7 +30,6 @@
     "pranaygp.vscode-css-peek",
     "esbenp.prettier-vscode",
     "usernamehw.errorlens",
-
 
     // Backlog grooming and task tracking
     "gruntfuggly.todo-tree",
