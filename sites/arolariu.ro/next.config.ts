@@ -26,6 +26,12 @@ console.log(">>> NODE_ENV", process.env["NODE_ENV"]);
 const nextConfig: NextConfig = {
   basePath: "",
 
+  logging: {
+    fetches: {
+      fullUrl: isDebugBuild,
+    },
+  },
+
   compiler: {
     removeConsole: isDebugBuild ? false : {exclude: ["error", "warn"]},
     reactRemoveProperties: {
@@ -114,16 +120,33 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   experimental: {
-    enablePrerenderSourceMaps: isDebugBuild ? true : undefined,
-    allowDevelopmentBuild: isDebugBuild ? true : undefined,
+    // Enable source maps for prerendered pages in development
+    enablePrerenderSourceMaps: isDebugBuild,
+
+    // Enable server source maps in development for debugging
     serverSourceMaps: isDebugBuild,
+
+    // Enable Turbopack source maps in development
     turbopackSourceMaps: isDebugBuild,
+
+    // Disable minification in development for readable debugging
     turbopackMinify: !isDebugBuild,
+
+    // Disable tree shaking in dev to preserve all code for debugging
     turbopackTreeShaking: !isDebugBuild,
+
+    // Memory optimizations only in production
     webpackMemoryOptimizations: !isDebugBuild,
+
+    // Disable optimized loading in dev for better debugging
     disableOptimizedLoading: isDebugBuild,
+
+    // Disable React optimizations in dev for debugging
     optimizeServerReact: !isDebugBuild,
+
+    // Disable server minification in development
     serverMinification: !isDebugBuild,
+
     typedEnv: true,
     optimizePackageImports: ["@arolariu/components"],
     serverActions: {
@@ -131,8 +154,6 @@ const nextConfig: NextConfig = {
     },
   },
 
-  productionBrowserSourceMaps: isDebugBuild,
-  reactProductionProfiling: isDebugBuild,
   transpilePackages: ["@arolariu/components"],
 
   typescript: {
