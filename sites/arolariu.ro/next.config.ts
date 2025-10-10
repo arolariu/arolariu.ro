@@ -114,6 +114,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   experimental: {
+    enablePrerenderSourceMaps: isDebugBuild ? true : undefined,
     allowDevelopmentBuild: isDebugBuild ? true : undefined,
     serverSourceMaps: isDebugBuild,
     turbopackSourceMaps: isDebugBuild,
@@ -133,29 +134,6 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: isDebugBuild,
   reactProductionProfiling: isDebugBuild,
   transpilePackages: ["@arolariu/components"],
-
-  webpack: (config) => {
-    // Remove minifcation, chunking and optimization for dev builds
-    if (isDebugBuild) {
-      console.log(">>> ⚙️ Removing minification, chunking and optimization for dev builds");
-      config.devtool = "source-map";
-      config.optimization.chunkIds = "named";
-      config.optimization.concatenateModules = false;
-      config.optimization.mangleExports = false;
-      config.optimization.mangleWasmImports = false;
-      config.optimization.mergeDuplicateChunks = false;
-      config.optimization.minimize = false;
-      config.optimization.minimizer = [];
-      config.optimization.moduleIds = "named";
-      config.optimization.nodeEnv = "development";
-      config.optimization.portableRecords = true;
-      config.optimization.providedExports = true;
-      config.optimization.runtimeChunk = false;
-      config.optimization.splitChunks = false;
-    }
-
-    return config;
-  },
 
   typescript: {
     ignoreBuildErrors: false,
