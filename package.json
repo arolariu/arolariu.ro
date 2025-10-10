@@ -84,8 +84,8 @@
     "@faker-js/faker": "10.0.0",
     "@hookform/resolvers": "5.2.2",
     "@microsoft/api-extractor": "7.53.1",
-    "@next/bundle-analyzer": "15.6.0-canary.51",
-    "@next/eslint-plugin-next": "15.6.0-canary.51",
+    "@next/bundle-analyzer": "16.0.0-beta.0",
+    "@next/eslint-plugin-next": "16.0.0-beta.0",
     "@nx/js": "21.6.4",
     "@nx/node": "21.6.4",
     "@nx/web": "21.6.4",
@@ -123,7 +123,7 @@
     "@react-email/preview-server": "4.3.0",
     "@react-pdf/renderer": "4.3.1",
     "@react-pdf/types": "2.9.1",
-    "@rsbuild/core": "1.5.15",
+    "@rsbuild/core": "1.5.16",
     "@rsbuild/plugin-react": "1.4.1",
     "@rslib/core": "0.15.0",
     "@storybook/addon-a11y": "8.6.14",
@@ -153,7 +153,7 @@
     "@types/eslint": "9.6.1",
     "@types/eslint-plugin-jsx-a11y": "6.10.1",
     "@types/jest": "30.0.0",
-    "@types/node": "24.7.0",
+    "@types/node": "24.7.1",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.1",
     "@types/three": "0.180.0",
@@ -162,14 +162,14 @@
     "cmdk": "1.1.1",
     "cross-env": "10.1.0",
     "cssnano": "7.1.1",
-    "daisyui": "5.1.29",
+    "daisyui": "5.1.30",
     "dexie": "4.2.1",
     "embla-carousel-react": "8.6.0",
     "eslint": "9.37.0",
     "eslint-plugin-file-progress": "3.0.2",
     "eslint-plugin-functional": "9.0.2",
     "eslint-plugin-jest": "29.0.1",
-    "eslint-plugin-jsdoc": "61.0.1",
+    "eslint-plugin-jsdoc": "61.1.0",
     "eslint-plugin-jsx-a11y": "6.10.2",
     "eslint-plugin-n": "17.23.1",
     "eslint-plugin-perfectionist": "4.15.1",
@@ -194,9 +194,9 @@
     "jiti": "2.6.1",
     "lucide-react": "0.545.0",
     "motion": "12.23.22",
-    "msw": "2.11.4",
+    "msw": "2.11.5",
     "nanospinner": "1.2.2",
-    "next": "15.6.0-canary.51",
+    "next": "16.0.0-beta.0",
     "next-intl": "4.3.12",
     "next-themes": "0.4.6",
     "nx": "21.6.4",
@@ -247,13 +247,13 @@
   },
   "overrides": {
     "@clerk/nextjs": {
-      "next": "15.6.0-canary.51"
+      "next": "16.0.0-beta.0"
     },
     "@storybook/nextjs": {
-      "next": "15.6.0-canary.51"
+      "next": "16.0.0-beta.0"
     },
     "next-intl": {
-      "next": "15.6.0-canary.51"
+      "next": "16.0.0-beta.0"
     }
   }
 }
