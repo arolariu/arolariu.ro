@@ -340,7 +340,6 @@ function DropDrawerItem({
   onSelect,
   onClick,
   icon,
-  variant = "default",
   inset,
   disabled,
   ...props
@@ -395,7 +394,6 @@ function DropDrawerItem({
       <div
         ref={itemRef}
         data-slot='drop-drawer-item'
-        data-variant={variant}
         data-inset={inset}
         data-disabled={disabled}
         className={cn(
@@ -405,7 +403,6 @@ function DropDrawerItem({
           // For items in a group, don't add background but add more padding
           isInsideGroup && "bg-transparent py-4",
           inset && "pl-8",
-          variant === "destructive" && "text-red-500 dark:dark:text-red-900 dark:text-red-500 dark:text-red-900",
           disabled && "pointer-events-none opacity-50",
           className,
         )}
@@ -431,12 +428,10 @@ function DropDrawerItem({
   return (
     <DropdownMenuItem
       data-slot='drop-drawer-item'
-      data-variant={variant}
       data-inset={inset}
       className={className}
       onSelect={onSelect}
       onClick={onClick as React.MouseEventHandler<HTMLDivElement>}
-      variant={variant}
       inset={inset}
       disabled={disabled}
       {...props}>

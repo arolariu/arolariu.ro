@@ -3,7 +3,6 @@
 import {cn} from "@/lib/utilities";
 import {motion, stagger, useAnimate, useInView} from "motion/react";
 import * as React from "react";
-import {useEffect} from "react";
 
 export const TypewriterText = ({
   words,
@@ -21,13 +20,13 @@ export const TypewriterText = ({
   const wordsArray = words.map((word) => {
     return {
       ...word,
-      text: [...word.text],
+      text: word.text.split(""),
     };
   });
 
   const [scope, animate] = useAnimate();
   const isInView = useInView(scope);
-  useEffect(() => {
+  React.useEffect(() => {
     if (isInView) {
       animate(
         "span",
@@ -106,7 +105,7 @@ export const TypewriterTextSmooth = ({
   const wordsArray = words.map((word) => {
     return {
       ...word,
-      text: [...word.text],
+      text: word.text.split(""),
     };
   });
   const renderWords = () => {
