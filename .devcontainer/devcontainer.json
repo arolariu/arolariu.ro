@@ -49,7 +49,6 @@
     "vscode": {
       "extensions": [
         "bencoleman.armview",
-        "msazurermtools.azurerm-vscode-tools",
         "ms-azuretools.vscode-azureresourcegroups",
         "ms-azuretools.vscode-bicep",
         "editorconfig.editorconfig",
@@ -61,6 +60,7 @@
         "github.github-vscode-theme",
         "visualstudioexptteam.vscodeintellicode",
         "visualstudioexptteam.intellicode-api-usage-examples",
+        "graphql.vscode-graphql",
         "graphql.vscode-graphql-syntax",
         "yoavbls.pretty-ts-errors",
         "svelte.svelte-vscode",

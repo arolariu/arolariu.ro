@@ -1,11 +1,8 @@
 {
   "recommendations": [
-    // Azure Resource Manager (ARM) tooling
+    // Azure Resource Manager (ARM) and Bicep IaC tooling
     "bencoleman.armview",
-    "msazurermtools.azurerm-vscode-tools",
     "ms-azuretools.vscode-azureresourcegroups",
-
-    // Azure Bicep tooling (Infrastructure as Code)
     "ms-azuretools.vscode-bicep",
 
     // Formatting extensions
