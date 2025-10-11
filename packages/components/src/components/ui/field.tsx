@@ -1,7 +1,7 @@
 "use client";
 
 import {cva, type VariantProps} from "class-variance-authority";
-import {useMemo} from "react";
+import * as React from "react";
 
 import {Label} from "@/components/ui/label";
 import {Separator} from "@/components/ui/separator";
@@ -137,7 +137,7 @@ function FieldSeparator({
   return (
     <div
       data-slot='field-separator'
-      data-content={!!children}
+      data-content={Boolean(children) || undefined}
       className={cn("relative -my-2 h-5 text-sm group-data-[variant=outline]/field-group:-mb-2", className)}
       {...props}>
       <Separator className='absolute inset-0 top-1/2' />
@@ -160,7 +160,8 @@ function FieldError({
 }: React.ComponentProps<"div"> & {
   errors?: Array<{message?: string} | undefined>;
 }) {
-  const content = useMemo(() => {
+  // eslint-disable-next-line sonarjs/function-return-type -- expected different return type.
+  const content = React.useMemo(() => {
     if (children) {
       return children;
     }

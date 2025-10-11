@@ -317,6 +317,8 @@ export const MobileFriendly: Story = {
     return (
       <div className='relative'>
         <button
+          type='button'
+          title='Toggle Menu'
           className='mb-2 block rounded-md bg-neutral-100 p-2 md:hidden dark:bg-neutral-800'
           onClick={() => setIsOpen(!isOpen)}>
           <svg
@@ -392,7 +394,7 @@ export const MobileFriendly: Story = {
 };
 
 // ListItem component for NavigationMenuContent
-const ListItem = React.forwardRef<React.ElementRef<"a">, React.ComponentPropsWithoutRef<"a"> & {title: string; className?: string}>(
+const ListItem = React.forwardRef<React.ComponentRef<"a">, React.ComponentPropsWithoutRef<"a"> & {title: string; className?: string}>(
   ({className, title, children, ...props}, ref) => {
     return (
       <li>

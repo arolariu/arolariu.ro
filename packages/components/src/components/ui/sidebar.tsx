@@ -86,8 +86,8 @@ const SidebarProvider = React.forwardRef<
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    globalThis.window.addEventListener("keydown", handleKeyDown);
+    return () => globalThis.window.removeEventListener("keydown", handleKeyDown);
   }, [toggleSidebar]);
 
   // We add a state so that we can do data-state="expanded" or "collapsed".
@@ -219,7 +219,7 @@ const Sidebar = React.forwardRef<
 });
 Sidebar.displayName = "Sidebar";
 
-const SidebarTrigger = React.forwardRef<React.ElementRef<typeof Button>, React.ComponentProps<typeof Button>>(
+const SidebarTrigger = React.forwardRef<React.ComponentRef<typeof Button>, React.ComponentProps<typeof Button>>(
   ({className, onClick, ...props}, ref) => {
     const {toggleSidebar} = useSidebar();
 
@@ -252,6 +252,7 @@ const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<"bu
       data-sidebar='rail'
       aria-label='Toggle Sidebar'
       tabIndex={-1}
+      type='button'
       onClick={toggleSidebar}
       title='Toggle Sidebar'
       className={cn(
@@ -284,16 +285,21 @@ const SidebarInset = React.forwardRef<HTMLDivElement, React.ComponentProps<"main
 });
 SidebarInset.displayName = "SidebarInset";
 
-const SidebarInput = React.forwardRef<React.ElementRef<typeof Input>, React.ComponentProps<typeof Input>>(({className, ...props}, ref) => {
-  return (
-    <Input
-      ref={ref}
-      data-sidebar='input'
-      className={cn("focus-visible:ring-sidebar-ring h-8 w-full bg-white shadow-none focus-visible:ring-2 dark:bg-neutral-950", className)}
-      {...props}
-    />
-  );
-});
+const SidebarInput = React.forwardRef<React.ComponentRef<typeof Input>, React.ComponentProps<typeof Input>>(
+  ({className, ...props}, ref) => {
+    return (
+      <Input
+        ref={ref}
+        data-sidebar='input'
+        className={cn(
+          "focus-visible:ring-sidebar-ring h-8 w-full bg-white shadow-none focus-visible:ring-2 dark:bg-neutral-950",
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);
 SidebarInput.displayName = "SidebarInput";
 
 const SidebarHeader = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({className, ...props}, ref) => {
@@ -320,7 +326,7 @@ const SidebarFooter = React.forwardRef<HTMLDivElement, React.ComponentProps<"div
 });
 SidebarFooter.displayName = "SidebarFooter";
 
-const SidebarSeparator = React.forwardRef<React.ElementRef<typeof Separator>, React.ComponentProps<typeof Separator>>(
+const SidebarSeparator = React.forwardRef<React.ComponentRef<typeof Separator>, React.ComponentProps<typeof Separator>>(
   ({className, ...props}, ref) => {
     return (
       <Separator

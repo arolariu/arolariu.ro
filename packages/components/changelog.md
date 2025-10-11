@@ -8,6 +8,10 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 ## 🎉 Latest Releases
 
+### [0.3.1](https://www.npmjs.com/package/@arolariu/components/v/0.3.1) - 2025-11-11
+**🔧 Bug Fixes & Maintenance**
+- 🐛 **Linting** Migrated from deprecated ElementRef to ComponentRef.
+
 ### [0.3.0](https://www.npmjs.com/package/@arolariu/components/v/0.3.0) - 2025-11-10
 
 **✨ New Features & Improvements**
