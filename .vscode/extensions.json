@@ -2,34 +2,35 @@
   "recommendations": [
     // Azure Resource Manager (ARM) and Bicep IaC tooling
     "bencoleman.armview",
-    "ms-azuretools.vscode-azureresourcegroups",
     "ms-azuretools.vscode-bicep",
+    "ms-azuretools.vscode-azureresourcegroups",
 
     // Formatting extensions
     "editorconfig.editorconfig",
     "tombonnike.vscode-status-bar-format-toggle",
 
     // GitHub integration
-    "github.vscode-github-actions",
     "github.copilot",
     "github.copilot-chat",
-    "github.vscode-pull-request-github",
     "github.github-vscode-theme",
+    "github.vscode-github-actions",
+    "github.vscode-pull-request-github",
     "visualstudioexptteam.vscodeintellicode",
     "visualstudioexptteam.intellicode-api-usage-examples",
 
     // Frontend support
     "graphql.vscode-graphql",
-    "graphql.vscode-graphql-syntax",
-    "yoavbls.pretty-ts-errors",
-    "svelte.svelte-vscode",
-    "bradlc.vscode-tailwindcss",
-    "pranaygp.vscode-css-peek",
-    "esbenp.prettier-vscode",
     "usernamehw.errorlens",
+    "svelte.svelte-vscode",
+    "esbenp.prettier-vscode",
+    "pranaygp.vscode-css-peek",
+    "yoavbls.pretty-ts-errors",
+    "bradlc.vscode-tailwindcss",
+    "graphql.vscode-graphql-syntax",
+    "ms-edgedevtools.vscode-edge-devtools",
 
     // Backlog grooming and task tracking
     "gruntfuggly.todo-tree",
-    "wayou.vscode-todo-highlight",
+    "wayou.vscode-todo-highlight"
   ]
 }
