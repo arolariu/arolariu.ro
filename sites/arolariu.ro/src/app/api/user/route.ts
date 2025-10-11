@@ -30,13 +30,12 @@ const requestDurationHistogram = createHistogram("api.user.duration", "Request d
  * Returns user information for both authenticated (Clerk) and guest users.
  *
  * For authenticated users:
- * - Returns Clerk user object with valid JWT from Clerk
+ * - Returns Clerk user object with valid JWT from Clerk.
  *
  * For guest users:
- * - Returns null user with guest JWT token
- * - JWT contains guest identifier and limited permissions
- *
- * @returns The user information including user object, identifier, and JWT token
+ * - Returns null user with guest JWT token.
+ * - JWT contains guest identifier and limited permissions.
+ * @returns The user information including user object, identifier, and JWT token.
  */
 export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
   const startTime = Date.now();
@@ -62,7 +61,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
         // Check authentication
         addSpanEvent("auth.check.start");
         const {getToken, userId} = await auth();
-        addSpanEvent("auth.check.complete", {authenticated: !!userId});
+        addSpanEvent("auth.check.complete", {authenticated: Boolean(userId)});
 
         // Authenticated user with Clerk
         if (userId) {
@@ -86,13 +85,13 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             addSpanEvent("token.generate.complete");
 
             const userInformation: UserInformation = {
-              user: user,
+              user,
               userIdentifier: userId,
               userJwt: token ?? "",
             };
 
             authSpan.setAttributes({
-              "user.has_token": !!token,
+              "user.has_token": Boolean(token),
               "response.status": 200,
             });
 
@@ -133,7 +132,10 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
           addSpanEvent("guest.identifier.retrieve.start");
           let guestIdentifier = await getCookie("guest_session_id");
           
-          if (!guestIdentifier) {
+          if (guestIdentifier) {
+            logWithTrace("info", "Reusing existing guest session identifier", {guestIdentifier}, "api");
+            addSpanEvent("guest.identifier.reused", {identifier: guestIdentifier});
+          } else {
             // Generate a new unique identifier for this guest session
             guestIdentifier = generateGuid();
             
@@ -141,20 +143,17 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             // httpOnly: prevents JavaScript access (XSS protection)
             // secure: ensures cookie is only sent over HTTPS
             // sameSite: 'lax' provides CSRF protection while allowing navigation
-            // maxAge: 30 days in seconds (30 * 24 * 60 * 60 = 2592000)
+            // maxAge: 30 days in seconds (30 * 24 * 60 * 60 = 2_592_000)
             await setCookie("guest_session_id", guestIdentifier, {
               httpOnly: true,
               secure: process.env.NODE_ENV === "production",
               sameSite: "lax",
-              maxAge: 2592000,
+              maxAge: 2_592_000,
               path: "/",
             });
             
             logWithTrace("info", "Generated new guest session identifier", {guestIdentifier}, "api");
             addSpanEvent("guest.identifier.created", {identifier: guestIdentifier});
-          } else {
-            logWithTrace("info", "Reusing existing guest session identifier", {guestIdentifier}, "api");
-            addSpanEvent("guest.identifier.reused", {identifier: guestIdentifier});
           }
 
           const currentTimestamp = Math.floor(Date.now() / 1000);
@@ -231,7 +230,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
-            maxAge: 2592000,
+            maxAge: 2_592_000,
             path: "/",
           });
         }
