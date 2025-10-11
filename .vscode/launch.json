@@ -40,6 +40,7 @@
         "NEXT_TURBOPACK_TRACING": "1"
       },
       "sourceMaps": true,
+      "timeout": 30000, // 30 seconds
       "serverReadyAction": {
         "action": "debugWithEdge",
         "killOnServerStop": true,
