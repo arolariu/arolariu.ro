@@ -8,6 +8,21 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 ## 🎉 Latest Releases
 
+### [0.3.1](https://www.npmjs.com/package/@arolariu/components/v/0.3.1) - 2025-11-11
+**🔧 Bug Fixes & Maintenance**
+- 🐛 **Linting** Migrated from deprecated ElementRef to ComponentRef.
+
+### [0.3.0](https://www.npmjs.com/package/@arolariu/components/v/0.3.0) - 2025-11-10
+
+**✨ New Features & Improvements**
+- 🆕 **New Component: `ButtonGroup`** - A group of buttons that behave as a single unit.
+- 🆕 **New Component: `EmptyState`** - A component to display an empty state with a message and illustration.
+- 🆕 **New Component: `Field`** - A component for form fields.
+- 🆕 **New Component: `InputGroup`** - A component for grouping input elements.
+- 🆕 **New Component: `Item`** - A component for displaying a single item in a list.
+- 🆕 **New Component: `Kbd`** - A component for displaying keyboard shortcuts.
+- 🆕 **New Component: `Spinner`** - A component for displaying a loading spinner.
+
 ### [0.2.0](https://www.npmjs.com/package/@arolariu/components/v/0.2.0) - 2025-10-01
 
 **✨ New Features & Improvements**

@@ -26,6 +26,12 @@ console.log(">>> NODE_ENV", process.env["NODE_ENV"]);
 const nextConfig: NextConfig = {
   basePath: "",
 
+  logging: {
+    fetches: {
+      fullUrl: isDebugBuild,
+    },
+  },
+
   compiler: {
     removeConsole: isDebugBuild ? false : {exclude: ["error", "warn"]},
     reactRemoveProperties: {
@@ -114,15 +120,33 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   experimental: {
-    allowDevelopmentBuild: isDebugBuild ? true : undefined,
+    // Enable source maps for prerendered pages in development
+    enablePrerenderSourceMaps: isDebugBuild,
+
+    // Enable server source maps in development for debugging
     serverSourceMaps: isDebugBuild,
+
+    // Enable Turbopack source maps in development
     turbopackSourceMaps: isDebugBuild,
+
+    // Disable minification in development for readable debugging
     turbopackMinify: !isDebugBuild,
+
+    // Disable tree shaking in dev to preserve all code for debugging
     turbopackTreeShaking: !isDebugBuild,
+
+    // Memory optimizations only in production
     webpackMemoryOptimizations: !isDebugBuild,
+
+    // Disable optimized loading in dev for better debugging
     disableOptimizedLoading: isDebugBuild,
+
+    // Disable React optimizations in dev for debugging
     optimizeServerReact: !isDebugBuild,
+
+    // Disable server minification in development
     serverMinification: !isDebugBuild,
+
     typedEnv: true,
     optimizePackageImports: ["@arolariu/components"],
     serverActions: {
@@ -130,32 +154,7 @@ const nextConfig: NextConfig = {
     },
   },
 
-  productionBrowserSourceMaps: isDebugBuild,
-  reactProductionProfiling: isDebugBuild,
   transpilePackages: ["@arolariu/components"],
-
-  webpack: (config) => {
-    // Remove minifcation, chunking and optimization for dev builds
-    if (isDebugBuild) {
-      console.log(">>> ⚙️ Removing minification, chunking and optimization for dev builds");
-      config.devtool = "source-map";
-      config.optimization.chunkIds = "named";
-      config.optimization.concatenateModules = false;
-      config.optimization.mangleExports = false;
-      config.optimization.mangleWasmImports = false;
-      config.optimization.mergeDuplicateChunks = false;
-      config.optimization.minimize = false;
-      config.optimization.minimizer = [];
-      config.optimization.moduleIds = "named";
-      config.optimization.nodeEnv = "development";
-      config.optimization.portableRecords = true;
-      config.optimization.providedExports = true;
-      config.optimization.runtimeChunk = false;
-      config.optimization.splitChunks = false;
-    }
-
-    return config;
-  },
 
   typescript: {
     ignoreBuildErrors: false,

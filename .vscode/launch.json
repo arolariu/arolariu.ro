@@ -2,14 +2,62 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch Dev Website",
+      "name": "Next.js: Debug Server-Side",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev --workspace @arolariu/website",
+      "cwd": "${workspaceFolder}",
+      "serverReadyAction": {
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "action": "debugWithEdge"
+      }
+    },
+    {
+      "name": "Next.js: Debug Client-Side",
+      "type": "msedge",
+      "request": "launch",
+      "url": "https://localhost:3000",
+      "webRoot": "${workspaceFolder}/sites/arolariu.ro",
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "webpack://_N_E/*": "${webRoot}/*",
+        "webpack:///./*": "${webRoot}/*",
+        "webpack:///./~/*": "${webRoot}/node_modules/*"
+      }
+    },
+    {
+      "name": "Next.js: Debug Full Stack",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/sites/arolariu.ro",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "env": {
+        "NODE_OPTIONS": "--inspect",
+        "NEXT_TURBOPACK_TRACING": "1"
+      },
+      "sourceMaps": true,
+      "timeout": 30000, // 30 seconds
+      "serverReadyAction": {
+        "action": "debugWithEdge",
+        "killOnServerStop": true,
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "webRoot": "${workspaceFolder}/sites/arolariu.ro"
+      }
+    },
+    {
+      "name": "Launch Dev Website (Legacy)",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:website"],
       "cwd": "${workspaceFolder}",
       "env": { "NODE_ENV": "development" },
-      "skipFiles": ["<node_internals>/**"],
+      "skipFiles": ["<node_internals>/**"]
     },
     {
       "name": "Launch Storybook for components",
@@ -37,5 +85,5 @@
       "runtimeArgs": ["build", "sites/docs.arolariu.ro/docfx.json"],
       "postDebugTask": "Launch DocFX"
     }
-  ],
+  ]
 }

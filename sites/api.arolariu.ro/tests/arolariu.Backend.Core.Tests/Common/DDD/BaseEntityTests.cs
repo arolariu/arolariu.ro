@@ -20,14 +20,15 @@ public sealed class BaseEntityTests
     var entity = new TestEntity { CreatedBy = userId };
 
     // Assert
-    Assert.AreNotEqual(Guid.Empty, entity.Id, "Entity ID should be initialized and not Guid.Empty.");
+    Assert.AreNotEqual(Guid.Empty, entity.id, "Entity ID should be initialized and not Guid.Empty.");
     Assert.AreEqual(userId, entity.CreatedBy);
     Assert.IsFalse(entity.IsSoftDeleted);
     Assert.IsFalse(entity.IsImportant);
     Assert.AreEqual(0, entity.NumberOfUpdates);
     // LastUpdatedAt should be very close to CreatedAt (both set during construction)
     var delta = (entity.LastUpdatedAt - entity.CreatedAt).Duration();
-    Assert.IsLessThan(delta.TotalSeconds, 1, "LastUpdatedAt should initially match CreatedAt (within 1s).");
+    // MSTest signature is IsLessThan(upperBound, value). We want to assert delta.TotalSeconds < 1
+    Assert.IsLessThan(1, delta.TotalSeconds, "LastUpdatedAt should initially match CreatedAt (within 1s).");
   }
 
   [TestMethod]
