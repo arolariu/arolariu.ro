@@ -255,5 +255,12 @@
     "next-intl": {
       "next": "16.0.0-beta.0"
     }
+  },
+  "dependencies": {
+    "@opentelemetry/exporter-trace-otlp-http": "0.206.0",
+    "@opentelemetry/resources": "2.1.0",
+    "@opentelemetry/sdk-node": "0.206.0",
+    "@opentelemetry/sdk-trace-node": "2.1.0",
+    "@opentelemetry/semantic-conventions": "1.37.0"
   }
 }
