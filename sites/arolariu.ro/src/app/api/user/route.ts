@@ -1,3 +1,5 @@
+import {getCookie, setCookie} from "@/lib/actions/cookies/cookies.action";
+import {generateGuid} from "@/lib/utils.generic";
 import {API_JWT, createJwtToken} from "@/lib/utils.server";
 import {
   addSpanEvent,
@@ -127,7 +129,34 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
 
           logWithTrace("info", "Generating guest user JWT token", undefined, "api");
 
-          const guestIdentifier = "00000000-0000-0000-0000-000000000000";
+          // Check for existing guest identifier in cookie, or generate a new one
+          addSpanEvent("guest.identifier.retrieve.start");
+          let guestIdentifier = await getCookie("guest_session_id");
+          
+          if (!guestIdentifier) {
+            // Generate a new unique identifier for this guest session
+            guestIdentifier = generateGuid();
+            
+            // Store in a secure HTTP-only cookie that expires in 30 days
+            // httpOnly: prevents JavaScript access (XSS protection)
+            // secure: ensures cookie is only sent over HTTPS
+            // sameSite: 'lax' provides CSRF protection while allowing navigation
+            // maxAge: 30 days in seconds (30 * 24 * 60 * 60 = 2592000)
+            await setCookie("guest_session_id", guestIdentifier, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === "production",
+              sameSite: "lax",
+              maxAge: 2592000,
+              path: "/",
+            });
+            
+            logWithTrace("info", "Generated new guest session identifier", {guestIdentifier}, "api");
+            addSpanEvent("guest.identifier.created", {identifier: guestIdentifier});
+          } else {
+            logWithTrace("info", "Reusing existing guest session identifier", {guestIdentifier}, "api");
+            addSpanEvent("guest.identifier.reused", {identifier: guestIdentifier});
+          }
+
           const currentTimestamp = Math.floor(Date.now() / 1000);
           const expirationTime = currentTimestamp + 3600; // 1 hour expiration
 
@@ -194,8 +223,19 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
           "api",
         );
 
-        // Fallback to guest user on error
-        const fallbackIdentifier = "00000000-0000-0000-0000-000000000000";
+        // Fallback to guest user on error - still generate unique identifier
+        let fallbackIdentifier = await getCookie("guest_session_id");
+        if (!fallbackIdentifier) {
+          fallbackIdentifier = generateGuid();
+          await setCookie("guest_session_id", fallbackIdentifier, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            maxAge: 2592000,
+            path: "/",
+          });
+        }
+        
         const fallbackUserInformation: UserInformation = {
           user: null,
           userIdentifier: fallbackIdentifier,

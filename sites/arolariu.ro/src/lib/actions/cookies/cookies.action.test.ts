@@ -40,7 +40,13 @@ describe("setCookie", () => {
 
     await setCookie("testCookie", "testValue");
 
-    expect(mockCookies.set).toHaveBeenCalledWith("testCookie", "testValue", {path: "/"});
+    expect(mockCookies.set).toHaveBeenCalledWith("testCookie", "testValue", {
+      path: "/",
+      maxAge: undefined,
+      httpOnly: undefined,
+      secure: undefined,
+      sameSite: undefined,
+    });
   });
 
   it("should handle setting a cookie with an empty value", async () => {
@@ -51,7 +57,53 @@ describe("setCookie", () => {
 
     await setCookie("emptyCookie", "");
 
-    expect(mockCookies.set).toHaveBeenCalledWith("emptyCookie", "", {path: "/"});
+    expect(mockCookies.set).toHaveBeenCalledWith("emptyCookie", "", {
+      path: "/",
+      maxAge: undefined,
+      httpOnly: undefined,
+      secure: undefined,
+      sameSite: undefined,
+    });
+  });
+
+  it("should set cookie with custom options", async () => {
+    const mockCookies = {
+      set: jest.fn(),
+    };
+    (cookies as jest.Mock).mockResolvedValue(mockCookies);
+
+    await setCookie("secureCookie", "secureValue", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 3600,
+      path: "/custom",
+    });
+
+    expect(mockCookies.set).toHaveBeenCalledWith("secureCookie", "secureValue", {
+      path: "/custom",
+      maxAge: 3600,
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    });
+  });
+
+  it("should use default path when not specified in options", async () => {
+    const mockCookies = {
+      set: jest.fn(),
+    };
+    (cookies as jest.Mock).mockResolvedValue(mockCookies);
+
+    await setCookie("testCookie", "testValue", {httpOnly: true});
+
+    expect(mockCookies.set).toHaveBeenCalledWith("testCookie", "testValue", {
+      path: "/",
+      maxAge: undefined,
+      httpOnly: true,
+      secure: undefined,
+      sameSite: undefined,
+    });
   });
 });
 

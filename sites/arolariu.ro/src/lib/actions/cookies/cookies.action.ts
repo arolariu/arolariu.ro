@@ -15,11 +15,30 @@ export async function getCookie(name: string): Promise<string | undefined> {
 
 /**
  * This function sets a cookie in the response.
+ * @param name The name of the cookie to set.
+ * @param value The value to store in the cookie.
+ * @param options Optional cookie configuration (maxAge, httpOnly, secure, sameSite, etc.).
  * @returns A promise that resolves when the cookie is set.
  */
-export async function setCookie(name: string, value: string): Promise<void> {
+export async function setCookie(
+  name: string,
+  value: string,
+  options?: {
+    maxAge?: number;
+    httpOnly?: boolean;
+    secure?: boolean;
+    sameSite?: "strict" | "lax" | "none";
+    path?: string;
+  },
+): Promise<void> {
   const allCookies = await cookies();
-  allCookies.set(name, value, {path: "/"});
+  allCookies.set(name, value, {
+    path: options?.path ?? "/",
+    maxAge: options?.maxAge,
+    httpOnly: options?.httpOnly,
+    secure: options?.secure,
+    sameSite: options?.sameSite,
+  });
 }
 
 /**
