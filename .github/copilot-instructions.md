@@ -59,7 +59,7 @@ arolariu.ro/
 ## Technology Stack
 
 ### Frontend (sites/arolariu.ro)
-- **Framework**: Next.js 15.6.0-canary.51 (App Router)
+- **Framework**: Next.js 16.0.0-beta.0 (App Router)
 - **React**: v19.2.0 (with React Server Components)
 - **TypeScript**: v5.9.3 (strict mode)
 - **Styling**: Tailwind CSS v4.1.14 + PostCSS
@@ -71,7 +71,7 @@ arolariu.ro/
 - **Testing**: Jest + Playwright
 
 ### Backend (sites/api.arolariu.ro)
-- **Framework**: .NET 9.0 STS (Standard Terms Support)
+- **Framework**: .NET 10.0 (Current)
 - **Architecture**: Modular Monolith with Domain-Driven Design
 - **Domains**: General (infrastructure), Invoices (business), Auth
 - **Testing**: xUnit

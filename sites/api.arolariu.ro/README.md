@@ -1,6 +1,6 @@
 # api.arolariu.ro - Backend API
 
-A **modular monolith** backend API built with **.NET 9.0 STS** following **Domain-Driven Design (DDD)** principles and **SOLID** patterns.
+A **modular monolith** backend API built with **.NET 10.0** following **Domain-Driven Design (DDD)** principles and **SOLID** patterns.
 
 ---
 
@@ -44,7 +44,7 @@ The codebase adheres to SOLID design patterns:
 
 ## 🚀 Technology Stack
 
-- **Framework**: .NET 9.0 STS (Standard Term Support)
+- **Framework**: .NET 10.0 (Current)
 - **Language**: C# 13 with modern language features
 - **API Pattern**: ASP.NET Core Minimal APIs
 - **Dependency Injection**: Built-in DI container
@@ -104,7 +104,7 @@ The codebase adheres to SOLID design patterns:
 
 ### Prerequisites
 
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) or later
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
 - [Docker](https://www.docker.com/) (optional, for containerized development)
 - IDE: [Visual Studio 2022](https://visualstudio.microsoft.com/), [Rider](https://www.jetbrains.com/rider/), or [VS Code](https://code.visualstudio.com/)
 
