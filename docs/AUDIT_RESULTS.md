@@ -92,7 +92,8 @@ docs/
 2. ✅ `/docs/RFC_TEMPLATE.md` - Standard RFC template (3,329 chars)
 3. ✅ `/docs/frontend/README.md` - Frontend documentation index (2,876 chars)
 4. ✅ `/docs/backend/README.md` - Backend documentation index (5,199 chars)
-5. ✅ `/docs/backend/rfc/1000-domain-driven-design-architecture.md` - DDD architecture RFC (13,415 chars)
+5. ✅ `/docs/rfc/2001-domain-driven-design-architecture.md` - DDD architecture RFC (13,415 chars)
+6. ✅ `/docs/rfc/1001-opentelemetry-observability-system.md` - Moved and renumbered existing RFC
 
 ### 3. API Documentation Namespace Structure (VERIFIED & UPDATED)
 
@@ -215,8 +216,8 @@ These serve immediate practical purposes and are correctly located:
 #### Architectural Documentation (RFC Format)
 
 **Migrated/Created**:
-- ✅ RFC 0001: OpenTelemetry Observability System (Frontend)
-- ✅ RFC 1000: Domain-Driven Design Architecture (Backend)
+- ✅ RFC 1001: OpenTelemetry Observability System (Frontend - renumbered from 0001)
+- ✅ RFC 2001: Domain-Driven Design Architecture (Backend - renumbered from 1000)
 
 **Future RFC Candidates**:
 - Backend event bus architecture

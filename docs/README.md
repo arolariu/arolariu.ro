@@ -8,59 +8,71 @@ This directory contains comprehensive technical documentation for the arolariu.r
 docs/
 ├── README.md           # This file
 ├── RFC_TEMPLATE.md     # Template for creating new RFCs
+├── rfc/                # All RFCs organized by number ranges
+│   ├── 0000-0999: Monorepo/general RFCs
+│   ├── 1000-1999: Frontend RFCs
+│   ├── 2000-2999: Backend RFCs
+│   ├── 3000-3999: Database RFCs
+│   └── 4000+: Other domain-specific RFCs
 ├── frontend/           # Frontend-related documentation
-│   └── rfc/           # Frontend RFCs
 └── backend/            # Backend-related documentation
-    └── rfc/           # Backend RFCs
 ```
 
 ## Documentation Categories
 
-### Frontend Documentation (`/docs/frontend/`)
+### All RFCs (`/docs/rfc/`)
 
-Frontend documentation covers:
+All architectural RFCs are organized by number ranges in a single directory:
+
+**Monorepo/General (0000-0999)**
+- General architecture decisions
+- Cross-cutting concerns
+- Tooling and infrastructure
+
+**Frontend (1000-1999)**
+- [RFC 1001: OpenTelemetry Observability System](./rfc/1001-opentelemetry-observability-system.md) - ✅ Implemented
 - Next.js application architecture
 - React components and patterns
 - Client-side state management
 - UI/UX design decisions
-- Frontend build and deployment processes
-- Performance optimization strategies
-- Accessibility implementations
 
-**Current RFCs:**
-- [RFC 0001: OpenTelemetry Observability System](./frontend/rfc/0001-opentelemetry-observability-system.md) - ✅ Implemented
-
-### Backend Documentation (`/docs/backend/`)
-
-Backend documentation covers:
+**Backend (2000-2999)**
+- [RFC 2001: Domain-Driven Design Architecture](./rfc/2001-domain-driven-design-architecture.md) - ✅ Implemented
 - .NET API architecture
 - Domain-Driven Design (DDD) patterns
 - SOLID principles implementation
-- Database schema and migrations
 - API endpoints and contracts
-- Authentication and authorization
-- Backend deployment strategies
 
-**Current RFCs:**
-- Coming soon
+**Database (3000-3999)**
+- Database schema and migrations
+- Data access patterns
+- Query optimization
+- Backup and recovery strategies
+
+### Supporting Documentation
+
+- **Frontend Docs** (`/docs/frontend/`): Frontend-specific guides and references
+- **Backend Docs** (`/docs/backend/`): Backend-specific guides and references
 
 ## Creating New RFCs
 
 To create a new RFC:
 
 1. Copy the `RFC_TEMPLATE.md` file
-2. Place it in the appropriate directory (`frontend/rfc/` or `backend/rfc/`)
-3. Name it with the next sequential number: `NNNN-descriptive-name.md`
+2. Place it in the `/docs/rfc/` directory
+3. Name it with the next sequential number in the appropriate range: `NNNN-descriptive-name.md`
 4. Fill in all sections of the template
 5. Update the index in this README
 6. Submit a pull request for review
 
 ### RFC Numbering Convention
 
-- **0001-0999**: Frontend RFCs
-- **1000-1999**: Backend RFCs
-- **2000-2999**: Infrastructure RFCs
-- **3000-3999**: Cross-cutting concerns (Security, Performance, etc.)
+- **0000-0999**: Monorepo/General RFCs (architecture, tooling, cross-cutting concerns)
+- **1000-1999**: Frontend RFCs (Next.js, React, UI/UX)
+- **2000-2999**: Backend RFCs (.NET, DDD, API design)
+- **3000-3999**: Database RFCs (schema, migrations, data access)
+- **4000-4999**: Infrastructure RFCs (Azure, deployment, monitoring)
+- **5000+**: Reserved for future domain-specific RFCs
 
 ## RFC Status Lifecycle
 

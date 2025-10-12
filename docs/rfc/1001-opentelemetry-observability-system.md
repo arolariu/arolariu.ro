@@ -1,4 +1,4 @@
-# RFC 0001: OpenTelemetry Observability System for Next.js 16
+# RFC 1001: OpenTelemetry Observability System for Next.js 16
 
 - **Status**: Implemented
 - **Date**: 2025-10-11

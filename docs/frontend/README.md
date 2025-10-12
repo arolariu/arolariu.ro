@@ -14,13 +14,13 @@ The frontend is built using:
 
 ## RFCs (Request for Comments)
 
-RFCs document major architectural decisions, design patterns, and technical implementations.
+Frontend RFCs are numbered **1000-1999** and located in `/docs/rfc/`.
 
 ### Implemented RFCs
 
 | RFC # | Title | Status | Date | Description |
 |-------|-------|--------|------|-------------|
-| [0001](./rfc/0001-opentelemetry-observability-system.md) | OpenTelemetry Observability System | ✅ Implemented | 2025-10-11 | Comprehensive observability system using OpenTelemetry SDK for Next.js |
+| [1001](../rfc/1001-opentelemetry-observability-system.md) | OpenTelemetry Observability System | ✅ Implemented | 2025-10-11 | Comprehensive observability system using OpenTelemetry SDK for Next.js |
 
 ### Proposed RFCs
 
@@ -83,8 +83,8 @@ None currently.
 When creating a new frontend RFC:
 
 1. Use the RFC template from `/docs/RFC_TEMPLATE.md`
-2. Number it sequentially (0002, 0003, etc.)
-3. Place in `/docs/frontend/rfc/`
+2. Number it in the 1000-1999 range (1002, 1003, etc.)
+3. Place in `/docs/rfc/`
 4. Update this README with the new RFC entry
 5. Submit for review
 

@@ -1,4 +1,4 @@
-# RFC 1000: Domain-Driven Design Architecture
+# RFC 2001: Domain-Driven Design Architecture
 
 - **Status**: Implemented
 - **Date**: 2025-10-12

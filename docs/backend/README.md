@@ -44,13 +44,13 @@ src/
 
 ## RFCs (Request for Comments)
 
-RFCs document major architectural decisions, design patterns, and technical implementations.
+Backend RFCs are numbered **2000-2999** and located in `/docs/rfc/`.
 
 ### Implemented RFCs
 
 | RFC # | Title | Status | Date | Description |
 |-------|-------|--------|------|-------------|
-| [1000](./rfc/1000-domain-driven-design-architecture.md) | Domain-Driven Design Architecture | ✅ Implemented | 2025-10-12 | Complete DDD architecture with modular monolith, SOLID principles, and bounded contexts |
+| [2001](../rfc/2001-domain-driven-design-architecture.md) | Domain-Driven Design Architecture | ✅ Implemented | 2025-10-12 | Complete DDD architecture with modular monolith, SOLID principles, and bounded contexts |
 
 ### Proposed RFCs
 
@@ -157,23 +157,23 @@ None currently.
 When creating a new backend RFC:
 
 1. Use the RFC template from `/docs/RFC_TEMPLATE.md`
-2. Number it starting from 1000 (1000, 1001, etc.)
-3. Place in `/docs/backend/rfc/`
+2. Number it in the 2000-2999 range (2002, 2003, etc.)
+3. Place in `/docs/rfc/`
 4. Update this README with the new RFC entry
 5. Submit for review
 
 ### Suggested Topics for Future RFCs
 
-- **RFC 1000**: Domain event architecture and implementation
-- **RFC 1001**: Repository pattern and data access strategy
-- **RFC 1002**: API versioning and backward compatibility
-- **RFC 1003**: Background job processing architecture
-- **RFC 1004**: Multi-tenancy implementation
-- **RFC 1005**: Caching strategy (distributed cache, in-memory)
-- **RFC 1006**: Rate limiting and throttling
-- **RFC 1007**: Audit logging and compliance
-- **RFC 1008**: Database migration strategy
-- **RFC 1009**: Error handling and response standardization
+- **RFC 2002**: Domain event architecture and implementation
+- **RFC 2003**: Repository pattern and data access strategy
+- **RFC 2004**: API versioning and backward compatibility
+- **RFC 2005**: Background job processing architecture
+- **RFC 2006**: Multi-tenancy implementation
+- **RFC 2007**: Caching strategy (distributed cache, in-memory)
+- **RFC 2008**: Rate limiting and throttling
+- **RFC 2009**: Audit logging and compliance
+- **RFC 2010**: Database migration strategy
+- **RFC 2011**: Error handling and response standardization
 
 ## Code Quality Standards
 
