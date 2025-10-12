@@ -24,13 +24,14 @@ The application previously used a hardcoded zero UUID (`00000000-0000-0000-0000-
 3. **Authorization Weakness**: Backend could not distinguish between guest sessions
 4. **Audit Trail Loss**: No ability to track guest user actions or patterns
 
-### 1.2 Design Goals
+### 1.2 Design Goals (REVISED)
 
-- Generate cryptographically unique identifiers per guest session
-- Persist identifiers securely via HTTP-only cookies with 30-day expiration
+- Generate cryptographically unique identifiers per guest request (CHANGED: was "per session")
+- ~~Persist identifiers securely via HTTP-only cookies~~ (REMOVED: security vulnerability)
 - Integrate with existing JWT-based API authentication
-- Prevent client-side cookie tampering through server-only access
+- Prevent session fixation attacks through stateless identifier generation
 - Maintain backward compatibility with authenticated user flows
+- Accept trade-off: Guest users have no data persistence (must authenticate for persistence)
 
 ---
 
@@ -63,24 +64,33 @@ guestIdentifier = generateGuid(); // e.g., "550e8400-e29b-41d4-a716-446655440000
 
 **Rationale**: UUIDv4 provides 122 bits of entropy, making collision probability negligible (1 in 2^122).
 
-### 2.3 Cookie Persistence
+### 2.3 Session Model (REVISED)
 
-**Configuration**:
+**IMPORTANT CHANGE**: Cookie persistence removed due to session fixation vulnerability.
+
+**Previous Approach (INSECURE - REMOVED)**:
 ```typescript
-await setCookie("guest_session_id", guestIdentifier, {
-  httpOnly: true,              // Prevent JavaScript access
-  secure: true,                // HTTPS-only in production
-  sameSite: "lax",             // CSRF protection with navigation support
-  maxAge: 2_592_000,           // 30 days (seconds)
-  path: "/",                   // Site-wide availability
-});
+// VULNERABILITY: Server trusted cookie value directly
+let guestIdentifier = await getCookie("guest_session_id");
+if (!guestIdentifier) {
+  guestIdentifier = generateGuid();
+  await setCookie("guest_session_id", guestIdentifier, {...});
+}
+// This allowed attackers to set victim's UUID in cookie
 ```
 
-**Security Properties**:
-- `httpOnly`: Blocks XSS attacks from reading/modifying the cookie
-- `secure`: Prevents transmission over unencrypted connections (production)
-- `sameSite=lax`: Mitigates CSRF while allowing top-level navigation
-- 30-day expiration: Balance between UX continuity and privacy
+**Current Approach (SECURE)**:
+```typescript
+// SECURE: Always generate fresh identifier, never trust cookies
+const guestIdentifier = generateGuid();
+// No cookie persistence - stateless guest sessions
+```
+
+**Security Rationale**:
+- Server-generated identifiers only - no client control
+- Each request gets independent identifier - no session hijacking possible
+- Stateless design - no session store required
+- Guest users cannot access previous data - must authenticate for persistence
 
 ### 2.4 JWT Integration
 
@@ -107,47 +117,90 @@ await setCookie("guest_session_id", guestIdentifier, {
 
 ## 3. Security Analysis
 
-### 3.1 Threat Model
+### 3.1 Threat Model & Security Amendment
 
-**Threat**: Attacker sets arbitrary `guest_session_id` cookie to access another guest's data
+**SECURITY AMENDMENT (2025-10-12)**: Critical vulnerability identified and fixed.
 
-**Mitigations**:
+**Original Vulnerability (FIXED)**:
 
-1. **JWT-Based Authorization**: Cookie identifier alone is insufficient for API access
-   - API requires valid JWT signed with server secret
-   - JWT contains `userIdentifier` claim matching cookie value
-   - Backend validates JWT signature before processing requests
+The initial implementation had a **session fixation vulnerability**:
 
-2. **Server-Side Token Generation**: JWTs are created exclusively on server
-   - Attacker cannot forge valid JWT without server secret
-   - Cookie modification is detected when JWT validation fails
-   - Token expiration (1 hour) limits window for replay attacks
-
-3. **HTTP-Only Cookie Protection**: Cookie value is opaque to client-side JavaScript
-   - XSS attacks cannot extract identifier to craft malicious JWTs
-   - Client cannot read cookie to discover valid identifiers
-
-4. **Role-Based Access Control**: Backend enforces `role="guest"` restrictions
-   - Guest identifiers only access guest-scoped data
-   - Critical operations require authenticated user role
-   - Cross-user data access is prevented at authorization layer
-
-**Attack Scenario Analysis**:
 ```
-Attacker Attempt: Set cookie with victim's identifier
+Attack Scenario (Original Implementation):
 ┌─────────────────────────────────────────────────────────┐
 │ 1. Attacker sets: guest_session_id=<victim-uuid>       │
-│ 2. Request to /api/user generates JWT with attacker ID │
-│ 3. API request includes attacker's JWT (signed)        │
-│ 4. Backend validates JWT signature ✓                   │
-│ 5. Backend extracts userIdentifier from JWT            │
-│    → userIdentifier ≠ victim-uuid (JWT contains       │
-│      attacker's ID from cookie at JWT generation)      │
-│ 6. Result: Attacker accesses own data, not victim's    │
+│ 2. Attacker calls /api/user                            │
+│ 3. Server reads cookie: victim-uuid                    │
+│ 4. Server generates JWT with userIdentifier=victim-uuid│
+│ 5. Server signs JWT with secret ✓                      │
+│ 6. Attacker receives valid JWT for victim's identifier │
+│ 7. Attacker calls backend APIs with this JWT           │
+│ 8. Backend validates JWT signature ✓                   │
+│ 9. Backend extracts userIdentifier=victim-uuid         │
+│ 10. BREACH: Attacker accesses victim's guest data!     │
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Conclusion**: Cookie serves as session persistence token, not authorization token. Authorization is enforced via JWT signature validation and role-based access control.
+**Root Cause**: Server blindly trusted client-provided cookie value and embedded it into signed JWT, enabling session hijacking.
+
+**Security Fix (Current Implementation)**:
+
+The server now **always generates fresh identifiers** and never trusts cookie values:
+
+```
+Secure Approach (Fixed Implementation):
+┌─────────────────────────────────────────────────────────┐
+│ 1. Attacker sets: guest_session_id=<victim-uuid>       │
+│ 2. Attacker calls /api/user                            │
+│ 3. Server IGNORES cookie value                         │
+│ 4. Server generates NEW identifier: attacker-uuid      │
+│ 5. Server generates JWT with userIdentifier=attacker-uuid│
+│ 6. Server signs JWT with secret ✓                      │
+│ 7. Attacker receives valid JWT for THEIR identifier    │
+│ 8. Attacker calls backend APIs with this JWT           │
+│ 9. Backend validates JWT signature ✓                   │
+│ 10. Backend extracts userIdentifier=attacker-uuid      │
+│ 11. SECURE: Attacker only accesses their own data      │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Trade-offs of Security Fix**:
+
+1. **No Guest Session Persistence**: Guest users cannot return to previous data across sessions
+   - Each request generates a new identifier
+   - Guest users lose data when closing browser/clearing cookies
+   - This is acceptable: guests should create accounts for data persistence
+
+2. **Stateless Design**: Simplified security model
+   - No need for server-side session store
+   - No session binding or validation required
+   - Each request is independently authorized
+
+3. **User Impact**: 
+   - Authenticated users (Clerk): Full session persistence ✓
+   - Guest users: Ephemeral sessions only (must authenticate for persistence)
+
+**Why Cookie Persistence Was Fundamentally Flawed**:
+
+Cookie-based persistence without server-side validation creates an untrusted input vector:
+- Client controls cookie value
+- Server cannot distinguish legitimate cookies from attacker-set cookies
+- No cryptographic binding between cookie and session
+- Requires complex server-side session store to map cookies to validated identifiers
+
+**Secure Alternative Approaches** (not implemented):
+
+1. **Encrypted Signed Tokens**: Server generates encrypted token containing identifier + signature
+   - Server validates signature before accepting identifier
+   - Prevents tampering but adds crypto overhead
+   
+2. **Server-Side Session Store**: Redis/database maps session tokens to identifiers
+   - Server-side validation of session ownership
+   - Requires additional infrastructure
+
+3. **Authenticated Sessions Only**: Remove guest persistence entirely
+   - Force authentication for any data persistence
+   - Simplest and most secure approach (chosen)
 
 ### 3.2 Additional Security Considerations
 
@@ -168,68 +221,58 @@ Attacker Attempt: Set cookie with victim's identifier
 
 ---
 
-## 4. Implementation Details
+## 4. Implementation Details (REVISED)
 
-### 4.1 Next.js Server Actions
+### 4.1 Stateless Guest Identifier Generation
 
-**Cookie Management**: Uses Next.js `cookies()` API from `next/headers`
-
+**Current Implementation**:
 ```typescript
-"use server";
-import {cookies} from "next/headers";
-
-export async function setCookie(name: string, value: string, options?: CookieOptions) {
-  const cookieStore = await cookies();
-  cookieStore.set(name, value, options);
+// /api/user route handler
+export async function GET(): Promise<NextResponse<UserInformation>> {
+  // ... authentication check ...
+  
+  // Guest user flow - always generate fresh identifier
+  const guestIdentifier = generateGuid();
+  
+  const jwtPayload = {
+    iss: "https://auth.arolariu.ro",
+    aud: "https://api.arolariu.ro",
+    sub: "guest",
+    role: "guest",
+    userIdentifier: guestIdentifier, // Fresh identifier every request
+    iat: currentTimestamp,
+    exp: currentTimestamp + 3600,
+  };
+  
+  const guestToken = await createJwtToken(jwtPayload, API_JWT);
+  return NextResponse.json({
+    user: null,
+    userIdentifier: guestIdentifier,
+    userJwt: guestToken,
+  });
 }
 ```
 
-**Context Safety**:
-- `"use server"` directive ensures server-only execution
-- Client components invoke via Server Actions (POST requests)
-- Next.js validates Server Action origin (same-origin policy)
-- Client-side direct cookie access is prevented
+**Security Properties**:
+- Server-generated identifiers only
+- No client input trusted for identifier
+- Each request independent
+- No session fixation possible
 
-**Server Action Security**:
-```typescript
-// Client component (browser)
-"use client";
-import {setCookie} from "@/lib/actions/cookies";
+### 4.2 Cookie Utilities (NOT USED for guest sessions)
 
-// Invokes Server Action via POST request
-await setCookie("guest_session_id", uuid, options);
-// ↓
-// Server Action (Node.js runtime)
-"use server";
-export async function setCookie(...) {
-  // Executes on server with cookie access
-}
-```
+**Note**: Cookie utilities remain in codebase for other purposes (user preferences, consent, etc.) but are NOT used for guest session persistence due to security vulnerability.
 
-### 4.2 Client vs Server Cookie Access
+**Cookie utilities still available for**:
+- User preferences (theme, language)
+- Cookie consent management
+- Non-security-sensitive data
+- Authenticated session preferences
 
-**Server Context** (Safe):
-- `/api/user` route handler: Server Component
-- Uses `cookies()` directly for read/write
-- Full access to HTTP-only cookies
-
-**Client Context** (Restricted):
-- Client Components use Server Actions
-- Server Actions proxy cookie operations
-- Client cannot read/write HTTP-only cookies directly
-- Next.js enforces Server Action origin validation
-
-**Verification**:
-```bash
-# No direct document.cookie usage in codebase
-$ grep -r "document.cookie" src/ --include="*.ts" --include="*.tsx"
-# (returns 0 matches)
-
-# Client components use Server Actions
-$ grep -l "use client" src/**/*.tsx | xargs grep "setCookie\|getCookie"
-# Commander.tsx: import {setCookie} from "@/lib/actions/cookies";
-# EULA.tsx: import {getCookie, setCookie} from "@/lib/actions/cookies";
-```
+**NOT used for**:
+- Guest session identifiers (security risk)
+- Authentication tokens (handled by Clerk)
+- Authorization data (handled by JWT)
 
 ---
 
@@ -272,18 +315,24 @@ $ grep -l "use client" src/**/*.tsx | xargs grep "setCookie\|getCookie"
 
 ## 6. Migration & Rollout
 
-### 6.1 Backward Compatibility
+### 6.1 Breaking Changes
 
-**Legacy Behavior**: Existing sessions with no cookie continue to function
-- New sessions generate identifier on first `/api/user` request
-- No disruption to authenticated user flows (Clerk authentication)
-- Backend accepts any valid GUID format (including new UUIDs)
+**BREAKING CHANGE**: Guest users no longer have persistent sessions
 
-**Gradual Rollout**:
-1. Deploy with feature flag (optional)
-2. Monitor identifier generation rate
-3. Validate JWT integration with backend
-4. Confirm no increase in authorization errors
+**Impact**:
+- Guest users cannot return to previous data after closing browser
+- Guest users must authenticate (create account) for data persistence
+- Each guest request is treated as new, independent session
+
+**Migration Path**:
+1. Inform users that guest mode is ephemeral only
+2. Encourage account creation for data persistence
+3. Authenticated users (Clerk) unaffected - full persistence maintained
+
+**Backward Compatibility**:
+- Authenticated user flows unchanged (Clerk authentication)
+- Backend accepts any valid GUID format
+- API contracts unchanged (still accepts guest role)
 
 ### 6.2 Monitoring
 

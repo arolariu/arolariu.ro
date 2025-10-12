@@ -128,56 +128,37 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
 
           logWithTrace("info", "Generating guest user JWT token", undefined, "api");
 
-          // Check for existing guest identifier in cookie, or generate a new one
-          // SECURITY NOTE: While cookies can be modified client-side, authorization is enforced
-          // via JWT signature validation, not the cookie value alone. Attack scenarios:
+          // Generate a unique guest identifier for this session
+          // SECURITY: Always generate fresh identifier - never trust cookie values
+          // 
+          // Previous approach had critical vulnerability:
+          // - Attacker could set cookie with victim's UUID
+          // - Server would generate signed JWT with victim's identifier
+          // - Attacker could access victim's data using this valid JWT
           //
-          // 1. Attacker sets cookie with victim's UUID:
-          //    - This endpoint generates JWT with identifier from cookie
-          //    - JWT is signed with server secret (attacker cannot forge)
-          //    - API requests require valid JWT signature
-          //    - Backend validates JWT + extracts userIdentifier claim
-          //    - Result: Attacker's requests use attacker's identifier (from their JWT)
+          // Current approach (secure):
+          // - Always generate new identifier on each request
+          // - No persistence between requests (stateless design)
+          // - Attacker cannot hijack another user's session
+          // - Each request gets independent authorization
           //
-          // 2. Cookie serves as session persistence token, NOT authorization token:
-          //    - Authorization = JWT signature validation + role-based access control
-          //    - Cookie = convenient session identifier storage mechanism
-          //    - Tampering cookie only affects which identifier is embedded in attacker's JWT
-          //    - Backend enforces role="guest" restrictions regardless of identifier
+          // Trade-offs:
+          // - No session continuity for guest users between requests
+          // - Guest users cannot return to previous data without authentication
+          // - This is acceptable: guests should create accounts for persistence
+          // - Authenticated users (via Clerk) maintain full session continuity
           //
-          // 3. Additional protections:
-          //    - HTTP-only cookie prevents XSS cookie theft
-          //    - SameSite=lax prevents CSRF cookie transmission
-          //    - Short JWT expiration (1 hour) limits attack window
-          //    - Guest role has restricted API access (read-only operations)
+          // Alternative secure approaches for guest persistence:
+          // 1. Server-side session store (Redis/database) mapping tokens to identifiers
+          // 2. Encrypted signed tokens containing identifier + expiry
+          // 3. IP-based session binding (less secure due to NAT/VPN)
           //
-          // See RFC 0002 Section 3.1 for complete threat analysis.
-          addSpanEvent("guest.identifier.retrieve.start");
-          let guestIdentifier = await getCookie("guest_session_id");
+          // See RFC 0002 Amendment for security fix details.
+          addSpanEvent("guest.identifier.generate.start");
+          const guestIdentifier = generateGuid();
           
-          if (guestIdentifier) {
-            logWithTrace("info", "Reusing existing guest session identifier", {guestIdentifier}, "api");
-            addSpanEvent("guest.identifier.reused", {identifier: guestIdentifier});
-          } else {
-            // Generate a new unique identifier for this guest session
-            guestIdentifier = generateGuid();
-            
-            // Store in a secure HTTP-only cookie that expires in 30 days
-            // httpOnly: prevents JavaScript access (XSS protection)
-            // secure: ensures cookie is only sent over HTTPS
-            // sameSite: 'lax' provides CSRF protection while allowing navigation
-            // maxAge: 30 days in seconds (30 * 24 * 60 * 60 = 2_592_000)
-            await setCookie("guest_session_id", guestIdentifier, {
-              httpOnly: true,
-              secure: process.env.NODE_ENV === "production",
-              sameSite: "lax",
-              maxAge: 2_592_000,
-              path: "/",
-            });
-            
-            logWithTrace("info", "Generated new guest session identifier", {guestIdentifier}, "api");
-            addSpanEvent("guest.identifier.created", {identifier: guestIdentifier});
-          }
+          logWithTrace("info", "Generated new guest session identifier", {guestIdentifier}, "api");
+          addSpanEvent("guest.identifier.created", {identifier: guestIdentifier});
 
           const currentTimestamp = Math.floor(Date.now() / 1000);
           const expirationTime = currentTimestamp + 3600; // 1 hour expiration
