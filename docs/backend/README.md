@@ -5,7 +5,7 @@ This directory contains technical documentation for the backend components of th
 ## Overview
 
 The backend is built using:
-- **Framework**: .NET 10.0 (Current)
+- **Framework**: .NET 10.0 (LTS)
 - **Language**: C# 13 with modern language features
 - **Architecture**: Modular Monolith
 - **Design Patterns**: Domain-Driven Design (DDD) + SOLID principles

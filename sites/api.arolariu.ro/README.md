@@ -44,7 +44,7 @@ The codebase adheres to SOLID design patterns:
 
 ## 🚀 Technology Stack
 
-- **Framework**: .NET 10.0 (Current)
+- **Framework**: .NET 10.0 (LTS)
 - **Language**: C# 13 with modern language features
 - **API Pattern**: ASP.NET Core Minimal APIs
 - **Dependency Injection**: Built-in DI container

@@ -77,7 +77,7 @@ arolariu.Backend (Modular Monolith)
 - `SwaggerFilterService.cs`: OpenAPI document filtering
 
 **Technology Stack:**
-- .NET 10.0 (Current)
+- .NET 10.0 (LTS)
 - ASP.NET Core Minimal APIs
 - OpenTelemetry for observability
 - Swashbuckle for OpenAPI generation

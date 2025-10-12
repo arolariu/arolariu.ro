@@ -71,7 +71,7 @@ arolariu.ro/
 - **Testing**: Jest + Playwright
 
 ### Backend (sites/api.arolariu.ro)
-- **Framework**: .NET 10.0 (Current)
+- **Framework**: .NET 10.0 (LTS)
 - **Architecture**: Modular Monolith with Domain-Driven Design
 - **Domains**: General (infrastructure), Invoices (business), Auth
 - **Testing**: xUnit
