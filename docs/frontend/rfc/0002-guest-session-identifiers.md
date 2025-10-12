@@ -24,14 +24,14 @@ The application previously used a hardcoded zero UUID (`00000000-0000-0000-0000-
 3. **Authorization Weakness**: Backend could not distinguish between guest sessions
 4. **Audit Trail Loss**: No ability to track guest user actions or patterns
 
-### 1.2 Design Goals (REVISED)
+### 1.2 Design Goals (REVISED - Signed Token Approach)
 
-- Generate cryptographically unique identifiers per guest request (CHANGED: was "per session")
-- ~~Persist identifiers securely via HTTP-only cookies~~ (REMOVED: security vulnerability)
+- Generate cryptographically unique identifiers per guest session
+- **Persist identifiers securely via cryptographically signed tokens** (SECURE: signature prevents forgery)
 - Integrate with existing JWT-based API authentication
-- Prevent session fixation attacks through stateless identifier generation
+- **Prevent session fixation through server-signed tokens** (only server can generate valid signatures)
 - Maintain backward compatibility with authenticated user flows
-- Accept trade-off: Guest users have no data persistence (must authenticate for persistence)
+- **Enable guest session persistence WITHOUT sacrificing security** (signature validation)
 
 ---
 
@@ -64,33 +64,57 @@ guestIdentifier = generateGuid(); // e.g., "550e8400-e29b-41d4-a716-446655440000
 
 **Rationale**: UUIDv4 provides 122 bits of entropy, making collision probability negligible (1 in 2^122).
 
-### 2.3 Session Model (REVISED)
+### 2.3 Session Model (FINAL - Signed Token Approach)
 
-**IMPORTANT CHANGE**: Cookie persistence removed due to session fixation vulnerability.
+**SECURE SOLUTION**: Cryptographically signed tokens enable safe session persistence.
 
-**Previous Approach (INSECURE - REMOVED)**:
+**Previous Insecure Approach (REMOVED)**:
 ```typescript
-// VULNERABILITY: Server trusted cookie value directly
+// VULNERABILITY: Server trusted unsigned cookie value
 let guestIdentifier = await getCookie("guest_session_id");
-if (!guestIdentifier) {
-  guestIdentifier = generateGuid();
-  await setCookie("guest_session_id", guestIdentifier, {...});
-}
-// This allowed attackers to set victim's UUID in cookie
+// Attacker could set victim's UUID → session hijacking
 ```
 
-**Current Approach (SECURE)**:
+**Previous Stateless Approach (SECURE BUT NO PERSISTENCE)**:
 ```typescript
-// SECURE: Always generate fresh identifier, never trust cookies
-const guestIdentifier = generateGuid();
-// No cookie persistence - stateless guest sessions
+// SECURE: But no persistence (bad UX)
+const guestIdentifier = generateGuid(); // Fresh every request
+// Guest users lose data between sessions
 ```
 
-**Security Rationale**:
-- Server-generated identifiers only - no client control
-- Each request gets independent identifier - no session hijacking possible
-- Stateless design - no session store required
-- Guest users cannot access previous data - must authenticate for persistence
+**Current Signed Token Approach (SECURE + PERSISTENCE)** ✓:
+```typescript
+// 1. Check for existing signed token
+const existingToken = await getCookie("guest_session_token");
+
+if (existingToken) {
+  // 2. Validate signature (rejects forgeries)
+  const validatedId = await validateGuestSessionToken(existingToken, secret);
+  
+  if (validatedId) {
+    // Valid token → Reuse identifier (persistence)
+    guestIdentifier = validatedId;
+  } else {
+    // Invalid/tampered token → New session
+    guestIdentifier = generateGuid();
+    const token = await createGuestSessionToken(guestIdentifier, secret);
+    await setCookie("guest_session_token", token, secureOptions);
+  }
+} else {
+  // 3. No token → Create new session
+  guestIdentifier = generateGuid();
+  const token = await createGuestSessionToken(guestIdentifier, secret);
+  await setCookie("guest_session_token", token, secureOptions);
+}
+```
+
+**Security Properties**:
+- **Signature validation**: Only server can create valid tokens (prevents forgery)
+- **Session persistence**: Valid tokens reuse same guest identifier (good UX)
+- **Tamper detection**: Modified tokens rejected (integrity protection)
+- **Time-limited**: Tokens expire after 30 days (limits exposure)
+- **HTTP-only cookies**: JavaScript cannot access (XSS protection)
+- **Server-only signing**: Client cannot forge tokens (security guarantee)
 
 ### 2.4 JWT Integration
 

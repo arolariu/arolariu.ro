@@ -1,6 +1,6 @@
 import {getCookie, setCookie} from "@/lib/actions/cookies/cookies.action";
 import {generateGuid} from "@/lib/utils.generic";
-import {API_JWT, createJwtToken} from "@/lib/utils.server";
+import {API_JWT, createGuestSessionToken, createJwtToken, validateGuestSessionToken} from "@/lib/utils.server";
 import {
   addSpanEvent,
   createAuthAttributes,
@@ -128,37 +128,75 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
 
           logWithTrace("info", "Generating guest user JWT token", undefined, "api");
 
-          // Generate a unique guest identifier for this session
-          // SECURITY: Always generate fresh identifier - never trust cookie values
-          // 
-          // Previous approach had critical vulnerability:
-          // - Attacker could set cookie with victim's UUID
-          // - Server would generate signed JWT with victim's identifier
-          // - Attacker could access victim's data using this valid JWT
+          // Secure guest session management with cryptographically signed tokens
+          // SECURITY MODEL:
+          // - Guest identifiers are stored in HTTP-only cookies as SIGNED tokens
+          // - Server validates signature before accepting guest identifier
+          // - Only server can generate valid tokens (prevents session fixation)
+          // - Attackers cannot forge valid signatures without server secret
           //
-          // Current approach (secure):
-          // - Always generate new identifier on each request
-          // - No persistence between requests (stateless design)
-          // - Attacker cannot hijack another user's session
-          // - Each request gets independent authorization
+          // APPROACH:
+          // 1. Check for existing signed guest session token in cookie
+          // 2. Validate token signature and expiry (reject if invalid/tampered)
+          // 3. If valid, extract and reuse guest identifier (session continuity)
+          // 4. If invalid/missing, generate new identifier + signed token
+          // 5. Store signed token in secure HTTP-only cookie
           //
-          // Trade-offs:
-          // - No session continuity for guest users between requests
-          // - Guest users cannot return to previous data without authentication
-          // - This is acceptable: guests should create accounts for persistence
-          // - Authenticated users (via Clerk) maintain full session continuity
+          // SECURITY PROPERTIES:
+          // ✓ Session persistence for guest users (UX requirement)
+          // ✓ Prevents session fixation (signature validation)
+          // ✓ Prevents cookie tampering (signature verification)
+          // ✓ Time-limited sessions (token expiry)
+          // ✓ HTTP-only cookies (XSS protection)
+          // ✓ Server-only signing (attacker cannot forge tokens)
           //
-          // Alternative secure approaches for guest persistence:
-          // 1. Server-side session store (Redis/database) mapping tokens to identifiers
-          // 2. Encrypted signed tokens containing identifier + expiry
-          // 3. IP-based session binding (less secure due to NAT/VPN)
-          //
-          // See RFC 0002 Amendment for security fix details.
-          addSpanEvent("guest.identifier.generate.start");
-          const guestIdentifier = generateGuid();
+          // See RFC 0002 for complete security analysis.
+          addSpanEvent("guest.session.retrieve.start");
           
-          logWithTrace("info", "Generated new guest session identifier", {guestIdentifier}, "api");
-          addSpanEvent("guest.identifier.created", {identifier: guestIdentifier});
+          let guestIdentifier: string;
+          const existingToken = await getCookie("guest_session_token");
+          
+          if (existingToken) {
+            // Validate existing token signature and expiry
+            const validatedId = await validateGuestSessionToken(existingToken, API_JWT);
+            
+            if (validatedId) {
+              // Valid signed token - reuse identifier
+              guestIdentifier = validatedId;
+              logWithTrace("info", "Reusing validated guest session", {guestIdentifier}, "api");
+              addSpanEvent("guest.session.reused", {identifier: guestIdentifier});
+            } else {
+              // Invalid/expired token - generate new session
+              guestIdentifier = generateGuid();
+              const sessionToken = await createGuestSessionToken(guestIdentifier, API_JWT);
+              
+              await setCookie("guest_session_token", sessionToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                maxAge: 2_592_000, // 30 days
+                path: "/",
+              });
+              
+              logWithTrace("info", "Generated new guest session (invalid token)", {guestIdentifier}, "api");
+              addSpanEvent("guest.session.created", {identifier: guestIdentifier, reason: "invalid_token"});
+            }
+          } else {
+            // No existing token - create new session
+            guestIdentifier = generateGuid();
+            const sessionToken = await createGuestSessionToken(guestIdentifier, API_JWT);
+            
+            await setCookie("guest_session_token", sessionToken, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === "production",
+              sameSite: "lax",
+              maxAge: 2_592_000, // 30 days
+              path: "/",
+            });
+            
+            logWithTrace("info", "Generated new guest session (no token)", {guestIdentifier}, "api");
+            addSpanEvent("guest.session.created", {identifier: guestIdentifier, reason: "no_token"});
+          }
 
           const currentTimestamp = Math.floor(Date.now() / 1000);
           const expirationTime = currentTimestamp + 3600; // 1 hour expiration
@@ -226,11 +264,29 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
           "api",
         );
 
-        // Fallback to guest user on error - still generate unique identifier
-        let fallbackIdentifier = await getCookie("guest_session_id");
-        if (!fallbackIdentifier) {
+        // Fallback to guest user on error - use same secure token approach
+        let fallbackIdentifier: string;
+        const existingToken = await getCookie("guest_session_token");
+        
+        if (existingToken) {
+          const validatedId = await validateGuestSessionToken(existingToken, API_JWT);
+          if (validatedId) {
+            fallbackIdentifier = validatedId;
+          } else {
+            fallbackIdentifier = generateGuid();
+            const sessionToken = await createGuestSessionToken(fallbackIdentifier, API_JWT);
+            await setCookie("guest_session_token", sessionToken, {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === "production",
+              sameSite: "lax",
+              maxAge: 2_592_000,
+              path: "/",
+            });
+          }
+        } else {
           fallbackIdentifier = generateGuid();
-          await setCookie("guest_session_id", fallbackIdentifier, {
+          const sessionToken = await createGuestSessionToken(fallbackIdentifier, API_JWT);
+          await setCookie("guest_session_token", sessionToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",

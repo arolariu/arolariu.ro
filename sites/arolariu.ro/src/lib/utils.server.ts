@@ -97,6 +97,137 @@ export async function createJwtToken(payload: Readonly<Record<string, any>>, sec
 }
 
 /**
+ * Guest session token payload structure.
+ * Contains guest identifier and metadata for secure session persistence.
+ */
+export interface GuestSessionPayload {
+  guestId: string;
+  createdAt: number;
+  expiresAt: number;
+}
+
+/**
+ * Creates a cryptographically signed guest session token.
+ * This token can be safely stored in cookies and validated on subsequent requests.
+ * 
+ * Security model:
+ * - Token is signed with server secret (attacker cannot forge)
+ * - Contains guest identifier + expiry timestamp
+ * - Server validates signature before accepting guest_id
+ * - Prevents session fixation: only server can generate valid tokens
+ * 
+ * @param guestId The unique guest identifier (UUID)
+ * @param secret The server secret for signing
+ * @param expiryDays Number of days until token expires (default: 30)
+ * @returns Promise resolving to signed session token string
+ */
+export async function createGuestSessionToken(
+  guestId: string,
+  secret: string,
+  expiryDays = 30,
+): Promise<string> {
+  return withSpan("auth.guest_session.create", async (span) => {
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      const expiresAt = now + expiryDays * 24 * 60 * 60;
+
+      const payload: GuestSessionPayload = {
+        guestId,
+        createdAt: now,
+        expiresAt,
+      };
+
+      span.setAttributes({
+        "guest_session.id": guestId,
+        "guest_session.expiry_days": expiryDays,
+      });
+
+      addSpanEvent("guest_session.signing.start");
+      logWithTrace("debug", "Creating guest session token", {guestId, expiryDays}, "server");
+
+      const secretKey = new TextEncoder().encode(secret);
+      const token = await new SignJWT(payload)
+        .setProtectedHeader({alg: "HS256", typ: "JWT"})
+        .setIssuedAt(now)
+        .setExpirationTime(expiresAt)
+        .sign(secretKey);
+
+      addSpanEvent("guest_session.signing.complete");
+      logWithTrace("info", "Guest session token created", {guestId}, "server");
+
+      return token;
+    } catch (error) {
+      recordSpanError(error, "Failed to create guest session token");
+      logWithTrace("error", "Guest session token creation failed", {error: error instanceof Error ? error.message : "Unknown"}, "server");
+      throw new Error(error instanceof Error ? error.message : "Failed to create guest session token");
+    }
+  });
+}
+
+/**
+ * Validates and extracts guest identifier from a signed session token.
+ * 
+ * Security validation:
+ * - Verifies JWT signature (prevents forgery)
+ * - Checks token expiration
+ * - Validates token structure
+ * 
+ * @param token The signed guest session token from cookie
+ * @param secret The server secret for validation
+ * @returns Promise resolving to guest identifier if valid, null if invalid/expired
+ */
+export async function validateGuestSessionToken(
+  token: string,
+  secret: string,
+): Promise<string | null> {
+  return withSpan("auth.guest_session.validate", async (span) => {
+    try {
+      addSpanEvent("guest_session.validation.start");
+      logWithTrace("debug", "Validating guest session token", undefined, "server");
+
+      const secretKey = new TextEncoder().encode(secret);
+      const {payload} = await jwtVerify(token, secretKey, {
+        algorithms: ["HS256"],
+      });
+
+      const sessionData = payload as unknown as GuestSessionPayload;
+
+      // Validate structure
+      if (!sessionData.guestId || !sessionData.expiresAt) {
+        logWithTrace("warn", "Invalid guest session token structure", undefined, "server");
+        return null;
+      }
+
+      // Check expiration
+      const now = Math.floor(Date.now() / 1000);
+      if (now >= sessionData.expiresAt) {
+        logWithTrace("info", "Guest session token expired", {guestId: sessionData.guestId}, "server");
+        return null;
+      }
+
+      span.setAttributes({
+        "guest_session.id": sessionData.guestId,
+        "guest_session.valid": true,
+      });
+
+      addSpanEvent("guest_session.validation.success");
+      logWithTrace("info", "Guest session token validated", {guestId: sessionData.guestId}, "server");
+
+      return sessionData.guestId;
+    } catch (error) {
+      // Invalid signature or malformed token
+      span.setAttributes({
+        "guest_session.valid": false,
+        "guest_session.error": error instanceof Error ? error.message : "Unknown",
+      });
+
+      logWithTrace("warn", "Guest session token validation failed", {error: error instanceof Error ? error.message : "Unknown"}, "server");
+      return null;
+    }
+  });
+}
+
+/**
  * JWT token verification result type.
  */
 export type JwtVerificationResult = {valid: true; payload: Record<string, any>} | {valid: false; error: string};
