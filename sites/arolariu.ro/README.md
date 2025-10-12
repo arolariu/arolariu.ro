@@ -1,6 +1,6 @@
 # Welcome to the front-end service.
 
-You've landed on the front-end service of the arolariu.ro platform. This service is responsible for serving the front-end of the website, which is built using the [Next.JS v14](https://nextjs.org/) React-based framework.
+You've landed on the front-end service of the arolariu.ro platform. This service is responsible for serving the front-end of the website, which is built using the [Next.JS v16](https://nextjs.org/) React-based framework.
 
 The front-end service provides a modern and responsive user interface for the arolariu.ro platform. The front-end service is built using TypeScript and integrates with the back-end service to provide a seamless user experience.
 
@@ -118,7 +118,7 @@ npm run dev
 
 # Output (example)
 Using existing cloned repo
-  ▲ Next.js 14.2.2 (turbo)
+  ▲ Next.js 16.0.0 (turbo)
   - Local:        http://localhost:3000
   - Environments: .env
   - Experiments (use with caution):
