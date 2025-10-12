@@ -5,10 +5,15 @@ This namespace is the root namespace for all the code that I write.
 
 > [!NOTE]
 >
-> As of 8th of June 2023, the `arolariu` namespace contains 2 sub-namespaces:
+> As of October 2025, the `arolariu` namespace contains 2 sub-namespaces:
 >
-> - `arolariu.Backend` <-- contains the XML documentation for the backend solution.
-> - `arolariu.Frontend` <--- contains the XML documentation for the frontend solution.
+> - `arolariu.Backend` - Contains XML documentation for the backend solution (.NET 10.0)
+>   - `arolariu.Backend.Common` - Shared infrastructure and utilities
+>   - `arolariu.Backend.Core` - Application entry point and general domain
+>   - `arolariu.Backend.Core.Auth` - Authentication domain
+>   - `arolariu.Backend.Domain.Invoices` - Invoices business domain
+> - `arolariu.Frontend` - Contains documentation for the frontend solution (Next.js 16)
+>   - Hooks, utilities, and server actions for the Next.js application
 
 ## How to navigate the API documentation
 
