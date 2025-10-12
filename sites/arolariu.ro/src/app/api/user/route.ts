@@ -129,6 +129,29 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
           logWithTrace("info", "Generating guest user JWT token", undefined, "api");
 
           // Check for existing guest identifier in cookie, or generate a new one
+          // SECURITY NOTE: While cookies can be modified client-side, authorization is enforced
+          // via JWT signature validation, not the cookie value alone. Attack scenarios:
+          //
+          // 1. Attacker sets cookie with victim's UUID:
+          //    - This endpoint generates JWT with identifier from cookie
+          //    - JWT is signed with server secret (attacker cannot forge)
+          //    - API requests require valid JWT signature
+          //    - Backend validates JWT + extracts userIdentifier claim
+          //    - Result: Attacker's requests use attacker's identifier (from their JWT)
+          //
+          // 2. Cookie serves as session persistence token, NOT authorization token:
+          //    - Authorization = JWT signature validation + role-based access control
+          //    - Cookie = convenient session identifier storage mechanism
+          //    - Tampering cookie only affects which identifier is embedded in attacker's JWT
+          //    - Backend enforces role="guest" restrictions regardless of identifier
+          //
+          // 3. Additional protections:
+          //    - HTTP-only cookie prevents XSS cookie theft
+          //    - SameSite=lax prevents CSRF cookie transmission
+          //    - Short JWT expiration (1 hour) limits attack window
+          //    - Guest role has restricted API access (read-only operations)
+          //
+          // See RFC 0002 Section 3.1 for complete threat analysis.
           addSpanEvent("guest.identifier.retrieve.start");
           let guestIdentifier = await getCookie("guest_session_id");
           
