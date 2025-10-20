@@ -7,12 +7,30 @@ applyTo: '**/*.jsx, **/*.tsx, **/*.js, **/*.ts, **/*.css, **/*.scss'
 
 Instructions for building high-quality ReactJS applications with modern patterns, hooks, and best practices following the official React documentation at https://react.dev.
 
+## 📚 Essential Context
+
+**This project uses React 19.2.0 within a Next.js 16 environment. Key differences:**
+
+1. **React Server Components (RSC)**: Default component type in Next.js App Router
+2. **Server Actions**: Built-in form handling and mutations
+3. **Component Library**: `@arolariu/components` based on shadcn/ui + Radix UI
+4. **Strict TypeScript**: All components must be properly typed
+5. **Observability**: Telemetry integration (see Frontend RFCs)
+
+**Reference these for context:**
+- Main Instructions: `.github/copilot-instructions.md`
+- Frontend Instructions: `.github/instructions/frontend.instructions.md`
+- **Frontend RFCs**: Check `docs/rfc/` for RFCs numbered **1000-1999** (observability, architecture, patterns)
+- Component Library: `packages/components/`
+
 ## Project Context
-- Latest React version (React 19+)
-- TypeScript for type safety (when applicable)
+- React 19.2.0 (with React Server Components support)
+- Next.js 16.0.0-beta.0 (App Router)
+- TypeScript 5.9.3 for strict type safety
 - Functional components with hooks as default
+- Server Components as default, Client Components when needed
 - Follow React's official style guide and best practices
-- Use modern build tools (Vite, Create React App, or custom Webpack setup)
+- RSLib + Rsbuild for component library builds
 - Implement proper component composition and reusability patterns
 
 ## Development Standards
@@ -96,6 +114,71 @@ Instructions for building high-quality ReactJS applications with modern patterns
 - Implement accessibility features for forms (labels, ARIA attributes)
 - Use debounced validation for better user experience
 - Handle file uploads and complex form scenarios
+
+### Routing (Next.js App Router)
+- Use file-based routing in `app/` directory
+- Implement layouts for shared UI across routes
+- Use route groups `(groupName)` for organization without affecting URL
+- Leverage Server Components for initial page loads
+- Use `<Link>` from next/link for client-side navigation
+- Implement loading.tsx for loading states
+- Create error.tsx for error boundaries
+
+### Component Library Usage
+- Import components from `@arolariu/components`
+- Use shadcn/ui patterns for consistency
+- Extend library components via composition, not modification
+- Follow Radix UI accessibility patterns
+- Leverage class-variance-authority for variants
+- Use Tailwind CSS utility classes for styling
+
+### React 19 Specific Features
+- **Server Components**: Default in Next.js App Router, no `use client` needed
+- **Actions**: Use Server Actions for form submissions
+- **use() Hook**: Unwrap promises and context in render
+- **Improved Hydration**: Better SSR mismatch handling
+- **Document Metadata**: Use Next.js metadata API
+- **Optimistic Updates**: Built-in optimistic UI patterns
+
+## Quick Reference
+
+### When to Use Client Components
+Add `"use client"` directive only when you need:
+- Browser-only APIs (window, document, localStorage)
+- Event handlers (onClick, onChange, onSubmit with preventDefault)
+- React hooks (useState, useEffect, useContext)
+- Third-party libraries that depend on browser APIs
+
+### Component Patterns for This Codebase
+
+```tsx
+// Server Component (Default)
+// No "use client" needed
+export default async function ServerComponent() {
+  const data = await fetchData();
+  return <div>{data.title}</div>;
+}
+
+// Client Component (When Needed)
+"use client";
+import { useState } from "react";
+
+export function ClientComponent() {
+  const [state, setState] = useState(0);
+  return <button onClick={() => setState(s => s + 1)}>{state}</button>;
+}
+
+// Shared Component from Library
+import { Button, Card } from "@arolariu/components";
+
+export function MyComponent() {
+  return (
+    <Card>
+      <Button variant="default">Click me</Button>
+    </Card>
+  );
+}
+```
 
 ### Routing
 - Use React Router for client-side routing

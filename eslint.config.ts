@@ -221,7 +221,7 @@ const eslintConfig = defineConfig(
     },
     settings: {
       react: {
-        version: "19.1.1",
+        version: "19.2.0",
       },
       node: {
         version: "24",
@@ -545,7 +545,7 @@ const eslintConfig = defineConfig(
     },
     settings: {
       react: {
-        version: "19.1.1",
+        version: "19.2.0",
       },
       node: {
         version: "24",

@@ -5,7 +5,38 @@ applyTo: '**/*.ts'
 
 # TypeScript Development
 
-> These instructions assume projects are built with TypeScript 5.x (or newer) compiling to an ES2022 JavaScript baseline. Adjust guidance if your runtime requires older language targets or down-level transpilation.
+> These instructions assume projects are built with TypeScript 5.9.3 compiling to an ES2022 JavaScript baseline. Adjust guidance if your runtime requires older language targets or down-level transpilation.
+
+## 📚 Essential Context
+
+**This project uses STRICTEST possible TypeScript configuration:**
+
+```json
+{
+  "strict": true,
+  "noImplicitAny": true,
+  "strictNullChecks": true,
+  "noUncheckedIndexedAccess": true,
+  "exactOptionalPropertyTypes": true,
+  "noPropertyAccessFromIndexSignature": true,
+  "noImplicitReturns": true,
+  "noFallthroughCasesInSwitch": true
+}
+```
+
+**Key TypeScript Patterns in This Codebase:**
+- Domain-Driven Design types (see `src/types/DDD/`)
+- Discriminated unions for state machines
+- Branded types for domain concepts (Invoice IDs, etc.)
+- Type guards and validators
+- Utility types for common patterns
+
+**Reference:**
+- Main Instructions: `.github/copilot-instructions.md` (Type Safety section)
+- Domain Types: `sites/arolariu.ro/src/types/`
+- **RFCs**: Check `docs/rfc/` for type patterns and architectural decisions
+  - Frontend RFCs: 1000-1999 (frontend type patterns)
+  - Backend RFCs: 2000-2999 (DDD type patterns)
 
 ## Core Intent
 
@@ -13,6 +44,7 @@ applyTo: '**/*.ts'
 - Prefer readable, explicit solutions over clever shortcuts.
 - Extend current abstractions before inventing new ones.
 - Prioritize maintainability and clarity, short methods and classes, clean code.
+- **Never use `any`** - this is a strict TypeScript codebase.
 
 ## General Guardrails
 
@@ -98,6 +130,115 @@ applyTo: '**/*.ts'
 - Add or update unit tests with the project's framework and naming style.
 - Expand integration or end-to-end suites when behavior crosses modules or platform APIs.
 - Run targeted test scripts for quick feedback before submitting.
+- Minimum 85% code coverage for critical paths.
+
+## Domain-Driven Design Type Patterns
+
+### Base Entity Types
+```typescript
+// types/DDD/Entities/BaseEntity.ts
+export interface BaseEntity<T> {
+  id: T;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// types/DDD/Entities/NamedEntity.ts
+export interface NamedEntity<T> extends BaseEntity<T> {
+  name: string;
+}
+```
+
+### Value Objects
+```typescript
+// Immutable value objects for domain concepts
+export interface Money {
+  readonly amount: number;
+  readonly currency: Currency;
+}
+
+// Type guards for validation
+export function isMoney(obj: unknown): obj is Money {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    "amount" in obj &&
+    "currency" in obj
+  );
+}
+```
+
+### Discriminated Unions
+```typescript
+// State machines with exhaustive checks
+type LoadingState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; data: DataType }
+  | { status: "error"; error: Error };
+
+function handleState(state: LoadingState) {
+  switch (state.status) {
+    case "idle":
+      return null;
+    case "loading":
+      return <Spinner />;
+    case "success":
+      return <Data data={state.data} />;
+    case "error":
+      return <Error error={state.error} />;
+  }
+}
+```
+
+### Branded Types
+```typescript
+// Prevent type confusion for domain IDs
+type InvoiceId = string & { readonly __brand: "InvoiceId" };
+type UserId = string & { readonly __brand: "UserId" };
+
+function createInvoiceId(id: string): InvoiceId {
+  return id as InvoiceId;
+}
+
+// Now these cannot be confused
+function getInvoice(id: InvoiceId): Invoice { /* ... */ }
+// getInvoice(userId); // Type error!
+```
+
+## Quick Reference
+
+### Project-Specific Type Locations
+```
+sites/arolariu.ro/src/types/
+├── index.ts              # Global types
+├── DDD/                  # Domain-Driven Design patterns
+│   ├── Entities/        # Base entity interfaces
+│   └── ValueObjects/    # Value object types
+├── invoices/            # Invoice domain types
+│   ├── Invoice.ts
+│   ├── Product.ts
+│   └── Merchant.ts
+└── typedEnv.ts          # Type-safe environment variables
+```
+
+### Common Type Utilities
+- `Readonly<T>`: Make all properties readonly
+- `Partial<T>`: Make all properties optional
+- `Required<T>`: Make all properties required
+- `Pick<T, K>`: Select specific properties
+- `Omit<T, K>`: Exclude specific properties
+- `Record<K, V>`: Object with specific key-value types
+- `NonNullable<T>`: Exclude null and undefined
+- `ReturnType<T>`: Extract function return type
+- `Parameters<T>`: Extract function parameter types
+
+### Strict Mode Implications
+- **No implicit any**: All types must be explicit
+- **Strict null checks**: Handle null/undefined explicitly
+- **No unchecked index access**: Array access returns `T | undefined`
+- **Exact optional properties**: undefined ≠ missing property
+- **No implicit returns**: All code paths must return a value
 - Avoid brittle timing assertions; prefer fake timers or injected clocks.
 
 ## Performance & Reliability

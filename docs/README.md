@@ -38,6 +38,7 @@ All architectural RFCs are organized by number ranges in a single directory:
 
 **Backend (2000-2999)**
 - [RFC 2001: Domain-Driven Design Architecture](./rfc/2001-domain-driven-design-architecture.md) - ✅ Implemented
+- [RFC 2002: OpenTelemetry Backend Observability](./rfc/2002-opentelemetry-backend-observability.md) - ✅ Implemented
 - .NET API architecture
 - Domain-Driven Design (DDD) patterns
 - SOLID principles implementation

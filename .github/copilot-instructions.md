@@ -7,18 +7,19 @@ This document provides comprehensive guidelines for GitHub Copilot when working 
 ## Table of Contents
 
 1. [Monorepo Architecture](#monorepo-architecture)
-2. [Technology Stack](#technology-stack)
-3. [Code Quality Standards](#code-quality-standards)
-4. [Frontend Development (Next.js)](#frontend-development-nextjs)
-5. [Backend Development (.NET)](#backend-development-net)
-6. [Shared Components Library](#shared-components-library)
-7. [Type Safety & TypeScript](#type-safety--typescript)
-8. [State Management](#state-management)
-9. [Testing Practices](#testing-practices)
-10. [Infrastructure & Deployment](#infrastructure--deployment)
-11. [Naming Conventions](#naming-conventions)
-12. [Performance Considerations](#performance-considerations)
-13. [Security Guidelines](#security-guidelines)
+2. [Documentation & Architecture RFCs](#documentation--architecture-rfcs)
+3. [Technology Stack](#technology-stack)
+4. [Code Quality Standards](#code-quality-standards)
+5. [Frontend Development (Next.js)](#frontend-development-nextjs)
+6. [Backend Development (.NET)](#backend-development-net)
+7. [Shared Components Library](#shared-components-library)
+8. [Type Safety & TypeScript](#type-safety--typescript)
+9. [State Management](#state-management)
+10. [Testing Practices](#testing-practices)
+11. [Infrastructure & Deployment](#infrastructure--deployment)
+12. [Naming Conventions](#naming-conventions)
+13. [Performance Considerations](#performance-considerations)
+14. [Security Guidelines](#security-guidelines)
 
 ---
 
@@ -53,6 +54,90 @@ arolariu.ro/
 - Nx caches build outputs for faster rebuilds
 - Use `nx affected` to run tasks only on changed projects
 - The component library (`@arolariu/components`) is a shared dependency
+
+---
+
+## Documentation & Architecture RFCs
+
+### Documentation Structure
+The `docs/` directory contains comprehensive documentation about the system architecture, design decisions, and best practices:
+
+```
+docs/
+├── README.md              # Documentation index
+├── RFC_TEMPLATE.md        # Template for new RFCs
+├── backend/               # Backend-specific documentation
+│   └── README.md
+├── frontend/              # Frontend-specific documentation
+│   └── README.md
+└── rfc/                   # Request for Comments (architectural decisions)
+    ├── 1001-opentelemetry-observability-system.md
+    └── 2001-domain-driven-design-architecture.md
+```
+
+### Understanding the System Through RFCs
+
+**Always consult the RFC documents** when working on significant features or architectural changes. These documents provide:
+
+#### RFC 1001: OpenTelemetry Observability System
+- **Topic**: Distributed tracing, metrics, and logging infrastructure
+- **Components**: `sites/arolariu.ro/src/lib/telemetry.ts`, `src/instrumentation.ts`
+- **Key Concepts**:
+  - Type-safe OpenTelemetry SDK implementation
+  - Strongly-typed span attributes and semantic conventions
+  - SSR/CSR context differentiation
+  - Performance monitoring patterns
+  - Structured logging with trace correlation
+- **When to Reference**:
+  - Adding new telemetry/observability features
+  - Debugging performance issues
+  - Understanding trace context flow through the application
+
+#### RFC 2001: Domain-Driven Design Architecture
+- **Topic**: Backend modular monolith architecture
+- **Components**: `sites/api.arolariu.ro/src/Domain/`
+- **Key Concepts**:
+  - Bounded contexts (General, Invoices, Auth domains)
+  - Rich domain models with encapsulated business logic
+  - Aggregate roots, value objects, and domain events
+  - Repository pattern and data access
+  - SOLID principles application
+  - 85%+ test coverage standards
+- **When to Reference**:
+  - Adding new backend domains or features
+  - Understanding domain boundaries and interactions
+  - Implementing new business logic
+  - Refactoring backend code
+
+### RFC Process
+
+When making architectural changes:
+
+1. **Read Relevant RFCs**: Check if existing RFCs document patterns or decisions
+2. **Follow Established Patterns**: Use the same architectural approaches documented in RFCs
+3. **Document New Decisions**: Significant architectural changes should result in new RFCs
+4. **Use RFC Template**: `docs/RFC_TEMPLATE.md` provides the structure for new RFCs
+
+### Key Architectural Principles from RFCs
+
+#### From RFC 1001 (Observability)
+- **Type Safety First**: Use strongly-typed telemetry APIs
+- **Context Awareness**: Distinguish between server/client/edge execution contexts
+- **Semantic Conventions**: Follow OpenTelemetry standards strictly
+- **Performance Conscious**: Zero runtime overhead through efficient exporters
+
+#### From RFC 2001 (DDD)
+- **Ubiquitous Language**: Code terminology matches business domain
+- **Rich Domain Models**: Business logic belongs in domain entities
+- **Bounded Contexts**: Clear separation between domains
+- **Testability**: Comprehensive test coverage with clear boundaries
+
+### When to Consult Documentation
+
+- **Before implementing new features**: Understand existing patterns
+- **When encountering unfamiliar code**: Check if an RFC explains the design
+- **During code reviews**: Validate adherence to documented architecture
+- **When debugging**: RFCs provide context on why systems work the way they do
 
 ---
 
@@ -989,15 +1074,16 @@ import {useZustandStore} from "@/hooks/stateStore";
 
 When working with this codebase:
 
-1. **Follow the monorepo structure** - Use Nx commands and respect project boundaries
-2. **Embrace strict typing** - TypeScript strict mode is non-negotiable
-3. **Prefer Server Components** - Use Client Components only when needed
-4. **Write comprehensive tests** - Unit, integration, and E2E coverage
-5. **Document public APIs** - Use JSDoc/XML doc comments
-6. **Follow DDD principles** - Respect domain boundaries in the backend
-7. **Optimize for performance** - Use memo, lazy loading, and code splitting
-8. **Prioritize security** - Validate inputs, sanitize outputs, use CSP
-9. **Maintain accessibility** - Follow WCAG standards and semantic HTML
-10. **Keep code consistent** - ESLint and Prettier enforce the rules
+1. **Consult the documentation** - Always check `docs/rfc/` for architectural decisions and patterns before making significant changes
+2. **Follow the monorepo structure** - Use Nx commands and respect project boundaries
+3. **Embrace strict typing** - TypeScript strict mode is non-negotiable
+4. **Prefer Server Components** - Use Client Components only when needed
+5. **Write comprehensive tests** - Unit, integration, and E2E coverage
+6. **Document public APIs** - Use JSDoc/XML doc comments
+7. **Follow DDD principles** - Respect domain boundaries in the backend
+8. **Optimize for performance** - Use memo, lazy loading, and code splitting
+9. **Prioritize security** - Validate inputs, sanitize outputs, use CSP
+10. **Maintain accessibility** - Follow WCAG standards and semantic HTML
+11. **Keep code consistent** - ESLint and Prettier enforce the rules
 
 This is a modern, enterprise-grade monorepo with high standards for code quality, type safety, and architectural patterns. All contributions should align with these established practices.
