@@ -50,10 +50,13 @@ export function parseNewmanReport(reportData: NewmanReport): NewmanExecutionStat
       const failedAssertions = execution.assertions?.filter((assertion) => assertion.error !== undefined) ?? [];
       const responseBody = response?.stream ? Buffer.from(response.stream).toString("utf-8").substring(0, 500) : "";
 
+      // Extract URL - use raw string if available, otherwise construct from parts
+      const urlString = request.url.raw || `${request.url.protocol}://${request.url.host.join(".")}/${request.url.path.join("/")}`;
+
       failedRequestDetails.push({
         name: item.name,
         method: request.method,
-        url: request.url.toString(),
+        url: urlString,
         statusCode: response?.code ?? 0,
         responseTime: response?.responseTime ?? 0,
         failedAssertions: failedAssertions.map((assertion) => ({
@@ -86,6 +89,51 @@ export function parseNewmanReport(reportData: NewmanReport): NewmanExecutionStat
 }
 
 /**
+ * Generates markdown for a single failed request
+ * @param failure - Failed request details
+ * @param index - Request index (1-based)
+ * @returns Formatted markdown for the failed request
+ */
+function generateFailedRequestMarkdown(failure: NewmanFailedRequest, index: number): string {
+  let markdown = `<details>\n`;
+  markdown += `<summary><strong>${index}. ${failure.name}</strong> - ${failure.method} ${failure.statusCode} (${failure.responseTime}ms)</summary>\n\n`;
+
+  markdown += "**Request Details:**\n\n";
+  markdown += `- **Method:** \`${failure.method}\`\n`;
+  markdown += `- **URL:** \`${failure.url}\`\n`;
+
+  let statusEmoji = "";
+  if (failure.statusCode >= 500) {
+    statusEmoji = "🔴";
+  } else if (failure.statusCode >= 400) {
+    statusEmoji = "🟠";
+  }
+  markdown += `- **Status Code:** \`${failure.statusCode}\` ${statusEmoji}\n`;
+  markdown += `- **Response Time:** \`${failure.responseTime}ms\`\n\n`;
+
+  if (failure.failedAssertions.length > 0) {
+    markdown += "**Failed Assertions:**\n\n";
+    for (const assertion of failure.failedAssertions) {
+      markdown += `- ❌ **${assertion.assertion}**\n`;
+      markdown += `  \`\`\`\n  ${assertion.error}\n  \`\`\`\n`;
+    }
+    markdown += "\n";
+  }
+
+  if (failure.responseBody?.trim()) {
+    markdown += "<details>\n";
+    markdown += "<summary>Response Body (truncated to 500 chars)</summary>\n\n";
+    markdown += "```\n";
+    markdown += failure.responseBody;
+    markdown += "\n```\n";
+    markdown += "</details>\n\n";
+  }
+
+  markdown += `</details>\n\n`;
+  return markdown;
+}
+
+/**
  * Generates a detailed markdown section for Newman test results
  * @param stats - Parsed Newman execution statistics
  * @param testType - Type of test (e.g., 'Frontend', 'Backend')
@@ -97,59 +145,44 @@ export function parseNewmanReport(reportData: NewmanReport): NewmanExecutionStat
  * ```
  */
 export function generateNewmanResultsSection(stats: NewmanExecutionStats, testType: string): string {
-  let markdown = `\n### 📊 ${testType} Newman Test Results\n\n`;
+  let markdown = `\n## 📊 ${testType} Newman Test Results\n\n`;
 
   // Overall statistics
-  markdown += "**Test Execution Summary:**\n\n";
+  markdown += "### Test Execution Summary\n\n";
   markdown += "| Metric | Value |\n";
   markdown += "|--------|-------|\n";
-  markdown += `| Collection | ${stats.collectionName} |\n`;
+  markdown += `| Collection | \`${stats.collectionName}\` |\n`;
   markdown += `| Total Requests | ${stats.totalRequests} |\n`;
-  markdown += `| Failed Requests | **${stats.failedRequests}** |\n`;
-  markdown += `| Success Rate | ${stats.successRate.toFixed(2)}% |\n`;
+
+  const failedRequestsDisplay = stats.failedRequests > 0 ? `**${stats.failedRequests}** ❌` : `${stats.failedRequests} ✅`;
+  markdown += `| Failed Requests | ${failedRequestsDisplay} |\n`;
+  markdown += `| Success Rate | **${stats.successRate.toFixed(2)}%** |\n`;
   markdown += `| Total Assertions | ${stats.totalAssertions} |\n`;
-  markdown += `| Failed Assertions | **${stats.failedAssertions}** |\n`;
-  markdown += `| Assertion Success Rate | ${stats.assertionSuccessRate.toFixed(2)}% |\n`;
-  markdown += `| Total Duration | ${(stats.timings.totalDuration / 1000).toFixed(2)}s |\n`;
+
+  const failedAssertionsDisplay = stats.failedAssertions > 0 ? `**${stats.failedAssertions}** ❌` : `${stats.failedAssertions} ✅`;
+  markdown += `| Failed Assertions | ${failedAssertionsDisplay} |\n`;
+  markdown += `| Assertion Success Rate | **${stats.assertionSuccessRate.toFixed(2)}%** |\n`;
+  markdown += `| Total Duration | \`${(stats.timings.totalDuration / 1000).toFixed(2)}s\` |\n`;
   markdown += "\n";
 
   // Performance metrics
-  markdown += "**Performance Metrics:**\n\n";
-  markdown += "| Metric | Value (ms) |\n";
-  markdown += "|--------|------------|\n";
-  markdown += `| Response Time (Min) | ${stats.timings.responseTimeMin} |\n`;
-  markdown += `| Response Time (Avg) | **${stats.timings.responseTimeAvg}** |\n`;
-  markdown += `| Response Time (Max) | ${stats.timings.responseTimeMax} |\n`;
+  markdown += "### ⏱️ Performance Metrics\n\n";
+  markdown += "| Metric | Value |\n";
+  markdown += "|--------|-------|\n";
+  markdown += `| Response Time (Min) | \`${stats.timings.responseTimeMin}ms\` |\n`;
+  markdown += `| Response Time (Avg) | **\`${stats.timings.responseTimeAvg}ms\`** |\n`;
+  markdown += `| Response Time (Max) | \`${stats.timings.responseTimeMax}ms\` |\n`;
   markdown += "\n";
 
   // Failed requests details
   if (stats.failures.length > 0) {
-    markdown += "**❌ Failed Requests:**\n\n";
-
+    markdown += "### ❌ Failed Requests\n\n";
     for (const [index, failure] of stats.failures.entries()) {
-      markdown += `#### ${index + 1}. ${failure.name}\n\n`;
-      markdown += `- **Method:** \`${failure.method}\`\n`;
-      markdown += `- **URL:** \`${failure.url}\`\n`;
-      markdown += `- **Status Code:** \`${failure.statusCode}\`\n`;
-      markdown += `- **Response Time:** ${failure.responseTime}ms\n`;
-
-      if (failure.failedAssertions.length > 0) {
-        markdown += "\n**Failed Assertions:**\n\n";
-        for (const assertion of failure.failedAssertions) {
-          markdown += `- ❌ **${assertion.assertion}**\n`;
-          markdown += `  \`\`\`\n  ${assertion.error}\n  \`\`\`\n`;
-        }
-      }
-
-      if (failure.responseBody) {
-        markdown += "\n**Response Body (truncated):**\n\n";
-        markdown += "```\n";
-        markdown += failure.responseBody;
-        markdown += "\n```\n";
-      }
-
-      markdown += "\n---\n\n";
+      markdown += generateFailedRequestMarkdown(failure, index + 1);
     }
+  } else {
+    markdown += "### ✅ All Requests Passed\n\n";
+    markdown += "No failed requests detected.\n\n";
   }
 
   return markdown;

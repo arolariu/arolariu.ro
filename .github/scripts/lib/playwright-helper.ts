@@ -4,10 +4,7 @@
  * @param workflowRunUrl - The URL to the workflow run for artifact links.
  * @returns Markdown string for the Playwright test results section.
  */
-export default async function getPlaywrightResultsSection(
-  jobStatus: string,
-  workflowRunUrl: string
-): Promise<string> {
+export default async function getPlaywrightResultsSection(jobStatus: string, workflowRunUrl: string): Promise<string> {
   let statusEmoji: string;
   if (jobStatus === "success") {
     statusEmoji = "✅";
