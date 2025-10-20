@@ -11,6 +11,7 @@
       "script": {
         "type": "text/javascript",
         "exec": [
+          "// Collection-level test: RESTful status code validation",
           "pm.test(\"Response status follows RESTful conventions (collection-level)\", function () {",
           "    var method = pm.request.method.toUpperCase();",
           "    var code = pm.response.code;",
@@ -22,7 +23,20 @@
           "    else if (method === 'DELETE') { expectedRange = [200, 299]; }",
           "    else { expectedRange = [200, 399]; }",
           "    pm.expect(code).to.be.within(expectedRange[0], expectedRange[1]);",
-          "});"
+          "});",
+          "",
+          "// Collection-level test: Response time performance",
+          "pm.test(\"Response time is acceptable (< 5000ms)\", function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "// Collection-level test: Content-Type header validation",
+          "pm.test(\"Content-Type header is present\", function () {",
+          "    pm.expect(pm.response.headers.get('Content-Type')).to.exist;",
+          "});",
+          "",
+          "// Log performance metrics for detailed diagnostics",
+          "console.log(`Request: ${pm.info.requestName} - Status: ${pm.response.code} - ${pm.response.responseTime}ms`);"
         ]
       }
     }

@@ -21,7 +21,9 @@ import {
   generateLogTailSection,
   generateNextStepsSection,
 } from "../lib/markdown-builder.ts";
+import {categorizeFailures, generateNewmanResultsSection, parseNewmanReport} from "../lib/newman-parser.ts";
 import type {ScriptParams} from "../types/index.ts";
+import type {NewmanReport} from "../types/newman-types.ts";
 import type {BackendHealthCheck, E2ETestResults, TestArtifactPaths, WorkflowMetadata} from "../types/workflow-types.ts";
 
 /**
@@ -183,6 +185,52 @@ async function loadLogTails(artifacts: TestArtifactPaths, tailLength: number = D
 }
 
 /**
+ * Loads and parses Newman JSON reports from test artifacts
+ * @param artifacts - Discovered test artifact paths containing Newman JSON reports
+ * @returns Promise resolving to object with parsed frontend and backend Newman stats (or null if not found)
+ * @example
+ * ```typescript
+ * const newman = await loadNewmanReports(artifacts);
+ * if (newman.frontend) console.log(`Frontend: ${newman.frontend.failedRequests} failures`);
+ * ```
+ */
+async function loadNewmanReports(artifacts: TestArtifactPaths): Promise<{
+  frontend: ReturnType<typeof parseNewmanReport> | null;
+  backend: ReturnType<typeof parseNewmanReport> | null;
+}> {
+  const newman = {
+    frontend: null as ReturnType<typeof parseNewmanReport> | null,
+    backend: null as ReturnType<typeof parseNewmanReport> | null,
+  };
+
+  // Find Newman JSON reports
+  const frontendReport = artifacts.reports?.find((r) => r.includes("newman-frontend.json"));
+  const backendReport = artifacts.reports?.find((r) => r.includes("newman-backend.json"));
+
+  // Parse frontend report
+  if (frontendReport && (await fileExists(frontendReport))) {
+    try {
+      const reportData = await readJsonFile<NewmanReport>(frontendReport);
+      newman.frontend = parseNewmanReport(reportData);
+    } catch (error) {
+      console.warn(`Failed to parse frontend Newman report:`, error);
+    }
+  }
+
+  // Parse backend report
+  if (backendReport && (await fileExists(backendReport))) {
+    try {
+      const reportData = await readJsonFile<NewmanReport>(backendReport);
+      newman.backend = parseNewmanReport(reportData);
+    } catch (error) {
+      console.warn(`Failed to parse backend Newman report:`, error);
+    }
+  }
+
+  return newman;
+}
+
+/**
  * Generates the complete markdown body for an E2E test failure GitHub issue
  * @param metadata - Workflow execution metadata (run ID, repository, date, etc.)
  * @param results - Test execution results for frontend and backend jobs
@@ -204,6 +252,40 @@ async function generateIssueBody(metadata: WorkflowMetadata, results: E2ETestRes
 
   // Add job status table
   body += generateJobStatusTable(results);
+
+  // Add Newman test results (detailed statistics)
+  const newman = await loadNewmanReports(artifacts);
+  if (newman.frontend) {
+    body += generateNewmanResultsSection(newman.frontend, "Frontend");
+  }
+  if (newman.backend) {
+    body += generateNewmanResultsSection(newman.backend, "Backend");
+  }
+
+  // Add failure categorization if we have Newman data
+  if (newman.frontend || newman.backend) {
+    body += "\n## 📊 Failure Analysis\n\n";
+
+    if (newman.frontend) {
+      const frontendCategories = categorizeFailures(newman.frontend);
+      body += "### Frontend Failure Breakdown\n\n";
+      body += `- **Client Errors (4xx):** ${frontendCategories.clientErrors}\n`;
+      body += `- **Server Errors (5xx):** ${frontendCategories.serverErrors}\n`;
+      body += `- **Timeouts:** ${frontendCategories.timeouts}\n`;
+      body += `- **Assertion Failures:** ${frontendCategories.assertionFailures}\n`;
+      body += `- **Other Errors:** ${frontendCategories.other}\n\n`;
+    }
+
+    if (newman.backend) {
+      const backendCategories = categorizeFailures(newman.backend);
+      body += "### Backend Failure Breakdown\n\n";
+      body += `- **Client Errors (4xx):** ${backendCategories.clientErrors}\n`;
+      body += `- **Server Errors (5xx):** ${backendCategories.serverErrors}\n`;
+      body += `- **Timeouts:** ${backendCategories.timeouts}\n`;
+      body += `- **Assertion Failures:** ${backendCategories.assertionFailures}\n`;
+      body += `- **Other Errors:** ${backendCategories.other}\n\n`;
+    }
+  }
 
   // Add health check section
   const healthCheck = await loadHealthCheckData(artifacts);

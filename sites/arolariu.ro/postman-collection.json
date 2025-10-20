@@ -11,9 +11,21 @@
       "script": {
         "type": "text/javascript",
         "exec": [
+          "// Collection-level test validations",
           "pm.test(\"Response status is successful\", function () {",
           "    pm.expect(pm.response.code).to.be.within(200, 299);",
-          "});"
+          "});",
+          "",
+          "pm.test(\"Response time is acceptable\", function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "pm.test(\"Response has valid headers\", function () {",
+          "    pm.expect(pm.response.headers.get('Content-Type')).to.exist;",
+          "});",
+          "",
+          "// Log performance metrics",
+          "console.log(`Request: ${pm.info.requestName} - ${pm.response.responseTime}ms`);"
         ]
       }
     }
