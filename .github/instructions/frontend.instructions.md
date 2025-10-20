@@ -1,9 +1,42 @@
+---
+description: 'Next.js and React development standards with App Router, RSC, and observability'
+applyTo: 'sites/arolariu.ro/**/*.tsx, sites/arolariu.ro/**/*.ts, sites/arolariu.ro/**/*.jsx, sites/arolariu.ro/**/*.js, sites/arolariu.ro/**/*.css'
+---
+
 # Copilot Instructions for React/Next.js Codebase
+
+## 📚 Essential Context
+
+**Before implementing any frontend code, consult these resources:**
+
+1. **Frontend RFCs**: Check `docs/rfc/` for frontend-specific architectural decisions
+   - Frontend RFCs are numbered **1000-1999**
+   - Review relevant RFCs for observability, architecture patterns, and best practices
+   - Examples: OpenTelemetry implementation, type-safe telemetry, SSR/CSR patterns
+
+2. **Frontend Documentation**: `docs/frontend/README.md`
+   - Component patterns and guidelines
+   - State management strategies
+   - Performance optimization techniques
+
+3. **Main Copilot Instructions**: `.github/copilot-instructions.md`
+   - Complete monorepo architecture
+   - Component library usage (@arolariu/components)
+   - Testing and quality standards
+
+**Technology Stack:**
+- Next.js 16.0.0-beta.0 (App Router with React Server Components)
+- React 19.2.0 (with RSC support)
+- TypeScript 5.9.3 (strict mode)
+- Tailwind CSS 4.1.14
+- Zustand 5.0.8 for state management
+- Clerk for authentication
+- next-intl 4.3.11 for internationalization
 
 ## Project Overview
 
-This is a Next.js 15+ application with TypeScript, using the App Router pattern.
-The project follows domain-driven design principles with a focus on type safety, performance, and maintainability.
+This is a Next.js 16 application with TypeScript, using the App Router pattern with React Server Components as default.
+The project follows domain-driven design principles with a focus on type safety, performance, observability, and maintainability.
 
 ## Architecture & Structure
 
@@ -398,16 +431,108 @@ if (isLoading) {
 - Handle escape key and backdrop clicks appropriately
 - Size dialogs appropriately for content
 
+## React Server Components (RSC) Guidelines
+
+### Default to Server Components
+
+```tsx
+// app/page.tsx - Server Component by default (NO "use client")
+export default async function Page() {
+  const data = await fetchData(); // Direct data fetching
+  return <PageContent data={data} />;
+}
+```
+
+### Client Components (When Needed)
+
+Only use `"use client"` directive when you need:
+- Browser APIs (window, localStorage, etc.)
+- Event handlers (onClick, onChange, etc.)
+- React hooks (useState, useEffect, etc.)
+- Browser-only libraries
+
+```tsx
+"use client"; // Required at top of file
+
+import { useState } from "react";
+
+export function InteractiveComponent() {
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount(count + 1)}>{count}</button>;
+}
+```
+
+### Server Actions Pattern
+
+```tsx
+// lib/actions/myAction.ts
+"use server";
+
+import { revalidatePath } from "next/cache";
+
+export async function updateData(formData: FormData) {
+  const data = processFormData(formData);
+  await saveToDatabase(data);
+  revalidatePath("/path");
+  return { success: true, data };
+}
+
+// Usage in component
+import { updateData } from "@/lib/actions/myAction";
+
+<form action={updateData}>
+  <input name="field" />
+  <button type="submit">Submit</button>
+</form>
+```
+
+## Observability & Telemetry
+
+### Implementing Telemetry (see Frontend RFCs 1000-1999)
+
+```tsx
+import { withSpan, createSpan } from "@/lib/telemetry";
+
+// Server Component with telemetry
+export default async function Page() {
+  return withSpan("Page.render", async (span) => {
+    span.setAttribute("page.route", "/example");
+    const data = await fetchData();
+    return <div>{data}</div>;
+  });
+}
+
+// Client Component with telemetry
+"use client";
+export function Component() {
+  const handleClick = async () => {
+    const span = createSpan("user.action", { action: "click" });
+    try {
+      await performAction();
+      span.end();
+    } catch (error) {
+      span.recordException(error);
+      span.end();
+    }
+  };
+}
+```
+
+**Note**: Consult Frontend RFCs (1000-1999) for detailed telemetry patterns and implementation guidance.
+```
+
 ## Common Anti-Patterns to Avoid
 
-1. **Prop Drilling**: Use Context API for shared state
-2. **Inline Styles**: Use Tailwind CSS classes or CSS modules
-3. **Direct DOM Manipulation**: Use React patterns and refs
-4. **Memory Leaks**: Always clean up resources in useEffect cleanup
-5. **Missing Error Boundaries**: Implement proper error handling
-6. **Inconsistent Naming**: Follow established naming conventions
-7. **Large Components**: Break down into smaller, focused components
-8. **Missing TypeScript**: Always use proper typing for props and state
+1. **Using "use client" unnecessarily**: Prefer Server Components by default
+2. **Prop Drilling**: Use Context API for shared state
+3. **Inline Styles**: Use Tailwind CSS classes or CSS modules
+4. **Direct DOM Manipulation**: Use React patterns and refs
+5. **Memory Leaks**: Always clean up resources in useEffect cleanup
+6. **Missing Error Boundaries**: Implement proper error handling
+7. **Inconsistent Naming**: Follow established naming conventions
+8. **Large Components**: Break down into smaller, focused components
+9. **Missing TypeScript**: Always use proper typing for props and state
+10. **Ignoring Telemetry**: Add observability to critical paths
 
 ## Documentation Standards
 
@@ -436,4 +561,40 @@ export async function processUploads(
 - Update architecture diagrams when needed
 - Include troubleshooting guides
 
-Remember: The goal is to maintain high code quality, consistency, and developer experience while building scalable and maintainable React applications.
+## Quick Reference
+
+### Project Structure
+```
+sites/arolariu.ro/
+├── src/
+│   ├── app/                    # Next.js App Router
+│   │   ├── layout.tsx         # Root layout (RSC)
+│   │   ├── page.tsx           # Home page (RSC)
+│   │   └── (routes)/          # Route groups
+│   ├── components/            # Shared components with logic
+│   ├── presentation/          # UI-only presentation components
+│   ├── hooks/                 # Custom React hooks
+│   ├── lib/                   # Utilities
+│   │   ├── telemetry.ts      # OpenTelemetry setup (RFC 1001)
+│   │   ├── utils.client.ts   # Client-only utilities
+│   │   ├── utils.server.ts   # Server-only utilities
+│   │   └── actions/          # Server Actions
+│   └── types/                 # TypeScript definitions
+└── public/                    # Static assets
+```
+
+### Common Commands
+- Dev: `npm run dev:website`
+- Build: `npm run build:website`
+- Test: `npm run test:website`
+- Lint: `npm run lint`
+- Format: `npm run format`
+
+### Key Patterns
+- **RSC First**: Server Components by default, Client Components only when needed
+- **Server Actions**: For mutations and form submissions
+- **Telemetry**: Observability patterns (see Frontend RFCs 1000-1999)
+- **Type Safety**: Strict TypeScript with domain types
+- **Component Library**: Use @arolariu/components for UI
+
+Remember: The goal is to maintain high code quality, consistency, and developer experience while building scalable, observable, and maintainable React applications with Next.js 16 and React 19.

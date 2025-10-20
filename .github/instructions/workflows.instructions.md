@@ -5,9 +5,37 @@ description: 'Comprehensive guide for building robust, secure, and efficient CI/
 
 # GitHub Actions CI/CD Best Practices
 
+## 📚 Essential Context for This Monorepo
+
+**This project uses a monorepo structure with multiple independent sites:**
+
+**Existing Workflows:**
+```
+.github/workflows/
+├── website-official-build.yml      # Main website CI
+├── website-official-release.yml    # Website deployment
+├── api-official-trigger.yml        # Backend API deployment
+├── cv-official-trigger.yml         # CV site deployment
+├── docs-official-trigger.yml       # Documentation deployment
+└── test-official-e2e.yml           # E2E testing
+```
+
+**Key Technologies:**
+- **Azure**: Deployment target (App Service, Static Web Apps)
+- **Docker**: Containerized deployments
+- **Node.js**: Frontend builds (Next.js, SvelteKit)
+- **.NET**: Backend API builds
+- **npm workspaces**: Monorepo package management
+
+**Monorepo-Specific Patterns:**
+- Build and deploy sites independently based on path changes
+- Use path filters to trigger workflows only for affected projects
+- Run tests in parallel across projects
+- Deploy multiple sites independently to different Azure resources
+
 ## Your Mission
 
-As GitHub Copilot, you are an expert in designing and optimizing CI/CD pipelines using GitHub Actions. Your mission is to assist developers in creating efficient, secure, and reliable automated workflows for building, testing, and deploying their applications. You must prioritize best practices, ensure security, and provide actionable, detailed guidance.
+As GitHub Copilot, you are an expert in designing and optimizing CI/CD pipelines using GitHub Actions. Your mission is to assist developers in creating efficient, secure, and reliable automated workflows for building, testing, and deploying their applications in a monorepo environment. You must prioritize best practices, ensure security, and provide actionable, detailed guidance.
 
 ## Core Concepts and Structure
 
@@ -598,6 +626,150 @@ This section provides an expanded guide to diagnosing and resolving frequent pro
     - **Rollback Immediately:**
         - If a production deployment fails or causes degradation, trigger the rollback strategy immediately to restore service. Diagnose the issue in a non-production environment.
 
+## Monorepo-Specific Patterns
+
+### **1. Path-Based Triggering**
+```yaml
+on:
+  push:
+    paths:
+      - 'sites/arolariu.ro/**'
+      - 'packages/components/**'
+```
+
+### **2. Matrix Strategy for Multiple Projects**
+```yaml
+strategy:
+  matrix:
+    project: [website, api, cv, docs]
+    include:
+      - project: website
+        path: sites/arolariu.ro
+        command: npm run build:website
+      - project: api
+        path: sites/api.arolariu.ro
+        command: npm run build:api
+```
+
+### **3. Conditional Deployment per Project**
+```yaml
+- name: Check if website changed
+  id: check
+  run: |
+    if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q "^sites/arolariu.ro/"; then
+      echo "changed=true" >> $GITHUB_OUTPUT
+    fi
+
+- name: Deploy website
+  if: steps.check.outputs.changed == 'true'
+  run: npm run deploy:website
+```
+
+### **4. npm Workspaces for Dependencies**
+```yaml
+- name: Install dependencies
+  run: npm ci
+
+- name: Build specific workspace
+  run: npm run build:website
+```
+
+## Project-Specific Examples
+
+### Website Build Workflow Pattern
+```yaml
+name: Website Build
+on:
+  push:
+    branches: [main, preview]
+    paths:
+      - 'sites/arolariu.ro/**'
+      - 'packages/components/**'
+      - 'package.json'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build website
+        run: npm run build:website
+
+      - name: Run tests
+        run: npm run test:website
+```
+
+### API Deployment Pattern
+```yaml
+name: API Deployment
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sites/api.arolariu.ro/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build and test
+        run: |
+          dotnet build sites/api.arolariu.ro
+          dotnet test sites/api.arolariu.ro/tests
+
+      - name: Publish
+        run: dotnet publish sites/api.arolariu.ro -c Release -o ./publish
+
+      - name: Deploy to Azure
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'arolariu-api'
+          publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
+          package: ./publish
+```
+
+## Quick Reference
+
+### Common Workflow Tasks
+- **Build Website**: `npm run build:website`
+- **Test Website**: `npm run test:website`
+- **Build API**: `dotnet build sites/api.arolariu.ro`
+- **Build Components**: `npm run build --workspace @arolariu/components`
+- **Lint**: `npm run lint`
+- **Format Check**: `npm run format:check`
+
+### Environment Secrets Required
+- `AZURE_WEBSITE_PUBLISH_PROFILE`: Website deployment
+- `AZURE_API_PUBLISH_PROFILE`: API deployment
+- `CLERK_SECRET_KEY`: Authentication
+- Other secrets per Azure Key Vault configuration
+
+### Best Practices for This Repo
+1. Use path-based triggers to build only changed projects
+2. Leverage npm workspace commands for specific builds
+3. Run tests in parallel across projects using matrix strategies
+4. Deploy only changed projects based on path filters
+5. Use environment-specific secrets
+6. Implement proper health checks post-deployment
+7. Use Azure OIDC for authentication (no long-lived secrets)
+8. Cache npm dependencies with `actions/cache`
+
 ## Conclusion
 
-GitHub Actions is a powerful and flexible platform for automating your software development lifecycle. By rigorously applying these best practices—from securing your secrets and token permissions, to optimizing performance with caching and parallelization, and implementing comprehensive testing and robust deployment strategies—you can guide developers in building highly efficient, secure, and reliable CI/CD pipelines. Remember that CI/CD is an iterative journey; continuously measure, optimize, and secure your pipelines to achieve faster, safer, and more confident releases. Your detailed guidance will empower teams to leverage GitHub Actions to its fullest potential and deliver high-quality software with confidence. This extensive document serves as a foundational resource for anyone looking to master CI/CD with GitHub Actions.
+GitHub Actions is a powerful and flexible platform for automating your software development lifecycle. By rigorously applying these best practices—from securing your secrets and token permissions, to optimizing performance with caching and parallelization, implementing monorepo-specific patterns with path-based triggers, and establishing comprehensive testing and robust deployment strategies—you can guide developers in building highly efficient, secure, and reliable CI/CD pipelines for complex monorepo architectures. Remember that CI/CD is an iterative journey; continuously measure, optimize, and secure your pipelines to achieve faster, safer, and more confident releases. Your detailed guidance will empower teams to leverage GitHub Actions to its fullest potential and deliver high-quality software with confidence. This extensive document serves as a foundational resource for anyone looking to master CI/CD with GitHub Actions in a monorepo environment.

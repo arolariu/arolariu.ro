@@ -7,6 +7,31 @@ applyTo: '**/*.cs,**/*.csproj,**/Program.cs,**/appsettings.json'
 
 You are an AI assistant specialized in Domain-Driven Design (DDD), SOLID principles, and .NET good practices for software Development. Follow these guidelines for building robust, maintainable systems.
 
+## 📚 Essential Context
+
+**Before implementing any backend code, consult these resources:**
+
+1. **Backend RFCs**: Check `docs/rfc/` for backend-specific architectural decisions
+   - Backend RFCs are numbered **2000-2999**
+   - Review relevant RFCs for DDD patterns, architecture decisions, and best practices
+   - Examples: modular monolith architecture, bounded contexts, domain events
+
+2. **Backend Documentation**: `docs/backend/README.md`
+   - Domain-specific implementation details
+   - Architecture decision records
+   - Integration patterns
+
+3. **Main Copilot Instructions**: `.github/copilot-instructions.md`
+   - Monorepo structure and conventions
+   - Testing standards and quality requirements
+   - Overall project architecture
+
+**Technology Stack:**
+- .NET 10.0 (LTS) - Use latest C# 13 features
+- Architecture: Modular Monolith with DDD
+- Testing: xUnit with 85%+ coverage requirement
+- Observability: OpenTelemetry integration
+
 ## MANDATORY THINKING PROCESS
 
 **BEFORE any implementation, you MUST:**
@@ -263,7 +288,51 @@ public void MethodName_Condition_ExpectedResult()
 * Maintain backward compatibility in public contracts.
 * Use domain events for cross-context communication.
 
+### OpenTelemetry & Observability
+
+* Implement distributed tracing for cross-domain operations.
+* Use structured logging with proper context propagation.
+* Emit domain-specific metrics for business operations.
+* Follow semantic conventions for spans and attributes.
+* Reference RFC 1001 for observability patterns.
+
+### .NET 10 Modern Features
+
+* Use `required` keyword for required properties (C# 11+).
+* Leverage `file`-scoped types for internal implementations.
+* Use collection expressions `[item1, item2]` for readability (C# 12+).
+* Implement primary constructors for simple classes (C# 12+).
+* Use `nameof` for parameter validation and reflection.
+* Leverage pattern matching for complex conditionals.
+
 **Remember**: These guidelines apply to ALL projects and should be the foundation for designing robust, maintainable financial systems.
+
+## Quick Reference
+
+### Project Structure
+```
+sites/api.arolariu.ro/
+├── src/
+│   ├── Core/                    # Application entry point
+│   │   ├── Program.cs          # Bootstrap configuration
+│   │   └── Domain/General/     # Infrastructure domain
+│   ├── Core.Auth/              # Authentication bounded context
+│   └── Invoices/               # Business domain
+└── tests/                      # Test projects
+```
+
+### Common Commands
+- Build: `dotnet build`
+- Test: `dotnet test`
+- Run: `dotnet run --project sites/api.arolariu.ro/src/Core`
+
+### Key DDD Patterns (See Backend RFCs 2000-2999)
+- **Aggregate Pattern**: Transactional consistency boundaries
+- **Value Objects**: Immutable domain concepts
+- **Domain Events**: Business state change notifications
+- **Repository Pattern**: Data access abstraction
+- **CQRS**: Command-Query Responsibility Segregation (where applicable)
+- **Check `docs/rfc/` for detailed implementation guidance**
 
 ## CRITICAL REMINDERS
 
