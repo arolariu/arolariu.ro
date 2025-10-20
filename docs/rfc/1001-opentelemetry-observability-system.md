@@ -43,33 +43,33 @@ Modern Next.js applications operating in SSR-first, CSR-second, and Backend-for-
 │                      Next.js Application                        │
 ├─────────────────────────────────────────────────────────────────┤
 │  instrumentation.ts                                             │
-│  ├─ startTelemetry() on Node.js runtime                        │
-│  └─ Initializes before application bootstrap                   │
+│  ├─ startTelemetry() on Node.js runtime                         │
+│  └─ Initializes before application bootstrap                    │
 ├─────────────────────────────────────────────────────────────────┤
 │  telemetry.ts                                                   │
 │  ├─ NodeSDK Configuration                                       │
-│  │  ├─ Auto-instrumentations (HTTP, Fetch, FS, DNS, etc.)     │
-│  │  ├─ OTLP Trace Exporter (BatchSpanProcessor)               │
-│  │  └─ OTLP Metric Exporter (PeriodicExportingMetricReader)   │
+│  │  ├─ Auto-instrumentations (HTTP, Fetch, FS, DNS, etc.)       │
+│  │  ├─ OTLP Trace Exporter (BatchSpanProcessor)                 │
+│  │  └─ OTLP Metric Exporter (PeriodicExportingMetricReader)     │
 │  ├─ Type System                                                 │
-│  │  ├─ LogLevel, RenderContext, HttpMethod                    │
-│  │  ├─ SpanOperationType, MetricName (template literals)      │
-│  │  └─ Semantic Attribute Interfaces (6 types)                │
+│  │  ├─ LogLevel, RenderContext, HttpMethod                      │
+│  │  ├─ SpanOperationType, MetricName (template literals)        │
+│  │  └─ Semantic Attribute Interfaces (6 types)                  │
 │  ├─ API Functions                                               │
-│  │  ├─ withSpan(), addSpanEvent(), setSpanAttributes()        │
-│  │  ├─ createCounter(), createHistogram(), createUpDownCounter() │
-│  │  └─ logWithTrace()                                          │
+│  │  ├─ withSpan(), addSpanEvent(), setSpanAttributes()          │
+│  │  ├─ createCounter(), createHistogram(), createUpDownCounter()│
+│  │  └─ logWithTrace()                                           │
 │  └─ Semantic Helpers                                            │
-│     ├─ createHttpServerAttributes()                            │
-│     ├─ createHttpClientAttributes()                            │
-│     ├─ createNextJsAttributes()                                │
-│     ├─ createDatabaseAttributes()                              │
-│     ├─ createCacheAttributes()                                 │
-│     ├─ createAuthAttributes()                                  │
-│     └─ createErrorAttributes()                                 │
+│     ├─ createHttpServerAttributes()                             │
+│     ├─ createHttpClientAttributes()                             │
+│     ├─ createNextJsAttributes()                                 │
+│     ├─ createDatabaseAttributes()                               │
+│     ├─ createCacheAttributes()                                  │
+│     ├─ createAuthAttributes()                                   │
+│     └─ createErrorAttributes()                                  │
 ├─────────────────────────────────────────────────────────────────┤
-│  Application Code (Pages, Components, API Routes)              │
-│  └─ Uses telemetry API with type-safe helpers                  │
+│  Application Code (Pages, Components, API Routes)               │
+│  └─ Uses telemetry API with type-safe helpers                   │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
