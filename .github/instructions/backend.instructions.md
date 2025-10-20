@@ -294,7 +294,7 @@ public void MethodName_Condition_ExpectedResult()
 * Use structured logging with proper context propagation.
 * Emit domain-specific metrics for business operations.
 * Follow semantic conventions for spans and attributes.
-* Reference RFC 1001 for observability patterns.
+* Reference RFC 2002 for observability patterns.
 
 ### .NET 10 Modern Features
 
