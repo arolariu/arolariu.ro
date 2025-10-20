@@ -11,9 +11,37 @@ on:
   workflow_dispatch:
 
 jobs:
+  setup:
+    name: '⚙️ Setup Dependencies'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v5.0.0
+
+      - name: 📦 Installing Node.js...
+        uses: actions/setup-node@v5.0.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: 📦 Installing dependencies...
+        run: npm ci
+
+      - name: 📦 Installing global dependencies...
+        run: npm install -g newman
+
+      - name: 💾 Cache node_modules for reuse
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}-${{ github.run_id }}
+
   frontend:
     name: '[Frontend] End-to-End Testing (🧪)'
     runs-on: ubuntu-latest
+    needs: setup
     outputs:
       duration: ${{ steps.test.outputs.duration }}
     steps:
@@ -25,10 +53,13 @@ jobs:
         with:
           node-version: 24
 
-      - name: 📦 Installing dependencies...
-        run: |
-          npm install
-          npm install -g newman
+      - name: � Restore node_modules from cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}-${{ github.run_id }}
 
       - name: 🚀 Running end-to-end tests...
         id: test
@@ -58,6 +89,7 @@ jobs:
   backend:
     name: '[Backend] End-to-End Testing (🧪)'
     runs-on: ubuntu-latest
+    needs: setup
     outputs:
       duration: ${{ steps.test.outputs.duration }}
     steps:
@@ -69,10 +101,13 @@ jobs:
         with:
           node-version: 24
 
-      - name: 📦 Installing dependencies...
-        run: |
-          npm install
-          npm install -g newman
+      - name: � Restore node_modules from cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            ~/.npm
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}-${{ github.run_id }}
 
       - name: 🌡️ Check dependencies health
         run: |
@@ -108,79 +143,61 @@ jobs:
 
   raise-issue-on-failure:
     name: 'Raise Issue on Failure'
-    needs: [frontend, backend]
+    needs: [setup, frontend, backend]
     runs-on: ubuntu-latest
     if: ${{ always() && (needs.frontend.result == 'failure' || needs.backend.result == 'failure') }}
     env:
       TZ: Europe/Bucharest
     steps:
-      - uses: actions/checkout@v5.0.0
-      - name: 📅 Get current date
-        id: date
-        run: echo "today=$(date +'%d-%m-%Y')" >> $GITHUB_OUTPUT
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v5.0.0
 
-      - name: Download all logs
+      - name: 📦 Installing Node.js...
+        uses: actions/setup-node@v5.0.0
+        with:
+          node-version: 24
+
+      - name: 📥 Download all test artifacts
         uses: actions/download-artifact@v5.0.0
         with:
           path: logs
 
-      - id: health
-        run: |
-          if [ -f logs/backend-test-logs/backend-health.json ]; then
-            {
-              echo 'json<<EOF'
-              cat logs/backend-test-logs/backend-health.json
-              printf '\nEOF\n'
-            } >> "$GITHUB_OUTPUT"
-          else
-            echo "json=No health data available" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Prepare assertion summaries
-        run: |
-          echo "### ❌ Assertion Summaries" > assertion-summaries.md
-          found=0
-          for f in logs/*/e2e-logs/*-summary.md; do
-            if [ -f "$f" ]; then
-              echo -e "\n#### $(basename "$f")" >> assertion-summaries.md
-              cat "$f" >> assertion-summaries.md
-              found=1
-            fi
-          done
-          if [ $found -eq 0 ]; then
-            echo "\nNo assertion summary files found." >> assertion-summaries.md
-          fi
-      - name: Prepare log tail
+      - name: 📝 Create log summary (if logs exist)
         run: |
           echo "## 🔥 Log Tail from Failed Jobs" > log-tail.md
-          for file in logs/*/*.log; do
-            echo -e "\n### $(basename "$file")" >> log-tail.md
-            tail -n 50 "$file" >> log-tail.md
-          done
+          # Check if any log files exist before processing
+          if compgen -G "logs/*/*.log" > /dev/null; then
+            for file in logs/*/*.log; do
+              if [ -f "$file" ]; then
+                echo -e "\n### $(basename "$file")" >> log-tail.md
+                tail -n 50 "$file" >> log-tail.md
+              fi
+            done
+            echo "✓ Log summary created successfully"
+          else
+            echo "⚠️ No log files found - skipping log summary creation"
+            echo -e "\n_No log files were found in the artifacts._" >> log-tail.md
+          fi
+        shell: bash
 
-      - name: Populate issue template
-        id: populate-template
+      - name: 🐛 Create GitHub Issue for Test Failure
+        uses: actions/github-script@v7
         env:
           WORKFLOW: ${{ github.workflow }}
           RUN_ID: ${{ github.run_id }}
           RUN_NUMBER: ${{ github.run_number }}
           EVENT_NAME: ${{ github.event_name }}
           SERVER_URL: ${{ github.server_url }}
-          REPOSITORY: ${{ github.repository }}
-          RUN_DATE: ${{ steps.date.outputs.today }}
           FRONTEND_STATUS: ${{ needs.frontend.result }}
           FRONTEND_DURATION: ${{ needs.frontend.outputs.duration }}
           BACKEND_STATUS: ${{ needs.backend.result }}
           BACKEND_DURATION: ${{ needs.backend.outputs.duration }}
-          HEALTH_JSON: ${{ steps.health.outputs.json }}
-        run: |
-          # Protect envsubst from literal $ in Markdown by escaping where needed
-          envsubst < .github/templates/e2e-test-template.md > populated-template.md
-          cat populated-template.md assertion-summaries.md log-tail.md > final-issue.md
-
-      - uses: peter-evans/create-issue-from-file@v5.0.1
+          ARTIFACTS_DIR: logs
         with:
-          title: "[${{ steps.date.outputs.today }}] Hourly Live Test Failed 🚨"
-          content-filepath: final-issue.md
-          labels: bug, automated-test-failure
-          assignees: arolariu
+          script: |
+            // Install dependencies required by the script
+            const { execSync } = require('child_process');
+            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
+
+            const {default: createE2EFailureIssueWrapper} = await import('${{ github.workspace }}/.github/scripts/src/create-e2e-failure-issue-wrapper.js');
+            await createE2EFailureIssueWrapper({github, context, core, exec});
