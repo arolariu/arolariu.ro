@@ -178,7 +178,7 @@ jobs:
     needs: [stats, formatting, linting]
     if: always()
     steps:
-      - name: � Checkout repository
+      - name: 🛫 Checkout repository
         uses: actions/checkout@v5
 
       - name: 📦 Setup Node.js environment
