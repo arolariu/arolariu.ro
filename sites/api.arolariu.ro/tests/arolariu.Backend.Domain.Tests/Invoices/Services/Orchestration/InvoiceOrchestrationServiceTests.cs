@@ -220,7 +220,7 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationDependencyValidationException(innerException);
 
     mockStorageService
- .Setup(s => s.ReadInvoiceObject(invoiceId, null))
+      .Setup(s => s.ReadInvoiceObject(invoiceId, null))
       .ThrowsAsync(foundationException);
 
     // Act & Assert
