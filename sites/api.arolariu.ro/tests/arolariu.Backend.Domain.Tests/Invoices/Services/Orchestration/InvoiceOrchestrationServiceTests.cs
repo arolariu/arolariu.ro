@@ -150,7 +150,7 @@ public sealed class InvoiceOrchestrationServiceTests
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockStorageService
-    .Setup(s => s.ReadInvoiceObject(invoiceId, null))
+      .Setup(s => s.ReadInvoiceObject(invoiceId, null))
       .ReturnsAsync(invoice);
 
     mockAnalysisService
