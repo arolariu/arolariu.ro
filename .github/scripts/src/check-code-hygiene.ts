@@ -28,6 +28,20 @@ export interface CodeHygieneResult {
   linesDeleted?: number;
   /** Bundle size comparison markdown (stats mode) */
   bundleSizeMarkdown?: string;
+  /** Files changed vs main branch (stats mode) */
+  filesChangedVsMain?: number;
+  /** Lines added vs main branch (stats mode) */
+  linesAddedVsMain?: number;
+  /** Lines deleted vs main branch (stats mode) */
+  linesDeletedVsMain?: number;
+  /** Files changed vs previous commit (stats mode) */
+  filesChangedVsPrev?: number;
+  /** Lines added vs previous commit (stats mode) */
+  linesAddedVsPrev?: number;
+  /** Lines deleted vs previous commit (stats mode) */
+  linesDeletedVsPrev?: number;
+  /** Whether this is the first commit in PR (stats mode) */
+  isFirstCommit?: boolean;
   /** Whether formatting changes are needed (format mode) */
   formattingNeeded?: boolean;
   /** List of files that need formatting (format mode) */
@@ -42,29 +56,48 @@ export interface CodeHygieneResult {
 
 /**
  * Computes statistics about code changes between commits
+ * Compares current commit against BOTH main branch AND previous commit (if not first)
  * @param params - Script execution parameters
  * @returns Promise resolving to statistics result
  */
 async function checkStats(params: ScriptParams): Promise<CodeHygieneResult> {
-  const {core} = params;
+  const {core, exec} = params;
 
   try {
     core.info("🔍 Computing code statistics...");
 
-    // Determine base and head commits
-    const baseRef = getEnvVar("BASE_REF") ?? getEnvVar("GITHUB_BASE_REF") ?? "origin/main";
     const headRef = getEnvVar("HEAD_REF") ?? getEnvVar("GITHUB_SHA") ?? "HEAD";
-
-    core.info(`Comparing ${baseRef}...${headRef}`);
 
     // Ensure we have the base branch fetched
     await ensureBranchFetched(params, "main");
 
-    // Get diff stats using reusable helper
-    const diffStats = await getGitDiffStats(params, baseRef, headRef);
+    // Compare against main branch
+    core.info("📊 Comparing against main branch...");
+    const diffVsMain = await getGitDiffStats(params, "origin/main", headRef);
+    core.info(`📊 vs Main: ${diffVsMain.filesChanged} files, +${diffVsMain.linesAdded} -${diffVsMain.linesDeleted}`);
 
-    core.info(`� Files changed: ${diffStats.filesChanged}`);
-    core.info(`📈 Lines: +${diffStats.linesAdded} -${diffStats.linesDeleted}`);
+    // Try to compare against previous commit (HEAD~1)
+    let diffVsPrev: typeof diffVsMain | null = null;
+    let isFirstCommit = false;
+
+    try {
+      const prevCommitCheck = await exec.getExecOutput("git", ["rev-parse", "--verify", "HEAD~1"], {
+        ignoreReturnCode: true,
+        silent: true,
+      });
+
+      if (prevCommitCheck.exitCode === 0) {
+        core.info("📊 Comparing against previous commit...");
+        diffVsPrev = await getGitDiffStats(params, "HEAD~1", headRef);
+        core.info(`� vs Previous: ${diffVsPrev.filesChanged} files, +${diffVsPrev.linesAdded} -${diffVsPrev.linesDeleted}`);
+      } else {
+        core.info("ℹ️ No previous commit found (first commit in PR)");
+        isFirstCommit = true;
+      }
+    } catch (error) {
+      core.info("ℹ️ Could not compare with previous commit (likely first commit)");
+      isFirstCommit = true;
+    }
 
     // Get bundle size comparison
     core.info("📦 Analyzing bundle sizes...");
@@ -79,20 +112,36 @@ async function checkStats(params: ScriptParams): Promise<CodeHygieneResult> {
       bundleSizeMarkdown = "_Bundle size comparison unavailable_";
     }
 
-    // Set outputs for GitHub Actions
-    core.setOutput("files-changed", diffStats.filesChanged.toString());
-    core.setOutput("lines-added", diffStats.linesAdded.toString());
-    core.setOutput("lines-deleted", diffStats.linesDeleted.toString());
-    core.setOutput("has-changes", diffStats.filesChanged > 0 ? "true" : "false");
+    // Set outputs for GitHub Actions (main comparison for primary display)
+    core.setOutput("files-changed", diffVsMain.filesChanged.toString());
+    core.setOutput("lines-added", diffVsMain.linesAdded.toString());
+    core.setOutput("lines-deleted", diffVsMain.linesDeleted.toString());
+    core.setOutput("has-changes", diffVsMain.filesChanged > 0 ? "true" : "false");
+
+    // Additional outputs for previous commit comparison
+    if (diffVsPrev) {
+      core.setOutput("files-changed-vs-prev", diffVsPrev.filesChanged.toString());
+      core.setOutput("lines-added-vs-prev", diffVsPrev.linesAdded.toString());
+      core.setOutput("lines-deleted-vs-prev", diffVsPrev.linesDeleted.toString());
+    }
+    core.setOutput("is-first-commit", isFirstCommit ? "true" : "false");
+    core.setOutput("bundle-size-markdown", bundleSizeMarkdown);
 
     core.info("✅ Statistics computation complete");
 
     return {
       success: true,
-      filesChanged: diffStats.filesChanged,
-      linesAdded: diffStats.linesAdded,
-      linesDeleted: diffStats.linesDeleted,
+      filesChanged: diffVsMain.filesChanged,
+      linesAdded: diffVsMain.linesAdded,
+      linesDeleted: diffVsMain.linesDeleted,
       bundleSizeMarkdown,
+      filesChangedVsMain: diffVsMain.filesChanged,
+      linesAddedVsMain: diffVsMain.linesAdded,
+      linesDeletedVsMain: diffVsMain.linesDeleted,
+      filesChangedVsPrev: diffVsPrev?.filesChanged ?? 0,
+      linesAddedVsPrev: diffVsPrev?.linesAdded ?? 0,
+      linesDeletedVsPrev: diffVsPrev?.linesDeleted ?? 0,
+      isFirstCommit,
     };
   } catch (error) {
     const err = error as Error;
@@ -154,6 +203,7 @@ async function checkFormatting(params: ScriptParams): Promise<CodeHygieneResult>
 
     core.info("✅ All files are properly formatted");
     core.setOutput("format-needed", "false");
+    core.setOutput("files-needing-format", "");
 
     return {
       success: true,
@@ -197,6 +247,8 @@ async function checkLinting(params: ScriptParams): Promise<CodeHygieneResult> {
       // Truncate output if too long
       const truncatedOutput = lintOutput.length > 50000 ? lintOutput.substring(0, 50000) + "\n\n... (output truncated)" : lintOutput;
 
+      core.setOutput("lint-output", truncatedOutput);
+
       return {
         success: false,
         lintingErrors: true,
@@ -207,6 +259,7 @@ async function checkLinting(params: ScriptParams): Promise<CodeHygieneResult> {
 
     core.info("✅ All linting checks passed");
     core.setOutput("lint-passed", "true");
+    core.setOutput("lint-output", "All checks passed!");
 
     return {
       success: true,

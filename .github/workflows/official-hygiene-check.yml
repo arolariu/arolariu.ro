@@ -19,15 +19,10 @@ env:
   HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
-  stats:
-    name: 📊 Code Statistics
+  hygiene-check-setup:
+    name: 🧹 Code Hygiene Check Setup
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    outputs:
-      has-changes: ${{ steps.check-stats.outputs.has-changes }}
-      files-changed: ${{ steps.check-stats.outputs.files-changed }}
-      lines-added: ${{ steps.check-stats.outputs.lines-added }}
-      lines-deleted: ${{ steps.check-stats.outputs.lines-deleted }}
+    timeout-minutes: 20
     steps:
       - name: 🛫 Checkout repository
         uses: actions/checkout@v5
@@ -41,8 +36,32 @@ jobs:
           node-version: 24
           cache: "npm"
 
+      - name: 🗂️ Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            **/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: 📥 Install dependencies
         run: npm ci --prefer-offline --no-audit
+
+      - name: 🗂️ Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+          cache: true
+
+      - name: 🗂️ Cache .NET packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/Directory.Build.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
       - name: 🔨 Build all projects
         run: npm run build
@@ -80,8 +99,8 @@ jobs:
     name: 🎨 Code Formatting
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: stats
-    if: needs.stats.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
+    needs: hygiene-check-setup
+    if: needs.hygiene-check-setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     outputs:
       format-needed: ${{ steps.check-format.outputs.format-needed }}
     steps:
@@ -128,8 +147,8 @@ jobs:
     name: 🔍 Code Linting
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: stats
-    if: needs.stats.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
+    needs: hygiene-check-setup
+    if: needs.hygiene-check-setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     outputs:
       lint-passed: ${{ steps.check-lint.outputs.lint-passed }}
     steps:
@@ -175,7 +194,7 @@ jobs:
   summary:
     name: 📋 Code Hygiene Summary
     runs-on: ubuntu-latest
-    needs: [stats, formatting, linting]
+    needs: [hygiene-check-setup, formatting, linting]
     if: always()
     steps:
       - name: � Checkout repository
@@ -192,12 +211,12 @@ jobs:
         env:
           COMMENT_TYPE: "summary"
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          STATS_RESULT: ${{ needs.stats.result }}
+          STATS_RESULT: ${{ needs.hygiene-check-setup.result }}
           FORMATTING_RESULT: ${{ needs.formatting.result }}
           LINTING_RESULT: ${{ needs.linting.result }}
-          FILES_CHANGED: ${{ needs.stats.outputs.files-changed }}
-          LINES_ADDED: ${{ needs.stats.outputs.lines-added }}
-          LINES_DELETED: ${{ needs.stats.outputs.lines-deleted }}
+          FILES_CHANGED: ${{ needs.hygiene-check-setup.outputs.files-changed }}
+          LINES_ADDED: ${{ needs.hygiene-check-setup.outputs.lines-added }}
+          LINES_DELETED: ${{ needs.hygiene-check-setup.outputs.lines-deleted }}
           GITHUB_SHA: ${{ github.sha }}
         with:
           script: |
