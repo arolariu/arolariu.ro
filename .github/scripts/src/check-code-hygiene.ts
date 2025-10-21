@@ -203,7 +203,7 @@ async function checkFormatting(params: ScriptParams): Promise<CodeHygieneResult>
 
     core.info("✅ All files are properly formatted");
     core.setOutput("format-needed", "false");
-    core.setOutput("files-needing-format", "");
+    core.setOutput("files-needing-format", "[]");
 
     return {
       success: true,
