@@ -43,8 +43,10 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
+          dotnet-version: ${{ env.DOTNET_VERSION }}
           fetch-depth: 0  # Need full history for git diff stats
-          install-node-deps: 'true'
+          setup-node: 'true'
+          setup-dotnet: 'true'
 
       - name: 📊 Computing the statistics...
         id: compute
@@ -67,15 +69,13 @@ jobs:
       format-needed: ${{ steps.check.outputs.format-needed }}
       files-needing-format: ${{ steps.check.outputs.files-needing-format }}
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5
-
-      - name: 📦 Setting up the workspace...
+      - name: 🧰 Setup workspace environment
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
           dotnet-version: ${{env.DOTNET_VERSION}}
-          fetch-depth: 1
+          setup-node: 'false'
+          setup-dotnet: 'false'
 
       - name: 🎨 Checking the formatting...
         id: check
@@ -96,15 +96,13 @@ jobs:
       lint-passed: ${{ steps.check.outputs.lint-passed }}
       lint-output: ${{ steps.check.outputs.lint-output }}
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5
-
-      - name: 📦 Setting up the workspace...
+      - name: 🧰 Setup workspace environment
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
           dotnet-version: ${{env.DOTNET_VERSION}}
-          fetch-depth: 1
+          setup-node: 'false'
+          setup-dotnet: 'false'
 
       - name: 🔍 Checking the linting...
         id: check
@@ -124,15 +122,13 @@ jobs:
     if: github.event_name == 'pull_request' && needs.stats.outputs.has-changes == 'true'
     timeout-minutes: 3
     steps:
-      - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5
-
-      - name: 📦 Setting up the workspace...
+      - name: 🧰 Setup workspace environment (minimal)
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
           dotnet-version: ${{env.DOTNET_VERSION}}
-          fetch-depth: 1
+          setup-node: 'false'
+          setup-dotnet: 'false'
 
       - name: 💬 Post statistics comment
         uses: actions/github-script@v8
@@ -156,12 +152,13 @@ jobs:
     if: github.event_name == 'pull_request' && needs.format.outputs.format-needed == 'true'
     timeout-minutes: 3
     steps:
-      - name: 📦 Setup workspace (minimal)
+      - name: 🧰 Setup workspace environment (minimal)
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
           dotnet-version: ${{env.DOTNET_VERSION}}
-          fetch-depth: 1
+          setup-node: 'false'
+          setup-dotnet: 'false'
 
       - name: 💬 Post formatting comment
         uses: actions/github-script@v8
@@ -183,12 +180,13 @@ jobs:
     if: github.event_name == 'pull_request' && needs.lint.outputs.lint-passed == 'false'
     timeout-minutes: 3
     steps:
-      - name: 📦 Setup workspace (minimal)
+      - name: 🧰 Setup workspace environment (minimal)
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
           dotnet-version: ${{env.DOTNET_VERSION}}
-          fetch-depth: 1
+          setup-node: 'false'
+          setup-dotnet: 'false'
 
       - name: 💬 Post linting comment
         uses: actions/github-script@v8
@@ -211,12 +209,13 @@ jobs:
     if: always()
     timeout-minutes: 3
     steps:
-      - name: 📦 Setup workspace (minimal)
+      - name: 🧰 Setup workspace environment (minimal)
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
           dotnet-version: ${{env.DOTNET_VERSION}}
-          fetch-depth: 1
+          setup-node: 'false'
+          setup-dotnet: 'false'
 
       - name: 💬 Post summary comment
         if: github.event_name == 'pull_request'
