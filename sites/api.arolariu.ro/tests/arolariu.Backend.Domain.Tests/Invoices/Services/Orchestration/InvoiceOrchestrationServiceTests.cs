@@ -93,7 +93,7 @@ public sealed class InvoiceOrchestrationServiceTests
     // Arrange & Act
     var service = new InvoiceOrchestrationService(
       mockAnalysisService.Object,
- mockStorageService.Object,
+      mockStorageService.Object,
       mockLoggerFactory.Object);
 
     // Assert
