@@ -36,14 +36,17 @@ jobs:
       has-changes: ${{ steps.compute.outputs.has-changes }}
       bundle-size-markdown: ${{ steps.compute.outputs.bundle-size-markdown }}
     steps:
-      - name: 📦 Setup workspace
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v5
+
+      - name: 📦 Setting up the workspace...
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
           fetch-depth: 0  # Need full history for git diff stats
           install-node-deps: 'true'
 
-      - name: 📊 Compute statistics
+      - name: 📊 Computing the statistics...
         id: compute
         uses: actions/github-script@v8
         env:
@@ -64,14 +67,17 @@ jobs:
       format-needed: ${{ steps.check.outputs.format-needed }}
       files-needing-format: ${{ steps.check.outputs.files-needing-format }}
     steps:
-      - name: 📦 Setup workspace
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v5
+
+      - name: 📦 Setting up the workspace...
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
           dotnet-version: ${{env.DOTNET_VERSION}}
           fetch-depth: 1
 
-      - name: 🎨 Check formatting
+      - name: 🎨 Checking the formatting...
         id: check
         uses: actions/github-script@v8
         env:
@@ -90,14 +96,17 @@ jobs:
       lint-passed: ${{ steps.check.outputs.lint-passed }}
       lint-output: ${{ steps.check.outputs.lint-output }}
     steps:
-      - name: 📦 Setup workspace
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v5
+
+      - name: 📦 Setting up the workspace...
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
           dotnet-version: ${{env.DOTNET_VERSION}}
-          fetch-depth: 1  # Shallow checkout
+          fetch-depth: 1
 
-      - name: 🔍 Check linting
+      - name: 🔍 Checking the linting...
         id: check
         uses: actions/github-script@v8
         env:
@@ -115,7 +124,10 @@ jobs:
     if: github.event_name == 'pull_request' && needs.stats.outputs.has-changes == 'true'
     timeout-minutes: 3
     steps:
-      - name: 📦 Setup workspace (minimal)
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v5
+
+      - name: 📦 Setting up the workspace...
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
