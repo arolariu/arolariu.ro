@@ -50,15 +50,6 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v5
 
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-version: '24'
-          setup-azure: 'true'
-          playwright: 'true'
-          cache-key-prefix: 'website-test'
-          working-directory: './sites/arolariu.ro'
-
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2.3.0
         with:
@@ -66,8 +57,15 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: 📦 Generate additional files...
-        run: npm generate
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: '24'
+          setup-azure: 'true'
+          playwright: 'true'
+          generate: 'true'
+          cache-key-prefix: 'website-test'
+          working-directory: './sites/arolariu.ro'
 
       - name: 🧪 Running Jest Unit tests...
         run: npm run test:unit
@@ -130,20 +128,21 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v5
 
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-version: '24'
-          setup-azure: 'true'
-          cache-key-prefix: 'website-build'
-          working-directory: './sites/arolariu.ro'
-
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2.3.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: '24'
+          setup-azure: 'true'
+          generate: 'true'
+          cache-key-prefix: 'website-build'
+          working-directory: './sites/arolariu.ro'
 
       - name: 🔒 Performing auth against private Azure Container Registry...
         uses: Azure/docker-login@v2
@@ -152,10 +151,8 @@ jobs:
           password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
           login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
-      - name: 📦 Enable corepack and generate files...
-        run: |
-          corepack enable
-          npm run generate
+      - name: 📦 Enable corepack...
+        run: corepack enable
 
       - name: 🏗️ Building the docker container...
         env:

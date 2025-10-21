@@ -11,12 +11,22 @@ inputs:
   dotnet-version:
     description: '.NET version to use (leave empty to skip .NET setup)'
     required: false
-    default: ''
+    default: '10.x'
   
-  install-dependencies:
+  install-node-dependencies:
     description: 'Whether to install npm dependencies'
     required: false
     default: 'true'
+  
+  install-dotnet-dependencies:
+    description: 'Whether to restore .NET dependencies'
+    required: false
+    default: 'true'
+  
+  generate:
+    description: 'Whether to run npm run generate for GraphQL schemas and artifacts'
+    required: false
+    default: 'false'
   
   cache-key-prefix:
     description: 'Prefix for cache key to allow per-workflow customization'
@@ -50,6 +60,10 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: 🚀 Starting workspace setup...
+      shell: bash
+      run: echo "::notice::Setting up workspace with Node.js ${{ inputs.node-version }}${{ inputs.dotnet-version != '' && format(' and .NET {0}', inputs.dotnet-version) || '' }}"
+    
     - name: 📦 Setup Node.js ${{ inputs.node-version }}
       uses: actions/setup-node@v5
       with:
@@ -82,31 +96,73 @@ runs:
         path: |
           ~/.nuget/packages
           ~/.dotnet
-        key: ${{ runner.os }}-dotnet-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
+        key: ${{ runner.os }}-dotnet-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/*.csproj', '**/*.slnx', '**/packages.lock.json') }}
         restore-keys: |
           ${{ runner.os }}-dotnet-${{ inputs.cache-key-prefix }}-
           ${{ runner.os }}-dotnet-
     
     - name: 📥 Install npm dependencies
-      if: inputs.install-dependencies == 'true'
+      if: inputs.install-node-dependencies == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
         if [ "${{ steps.cache-node.outputs.cache-hit }}" != "true" ]; then
-          echo "Installing dependencies (no cache hit)..."
+          echo "::group::📦 Installing Node.js dependencies..."
           npm ci --prefer-offline --no-audit
+          echo "::endgroup::"
+          echo "✅ Dependencies installed successfully"
         else
-          echo "Using cached dependencies"
+          echo "✅ Using cached Node.js dependencies"
+        fi
+    
+    - name: 📥 Restore .NET dependencies
+      if: inputs.dotnet-version != '' && inputs.install-dotnet-dependencies == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if [ "${{ steps.cache-dotnet.outputs.cache-hit }}" != "true" ]; then
+          echo "::group::📦 Restoring .NET dependencies..."
+          dotnet restore
+          echo "::endgroup::"
+          echo "✅ .NET dependencies restored successfully"
+        else
+          echo "✅ Using cached .NET dependencies"
         fi
     
     - name: ⚙️ Setup Azure configuration
       if: inputs.setup-azure == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: npm run setup:azure
+      run: |
+        echo "::group::⚙️ Setting up Azure configuration..."
+        npm run setup:azure
+        echo "::endgroup::"
+        echo "✅ Azure configuration completed"
     
     - name: 🎭 Install Playwright browsers
       if: inputs.playwright == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: npx playwright install --with-deps
+      run: |
+        echo "::group::🎭 Installing Playwright browsers..."
+        npx playwright install --with-deps
+        echo "::endgroup::"
+        echo "✅ Playwright browsers installed"
+    
+    - name: 🔨 Generate artifacts (GraphQL schemas, types, etc.)
+      if: inputs.generate == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "::group::🔨 Generating artifacts..."
+        npm run generate
+        echo "::endgroup::"
+        echo "✅ Artifacts generated successfully"
+    
+    - name: ✨ Workspace setup complete
+      shell: bash
+      run: |
+        echo "::notice::✅ Workspace setup completed successfully!"
+        echo "📊 Summary:"
+        echo "  - Node.js cache hit: ${{ steps.cache-node.outputs.cache-hit || 'N/A' }}"
+        echo "  - .NET cache hit: ${{ steps.cache-dotnet.outputs.cache-hit || 'N/A' }}"

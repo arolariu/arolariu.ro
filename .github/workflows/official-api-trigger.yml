@@ -45,7 +45,8 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           dotnet-version: '10.x'
-          install-dependencies: 'false'
+          install-node-dependencies: 'false'
+          install-dotnet-dependencies: 'true'
           cache-key-prefix: 'api-test'
 
       # - name: 🧪 Running unit tests...
@@ -74,7 +75,8 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           dotnet-version: '10.x'
-          install-dependencies: 'false'
+          install-node-dependencies: 'false'
+          install-dotnet-dependencies: 'false'
           cache-key-prefix: 'api-build'
 
       - name: 🔒 Performing auth against Azure Public Cloud...

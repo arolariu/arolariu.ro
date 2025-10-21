@@ -47,9 +47,12 @@ Example usage:
   uses: ./.github/actions/setup-workspace
   with:
     node-version: '24'
-    dotnet-version: '10.x'  # Optional
+    dotnet-version: '10.x'  # Optional, defaults to 10.x
+    install-node-dependencies: 'true'  # Optional
+    install-dotnet-dependencies: 'true'  # Optional
     cache-key-prefix: 'my-workflow'
     setup-azure: 'true'  # Optional
+    generate: 'true'  # Optional - runs npm run generate
 ```
 
 ## Your Mission

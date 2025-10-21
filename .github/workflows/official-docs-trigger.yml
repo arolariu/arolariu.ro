@@ -28,7 +28,8 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           dotnet-version: '10.x'
-          install-dependencies: 'false'
+          install-node-dependencies: 'false'
+          install-dotnet-dependencies: 'true'
           cache-key-prefix: 'docs'
 
       - name: "[API::1/3] 🏗️ Installing the API dependencies..."

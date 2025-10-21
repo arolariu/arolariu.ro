@@ -42,6 +42,7 @@ A composite GitHub Action that sets up the Node.js and .NET development environm
     node-version: '24'
     setup-azure: 'true'
     playwright: 'true'
+    generate: 'true'
     cache-key-prefix: 'website-build'
 ```
 
@@ -61,12 +62,14 @@ A composite GitHub Action that sets up the Node.js and .NET development environm
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `node-version` | Node.js version to use | No | `24` |
-| `dotnet-version` | .NET version to use (leave empty to skip) | No | `''` |
-| `install-dependencies` | Whether to install npm dependencies | No | `true` |
+| `dotnet-version` | .NET version to use (leave empty to skip) | No | `10.x` |
+| `install-node-dependencies` | Whether to install npm dependencies | No | `true` |
+| `install-dotnet-dependencies` | Whether to restore .NET dependencies | No | `true` |
 | `cache-key-prefix` | Prefix for cache key customization | No | `default` |
 | `working-directory` | Working directory for npm commands | No | `.` |
 | `setup-azure` | Whether to run `npm setup:azure` | No | `false` |
 | `playwright` | Whether to install Playwright browsers | No | `false` |
+| `generate` | Whether to run `npm run generate` for GraphQL schemas and artifacts | No | `false` |
 
 ## Outputs
 
@@ -117,6 +120,8 @@ Restore keys (in order):
   with:
     node-version: '24'
     dotnet-version: '10.x'
+    install-node-dependencies: 'false'
+    install-dotnet-dependencies: 'true'
     cache-key-prefix: 'api'
 ```
 
