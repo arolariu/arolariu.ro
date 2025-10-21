@@ -1,11 +1,21 @@
 namespace arolariu.Backend.Core.Tests.Common.Options;
 
+using System.Diagnostics.CodeAnalysis;
+
 using arolariu.Backend.Common.Options;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+/// <summary>
+/// Tests for <see cref="AzureOptions"/> and <see cref="LocalOptions"/> verifying defaults and property persistence.
+/// Naming follows MethodName_Condition_ExpectedResult pattern.
+/// </summary>
+[SuppressMessage("Design", "CA1515", Justification = "Public visibility required for MSTest discovery.")]
+[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming convention enforced across test suite.")]
 [TestClass]
 public sealed class AzureAndLocalOptionsTests
 {
+  /// <summary>Ensures all defaults on AzureOptions are empty strings per design.</summary>
   [TestMethod]
   public void AzureOptions_Defaults_AreEmptyStrings()
   {
@@ -32,6 +42,7 @@ public sealed class AzureAndLocalOptionsTests
     Assert.AreEqual(string.Empty, o.TermsAndConditions);
   }
 
+  /// <summary>Validates property assignments on LocalOptions persist values.</summary>
   [TestMethod]
   public void LocalOptions_PropertyAssignment_PersistsValues()
   {

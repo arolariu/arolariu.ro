@@ -1,65 +1,38 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-    <GenerateDocumentationFile>True</GenerateDocumentationFile>
-    <SignAssembly>False</SignAssembly>
-    <AnalysisLevel>latest-all</AnalysisLevel>
+    <IsAspNetCoreProject>true</IsAspNetCoreProject>
+    <UserSecretsId>7e279eb7-fd3d-471a-893d-bd52eca63f54</UserSecretsId>
+    <DockerfileFile>..\..\Dockerfile</DockerfileFile>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
-  <!-- Treat warnings as errors for `DEBUG` deployment. -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <WarningLevel>9999</WarningLevel>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <Deterministic>True</Deterministic>
-    <NoWarn>S1135, NU1903, NU1902</NoWarn>
-    <IsTrimmable>False</IsTrimmable>
-    <IsAotCompatible>False</IsAotCompatible>
-  </PropertyGroup>
-
-  <!-- Treat warnings as errors for `RELEASE` deployment. -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <WarningLevel>9999</WarningLevel>
-    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
-    <Deterministic>True</Deterministic>
-    <NoWarn>S1135, NU1903, NU1902</NoWarn>
-    <IsTrimmable>False</IsTrimmable>
-    <IsAotCompatible>False</IsAotCompatible>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <!-- Health checks packages -->
-    <PackageReference Include="AspNetCore.HealthChecks.AzureKeyVault" Version="9.0.0" />
-    <PackageReference Include="AspNetCore.HealthChecks.CosmosDb" Version="9.0.0" />
-    <PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="9.0.0" />
-    <PackageReference Include="AspNetCore.HealthChecks.AzureStorage" Version="7.0.0" />
-    <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
-    <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.54.0" />
-    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.13.0" />
-
-    <!-- Azure packages-->
-    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.26.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0-preview.4" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  <ItemGroup Label="Health Checks Packages">
+    <PackageReference Include="AspNetCore.HealthChecks.AzureKeyVault" />
+    <PackageReference Include="AspNetCore.HealthChecks.CosmosDb" />
+    <PackageReference Include="AspNetCore.HealthChecks.SqlServer" />
+    <PackageReference Include="AspNetCore.HealthChecks.AzureStorage" />
+    <PackageReference Include="AspNetCore.HealthChecks.UI.Client" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Label="Azure Packages">
+    <PackageReference Include="Azure.AI.OpenAI" />
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" />
+    <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" />
+    <PackageReference Include="Microsoft.Extensions.Azure" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
+  </ItemGroup>
+
+  <ItemGroup Label="Other Dependencies">
+    <PackageReference Include="Newtonsoft.Json" />
+  </ItemGroup>
+
+  <ItemGroup Label="Project References">
     <ProjectReference Include="..\Common\arolariu.Backend.Common.csproj" />
     <ProjectReference Include="..\Core.Auth\arolariu.Backend.Core.Auth.csproj" />
     <ProjectReference Include="..\Invoices\arolariu.Backend.Domain.Invoices.csproj" />
   </ItemGroup>
 
-  <PropertyGroup>
-    <DockerfileFile>..\..\Dockerfile</DockerfileFile>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <UserSecretsId>7e279eb7-fd3d-471a-893d-bd52eca63f54</UserSecretsId>
-  </PropertyGroup>
 </Project>

@@ -1,11 +1,21 @@
 namespace arolariu.Backend.Core.Tests.Common.DDD;
 
+using System.Diagnostics.CodeAnalysis;
+
 using arolariu.Backend.Common.DDD.ValueObjects;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+/// <summary>
+/// Tests for the <see cref="Currency"/> value object verifying constructor property assignment
+/// and value equality semantics. Method names follow the mandated MethodName_Condition_ExpectedResult pattern.
+/// </summary>
+[SuppressMessage("Design", "CA1515", Justification = "Public test class required for MSTest discovery.")]
+[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming convention enforced across test suite.")]
 [TestClass]
 public sealed class CurrencyTests
 {
+  /// <summary>Ensures constructor assigns properties as provided.</summary>
   [TestMethod]
   public void Constructor_SetsProperties()
   {
@@ -15,6 +25,7 @@ public sealed class CurrencyTests
     Assert.AreEqual("$", currency.Symbol);
   }
 
+  /// <summary>Validates record struct value equality semantics for identical instances.</summary>
   [TestMethod]
   public void ValueEquality_WorksAsRecordStruct()
   {

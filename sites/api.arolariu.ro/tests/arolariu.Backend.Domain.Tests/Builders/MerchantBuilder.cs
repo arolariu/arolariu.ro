@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Tests.Builders;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
@@ -9,14 +10,21 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using Xunit;
 
 /// <summary>
-/// Test data builder for Merchant entities following "The Standard" test patterns.
+/// Test data builder for <see cref="Merchant"/> aggregates used across domain test cases.
+/// Non-cryptographic randomness is intentionally used only for generating diverse test inputs.
 /// </summary>
+[SuppressMessage("Security", "CA5394", Justification = "Random used for non-security test data generation.")]
+[SuppressMessage("Design", "CA1515", Justification = "Public static builder consumed across multiple test classes.")]
+[SuppressMessage("Naming", "CA1707", Justification = "Test helper follows underscore method naming in tests.")]
+[SuppressMessage("Design", "CA1002", Justification = "List<T> is acceptable for internal test data manipulation.")]
 public static class MerchantTestDataBuilder
 {
   private static readonly Random Random = new();
 
-  public static Merchant CreateRandomMerchant() =>
-    new Merchant
+  /// <summary>Creates a merchant with randomized values for test scenarios.</summary>
+  public static Merchant CreateRandomMerchant()
+  {
+    return new Merchant
     {
       id = Guid.NewGuid(),
       ParentCompanyId = Guid.NewGuid(),
@@ -30,7 +38,9 @@ public static class MerchantTestDataBuilder
       NumberOfUpdates = Random.Next(0, 10),
       ReferencedInvoices = [Guid.NewGuid()]
     };
+  }
 
+  /// <summary>Creates a merchant overriding selected properties while randomizing the rest.</summary>
   public static Merchant CreateMerchantWithSpecificProperties(
     Guid? id = null,
     Guid? parentCompanyId = null,
@@ -55,13 +65,17 @@ public static class MerchantTestDataBuilder
     };
   }
 
-  public static TheoryData<Merchant> GetMerchantTheoryData() =>
-    [
+  /// <summary>Provides theory data containing several randomized merchants.</summary>
+  public static TheoryData<Merchant> GetMerchantTheoryData()
+  {
+    return [
       CreateRandomMerchant(),
       CreateRandomMerchant(),
       CreateRandomMerchant()
     ];
+  }
 
+  /// <summary>Creates multiple randomly generated merchants.</summary>
   public static List<Merchant> CreateMultipleRandomMerchants(int count = 3)
   {
     var merchants = new List<Merchant>();
@@ -72,9 +86,13 @@ public static class MerchantTestDataBuilder
     return merchants;
   }
 
-  private static string GetRandomString() =>
-    Guid.NewGuid().ToString()[..8];
+  private static string GetRandomString()
+  {
+    return Guid.NewGuid().ToString()[..8];
+  }
 
-  private static DateTimeOffset GetRandomDateTimeOffset() =>
-    DateTimeOffset.Now.AddDays(-Random.Next(0, 365));
+  private static DateTimeOffset GetRandomDateTimeOffset()
+  {
+    return DateTimeOffset.Now.AddDays(-Random.Next(0, 365));
+  }
 }

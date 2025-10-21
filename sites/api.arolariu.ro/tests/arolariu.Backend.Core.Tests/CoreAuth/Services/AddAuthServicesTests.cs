@@ -1,47 +1,62 @@
 namespace arolariu.Backend.Core.Tests.CoreAuth.Services;
 
 using System;
-using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
+
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Core.Auth.Brokers;
 using arolariu.Backend.Core.Auth.Models;
 using arolariu.Backend.Core.Auth.Modules;
 using arolariu.Backend.Core.Tests.Shared.TestDoubles;
+
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+/// <summary>
+/// Tests covering authentication service registration and configuration logic in <see cref="WebApplicationBuilderExtensions.AddAuthServices"/>.
+/// Naming follows the <c>MethodName_Condition_ExpectedResult</c> pattern per repository guidelines.
+/// </summary>
+[SuppressMessage("Design", "CA1515", Justification = "MSTest requires public test classes for discovery.")]
+[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming pattern mandated for tests.")]
 [TestClass]
 public sealed class AddAuthServicesTests
 {
-  private static WebApplicationBuilder CreateBuilderWithOptions(ApplicationOptions opts)
+  /// <summary>Create a <see cref="WebApplicationBuilder"/> with injected fake options manager.</summary>
+  private static WebApplicationBuilder CreateBuilderWithOptions(LocalOptions opts)
   {
     var builder = WebApplication.CreateBuilder();
     builder.Services.AddSingleton<IOptionsManager>(new FakeOptionsManager(opts));
     return builder;
   }
 
-  private static ApplicationOptions CreateOptions() => new LocalOptions
+  /// <summary>Builds a deterministic set of local options for test scenarios.</summary>
+  private static LocalOptions CreateOptions()
   {
-    SqlConnectionString = "Server=(localdb)\\MSSQLLocalDB;Database=Test;",
-    JwtSecret = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEF", // 40+ chars
-    JwtIssuer = "issuer",
-    JwtAudience = "aud"
-  };
+    return new()
+    {
+      SqlConnectionString = "Server=(localdb)\\MSSQLLocalDB;Database=Test;",
+      JwtSecret = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEF", //40+ chars
+      JwtIssuer = "issuer",
+      JwtAudience = "aud"
+    };
+  }
 
+  /// <summary>Verifies that passing a null builder throws <see cref="ArgumentNullException"/>.</summary>
   [TestMethod]
   public void AddAuthServices_NullBuilder_Throws()
   {
     Assert.ThrowsExactly<ArgumentNullException>(() => WebApplicationBuilderExtensions.AddAuthServices(null!));
   }
 
+  /// <summary>Ensures identity core services and authorization services are registered.</summary>
   [TestMethod]
   public void AddAuthServices_RegistersCoreIdentityServices()
   {
@@ -61,6 +76,7 @@ public sealed class AddAuthServicesTests
     Assert.IsNotNull(provider.GetService<IAuthorizationService>());
   }
 
+  /// <summary>Validates password, user, and general identity option configuration.</summary>
   [TestMethod]
   public void AddAuthServices_ConfiguresIdentityOptions()
   {
@@ -78,18 +94,20 @@ public sealed class AddAuthServicesTests
     Assert.IsTrue(identityOpts.User.RequireUniqueEmail);
   }
 
+  /// <summary>Ensures JWT bearer is set as the default authentication scheme.</summary>
   [TestMethod]
-  public void AddAuthServices_SetsJwtBearerAsDefaultScheme()
+  public async Task AddAuthServices_SetsJwtBearerAsDefaultScheme()
   {
     var builder = CreateBuilderWithOptions(CreateOptions());
     builder.AddAuthServices();
     using var provider = builder.Services.BuildServiceProvider();
     var schemeProvider = provider.GetRequiredService<IAuthenticationSchemeProvider>();
-    var defaultScheme = Task.Run(async () => (await schemeProvider.GetDefaultAuthenticateSchemeAsync())?.Name).Result;
+    var defaultScheme = (await schemeProvider.GetDefaultAuthenticateSchemeAsync().ConfigureAwait(false))?.Name;
 
     Assert.AreEqual(JwtBearerDefaults.AuthenticationScheme, defaultScheme);
   }
 
+  /// <summary>Verifies JWT validation parameters configured from provided options.</summary>
   [TestMethod]
   public void AddAuthServices_ConfiguresJwtBearerValidationParameters()
   {
@@ -97,8 +115,8 @@ public sealed class AddAuthServicesTests
     builder.AddAuthServices();
     using var provider = builder.Services.BuildServiceProvider();
     var jwtOptions = provider
-      .GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
-      .Get(JwtBearerDefaults.AuthenticationScheme);
+    .GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
+    .Get(JwtBearerDefaults.AuthenticationScheme);
 
     Assert.AreEqual("issuer", jwtOptions.TokenValidationParameters.ValidIssuer);
     Assert.AreEqual("aud", jwtOptions.TokenValidationParameters.ValidAudience);
@@ -107,6 +125,7 @@ public sealed class AddAuthServicesTests
     Assert.IsTrue(jwtOptions.TokenValidationParameters.ValidateLifetime);
   }
 
+  /// <summary>Checks application cookie configuration (HttpOnly, sliding expiration, custom name).</summary>
   [TestMethod]
   public void AddAuthServices_ConfiguresApplicationCookie()
   {
@@ -116,12 +135,12 @@ public sealed class AddAuthServicesTests
 
     // Identity uses IdentityConstants.ApplicationScheme for app cookie
     var cookieOpts = provider
-      .GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
-      .Get(IdentityConstants.ApplicationScheme);
+    .GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
+    .Get(IdentityConstants.ApplicationScheme);
 
     Assert.IsTrue(cookieOpts.Cookie.HttpOnly);
     Assert.IsTrue(cookieOpts.SlidingExpiration);
     Assert.AreEqual("auth-arolariu-ro", cookieOpts.Cookie.Name);
-    Assert.IsTrue(cookieOpts.ExpireTimeSpan.TotalMinutes <= 30.1 && cookieOpts.ExpireTimeSpan.TotalMinutes >= 29.9);
+    Assert.IsTrue(cookieOpts.ExpireTimeSpan.TotalMinutes is <= 30.1 and >= 29.9);
   }
 }

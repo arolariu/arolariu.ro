@@ -1,19 +1,30 @@
 namespace arolariu.Backend.Core.Tests.Common.Options;
 
 using System;
+using System.Diagnostics.CodeAnalysis;
+
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Core.Tests.Shared.TestDoubles;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+/// <summary>
+/// Tests for <see cref="LocalOptionsManager"/> ensuring option retrieval and monitor updates behave as expected.
+/// Method names use the mandated <c>Method_Condition_ExpectedResult</c> pattern.
+/// </summary>
+[SuppressMessage("Design", "CA1515", Justification = "Public visibility required for MSTest discovery.")]
+[SuppressMessage("Naming", "CA1707", Justification = "Underscore-separated test naming convention enforced across solution.")]
 [TestClass]
 public sealed class LocalOptionsManagerTests
 {
+  /// <summary>Verifies constructor throws when monitor dependency is null.</summary>
   [TestMethod]
   public void Ctor_NullMonitor_Throws()
   {
     Assert.ThrowsExactly<ArgumentNullException>(() => new LocalOptionsManager(null!));
   }
 
+  /// <summary>Ensures returned application options reference current monitor value.</summary>
   [TestMethod]
   public void GetApplicationOptions_ReturnsCurrentValue()
   {
@@ -39,6 +50,7 @@ public sealed class LocalOptionsManagerTests
     Assert.AreEqual("local-audience", result.JwtAudience);
   }
 
+  /// <summary>Confirms manager reflects updated monitor value after change.</summary>
   [TestMethod]
   public void GetApplicationOptions_ReflectsUpdatedMonitorValue()
   {

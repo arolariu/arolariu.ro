@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Tests.Builders;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -12,14 +13,17 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 using Xunit;
 
 /// <summary>
-/// Test data builder for Invoice entities following "The Standard" test patterns.
+/// Test data builder for <see cref="Invoice"/> entities following test naming and data generation patterns.
+/// Randomness here is non-cryptographic and only used to create diverse test inputs.
 /// </summary>
-public static class InvoiceBuilder
+[SuppressMessage("Security", "CA5394:Do not use insecure randomness", Justification = "Non-security test data generation only.")]
+internal static class InvoiceBuilder
 {
   private static readonly Random Random = new();
 
-  public static Invoice CreateRandomInvoice() =>
-    new Invoice
+  public static Invoice CreateRandomInvoice()
+  {
+    return new Invoice
     {
       id = Guid.NewGuid(),
       UserIdentifier = Guid.NewGuid(),
@@ -37,6 +41,7 @@ public static class InvoiceBuilder
       PossibleRecipes = [],
       PaymentInformation = CreateRandomPaymentInformation()
     };
+  }
 
   public static Invoice CreateInvoiceWithSpecificProperties(
     Guid? id = null,
@@ -67,12 +72,14 @@ public static class InvoiceBuilder
     };
   }
 
-  public static TheoryData<Invoice> GetInvoiceTheoryData() =>
-    [
+  public static TheoryData<Invoice> GetInvoiceTheoryData()
+  {
+    return [
       CreateRandomInvoice(),
       CreateRandomInvoice(),
       CreateRandomInvoice()
     ];
+  }
 
   public static List<Invoice> CreateMultipleRandomInvoices(int count = 3)
   {
@@ -111,8 +118,9 @@ public static class InvoiceBuilder
     return products;
   }
 
-  private static PaymentInformation CreateRandomPaymentInformation() =>
-    new PaymentInformation
+  private static PaymentInformation CreateRandomPaymentInformation()
+  {
+    return new PaymentInformation
     {
       TransactionDate = GetRandomDateTimeOffset(),
       PaymentType = PaymentType.CARD,
@@ -120,11 +128,16 @@ public static class InvoiceBuilder
       TotalCostAmount = (decimal)(Random.NextDouble() * 1000),
       TotalTaxAmount = (decimal)(Random.NextDouble() * 100)
     };
+  }
 
-  private static string GetRandomString() =>
-    Guid.NewGuid().ToString()[..8];
+  private static string GetRandomString()
+  {
+    return Guid.NewGuid().ToString()[..8];
+  }
 
-  private static DateTimeOffset GetRandomDateTimeOffset() =>
-    DateTimeOffset.Now.AddDays(-Random.Next(0, 365));
+  private static DateTimeOffset GetRandomDateTimeOffset()
+  {
+    return DateTimeOffset.Now.AddDays(-Random.Next(0, 365));
+  }
 }
 
