@@ -205,7 +205,7 @@ public sealed class InvoiceOrchestrationServiceTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(() =>
- orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.CompleteAnalysis, invoiceId, null));
+      orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.CompleteAnalysis, invoiceId, null));
   }
 
   /// <summary>
