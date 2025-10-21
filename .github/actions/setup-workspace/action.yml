@@ -58,7 +58,7 @@ runs:
         path: |
           ~/.nuget/packages
           ~/.dotnet/tools
-        key: ${{ runner.os }}-dotnet-${{ inputs.dotnet-version }}-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}
+        key: ${{ runner.os }}-dotnet-${{ inputs.dotnet-version }}-${{ hashFiles('**/packages.lock.json') }}
         restore-keys: |
           ${{ runner.os }}-dotnet-${{ inputs.dotnet-version }}-
           ${{ runner.os }}-dotnet-
