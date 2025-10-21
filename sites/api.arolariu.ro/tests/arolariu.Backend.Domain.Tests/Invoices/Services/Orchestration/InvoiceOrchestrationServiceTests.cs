@@ -93,7 +93,7 @@ public sealed class InvoiceOrchestrationServiceTests
     // Arrange & Act
     var service = new InvoiceOrchestrationService(
       mockAnalysisService.Object,
- mockStorageService.Object,
+      mockStorageService.Object,
       mockLoggerFactory.Object);
 
     // Assert
@@ -126,7 +126,7 @@ public sealed class InvoiceOrchestrationServiceTests
       .ReturnsAsync(analyzedInvoice);
 
     mockStorageService
-   .Setup(s => s.UpdateInvoiceObject(analyzedInvoice, invoiceId, userId))
+      .Setup(s => s.UpdateInvoiceObject(analyzedInvoice, invoiceId, userId))
       .ReturnsAsync(analyzedInvoice);
 
     // Act
@@ -150,7 +150,7 @@ public sealed class InvoiceOrchestrationServiceTests
     var invoice = InvoiceBuilder.CreateRandomInvoice();
 
     mockStorageService
-    .Setup(s => s.ReadInvoiceObject(invoiceId, null))
+      .Setup(s => s.ReadInvoiceObject(invoiceId, null))
       .ReturnsAsync(invoice);
 
     mockAnalysisService
@@ -205,7 +205,7 @@ public sealed class InvoiceOrchestrationServiceTests
 
     // Act & Assert
     await Assert.ThrowsAsync<InvoiceOrchestrationDependencyException>(() =>
- orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.CompleteAnalysis, invoiceId, null)).ConfigureAwait(false);
+      orchestrationService.AnalyzeInvoiceWithOptions(AnalysisOptions.CompleteAnalysis, invoiceId, null));
   }
 
   /// <summary>
@@ -220,7 +220,7 @@ public sealed class InvoiceOrchestrationServiceTests
     var foundationException = new InvoiceFoundationDependencyValidationException(innerException);
 
     mockStorageService
- .Setup(s => s.ReadInvoiceObject(invoiceId, null))
+      .Setup(s => s.ReadInvoiceObject(invoiceId, null))
       .ThrowsAsync(foundationException);
 
     // Act & Assert
