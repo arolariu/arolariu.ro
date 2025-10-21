@@ -129,7 +129,7 @@ jobs:
             const {default: checkCodeHygieneWrapper} = await import('${{ github.workspace }}/.github/scripts/src/check-code-hygiene-wrapper.js');
             await checkCodeHygieneWrapper({github, context, core, exec});
 
-      - name: � Post formatting comment to PR
+      - name: 💬 Post formatting comment to PR
         if: github.event_name == 'pull_request' && steps.check-format.outputs.format-needed == 'true'
         uses: actions/github-script@v8
         env:
@@ -177,7 +177,7 @@ jobs:
             const {default: checkCodeHygieneWrapper} = await import('${{ github.workspace }}/.github/scripts/src/check-code-hygiene-wrapper.js');
             await checkCodeHygieneWrapper({github, context, core, exec});
 
-      - name: � Post linting comment to PR
+      - name: 💬 Post linting comment to PR
         if: github.event_name == 'pull_request' && steps.check-lint.outputs.lint-passed == 'false'
         uses: actions/github-script@v8
         env:
@@ -197,7 +197,7 @@ jobs:
     needs: [hygiene-check-setup, formatting, linting]
     if: always()
     steps:
-      - name: � Checkout repository
+      - name: 🛫 Checkout repository
         uses: actions/checkout@v5
 
       - name: 📦 Setup Node.js environment
