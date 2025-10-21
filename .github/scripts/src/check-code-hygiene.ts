@@ -63,7 +63,7 @@ async function checkStats(params: ScriptParams): Promise<CodeHygieneResult> {
     // Get diff stats using reusable helper
     const diffStats = await getGitDiffStats(params, baseRef, headRef);
 
-    core.info(`� Files changed: ${diffStats.filesChanged}`);
+    core.info(`📁 Files changed: ${diffStats.filesChanged}`);
     core.info(`📈 Lines: +${diffStats.linesAdded} -${diffStats.linesDeleted}`);
 
     // Get bundle size comparison
