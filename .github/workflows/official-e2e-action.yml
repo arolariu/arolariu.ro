@@ -25,7 +25,7 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
-          cache-key-prefix: 'e2e-${{ github.run_id }}'
+          cache-key-prefix: 'e2e'
 
       - name: 📦 Installing global dependencies...
         run: npm install -g newman
@@ -44,7 +44,7 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
-          cache-key-prefix: 'e2e-${{ github.run_id }}'
+          cache-key-prefix: 'e2e'
 
       - name: 🚀 Running end-to-end tests...
         id: test
@@ -85,7 +85,7 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
-          cache-key-prefix: 'e2e-${{ github.run_id }}'
+          cache-key-prefix: 'e2e'
 
       - name: 🌡️ Check dependencies health
         run: |
@@ -135,7 +135,7 @@ jobs:
         with:
           node-version: '24'
           install-node-dependencies: 'false'
-          cache-key-prefix: 'e2e-issue'
+          cache-key-prefix: 'e2e'
 
       - name: 📥 Download all test artifacts
         uses: actions/download-artifact@v5

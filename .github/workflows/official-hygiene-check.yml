@@ -39,7 +39,7 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
-          cache-key-prefix: 'hygiene-stats'
+          cache-key-prefix: 'hygiene'
 
       - name: 🔨 Build all projects
         run: npm run build
@@ -91,7 +91,7 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
-          cache-key-prefix: 'hygiene-format'
+          cache-key-prefix: 'hygiene'
 
       - name: 🎨 Check code formatting using TypeScript helper
         id: check-format
@@ -136,7 +136,7 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
-          cache-key-prefix: 'hygiene-lint'
+          cache-key-prefix: 'hygiene'
 
       - name: 🔍 Check code linting using TypeScript helper
         id: check-lint
@@ -177,7 +177,7 @@ jobs:
         with:
           node-version: '24'
           install-node-dependencies: 'false'
-          cache-key-prefix: 'hygiene-summary'
+          cache-key-prefix: 'hygiene'
 
       - name: 💬 Post summary comment to PR
         if: github.event_name == 'pull_request'

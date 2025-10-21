@@ -64,7 +64,7 @@ jobs:
           setup-azure: 'true'
           playwright: 'true'
           generate: 'true'
-          cache-key-prefix: 'website-test'
+          cache-key-prefix: 'website'
           working-directory: './sites/arolariu.ro'
 
       - name: 🧪 Running Jest Unit tests...
@@ -141,7 +141,7 @@ jobs:
           node-version: '24'
           setup-azure: 'true'
           generate: 'true'
-          cache-key-prefix: 'website-build'
+          cache-key-prefix: 'website'
           working-directory: './sites/arolariu.ro'
 
       - name: 🔒 Performing auth against private Azure Container Registry...
@@ -150,9 +150,6 @@ jobs:
           username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
           password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
           login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
-
-      - name: 📦 Enable corepack...
-        run: corepack enable
 
       - name: 🏗️ Building the docker container...
         env:

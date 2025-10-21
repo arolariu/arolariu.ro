@@ -47,7 +47,7 @@ jobs:
           dotnet-version: '10.x'
           install-node-dependencies: 'false'
           install-dotnet-dependencies: 'true'
-          cache-key-prefix: 'api-test'
+          cache-key-prefix: 'api'
 
       # - name: 🧪 Running unit tests...
       #   run: |
@@ -77,7 +77,7 @@ jobs:
           dotnet-version: '10.x'
           install-node-dependencies: 'false'
           install-dotnet-dependencies: 'false'
-          cache-key-prefix: 'api-build'
+          cache-key-prefix: 'api'
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2.3.0
