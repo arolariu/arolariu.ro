@@ -1,0 +1,96 @@
+name: 'Setup Workspace'
+description: 'Composite action to checkout repository, setup Node.js and .NET, and install dependencies with caching'
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '24'
+  dotnet-version:
+    description: '.NET SDK version to use'
+    required: false
+    default: '10.0.x'
+  fetch-depth:
+    description: 'Number of commits to fetch. 0 indicates all history for all branches and tags'
+    required: false
+    default: '1'
+  install-node-deps:
+    description: 'Whether to install npm dependencies'
+    required: false
+    default: 'true'
+  setup-dotnet:
+    description: 'Whether to setup .NET SDK'
+    required: false
+    default: 'true'
+  working-directory:
+    description: 'Working directory'
+    required: false
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 🛫 Checkout repository
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: ${{ inputs.fetch-depth }}
+        ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+    - name: 📦 Setup Node.js ${{ inputs.node-version }}
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+
+    - name: 🗂️ Setup .NET SDK ${{ inputs.dotnet-version }}
+      if: inputs.setup-dotnet == 'true'
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+        cache: true
+        cache-dependency-path: '**/packages.lock.json'
+
+    - name: 📥 Restore .NET tools cache
+      if: inputs.setup-dotnet == 'true'
+      id: cache-dotnet-tools
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.nuget/packages
+          ~/.dotnet/tools
+        key: ${{ runner.os }}-dotnet-${{ inputs.dotnet-version }}-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}
+        restore-keys: |
+          ${{ runner.os }}-dotnet-${{ inputs.dotnet-version }}-
+          ${{ runner.os }}-dotnet-
+
+    - name: 📥 Restore npm cache
+      if: inputs.install-node-deps == 'true'
+      id: cache-npm
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.npm
+          node_modules
+          sites/*/node_modules
+          packages/*/node_modules
+        key: ${{ runner.os }}-node-${{ inputs.node-version }}-npm-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-${{ inputs.node-version }}-npm-${{ hashFiles('**/package-lock.json') }}-
+          ${{ runner.os }}-node-${{ inputs.node-version }}-npm-
+          ${{ runner.os }}-node-
+
+    - name: 📥 Install npm dependencies
+      if: inputs.install-node-deps == 'true' && steps.cache-npm.outputs.cache-hit != 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: npm ci --prefer-offline --no-audit
+
+    - name: ✅ npm dependencies restored from cache
+      if: inputs.install-node-deps == 'true' && steps.cache-npm.outputs.cache-hit == 'true'
+      shell: bash
+      run: echo "✅ npm dependencies restored from cache"
+
+    - name: ✅ .NET tools restored from cache
+      if: inputs.setup-dotnet == 'true' && steps.cache-dotnet-tools.outputs.cache-hit == 'true'
+      shell: bash
+      run: echo "✅ .NET tools restored from cache"
