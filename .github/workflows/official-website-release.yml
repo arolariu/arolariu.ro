@@ -1,4 +1,4 @@
-name: "website-official-release"
+name: "official-website-release"
 
 permissions:
   id-token: write
@@ -6,7 +6,7 @@ permissions:
 
 on:
   workflow_run:
-    workflows: ["website-official-build"]
+    workflows: ["official-website-build"]
     types: ["completed"]
     branches: ["preview"]
   workflow_dispatch:
@@ -27,6 +27,13 @@ on:
         default: "frontend/dev.arolariu"
         required: true
         type: choice
+
+env:
+  COMMIT_SHA: ${{ github.sha }}
+  PRODUCTION: ${{ inputs.environment == 'production' && 'true' || 'false' }}
+  AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
+  AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
+  AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
 
 jobs:
   release:

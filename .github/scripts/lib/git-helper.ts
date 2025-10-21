@@ -106,3 +106,127 @@ export async function getBranchCommitComparisonSection(
   section += `----\n`;
   return section;
 }
+
+/**
+ * Git diff statistics result
+ */
+export interface GitDiffStats {
+  /** Number of files changed */
+  filesChanged: number;
+  /** Number of lines added */
+  linesAdded: number;
+  /** Number of lines deleted */
+  linesDeleted: number;
+  /** Raw diff stat output */
+  rawStats: string;
+}
+
+/**
+ * Computes diff statistics between two Git references
+ * @param params - Script execution parameters
+ * @param baseRef - Base reference (e.g., 'origin/main', 'HEAD~1')
+ * @param headRef - Head reference (e.g., 'HEAD', commit SHA)
+ * @returns Promise resolving to diff statistics
+ * @example
+ * ```typescript
+ * const stats = await getGitDiffStats(params, 'origin/main', 'HEAD');
+ * console.log(`${stats.filesChanged} files changed`);
+ * console.log(`+${stats.linesAdded} -${stats.linesDeleted}`);
+ * ```
+ */
+export async function getGitDiffStats(params: ScriptParams, baseRef: string, headRef: string): Promise<GitDiffStats> {
+  const {core, exec} = params;
+
+  core.debug(`Computing diff stats between ${baseRef} and ${headRef}`);
+
+  // Get files changed
+  const filesResult = await exec.getExecOutput("git", ["diff", "--name-only", baseRef, headRef], {
+    ignoreReturnCode: true,
+    silent: true,
+  });
+
+  const filesChanged = filesResult.stdout ? filesResult.stdout.trim().split("\n").filter(Boolean).length : 0;
+
+  // Get diff stats
+  const statsResult = await exec.getExecOutput("git", ["diff", "--shortstat", baseRef, headRef], {
+    ignoreReturnCode: true,
+    silent: true,
+  });
+
+  const rawStats = statsResult.stdout.trim();
+  core.debug(`Git diff --shortstat: ${rawStats || "No changes"}`);
+
+  // Parse lines added/deleted
+  let linesAdded = 0;
+  let linesDeleted = 0;
+
+  const insertionsRegex = /(\d+) insertion/;
+  const deletionsRegex = /(\d+) deletion/;
+
+  const insertionsMatch = insertionsRegex.exec(rawStats);
+  const deletionsMatch = deletionsRegex.exec(rawStats);
+
+  if (insertionsMatch?.[1]) linesAdded = Number.parseInt(insertionsMatch[1], 10);
+  if (deletionsMatch?.[1]) linesDeleted = Number.parseInt(deletionsMatch[1], 10);
+
+  return {
+    filesChanged,
+    linesAdded,
+    linesDeleted,
+    rawStats,
+  };
+}
+
+/**
+ * Ensures a Git branch is fetched and available locally
+ * @param params - Script execution parameters
+ * @param branchName - Branch name to fetch (e.g., 'main')
+ * @param remote - Remote name (defaults to 'origin')
+ * @returns Promise that resolves when fetch is complete
+ * @example
+ * ```typescript
+ * await ensureBranchFetched(params, 'main', 'origin');
+ * // Now 'origin/main' is available for comparisons
+ * ```
+ */
+export async function ensureBranchFetched(params: ScriptParams, branchName: string, remote: string = "origin"): Promise<void> {
+  const {core, exec} = params;
+
+  core.debug(`Ensuring ${remote}/${branchName} is fetched`);
+
+  await exec.exec("git", ["fetch", remote, `${branchName}:refs/remotes/${remote}/${branchName}`], {
+    ignoreReturnCode: true,
+    silent: true,
+  });
+
+  core.debug(`Branch ${remote}/${branchName} fetch complete`);
+}
+
+/**
+ * Gets the list of changed files between two Git references
+ * @param params - Script execution parameters
+ * @param baseRef - Base reference
+ * @param headRef - Head reference
+ * @returns Promise resolving to array of changed file paths
+ * @example
+ * ```typescript
+ * const files = await getChangedFiles(params, 'origin/main', 'HEAD');
+ * files.forEach(file => console.log(`Modified: ${file}`));
+ * ```
+ */
+export async function getChangedFiles(params: ScriptParams, baseRef: string, headRef: string): Promise<string[]> {
+  const {core, exec} = params;
+
+  core.debug(`Getting changed files between ${baseRef} and ${headRef}`);
+
+  const result = await exec.getExecOutput("git", ["diff", "--name-only", baseRef, headRef], {
+    ignoreReturnCode: true,
+    silent: true,
+  });
+
+  const files = result.stdout ? result.stdout.trim().split("\n").filter(Boolean) : [];
+
+  core.debug(`Found ${files.length} changed files`);
+
+  return files;
+}

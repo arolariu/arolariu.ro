@@ -1,0 +1,215 @@
+name: "official-hygiene-check"
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+on:
+  push:
+    branches: ["preview", "main"]
+  pull_request:
+    branches: ["preview", "main"]
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+env:
+  COMMIT_SHA: ${{ github.sha }}
+  BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+  HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+
+jobs:
+  stats:
+    name: 📊 Code Statistics
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      has-changes: ${{ steps.check-stats.outputs.has-changes }}
+      files-changed: ${{ steps.check-stats.outputs.files-changed }}
+      lines-added: ${{ steps.check-stats.outputs.lines-added }}
+      lines-deleted: ${{ steps.check-stats.outputs.lines-deleted }}
+    steps:
+      - name: 🛫 Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: 📦 Setup Node.js environment
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: "npm"
+
+      - name: 📥 Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: 🔨 Build all projects
+        run: npm run build
+        continue-on-error: true
+
+      - name: 📊 Compute statistics using TypeScript helper
+        id: check-stats
+        uses: actions/github-script@v8
+        env:
+          CHECK_MODE: "stats"
+          BASE_REF: ${{ env.BASE_REF }}
+          HEAD_REF: ${{ env.HEAD_REF }}
+          GITHUB_SHA: ${{ github.sha }}
+        with:
+          script: |
+            const {default: checkCodeHygieneWrapper} = await import('${{ github.workspace }}/.github/scripts/src/check-code-hygiene-wrapper.js');
+            await checkCodeHygieneWrapper({github, context, core, exec});
+
+      - name: 💬 Post statistics comment to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v8
+        env:
+          COMMENT_TYPE: "stats"
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          FILES_CHANGED: ${{ steps.check-stats.outputs.files-changed }}
+          LINES_ADDED: ${{ steps.check-stats.outputs.lines-added }}
+          LINES_DELETED: ${{ steps.check-stats.outputs.lines-deleted }}
+          GITHUB_SHA: ${{ github.sha }}
+        with:
+          script: |
+            const {default: postHygieneCommentWrapper} = await import('${{ github.workspace }}/.github/scripts/src/post-hygiene-comment-wrapper.js');
+            await postHygieneCommentWrapper({github, context, core, exec});
+
+  formatting:
+    name: 🎨 Code Formatting
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: stats
+    if: needs.stats.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
+    outputs:
+      format-needed: ${{ steps.check-format.outputs.format-needed }}
+    steps:
+      - name: 🛫 Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: 📦 Setup Node.js environment
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: "npm"
+
+      - name: 📥 Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: 🎨 Check code formatting using TypeScript helper
+        id: check-format
+        uses: actions/github-script@v8
+        env:
+          CHECK_MODE: "format"
+          GITHUB_SHA: ${{ github.sha }}
+        with:
+          script: |
+            const {default: checkCodeHygieneWrapper} = await import('${{ github.workspace }}/.github/scripts/src/check-code-hygiene-wrapper.js');
+            await checkCodeHygieneWrapper({github, context, core, exec});
+
+      - name: 💬 Post formatting comment to PR
+        if: github.event_name == 'pull_request' && steps.check-format.outputs.format-needed == 'true'
+        uses: actions/github-script@v8
+        env:
+          COMMENT_TYPE: "formatting"
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          FORMAT_NEEDED: ${{ steps.check-format.outputs.format-needed }}
+          FILES_NEEDING_FORMAT: ${{ steps.check-format.outputs.files-needing-format }}
+          GITHUB_SHA: ${{ github.sha }}
+        with:
+          script: |
+            const {default: postHygieneCommentWrapper} = await import('${{ github.workspace }}/.github/scripts/src/post-hygiene-comment-wrapper.js');
+            await postHygieneCommentWrapper({github, context, core, exec});
+
+  linting:
+    name: 🔍 Code Linting
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: stats
+    if: needs.stats.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
+    outputs:
+      lint-passed: ${{ steps.check-lint.outputs.lint-passed }}
+    steps:
+      - name: 🛫 Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: 📦 Setup Node.js environment
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: "npm"
+
+      - name: 📥 Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: 🔍 Check code linting using TypeScript helper
+        id: check-lint
+        uses: actions/github-script@v8
+        env:
+          CHECK_MODE: "lint"
+          GITHUB_SHA: ${{ github.sha }}
+        with:
+          script: |
+            const {default: checkCodeHygieneWrapper} = await import('${{ github.workspace }}/.github/scripts/src/check-code-hygiene-wrapper.js');
+            await checkCodeHygieneWrapper({github, context, core, exec});
+
+      - name: 💬 Post linting comment to PR
+        if: github.event_name == 'pull_request' && steps.check-lint.outputs.lint-passed == 'false'
+        uses: actions/github-script@v8
+        env:
+          COMMENT_TYPE: "linting"
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          LINT_PASSED: ${{ steps.check-lint.outputs.lint-passed }}
+          LINT_OUTPUT: ${{ steps.check-lint.outputs.lint-output }}
+          GITHUB_SHA: ${{ github.sha }}
+        with:
+          script: |
+            const {default: postHygieneCommentWrapper} = await import('${{ github.workspace }}/.github/scripts/src/post-hygiene-comment-wrapper.js');
+            await postHygieneCommentWrapper({github, context, core, exec});
+
+  summary:
+    name: 📋 Code Hygiene Summary
+    runs-on: ubuntu-latest
+    needs: [stats, formatting, linting]
+    if: always()
+    steps:
+      - name: 🛫 Checkout repository
+        uses: actions/checkout@v5
+
+      - name: 📦 Setup Node.js environment
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: 💬 Post summary comment to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v8
+        env:
+          COMMENT_TYPE: "summary"
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          STATS_RESULT: ${{ needs.stats.result }}
+          FORMATTING_RESULT: ${{ needs.formatting.result }}
+          LINTING_RESULT: ${{ needs.linting.result }}
+          FILES_CHANGED: ${{ needs.stats.outputs.files-changed }}
+          LINES_ADDED: ${{ needs.stats.outputs.lines-added }}
+          LINES_DELETED: ${{ needs.stats.outputs.lines-deleted }}
+          GITHUB_SHA: ${{ github.sha }}
+        with:
+          script: |
+            const {default: postHygieneCommentWrapper} = await import('${{ github.workspace }}/.github/scripts/src/post-hygiene-comment-wrapper.js');
+            await postHygieneCommentWrapper({github, context, core, exec});
+
+      - name: ✅ All checks passed
+        if: needs.formatting.result == 'success' && needs.linting.result == 'success'
+        run: echo "🎉 All code hygiene checks passed successfully!"
+
+      - name: ❌ Some checks failed
+        if: needs.formatting.result == 'failure' || needs.linting.result == 'failure'
+        run: |
+          echo "::error::Code hygiene checks failed. Please review the errors above."
+          exit 1
