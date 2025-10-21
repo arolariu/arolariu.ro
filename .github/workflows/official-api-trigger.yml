@@ -1,4 +1,4 @@
-name: "api-official-trigger"
+name: "official-api-trigger"
 
 permissions:
   id-token: write

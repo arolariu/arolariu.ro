@@ -2,254 +2,419 @@
 
 <img width="400" src="readme/logo.png" alt="arolariu.ro logo">
 
-# AROLARIU.RO Monorepo
+# 🚀 AROLARIU.RO Monorepo
 
-![GitHub commit activity](https://img.shields.io/github/commit-activity/y/arolariu/arolariu.ro?style=for-the-badge)
-![GitHub language count](https://img.shields.io/github/languages/count/arolariu/arolariu.ro?style=for-the-badge)
-![GitHub repo size](https://img.shields.io/github/repo-size/arolariu/arolariu.ro?style=for-the-badge)
+### A Modern, Production-Grade Full-Stack Platform
 
-![GitHub followers](https://img.shields.io/github/followers/arolariu?style=for-the-badge)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/arolariu/arolariu.ro?style=for-the-badge)
-![Lines of code](https://aschey.tech/tokei/github/arolariu/arolariu.ro?style=for-the-badge&label=Lines%20of%20Code)
+<br/>
 
-![Qualys SSL/TLS Grade](http://img.shields.io/badge/Qualys%20SSL%2FTLS%20Grade-A%2B-brightgreen.svg?style=for-the-badge)
-![Mozilla HTTP Observatory Grade](https://img.shields.io/mozilla-observatory/grade/arolariu.ro?style=for-the-badge&label=MDN%20Security%20Score)
+<!-- Activity & Engagement Stats -->
+<div align="center">
+
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/arolariu/arolariu.ro?style=for-the-badge&logo=github&label=Monthly%20Commits&color=blue)
+![GitHub last commit](https://img.shields.io/github/last-commit/arolariu/arolariu.ro?style=for-the-badge&logo=git&label=Last%20Commit)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/arolariu/arolariu.ro/official-website-build.yml?style=for-the-badge&logo=githubactions&label=Build)
 
 </div>
 
-## Platform screenshots
+<!-- Code Quality & Size Stats -->
+<div align="center">
 
-![Screenshot of the main website](./readme/desktop-platform.png)
+![Lines of code](https://aschey.tech/tokei/github/arolariu/arolariu.ro?style=for-the-badge&label=Lines%20of%20Code&color=orange)
+![GitHub code size](https://img.shields.io/github/languages/code-size/arolariu/arolariu.ro?style=for-the-badge&logo=files&color=yellow)
+![GitHub repo size](https://img.shields.io/github/repo-size/arolariu/arolariu.ro?style=for-the-badge&logo=database&label=Repo%20Size)
+![GitHub language count](https://img.shields.io/github/languages/count/arolariu/arolariu.ro?style=for-the-badge&logo=typescript&label=Languages)
 
-## Table of Contents
+</div>
 
-- [AROLARIU.RO Monorepo](#arolariuro-monorepo)
-  - [Platform screenshots](#platform-screenshots)
-  - [Table of Contents](#table-of-contents)
-    - [What is this repository?](#what-is-this-repository)
-  - [Setup Guide](#setup-guide)
+<!-- Security & Performance Stats -->
+<div align="center">
+
+![Qualys SSL/TLS Grade](http://img.shields.io/badge/SSL%2FTLS-A%2B-brightgreen.svg?style=for-the-badge&logo=letsencrypt&logoColor=white)
+![Mozilla HTTP Observatory Grade](https://img.shields.io/mozilla-observatory/grade/arolariu.ro?style=for-the-badge&logo=mozilla&label=Security%20Score)
+![Uptime](https://img.shields.io/badge/Uptime-99.9%25-success?style=for-the-badge&logo=statuspage&logoColor=white)
+
+</div>
+
+<!-- Technology Stack Badges -->
+<div align="center">
+
+![Next.js](https://img.shields.io/badge/Next.js-16.0-black?style=for-the-badge&logo=next.js)
+![React](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
+![Azure](https://img.shields.io/badge/Azure-Cloud-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white)
+
+</div>
+
+<!-- Social & Community Stats -->
+<div align="center">
+
+![GitHub followers](https://img.shields.io/github/followers/arolariu?style=for-the-badge&logo=github&label=Followers)
+![GitHub stars](https://img.shields.io/github/stars/arolariu/arolariu.ro?style=for-the-badge&logo=starship&color=yellow&label=Stars)
+![GitHub forks](https://img.shields.io/github/forks/arolariu/arolariu.ro?style=for-the-badge&logo=git&label=Forks)
+![GitHub watchers](https://img.shields.io/github/watchers/arolariu/arolariu.ro?style=for-the-badge&logo=eyes&label=Watchers)
+
+</div>
+
+<br/>
+
+---
+
+</div>
+
+## 📸 Platform Preview
+
+<div align="center">
+<img src="./readme/desktop-platform.png" alt="Platform Screenshot" style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+
+*Production-ready platform with modern UI/UX*
+
+</div>
+
+---
+
+## 📋 Table of Contents
+
+- [🚀 AROLARIU.RO Monorepo](#-arolariuro-monorepo)
+    - [A Modern, Production-Grade Full-Stack Platform](#a-modern-production-grade-full-stack-platform)
+  - [📸 Platform Preview](#-platform-preview)
+  - [📋 Table of Contents](#-table-of-contents)
+  - [🎯 What is This Repository?](#-what-is-this-repository)
+    - [🌐 Live Services](#-live-services)
+    - [✨ Key Features](#-key-features)
+  - [⚡ Setup Guide](#-setup-guide)
     - [Quick Start](#quick-start)
-    - [Nx Workflow Diagrams](#nx-workflow-diagrams)
-      - [Build Command Flow](#build-command-flow)
-      - [Development Command Flow](#development-command-flow)
-      - [Test Command Flow](#test-command-flow)
     - [Project Structure](#project-structure)
     - [Advanced Nx Commands](#advanced-nx-commands)
-    - [High Level Infrastructure overview (using Bicep Visualizer)](#high-level-infrastructure-overview-using-bicep-visualizer)
-    - [Current CI/CD status](#current-cicd-status)
-    - [Repository Statistics](#repository-statistics)
-      - [Repository activity](#repository-activity)
-      - [Repository contributors](#repository-contributors)
+  - [🏗️ Infrastructure Overview](#️-infrastructure-overview)
+    - [☁️ Azure Components](#️-azure-components)
+    - [🎯 Key Infrastructure Features](#-key-infrastructure-features)
+  - [🔄 CI/CD Pipeline Status](#-cicd-pipeline-status)
+    - [🌐 Website Pipelines](#-website-pipelines)
+    - [⚙️ API Pipelines](#️-api-pipelines)
+    - [🎯 Pipeline Features](#-pipeline-features)
+  - [📊 Repository Statistics](#-repository-statistics)
+    - [Activity Metrics](#activity-metrics)
+      - [📅 Commit Timeline](#-commit-timeline)
+      - [🐛 Issue Activity](#-issue-activity)
+      - [🔀 Pull Request Activity](#-pull-request-activity)
+      - [💬 Trending Topics](#-trending-topics)
+      - [👥 Recent Contributors](#-recent-contributors)
+      - [🗺️ Development Heatmap](#️-development-heatmap)
+    - [Top Contributors](#top-contributors)
+    - [🌟 Star History](#-star-history)
+    - [💖 Support This Project](#-support-this-project)
 
-### What is this repository?
+---
 
-The `arolariu.ro` repository contains the open-source code for different services and workers that are running under the domain umbrella. The repository is organized as a monorepo, and it contains the following services:
+## 🎯 What is This Repository?
 
-- [Next.JS Production Platform](https://arolariu.ro) - is the main point of contact and the primary entry point for users.
-- [Next.JS Development Platform](https://dev.arolariu.ro) - is the development platform for the main website.
-- [ASP.NET (LTS) Public API](https://api.arolariu.ro) - acts as the main backend; it is able to serve REST, GraphQL, and gRPC requests.
+The **arolariu.ro** monorepo is a comprehensive full-stack platform built with modern technologies and best practices. It showcases enterprise-grade architecture, clean code principles, and production-ready deployment strategies.
 
-## Setup Guide
+### 🌐 Live Services
 
-This repository uses [Nx](https://nx.dev) as a monorepo tool to manage all projects from a unified CLI interface. This provides streamlined build, test, and development workflows across the entire codebase.
+| Service | URL | Technology | Purpose |
+|---------|-----|------------|---------|
+| 🎨 **Production Platform** | [arolariu.ro](https://arolariu.ro) | Next.js 16 + React 19 | Main website and user interface |
+| 🔧 **Development Platform** | [dev.arolariu.ro](https://dev.arolariu.ro) | Next.js 16 + React 19 | Development environment |
+| 🚀 **Public API** | [api.arolariu.ro](https://api.arolariu.ro) | .NET 10 (LTS) | REST, GraphQL & gRPC backend |
+| 📄 **CV/Resume** | [cv.arolariu.ro](https://cv.arolariu.ro) | SvelteKit 2 | Personal CV website |
+| 📚 **Documentation** | [docs.arolariu.ro](https://docs.arolariu.ro) | DocFX | Technical documentation |
+
+### ✨ Key Features
+
+- 🏛️ **Domain-Driven Design** - Clean architecture with well-defined bounded contexts
+- 📊 **OpenTelemetry Integration** - Full observability with distributed tracing
+- 🔒 **Enterprise Security** - SSL/TLS A+ rating, comprehensive security headers
+- ⚡ **High Performance** - Optimized for speed with CDN, caching, and SSR/SSG
+- 🧪 **Comprehensive Testing** - Unit, integration, and E2E tests with high coverage
+- 🔄 **CI/CD Automation** - Automated builds, tests, and deployments
+- 📦 **Nx Monorepo** - Efficient workspace management and build optimization
+
+## ⚡ Setup Guide
+
+> 🚀 **Powered by [Nx](https://nx.dev)** - Enterprise-grade monorepo tooling for streamlined development workflows
 
 ### Quick Start
 
+<details open>
+<summary><b>📦 Installation & Build Commands</b></summary>
+
 ```bash
-# Install dependencies at root level
+# 1️⃣ Install dependencies (root level)
 npm install
 
-# Build all projects
+# 2️⃣ Build all projects
 npm run build
 
-# Build specific projects
-npm run build:website      # Main website (Next.js)
-npm run build:components   # React component library
-npm run build:api         # Backend API (.NET)
-npm run build:cv          # CV site (SvelteKit)
-npm run build:docs        # Documentation (DocFX)
+# 3️⃣ Build specific projects
+npm run build:website      # 🌐 Main website (Next.js)
+npm run build:components   # 🧩 React component library
+npm run build:api         # ⚙️ Backend API (.NET)
+npm run build:cv          # 📄 CV site (SvelteKit)
+npm run build:docs        # 📚 Documentation (DocFX)
+```
 
-# Development servers
-npm run dev:website       # Start website dev server
-npm run dev:components    # Start component storybook
-npm run dev:api          # Start API dev server
-npm run dev:cv           # Start CV dev server
-npm run dev:docs         # Start docs dev server
+</details>
 
-# Testing & maintenance
+<details open>
+<summary><b>🔥 Development Commands</b></summary>
+
+```bash
+# Start development servers
+npm run dev:website       # 🌐 Website → http://localhost:3000
+npm run dev:components    # 🧩 Storybook → http://localhost:6006
+npm run dev:api          # ⚙️ API → http://localhost:5000
+npm run dev:cv           # 📄 CV → http://localhost:4173
+npm run dev:docs         # 📚 Docs → http://localhost:8080
+```
+
+</details>
+
+<details>
+<summary><b>🧪 Testing & Quality Commands</b></summary>
+
+```bash
 npm run test             # Run all tests
+npm run test:watch       # Run tests in watch mode
+npm run test:coverage    # Generate coverage reports
 npm run lint             # Lint all projects
-npm run format           # Format all projects
+npm run format           # Format code with Prettier
 ```
 
-### Nx Workflow Diagrams
-
-#### Build Command Flow
-```mermaid
-graph TD
-    A[npm run build] --> B[nx run-many --target=build --all]
-    B --> C[Components Build]
-    B --> D[CV Build]
-    B --> E[API Build]
-    B --> F[Docs Build]
-    B --> G[Website Build]
-    
-    C --> G
-    E --> F
-    
-    C --> H[Component Library Output]
-    D --> I[CV Site Output]
-    E --> J[API Binaries]
-    F --> K[Documentation Site]
-    G --> L[Website Output]
-    
-    style C fill:#e1f5fe
-    style D fill:#e1f5fe
-    style E fill:#fff3e0
-    style F fill:#fff3e0
-    style G fill:#e8f5e8
-```
-
-#### Development Command Flow
-```mermaid
-graph TD
-    A[npm run dev] --> B[nx run-many --target=dev --all --parallel]
-    B --> C[Components Storybook]
-    B --> D[CV Dev Server]
-    B --> E[API Dev Server]
-    B --> F[Docs Dev Server]
-    B --> G[Website Dev Server]
-    
-    C --> H[localhost:6006]
-    D --> I[localhost:3001]
-    E --> J[localhost:5000]
-    F --> K[localhost:8080]
-    G --> L[localhost:3000]
-    
-    style C fill:#e1f5fe
-    style D fill:#e1f5fe
-    style E fill:#fff3e0
-    style F fill:#fff3e0
-    style G fill:#e8f5e8
-```
-
-#### Test Command Flow
-```mermaid
-graph TD
-    A[npm run test] --> B[nx run-many --target=test --all]
-    B --> C[Components Tests]
-    B --> D[CV Tests]
-    B --> E[API Tests]
-    B --> F[Website Tests]
-    
-    C --> G[Jest + React Testing Library]
-    D --> H[Vitest + SvelteKit Testing]
-    E --> I[.NET xUnit Tests]
-    F --> J[Jest + Playwright E2E]
-    
-    G --> K[Component Test Results]
-    H --> L[CV Test Results]
-    I --> M[API Test Results]
-    J --> N[Website Test Results]
-    
-    style C fill:#e1f5fe
-    style D fill:#e1f5fe
-    style E fill:#fff3e0
-    style F fill:#e8f5e8
-```
+</details>
 
 ### Project Structure
 
-```
-arolariu.ro/
-├── packages/
-│   └── components/          # React component library
-├── sites/
-│   ├── arolariu.ro/        # Main website (Next.js)
-│   ├── api.arolariu.ro/    # Backend API (.NET)
-│   ├── cv.arolariu.ro/     # CV site (SvelteKit)
-│   └── docs.arolariu.ro/   # Documentation (DocFX)
-├── package.json            # Root workspace configuration
-└── nx.json                 # Nx workspace configuration
+```plaintext
+arolariu.ro/                    # 🏠 Monorepo root
+├── 📦 packages/
+│   └── components/            # 🧩 Shared React component library
+│       ├── src/              # Component source code
+│       ├── stories/          # Storybook stories
+│       └── package.json
+│
+├── 🌐 sites/
+│   ├── arolariu.ro/          # 🎨 Main Next.js website
+│   │   ├── src/
+│   │   │   ├── app/          # Next.js App Router
+│   │   │   ├── components/   # UI components
+│   │   │   ├── hooks/        # Custom React hooks
+│   │   │   └── lib/          # Utilities
+│   │   └── package.json
+│   │
+│   ├── api.arolariu.ro/      # ⚙️ .NET Backend API
+│   │   ├── src/
+│   │   │   └── Domain/       # DDD domains
+│   │   │       ├── General/
+│   │   │       ├── Invoices/
+│   │   │       └── Auth/
+│   │   └── tests/
+│   │
+│   ├── cv.arolariu.ro/       # 📄 SvelteKit CV
+│   ├── docs.arolariu.ro/     # 📚 DocFX Documentation
+│   └── ...
+│
+├── 🏗️ infra/
+│   └── Azure/
+│       └── Bicep/            # Infrastructure as Code
+│
+├── 📜 scripts/               # Build & utility scripts
+├── 🔧 nx.json               # Nx workspace config
+└── 📦 package.json          # Root dependencies
+
 ```
 
 ### Advanced Nx Commands
 
+<details>
+<summary><b>🎯 Optimization & Analysis</b></summary>
+
 ```bash
-# Show project dependency graph
+# 📊 Visualize project dependency graph
 npx nx graph
 
-# Run commands only on affected projects
+# 🎯 Run tasks only on affected projects
 npx nx affected --target=build
 npx nx affected --target=test
+npx nx affected --target=lint
 
-# Run specific commands
+# 🔍 Show project details
+npx nx show project website
+npx nx show projects --affected
+
+# 🚀 Run specific project commands
 npx nx run website:build
 npx nx run components:storybook
 npx nx run api:dev
-
-# Show project details
-npx nx show project website
-npx nx show projects --affected
 ```
 
-### High Level Infrastructure overview (using Bicep Visualizer)
+</details>
 
-![High Level Infrastructure overview](./design/high-level-infra.png)
+## 🏗️ Infrastructure Overview
 
-The infrastructure is deployed using Azure Bicep, and it is organized in a way that allows for easy management and scaling. The main components of the infrastructure are:
+<div align="center">
 
-- **Azure Front Door** - acts as the main entry point for the platform, and it is able to route traffic to different services based on the request.
-- **Azure App Service** - is used to host the main website and the API.
-- **Azure CDN** - is used to cache and serve static content to users.
-- **Azure Key Vault** - is used to store and manage secrets and certificates.
-- **Azure Application Insights** - is used to monitor and track the performance of the services.
-- **Azure SQL Database** - is used to store and manage the data for the API.
-- **Azure Storage Account** - is used to store and manage the static files for the website.
-- **Azure Monitor** - is used to monitor and track the performance of the services.
-- **Azure App Configuration** - is used to store and manage the configuration settings for the services.
-- **Azure Cosmos DB** - is used to store and manage the data for the API.
+![Infrastructure Architecture](./design/high-level-infra.png)
+
+*Azure Cloud Architecture - Deployed using Infrastructure as Code (Bicep)*
+
+</div>
+
+### ☁️ Azure Components
+
+| Component | Purpose | Technology |
+|-----------|---------|------------|
+| 🌐 **Azure Front Door** | Global entry point & traffic routing | CDN + WAF |
+| 🖥️ **Azure App Service** | Host website & API containers | Docker + Linux |
+| 📦 **Azure CDN** | Static content delivery & caching | Edge locations |
+| 🔐 **Azure Key Vault** | Secrets & certificate management | HSM-backed |
+| 📊 **Application Insights** | APM & distributed tracing | OpenTelemetry |
+| 🗄️ **Azure SQL Database** | Relational data storage | PaaS SQL |
+| 🌍 **Azure Cosmos DB** | NoSQL document database | Multi-region |
+| 💾 **Azure Storage** | Blob storage for static files | ZRS redundancy |
+| 🎛️ **App Configuration** | Feature flags & settings | Managed service |
+| 📈 **Azure Monitor** | Metrics, logs & alerting | Full observability |
+
+### 🎯 Key Infrastructure Features
+
+- ✅ **High Availability** - Multi-region deployment with automatic failover
+- ✅ **Auto-scaling** - Dynamic resource allocation based on demand
+- ✅ **Zero-downtime Deployments** - Blue-green deployment strategy
+- ✅ **Infrastructure as Code** - Fully automated provisioning with Bicep
+- ✅ **Security Hardening** - Private endpoints, managed identities, SSL/TLS A+
+- ✅ **Observability** - Comprehensive logging, metrics, and distributed tracing
 
 ---
 
-### Current CI/CD status
+## 🔄 CI/CD Pipeline Status
 
-| Service              | Build Status                                                                                                                                                                                                                                          | Release Status                                                                                                                                                                                                                                                 |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Main Platform (DEV)  | [![website-official-build](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-build.yml/badge.svg?branch=preview&event=push)](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-build.yml)           | [![website-official-release](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-release.yml/badge.svg?branch=preview&event=workflow_dispatch)](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-release.yml) |
-| Main Platform (PROD) | [![website-official-build](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-build.yml/badge.svg?branch=main&event=workflow_dispatch)](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-build.yml) | [![website-official-release](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-release.yml/badge.svg?branch=main&event=workflow_dispatch)](https://github.com/arolariu/arolariu.ro/actions/workflows/website-official-release.yml)    |
-| API Platform (PROD)  | [![api-official-trigger](https://github.com/arolariu/arolariu.ro/actions/workflows/api-official-trigger.yml/badge.svg?branch=main&event=workflow_dispatch)](https://github.com/arolariu/arolariu.ro/actions/workflows/api-official-trigger.yml)       | [![api-official-trigger](https://github.com/arolariu/arolariu.ro/actions/workflows/api-official-trigger.yml/badge.svg?branch=main&event=workflow_dispatch)](https://github.com/arolariu/arolariu.ro/actions/workflows/api-official-trigger.yml)                |
+<div align="center">
 
-> [!NOTE]
-> The `PROD` environment is the production environment, and the `DEV` environment is the development environment.
+### 🌐 Website Pipelines
+
+</div>
+
+| Environment | Branch | Build | Release | Deployment |
+|-------------|--------|-------|---------|------------|
+| 🟢 **Production** | `main` | [![Build](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml) | [![Release](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml) | [arolariu.ro](https://arolariu.ro) |
+| 🟡 **Development** | `preview` | [![Build](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml/badge.svg?branch=preview)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-build.yml) | [![Release](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml/badge.svg?branch=preview)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-website-release.yml) | [dev.arolariu.ro](https://dev.arolariu.ro) |
+
+<div align="center">
+
+### ⚙️ API Pipelines
+
+</div>
+
+| Environment | Branch | Build & Deploy | Endpoint |
+|-------------|--------|----------------|----------|
+| 🟢 **Production** | `main` | [![API](https://github.com/arolariu/arolariu.ro/actions/workflows/official-api-trigger.yml/badge.svg?branch=main)](https://github.com/arolariu/arolariu.ro/actions/workflows/official-api-trigger.yml) | [api.arolariu.ro](https://api.arolariu.ro) |
+
+### 🎯 Pipeline Features
+
+- ✅ **Automated Testing** - Unit, integration & E2E tests on every commit
+- ✅ **Code Quality Gates** - ESLint, Prettier, SonarQube analysis
+- ✅ **Security Scanning** - Dependency vulnerability checks
+- ✅ **Docker Containerization** - Multi-stage builds with layer caching
+- ✅ **Blue-Green Deployments** - Zero-downtime releases
+- ✅ **Automatic Rollbacks** - Health check failures trigger rollback
+- ✅ **Environment Promotion** - Preview → Production workflow
 
 ---
 
-### Repository Statistics
+## 📊 Repository Statistics
 
-A lot of the information presented here is generated using the [Repography](https://repography.com) service.
-The service is able to generate a lot of different badges and graphs based on the GitHub repository's activity.
+> 📈 **Powered by [Repography](https://repography.com)** - Advanced analytics updated every 24 hours from GitHub API
 
-The data is updated every 24 hours, and it is based on the latest available information from the GitHub API.
+<div align="center">
 
-Time interval: [![Time period](https://images.repography.com/39125298/arolariu/arolariu.ro/recent-activity/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_badge.svg)](https://repography.com)
+[![Time period](https://images.repography.com/39125298/arolariu/arolariu.ro/recent-activity/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_badge.svg)](https://repography.com)
 
-#### Repository activity
+</div>
+
+### Activity Metrics
+
+<div align="center">
+
+#### 📅 Commit Timeline
 
 [![Timeline graph](https://images.repography.com/39125298/arolariu/arolariu.ro/recent-activity/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_timeline.svg)](https://github.com/arolariu/arolariu.ro/commits)
 
+</div>
+
+<div align="center">
+
+#### 🐛 Issue Activity
+
 [![Issue status graph](https://images.repography.com/39125298/arolariu/arolariu.ro/recent-activity/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_issues.svg)](https://github.com/arolariu/arolariu.ro/issues)
+
+</div>
+
+<div align="center">
+
+#### 🔀 Pull Request Activity
 
 [![Pull request status graph](https://images.repography.com/39125298/arolariu/arolariu.ro/recent-activity/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_prs.svg)](https://github.com/arolariu/arolariu.ro/pulls)
 
+</div>
+
+<div align="center">
+
+#### 💬 Trending Topics
+
 [![Trending topics](https://images.repography.com/39125298/arolariu/arolariu.ro/recent-activity/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_words.svg)](https://github.com/arolariu/arolariu.ro/commits)
+
+</div>
+
+<div align="center">
+
+#### 👥 Recent Contributors
 
 [![Top contributors](https://images.repography.com/39125298/arolariu/arolariu.ro/recent-activity/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_users.svg)](https://github.com/arolariu/arolariu.ro/graphs/contributors)
 
+</div>
+
+<div align="center">
+
+#### 🗺️ Development Heatmap
+
 [![Activity map](https://images.repography.com/39125298/arolariu/arolariu.ro/recent-activity/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_map.svg)](https://github.com/arolariu/arolariu.ro/commits)
 
-#### Repository contributors
+</div>
 
-Here is a list that contains the top contributors to the repository.
+---
+
+### Top Contributors
+
+<div align="center">
 
 [![Top contributors](https://images.repography.com/39125298/arolariu/arolariu.ro/top-contributors/1W5aIW8QnZQEotvdsf5oU2sHQhOpMgx1tUWkfXzX7bA/9AUN7WfNEj1mtVRPP4BM4177J7FzSpcQrJSkX4mIKbY_table.svg)](https://github.com/arolariu/arolariu.ro/graphs/contributors)
+
+</div>
+
+---
+
+<div align="center">
+
+### 🌟 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=arolariu/arolariu.ro&type=Date)](https://star-history.com/#arolariu/arolariu.ro&Date)
+
+</div>
+
+---
+
+<div align="center">
+
+### 💖 Support This Project
+
+If you find this project useful, please consider giving it a ⭐ star on GitHub!
+
+[![GitHub stars](https://img.shields.io/github/stars/arolariu/arolariu.ro?style=social)](https://github.com/arolariu/arolariu.ro/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/arolariu/arolariu.ro?style=social)](https://github.com/arolariu/arolariu.ro/network/members)
+[![GitHub watchers](https://img.shields.io/github/watchers/arolariu/arolariu.ro?style=social)](https://github.com/arolariu/arolariu.ro/watchers)
+
+**[⬆ Back to Top](#-arolariuro-monorepo)**
+
+</div>

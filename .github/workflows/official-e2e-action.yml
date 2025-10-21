@@ -1,4 +1,4 @@
-name: "live-test-official"
+name: "official-e2e-action"
 
 permissions:
   id-token: write
@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v5
 
       - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v5.0.0
+        uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: 'npm'
@@ -46,10 +46,10 @@ jobs:
       duration: ${{ steps.test.outputs.duration }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v5
 
       - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v5.0.0
+        uses: actions/setup-node@v5
         with:
           node-version: 24
 
@@ -94,10 +94,10 @@ jobs:
       duration: ${{ steps.test.outputs.duration }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v5
 
       - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v5.0.0
+        uses: actions/setup-node@v5
         with:
           node-version: 24
 
@@ -150,15 +150,15 @@ jobs:
       TZ: Europe/Bucharest
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v5
 
       - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v5.0.0
+        uses: actions/setup-node@v5
         with:
           node-version: 24
 
       - name: 📥 Download all test artifacts
-        uses: actions/download-artifact@v5.0.0
+        uses: actions/download-artifact@v5
         with:
           path: logs
 

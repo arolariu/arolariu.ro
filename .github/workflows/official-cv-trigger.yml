@@ -1,4 +1,4 @@
-name: "cv-official-trigger"
+name: "official-cv-trigger"
 
 permissions:
   id-token: write
@@ -14,6 +14,9 @@ on:
     paths: ["sites/cv.arolariu.ro/**"]
   workflow_dispatch:
 
+env:
+  COMMIT_SHA: ${{ github.sha }}
+
 jobs:
   build-and-deploy:
     name: 🚀 Building and deploying the CV platform (cv.arolariu.ro)...
@@ -23,10 +26,10 @@ jobs:
       url: "https://cv.arolariu.ro"
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v5
 
       - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v5.0.0
+        uses: actions/setup-node@v5
         with:
           node-version: 24
 

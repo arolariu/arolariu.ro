@@ -9,35 +9,8 @@ import {getBranchCommitComparisonSection} from "../lib/git-helper.ts";
 import getJestResultsSection from "../lib/jest-helper.ts";
 import getPlaywrightResultsSection from "../lib/playwright-helper.ts";
 import {generateWorkflowInfoSection} from "../lib/pr-comment-builder.ts";
+import {getPRNumber} from "../lib/pr-helper.ts";
 import type {ScriptParams, WorkflowInfo} from "../types/index.ts";
-
-/**
- * Validates and parses the PR number from the PR_NUMBER environment variable
- * @returns PR number as integer, or null if invalid/not set
- * @example
- * ```typescript
- * const prNum = getPRNumber();
- * if (prNum === null) {
- *   console.log('No valid PR found');
- * }
- * ```
- */
-function getPRNumber(): number | null {
-  const prNumberStr = process.env["PR_NUMBER"];
-
-  if (!prNumberStr || prNumberStr === "null" || prNumberStr === "" || prNumberStr === "undefined") {
-    console.log(`No open PR found for this commit (PR_NUMBER: ${prNumberStr}), or PR_NUMBER env var not set correctly. Skipping comment.`);
-    return null;
-  }
-
-  const prNumber = Number.parseInt(prNumberStr, 10);
-  if (Number.isNaN(prNumber)) {
-    console.log(`Invalid PR_NUMBER: ${prNumberStr}. Skipping comment.`);
-    return null;
-  }
-
-  return prNumber;
-}
 
 /**
  * Extracts and validates required environment variables for PR comment creation
@@ -134,9 +107,9 @@ export default async function createPRComment(params: ScriptParams): Promise<voi
 
   core.info("🚀 Starting PR comment creation process...");
 
-  // Validate PR number
+  // Validate PR number using shared helper
   core.debug("Validating PR number...");
-  const prNumber = getPRNumber();
+  const prNumber = getPRNumber(core);
   if (prNumber === null) {
     core.warning("⏭️ No PR number found - skipping comment creation");
     return;

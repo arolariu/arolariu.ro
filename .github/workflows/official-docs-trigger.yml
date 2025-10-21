@@ -1,4 +1,4 @@
-name: "docs-official-trigger"
+name: "official-docs-trigger"
 
 permissions:
   id-token: write
@@ -10,6 +10,9 @@ on:
     paths-ignore: [".github/*"]
   workflow_dispatch:
 
+env:
+  COMMIT_SHA: ${{ github.sha }}
+
 jobs:
   build-and-deploy:
     name: 🚀 Building and deploying the docs platform (docs.arolariu.ro)...
@@ -19,10 +22,10 @@ jobs:
       url: "https://docs.arolariu.ro"
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v5
 
       - name: 📦 Installing the .NET runtime...
-        uses: actions/setup-dotnet@v5.0.0
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "10.x"
 

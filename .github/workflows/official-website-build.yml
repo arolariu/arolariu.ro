@@ -1,4 +1,4 @@
-name: "website-official-build"
+name: "official-website-build"
 
 permissions:
   id-token: write
@@ -48,10 +48,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v5
 
       - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v5.0.0
+        uses: actions/setup-node@v5
         with:
           node-version: 24
 
@@ -84,13 +84,6 @@ jobs:
         env: # We will use local assets for the tests
           USE_CDN: "false"
 
-      - name: ❓ Find Pull Request
-        if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
-        id: find_pr
-        uses: jwalton/gh-find-current-pr@v1.3.3
-        with:
-          state: open
-
       - name: 📤 Upload Test Reports
         if: always()
         uses: actions/upload-artifact@v4.6.2
@@ -102,9 +95,9 @@ jobs:
 
       - name: 💬 Create PR Comment
         uses: actions/github-script@v8.0.0
-        if: github.event_name == 'push' && github.ref == 'refs/heads/preview' && steps.find_pr.outputs.number
+        if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
         env:
-          PR_NUMBER: ${{ steps.find_pr.outputs.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JOB_STATUS: ${{ job.status }}
           COMMIT_SHA: ${{ github.sha }}
@@ -123,7 +116,7 @@ jobs:
             await createPRCommentWrapper({ github, context, core, exec });
 
       - name: ☂️ Uploading code coverage report to CodeCov
-        uses: codecov/codecov-action@v5.5.1
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: "sites/arolariu.ro/code-cov"
@@ -135,7 +128,7 @@ jobs:
     environment: ${{ inputs.environment || 'development'}}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v5
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2.3.0
@@ -152,7 +145,7 @@ jobs:
           login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
       - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v5.0.0
+        uses: actions/setup-node@v5
         with:
           node-version: 24
 
