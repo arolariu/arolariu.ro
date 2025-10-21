@@ -126,7 +126,7 @@ public sealed class InvoiceOrchestrationServiceTests
       .ReturnsAsync(analyzedInvoice);
 
     mockStorageService
-   .Setup(s => s.UpdateInvoiceObject(analyzedInvoice, invoiceId, userId))
+      .Setup(s => s.UpdateInvoiceObject(analyzedInvoice, invoiceId, userId))
       .ReturnsAsync(analyzedInvoice);
 
     // Act
