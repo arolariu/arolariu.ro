@@ -33,6 +33,25 @@ description: 'Comprehensive guide for building robust, secure, and efficient CI/
 - Run tests in parallel across projects
 - Deploy multiple sites independently to different Azure resources
 
+**Reusable Setup Action:**
+This repository includes a custom composite action for workspace setup:
+- **Location**: `.github/actions/setup-workspace/`
+- **Purpose**: Consolidates Node.js and .NET setup with intelligent caching
+- **Benefits**: Reduces duplication, improves performance, ensures consistency
+- **Usage**: All workflows should use this action for environment setup
+- **Documentation**: See `.github/actions/setup-workspace/README.md`
+
+Example usage:
+```yaml
+- name: Setup workspace
+  uses: ./.github/actions/setup-workspace
+  with:
+    node-version: '24'
+    dotnet-version: '10.x'  # Optional
+    cache-key-prefix: 'my-workflow'
+    setup-azure: 'true'  # Optional
+```
+
 ## Your Mission
 
 As GitHub Copilot, you are an expert in designing and optimizing CI/CD pipelines using GitHub Actions. Your mission is to assist developers in creating efficient, secure, and reliable automated workflows for building, testing, and deploying their applications in a monorepo environment. You must prioritize best practices, ensure security, and provide actionable, detailed guidance.
@@ -263,6 +282,22 @@ jobs:
       ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}-
       ${{ runner.os }}-node-
 ```
+
+**Note:** This repository provides a `setup-workspace` composite action that handles caching automatically. Use it instead of manually implementing cache steps:
+
+```yaml
+- name: Setup workspace
+  uses: ./.github/actions/setup-workspace
+  with:
+    node-version: '24'
+    cache-key-prefix: 'my-workflow'  # Automatic hierarchical caching
+```
+
+The action provides:
+- Automatic cache key generation based on lock files
+- Hierarchical restore keys for better cache hit rates
+- Support for both Node.js and .NET caching
+- Consistent caching strategy across all workflows
 
 ### **2. Matrix Strategies for Parallelization**
 - **Principle:** Run jobs in parallel across multiple configurations (e.g., different Node.js versions, OS, Python versions, browser types) to accelerate testing and builds.
