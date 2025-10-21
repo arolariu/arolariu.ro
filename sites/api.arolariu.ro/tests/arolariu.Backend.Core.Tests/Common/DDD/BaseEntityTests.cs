@@ -1,16 +1,24 @@
 namespace arolariu.Backend.Core.Tests.Common.DDD;
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Core.Tests.Shared.TestDoubles;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+/// <summary>
+/// Tests for the base entity abstraction verifying audit field initialization, soft delete behavior,
+/// update simulation and importance flag toggling. Method names follow the mandated
+/// MethodName_Condition_ExpectedResult pattern.
+/// </summary>
+[SuppressMessage("Design", "CA1515", Justification = "Public class required for MSTest discovery.")]
+[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming enforced across test suite.")]
 [TestClass]
 public sealed class BaseEntityTests
 {
+  /// <summary>Ensures initial state sets created and last updated timestamps and not soft deleted.</summary>
   [TestMethod]
-
   public void DefaultInitialization_SetsCreatedAndLastUpdated_NotSoftDeleted()
   {
     // Arrange
@@ -31,6 +39,7 @@ public sealed class BaseEntityTests
     Assert.IsLessThan(1, delta.TotalSeconds, "LastUpdatedAt should initially match CreatedAt (within 1s).");
   }
 
+  /// <summary>Verifies soft delete method marks entity as soft deleted.</summary>
   [TestMethod]
   public void SoftDelete_SetsFlagTrue()
   {
@@ -40,6 +49,7 @@ public sealed class BaseEntityTests
     Assert.IsTrue(entity.IsSoftDeleted);
   }
 
+  /// <summary>Ensures updating increments NumberOfUpdates and sets audit fields.</summary>
   [TestMethod]
   public void SimulateUpdate_IncrementsNumberOfUpdatesAndSetsAuditFields()
   {
@@ -53,6 +63,7 @@ public sealed class BaseEntityTests
     Assert.IsTrue(entity.LastUpdatedAt >= entity.CreatedAt);
   }
 
+  /// <summary>Confirms importance flag can be toggled.</summary>
   [TestMethod]
   public void IsImportant_CanBeToggled()
   {

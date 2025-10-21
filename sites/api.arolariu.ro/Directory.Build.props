@@ -1,0 +1,70 @@
+<Project>
+  <!--
+    Central Build Configuration for arolariu.ro Backend API
+    This file is automatically imported by all project files in this directory and subdirectories.
+  -->
+
+  <PropertyGroup Label="Common Project Settings">
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-all</AnalysisLevel>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <SignAssembly>False</SignAssembly>
+  </PropertyGroup>
+
+  <!-- Debug Configuration -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" Label="Debug Build Settings">
+    <WarningLevel>9999</WarningLevel>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <Deterministic>True</Deterministic>
+    <NoWarn>S1135, NU1903, NU1902</NoWarn>
+  </PropertyGroup>
+
+  <!-- Release Configuration -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'" Label="Release Build Settings">
+    <WarningLevel>9999</WarningLevel>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <Deterministic>True</Deterministic>
+    <NoWarn>S1135, NU1903, NU1902</NoWarn>
+  </PropertyGroup>
+
+  <!-- AOT & Trimming Settings for Libraries -->
+  <PropertyGroup Condition="'$(OutputType)' == 'Library' AND '$(IsTestProject)' != 'true'" Label="Library Optimization Settings">
+    <IsTrimmable>True</IsTrimmable>
+    <IsAotCompatible>True</IsAotCompatible>
+  </PropertyGroup>
+
+  <!-- AOT & Trimming Settings for Web Projects -->
+  <PropertyGroup Condition="'$(OutputType)' == 'Exe' OR '$(IsAspNetCoreProject)' == 'true'" Label="Web Project Optimization Settings">
+    <IsTrimmable>False</IsTrimmable>
+    <IsAotCompatible>False</IsAotCompatible>
+  </PropertyGroup>
+
+  <!-- Test Project Settings -->
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'" Label="Test Project Settings">
+    <IsPackable>false</IsPackable>
+    <IsTrimmable>False</IsTrimmable>
+    <IsAotCompatible>False</IsAotCompatible>
+  </PropertyGroup>
+
+  <!-- Enable Central Package Management -->
+  <PropertyGroup Label="Central Package Management">
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!-- Solution-wide Metadata -->
+  <PropertyGroup Label="Assembly Metadata">
+    <Company>arolariu.ro</Company>
+    <Authors>Alexandru Olariu</Authors>
+    <Copyright>Copyright © 2025 Alexandru Olariu</Copyright>
+    <PackageProjectUrl>https://arolariu.ro</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/arolariu/arolariu.ro</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+</Project>

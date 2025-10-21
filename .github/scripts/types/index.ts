@@ -1,6 +1,6 @@
 import * as core from "@actions/core";
-import * as github from "@actions/github";
 import * as exec from "@actions/exec";
+import * as github from "@actions/github";
 
 // Type alias for the Octokit client instance
 export type OctokitClient = ReturnType<typeof github.getOctokit>;
@@ -13,6 +13,14 @@ export interface ScriptParams {
   context: typeof github.context;
   core: typeof core;
   exec: typeof exec;
+}
+
+/**
+ * GitHub repository information
+ */
+export interface RepositoryInfo {
+  owner: string;
+  name: string;
 }
 
 /**
@@ -39,3 +47,6 @@ export interface FileComparisonItem {
   diff: number;
   status: string;
 }
+
+// Re-export workflow-specific types
+export type * from "./workflow-types.ts";

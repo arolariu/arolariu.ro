@@ -5,6 +5,8 @@
     <File Path=".gitignore" />
     <File Path="sites/api.arolariu.ro/.dockerignore" />
     <File Path="sites/api.arolariu.ro/Controllers_Breakpoints.xml" />
+    <File Path="sites/api.arolariu.ro/Directory.Build.props" />
+    <File Path="sites/api.arolariu.ro/Directory.Packages.props" />
     <File Path="sites/api.arolariu.ro/Dockerfile" />
   </Folder>
   <Folder Name="/sites/" />

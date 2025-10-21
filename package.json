@@ -84,8 +84,8 @@
     "@faker-js/faker": "10.1.0",
     "@hookform/resolvers": "5.2.2",
     "@microsoft/api-extractor": "7.53.1",
-    "@next/bundle-analyzer": "16.0.0-beta.0",
-    "@next/eslint-plugin-next": "16.0.0-beta.0",
+    "@next/bundle-analyzer": "16.0.0-canary.15",
+    "@next/eslint-plugin-next": "16.0.0-canary.15",
     "@nx/js": "21.6.5",
     "@nx/node": "21.6.5",
     "@nx/web": "21.6.5",
@@ -208,7 +208,7 @@
     "motion": "12.23.24",
     "msw": "2.11.6",
     "nanospinner": "1.2.2",
-    "next": "16.0.0-beta.0",
+    "next": "16.0.0-canary.15",
     "next-intl": "4.3.12",
     "next-themes": "0.4.6",
     "nx": "21.6.5",
@@ -259,13 +259,13 @@
   },
   "overrides": {
     "@clerk/nextjs": {
-      "next": "16.0.0-beta.0"
+      "next": "16.0.0-canary.15"
     },
     "@storybook/nextjs": {
-      "next": "16.0.0-beta.0"
+      "next": "16.0.0-canary.15"
     },
     "next-intl": {
-      "next": "16.0.0-beta.0"
+      "next": "16.0.0-canary.15"
     }
   }
 }
