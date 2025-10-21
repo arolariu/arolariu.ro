@@ -35,14 +35,11 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: 📦 Setup Node.js environment
-        uses: actions/setup-node@v5
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
         with:
-          node-version: 24
-          cache: "npm"
-
-      - name: 📥 Install dependencies
-        run: npm ci --prefer-offline --no-audit
+          node-version: '24'
+          cache-key-prefix: 'hygiene-stats'
 
       - name: 🔨 Build all projects
         run: npm run build
@@ -90,14 +87,11 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: 📦 Setup Node.js environment
-        uses: actions/setup-node@v5
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
         with:
-          node-version: 24
-          cache: "npm"
-
-      - name: 📥 Install dependencies
-        run: npm ci --prefer-offline --no-audit
+          node-version: '24'
+          cache-key-prefix: 'hygiene-format'
 
       - name: 🎨 Check code formatting using TypeScript helper
         id: check-format
@@ -138,14 +132,11 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: 📦 Setup Node.js environment
-        uses: actions/setup-node@v5
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
         with:
-          node-version: 24
-          cache: "npm"
-
-      - name: 📥 Install dependencies
-        run: npm ci --prefer-offline --no-audit
+          node-version: '24'
+          cache-key-prefix: 'hygiene-lint'
 
       - name: 🔍 Check code linting using TypeScript helper
         id: check-lint
@@ -181,10 +172,12 @@ jobs:
       - name: 🛫 Checkout repository
         uses: actions/checkout@v5
 
-      - name: 📦 Setup Node.js environment
-        uses: actions/setup-node@v5
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
         with:
-          node-version: 24
+          node-version: '24'
+          install-dependencies: 'false'
+          cache-key-prefix: 'hygiene-summary'
 
       - name: 💬 Post summary comment to PR
         if: github.event_name == 'pull_request'

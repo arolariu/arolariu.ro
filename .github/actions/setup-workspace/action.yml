@@ -1,0 +1,112 @@
+name: 'Setup Workspace'
+description: 'Sets up Node.js and .NET with optimized caching for the monorepo workspace'
+author: 'arolariu.ro'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: false
+    default: '24'
+  
+  dotnet-version:
+    description: '.NET version to use (leave empty to skip .NET setup)'
+    required: false
+    default: ''
+  
+  install-dependencies:
+    description: 'Whether to install npm dependencies'
+    required: false
+    default: 'true'
+  
+  cache-key-prefix:
+    description: 'Prefix for cache key to allow per-workflow customization'
+    required: false
+    default: 'default'
+  
+  working-directory:
+    description: 'Working directory for npm commands (relative to repository root)'
+    required: false
+    default: '.'
+  
+  setup-azure:
+    description: 'Whether to run npm setup:azure command'
+    required: false
+    default: 'false'
+  
+  playwright:
+    description: 'Whether to install Playwright browsers'
+    required: false
+    default: 'false'
+
+outputs:
+  node-cache-hit:
+    description: 'Whether there was a cache hit for Node.js dependencies'
+    value: ${{ steps.cache-node.outputs.cache-hit }}
+  
+  dotnet-cache-hit:
+    description: 'Whether there was a cache hit for .NET packages'
+    value: ${{ steps.cache-dotnet.outputs.cache-hit }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 📦 Setup Node.js ${{ inputs.node-version }}
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ inputs.node-version }}
+    
+    - name: 💾 Cache Node.js dependencies
+      id: cache-node
+      uses: actions/cache@v4
+      with:
+        path: |
+          node_modules
+          ~/.npm
+          **/node_modules
+        key: ${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-
+          ${{ runner.os }}-node-
+    
+    - name: 📦 Setup .NET ${{ inputs.dotnet-version }}
+      if: inputs.dotnet-version != ''
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: ${{ inputs.dotnet-version }}
+    
+    - name: 💾 Cache .NET packages
+      id: cache-dotnet
+      if: inputs.dotnet-version != ''
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.nuget/packages
+          ~/.dotnet
+        key: ${{ runner.os }}-dotnet-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
+        restore-keys: |
+          ${{ runner.os }}-dotnet-${{ inputs.cache-key-prefix }}-
+          ${{ runner.os }}-dotnet-
+    
+    - name: 📥 Install npm dependencies
+      if: inputs.install-dependencies == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if [ "${{ steps.cache-node.outputs.cache-hit }}" != "true" ]; then
+          echo "Installing dependencies (no cache hit)..."
+          npm ci --prefer-offline --no-audit
+        else
+          echo "Using cached dependencies"
+        fi
+    
+    - name: ⚙️ Setup Azure configuration
+      if: inputs.setup-azure == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: npm run setup:azure
+    
+    - name: 🎭 Install Playwright browsers
+      if: inputs.playwright == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: npx playwright install --with-deps

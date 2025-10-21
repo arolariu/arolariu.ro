@@ -50,10 +50,14 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v5
 
-      - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v5
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
         with:
-          node-version: 24
+          node-version: '24'
+          setup-azure: 'true'
+          playwright: 'true'
+          cache-key-prefix: 'website-test'
+          working-directory: './sites/arolariu.ro'
 
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2.3.0
@@ -62,12 +66,8 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: 📦 Installing dependencies...
-        run: |
-          npm ci
-          npm setup:azure
-          npm playwright install --with-deps
-          npm generate
+      - name: 📦 Generate additional files...
+        run: npm generate
 
       - name: 🧪 Running Jest Unit tests...
         run: npm run test:unit
@@ -130,6 +130,14 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v5
 
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: '24'
+          setup-azure: 'true'
+          cache-key-prefix: 'website-build'
+          working-directory: './sites/arolariu.ro'
+
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2.3.0
         with:
@@ -144,16 +152,9 @@ jobs:
           password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
           login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
-      - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v5
-        with:
-          node-version: 24
-
-      - name: 📦 Installing dependencies...
+      - name: 📦 Enable corepack and generate files...
         run: |
           corepack enable
-          npm install --immutable
-          npm run setup:azure
           npm run generate
 
       - name: 🏗️ Building the docker container...
