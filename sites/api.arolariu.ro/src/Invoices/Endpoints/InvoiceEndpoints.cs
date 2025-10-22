@@ -27,9 +27,6 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 public static partial class InvoiceEndpoints
 {
   private const string SemanticVersioning = "3.0.0";
-
-  [SuppressMessage("Performance", "IDE0051:Avoid unused private fields", Justification = "False. Partial implementation.")]
-  [SuppressMessage("Performance", "CA1823:Avoid unused private fields", Justification = "False. Partial implementation.")]
   private const string EndpointNameTag = "Invoices Management System v" + SemanticVersioning;
 
   /// <summary>
