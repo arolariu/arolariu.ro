@@ -142,7 +142,7 @@ jobs:
           # Truncate to 50000 chars
             TRUNCATED_CONTENT="$(head -c 50000 lint_output.txt)"
             {
-              echo "lint-output<<'EOF'"
+              echo "lint-output<<EOF"
               echo "$TRUNCATED_CONTENT"
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
@@ -254,10 +254,10 @@ jobs:
           } > top_dir.md
 
           {
-            echo "top-ext-markdown<<'EOF'"
+            echo "top-ext-markdown<<EOF"
             cat top_ext.md
             echo "EOF"
-            echo "top-dir-markdown<<'EOF'"
+            echo "top-dir-markdown<<EOF"
             cat top_dir.md
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
