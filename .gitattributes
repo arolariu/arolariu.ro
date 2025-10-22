@@ -1,0 +1,139 @@
+# Git Attributes Configuration for arolariu.ro Monorepo
+# Enforces CRLF line endings across all platforms to maintain consistency
+# between Windows development and Linux CI/CD environments
+
+# =============================================================================
+# Default Behavior: All text files use CRLF
+# =============================================================================
+* text=auto eol=crlf
+
+# =============================================================================
+# Source Code Files: Explicit CRLF
+# =============================================================================
+
+# TypeScript/JavaScript
+*.ts text eol=crlf
+*.tsx text eol=crlf
+*.js text eol=crlf
+*.jsx text eol=crlf
+*.mjs text eol=crlf
+*.cjs text eol=crlf
+
+# Configuration Files
+*.json text eol=crlf
+*.jsonc text eol=crlf
+*.json5 text eol=crlf
+*.yaml text eol=crlf
+*.yml text eol=crlf
+*.toml text eol=crlf
+*.ini text eol=crlf
+*.config text eol=crlf
+
+# Web Files
+*.html text eol=crlf
+*.htm text eol=crlf
+*.css text eol=crlf
+*.scss text eol=crlf
+*.sass text eol=crlf
+*.less text eol=crlf
+*.svg text eol=crlf
+*.xml text eol=crlf
+
+# Documentation
+*.md text eol=crlf
+*.mdx text eol=crlf
+*.txt text eol=crlf
+*.rst text eol=crlf
+*.adoc text eol=crlf
+
+# .NET Files
+*.cs text eol=crlf
+*.csx text eol=crlf
+*.vb text eol=crlf
+*.fs text eol=crlf
+*.fsx text eol=crlf
+*.csproj text eol=crlf
+*.sln text eol=crlf
+*.slnx text eol=crlf
+*.props text eol=crlf
+*.targets text eol=crlf
+
+# Svelte
+*.svelte text eol=crlf
+
+# Other Text Files
+*.env text eol=crlf
+*.env.* text eol=crlf
+.editorconfig text eol=crlf
+.gitignore text eol=crlf
+.gitattributes text eol=crlf
+.npmrc text eol=crlf
+.prettierrc text eol=crlf
+.prettierignore text eol=crlf
+LICENSE text eol=crlf
+*.lock text eol=crlf
+
+# =============================================================================
+# Shell Scripts: Must use LF (Unix convention)
+# =============================================================================
+*.sh text eol=lf
+*.bash text eol=lf
+
+# =============================================================================
+# Binary Files: No line ending conversion
+# =============================================================================
+
+# Images
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.ico binary
+*.bmp binary
+*.webp binary
+*.svg binary
+
+# Fonts
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+
+# Archives
+*.zip binary
+*.tar binary
+*.gz binary
+*.7z binary
+*.rar binary
+
+# Executables & Libraries
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+
+# Media
+*.mp4 binary
+*.mov binary
+*.avi binary
+*.mp3 binary
+*.wav binary
+*.ogg binary
+
+# Documents
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+
+# Other Binary
+*.bin binary
+*.dat binary
+*.db binary
+*.p12 binary
+*.pfx binary
+*.pem binary
+*.key binary
+*.cer binary
+*.crt binary
