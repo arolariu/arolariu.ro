@@ -41,10 +41,13 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v5.0.0
 
-      - name: 📦 Installing the .NET runtime...
-        uses: actions/setup-dotnet@v5.0.0
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
         with:
-          dotnet-version: "10.x"
+          dotnet-version: '10'
+          install-node-dependencies: 'false'
+          install-dotnet-dependencies: 'true'
+          cache-key-prefix: 'api'
 
       # - name: 🧪 Running unit tests...
       #   run: |
@@ -68,6 +71,14 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v5.0.0
 
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          dotnet-version: '10.x'
+          install-node-dependencies: 'false'
+          install-dotnet-dependencies: 'false'
+          cache-key-prefix: 'api'
+
       - name: 🔒 Performing auth against Azure Public Cloud...
         uses: Azure/login@v2.3.0
         with:
@@ -81,11 +92,6 @@ jobs:
           username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
           password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
           login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
-
-      - name: 📦 Installing the .NET runtime...
-        uses: actions/setup-dotnet@v5.0.0
-        with:
-          dotnet-version: "10.x"
 
       - name: 🏗️ Building the docker container...
         env:

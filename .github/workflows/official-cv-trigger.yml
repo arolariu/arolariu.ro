@@ -28,14 +28,15 @@ jobs:
       - name: 🛫 Checking out the branch inside the runner environment...
         uses: actions/checkout@v5
 
-      - name: 📦 Installing Node.js...
-        uses: actions/setup-node@v5
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
         with:
-          node-version: 24
+          node-version: '24'
+          cache-key-prefix: 'cv'
+          working-directory: './sites/cv.arolariu.ro'
 
-      - name: 📦 Installing dependencies...
+      - name: 📦 Prepare and build...
         run: |
-          npm install
           npm run prepare
           npm run build
 

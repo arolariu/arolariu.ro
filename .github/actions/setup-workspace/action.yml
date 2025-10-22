@@ -1,81 +1,162 @@
 name: 'Setup Workspace'
-description: 'Composite action to setup Node.js and .NET, and optionally install dependencies with caching'
+description: 'Sets up Node.js and .NET with optimized caching for the monorepo workspace'
+author: 'arolariu.ro'
+
 inputs:
   node-version:
     description: 'Node.js version to use'
     required: false
     default: '24'
+
   dotnet-version:
-    description: '.NET SDK version to use'
+    description: '.NET version to use (leave empty to skip .NET setup)'
     required: false
-    default: '10.0.x'
-  setup-node:
+    default: '10.x'
+
+  install-node-dependencies:
     description: 'Whether to install npm dependencies'
     required: false
     default: 'true'
-  setup-dotnet:
-    description: 'Whether to setup .NET SDK'
+
+  install-dotnet-dependencies:
+    description: 'Whether to restore .NET dependencies'
     required: false
     default: 'true'
+
+  generate:
+    description: 'Whether to run npm run generate for GraphQL schemas and artifacts'
+    required: false
+    default: 'false'
+
+  cache-key-prefix:
+    description: 'Prefix for cache key to allow per-workflow customization'
+    required: false
+    default: 'default'
+
   working-directory:
-    description: 'Working directory'
+    description: 'Working directory for npm commands (relative to repository root)'
     required: false
     default: '.'
+
+  setup-azure:
+    description: 'Whether to run npm setup:azure command'
+    required: false
+    default: 'false'
+
+  playwright:
+    description: 'Whether to install Playwright browsers'
+    required: false
+    default: 'false'
+
+outputs:
+  node-cache-hit:
+    description: 'Whether there was a cache hit for Node.js dependencies'
+    value: ${{ steps.cache-node.outputs.cache-hit }}
+
+  dotnet-cache-hit:
+    description: 'Whether there was a cache hit for .NET packages'
+    value: ${{ steps.cache-dotnet.outputs.cache-hit }}
 
 runs:
   using: 'composite'
   steps:
-    - name: 📦 Setting up Node.js v${{ inputs.node-version }}
+    - name: 🚀 Starting workspace setup...
+      shell: bash
+      run: echo "::notice::Setting up workspace with Node.js ${{ inputs.node-version }}${{ inputs.dotnet-version != '' && format(' and .NET {0}', inputs.dotnet-version) || '' }}"
+
+    - name: 📦 Setup Node.js ${{ inputs.node-version }}
       uses: actions/setup-node@v5
       with:
         node-version: ${{ inputs.node-version }}
-        cache: 'npm'
-        cache-dependency-path: '**/package-lock.json'
 
-    - name: 🗂️ Setting up .NET SDK v${{ inputs.dotnet-version }}
-      if: inputs.setup-dotnet == 'true'
+    - name: 💾 Cache Node.js dependencies
+      id: cache-node
+      uses: actions/cache@v4
+      with:
+        path: |
+          node_modules
+          ~/.npm
+          **/node_modules
+        key: ${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/package-lock.json') }}
+
+    - name: 📦 Setup .NET ${{ inputs.dotnet-version }}
+      if: inputs.dotnet-version != ''
       uses: actions/setup-dotnet@v5
       with:
         dotnet-version: ${{ inputs.dotnet-version }}
-        cache: true
-        cache-dependency-path: '**/packages.lock.json'
 
-    - name: 📥 Restoring .NET cache...
-      if: inputs.setup-dotnet == 'true'
-      id: cache-dotnet-tools
+    - name: 💾 Cache .NET packages
+      id: cache-dotnet
+      if: inputs.dotnet-version != ''
       uses: actions/cache@v4
       with:
         path: |
           ~/.nuget/packages
-          ~/.dotnet/tools
-        key: ${{ runner.os }}-dotnet-${{ inputs.dotnet-version }}-${{ hashFiles('**/packages.lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-dotnet-${{ inputs.dotnet-version }}-
-          ${{ runner.os }}-dotnet-
+          ~/.dotnet
+        key: ${{ runner.os }}-dotnet-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/*.csproj', '**/*.slnx', '**/packages.lock.json') }}
 
-    - name: 📥 Restoring npm cache...
-      if: inputs.install-node-deps == 'true'
-      id: cache-npm
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.npm
-          node_modules
-          sites/*/node_modules
-          packages/*/node_modules
-        key: ${{ runner.os }}-node-${{ inputs.node-version }}-npm-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/package.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-${{ inputs.node-version }}-npm-${{ hashFiles('**/package-lock.json') }}-
-          ${{ runner.os }}-node-${{ inputs.node-version }}-npm-
-          ${{ runner.os }}-node-
-
-    - name: 📥 Installing .NET dependencies... (not found in cache!)
-      if: inputs.setup-dotnet == 'true' && steps.cache-dotnet-tools.outputs.cache-hit != 'true'
-      shell: bash
-      run: dotnet restore ${{ inputs.working-directory }}/arolariu.slnx
-
-    - name: 📥 Installing npm dependencies... (not found in cache!)
-      if: inputs.install-node-deps == 'true' && steps.cache-npm.outputs.cache-hit != 'true'
+    - name: 📥 Install npm dependencies
+      if: inputs.install-node-dependencies == 'true'
       shell: bash
       working-directory: ${{ inputs.working-directory }}
-      run: npm ci --prefer-offline --no-audit
+      run: |
+        if [ "${{ steps.cache-node.outputs.cache-hit }}" != "true" ]; then
+          echo "::group::📦 Installing Node.js dependencies..."
+          npm ci --prefer-offline --no-audit
+          echo "::endgroup::"
+          echo "✅ Dependencies installed successfully"
+        else
+          echo "✅ Using cached Node.js dependencies"
+        fi
+
+    - name: 📥 Restore .NET dependencies
+      if: inputs.dotnet-version != '' && inputs.install-dotnet-dependencies == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        if [ "${{ steps.cache-dotnet.outputs.cache-hit }}" != "true" ]; then
+          echo "::group::📦 Restoring .NET dependencies..."
+          dotnet restore
+          echo "::endgroup::"
+          echo "✅ .NET dependencies restored successfully"
+        else
+          echo "✅ Using cached .NET dependencies"
+        fi
+
+    - name: ⚙️ Setup Azure configuration
+      if: inputs.setup-azure == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "::group::⚙️ Setting up Azure configuration..."
+        npm run setup:azure
+        echo "::endgroup::"
+        echo "✅ Azure configuration completed"
+
+    - name: 🎭 Install Playwright browsers
+      if: inputs.playwright == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "::group::🎭 Installing Playwright browsers..."
+        npx playwright install --with-deps
+        echo "::endgroup::"
+        echo "✅ Playwright browsers installed"
+
+    - name: 🔨 Generate artifacts (GraphQL schemas, types, etc.)
+      if: inputs.generate == 'true'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        echo "::group::🔨 Generating artifacts..."
+        npm run generate
+        echo "::endgroup::"
+        echo "✅ Artifacts generated successfully"
+
+    - name: ✨ Workspace setup complete
+      shell: bash
+      run: |
+        echo "::notice::✅ Workspace setup completed successfully!"
+        echo "📊 Summary:"
+        echo "  - Node.js cache hit: ${{ steps.cache-node.outputs.cache-hit || 'N/A' }}"
+        echo "  - .NET cache hit: ${{ steps.cache-dotnet.outputs.cache-hit || 'N/A' }}"
