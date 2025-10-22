@@ -27,7 +27,7 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          dotnet-version: '10.x'
+          dotnet-version: '10'
           install-node-dependencies: 'false'
           install-dotnet-dependencies: 'true'
           cache-key-prefix: 'docs'
