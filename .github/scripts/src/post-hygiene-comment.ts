@@ -52,46 +52,52 @@ async function findExistingComment(params: ScriptParams, prNumber: number): Prom
 function generateUnifiedComment(params: ScriptParams): string {
   const {core} = params;
 
-  // Get all status information
+  // Core status information
   const statsResult = getEnvVar("STATS_RESULT", "unknown");
   const formattingResult = getEnvVar("FORMATTING_RESULT", "unknown");
   const lintingResult = getEnvVar("LINTING_RESULT", "unknown");
 
-  // Get statistics
+  // Primary diff stats
   const filesChanged = getEnvVar("FILES_CHANGED", "0");
   const linesAdded = getEnvVar("LINES_ADDED", "0");
   const linesDeleted = getEnvVar("LINES_DELETED", "0");
 
-  // Get comparison data
+  // Previous commit comparison
   const filesChangedVsPrev = getEnvVar("FILES_CHANGED_VS_PREV", "0");
   const linesAddedVsPrev = getEnvVar("LINES_ADDED_VS_PREV", "0");
   const linesDeletedVsPrev = getEnvVar("LINES_DELETED_VS_PREV", "0");
   const isFirstCommit = getEnvVar("IS_FIRST_COMMIT", "false") === "true";
 
-  // Get formatting data
+  // Formatting
   const formatNeeded = getEnvVar("FORMAT_NEEDED") === "true";
   const filesNeedingFormat = getEnvVar("FILES_NEEDING_FORMAT")?.split(",").filter(Boolean) || [];
 
-  // Get linting data
+  // Linting
   const lintPassed = getEnvVar("LINT_PASSED") === "true";
   const lintOutput = getEnvVar("LINT_OUTPUT", "");
 
-  // Get bundle size data
+  // Bundle size
   const bundleSizeMarkdown = getEnvVar("BUNDLE_SIZE_MARKDOWN", "_Not available_");
+
+  // Extended metrics
+  const topExtensionsTable = getEnvVar("TOP_EXTENSION_TABLE");
+  const topDirectoriesTable = getEnvVar("TOP_DIRECTORY_TABLE");
+  const churn = getEnvVar("CHURN");
+  const netChange = getEnvVar("NET_CHANGE");
 
   const commitSha = getEnvVar("GITHUB_SHA", "unknown");
 
-  // Determine overall status
+  // Overall status calculation (stats considered informational; still included)
   const allPassed = formattingResult === "success" && lintingResult === "success" && statsResult === "success";
+
   const statusEmoji = allPassed ? "✅" : "⚠️";
   const statusText = allPassed ? "All Checks Passed" : "Issues Found";
 
-  // Build the comment
   let comment = `${COMMENT_IDENTIFIER}\n\n`;
   comment += `# ${statusEmoji} Code Hygiene Report: ${statusText}\n\n`;
   comment += `**Commit:** \`${formatCommitSha(commitSha ?? "unknown")}\`\n\n`;
 
-  // Status Table
+  // Summary matrix
   comment += `## 📋 Check Summary\n\n`;
   comment += `| Check | Status | Result |\n`;
   comment += `|-------|--------|--------|\n`;
@@ -99,23 +105,53 @@ function generateUnifiedComment(params: ScriptParams): string {
   comment += `| 🎨 Formatting | ${getStatusEmoji(formattingResult ?? "unknown")} | ${formattingResult} |\n`;
   comment += `| 🔍 Linting | ${getStatusEmoji(lintingResult ?? "unknown")} | ${lintingResult} |\n\n`;
 
-  // Code Changes Summary
+  // Diff summary vs base
   comment += `## 📊 Code Changes vs Main Branch\n\n`;
   comment += `**Files Changed:** ${filesChanged}  \n`;
   comment += `**Lines Added:** +${linesAdded}  \n`;
   comment += `**Lines Deleted:** -${linesDeleted}\n\n`;
 
-  // Comparison with previous commit (if not first commit)
+  // Extended change metrics
+  if (churn !== undefined || netChange !== undefined) {
+    comment += `### 🔢 Change Metrics\n\n`;
+    if (churn !== undefined) {
+      comment += `- **Churn (Added + Deleted):** ${churn}\n`;
+    }
+    if (netChange !== undefined) {
+      const netNum = Number(netChange);
+      const netSign = netNum > 0 ? "+" : "";
+      comment += `- **Net Change (Added - Deleted):** ${netSign}${netChange}\n`;
+    }
+    comment += `\n`;
+  }
+
+  // Previous commit comparison
   if (!isFirstCommit) {
     comment += `<details>\n`;
-    comment += `<summary>� Changes Since Previous Commit</summary>\n\n`;
+    comment += `<summary>🔄 Changes Since Previous Commit</summary>\n\n`;
     comment += `**Files Changed:** ${filesChangedVsPrev}  \n`;
     comment += `**Lines Added:** +${linesAddedVsPrev}  \n`;
     comment += `**Lines Deleted:** -${linesDeletedVsPrev}\n\n`;
     comment += `</details>\n\n`;
   }
 
-  // Bundle Size Analysis
+  // Extension distribution
+  if (topExtensionsTable && topExtensionsTable.includes("|")) {
+    comment += `<details>\n`;
+    comment += `<summary>🧩 Extension Distribution (Top)</summary>\n\n`;
+    comment += `${topExtensionsTable}\n\n`;
+    comment += `</details>\n\n`;
+  }
+
+  // Directory impact
+  if (topDirectoriesTable && topDirectoriesTable.includes("|")) {
+    comment += `<details>\n`;
+    comment += `<summary>📂 Directory Impact (Top)</summary>\n\n`;
+    comment += `${topDirectoriesTable}\n\n`;
+    comment += `</details>\n\n`;
+  }
+
+  // Bundle Size
   if (bundleSizeMarkdown && bundleSizeMarkdown !== "_Not available_") {
     comment += `<details>\n`;
     comment += `<summary>📦 Bundle Size Analysis</summary>\n\n`;
@@ -123,11 +159,10 @@ function generateUnifiedComment(params: ScriptParams): string {
     comment += `</details>\n\n`;
   }
 
-  // Formatting Results
+  // Formatting
   if (formatNeeded) {
     comment += `## 🎨 Formatting Issues\n\n`;
     comment += `❌ **${filesNeedingFormat.length}** file(s) need formatting:\n\n`;
-
     if (filesNeedingFormat.length > 0) {
       comment += `<details>\n`;
       comment += `<summary>View files requiring formatting</summary>\n\n`;
@@ -136,38 +171,26 @@ function generateUnifiedComment(params: ScriptParams): string {
       });
       comment += `\n</details>\n\n`;
     }
-
     comment += `### How to Fix\n\n`;
-    comment += `Run the following command locally:\n\n`;
-    comment += `\`\`\`bash\n`;
-    comment += `npm run format\n`;
-    comment += `\`\`\`\n\n`;
+    comment += `\`\`\`bash\nnpm run format\n\`\`\`\n\n`;
   } else {
     comment += `## 🎨 Formatting\n\n`;
     comment += `✅ All files are properly formatted!\n\n`;
   }
 
-  // Linting Results
+  // Linting
   if (!lintPassed) {
     comment += `## 🔍 Linting Issues\n\n`;
     comment += `❌ ESLint found issues in your code.\n\n`;
-
     if (lintOutput) {
       const truncatedOutput = lintOutput.length > 50000 ? lintOutput.substring(0, 50000) + "\n\n... (output truncated)" : lintOutput;
-
       comment += `<details>\n`;
       comment += `<summary>View linting errors</summary>\n\n`;
-      comment += `\`\`\`\n`;
-      comment += `${truncatedOutput}\n`;
-      comment += `\`\`\`\n\n`;
+      comment += `\`\`\`\n${truncatedOutput}\n\`\`\`\n\n`;
       comment += `</details>\n\n`;
     }
-
     comment += `### How to Fix\n\n`;
-    comment += `Run the following command locally:\n\n`;
-    comment += `\`\`\`bash\n`;
-    comment += `npm run lint\n`;
-    comment += `\`\`\`\n\n`;
+    comment += `\`\`\`bash\nnpm run lint\n\`\`\`\n\n`;
   } else {
     comment += `## 🔍 Linting\n\n`;
     comment += `✅ All linting checks passed!\n\n`;
@@ -177,7 +200,7 @@ function generateUnifiedComment(params: ScriptParams): string {
   comment += `---\n\n`;
   comment += `_Last updated: ${new Date().toISOString()}_\n`;
 
-  core.info("Generated unified hygiene comment");
+  core.info("Generated unified hygiene comment (extended version)");
   return comment;
 }
 
