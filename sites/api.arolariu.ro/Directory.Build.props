@@ -16,7 +16,8 @@
   </PropertyGroup>
 
   <!-- Debug Configuration -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" Label="Debug Build Settings">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'"
+    Label="Debug Build Settings">
     <WarningLevel>9999</WarningLevel>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
@@ -25,7 +26,8 @@
   </PropertyGroup>
 
   <!-- Release Configuration -->
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'" Label="Release Build Settings">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'"
+    Label="Release Build Settings">
     <WarningLevel>9999</WarningLevel>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
@@ -34,13 +36,15 @@
   </PropertyGroup>
 
   <!-- AOT & Trimming Settings for Libraries -->
-  <PropertyGroup Condition="'$(OutputType)' == 'Library' AND '$(IsTestProject)' != 'true'" Label="Library Optimization Settings">
+  <PropertyGroup Condition="'$(OutputType)' == 'Library' AND '$(IsTestProject)' != 'true'"
+    Label="Library Optimization Settings">
     <IsTrimmable>True</IsTrimmable>
     <IsAotCompatible>True</IsAotCompatible>
   </PropertyGroup>
 
   <!-- AOT & Trimming Settings for Web Projects -->
-  <PropertyGroup Condition="'$(OutputType)' == 'Exe' OR '$(IsAspNetCoreProject)' == 'true'" Label="Web Project Optimization Settings">
+  <PropertyGroup Condition="'$(OutputType)' == 'Exe' OR '$(IsAspNetCoreProject)' == 'true'"
+    Label="Web Project Optimization Settings">
     <IsTrimmable>False</IsTrimmable>
     <IsAotCompatible>False</IsAotCompatible>
   </PropertyGroup>

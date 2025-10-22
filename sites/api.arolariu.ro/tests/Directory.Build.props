@@ -1,0 +1,44 @@
+<Project>
+  <!--
+    Test-Specific Build Configuration
+    This file applies build settings to all test projects in the hierarchy.
+    It inherits from the parent Directory.Build.props and adds test-specific overrides.
+  -->
+
+  <!-- Import parent Directory.Build.props for base configuration -->
+  <Import
+    Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup Label="Test Project Settings">
+
+  </PropertyGroup>
+
+  <PropertyGroup Label="Test Execution Settings">
+    <IsTestProject>true</IsTestProject>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Test Code Analysis Settings">
+    <!-- CA2007: ConfigureAwait Rule Override for Test Projects -->
+    <NoWarn>$(NoWarn);CA2007</NoWarn>
+
+    <!-- CA1707: Identifiers should not contain underscores -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+
+    <!-- CA1515: Consider making public types internal -->
+    <NoWarn>$(NoWarn);CA1515</NoWarn>
+
+    <!-- CA1062: Validate arguments of public methods -->
+    <NoWarn>$(NoWarn);CA1062</NoWarn>
+
+    <!-- CA1303: Do not pass literals as localized parameters -->
+    <NoWarn>$(NoWarn);CA1303</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Code Coverage Settings">
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura,json,lcov,opencover</CoverletOutputFormat>
+    <ExcludeByFile>**/*.Designer.cs,**/*.g.cs,**/*.g.i.cs</ExcludeByFile>
+  </PropertyGroup>
+</Project>
