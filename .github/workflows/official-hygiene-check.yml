@@ -3,34 +3,95 @@ name: "official-hygiene-check"
 permissions:
   contents: read
   pull-requests: write
-  issues: write
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
+concurrency:
+  group: hygiene-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   COMMIT_SHA: ${{ github.sha }}
-  BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+  BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/main' }}
   HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
-  stats:
-    name: 📊 Code Statistics
+  setup:
+    name: 🧩 Setup / Change Detection
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     outputs:
-      has-changes: ${{ steps.check-stats.outputs.has-changes }}
-      files-changed: ${{ steps.check-stats.outputs.files-changed }}
-      lines-added: ${{ steps.check-stats.outputs.lines-added }}
-      lines-deleted: ${{ steps.check-stats.outputs.lines-deleted }}
+      has-changes: ${{ steps.detect-changes.outputs.has-changes }}
+      changed-files: ${{ steps.detect-changes.outputs.changed-files }}
+      changed-files-count: ${{ steps.detect-changes.outputs.changed-files-count }}
+      base-ref: ${{ env.BASE_REF }}
+      head-ref: ${{ env.HEAD_REF }}
     steps:
-      - name: 🛫 Checkout repository
+      - name: 🛫 Checkout repository (full for diff)
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ env.HEAD_REF }}
+
+      - name: 📦 Setup workspace (dependencies & cache)
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: '24'
+          cache-key-prefix: 'hygiene'
+
+      - name: � Detect changed files (lightweight)
+        id: detect-changes
+        uses: actions/github-script@v8
+        env:
+          BASE_REF: ${{ env.BASE_REF }}
+          HEAD_REF: ${{ env.HEAD_REF }}
+        with:
+          script: |
+            const {default: detectChangesWrapper} = await import('${{ github.workspace }}/.github/scripts/src/detect-changes-wrapper.js');
+            await detectChangesWrapper({github, context, core, exec});
+
+      - name: � (Optional) Post basic change stats to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v8
+        env:
+          COMMENT_TYPE: "setup"
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          CHANGED_FILES_COUNT: ${{ steps.detect-changes.outputs.changed-files-count }}
+          CHANGED_FILES: ${{ steps.detect-changes.outputs.changed-files }}
+        with:
+          script: |
+            // Intentionally minimal – reuse existing comment builder if extended later
+            try {
+              const body = `🧩 Setup complete. Detected **${process.env.CHANGED_FILES_COUNT}** changed file(s).`;
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: Number(process.env.PR_NUMBER),
+                body
+              });
+            } catch (e) {
+              core.warning(`Failed to post setup comment: ${e.message}`);
+            }
+
+  formatting:
+    name: 🎨 Formatting
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: setup
+    if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
+    outputs:
+      format-needed: ${{ steps.check-format.outputs.format-needed }}
+      files-needing-format: ${{ steps.check-format.outputs.files-needing-format }}
+      result: ${{ steps.check-format.outputs.result }}
+    steps:
+      - name: 🛫 Checkout (shallow)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+          ref: ${{ env.HEAD_REF }}
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -38,24 +99,113 @@ jobs:
           node-version: '24'
           cache-key-prefix: 'hygiene'
 
-      - name: 🔨 Build all projects
-        run: npm run build
-        continue-on-error: true
-
-      - name: 📊 Compute statistics using TypeScript helper
-        id: check-stats
+      - name: 🎨 Run formatting check
+        id: check-format
         uses: actions/github-script@v8
         env:
-          CHECK_MODE: "stats"
-          BASE_REF: ${{ env.BASE_REF }}
-          HEAD_REF: ${{ env.HEAD_REF }}
-          GITHUB_SHA: ${{ github.sha }}
+          CHECK_MODE: "format"
         with:
           script: |
             const {default: checkCodeHygieneWrapper} = await import('${{ github.workspace }}/.github/scripts/src/check-code-hygiene-wrapper.js');
             await checkCodeHygieneWrapper({github, context, core, exec});
 
-      - name: 💬 Post statistics comment to PR
+      - name: 💬 Post formatting comment (only if needed)
+        if: github.event_name == 'pull_request' && steps.check-format.outputs.format-needed == 'true'
+        uses: actions/github-script@v8
+        env:
+          COMMENT_TYPE: "formatting"
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          FORMAT_NEEDED: ${{ steps.check-format.outputs.format-needed }}
+          FILES_NEEDING_FORMAT: ${{ steps.check-format.outputs.files-needing-format }}
+        with:
+          script: |
+            const {default: postHygieneCommentWrapper} = await import('${{ github.workspace }}/.github/scripts/src/post-hygiene-comment-wrapper.js');
+            await postHygieneCommentWrapper({github, context, core, exec});
+
+  linting:
+    name: 🔍 Linting
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: setup
+    if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
+    outputs:
+      lint-passed: ${{ steps.check-lint.outputs.lint-passed }}
+      lint-output: ${{ steps.check-lint.outputs.lint-output }}
+      result: ${{ steps.check-lint.outputs.result }}
+    steps:
+      - name: 🛫 Checkout (shallow)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+          ref: ${{ env.HEAD_REF }}
+
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: '24'
+          cache-key-prefix: 'hygiene'
+
+      - name: 🔍 Run lint check
+        id: check-lint
+        uses: actions/github-script@v8
+        env:
+          CHECK_MODE: "lint"
+        with:
+          script: |
+            const {default: checkCodeHygieneWrapper} = await import('${{ github.workspace }}/.github/scripts/src/check-code-hygiene-wrapper.js');
+            await checkCodeHygieneWrapper({github, context, core, exec});
+
+      - name: 💬 Post linting comment (only if failed)
+        if: github.event_name == 'pull_request' && steps.check-lint.outputs.lint-passed == 'false'
+        uses: actions/github-script@v8
+        env:
+          COMMENT_TYPE: "linting"
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          LINT_PASSED: ${{ steps.check-lint.outputs.lint-passed }}
+          LINT_OUTPUT: ${{ steps.check-lint.outputs.lint-output }}
+        with:
+          script: |
+            const {default: postHygieneCommentWrapper} = await import('${{ github.workspace }}/.github/scripts/src/post-hygiene-comment-wrapper.js');
+            await postHygieneCommentWrapper({github, context, core, exec});
+
+  code-summary:
+    name: � Code Summary / Stats
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: setup
+    if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
+    outputs:
+      files-changed: ${{ steps.check-stats.outputs.files-changed }}
+      lines-added: ${{ steps.check-stats.outputs.lines-added }}
+      lines-deleted: ${{ steps.check-stats.outputs.lines-deleted }}
+      has-changes: ${{ steps.check-stats.outputs.has-changes }}
+      bundle-size-markdown: ${{ steps.check-stats.outputs.bundle-size-markdown }}
+      result: ${{ steps.check-stats.outputs.result }}
+    steps:
+      - name: 🛫 Checkout (full for diff & bundle compare)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ env.HEAD_REF }}
+
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: '24'
+          cache-key-prefix: 'hygiene'
+
+      - name: � Compute statistics
+        id: check-stats
+        uses: actions/github-script@v8
+        env:
+          CHECK_MODE: "stats"
+          HEAD_REF: ${{ env.HEAD_REF }}
+        with:
+          script: |
+            const {default: checkCodeHygieneWrapper} = await import('${{ github.workspace }}/.github/scripts/src/check-code-hygiene-wrapper.js');
+            await checkCodeHygieneWrapper({github, context, core, exec});
+
+      - name: 💬 Post stats comment
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v8
         env:
@@ -64,131 +214,39 @@ jobs:
           FILES_CHANGED: ${{ steps.check-stats.outputs.files-changed }}
           LINES_ADDED: ${{ steps.check-stats.outputs.lines-added }}
           LINES_DELETED: ${{ steps.check-stats.outputs.lines-deleted }}
-          GITHUB_SHA: ${{ github.sha }}
-        with:
-          script: |
-            const {default: postHygieneCommentWrapper} = await import('${{ github.workspace }}/.github/scripts/src/post-hygiene-comment-wrapper.js');
-            await postHygieneCommentWrapper({github, context, core, exec});
-
-  formatting:
-    name: 🎨 Code Formatting
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: stats
-    if: needs.stats.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
-    outputs:
-      format-needed: ${{ steps.check-format.outputs.format-needed }}
-    steps:
-      - name: 🛫 Checkout repository
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-version: '24'
-          cache-key-prefix: 'hygiene'
-
-      - name: 🎨 Check code formatting using TypeScript helper
-        id: check-format
-        uses: actions/github-script@v8
-        env:
-          CHECK_MODE: "format"
-          GITHUB_SHA: ${{ github.sha }}
-        with:
-          script: |
-            const {default: checkCodeHygieneWrapper} = await import('${{ github.workspace }}/.github/scripts/src/check-code-hygiene-wrapper.js');
-            await checkCodeHygieneWrapper({github, context, core, exec});
-
-      - name: 💬 Post formatting comment to PR
-        if: github.event_name == 'pull_request' && steps.check-format.outputs.format-needed == 'true'
-        uses: actions/github-script@v8
-        env:
-          COMMENT_TYPE: "formatting"
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          FORMAT_NEEDED: ${{ steps.check-format.outputs.format-needed }}
-          FILES_NEEDING_FORMAT: ${{ steps.check-format.outputs.files-needing-format }}
-          GITHUB_SHA: ${{ github.sha }}
-        with:
-          script: |
-            const {default: postHygieneCommentWrapper} = await import('${{ github.workspace }}/.github/scripts/src/post-hygiene-comment-wrapper.js');
-            await postHygieneCommentWrapper({github, context, core, exec});
-
-  linting:
-    name: 🔍 Code Linting
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: stats
-    if: needs.stats.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
-    outputs:
-      lint-passed: ${{ steps.check-lint.outputs.lint-passed }}
-    steps:
-      - name: 🛫 Checkout repository
-        uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-version: '24'
-          cache-key-prefix: 'hygiene'
-
-      - name: 🔍 Check code linting using TypeScript helper
-        id: check-lint
-        uses: actions/github-script@v8
-        env:
-          CHECK_MODE: "lint"
-          GITHUB_SHA: ${{ github.sha }}
-        with:
-          script: |
-            const {default: checkCodeHygieneWrapper} = await import('${{ github.workspace }}/.github/scripts/src/check-code-hygiene-wrapper.js');
-            await checkCodeHygieneWrapper({github, context, core, exec});
-
-      - name: 💬 Post linting comment to PR
-        if: github.event_name == 'pull_request' && steps.check-lint.outputs.lint-passed == 'false'
-        uses: actions/github-script@v8
-        env:
-          COMMENT_TYPE: "linting"
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          LINT_PASSED: ${{ steps.check-lint.outputs.lint-passed }}
-          LINT_OUTPUT: ${{ steps.check-lint.outputs.lint-output }}
-          GITHUB_SHA: ${{ github.sha }}
         with:
           script: |
             const {default: postHygieneCommentWrapper} = await import('${{ github.workspace }}/.github/scripts/src/post-hygiene-comment-wrapper.js');
             await postHygieneCommentWrapper({github, context, core, exec});
 
   summary:
-    name: 📋 Code Hygiene Summary
+    name: 📋 Consolidated Hygiene Summary
     runs-on: ubuntu-latest
-    needs: [stats, formatting, linting]
+    needs: [setup, formatting, linting, code-summary]
     if: always()
     steps:
-      - name: 🛫 Checkout repository
+      - name: 🛫 Checkout (summary context)
         uses: actions/checkout@v5
 
-      - name: 📦 Setup workspace
+      - name: 📦 Setup workspace (no deps)
         uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
           install-node-dependencies: 'false'
           cache-key-prefix: 'hygiene'
 
-      - name: 💬 Post summary comment to PR
+      - name: 💬 Post consolidated summary to PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v8
         env:
           COMMENT_TYPE: "summary"
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          STATS_RESULT: ${{ needs.stats.result }}
+          STATS_RESULT: ${{ needs.code-summary.result }}
           FORMATTING_RESULT: ${{ needs.formatting.result }}
           LINTING_RESULT: ${{ needs.linting.result }}
-          FILES_CHANGED: ${{ needs.stats.outputs.files-changed }}
-          LINES_ADDED: ${{ needs.stats.outputs.lines-added }}
-          LINES_DELETED: ${{ needs.stats.outputs.lines-deleted }}
-          GITHUB_SHA: ${{ github.sha }}
+          FILES_CHANGED: ${{ needs.code-summary.outputs.files-changed }}
+          LINES_ADDED: ${{ needs.code-summary.outputs.lines-added }}
+          LINES_DELETED: ${{ needs.code-summary.outputs.lines-deleted }}
         with:
           script: |
             const {default: postHygieneCommentWrapper} = await import('${{ github.workspace }}/.github/scripts/src/post-hygiene-comment-wrapper.js');
