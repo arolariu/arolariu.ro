@@ -1,4 +1,10 @@
 {
+  "[csharp]": {
+    "editor.defaultFoldingRangeProvider": "ms-dotnettools.csharp",
+    "editor.foldingImportsByDefault": true,
+    "editor.foldingStrategy": "auto",
+    "editor.showFoldingControls": "mouseover"
+  },
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -416,6 +422,7 @@
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.expand": true,
   "explorer.fileNesting.patterns": {
+    "*.cs": "$(capture).*.cs",
     "*.ts": "$(capture).test.ts, $(capture).test.tsx, $(capture).stories.tsx, $(capture).spec.tsx",
     "*.tsx": "$(capture).test.ts, $(capture).test.tsx, $(capture).stories.tsx, $(capture).spec.tsx"
   },
