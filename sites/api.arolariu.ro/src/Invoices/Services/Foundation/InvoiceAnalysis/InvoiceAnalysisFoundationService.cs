@@ -52,12 +52,9 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
     return invoice;
   }).ConfigureAwait(false);
 
-  private async Task<Invoice> PerformOcrAnalysis(Invoice invoice, AnalysisOptions options)
-  {
-    return await receiptRecognizerBroker
+  private async Task<Invoice> PerformOcrAnalysis(Invoice invoice, AnalysisOptions options) => await receiptRecognizerBroker
       .PerformOcrAnalysisOnSingleInvoice(invoice, options)
       .ConfigureAwait(false);
-  }
 
   private async Task<Invoice> PerformTranslationAnalysis(Invoice invoice)
   {
@@ -72,10 +69,7 @@ public partial class InvoiceAnalysisFoundationService : IInvoiceAnalysisFoundati
     }
     return invoice;
   }
-  private async Task<Invoice> PerformGptAnalysis(Invoice invoice, AnalysisOptions options)
-  {
-    return await analysisBroker
+  private async Task<Invoice> PerformGptAnalysis(Invoice invoice, AnalysisOptions options) => await analysisBroker
       .PerformGptAnalysisOnSingleInvoice(invoice, options)
       .ConfigureAwait(false);
-  }
 }

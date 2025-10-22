@@ -60,15 +60,12 @@ public readonly record struct InvoiceScan(
   /// Static method to create a new instance of the InvoiceScan with default values.
   /// </summary>
   /// <returns></returns>
-  public static InvoiceScan Default()
+  public static InvoiceScan Default() => new InvoiceScan
   {
-    return new InvoiceScan
-    {
-      Type = ScanType.UNKNOWN,
-      Location = new Uri("https://arolariu.ro"),
-      Metadata = new Dictionary<string, object>(),
-    };
-  }
+    Type = ScanType.UNKNOWN,
+    Location = new Uri("https://arolariu.ro"),
+    Metadata = new Dictionary<string, object>(),
+  };
 
   /// <summary>
   /// Static method to determine if the scan is not new (i.e. has been set to something else than the default values).

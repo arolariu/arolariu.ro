@@ -2,7 +2,6 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Services.Orchestration;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -26,8 +25,6 @@ using Xunit;
 /// Tests validate orchestration logic, exception handling, telemetry integration and foundation service coordination.
 /// Method naming follows MethodName_Condition_ExpectedResult pattern per repository standards.
 /// </summary>
-[SuppressMessage("Design", "CA1515", Justification = "xUnit requires public visibility for test discovery.")]
-[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming mandated for test clarity and repository convention.")]
 public sealed class InvoiceOrchestrationServiceTests
 {
   private readonly Mock<IInvoiceAnalysisFoundationService> mockAnalysisService;
@@ -66,23 +63,19 @@ public sealed class InvoiceOrchestrationServiceTests
   /// Verifies constructor throws ArgumentNullException when analysis service is null.
   /// </summary>
   [Fact]
-  public void Constructor_NullAnalysisService_ThrowsArgumentNullException()
-  {
+  public void Constructor_NullAnalysisService_ThrowsArgumentNullException() =>
     // Arrange & Act & Assert
     Assert.Throws<ArgumentNullException>(() =>
       new InvoiceOrchestrationService(null!, mockStorageService.Object, mockLoggerFactory.Object));
-  }
 
   /// <summary>
   /// Verifies constructor throws ArgumentNullException when storage service is null.
   /// </summary>
   [Fact]
-  public void Constructor_NullStorageService_ThrowsArgumentNullException()
-  {
+  public void Constructor_NullStorageService_ThrowsArgumentNullException() =>
     // Arrange & Act & Assert
     Assert.Throws<ArgumentNullException>(() =>
       new InvoiceOrchestrationService(mockAnalysisService.Object, null!, mockLoggerFactory.Object));
-  }
 
   /// <summary>
   /// Validates successful instantiation with all valid dependencies.

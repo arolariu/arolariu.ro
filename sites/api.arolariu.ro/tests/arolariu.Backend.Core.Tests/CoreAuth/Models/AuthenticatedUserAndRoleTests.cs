@@ -1,7 +1,6 @@
 namespace arolariu.Backend.Core.Tests.CoreAuth.Models;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Core.Auth.Models;
 
@@ -11,8 +10,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// Tests for <see cref="AuthenticatedUser"/> and <see cref="AuthenticatedUserRole"/> covering property persistence
 /// and default value expectations. Method names follow the MethodName_Condition_ExpectedResult pattern.
 /// </summary>
-[SuppressMessage("Design", "CA1515", Justification = "Public test class required for MSTest discovery.")]
-[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming convention enforced across test suite.")]
 [TestClass]
 public sealed class AuthenticatedUserAndRoleTests
 {

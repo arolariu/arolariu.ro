@@ -1,7 +1,6 @@
 namespace arolariu.Backend.Core.Tests.Common.Options;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Core.Tests.Shared.TestDoubles;
@@ -12,17 +11,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// Tests for <see cref="CloudOptionsManager"/> ensuring retrieval of cloud (Azure) options and updated monitor values.
 /// Naming follows MethodName_Condition_ExpectedResult pattern mandated by repository guidelines.
 /// </summary>
-[SuppressMessage("Design", "CA1515", Justification = "Public visibility required for MSTest discovery.")]
-[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming convention enforced across test suite.")]
 [TestClass]
 public sealed class CloudOptionsManagerTests
 {
   /// <summary>Verifies constructor throws when monitor dependency is null.</summary>
   [TestMethod]
-  public void Ctor_NullMonitor_Throws()
-  {
-    Assert.ThrowsExactly<ArgumentNullException>(() => new CloudOptionsManager(null!));
-  }
+  public void Ctor_NullMonitor_Throws() => Assert.ThrowsExactly<ArgumentNullException>(() => new CloudOptionsManager(null!));
 
   /// <summary>Ensures returned application options reference current monitor value.</summary>
   [TestMethod]

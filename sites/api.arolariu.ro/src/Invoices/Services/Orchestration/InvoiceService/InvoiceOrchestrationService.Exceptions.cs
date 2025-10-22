@@ -2,7 +2,6 @@ namespace arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -101,8 +100,6 @@ public partial class InvoiceOrchestrationService
     }
   }
 
-  [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "<Pending>")]
-  [SuppressMessage("Style", "IDE0051:Remove unused private members", Justification = "<Pending>")]
   private InvoiceOrchestrationValidationException CreateAndLogValidationException(Exception exception)
   {
     var invoiceOrchestrationValidationException = new InvoiceOrchestrationValidationException(exception);

@@ -1,7 +1,6 @@
 namespace arolariu.Backend.Core.Tests.Common.DDD;
 
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.DDD.ValueObjects;
 
@@ -12,15 +11,10 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// hash code stability and dictionary key usability. Method names intentionally follow the
 /// Method_Component_ExpectedResult pattern per repository standards.
 /// </summary>
-[SuppressMessage("Design", "CA1515", Justification = "Public class required for MSTest discovery.")]
-[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming mandated for tests.")]
 [TestClass]
 public sealed class ContactInformationTests
 {
-  private static ContactInformation CreateSample()
-  {
-    return new("Alice Doe", "123 Main St", "+1-555-0000", "alice@example.test", "https://example.test");
-  }
+  private static ContactInformation CreateSample() => new("Alice Doe", "123 Main St", "+1-555-0000", "alice@example.test", "https://example.test");
 
   /// <summary>Validates that constructor sets all provided properties.</summary>
   [TestMethod]

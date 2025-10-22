@@ -59,10 +59,7 @@ public static class WebApplicationExtensions
   /// - Sets HttpContext.User for downstream middleware
   /// - Must be called before authorization middleware
   /// </remarks>
-  private static void UseAuthN(this WebApplication app)
-  {
-    app.UseAuthentication();
-  }
+  private static void UseAuthN(this WebApplication app) => app.UseAuthentication();
 
   /// <summary>
   /// Configures the application to use authorization middleware.
@@ -76,8 +73,5 @@ public static class WebApplicationExtensions
   /// - Applies policy-based authorization rules
   /// - Must be called after authentication middleware
   /// </remarks>
-  private static void UseAuthZ(this WebApplication app)
-  {
-    app.UseAuthorization();
-  }
+  private static void UseAuthZ(this WebApplication app) => app.UseAuthorization();
 }

@@ -1,7 +1,6 @@
 namespace arolariu.Backend.Core.Tests.CoreAuth.Services;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Options;
@@ -24,8 +23,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// Tests covering authentication service registration and configuration logic in <see cref="WebApplicationBuilderExtensions.AddAuthServices"/>.
 /// Naming follows the <c>MethodName_Condition_ExpectedResult</c> pattern per repository guidelines.
 /// </summary>
-[SuppressMessage("Design", "CA1515", Justification = "MSTest requires public test classes for discovery.")]
-[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming pattern mandated for tests.")]
 [TestClass]
 public sealed class AddAuthServicesTests
 {
@@ -38,23 +35,17 @@ public sealed class AddAuthServicesTests
   }
 
   /// <summary>Builds a deterministic set of local options for test scenarios.</summary>
-  private static LocalOptions CreateOptions()
+  private static LocalOptions CreateOptions() => new()
   {
-    return new()
-    {
-      SqlConnectionString = "Server=(localdb)\\MSSQLLocalDB;Database=Test;",
-      JwtSecret = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEF", //40+ chars
-      JwtIssuer = "issuer",
-      JwtAudience = "aud"
-    };
-  }
+    SqlConnectionString = "Server=(localdb)\\MSSQLLocalDB;Database=Test;",
+    JwtSecret = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEF", //40+ chars
+    JwtIssuer = "issuer",
+    JwtAudience = "aud"
+  };
 
   /// <summary>Verifies that passing a null builder throws <see cref="ArgumentNullException"/>.</summary>
   [TestMethod]
-  public void AddAuthServices_NullBuilder_Throws()
-  {
-    Assert.ThrowsExactly<ArgumentNullException>(() => WebApplicationBuilderExtensions.AddAuthServices(null!));
-  }
+  public void AddAuthServices_NullBuilder_Throws() => Assert.ThrowsExactly<ArgumentNullException>(() => WebApplicationBuilderExtensions.AddAuthServices(null!));
 
   /// <summary>Ensures identity core services and authorization services are registered.</summary>
   [TestMethod]

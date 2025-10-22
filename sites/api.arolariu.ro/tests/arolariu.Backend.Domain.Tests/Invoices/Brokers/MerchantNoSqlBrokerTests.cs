@@ -2,7 +2,6 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Brokers;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -23,8 +22,6 @@ using Xunit;
 /// Covers CRUD operations, exception pathways and query filtering scenarios. Method names follow
 /// the MethodName_Condition_ExpectedResult pattern by design; CA1707 suppressed accordingly.
 /// </summary>
-[SuppressMessage("Design", "CA1515", Justification = "xUnit requires public visibility for discovery.")]
-[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming mandated for test clarity.")]
 public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBase, IDisposable
 {
   private readonly InvoiceNoSqlBroker merchantNoSqlBroker;
@@ -419,10 +416,7 @@ It.IsAny<System.Threading.CancellationToken>()
   #region Test Data
 
   /// <summary>Merchant theory data provider.</summary>
-  public static TheoryData<Merchant> GetMerchantTestData()
-  {
-    return MerchantTestDataBuilder.GetMerchantTheoryData();
-  }
+  public static TheoryData<Merchant> GetMerchantTestData() => MerchantTestDataBuilder.GetMerchantTheoryData();
 
   #endregion
 }

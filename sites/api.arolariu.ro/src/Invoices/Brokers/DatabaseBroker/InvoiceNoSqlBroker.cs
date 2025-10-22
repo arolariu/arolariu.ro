@@ -194,8 +194,7 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
   /// <para>Currently no owned sub-collections. Soft delete flag present at entity level for parity with invoices (future enablement).</para>
   /// </remarks>
   /// <param name="modelBuilder">The mutable model builder.</param>
-  private static void SetModelReferencesForMerchantModel(ModelBuilder modelBuilder)
-  {
+  private static void SetModelReferencesForMerchantModel(ModelBuilder modelBuilder) =>
     modelBuilder.Entity<Merchant>(entity =>
     {
       entity.ToContainer("merchants");
@@ -220,7 +219,6 @@ public sealed partial class InvoiceNoSqlBroker : DbContext, IInvoiceNoSqlBroker
       entity.HasPartitionKey(merchant => merchant.ParentCompanyId);
       entity.HasNoDiscriminator(); // we will only store merchants in this container
     });
-  }
 
   /// <summary>
   /// Orchestrates model configuration for all aggregates/entities in this broker context.

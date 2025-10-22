@@ -1,7 +1,5 @@
 namespace arolariu.Backend.Core.Tests.Common.Options;
 
-using System.Diagnostics.CodeAnalysis;
-
 using arolariu.Backend.Common.Options;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -10,8 +8,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// Tests for <see cref="AzureOptions"/> and <see cref="LocalOptions"/> verifying defaults and property persistence.
 /// Naming follows MethodName_Condition_ExpectedResult pattern.
 /// </summary>
-[SuppressMessage("Design", "CA1515", Justification = "Public visibility required for MSTest discovery.")]
-[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming convention enforced across test suite.")]
 [TestClass]
 public sealed class AzureAndLocalOptionsTests
 {

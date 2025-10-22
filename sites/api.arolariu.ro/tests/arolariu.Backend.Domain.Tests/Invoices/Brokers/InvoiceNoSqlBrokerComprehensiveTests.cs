@@ -2,7 +2,6 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Brokers;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -22,8 +21,6 @@ using Xunit;
 /// and bulk read scenarios against the Cosmos EF Core broker abstraction.
 /// Follows MethodName_Condition_ExpectedResult pattern; underscores intentional.
 /// </summary>
-[SuppressMessage("Design", "CA1515", Justification = "xUnit requires public classes for discovery.")]
-[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming mandated for test clarity.")]
 public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlBrokerTestsBase, IDisposable
 {
   private readonly InvoiceNoSqlBroker invoiceNoSqlBroker;
@@ -227,10 +224,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// Provides theory data consisting of several randomized invoices.
   /// </summary>
   /// <returns>Collection of randomized <see cref="Invoice"/> instances.</returns>
-  public static TheoryData<Invoice> GetInvoiceTestData()
-  {
-    return InvoiceBuilder.GetInvoiceTheoryData();
-  }
+  public static TheoryData<Invoice> GetInvoiceTestData() => InvoiceBuilder.GetInvoiceTheoryData();
 
   #endregion
 }
