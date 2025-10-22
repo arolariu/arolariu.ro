@@ -78,7 +78,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualInvoice = await invoiceNoSqlBroker.CreateInvoiceAsync(expectedInvoice).ConfigureAwait(false);
+    var actualInvoice = await invoiceNoSqlBroker.CreateInvoiceAsync(expectedInvoice);
 
     // Then
     Assert.NotNull(actualInvoice);
@@ -106,7 +106,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ThrowsAsync(cosmosException);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<CosmosException>(() => invoiceNoSqlBroker.CreateInvoiceAsync(invoice).AsTask()).ConfigureAwait(false);
+    var exception = await Assert.ThrowsAsync<CosmosException>(() => invoiceNoSqlBroker.CreateInvoiceAsync(invoice).AsTask());
 
     Assert.Equal("Creation failed", exception.Message);
   }
@@ -138,7 +138,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id, expectedInvoice.UserIdentifier).ConfigureAwait(false);
+    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id, expectedInvoice.UserIdentifier);
 
     // Then
     Assert.NotNull(actualInvoice);
@@ -173,7 +173,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   .Returns(mockFeedIterator.Object);
 
     // When
-    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id).ConfigureAwait(false);
+    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id);
 
     // Then
     Assert.NotNull(actualInvoice);
@@ -208,7 +208,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
 .Returns(mockFeedIterator.Object);
 
     // When
-    var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync().ConfigureAwait(false);
+    var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync();
 
     // Then
     Assert.NotNull(actualInvoices);

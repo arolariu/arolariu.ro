@@ -130,7 +130,7 @@ public sealed class InvoiceOrchestrationServiceTests
       .ReturnsAsync(analyzedInvoice);
 
     // Act
-    await orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, userId).ConfigureAwait(false);
+    await orchestrationService.AnalyzeInvoiceWithOptions(options, invoiceId, userId);
 
     // Assert
     mockStorageService.Verify(s => s.ReadInvoiceObject(invoiceId, userId), Times.Once);

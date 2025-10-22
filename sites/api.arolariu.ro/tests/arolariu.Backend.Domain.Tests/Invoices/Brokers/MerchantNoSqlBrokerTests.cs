@@ -71,7 +71,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualMerchant = await merchantNoSqlBroker.CreateMerchantAsync(expectedMerchant).ConfigureAwait(false);
+    var actualMerchant = await merchantNoSqlBroker.CreateMerchantAsync(expectedMerchant);
 
     // Then
     Assert.NotNull(actualMerchant);
@@ -95,7 +95,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
     Merchant? nullMerchant = null;
 
     // When & Then
-    await Assert.ThrowsAsync<ArgumentNullException>(() => merchantNoSqlBroker.CreateMerchantAsync(nullMerchant!).AsTask()).ConfigureAwait(false);
+    await Assert.ThrowsAsync<ArgumentNullException>(() => merchantNoSqlBroker.CreateMerchantAsync(nullMerchant!).AsTask());
   }
 
   /// <summary>Validates Cosmos exception surfaces when container create fails.</summary>
@@ -115,7 +115,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
       .ThrowsAsync(cosmosException);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<CosmosException>(() => merchantNoSqlBroker.CreateMerchantAsync(merchant).AsTask()).ConfigureAwait(false);
+    var exception = await Assert.ThrowsAsync<CosmosException>(() => merchantNoSqlBroker.CreateMerchantAsync(merchant).AsTask());
     Assert.Equal("Creation failed", exception.Message);
   }
 
@@ -150,7 +150,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
       .Returns(mockFeedIterator.Object);
 
     // When
-    var actualMerchant = await merchantNoSqlBroker.ReadMerchantAsync(expectedMerchant.id).ConfigureAwait(false);
+    var actualMerchant = await merchantNoSqlBroker.ReadMerchantAsync(expectedMerchant.id);
 
     // Then
     Assert.NotNull(actualMerchant);
@@ -181,7 +181,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
       .Returns(mockFeedIterator.Object);
 
     // When
-    var actualMerchant = await merchantNoSqlBroker.ReadMerchantAsync(merchantId).ConfigureAwait(false);
+    var actualMerchant = await merchantNoSqlBroker.ReadMerchantAsync(merchantId);
     Assert.Null(actualMerchant);
   }
 
@@ -213,7 +213,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
       .Returns(mockFeedIterator.Object);
 
     // When
-    var actualMerchants = await merchantNoSqlBroker.ReadMerchantsAsync().ConfigureAwait(false);
+    var actualMerchants = await merchantNoSqlBroker.ReadMerchantsAsync();
 
     // Then
     Assert.NotNull(actualMerchants);
@@ -247,7 +247,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
       .Returns(mockFeedIterator.Object);
 
     // When
-    var actualMerchants = await merchantNoSqlBroker.ReadMerchantsAsync(parentCompanyId).ConfigureAwait(false);
+    var actualMerchants = await merchantNoSqlBroker.ReadMerchantsAsync(parentCompanyId);
 
     // Then
     Assert.NotNull(actualMerchants);
@@ -305,7 +305,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualMerchant = await merchantNoSqlBroker.UpdateMerchantAsync(originalMerchant.id, updatedMerchant).ConfigureAwait(false);
+    var actualMerchant = await merchantNoSqlBroker.UpdateMerchantAsync(originalMerchant.id, updatedMerchant);
 
     // Then
     Assert.NotNull(actualMerchant);
@@ -337,7 +337,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualMerchant = await merchantNoSqlBroker.UpdateMerchantAsync(originalMerchant, updatedMerchant).ConfigureAwait(false);
+    var actualMerchant = await merchantNoSqlBroker.UpdateMerchantAsync(originalMerchant, updatedMerchant);
 
     // Then
     Assert.NotNull(actualMerchant);
@@ -385,7 +385,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
       .ReturnsAsync(deleteResponseMock.Object);
 
     // When
-    await merchantNoSqlBroker.DeleteMerchantAsync(expectedMerchant.id).ConfigureAwait(false);
+    await merchantNoSqlBroker.DeleteMerchantAsync(expectedMerchant.id);
   }
 
   /// <summary>Does nothing when merchant is not found.</summary>
@@ -411,7 +411,7 @@ public sealed partial class MerchantNoSqlBrokerTests : InvoiceNoSqlBrokerTestsBa
       .Returns(mockFeedIterator.Object);
 
     // When
-    await merchantNoSqlBroker.DeleteMerchantAsync(merchantId).ConfigureAwait(false);
+    await merchantNoSqlBroker.DeleteMerchantAsync(merchantId);
   }
 
   #endregion
