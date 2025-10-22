@@ -186,8 +186,8 @@ dotnet_diagnostic.xUnit2025.severity = warning
 dotnet_diagnostic.xUnit2024.severity = warning
 dotnet_diagnostic.xUnit2023.severity = warning
 dotnet_diagnostic.xUnit2022.severity = warning
-dotnet_diagnostic.IDE0051.severity = warning
 dotnet_diagnostic.IDE0160.severity = warning
+dotnet_diagnostic.IDE0051.severity = suggestion
 dotnet_diagnostic.IDE0052.severity = warning
 dotnet_diagnostic.IDE0064.severity = suggestion
 
