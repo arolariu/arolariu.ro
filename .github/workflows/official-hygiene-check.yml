@@ -6,10 +6,7 @@ permissions:
   issues: write
 
 on:
-  push:
-    branches: ["preview", "main"]
   pull_request:
-    branches: ["preview", "main"]
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
