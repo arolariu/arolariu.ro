@@ -33,9 +33,9 @@ jobs:
         with:
           node-version: '24'
           cache-key-prefix: 'cv'
-          working-directory: './sites/cv.arolariu.ro'
 
       - name: 📦 Prepare and build...
+        working-directory: './sites/cv.arolariu.ro'
         run: |
           npm run prepare
           npm run build
