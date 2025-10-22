@@ -10,7 +10,6 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 /// Value converter between <see cref="IEnumerable{T}"/> and <see cref="string"/>."
 /// </summary>
 [ExcludeFromCodeCoverage]
-[SuppressMessage("Minor Code Smell", "S101:Types should be named in PascalCase", Justification = "Not applicable.")]
 public class ValueConverterForIEnumerableOf<T> : ValueConverter<IEnumerable<T>, string>
 {
   /// <summary>

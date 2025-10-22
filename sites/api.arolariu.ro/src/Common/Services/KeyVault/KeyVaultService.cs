@@ -230,11 +230,9 @@ public sealed class KeyVaultService : IKeyVaultService
     }
     catch (RequestFailedException)
     {
-#pragma warning disable S112 // General exceptions should never be thrown
 #pragma warning disable CA2201 // Do not raise reserved exception types
       throw new Exception($"Failed to get secret '{secretName}' from Key Vault: {_secretClient.VaultUri}");
 #pragma warning restore CA2201 // Do not raise reserved exception types
-#pragma warning restore S112 // General exceptions should never be thrown
     }
   }
 
@@ -288,11 +286,9 @@ public sealed class KeyVaultService : IKeyVaultService
     }
     catch (RequestFailedException)
     {
-#pragma warning disable S112 // General exceptions should never be thrown
 #pragma warning disable CA2201 // Do not raise reserved exception types
       throw new Exception($"Failed to get secret '{secretName}' from Key Vault: {_secretClient.VaultUri}");
 #pragma warning restore CA2201 // Do not raise reserved exception types
-#pragma warning restore S112 // General exceptions should never be thrown
     }
   }
 }

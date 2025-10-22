@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Core.Tests.Shared.TestDoubles;
 
 using System;
+
 using Microsoft.Extensions.Options;
 
 /// <summary>
@@ -9,21 +10,19 @@ using Microsoft.Extensions.Options;
 /// </summary>
 internal sealed class FakeOptionsMonitor<T> : IOptionsMonitor<T>
 {
-  private T _value;
-
   public FakeOptionsMonitor(T value)
   {
-    _value = value;
+    CurrentValue = value;
   }
 
-  public T CurrentValue => _value;
+  public T CurrentValue { get; private set; }
 
-  public T Get(string? name) => _value;
+  public T Get(string? name) => CurrentValue;
 
   public IDisposable? OnChange(Action<T, string?> listener) => null;
 
   /// <summary>
   /// Allows tests to mutate the underlying current value if needed.
   /// </summary>
-  public void Set(T newValue) => _value = newValue;
+  public void Set(T newValue) => CurrentValue = newValue;
 }

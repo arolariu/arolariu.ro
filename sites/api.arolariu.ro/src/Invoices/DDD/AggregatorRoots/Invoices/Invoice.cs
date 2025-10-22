@@ -103,19 +103,16 @@ public sealed class Invoice : NamedEntity<Guid>
   /// or user-submitted metadata.</para>
   /// </remarks>
   /// <returns>A new <see cref="Invoice"/> instance with immutable identity and sentinel defaults.</returns>
-  internal static Invoice Default()
+  internal static Invoice Default() => new Invoice
   {
-    return new Invoice
-    {
-      id = Guid.CreateVersion7(),
-      UserIdentifier = Guid.Empty,
-      Category = InvoiceCategory.NOT_DEFINED,
-      Scan = InvoiceScan.Default(),
-      PaymentInformation = new PaymentInformation(),
-      MerchantReference = Guid.Empty,
-      AdditionalMetadata = new Dictionary<string, object>(),
-    };
-  }
+    id = Guid.CreateVersion7(),
+    UserIdentifier = Guid.Empty,
+    Category = InvoiceCategory.NOT_DEFINED,
+    Scan = InvoiceScan.Default(),
+    PaymentInformation = new PaymentInformation(),
+    MerchantReference = Guid.Empty,
+    AdditionalMetadata = new Dictionary<string, object>(),
+  };
 
   /// <summary>
   /// Produces a new invoice aggregate representing a non-destructive merge of an original invoice and a set of partial updates.

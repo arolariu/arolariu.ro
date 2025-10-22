@@ -21,19 +21,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// and that required services can be resolved after configuration. Naming follows
 /// the mandated <c>MethodName_Condition_ExpectedResult</c> convention.
 /// </summary>
-[SuppressMessage("Design", "CA1515", Justification = "MSTest requires public visibility for discovery.")]
-[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming pattern mandated for tests.")]
 [SuppressMessage("Performance", "CA1848", Justification = "Single trivial log in test; performance delegate pattern unnecessary.")]
 [TestClass]
 public sealed class LoggingExtensionsTests
 {
-  private static AzureOptions CreateOptions()
+  private static AzureOptions CreateOptions() => new()
   {
-    return new()
-    {
-      ApplicationInsightsEndpoint = "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://eastus-0.in.applicationinsights.azure.com/"
-    };
-  }
+    ApplicationInsightsEndpoint = "InstrumentationKey=00000000-0000-0000-0000-000000000000;IngestionEndpoint=https://eastus-0.in.applicationinsights.azure.com/"
+  };
 
   /// <summary>Ensures AddTelemetry completes and app can build with Application Insights config.</summary>
   [TestMethod]

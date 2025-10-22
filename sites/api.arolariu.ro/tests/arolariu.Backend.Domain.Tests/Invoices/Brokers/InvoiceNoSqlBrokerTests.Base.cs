@@ -10,7 +10,6 @@ using Moq;
 /// Abstract base class providing common Cosmos DB mocks for invoice and merchant NoSQL broker tests.
 /// Initializes mocked <see cref="CosmosClient"/>, <see cref="Database"/> and invoice / merchant containers.
 /// </summary>
-[SuppressMessage("Design", "CA1515", Justification = "Public visibility required for inheritance across test classes.")]
 [SuppressMessage("Design", "CA1051", Justification = "Protected readonly fields intentionally exposed for derived test usage.")]
 public abstract class InvoiceNoSqlBrokerTestsBase
 {

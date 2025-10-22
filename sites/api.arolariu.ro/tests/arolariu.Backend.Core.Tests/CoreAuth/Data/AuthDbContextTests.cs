@@ -1,7 +1,6 @@
 namespace arolariu.Backend.Core.Tests.CoreAuth.Data;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Core.Auth.Brokers;
 using arolariu.Backend.Core.Auth.Models;
@@ -13,8 +12,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// Tests for <see cref="AuthDbContext"/> construction and provider configuration paths.
 /// Method names follow the mandated MethodName_Condition_ExpectedResult pattern.
 /// </summary>
-[SuppressMessage("Design", "CA1515", Justification = "Public test class required for MSTest discovery.")]
-[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming convention enforced for tests.")]
 [TestClass]
 public sealed class AuthDbContextTests
 {

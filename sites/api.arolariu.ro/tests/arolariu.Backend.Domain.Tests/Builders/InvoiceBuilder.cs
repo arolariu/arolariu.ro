@@ -21,27 +21,24 @@ internal static class InvoiceBuilder
 {
   private static readonly Random Random = new();
 
-  public static Invoice CreateRandomInvoice()
+  public static Invoice CreateRandomInvoice() => new Invoice
   {
-    return new Invoice
-    {
-      id = Guid.NewGuid(),
-      UserIdentifier = Guid.NewGuid(),
-      Name = GetRandomString(),
-      Description = GetRandomString(),
-      Category = InvoiceCategory.FAST_FOOD,
-      Scan = InvoiceScan.Default(),
-      IsImportant = Random.Next(0, 2) == 1,
-      CreatedBy = Guid.NewGuid(),
-      CreatedAt = GetRandomDateTimeOffset(),
-      NumberOfUpdates = Random.Next(0, 10),
-      MerchantReference = Guid.NewGuid(),
-      SharedWith = [Guid.NewGuid(), Guid.NewGuid()],
-      Items = CreateRandomProducts(),
-      PossibleRecipes = [],
-      PaymentInformation = CreateRandomPaymentInformation()
-    };
-  }
+    id = Guid.NewGuid(),
+    UserIdentifier = Guid.NewGuid(),
+    Name = GetRandomString(),
+    Description = GetRandomString(),
+    Category = InvoiceCategory.FAST_FOOD,
+    Scan = InvoiceScan.Default(),
+    IsImportant = Random.Next(0, 2) == 1,
+    CreatedBy = Guid.NewGuid(),
+    CreatedAt = GetRandomDateTimeOffset(),
+    NumberOfUpdates = Random.Next(0, 10),
+    MerchantReference = Guid.NewGuid(),
+    SharedWith = [Guid.NewGuid(), Guid.NewGuid()],
+    Items = CreateRandomProducts(),
+    PossibleRecipes = [],
+    PaymentInformation = CreateRandomPaymentInformation()
+  };
 
   public static Invoice CreateInvoiceWithSpecificProperties(
     Guid? id = null,
@@ -72,14 +69,11 @@ internal static class InvoiceBuilder
     };
   }
 
-  public static TheoryData<Invoice> GetInvoiceTheoryData()
-  {
-    return [
+  public static TheoryData<Invoice> GetInvoiceTheoryData() => [
       CreateRandomInvoice(),
       CreateRandomInvoice(),
       CreateRandomInvoice()
     ];
-  }
 
   public static List<Invoice> CreateMultipleRandomInvoices(int count = 3)
   {
@@ -118,26 +112,17 @@ internal static class InvoiceBuilder
     return products;
   }
 
-  private static PaymentInformation CreateRandomPaymentInformation()
+  private static PaymentInformation CreateRandomPaymentInformation() => new PaymentInformation
   {
-    return new PaymentInformation
-    {
-      TransactionDate = GetRandomDateTimeOffset(),
-      PaymentType = PaymentType.CARD,
-      Currency = new Currency() { Code = "RON", Name = "Romanian Leu", Symbol = "RON" },
-      TotalCostAmount = (decimal)(Random.NextDouble() * 1000),
-      TotalTaxAmount = (decimal)(Random.NextDouble() * 100)
-    };
-  }
+    TransactionDate = GetRandomDateTimeOffset(),
+    PaymentType = PaymentType.CARD,
+    Currency = new Currency() { Code = "RON", Name = "Romanian Leu", Symbol = "RON" },
+    TotalCostAmount = (decimal)(Random.NextDouble() * 1000),
+    TotalTaxAmount = (decimal)(Random.NextDouble() * 100)
+  };
 
-  private static string GetRandomString()
-  {
-    return Guid.NewGuid().ToString()[..8];
-  }
+  private static string GetRandomString() => Guid.NewGuid().ToString()[..8];
 
-  private static DateTimeOffset GetRandomDateTimeOffset()
-  {
-    return DateTimeOffset.Now.AddDays(-Random.Next(0, 365));
-  }
+  private static DateTimeOffset GetRandomDateTimeOffset() => DateTimeOffset.Now.AddDays(-Random.Next(0, 365));
 }
 

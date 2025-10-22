@@ -13,8 +13,5 @@ public static class WebApplicationExtensions
   /// Extension method to add the invoice domain configuration.
   /// </summary>
   /// <param name="app"></param>
-  public static void AddInvoiceDomainConfiguration(this WebApplication app)
-  {
-    app.MapInvoiceEndpoints();
-  }
+  public static void AddInvoiceDomainConfiguration(this WebApplication app) => app.MapInvoiceEndpoints();
 }

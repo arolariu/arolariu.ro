@@ -44,9 +44,7 @@ public static partial class AuthEndpoints
   /// - Proper versioning and tagging for API documentation
   /// - Security policies and authorization requirements
   /// </remarks>
-  public static void MapAuthEndpoints(this IEndpointRouteBuilder router)
-  {
+  public static void MapAuthEndpoints(this IEndpointRouteBuilder router) =>
     // This group contains the already built-in identity auth endpoints
     MapIdentityBuiltinEndpoints(router);
-  }
 }

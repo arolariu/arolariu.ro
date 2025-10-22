@@ -1,7 +1,6 @@
 namespace arolariu.Backend.Core.Tests.Common.DDD;
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Core.Tests.Shared.TestDoubles;
 
@@ -12,8 +11,6 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 /// update simulation and importance flag toggling. Method names follow the mandated
 /// MethodName_Condition_ExpectedResult pattern.
 /// </summary>
-[SuppressMessage("Design", "CA1515", Justification = "Public class required for MSTest discovery.")]
-[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming enforced across test suite.")]
 [TestClass]
 public sealed class BaseEntityTests
 {

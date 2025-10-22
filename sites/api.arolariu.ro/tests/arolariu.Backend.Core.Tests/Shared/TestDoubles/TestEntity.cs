@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Core.Tests.Shared.TestDoubles;
 
 using System;
+
 using arolariu.Backend.Common.DDD.Contracts;
 
 /// <summary>

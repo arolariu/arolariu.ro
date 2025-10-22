@@ -477,9 +477,7 @@ public static partial class InvoiceEndpoints
   /// <para><b>Idempotency:</b> Re-analysis overwrites prior enrichment; idempotent only when source inputs have not changed.</para>
   /// </remarks>
   /// <param name="router">Route builder instance.</param>
-  private static void MapInvoiceAnalysisEndpoints(this IEndpointRouteBuilder router)
-  {
-    router // Analyze a specific invoice, given its identifier.
+  private static void MapInvoiceAnalysisEndpoints(this IEndpointRouteBuilder router) => router // Analyze a specific invoice, given its identifier.
       .MapPost("/invoices/{id}/analyze", AnalyzeInvoiceAsync)
       .Accepts<AnalysisOptions>("application/json")
       .Produces(StatusCodes.Status202Accepted)
@@ -493,5 +491,4 @@ public static partial class InvoiceEndpoints
       .WithName(nameof(AnalyzeInvoiceAsync))
       .RequireAuthorization()
       .WithOpenApi();
-  }
 }

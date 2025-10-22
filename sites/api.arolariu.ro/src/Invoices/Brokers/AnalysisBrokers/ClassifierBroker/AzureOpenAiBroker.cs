@@ -30,7 +30,6 @@ using Azure.Identity;
 /// Ensure environment variables (e.g. AZURE_CLIENT_ID) are correctly provisioned in deployment.</para>
 /// </remarks>
 [ExcludeFromCodeCoverage] // brokers are not tested - they are wrappers over external services.
-#pragma warning disable OPENAI001 // acknowledge the fact that the OpenAI API is not yet stable
 public sealed partial class AzureOpenAiBroker : IOpenAiBroker
 {
   private readonly AzureOpenAIClient openAIClient;

@@ -142,13 +142,10 @@ internal sealed class SwaggerFilterService : IDocumentFilter
   private static void AddExternalDocumentation(OpenApiDocument swaggerDoc)
   {
     ArgumentNullException.ThrowIfNull(swaggerDoc);
-
-#pragma warning disable S1075 // URIs should not be hardcoded
     swaggerDoc.ExternalDocs = new OpenApiExternalDocs()
     {
       Description = "Check the API docs here!",
       Url = new Uri("https://docs.arolariu.ro"),
     };
-#pragma warning restore S1075 // URIs should not be hardcoded
   }
 }

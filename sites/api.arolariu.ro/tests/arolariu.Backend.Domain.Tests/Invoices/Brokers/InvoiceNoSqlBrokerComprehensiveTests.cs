@@ -2,7 +2,6 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Brokers;
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -22,8 +21,6 @@ using Xunit;
 /// and bulk read scenarios against the Cosmos EF Core broker abstraction.
 /// Follows MethodName_Condition_ExpectedResult pattern; underscores intentional.
 /// </summary>
-[SuppressMessage("Design", "CA1515", Justification = "xUnit requires public classes for discovery.")]
-[SuppressMessage("Naming", "CA1707", Justification = "Underscore naming mandated for test clarity.")]
 public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlBrokerTestsBase, IDisposable
 {
   private readonly InvoiceNoSqlBroker invoiceNoSqlBroker;
@@ -78,7 +75,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualInvoice = await invoiceNoSqlBroker.CreateInvoiceAsync(expectedInvoice).ConfigureAwait(false);
+    var actualInvoice = await invoiceNoSqlBroker.CreateInvoiceAsync(expectedInvoice);
 
     // Then
     Assert.NotNull(actualInvoice);
@@ -106,7 +103,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ThrowsAsync(cosmosException);
 
     // When & Then
-    var exception = await Assert.ThrowsAsync<CosmosException>(() => invoiceNoSqlBroker.CreateInvoiceAsync(invoice).AsTask()).ConfigureAwait(false);
+    var exception = await Assert.ThrowsAsync<CosmosException>(() => invoiceNoSqlBroker.CreateInvoiceAsync(invoice).AsTask());
 
     Assert.Equal("Creation failed", exception.Message);
   }
@@ -138,7 +135,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
       .ReturnsAsync(itemResponseMock.Object);
 
     // When
-    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id, expectedInvoice.UserIdentifier).ConfigureAwait(false);
+    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id, expectedInvoice.UserIdentifier);
 
     // Then
     Assert.NotNull(actualInvoice);
@@ -165,15 +162,17 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
     mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(true);
     mockFeedIterator.Setup(iterator => iterator.ReadNextAsync(It.IsAny<System.Threading.CancellationToken>()))
       .ReturnsAsync(feedResponseMock.Object)
-    .Callback(() => mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(false));
+      .Callback(() => mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(false));
 
     mockInvoicesContainer.Setup(container => container.GetItemQueryIterator<Invoice>(
-        It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c WHERE c.id = @invoiceIdentifier")
+        It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c WHERE c.id = @invoiceIdentifier"),
+        It.IsAny<string>(),
+        It.IsAny<QueryRequestOptions>()
       ))
-  .Returns(mockFeedIterator.Object);
+      .Returns(mockFeedIterator.Object);
 
     // When
-    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id).ConfigureAwait(false);
+    var actualInvoice = await invoiceNoSqlBroker.ReadInvoiceAsync(expectedInvoice.id);
 
     // Then
     Assert.NotNull(actualInvoice);
@@ -194,21 +193,23 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
     var expectedInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(3);
     var feedResponseMock = new Mock<FeedResponse<Invoice>>();
     feedResponseMock.Setup(response => response.GetEnumerator())
-.Returns(expectedInvoices.GetEnumerator());
+      .Returns(expectedInvoices.GetEnumerator());
 
     var mockFeedIterator = new Mock<FeedIterator<Invoice>>();
     mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(true);
     mockFeedIterator.Setup(iterator => iterator.ReadNextAsync(It.IsAny<System.Threading.CancellationToken>()))
       .ReturnsAsync(feedResponseMock.Object)
-    .Callback(() => mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(false));
+      .Callback(() => mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(false));
 
     mockInvoicesContainer.Setup(container => container.GetItemQueryIterator<Invoice>(
-    It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c")
-    ))
-.Returns(mockFeedIterator.Object);
+        It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c"),
+        It.IsAny<string>(),
+        It.IsAny<QueryRequestOptions>()
+      ))
+      .Returns(mockFeedIterator.Object);
 
     // When
-    var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync().ConfigureAwait(false);
+    var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync();
 
     // Then
     Assert.NotNull(actualInvoices);
@@ -223,10 +224,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
   /// Provides theory data consisting of several randomized invoices.
   /// </summary>
   /// <returns>Collection of randomized <see cref="Invoice"/> instances.</returns>
-  public static TheoryData<Invoice> GetInvoiceTestData()
-  {
-    return InvoiceBuilder.GetInvoiceTheoryData();
-  }
+  public static TheoryData<Invoice> GetInvoiceTestData() => InvoiceBuilder.GetInvoiceTheoryData();
 
   #endregion
 }
