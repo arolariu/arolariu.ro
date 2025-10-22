@@ -112,37 +112,32 @@ The existing GitHub Actions workflows exhibited several critical issues:
 │                                                                  │
 │  Node.js:                                                        │
 │  ├─ Primary: {os}-node-{prefix}-{hash(package-lock.json)}      │
-│  ├─ Fallback 1: {os}-node-{prefix}-                            │
-│  └─ Fallback 2: {os}-node-                                     │
+│  └─ Fallback: {os}-node-{prefix}-                              │
 │                                                                  │
 │  .NET:                                                           │
 │  ├─ Primary: {os}-dotnet-{prefix}-{hash(*.csproj, *.slnx,      │
 │  │                                       packages.lock.json)}    │
-│  ├─ Fallback 1: {os}-dotnet-{prefix}-                          │
-│  └─ Fallback 2: {os}-dotnet-                                   │
+│  └─ Fallback: {os}-dotnet-{prefix}-                            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 2.2 Cache Strategy
 
-#### 2.2.1 Hierarchical Cache Keys
+#### 2.2.1 Two-Tier Cache Keys
 
-The action implements a three-tier cache key strategy:
+The action implements a two-tier cache key strategy:
 
 **Primary Key**: Most specific, includes full dependency hash
 ```yaml
 {os}-node-{prefix}-{hashFiles('**/package-lock.json')}
 ```
 
-**Fallback Key 1**: Workflow-specific, allows cache sharing within workflow
+**Fallback Key**: Workflow-specific, allows cache sharing within workflow
 ```yaml
 {os}-node-{prefix}-
 ```
 
-**Fallback Key 2**: Cross-workflow, allows cache reuse across different workflows
-```yaml
-{os}-node-
-```
+**Important**: The cross-workflow fallback (`{os}-node-`) has been removed to prevent cache pollution between workflows. This ensures that when dependencies are updated, fresh installations occur rather than using potentially incompatible caches from other workflows.
 
 #### 2.2.2 Cache Key Prefix Strategy
 
@@ -154,7 +149,7 @@ Each workflow uses a simple, consistent prefix:
 - `cv` - CV site workflows
 - `docs` - Documentation workflows
 
-**Rationale**: Using the same prefix within a workflow allows jobs to share caches, reducing redundant installations. The hierarchical fallback ensures cross-workflow cache reuse when dependencies are similar.
+**Rationale**: Using the same prefix within a workflow allows jobs to share caches, reducing redundant installations. The workflow-specific fallback ensures cache isolation, preventing stale caches from other workflows when dependencies are updated.
 
 #### 2.2.3 .NET Lock File Support
 

@@ -80,25 +80,21 @@ A composite GitHub Action that sets up the Node.js and .NET development environm
 
 ## Cache Strategy
 
-The action uses a hierarchical cache key structure:
+The action uses a two-tier cache key structure for workflow-specific cache isolation:
 
 ### Node.js Cache
 ```
-{os}-node-{prefix}-{hash(package-lock.json)}
+Primary:  {os}-node-{prefix}-{hash(package-lock.json)}
+Fallback: {os}-node-{prefix}-
 ```
-
-Restore keys (in order):
-1. `{os}-node-{prefix}-`
-2. `{os}-node-`
 
 ### .NET Cache
 ```
-{os}-dotnet-{prefix}-{hash(*.csproj, *.slnx)}
+Primary:  {os}-dotnet-{prefix}-{hash(*.csproj, *.slnx, packages.lock.json)}
+Fallback: {os}-dotnet-{prefix}-
 ```
 
-Restore keys (in order):
-1. `{os}-dotnet-{prefix}-`
-2. `{os}-dotnet-`
+**Important**: Cache keys are scoped to workflows via the prefix to prevent cache pollution. When dependencies are updated, the hash-based primary key ensures fresh installations rather than using potentially incompatible caches.
 
 ## Examples from Repository Workflows
 
