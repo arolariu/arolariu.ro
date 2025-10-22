@@ -116,7 +116,7 @@ runs:
       run: |
         if [ "${{ steps.cache-dotnet.outputs.cache-hit }}" != "true" ]; then
           echo "::group::📦 Restoring .NET dependencies..."
-          dotnet restore
+          dotnet restore /arolariu.slnx
           echo "::endgroup::"
           echo "✅ .NET dependencies restored successfully"
         else
