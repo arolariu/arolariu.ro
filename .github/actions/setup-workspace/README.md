@@ -80,19 +80,30 @@ A composite GitHub Action that sets up the Node.js and .NET development environm
 
 ## Cache Strategy
 
-The action uses a two-tier cache key structure for workflow-specific cache isolation:
+The action uses hash-based exact matching for cache keys (no fallback keys):
 
 ### Node.js Cache
 ```
-Primary:  {os}-node-{prefix}-{hash(package-lock.json)}
-Fallback: {os}-node-{prefix}-
+Key: {os}-node-{prefix}-{hash(package-lock.json)}
 ```
 
 ### .NET Cache
 ```
-Primary:  {os}-dotnet-{prefix}-{hash(*.csproj, *.slnx, packages.lock.json)}
-Fallback: {os}-dotnet-{prefix}-
+Key: {os}-dotnet-{prefix}-{hash(*.csproj, *.slnx, packages.lock.json)}
 ```
+
+**Why no fallback keys?**
+
+Fallback keys can cause cache pollution when lock files are out of sync with package files. The hash-based approach ensures:
+- ✅ Cache hit only when dependencies are exactly the same
+- ✅ Fresh installation when any dependency changes
+- ✅ No risk of using stale cached dependencies
+- ✅ Clear behavior: exact match = cache hit, no match = fresh install
+
+**When does cache invalidate?**
+- a) No version bumps → Lock file unchanged → **Cache HIT**
+- b) Version bump with regenerated lock file → Hash changes → **Cache MISS** → Fresh install ✅
+- c) Only version bumps → Lock file regenerated → **Cache MISS** → Fresh install ✅
 
 **Important**: Cache keys are scoped to workflows via the prefix to prevent cache pollution. When dependencies are updated, the hash-based primary key ensures fresh installations rather than using potentially incompatible caches.
 

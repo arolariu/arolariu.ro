@@ -78,8 +78,6 @@ runs:
           ~/.npm
           **/node_modules
         key: ${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-${{ inputs.cache-key-prefix }}-
     
     - name: 📦 Setup .NET ${{ inputs.dotnet-version }}
       if: inputs.dotnet-version != ''
@@ -96,8 +94,6 @@ runs:
           ~/.nuget/packages
           ~/.dotnet
         key: ${{ runner.os }}-dotnet-${{ inputs.cache-key-prefix }}-${{ hashFiles('**/*.csproj', '**/*.slnx', '**/packages.lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-dotnet-${{ inputs.cache-key-prefix }}-
     
     - name: 📥 Install npm dependencies
       if: inputs.install-node-dependencies == 'true'
