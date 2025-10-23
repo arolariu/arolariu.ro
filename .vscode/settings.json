@@ -423,8 +423,8 @@
   "explorer.fileNesting.expand": true,
   "explorer.fileNesting.patterns": {
     "*.cs": "$(capture).*.cs",
-    "*.ts": "$(capture).test.ts, $(capture).test.tsx, $(capture).stories.tsx, $(capture).spec.tsx",
-    "*.tsx": "$(capture).test.ts, $(capture).test.tsx, $(capture).stories.tsx, $(capture).spec.tsx"
+    "*.ts": "$(capture).*.ts",
+    "*.tsx": "$(capture).*.tsx"
   },
   "explorer.incrementalNaming": "smart",
   "explorer.openEditors.minVisible": 0,
