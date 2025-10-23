@@ -65,19 +65,21 @@ jobs:
           playwright: 'true'
           generate: 'true'
           cache-key-prefix: 'website'
-          working-directory: './sites/arolariu.ro'
 
       - name: 🧪 Running Jest Unit tests...
+        working-directory: './sites/arolariu.ro'
         run: npm run test:unit
         env: # We will use local assets for the tests
           USE_CDN: "false"
 
       - name: 🧪 Running Playwright E2E Component tests...
+        working-directory: './sites/arolariu.ro'
         run: npm run test:e2e
         env: # We will use local assets for the tests
           USE_CDN: "false"
 
       - name: 🧪 Preparing UI tests (Building Storybook)...
+        working-directory: './sites/arolariu.ro'
         run: npm run storybook:build --quiet
         env: # We will use local assets for the tests
           USE_CDN: "false"
@@ -142,7 +144,6 @@ jobs:
           setup-azure: 'true'
           generate: 'true'
           cache-key-prefix: 'website'
-          working-directory: './sites/arolariu.ro'
 
       - name: 🔒 Performing auth against private Azure Container Registry...
         uses: Azure/docker-login@v2
