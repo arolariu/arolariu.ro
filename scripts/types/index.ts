@@ -162,3 +162,7 @@ export type SecretEnvironmentVariablesType = Extract<
   keyof (TypedProductionEnvironmentVariablesType | TypedDevelopmentEnvironmentVariablesType),
   keyof AuthEnvironmentVariables // Ensures only auth-related secrets are included
 >;
+
+export type AllEnvironmentVariablesKeys = keyof (TypedProductionEnvironmentVariablesType | TypedDevelopmentEnvironmentVariablesType);
+
+export type TypedConfigurationType = Record<AllEnvironmentVariablesKeys | (string & {}), string>;

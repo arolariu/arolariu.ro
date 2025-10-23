@@ -104,3 +104,24 @@ export async function runWithSpinner(
       throw new Error("The `hideOutput` variable should NOT be undefined!");
   }
 }
+
+/**
+ * Environment flag to determine if we are in production.
+ */
+export const isProductionEnvironment = process.env["PRODUCTION"] === "true";
+
+/**
+ * Environment flag to determine if we are using Azure App Configuration.
+ */
+export const isAzureInfrastructure = process.env["INFRA"] === "azure";
+
+/**
+ * Environment flag to determine if we are in verbose mode.
+ * In verbose mode, more detailed logs are printed to the console.
+ */
+export const isVerboseMode = process.env["VERBOSE"] === "true";
+
+/**
+ * Environment flag to determine if we are in a CI/CD environment.
+ */
+export const isInCI = !!(process.env["CI"] ?? process.env["GITHUB_ACTIONS"]);
