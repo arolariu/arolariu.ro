@@ -283,34 +283,21 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
   return lines.join("\n");
 }
 
-export async function main(): Promise<number> {
-  if (process.argv.includes("--help") || process.argv.includes("-h")) {
-    console.log(pc.magenta("\n╔══════════════════════════════════════════════════════════════════╗"));
-    console.log(pc.magenta("║       Environment Configuration Generator - Help                 ║"));
-    console.log(pc.magenta("╚══════════════════════════════════════════════════════════════════╝\n"));
-    console.log(pc.cyan("📋 Description:"));
-    console.log(pc.gray("   Generates .env file from Azure App Configuration or manual input\n"));
-    console.log(pc.cyan("🚀 Usage:"));
-    console.log(pc.gray("   npm run generate:env [options]\n"));
-    console.log(pc.cyan("⚙️  Options:"));
-    console.log(pc.gray("   --help, -h        Show this help message"));
-    console.log(pc.gray("   --verbose, -v     Enable verbose logging"));
-    console.log(pc.gray("   --azure           Fetch from Azure App Configuration"));
-    console.log(pc.gray("   --production      Use production configuration\n"));
-    console.log(pc.cyan("📦 Environment Variables:"));
-    console.log(pc.gray("   AZURE_CONFIG      Enable Azure mode (true/false)"));
-    console.log(pc.gray("   NODE_ENV          Set environment (production/development)"));
-    console.log(pc.gray("   CI                Detect CI/CD environment\n"));
-    console.log(pc.cyan("📖 Examples:"));
-    console.log(pc.gray("   npm run generate:env --azure --production"));
-    console.log(pc.gray("   npm run generate:env --verbose\n"));
-    return 0;
-  }
+function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[]): void {
+  console.log(pc.cyan("\n📂 Copying .env file to sub-repositories...\n"));
+  targetPaths.forEach((targetPath) => {
+    console.log(pc.gray(`Raw target path:${targetPath}`));
+    const builtTargetPath = path.resolve(`.${targetPath}`);
+    console.log(pc.gray(`Built target path: ${builtTargetPath}`));
+    try {
+      fs.copyFileSync(sourcePath, builtTargetPath);
+    } catch (error: unknown) {
+      console.error(pc.red(`   ✗ Error copying to ${builtTargetPath}: ${error}`));
+    }
+  });
+}
 
-  console.log(pc.magenta("\n╔══════════════════════════════════════════════════════════════════╗"));
-  console.log(pc.magenta("║       Environment Configuration Generator                        ║"));
-  console.log(pc.magenta("╚══════════════════════════════════════════════════════════════════╝\n"));
-
+export async function main(verbose: boolean = false): Promise<number> {
   console.log(pc.cyan("🔧 Configuration:\n"));
   console.log(pc.gray(`   Infrastructure: ${isAzureInfrastructure ? pc.blue("Azure") : pc.yellow("Local")}`));
   console.log(pc.gray(`   Environment: ${isProductionEnvironment ? pc.red("production") : pc.green("development")}`));
@@ -338,17 +325,40 @@ export async function main(): Promise<number> {
   console.log(pc.cyan("💾 Writing .env file...\n"));
   fs.writeFileSync(".env", content, {mode: 0o600});
 
-  console.log(pc.green("╔══════════════════════════════════════════════════════════════════╗"));
-  console.log(pc.green("║                    ✓ Success!                                    ║"));
-  console.log(pc.green("╚══════════════════════════════════════════════════════════════════╝\n"));
-  console.log(pc.gray(`   Generated ${pc.green(Object.keys(config).length)} environment variables`));
-  console.log(pc.gray(`   File: ${pc.cyan(path.resolve(".env"))}\n`));
+  console.log(pc.green(`   Generated ${pc.green(Object.keys(config).length)} environment variables`));
+  console.log(pc.green(`   File: ${pc.cyan(path.resolve(".env"))}\n`));
 
+  // Copy to sub-repositories if needed
+  copyEnvFileToSubRepos(".env", ["/sites/arolariu.ro/.env"]);
   return 0;
 }
 
 if (import.meta.main) {
-  main()
+  const verbose = process.argv.includes("/verbose") || process.argv.includes("/v");
+  if (process.argv.includes("--help") || process.argv.includes("-h")) {
+    console.log(pc.magenta("\n╔══════════════════════════════════════════════════════════════════╗"));
+    console.log(pc.magenta("║       ||arolariu.ro|| Environment Generator - Help               ║"));
+    console.log(pc.magenta("╚══════════════════════════════════════════════════════════════════╝\n"));
+    console.log(pc.cyan("📋 Description:"));
+    console.log(pc.gray("   Generates .env file from Azure App Configuration or manual input\n"));
+    console.log(pc.cyan("🚀 Usage:"));
+    console.log(pc.gray("   npm run generate:env [options]\n"));
+    console.log(pc.cyan("⚙️  Options:"));
+    console.log(pc.gray("   --help, -h        Show this help message"));
+    console.log(pc.gray("   --verbose, -v     Enable verbose logging"));
+    console.log(pc.gray("   --azure           Fetch from Azure App Configuration"));
+    console.log(pc.gray("   --production      Use production configuration\n"));
+    console.log(pc.cyan("📦 Environment Variables:"));
+    console.log(pc.gray("   AZURE_CONFIG      Enable Azure mode (true/false)"));
+    console.log(pc.gray("   NODE_ENV          Set environment (production/development)"));
+    console.log(pc.gray("   CI                Detect CI/CD environment\n"));
+    console.log(pc.cyan("📖 Examples:"));
+    console.log(pc.gray("   npm run generate:env --azure --production"));
+    console.log(pc.gray("   npm run generate:env --verbose\n"));
+    process.exit(1);
+  }
+
+  main(verbose)
     .then((code) => process.exit(code))
     .catch((err) => {
       console.error(err);
