@@ -40,8 +40,9 @@
     "storybook:build": "storybook build",
     "storybook:test": "test-storybook --coverage --coverageDirectory code-cov/storybook-report/ --no-cache --browsers firefox chromium webkit",
     "test": "npm run test:jest && npm run test:playwright && npm run test:storybook",
-    "test:unit": "jest",
+    "test:unit": "npm run test:jest",
     "test:jest": "jest",
+    "test:e2e": "npm run test:playwright",
     "test:playwright": "playwright test --config=playwright.config.ts",
     "test:storybook": "npm run storybook:build && npm run storybook:test"
   },
