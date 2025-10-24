@@ -11,7 +11,7 @@ inputs:
   dotnet-version:
     description: ".NET version to use (leave empty to skip .NET setup)"
     required: false
-    default: "10.x"
+    default: "10"
 
   install-node-dependencies:
     description: "Whether to install npm dependencies"
@@ -19,12 +19,12 @@ inputs:
     default: "true"
 
   install-dotnet-dependencies:
-    description: "Whether to restore .NET dependencies"
+    description: "Whether to install .NET dependencies"
     required: false
     default: "true"
 
   generate:
-    description: "Whether to run npm run generate for GraphQL schemas and artifacts"
+    description: "Whether to run npm run generate command"
     required: false
     default: "false"
 
@@ -34,17 +34,17 @@ inputs:
     default: "default"
 
   working-directory:
-    description: "Working directory for npm commands (relative to repository root)"
+    description: "Working directory for npm  and dotnet commands (relative to repository root)"
     required: false
     default: "."
 
   setup-azure:
-    description: "Whether to run npm setup:azure command"
+    description: "Whether to perform auth against the Azure Public Cloud"
     required: false
     default: "false"
 
   playwright:
-    description: "Whether to install Playwright browsers"
+    description: "Whether to install the Playwright browsers and dependencies"
     required: false
     default: "false"
 
@@ -63,6 +63,14 @@ runs:
     - name: 🚀 Starting workspace setup...
       shell: bash
       run: echo "::notice::Setting up workspace with Node.js ${{ inputs.node-version }}${{ inputs.dotnet-version != '' && format(' and .NET {0}', inputs.dotnet-version) || '' }}"
+
+    - name: 🔒 Performing auth against Azure Public Cloud...
+      if: inputs.setup-azure == 'true'
+      uses: Azure/login@v2.3.0
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     - name: 📦 Setup Node.js ${{ inputs.node-version }}
       uses: actions/setup-node@v5
@@ -123,16 +131,6 @@ runs:
           echo "✅ Using cached .NET dependencies"
         fi
 
-    - name: ⚙️ Setup Azure configuration
-      if: inputs.setup-azure == 'true'
-      shell: bash
-      working-directory: ${{ inputs.working-directory }}
-      run: |
-        echo "::group::⚙️ Setting up Azure configuration..."
-        npm run setup:azure
-        echo "::endgroup::"
-        echo "✅ Azure configuration completed"
-
     - name: 🎭 Install Playwright browsers
       if: inputs.playwright == 'true'
       shell: bash
@@ -149,7 +147,7 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         echo "::group::🔨 Generating artifacts..."
-        npm run generate
+        npm run generate /e /a /g /i
         echo "::endgroup::"
         echo "✅ Artifacts generated successfully"
 

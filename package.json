@@ -71,7 +71,6 @@
     "test:e2e:frontend": "node scripts/test-e2e.ts frontend",
     "generate": "node scripts/generate.ts",
     "generate:acks": "node scripts/generate.acks.ts",
-    "generate:copy": "node scripts/generate.copy.ts",
     "generate:env": "node scripts/generate.env.ts",
     "generate:gql": "node scripts/generate.gql.ts",
     "generate:i18n": "node scripts/generate.i18n.ts",
