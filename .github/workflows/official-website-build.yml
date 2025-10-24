@@ -61,7 +61,6 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
-          setup-azure: 'true'
           playwright: 'true'
           generate: 'true'
           cache-key-prefix: 'website'
@@ -141,7 +140,6 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
-          setup-azure: 'true'
           generate: 'true'
           cache-key-prefix: 'website'
 

@@ -51,7 +51,6 @@ Example usage:
     install-node-dependencies: 'true'  # Optional
     install-dotnet-dependencies: 'true'  # Optional
     cache-key-prefix: 'my-workflow'
-    setup-azure: 'true'  # Optional
     generate: 'true'  # Optional - runs npm run generate
 ```
 

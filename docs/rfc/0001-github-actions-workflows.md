@@ -124,7 +124,6 @@ inputs:
   install-dotnet-dependencies:     # Toggle dotnet restore (default: 'true')
   cache-key-prefix:                # Workflow-specific cache key (e.g., 'website', 'api')
   working-directory:               # Custom directory for npm commands (default: '.')
-  setup-azure:                     # Enable Azure configuration (default: 'false')
   playwright:                      # Install Playwright browsers (default: 'false')
   generate:                        # Run npm run generate (default: 'false')
 ```

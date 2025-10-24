@@ -40,7 +40,6 @@ A composite GitHub Action that sets up the Node.js and .NET development environm
   uses: ./.github/actions/setup-workspace
   with:
     node-version: '24'
-    setup-azure: 'true'
     playwright: 'true'
     generate: 'true'
     cache-key-prefix: 'website-build'
@@ -67,7 +66,6 @@ A composite GitHub Action that sets up the Node.js and .NET development environm
 | `install-dotnet-dependencies` | Whether to restore .NET dependencies | No | `true` |
 | `cache-key-prefix` | Prefix for cache key customization | No | `default` |
 | `working-directory` | Working directory for npm commands | No | `.` |
-| `setup-azure` | Whether to run `npm setup:azure` | No | `false` |
 | `playwright` | Whether to install Playwright browsers | No | `false` |
 | `generate` | Whether to run `npm run generate` for GraphQL schemas and artifacts | No | `false` |
 
@@ -115,7 +113,6 @@ Fallback keys can cause cache pollution when lock files are out of sync with pac
   uses: ./.github/actions/setup-workspace
   with:
     node-version: '24'
-    setup-azure: 'true'
     playwright: 'true'
     cache-key-prefix: 'website'
 ```

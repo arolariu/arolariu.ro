@@ -38,11 +38,6 @@ inputs:
     required: false
     default: "."
 
-  setup-azure:
-    description: "Whether to perform auth against the Azure Public Cloud"
-    required: false
-    default: "false"
-
   playwright:
     description: "Whether to install the Playwright browsers and dependencies"
     required: false
@@ -63,14 +58,6 @@ runs:
     - name: 🚀 Starting workspace setup...
       shell: bash
       run: echo "::notice::Setting up workspace with Node.js ${{ inputs.node-version }}${{ inputs.dotnet-version != '' && format(' and .NET {0}', inputs.dotnet-version) || '' }}"
-
-    - name: 🔒 Performing auth against Azure Public Cloud...
-      if: inputs.setup-azure == 'true'
-      uses: Azure/login@v2.3.0
-      with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     - name: 📦 Setup Node.js ${{ inputs.node-version }}
       uses: actions/setup-node@v5
