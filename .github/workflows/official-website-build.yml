@@ -24,6 +24,14 @@ on:
         default: "development"
         required: true
         type: choice
+      infrastructure:
+        description: "The infrastructure where it will be deployed (e.g. 'local' or 'azure')"
+        options:
+          - 'local'
+          - 'azure'
+        default: "azure"
+        required: true
+        type: choice
       container_name:
         description: "The name of the container to build and deploy. (e.g. 'frontend/dev.arolariu', 'frontend/arolariu')"
         options:
@@ -36,6 +44,7 @@ on:
 env:
   COMMIT_SHA: ${{ github.sha }}
   PRODUCTION: ${{ inputs.environment == 'production' && 'true' || 'false' }}
+  INFRA: ${{ inputs.infrastructure || 'azure' }}
   AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
   AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
   AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
