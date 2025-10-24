@@ -82,7 +82,7 @@ export async function main(options: Readonly<CommandLineOptions>): Promise<numbe
 
   console.log(pc.green("\n✨ All requested generation tasks completed."));
   console.log(pc.gray(`   Executed ${pc.green(String(tasksExecuted))} task(s).`));
-  return tasksExecuted;
+  return 0;
 }
 
 if (import.meta.main) {

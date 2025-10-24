@@ -12,21 +12,19 @@ import type {AllEnvironmentVariablesKeys, TypedConfigurationType} from "./types/
  * Fetch configuration values from Azure App Configuration.
  * @returns A promise that resolves to the typed configuration object.
  */
-async function fetchConfigurationFromAzureAppConfiguration(): Promise<TypedConfigurationType> {
+async function fetchConfigurationFromAzureAppConfiguration(verbose: boolean = false): Promise<TypedConfigurationType> {
   const appConfigStore = APP_CONFIGURATION_SERVER;
   const appConfigValues = Object.entries(APP_CONFIGURATION_MAPPING);
+
+  verbose && console.info(`🔍 Azure App Configuration server hostname: ${appConfigStore}`);
+  verbose && console.info(`🔍 Azure App Configuration values: ${JSON.stringify(appConfigValues, null, 2)}`);
 
   const credentials = new DefaultAzureCredential();
   const client = new AppConfigurationClient(appConfigStore, credentials);
   const label = isProductionEnvironment ? "PRODUCTION" : "DEVELOPMENT";
+  verbose && console.info(`🔍 Azure App Configuration requested label : ${label}`);
 
   const config = {} as TypedConfigurationType;
-
-  console.log(pc.gray("\n=================================================="));
-  console.log(pc.cyan(`||☁️  Fetching configuration from Azure App Configuration...`));
-  console.log(pc.gray(`||      Store: ${appConfigStore}`));
-  console.log(pc.gray(`||      Label: ${label}`));
-  console.log(pc.gray("==================================================\n"));
 
   for (const [key, envVar] of appConfigValues) {
     try {
@@ -64,7 +62,7 @@ async function fetchConfigurationFromAzureAppConfiguration(): Promise<TypedConfi
  * Function to parse an existing .env file and extract key-value pairs.
  * @returns The parsed configuration as a typed object.
  */
-function fetchConfigurationFromLocalEnvFile(envPath: string = ".env"): Partial<TypedConfigurationType> {
+function fetchConfigurationFromLocalEnvFile(envPath: string = ".env", verbose: boolean = false): Partial<TypedConfigurationType> {
   const config = {} as Partial<TypedConfigurationType>;
 
   if (!fs.existsSync(envPath)) {
@@ -101,7 +99,8 @@ function fetchConfigurationFromLocalEnvFile(envPath: string = ".env"): Partial<T
 
     console.log(pc.green(`✅ Parsed ${Object.keys(config).length} existing environment variables\n`));
   } catch (error) {
-    console.log(pc.yellow(`⚠️ Encountered error while parsing .env file: ${error}\n`));
+    console.log(pc.yellow(`⚠️ Encountered error while parsing .env file.\n`));
+    verbose && console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
   }
 
   return config;
@@ -116,7 +115,10 @@ function fetchConfigurationFromLocalEnvFile(envPath: string = ".env"): Partial<T
  * @param missingKeys An array of keys representing the missing environment variables.
  * @returns A promise that resolves to a partial object containing the newly provided configuration values.
  */
-async function promptForMissingKeys(missingKeys: AllEnvironmentVariablesKeys[]): Promise<Partial<TypedConfigurationType>> {
+async function promptForMissingKeys(
+  missingKeys: AllEnvironmentVariablesKeys[],
+  verbose: boolean = false,
+): Promise<Partial<TypedConfigurationType>> {
   console.log(pc.cyan("\n🔍 Prompting for missing environment variables...\n"));
 
   if (missingKeys.length === 0) {
@@ -174,13 +176,14 @@ async function promptForMissingKeys(missingKeys: AllEnvironmentVariablesKeys[]):
  * prompting the user for any that are missing.
  * @returns A promise that resolves to the complete typed configuration object.
  */
-async function ensureLocalEnvIsComplete(): Promise<TypedConfigurationType> {
+async function ensureLocalEnvIsComplete(verbose: boolean = false): Promise<TypedConfigurationType> {
   console.log(pc.cyan("\n🔧 Ensuring local environment configuration is complete...\n"));
   const configurationKeys = Object.values(APP_CONFIGURATION_MAPPING);
 
   // Parse existing .env if it exists, first (redundant in cloud / ci);
   const existingConfig = fetchConfigurationFromLocalEnvFile();
   const existingConfigKeys = Object.keys(existingConfig);
+  verbose && console.info(`🔍 Existing configuration keys: ${JSON.stringify(existingConfigKeys, null, 2)}`);
 
   // Find missing keys from REQUIRED array
   const missingKeys = configurationKeys.filter((key) => !existingConfigKeys.includes(key));
@@ -219,7 +222,7 @@ async function ensureLocalEnvIsComplete(): Promise<TypedConfigurationType> {
   return completedConfig as TypedConfigurationType; // safe cast.
 }
 
-function generateEnvFileContent(config: TypedConfigurationType): string {
+function generateEnvFileContent(config: TypedConfigurationType, verbose: boolean = false): string {
   console.log(pc.cyan("\n📝 Generating .env file content...\n"));
 
   const lines = [
@@ -283,18 +286,19 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
   return lines.join("\n");
 }
 
-function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[]): void {
+function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[], verbose: boolean = false): void {
   console.log(pc.cyan("\n📂 Copying .env file to sub-repositories...\n"));
-  targetPaths.forEach((targetPath) => {
+  for (const targetPath of targetPaths) {
     console.log(pc.gray(`Raw target path:${targetPath}`));
     const builtTargetPath = path.resolve(`.${targetPath}`);
     console.log(pc.gray(`Built target path: ${builtTargetPath}`));
     try {
       fs.copyFileSync(sourcePath, builtTargetPath);
     } catch (error: unknown) {
-      console.error(pc.red(`   ✗ Error copying to ${builtTargetPath}: ${error}`));
+      console.error(pc.red(`   ✗ Error copying to ${builtTargetPath}.`));
+      verbose && console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
     }
-  });
+  }
 }
 
 export async function main(verbose: boolean = false): Promise<number> {
@@ -310,17 +314,17 @@ export async function main(verbose: boolean = false): Promise<number> {
   try {
     if (isAzureInfrastructure) {
       isVerboseMode && console.log(pc.cyan("☁️  Fetching configuration from Azure App Configuration...\n"));
-      config = await fetchConfigurationFromAzureAppConfiguration();
+      config = await fetchConfigurationFromAzureAppConfiguration(verbose);
     } else {
       isVerboseMode && console.log(pc.yellow("📝 Populating configuration via manual input...\n"));
-      config = await ensureLocalEnvIsComplete();
+      config = await ensureLocalEnvIsComplete(verbose);
     }
   } catch (error) {
     console.error(pc.red(`\n✗ Error: ${error instanceof Error ? error.message : String(error)}\n`));
     process.exit(1);
   }
 
-  const content = generateEnvFileContent(config);
+  const content = generateEnvFileContent(config, verbose);
 
   console.log(pc.cyan("💾 Writing .env file...\n"));
   fs.writeFileSync(".env", content, {mode: 0o600});
@@ -329,7 +333,7 @@ export async function main(verbose: boolean = false): Promise<number> {
   console.log(pc.green(`   File: ${pc.cyan(path.resolve(".env"))}\n`));
 
   // Copy to sub-repositories if needed
-  copyEnvFileToSubRepos(".env", ["/sites/arolariu.ro/.env"]);
+  copyEnvFileToSubRepos(".env", ["/sites/arolariu.ro/.env"], verbose);
   return 0;
 }
 
