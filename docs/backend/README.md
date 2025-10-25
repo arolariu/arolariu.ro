@@ -105,7 +105,7 @@ Practical, concise guides for rapid development:
 
 ### Observability
 - Structured logging
-- OpenTelemetry integration (see [OpenTelemetry Guide](./opentelemetry-guide.md))
+- OpenTelemetry integration (see [OpenTelemetry Guide](./opentelemetry-guide.md), RFC 2002)
 - Health checks
 - Metrics collection
 
