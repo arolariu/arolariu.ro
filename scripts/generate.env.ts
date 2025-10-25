@@ -224,12 +224,48 @@ async function ensureLocalEnvIsComplete(verbose: boolean = false): Promise<Typed
 
 /**
  * Helper function to determine if a value needs to be quoted in .env format.
- * Values containing spaces, equals signs, or semicolons must be quoted.
+ * Values containing special characters must be quoted to prevent:
+ * - Shell expansion (backticks, dollar signs)
+ * - Comment interpretation (hash symbols)
+ * - Variable substitution
+ * - Newlines/tabs breaking the .env format
+ * - Shell metacharacters causing execution issues
+ * 
+ * @param value The string value to check and potentially quote
+ * @returns The value, quoted and escaped if necessary
  */
 function quoteIfNeeded(value: string): string {
-  return value.includes(" ") || value.includes("=") || value.includes(";")
-    ? `"${value.replace(/"/g, '\\"')}"`
-    : value;
+  // Empty values should be represented as empty strings
+  if (!value) {
+    return '""';
+  }
+
+  // List of characters that require quoting:
+  // - Whitespace: space, tab, newline, carriage return
+  // - Shell expansion: backtick (`), dollar sign ($)
+  // - Comments: hash (#)
+  // - Delimiters: equals (=), semicolon (;)
+  // - Shell metacharacters: pipe (|), ampersand (&), asterisk (*), question mark (?), less than (<), greater than (>)
+  // - Quotes: single quote ('), double quote (")
+  // - Backslash (\)
+  const needsQuoting = /[\s`$#=;|&*?<>'"\\]/.test(value);
+
+  if (!needsQuoting) {
+    return value;
+  }
+
+  // Escape backslashes first (must be done before escaping quotes)
+  let escaped = value.replace(/\\/g, '\\\\');
+  // Then escape double quotes
+  escaped = escaped.replace(/"/g, '\\"');
+  // Escape newlines as literal \n
+  escaped = escaped.replace(/\n/g, '\\n');
+  // Escape carriage returns as literal \r
+  escaped = escaped.replace(/\r/g, '\\r');
+  // Escape tabs as literal \t
+  escaped = escaped.replace(/\t/g, '\\t');
+
+  return `"${escaped}"`;
 }
 
 /**
