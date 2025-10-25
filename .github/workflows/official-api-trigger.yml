@@ -33,6 +33,7 @@ env:
 
 jobs:
   test:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: 🧪 Test phase (1/3)
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'production' }}
@@ -63,6 +64,7 @@ jobs:
       #     retention-days: 7
 
   build:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: 🛠️ Build phase (2/3)
     needs: test
     runs-on: ubuntu-latest
@@ -106,6 +108,7 @@ jobs:
         run: docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}
 
   deploy:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: 🚀 Deploy phase (3/3)
     needs: build
     runs-on: ubuntu-latest

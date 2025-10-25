@@ -51,6 +51,7 @@ env:
 
 jobs:
   test:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: 🧪 Test phase (1/2)
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'development'}}
@@ -130,6 +131,7 @@ jobs:
           directory: "sites/arolariu.ro/code-cov"
 
   build:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: ⚒️ Build phase (2/2)
     needs: test
     runs-on: ubuntu-latest

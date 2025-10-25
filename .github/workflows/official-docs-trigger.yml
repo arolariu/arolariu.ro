@@ -15,6 +15,7 @@ env:
 
 jobs:
   build-and-deploy:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: 🚀 Building and deploying the docs platform (docs.arolariu.ro)...
     runs-on: ubuntu-latest
     environment:

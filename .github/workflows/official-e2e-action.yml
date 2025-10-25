@@ -12,6 +12,7 @@ on:
 
 jobs:
   setup:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: '⚙️ Setup Dependencies'
     runs-on: ubuntu-latest
     outputs:
@@ -31,6 +32,7 @@ jobs:
         run: npm install -g newman
 
   frontend:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: '[Frontend] End-to-End Testing (🧪)'
     runs-on: ubuntu-latest
     needs: setup
@@ -72,6 +74,7 @@ jobs:
             e2e-logs/newman-frontend-summary.md
 
   backend:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: '[Backend] End-to-End Testing (🧪)'
     runs-on: ubuntu-latest
     needs: setup
