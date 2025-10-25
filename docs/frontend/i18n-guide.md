@@ -206,12 +206,12 @@ export function LanguageSwitcher() {
   const router = useRouter();
   
   const switchToEnglish = async () => {
-    await setCookie("NEXT_LOCALE", "en");
+    await setCookie("locale", "en");
     router.refresh();
   };
   
   const switchToRomanian = async () => {
-    await setCookie("NEXT_LOCALE", "ro");
+    await setCookie("locale", "ro");
     router.refresh();
   };
   
@@ -369,7 +369,7 @@ npm run generate:i18n
 ```typescript
 import {getCookie} from "@/lib/actions/cookies";
 
-const locale = await getCookie("NEXT_LOCALE");
+const locale = await getCookie("locale");
 console.log("Current locale:", locale); // Should be "en" or "ro"
 ```
 

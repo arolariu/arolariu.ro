@@ -71,7 +71,7 @@ Practical, developer-focused guides for implementing common patterns:
 - Component testing best practices
 
 ### Observability
-- OpenTelemetry integration (see [OpenTelemetry Guide](./opentelemetry-guide.md))
+- OpenTelemetry integration (see [OpenTelemetry Guide](./opentelemetry-guide.md) (RFC 1001))
 - Logging strategies
 - Error tracking
 - Performance monitoring
