@@ -214,7 +214,7 @@ async function ensureLocalEnvIsComplete(verbose: boolean = false): Promise<Typed
   }
 
   // Prompt user for missing keys
-  const newValues = await promptForMissingKeys(missingKeys);
+  const newValues = await promptForMissingKeys(missingKeys, verbose);
   // Merge and return complete config
   console.log(pc.green("✅ Configuration merged successfully!\n"));
 
@@ -222,7 +222,69 @@ async function ensureLocalEnvIsComplete(verbose: boolean = false): Promise<Typed
   return completedConfig as TypedConfigurationType; // safe cast.
 }
 
-function generateEnvFileContent(config: TypedConfigurationType, verbose: boolean = false): string {
+/**
+ * Helper function to determine if a value needs to be quoted in .env format.
+ * Values containing special characters must be quoted to prevent:
+ * - Shell expansion (backticks, dollar signs)
+ * - Comment interpretation (hash symbols)
+ * - Variable substitution
+ * - Newlines/tabs breaking the .env format
+ * - Shell metacharacters causing execution issues
+ * 
+ * @param value The string value to check and potentially quote
+ * @returns The value, quoted and escaped if necessary
+ */
+function quoteIfNeeded(value: string): string {
+  // Empty values should be represented as empty strings
+  if (!value) {
+    return '""';
+  }
+
+  // List of characters that require quoting:
+  // - Whitespace: space, tab, newline, carriage return
+  // - Shell expansion: backtick (`), dollar sign ($)
+  // - Comments: hash (#)
+  // - Delimiters: equals (=), semicolon (;)
+  // - Shell metacharacters: pipe (|), ampersand (&), asterisk (*), question mark (?), less than (<), greater than (>)
+  // - Quotes: single quote ('), double quote (")
+  // - Backslash (\)
+  const needsQuoting = /[\s`$#=;|&*?<>'"\\]/.test(value);
+
+  if (!needsQuoting) {
+    return value;
+  }
+
+  // Escape backslashes first (must be done before escaping quotes)
+  let escaped = value.replace(/\\/g, '\\\\');
+  // Then escape double quotes
+  escaped = escaped.replace(/"/g, '\\"');
+  // Escape newlines as literal \n
+  escaped = escaped.replace(/\n/g, '\\n');
+  // Escape carriage returns as literal \r
+  escaped = escaped.replace(/\r/g, '\\r');
+  // Escape tabs as literal \t
+  escaped = escaped.replace(/\t/g, '\\t');
+
+  return `"${escaped}"`;
+}
+
+/**
+ * Helper function to add a configuration section to the env file lines.
+ */
+function addConfigSection(lines: string[], sectionName: string, emoji: string, keys: string[], config: TypedConfigurationType): void {
+  console.log(pc.gray(`   ${emoji} Adding ${sectionName} Configuration...`));
+  lines.push("", `# ${sectionName} Configuration Start`);
+
+  for (const key of keys) {
+    if (config[key] !== undefined && config[key] !== null) {
+      lines.push(`${key}=${quoteIfNeeded(config[key])}`);
+    }
+  }
+
+  lines.push(`# ${sectionName} Configuration End`);
+}
+
+function generateEnvFileContent(config: TypedConfigurationType): string {
   console.log(pc.cyan("\n📝 Generating .env file content...\n"));
 
   const lines = [
@@ -236,50 +298,30 @@ function generateEnvFileContent(config: TypedConfigurationType, verbose: boolean
   ];
 
   // Site config
-  console.log(pc.gray("   📦 Adding Site Configuration..."));
-  lines.push("# Site Configuration Start");
-  for (const key of ["SITE_ENV", "SITE_NAME", "SITE_URL"]) {
-    if (config[key]) {
-      const quoted = config[key].includes(" ") || config[key].includes("=") ? `"${config[key]}"` : config[key];
-      lines.push(`${key}=${quoted}`);
-    }
-  }
-  lines.push("# Site Configuration End");
+  addConfigSection(lines, "Site", "📦", ["SITE_ENV", "SITE_NAME", "SITE_URL"], config);
 
   // API config
-  console.log(pc.gray("   🌐 Adding API Configuration..."));
-  lines.push("", "# API Configuration Start");
-  for (const key of ["API_ENV", "API_NAME", "API_URL", "API_JWT"]) {
-    if (config[key]) {
-      const quoted = config[key].includes(" ") || config[key].includes("=") ? `"${config[key]}"` : config[key];
-      lines.push(`${key}=${quoted}`);
-    }
-  }
-  lines.push("# API Configuration End");
+  addConfigSection(lines, "API", "🌐", ["API_ENV", "API_NAME", "API_URL", "API_JWT"], config);
 
   // Auth config
-  console.log(pc.gray("   🔐 Adding Authentication Configuration..."));
-  lines.push("", "# Authentication Configuration Start");
-  for (const key of ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY", "RESEND_API_KEY"]) {
-    if (config[key]) {
-      const quoted = config[key].includes(" ") || config[key].includes("=") ? `"${config[key]}"` : config[key];
-      lines.push(`${key}=${quoted}`);
-    }
-  }
-  lines.push("# Authentication Configuration End");
+  addConfigSection(lines, "Authentication", "🔐", ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY", "RESEND_API_KEY"], config);
 
   // Metadata config
   console.log(pc.gray("   📊 Adding Metadata Configuration..."));
-  lines.push("", "# Metadata Configuration Start");
+  const timestamp = new Date().toISOString();
+  const commitSha = process.env["COMMIT_SHA"] ?? process.env["GITHUB_SHA"] ?? "N/A";
+  const configStore = config["CONFIG_STORE"];
+  const useCdn = config["USE_CDN"] ?? "false";
+
   lines.push(
-    [
-      `TIMESTAMP=${new Date().toISOString()}`,
-      `COMMIT_SHA=${process.env["COMMIT_SHA"] ?? process.env["GITHUB_SHA"] ?? "N/A"}`,
-      `CONFIG_STORE=${config["CONFIG_STORE"]}`,
-      `USE_CDN=${config["USE_CDN"] ?? "false"}`,
-    ].join("\n"),
+    "",
+    "# Metadata Configuration Start",
+    `TIMESTAMP=${quoteIfNeeded(timestamp)}`,
+    `COMMIT_SHA=${quoteIfNeeded(commitSha)}`,
+    ...(configStore ? [`CONFIG_STORE=${quoteIfNeeded(configStore)}`] : []),
+    `USE_CDN=${quoteIfNeeded(useCdn)}`,
+    "# Metadata Configuration End",
   );
-  lines.push("# Metadata Configuration End");
 
   console.log(pc.green("   ✓ File content generated successfully!\n"));
 
@@ -324,7 +366,7 @@ export async function main(verbose: boolean = false): Promise<number> {
     process.exit(1);
   }
 
-  const content = generateEnvFileContent(config, verbose);
+  const content = generateEnvFileContent(config);
 
   console.log(pc.cyan("💾 Writing .env file...\n"));
   fs.writeFileSync(".env", content, {mode: 0o600});
@@ -362,10 +404,11 @@ if (import.meta.main) {
     process.exit(1);
   }
 
-  main(verbose)
-    .then((code) => process.exit(code))
-    .catch((err) => {
-      console.error(err);
-      process.exit(1);
-    });
+  try {
+    const code = await main(verbose);
+    process.exit(code);
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
 }
