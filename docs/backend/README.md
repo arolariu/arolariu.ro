@@ -51,6 +51,7 @@ Backend RFCs are numbered **2000-2999** and located in `/docs/rfc/`.
 | RFC # | Title | Status | Date | Description |
 |-------|-------|--------|------|-------------|
 | [2001](../rfc/2001-domain-driven-design-architecture.md) | Domain-Driven Design Architecture | ✅ Implemented | 2025-10-12 | Complete DDD architecture with modular monolith, SOLID principles, and bounded contexts |
+| [2002](../rfc/2002-opentelemetry-backend-observability.md) | OpenTelemetry Backend Observability | ✅ Implemented | 2025-10-12 | Backend distributed tracing with OpenTelemetry, Activity API, and Azure Application Insights |
 
 ### Proposed RFCs
 
@@ -59,6 +60,12 @@ None currently.
 ### Draft RFCs
 
 None currently.
+
+## Quick Start Guides
+
+Practical, concise guides for rapid development:
+
+- **[OpenTelemetry Guide](./opentelemetry-guide.md)** - Activity tracing, tags, events, and Azure Application Insights integration
 
 ## Key Topics
 
@@ -98,7 +105,7 @@ None currently.
 
 ### Observability
 - Structured logging
-- OpenTelemetry integration
+- OpenTelemetry integration (see [OpenTelemetry Guide](./opentelemetry-guide.md), RFC 2002)
 - Health checks
 - Metrics collection
 
