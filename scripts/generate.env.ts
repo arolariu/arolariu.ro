@@ -227,7 +227,9 @@ async function ensureLocalEnvIsComplete(verbose: boolean = false): Promise<Typed
  * Values containing spaces, equals signs, or semicolons must be quoted.
  */
 function quoteIfNeeded(value: string): string {
-  return value.includes(" ") || value.includes("=") || value.includes(";") ? `"${value}"` : value;
+  return value.includes(" ") || value.includes("=") || value.includes(";")
+    ? `"${value.replace(/"/g, '\\"')}"`
+    : value;
 }
 
 /**
