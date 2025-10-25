@@ -21,6 +21,9 @@ Frontend RFCs are numbered **1000-1999** and located in `/docs/rfc/`.
 | RFC # | Title | Status | Date | Description |
 |-------|-------|--------|------|-------------|
 | [1001](../rfc/1001-opentelemetry-observability-system.md) | OpenTelemetry Observability System | ✅ Implemented | 2025-10-11 | Comprehensive observability system using OpenTelemetry SDK for Next.js |
+| [1002](../rfc/1002-comprehensive-jsdoc-documentation-standard.md) | JSDoc/TSDoc Documentation Standard | ✅ Implemented | 2025-01-26 | Comprehensive JSDoc documentation standard for TypeScript/React |
+| [1003](../rfc/1003-next-intl-internationalization-system.md) | next-intl Internationalization System | ✅ Implemented | 2025-10-25 | Multi-language support with next-intl and type-safe translations |
+| [1004](../rfc/1004-metadata-seo-system.md) | Metadata and SEO System | ✅ Implemented | 2025-10-25 | Centralized metadata management and SEO optimization |
 
 ### Proposed RFCs
 
@@ -29,6 +32,15 @@ None currently.
 ### Draft RFCs
 
 None currently.
+
+## Quick Start Guides
+
+Practical, developer-focused guides for implementing common patterns:
+
+- **[JSDoc Guide](./jsdoc-guide.md)** - How to document TypeScript/React code (RFC 1002)
+- **[i18n Guide](./i18n-guide.md)** - How to add translations and multi-language support (RFC 1003)
+- **[Metadata Guide](./metadata-guide.md)** - How to implement SEO and metadata (RFC 1004)
+- **[OpenTelemetry Guide](./opentelemetry-guide.md)** - How to implement distributed tracing and observability (RFC 1001)
 
 ## Key Topics
 
@@ -59,7 +71,7 @@ None currently.
 - Component testing best practices
 
 ### Observability
-- OpenTelemetry integration (RFC 0001)
+- OpenTelemetry integration (see [OpenTelemetry Guide](./opentelemetry-guide.md))
 - Logging strategies
 - Error tracking
 - Performance monitoring
@@ -93,19 +105,19 @@ When creating a new frontend RFC:
 - Server Actions patterns and best practices
 - Component library architecture
 - Form handling strategy
-- Internationalization (i18n) implementation
 - Progressive Web App (PWA) features
 - Client-side caching strategy
 
 ## Questions?
 
 For frontend-specific questions:
+
 - Check existing RFCs
 - Review site README
 - Open a GitHub issue
-- Contact: admin@arolariu.ro
+- Contact: <admin@arolariu.ro>
 
 ---
 
-**Last Updated**: 2025-10-12
+**Last Updated**: 2025-10-25
 **Maintained By**: Frontend team
