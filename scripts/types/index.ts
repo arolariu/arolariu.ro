@@ -3,49 +3,53 @@ type EnvironmentOptions = "production" | "development";
 /**
  * Maps an environment identifier to the corresponding site name.
  *
- * @template T - The site environment, such as `"production"` or `"development"`.
+ * @template Environment - The site environment, such as `"production"` or `"development"`.
  * @remarks
  * - `"production"` resolves to `"arolariu.ro"`.
  * - `"development"` resolves to `"dev.arolariu.ro"`.
  * - Any other value results in `never`.
  */
-type SiteName<T extends string> = T extends "production" ? "arolariu.ro" : T extends "development" ? "dev.arolariu.ro" : never;
+type SiteName<Environment extends string> = Environment extends "production"
+  ? "arolariu.ro"
+  : Environment extends "development"
+    ? "dev.arolariu.ro"
+    : never;
 
 /**
  * Resolves an environment identifier to its fully qualified site URL.
  *
- * @template T - A string literal representing the deployment environment.
+ * @template Environment - A string literal representing the deployment environment.
  * @remarks
  * - `"production"` maps to `"https://arolariu.ro"`.
  * - `"development"` maps to `"https://dev.arolariu.ro"`.
  * - Any other value results in `never`.
  * @returns A literal URL string tied to the specified environment.
  */
-type SiteUrl<T extends string> = T extends "production"
+type SiteUrl<Environment extends string> = Environment extends "production"
   ? "https://arolariu.ro"
-  : T extends "development"
+  : Environment extends "development"
     ? "https://dev.arolariu.ro"
     : never;
 
 /**
  * Maps the deployment environment to its corresponding API name literal.
  *
- * @template T - A string literal representing the API deployment environment.
+ * @template Environment - A string literal representing the API deployment environment.
  * @remarks
  * - `"production"` resolves to `"arolariu-api"`.
  * - Any other environment results in `never`.
  */
-type ApiName<T extends string> = T extends "production" ? "arolariu-api" : never;
+type ApiName<Environment extends string> = Environment extends "production" ? "arolariu-api" : never;
 
 /**
  * Maps the deployment environment to its corresponding API URL literal.
  *
- * @template T - A string literal representing the API deployment environment.
+ * @template Environment - A string literal representing the API deployment environment.
  * @remarks
  * - `"production"` resolves to `"https://api.arolariu.ro"`.
  * - Any other environment results in `never`.
  */
-type ApiUrl<T extends string> = T extends "production" ? "https://api.arolariu.ro" : never;
+type ApiUrl<Environment extends string> = Environment extends "production" ? "https://api.arolariu.ro" : never;
 
 /**
  * Defines the environment variables specific to a site based on its deployment environment.
