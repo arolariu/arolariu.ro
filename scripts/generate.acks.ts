@@ -1,12 +1,11 @@
-/* eslint-disable */
-
-import type {NodePackageDependencyDependsOn, NodePackageDependencyType, NodePackageInformation} from "@/types";
 import fs, {globSync} from "node:fs";
+import {EOL} from "node:os";
 import path from "node:path";
-import {EOL} from "os";
+import pc from "picocolors";
+import type {NodePackageDependencyType, NodePackageInformation} from "./types";
 
 function generateAcknowledgements(verbose: boolean = false) {
-  console.log("[arolariu::acknowledgments] >>> Generating the `licenses.json` file...");
+  console.log("[arolariu::generateAcknowledgements] Generating the `licenses.json` file...");
   const specifiedPackages = extractDependenciesFromRootManifest(verbose);
 
   const allInstalledPackages = extractDependenciesManifestPaths(verbose);
@@ -14,7 +13,7 @@ function generateAcknowledgements(verbose: boolean = false) {
 
   const packageManifests = buildPackageManifests(filteredPackages, specifiedPackages);
   writeJsonFileWithManifests(packageManifests);
-  console.info("[arolariu::acknowledgments] >>> The `licenses.json` file has been generated successfully.");
+  console.info("[arolariu::generateAcknowledgements] The `licenses.json` file has been generated successfully.");
 }
 
 /**
@@ -22,7 +21,7 @@ function generateAcknowledgements(verbose: boolean = false) {
  * @param packageManifests The map of package manifests.
  */
 function writeJsonFileWithManifests(packageManifests: Map<NodePackageDependencyType, NodePackageInformation[]>) {
-  const rootPath = path.resolve(process.cwd()).concat("/licenses.json").replace(/\\/g, "/");
+  const rootPath = path.resolve(process.cwd()).concat("/sites/arolariu.ro/licenses.json").replaceAll("\\", "/");
 
   // sort packages in each dependency type
   const sortedPackages = new Map<NodePackageDependencyType, NodePackageInformation[]>();
@@ -31,14 +30,14 @@ function writeJsonFileWithManifests(packageManifests: Map<NodePackageDependencyT
     sortedPackages.set(depType, sortedPackagesArray);
   }
 
-  console.log("[arolariu::acknowledgments] >>> Writing licenses.json file to ", rootPath);
-  console.info("[arolariu::acknowledgments] >>> Exact path:", path.dirname(rootPath));
+  console.log(pc.gray("[arolariu::writeJsonFileWithManifests] Writing licenses.json file to path:\n\t >>"), pc.cyan(rootPath));
+  console.info(pc.gray("[arolariu::writeJsonFileWithManifests] Exact path:"), pc.dim(path.dirname(rootPath)));
 
   const fileContent = JSON.stringify(Object.fromEntries(sortedPackages), null, 0);
   fs.mkdirSync(path.dirname(rootPath), {recursive: true});
   fs.writeFileSync(rootPath, fileContent + EOL, "utf-8");
 
-  console.info("[arolariu::acknowledgments] >>> Finished writing licenses.json file.");
+  console.info(pc.gray("[arolariu::writeJsonFileWithManifests] Finished writing licenses.json file."));
 }
 
 /**
@@ -53,6 +52,7 @@ function buildPackageManifests(
 ): Map<NodePackageDependencyType, NodePackageInformation[]> {
   const packageManifests = new Map<NodePackageDependencyType, NodePackageInformation[]>();
   try {
+    console.info(`[arolariu::buildPackageManifests] Building package manifests for ${packageDirectPaths.length} packages...`);
     for (const packagePath of packageDirectPaths) {
       const packageManifest: {
         name?: string;
@@ -90,7 +90,7 @@ function buildPackageManifests(
       }
 
       // compute dependents of package:
-      const pkgDependents: NodePackageDependencyDependsOn[] = [];
+      const pkgDependents: Array<{name: string; version: string}> = [];
       const combinedDependents = {
         ...packageManifest.dependencies,
         ...packageManifest.devDependencies,
@@ -115,7 +115,7 @@ function buildPackageManifests(
       else packageManifests.set(depType, [pkg]);
     }
   } catch (err) {
-    console.error("[arolariu::acknowledgments] >>> Error reading package.json file:", err);
+    console.error("[arolariu::buildPackageManifests] Error reading package.json file:", err);
   }
 
   return packageManifests;
@@ -132,7 +132,11 @@ function filterDependenciesManifestPathsWithDependenciesList(
   packageDirectPaths: string[],
   specifiedPackages: Map<NodePackageDependencyType, string[]>,
 ): string[] {
-  console.info("[arolariu::acknowledgments] >>> Processing ", packageDirectPaths.length, " manifest files in node_modules...");
+  console.info(
+    "[arolariu::filterDependenciesManifestPathsWithDependenciesList] Processing ",
+    packageDirectPaths.length,
+    " manifest files in node_modules...",
+  );
 
   const filteredPackagePaths = packageDirectPaths.filter((packagePath) => {
     // Filter 1: name filter (process only specified packages)
@@ -149,16 +153,18 @@ function filterDependenciesManifestPathsWithDependenciesList(
     );
   });
 
-  // convert to absolute paths
-  filteredPackagePaths.forEach((packagePath) => path.resolve(packagePath).replace(/\\/g, "/"));
-
-  console.info(
-    "[arolariu::acknowledgments] >>> After filtering node_modules folder, found ",
-    filteredPackagePaths.length,
-    " packages, from " + packageDirectPaths.length + " manifest files.",
+  // Normalize all paths to absolute and use forward slashes
+  const filteredAndNormalizedPackagePaths = filteredPackagePaths.map(packagePath =>
+    path.resolve(packagePath).replaceAll("\\", "/")
   );
 
-  return filteredPackagePaths;
+  console.info(
+    "[arolariu::filterDependenciesManifestPathsWithDependenciesList] After filtering node_modules folder, found ",
+    filteredAndNormalizedPackagePaths.length,
+    " packages.",
+  );
+
+  return filteredAndNormalizedPackagePaths;
 }
 
 /**
@@ -169,13 +175,13 @@ function filterDependenciesManifestPathsWithDependenciesList(
 function extractDependenciesManifestPaths(verbose: boolean = false): string[] {
   let pathToNodeModules = process.cwd();
   pathToNodeModules = path.resolve(pathToNodeModules, "node_modules");
-  pathToNodeModules = pathToNodeModules.replace(/\\/g, "/");
-  console.info("[arolariu::acknowledgments] >>> Identified path to node_modules:", pathToNodeModules);
+  pathToNodeModules = pathToNodeModules.replaceAll("\\", "/");
+  console.info("[arolariu::extractDependenciesManifestPaths] Identified path to node_modules:\n\t >>", pathToNodeModules);
 
   let packageRawPaths = globSync(pathToNodeModules);
   let packageDirectPaths: string[] = []; // this will contain direct paths to the package.json files
   for (const path of packageRawPaths) packageDirectPaths.push(...globSync(`${path}/**/package.json`));
-  verbose && console.info("[arolariu::acknowledgments] >>> Found ", packageDirectPaths.length, " package.json files.");
+  verbose && console.info("[arolariu::extractDependenciesManifestPaths] Found ", packageDirectPaths.length, " package.json files.");
 
   return packageDirectPaths;
 }
@@ -187,12 +193,12 @@ function extractDependenciesManifestPaths(verbose: boolean = false): string[] {
  */
 function extractDependenciesFromRootManifest(verbose: boolean = false): Map<NodePackageDependencyType, string[]> {
   const currentDirectory = process.cwd();
-  console.info("[arolariu::acknowledgments] >>> Current directory:", currentDirectory);
+  console.info("[arolariu::extractDependenciesFromRootManifest] Current directory:\n\t >>", currentDirectory);
 
-  let packageManifestPath = currentDirectory.concat("/package.json").replace(/\\/g, "/");
-  console.log("[arolariu::acknowledgments] >>> Reading current package.json file from ", packageManifestPath);
+  let packageManifestPath = currentDirectory.concat("/sites/arolariu.ro/package.json").replaceAll("\\", "/");
+  console.log("[arolariu::extractDependenciesFromRootManifest] Reading current package.json file from path:\n\t >>", packageManifestPath);
   const packageManifest = JSON.parse(fs.readFileSync(packageManifestPath, "utf-8"));
-  verbose && console.info("[arolariu::acknowledgments] >>> Package.json content:", packageManifest);
+  verbose && console.info("[arolariu::extractDependenciesFromRootManifest] Package.json content:", packageManifest);
 
   const productionPackages = Object.keys(packageManifest.dependencies ?? {});
   const developmentPackages = Object.keys(packageManifest.devDependencies ?? {});
@@ -204,10 +210,10 @@ function extractDependenciesFromRootManifest(verbose: boolean = false): Map<Node
   specifiedPackages.set("peer", peerPackages);
 
   const totalNumberOfPackages = productionPackages.length + developmentPackages.length + peerPackages.length;
-  console.info("[arolariu::acknowledgments] >>> Found ", totalNumberOfPackages, " unique packages in package.json.");
-  console.info("[arolariu::acknowledgments] >>> Production packages: ", productionPackages.length);
-  console.info("[arolariu::acknowledgments] >>> Development packages: ", developmentPackages.length);
-  console.info("[arolariu::acknowledgments] >>> Peer packages: ", peerPackages.length);
+  console.info("[arolariu::extractDependenciesFromRootManifest] Found ", totalNumberOfPackages, " unique packages in package.json.");
+  console.info("[arolariu::extractDependenciesFromRootManifest] Production packages: ", productionPackages.length);
+  console.info("[arolariu::extractDependenciesFromRootManifest] Development packages: ", developmentPackages.length);
+  console.info("[arolariu::extractDependenciesFromRootManifest] Peer packages: ", peerPackages.length);
 
   return specifiedPackages;
 }
@@ -215,8 +221,39 @@ function extractDependenciesFromRootManifest(verbose: boolean = false): Map<Node
 /**
  * This function will be the entry point of the script.
  */
-export async function main(verbose: boolean = false) {
+export async function main(verbose: boolean = false): Promise<number> {
+  console.log(pc.cyan("🔧 Configuration:\n"));
+  console.log(pc.gray(`   Verbose: ${verbose ? pc.green("✅ Enabled") : pc.red("❌ Disabled")}`));
+  console.log(pc.gray(`   Working Directory: ${pc.dim(process.cwd())}`));
+  console.log();
+
   generateAcknowledgements(verbose);
+  console.log(pc.green("\n✨ Acknowledgements generation completed."));
+  return 0;
 }
 
-main();
+if (import.meta.main) {
+  const argv = process.argv.slice(2);
+  const verbose = argv.some((a) => ["/verbose", "/v", "--verbose", "-v"].includes(a));
+  const wantsHelp = argv.some((a) => ["/help", "/h", "--help", "-h"].includes(a));
+  if (wantsHelp) {
+    console.log(pc.magenta("\n╔══════════════════════════════════════════════════════════════════╗"));
+    console.log(pc.magenta("║            ||arolariu.ro|| Acknowledgements Generator - Help     ║"));
+    console.log(pc.magenta("╚══════════════════════════════════════════════════════════════════╝\n"));
+    console.log(pc.cyan("Usage:"), pc.gray("npm run generate /acks [flags]\n"));
+    console.log(pc.cyan("Flags:"));
+    console.log(`  ${pc.green("/verbose     /v    --verbose     -v")}      Enable verbose logging 🔊`);
+    console.log(`  ${pc.green("/help        /h    --help        -h")}      Show this help menu ❓`);
+    console.log("\nExample:");
+    console.log(pc.gray("  npm run generate /acks /verbose"));
+    process.exit(0);
+  }
+  try {
+    const code = await main(verbose);
+    process.exit(code);
+  } catch (err) {
+    console.error(pc.red("Acknowledgements generation failed:"));
+    console.error(err);
+    process.exit(1);
+  }
+}

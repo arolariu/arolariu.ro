@@ -162,3 +162,19 @@ export type SecretEnvironmentVariablesType = Extract<
   keyof (TypedProductionEnvironmentVariablesType | TypedDevelopmentEnvironmentVariablesType),
   keyof AuthEnvironmentVariables // Ensures only auth-related secrets are included
 >;
+
+export type AllEnvironmentVariablesKeys = keyof (TypedProductionEnvironmentVariablesType | TypedDevelopmentEnvironmentVariablesType);
+
+export type TypedConfigurationType = Record<AllEnvironmentVariablesKeys | (string & {}), string>;
+
+export type NodePackageDependencyType = Readonly<"production" | "development" | "peer">;
+
+export type NodePackageInformation = {
+  name: string;
+  version: string;
+  description: string;
+  homepage: string;
+  license: string;
+  author: string;
+  dependents?: Array<{name: string; version: string}>;
+};

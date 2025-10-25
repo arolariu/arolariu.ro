@@ -120,9 +120,6 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   experimental: {
-    // Enable source maps for prerendered pages in development
-    enablePrerenderSourceMaps: isDebugBuild,
-
     // Enable server source maps in development for debugging
     serverSourceMaps: isDebugBuild,
 

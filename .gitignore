@@ -20,6 +20,7 @@
 **/.next/**
 **/**/.DS_Store
 **/*.tsbuildinfo
+**/__generated__/**
 **/.eslintcache
 
 # Exceptions:

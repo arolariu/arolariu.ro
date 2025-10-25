@@ -1,5 +1,6 @@
 import {DefaultAzureCredential} from "@azure/identity";
 import {SecretClient} from "@azure/keyvault-secrets";
+import type {AllEnvironmentVariablesKeys} from "../types";
 
 /**
  * This function checks if a given value is a Key Vault reference.
@@ -58,3 +59,27 @@ export function isSecretKey(key: string): boolean {
   const secretPatternsType = ["SECRET", "KEY", "JWT", "TOKEN", "PASSWORD"];
   return secretPatternsType.some((pattern) => key.includes(pattern));
 }
+
+/**
+ * The mapping between the cloud configuration
+ * and the local environment typed configuration.
+ */
+export const APP_CONFIGURATION_MAPPING: Record<string, AllEnvironmentVariablesKeys> = {
+  "Common:Site:Environment": "SITE_ENV",
+  "Common:Site:Name": "SITE_NAME",
+  "Common:Site:Url": "SITE_URL",
+  "Common:Api:Environment": "API_ENV",
+  "Common:Api:Name": "API_NAME",
+  "Common:Api:Url": "API_URL",
+  "Common:Auth:Secret": "API_JWT",
+  "Other:ClerkPublishableKey": "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+  "Other:ClerkSecretKey": "CLERK_SECRET_KEY",
+  "Other:ResendKey": "RESEND_API_KEY",
+  "Other:UseCdn": "USE_CDN",
+};
+
+/**
+ * The Azure App Configuration server URL.
+ * This is the endpoint for accessing the Azure App Configuration service.
+ */
+export const APP_CONFIGURATION_SERVER: string = "https://qtcy47appconfig.azconfig.io";

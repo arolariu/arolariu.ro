@@ -24,6 +24,14 @@ on:
         default: "development"
         required: true
         type: choice
+      infrastructure:
+        description: "The infrastructure where it will be deployed (e.g. 'local' or 'azure')"
+        options:
+          - 'local'
+          - 'azure'
+        default: "azure"
+        required: true
+        type: choice
       container_name:
         description: "The name of the container to build and deploy. (e.g. 'frontend/dev.arolariu', 'frontend/arolariu')"
         options:
@@ -36,6 +44,7 @@ on:
 env:
   COMMIT_SHA: ${{ github.sha }}
   PRODUCTION: ${{ inputs.environment == 'production' && 'true' || 'false' }}
+  INFRA: ${{ inputs.infrastructure || 'azure' }}
   AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID}}
   AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID}}
   AZURE_CLIENT_ID: ${{secrets.AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID}}
@@ -61,23 +70,24 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
-          setup-azure: 'true'
           playwright: 'true'
           generate: 'true'
           cache-key-prefix: 'website'
-          working-directory: './sites/arolariu.ro'
 
       - name: 🧪 Running Jest Unit tests...
+        working-directory: './sites/arolariu.ro'
         run: npm run test:unit
         env: # We will use local assets for the tests
           USE_CDN: "false"
 
       - name: 🧪 Running Playwright E2E Component tests...
+        working-directory: './sites/arolariu.ro'
         run: npm run test:e2e
         env: # We will use local assets for the tests
           USE_CDN: "false"
 
       - name: 🧪 Preparing UI tests (Building Storybook)...
+        working-directory: './sites/arolariu.ro'
         run: npm run storybook:build --quiet
         env: # We will use local assets for the tests
           USE_CDN: "false"
@@ -139,10 +149,8 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: '24'
-          setup-azure: 'true'
           generate: 'true'
           cache-key-prefix: 'website'
-          working-directory: './sites/arolariu.ro'
 
       - name: 🔒 Performing auth against private Azure Container Registry...
         uses: Azure/docker-login@v2

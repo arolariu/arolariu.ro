@@ -1,29 +1,38 @@
+# Stage 0: Base image with system dependencies
 FROM node:24-alpine AS base
 
-# Install dumb-init and corepack, update and upgrade the system
+# Install system dependencies
 RUN corepack enable && \
   apk update && apk upgrade && \
-  apk add --no-cache libc6-compat && apk add dumb-init && rm -rf /var/cache/apk/*
+  apk add --no-cache libc6-compat dumb-init && \
+  rm -rf /var/cache/apk/*
 
-# Create a non-root user and group
+# Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
   adduser --system --uid 1001 nextjs
 
-
+# ========================================
 # Stage 1: Install dependencies
+# ========================================
 FROM base AS deps
 WORKDIR /app
 COPY package.json ./
 RUN npm install
 
+# ========================================
 # Stage 2: Build the application
+# ========================================
 FROM base AS builder
 WORKDIR /app
+
+# Copy installed dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
+# ========================================
 # Stage 3: Prepare the production image
+# ========================================
 FROM base AS runner
 WORKDIR /app
 RUN mkdir .next && chown nextjs:nodejs .next

@@ -69,7 +69,11 @@
     "test:e2e": "node scripts/test-e2e.ts all",
     "test:e2e:backend": "node scripts/test-e2e.ts backend",
     "test:e2e:frontend": "node scripts/test-e2e.ts frontend",
+    "generate": "node scripts/generate.ts",
+    "generate:acks": "node scripts/generate.acks.ts",
     "generate:env": "node scripts/generate.env.ts",
+    "generate:gql": "node scripts/generate.gql.ts",
+    "generate:i18n": "node scripts/generate.i18n.ts",
     "__script__based__commands__finish__": "✅ The above section contains commands based on node runner."
   },
   "devDependencies": {
