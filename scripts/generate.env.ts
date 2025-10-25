@@ -240,7 +240,7 @@ function addConfigSection(lines: string[], sectionName: string, emoji: string, k
   lines.push("", `# ${sectionName} Configuration Start`);
 
   for (const key of keys) {
-    if (config[key]) {
+    if (config[key] !== undefined && config[key] !== null) {
       lines.push(`${key}=${quoteIfNeeded(config[key])}`);
     }
   }
