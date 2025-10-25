@@ -153,16 +153,18 @@ function filterDependenciesManifestPathsWithDependenciesList(
     );
   });
 
-  // convert to absolute paths
-  for (const packagePath of filteredPackagePaths) path.resolve(packagePath).replaceAll("\\", "/");
+  // Normalize all paths to absolute and use forward slashes
+  const filteredAndNormalizedPackagePaths = filteredPackagePaths.map(packagePath =>
+    path.resolve(packagePath).replaceAll("\\", "/")
+  );
 
   console.info(
     "[arolariu::filterDependenciesManifestPathsWithDependenciesList] After filtering node_modules folder, found ",
-    filteredPackagePaths.length,
+    filteredAndNormalizedPackagePaths.length,
     " packages.",
   );
 
-  return filteredPackagePaths;
+  return filteredAndNormalizedPackagePaths;
 }
 
 /**
