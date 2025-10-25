@@ -206,12 +206,12 @@ export function LanguageSwitcher() {
   const router = useRouter();
   
   const switchToEnglish = async () => {
-    await setCookie("NEXT_LOCALE", "en");
+    await setCookie("locale", "en");
     router.refresh();
   };
   
   const switchToRomanian = async () => {
-    await setCookie("NEXT_LOCALE", "ro");
+    await setCookie("locale", "ro");
     router.refresh();
   };
   
