@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v2.3.0
+        uses: Azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -95,7 +95,7 @@ jobs:
 
       - name: 📤 Upload Test Reports
         if: always()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v5
         with:
           name: test-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
           path: sites/arolariu.ro/code-cov/
@@ -103,7 +103,7 @@ jobs:
           retention-days: 7
 
       - name: 💬 Create PR Comment
-        uses: actions/github-script@v8.0.0
+        uses: actions/github-script@v8
         if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -141,7 +141,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v2.3.0
+        uses: Azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
