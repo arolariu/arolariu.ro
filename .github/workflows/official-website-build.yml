@@ -51,6 +51,7 @@ env:
 
 jobs:
   test:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: 🧪 Test phase (1/2)
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'development'}}
@@ -60,7 +61,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v2.3.0
+        uses: Azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -94,7 +95,7 @@ jobs:
 
       - name: 📤 Upload Test Reports
         if: always()
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v5
         with:
           name: test-report-${{ inputs.environment || 'development' }}-${{ github.run_id }}
           path: sites/arolariu.ro/code-cov/
@@ -102,7 +103,7 @@ jobs:
           retention-days: 7
 
       - name: 💬 Create PR Comment
-        uses: actions/github-script@v8.0.0
+        uses: actions/github-script@v8
         if: github.event_name == 'push' && github.ref == 'refs/heads/preview'
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -130,6 +131,7 @@ jobs:
           directory: "sites/arolariu.ro/code-cov"
 
   build:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: ⚒️ Build phase (2/2)
     needs: test
     runs-on: ubuntu-latest
@@ -139,7 +141,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v2.3.0
+        uses: Azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}

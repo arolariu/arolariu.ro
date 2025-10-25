@@ -33,13 +33,14 @@ env:
 
 jobs:
   test:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: 🧪 Test phase (1/3)
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'production' }}
     timeout-minutes: 10
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v5
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -63,13 +64,14 @@ jobs:
       #     retention-days: 7
 
   build:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: 🛠️ Build phase (2/3)
     needs: test
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment || 'production' }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v5
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -80,7 +82,7 @@ jobs:
           cache-key-prefix: 'api'
 
       - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v2.3.0
+        uses: Azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -106,6 +108,7 @@ jobs:
         run: docker push ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}}
 
   deploy:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: 🚀 Deploy phase (3/3)
     needs: build
     runs-on: ubuntu-latest
@@ -115,7 +118,7 @@ jobs:
 
     steps:
       - name: 🔒 Handling the auth process to Azure Public Cloud...
-        uses: Azure/login@v2.3.0
+        uses: Azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -130,7 +133,7 @@ jobs:
 
       - name: ⚓ Deploying docker container to Azure App Service...
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3.0.6
+        uses: azure/webapps-deploy@v3
         env:
           CONTAINER_NAME: "backend/api.arolariu"
           CONTAINER_TAG: ${{ inputs.environment == 'production' && github.sha || 'latest' }}

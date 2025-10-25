@@ -60,7 +60,7 @@ runs:
       run: echo "::notice::Setting up workspace with Node.js ${{ inputs.node-version }}${{ inputs.dotnet-version != '' && format(' and .NET {0}', inputs.dotnet-version) || '' }}"
 
     - name: 📦 Setup Node.js ${{ inputs.node-version }}
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node-version }}
 

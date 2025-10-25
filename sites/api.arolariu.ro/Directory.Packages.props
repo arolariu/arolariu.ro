@@ -5,17 +5,13 @@
   versions.
     This ensures consistent package versions across all projects in the solution.
   -->
-
   <PropertyGroup Label="Central Package Management">
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-
   <ItemGroup Label="Microsoft Core Packages">
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
-    <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets"
-      Version="1.23.0-preview.4" />
+    <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0-preview.4" />
   </ItemGroup>
-
   <ItemGroup Label="ASP.NET Core Packages">
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.10" />
     <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="9.0.10" />
@@ -24,7 +20,6 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10" />
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="9.0.10" />
   </ItemGroup>
-
   <ItemGroup Label="Entity Framework Core Packages">
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.10" />
@@ -38,7 +33,6 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.10" />
   </ItemGroup>
-
   <ItemGroup Label="Microsoft Extensions Packages">
     <PackageVersion Include="Microsoft.Extensions.Azure" Version="1.13.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.10" />
@@ -46,7 +40,6 @@
     <PackageVersion Include="Microsoft.Extensions.Identity.Stores" Version="9.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.10" />
   </ItemGroup>
-
   <ItemGroup Label="Azure SDK Packages">
     <PackageVersion Include="Azure.Core" Version="1.49.0" />
     <PackageVersion Include="Azure.Identity" Version="1.17.0" />
@@ -54,29 +47,22 @@
     <PackageVersion Include="Azure.Security.KeyVault.Secrets" Version="4.8.0" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.26.0" />
   </ItemGroup>
-
   <ItemGroup Label="Azure AI Packages">
     <PackageVersion Include="Azure.AI.FormRecognizer" Version="4.1.0" />
     <PackageVersion Include="Azure.AI.OpenAI" Version="2.1.0" />
     <PackageVersion Include="Azure.AI.OpenAI.Assistants" Version="1.0.0-beta.4" />
     <PackageVersion Include="Azure.AI.Translation.Text" Version="1.0.0" />
   </ItemGroup>
-
   <ItemGroup Label="Azure Cognitive Services Packages">
-    <PackageVersion Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision"
-      Version="7.0.1" />
+    <PackageVersion Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" Version="7.0.1" />
   </ItemGroup>
-
   <ItemGroup Label="Azure Configuration Packages">
     <PackageVersion Include="Microsoft.Azure.AppConfiguration.AspNetCore" Version="8.4.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.AzureAppConfiguration"
-      Version="8.4.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.AzureAppConfiguration" Version="8.4.0" />
   </ItemGroup>
-
   <ItemGroup Label="Azure Cosmos DB Packages">
     <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.54.0" />
   </ItemGroup>
-
   <ItemGroup Label="Health Checks Packages">
     <PackageVersion Include="AspNetCore.HealthChecks.AzureKeyVault" Version="9.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.AzureStorage" Version="7.0.0" />
@@ -84,25 +70,21 @@
     <PackageVersion Include="AspNetCore.HealthChecks.SqlServer" Version="9.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
   </ItemGroup>
-
   <ItemGroup Label="OpenTelemetry Packages">
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.4.0" />
     <PackageVersion Include="OpenTelemetry" Version="1.13.1" />
     <PackageVersion Include="OpenTelemetry.Api" Version="1.13.1" />
     <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.13.1" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.13.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore"
-      Version="1.0.0-beta.11" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.13.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.0.0-beta.11" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.13.0" />
   </ItemGroup>
-
   <ItemGroup Label="Application Insights Packages">
     <PackageVersion Include="Microsoft.ApplicationInsights" Version="2.23.0" />
     <PackageVersion Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
     <PackageVersion Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.23.0" />
   </ItemGroup>
-
   <ItemGroup Label="Swagger and OpenAPI Packages">
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="9.0.6" />
     <PackageVersion Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.6" />
@@ -110,15 +92,12 @@
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="9.0.6" />
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.6" />
   </ItemGroup>
-
   <ItemGroup Label="Authentication and Security Packages">
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.14.0" />
   </ItemGroup>
-
   <ItemGroup Label="Serialization Packages">
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
-
   <ItemGroup Label="Testing Frameworks">
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Moq" Version="4.20.72" />
@@ -127,5 +106,4 @@
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
-
 </Project>

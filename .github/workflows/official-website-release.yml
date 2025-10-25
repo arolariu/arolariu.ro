@@ -39,14 +39,14 @@ jobs:
   release:
     name: 🚀 Release phase (1/1)
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.repository == 'arolariu/arolariu.ro' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')   }}
     environment:
       name: ${{ inputs.environment || 'development'}}
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
       - name: 🔒 Performing auth against Azure Public Cloud...
-        uses: Azure/login@v2.3.0
+        uses: Azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -61,7 +61,7 @@ jobs:
 
       - name: ⚓ Releasing docker container to Azure App Service...
         id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3.0.6
+        uses: azure/webapps-deploy@v3
         env:
           CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
           CONTAINER_TAG: ${{inputs.environment == 'PRODUCTION' && github.sha || 'latest'}}

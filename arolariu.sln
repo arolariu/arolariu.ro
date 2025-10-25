@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.0.11012.143 main
+VisualStudioVersion = 18.3.11120.145 main
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{15F6FC59-AAC4-54A0-792B-7B93FC8C81FD}"
 	ProjectSection(SolutionItems) = preProject
@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{15F6FC59-A
 		.filenesting.json = .filenesting.json
 		.gitignore = .gitignore
 		sites\api.arolariu.ro\Controllers_Breakpoints.xml = sites\api.arolariu.ro\Controllers_Breakpoints.xml
+		sites\api.arolariu.ro\Directory.Build.props = sites\api.arolariu.ro\Directory.Build.props
+		sites\api.arolariu.ro\Directory.Packages.props = sites\api.arolariu.ro\Directory.Packages.props
 		sites\api.arolariu.ro\Dockerfile = sites\api.arolariu.ro\Dockerfile
 	EndProjectSection
 EndProject

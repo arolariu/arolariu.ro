@@ -33,7 +33,7 @@ jobs:
       - name: 🛫 Checkout repository (full for diff)
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Always fetch full history for accurate diff analysis; avoids incomplete detection for large PRs
           ref: ${{ env.HEAD_REF }}
 
       - name: 📦 Setup workspace (dependencies & cache)

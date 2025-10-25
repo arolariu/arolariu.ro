@@ -2,15 +2,31 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Next.js: Debug Server-Side",
-      "type": "node-terminal",
+      "name": "Next.js: Debug Full Stack",
+      "type": "node",
       "request": "launch",
-      "command": "npm run dev --workspace @arolariu/website",
-      "cwd": "${workspaceFolder}",
+      "cwd": "${workspaceFolder}/sites/arolariu.ro",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "console": "integratedTerminal",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "env": {
+        "NODE_OPTIONS": "--inspect",
+        "NEXT_TURBOPACK_TRACING": "1"
+      },
+      "sourceMaps": true,
+      "timeout": 30000, // 30 seconds
       "serverReadyAction": {
+        "action": "debugWithEdge",
+        "killOnServerStop": true,
         "pattern": "- Local:.+(https?://.+)",
         "uriFormat": "%s",
-        "action": "debugWithEdge"
+        "webRoot": "${workspaceFolder}/sites/arolariu.ro"
       }
     },
     {
@@ -27,26 +43,15 @@
       }
     },
     {
-      "name": "Next.js: Debug Full Stack",
-      "type": "node",
+      "name": "Next.js: Debug Server-Side",
+      "type": "node-terminal",
       "request": "launch",
-      "cwd": "${workspaceFolder}/sites/arolariu.ro",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "console": "integratedTerminal",
-      "skipFiles": ["<node_internals>/**"],
-      "env": {
-        "NODE_OPTIONS": "--inspect",
-        "NEXT_TURBOPACK_TRACING": "1"
-      },
-      "sourceMaps": true,
-      "timeout": 30000, // 30 seconds
+      "command": "npm run dev --workspace @arolariu/website",
+      "cwd": "${workspaceFolder}",
       "serverReadyAction": {
-        "action": "debugWithEdge",
-        "killOnServerStop": true,
         "pattern": "- Local:.+(https?://.+)",
         "uriFormat": "%s",
-        "webRoot": "${workspaceFolder}/sites/arolariu.ro"
+        "action": "debugWithEdge"
       }
     },
     {
@@ -54,35 +59,61 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:website"],
+      "runtimeArgs": [
+        "run",
+        "dev:website"
+      ],
       "cwd": "${workspaceFolder}",
-      "env": { "NODE_ENV": "development" },
-      "skipFiles": ["<node_internals>/**"]
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
     },
     {
       "name": "Launch Storybook for components",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--workspace", "@arolariu/components", "run", "storybook"],
+      "runtimeArgs": [
+        "--workspace",
+        "@arolariu/components",
+        "run",
+        "storybook"
+      ],
       "cwd": "${workspaceFolder}",
-      "skipFiles": ["<node_internals>/**"]
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
     },
     {
       "name": "Launch Storybook for website",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["storybook", "dev", "-p", "7007", "-c", "sites/arolariu.ro/.storybook"],
+      "runtimeArgs": [
+        "storybook",
+        "dev",
+        "-p",
+        "7007",
+        "-c",
+        "sites/arolariu.ro/.storybook"
+      ],
       "cwd": "${workspaceFolder}",
-      "skipFiles": ["<node_internals>/**"]
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
     },
     {
       "name": "Launch DocFX site",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "docfx",
-      "runtimeArgs": ["build", "sites/docs.arolariu.ro/docfx.json"],
+      "runtimeArgs": [
+        "build",
+        "sites/docs.arolariu.ro/docfx.json"
+      ],
       "postDebugTask": "Launch DocFX"
     }
   ]

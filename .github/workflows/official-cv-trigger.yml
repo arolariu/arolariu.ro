@@ -19,6 +19,7 @@ env:
 
 jobs:
   build-and-deploy:
+    if: github.repository == 'arolariu/arolariu.ro'
     name: 🚀 Building and deploying the CV platform (cv.arolariu.ro)...
     runs-on: ubuntu-latest
     environment:
