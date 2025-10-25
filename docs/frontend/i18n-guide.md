@@ -369,7 +369,7 @@ npm run generate:i18n
 ```typescript
 import {getCookie} from "@/lib/actions/cookies";
 
-const locale = await getCookie("NEXT_LOCALE");
+const locale = await getCookie("locale");
 console.log("Current locale:", locale); // Should be "en" or "ro"
 ```
 
