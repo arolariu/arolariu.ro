@@ -158,17 +158,83 @@ export type TypedProductionEnvironmentVariablesType = TypedEnvironment<"producti
  */
 export type TypedDevelopmentEnvironmentVariablesType = TypedEnvironment<"development", "production">;
 
+/**
+ * Enumerates environment variable keys that satisfy both of the following constraints:
+ *
+ * - They exist in the union of allowed site configurations
+ *   (`TypedProductionEnvironmentVariablesType | TypedDevelopmentEnvironmentVariablesType`).
+ * - They overlap with the authentication secret contract defined by `AuthEnvironmentVariables`.
+ *
+ * @remarks
+ * This type acts as a compile-time guardrail for logic that operates on secret values, ensuring
+ * that only keys explicitly flagged as authentication secrets can be used when reading from the
+ * consolidated environment configuration.
+ */
 export type SecretEnvironmentVariablesType = Extract<
   keyof (TypedProductionEnvironmentVariablesType | TypedDevelopmentEnvironmentVariablesType),
   keyof AuthEnvironmentVariables // Ensures only auth-related secrets are included
 >;
 
+/**
+ * Represents the union of all environment variable keys available across both
+ * production and development configurations.
+ *
+ * Useful for constraining utilities or validation logic to the exact set of
+ * known environment variable names, regardless of the build target.
+ *
+ * @remarks
+ * The union is derived from `TypedProductionEnvironmentVariablesType` and
+ * `TypedDevelopmentEnvironmentVariablesType`, ensuring that any environment
+ * variable defined in either context is included.
+ *
+ * @see {@link TypedProductionEnvironmentVariablesType} - Production environment variables
+ * @see {@link TypedDevelopmentEnvironmentVariablesType} - Development environment variables
+ */
 export type AllEnvironmentVariablesKeys = keyof (TypedProductionEnvironmentVariablesType | TypedDevelopmentEnvironmentVariablesType);
 
+/**
+ * Represents the canonical mapping between all statically known environment variable keys
+ * and their runtime string values, while still permitting arbitrary string keys for dynamic scenarios.
+ *
+ * @remarks
+ * This alias blends compile-time safety with runtime flexibility by composing the union of
+ * `AllEnvironmentVariablesKeys` and an open string signature. The result is an object-like
+ * contract where every known key is enforced as a string-valued entry, yet additional keys
+ * that surface at runtime can still participate without type errors.
+ *
+ * @example
+ * ```ts
+ * const typedConfig: TypedConfigurationType = {
+ *   DATABASE_URL: process.env.DATABASE_URL ?? '',
+ *   'custom-runtime-key': '42'
+ * };
+ * ```
+ *
+ * @see {@link AllEnvironmentVariablesKeys} - For the set of known environment variable keys.
+ */
 export type TypedConfigurationType = Record<AllEnvironmentVariablesKeys | (string & {}), string>;
 
+/**
+ * Represents the immutable set of supported Node.js package dependency types,
+ * distinguishing between production, development, and peer dependencies.
+ */
 export type NodePackageDependencyType = Readonly<"production" | "development" | "peer">;
 
+/**
+ * Describes the metadata associated with an installed Node.js package.
+ *
+ * @remarks
+ * Use this shape to capture the essential identifying information and optional dependency data
+ * returned by package managers or registry lookups.
+ *
+ * @property name - The package's registry identifier (e.g., `"react"`).
+ * @property version - The exact semantic version of the package (e.g., `"18.2.0"`).
+ * @property description - A short human-readable summary of the package's purpose.
+ * @property homepage - A URL pointing to the package's primary documentation or project site.
+ * @property license - The SPDX identifier for the package's licensing terms.
+ * @property author - The name or contact string of the package's primary maintainer.
+ * @property dependents - Optional list of packages that rely on this package, including their versions.
+ */
 export type NodePackageInformation = {
   name: string;
   version: string;
