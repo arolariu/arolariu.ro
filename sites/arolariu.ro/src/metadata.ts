@@ -12,7 +12,7 @@ const options = {
   author: "Alexandru-Razvan Olariu",
   description:
     "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania.",
-} as const;
+};
 
 const normalIcons: Icon[] = [
   {
@@ -27,7 +27,7 @@ const normalIcons: Icon[] = [
     sizes: "32x32",
     url: `${SITE_URL}/manifest/favicon-32x32.png`,
   },
-] as const;
+];
 
 const appleTouchIcons: Icon[] = [
   {
@@ -84,7 +84,7 @@ const appleTouchIcons: Icon[] = [
     sizes: "180x180",
     url: `${SITE_URL}/manifest/apple-touch-icon-180x180.png`,
   },
-] as const;
+];
 
 export const metadata: Metadata = {
   metadataBase: options.siteUrl,
@@ -136,7 +136,7 @@ export const metadata: Metadata = {
     card: "summary",
   } satisfies Twitter,
   manifest: "/manifest.json",
-  icons: [...normalIcons, ...appleTouchIcons] satisfies Icon[],
+  icons: [...normalIcons, ...appleTouchIcons],
 };
 
 type PartialMetadata = Readonly<

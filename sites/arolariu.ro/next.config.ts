@@ -130,7 +130,8 @@ const nextConfig: NextConfig = {
     turbopackMinify: !isDebugBuild,
 
     // Disable tree shaking in dev to preserve all code for debugging
-    turbopackTreeShaking: !isDebugBuild,
+    // TEMP: Also disable in prod due to Turbopack tree-shaking bug
+    turbopackTreeShaking: false,
 
     // Memory optimizations only in production
     webpackMemoryOptimizations: !isDebugBuild,
