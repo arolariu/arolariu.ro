@@ -76,6 +76,7 @@ jobs:
           cache-key-prefix: 'website'
 
       - name: 🔨 Build components library
+        working-directory: '.'
         run: npm run build:components
         env:
           USE_CDN: "false"
