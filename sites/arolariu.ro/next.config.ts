@@ -129,8 +129,8 @@ const nextConfig: NextConfig = {
     // Disable minification in development for readable debugging
     turbopackMinify: !isDebugBuild,
 
-    // Disable tree shaking in dev to preserve all code for debugging
-    turbopackTreeShaking: !isDebugBuild,
+    // todo: switch to `!isDebugBuild` when Turbopack supports this features fully.
+    turbopackTreeShaking: false,
 
     // Disable optimized loading in dev for better debugging
     disableOptimizedLoading: isDebugBuild,
