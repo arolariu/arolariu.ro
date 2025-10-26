@@ -135,6 +135,7 @@ runs:
       run: |
         echo "::group::🔨 Generating artifacts..."
         npm run generate /e /a /g /i
+        npm run build:components
         echo "::endgroup::"
         echo "✅ Artifacts generated successfully"
 
