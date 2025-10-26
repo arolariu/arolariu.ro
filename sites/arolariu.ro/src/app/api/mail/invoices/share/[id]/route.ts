@@ -19,6 +19,10 @@ export async function POST(request: NextRequest, {params}: Props) {
     fromEmail: string;
   };
 
+  // todo: figure out a better way without exposing email.
+  const toUsername = toEmail.split("@")[0] as string;
+  const fromUsername = fromEmail.split("@")[0] as string;
+
   try {
     const emailData = await resend.emails.send({
       from: "AROLARIU.RO <doNotReply@mail.arolariu.ro>",
@@ -26,7 +30,7 @@ export async function POST(request: NextRequest, {params}: Props) {
       cc: fromEmail,
       bcc: "admin@arolariu.ro",
       subject: "Invoice shared! 🎉🎉",
-      react: SharedInvoice({identifier: id}),
+      react: SharedInvoice({identifier: id, toUsername, fromUsername}),
     } satisfies CreateEmailOptions);
 
     if (emailData.error) {

@@ -4,6 +4,7 @@
   "compilerOptions": {
     "exactOptionalPropertyTypes": false,
     "allowArbitraryExtensions": true,
+    "erasableSyntaxOnly": false,
     "paths": {
       "@/*": [
         "./src/*"

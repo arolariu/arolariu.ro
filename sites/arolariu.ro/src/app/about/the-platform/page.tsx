@@ -1,7 +1,7 @@
 import {ScrollToTop} from "@/hooks/useScrollToTop";
 import {createMetadata} from "@/metadata";
+import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
-import type {Metadata} from "next/types";
 import Hero from "./_components/Hero";
 import Statistics from "./_components/Statistics";
 import TechStack from "./_components/TechStack";

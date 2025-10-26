@@ -2,8 +2,8 @@ import {FakeInvoiceBigList} from "@/data/mocks/invoices";
 import {fetchUser} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
 import {RichText} from "@/presentation/Text";
+import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
-import type {Metadata} from "next/types";
 import RenderViewInvoicesScreen from "./island";
 
 /**

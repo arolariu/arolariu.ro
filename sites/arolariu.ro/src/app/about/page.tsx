@@ -1,6 +1,6 @@
 import {createMetadata} from "@/metadata";
+import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
-import type {Metadata} from "next/types";
 import RenderAboutScreen from "./island";
 
 /**

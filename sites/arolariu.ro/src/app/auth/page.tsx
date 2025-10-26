@@ -1,8 +1,8 @@
 import {fetchUser} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
+import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import {redirect} from "next/navigation";
-import type {Metadata} from "next/types";
 import RenderAuthScreen from "./island";
 
 /**
