@@ -78,10 +78,10 @@
   },
   "scripts": {
     "build": "npm run build:before && rslib build && npm run build:after",
-    "build:before": "node scripts/beforeBuild.ts",
-    "build:after": "node scripts/afterBuild.ts",
+    "build:before": "tsx scripts/beforeBuild.ts",
+    "build:after": "tsx scripts/afterBuild.ts",
     "build:clean": "rimraf dist",
-    "build:exports": "node scripts/generate-exports.ts",
+    "build:exports": "tsx scripts/generate-exports.ts",
     "build:storybook": "storybook build",
     "storybook": "storybook dev -p 6006"
   },

@@ -1,6 +1,7 @@
-import fs, {globSync} from "node:fs";
+import fs from "node:fs";
 import {EOL} from "node:os";
 import path from "node:path";
+import {globSync} from "glob";
 import pc from "picocolors";
 import type {NodePackageDependencyType, NodePackageInformation} from "./types";
 
@@ -232,7 +233,7 @@ export async function main(verbose: boolean = false): Promise<number> {
   return 0;
 }
 
-if (import.meta.main) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   const argv = process.argv.slice(2);
   const verbose = argv.some((a) => ["/verbose", "/v", "--verbose", "-v"].includes(a));
   const wantsHelp = argv.some((a) => ["/help", "/h", "--help", "-h"].includes(a));
