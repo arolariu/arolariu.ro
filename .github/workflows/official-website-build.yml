@@ -75,9 +75,18 @@ jobs:
           generate: 'true'
           cache-key-prefix: 'website'
 
-      - name: 🔨 Build components library
+      - name: 📦 Install published @arolariu/components from NPM
         working-directory: '.'
-        run: npm run build:components
+        run: |
+          echo "Replacing workspace link with published NPM package (v0.3.1)..."
+          rm -rf node_modules/@arolariu
+          mkdir -p node_modules/@arolariu
+          cd node_modules/@arolariu
+          npm pack @arolariu/components@0.3.1
+          tar -xzf *.tgz
+          mv package components
+          rm *.tgz
+          echo "✓ Installed @arolariu/components@0.3.1 from NPM registry"
         env:
           USE_CDN: "false"
 
