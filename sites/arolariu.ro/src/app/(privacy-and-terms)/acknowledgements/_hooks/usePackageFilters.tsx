@@ -1,5 +1,5 @@
 import type {NodePackageInformation, NodePackagesJSON} from "@/types";
-import {type Dispatch, type SetStateAction, useCallback, useState} from "react";
+import {type Dispatch, type SetStateAction, useCallback, useMemo, useState} from "react";
 
 type SortField = Readonly<"name" | "dependencies" | "type">;
 type SortDirection = Readonly<"asc" | "desc">;
@@ -115,8 +115,13 @@ export function usePackageFilters(packages: HookInputType): Readonly<HookReturnT
   const [packageType, setPackageType] = useState<PackageType>("all");
   const memoizedExtractPackageType = useCallback((pkg: {name: string}): PackageType => __extractPackageType__(pkg, packages), [packages]);
 
-  const flatPackages = [packages.development!, packages.production!, packages.peer!].flat();
-  const filteredAndSortedPackages = flatPackages
+  // Wrapped in a Set and useMemo to avoid duplicates and unnecessary recalculations.
+  const flatPackages = useMemo(
+    () => new Set([packages.development || [], packages.production || [], packages.peer || []].flat()),
+    [packages],
+  );
+
+  const filteredAndSortedPackages = Array.from(flatPackages)
     // Filter by search query
     .filter(
       (pkg) =>
