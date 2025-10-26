@@ -34,7 +34,6 @@ import {
 
 import {motion} from "motion/react";
 
-import Link from "next/link";
 import {useCallback} from "react";
 import {TbExternalLink, TbPackage} from "react-icons/tb";
 import {usePackageFilters} from "../_hooks/usePackageFilters";
@@ -256,14 +255,14 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                             <span className='mr-2 font-medium'>Dependencies: {pkg.dependents?.length ?? "N/A"}</span>
                           </div>
                           <div className='mt-4 flex items-center justify-between'>
-                            <Link
+                            <a
                               href={pkg.homepage}
                               target='_blank'
                               rel='noopener noreferrer'
                               className='text-muted-foreground hover:text-primary flex items-center text-sm transition-colors'>
                               <TbExternalLink className='mr-1 h-4 w-4' />
                               <span>Website</span>
-                            </Link>
+                            </a>
                             <DependenciesDialog pkg={pkg} />
                           </div>
                         </div>
@@ -316,7 +315,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                           <DependenciesDialog pkg={pkg} />
                         </TableCell>
                         <TableCell>
-                          <Link
+                          <a
                             href={pkg.homepage}
                             target='_blank'
                             rel='noopener noreferrer'
@@ -324,7 +323,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                             title='Website'>
                             <TbExternalLink className='mx-auto h-4 w-4' />
                             <span className='sr-only'>Website</span>
-                          </Link>
+                          </a>
                         </TableCell>
                       </TableRow>
                     ))}
