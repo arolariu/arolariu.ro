@@ -1,12 +1,12 @@
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {getCookie} from "@/lib/actions/cookies";
-import type {Viewport} from "next";
 import {getLocale} from "next-intl/server";
 import {Suspense} from "react";
 import Eula from "./EULA";
 import Loading from "./loading";
 import ContextProviders from "./providers";
+import Tracking from "./tracking";
 
 // @ts-ignore -- css file has no typings.
 import "@arolariu/components/styles.css";
@@ -14,13 +14,13 @@ import "@arolariu/components/styles.css";
 // @ts-ignore -- css file has no typings.
 import "./globals.css";
 
-import Tracking from "./tracking";
-
-export {metadata} from "@/metadata";
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-};
+// /**
+//  * Generates metadata for the Terms of Service page.
+//  * @returns The metadata for the Terms of Service page.
+//  */
+// export async function generateMetadata(): Promise<Metadata> {
+//   return createMetadata();
+// }
 
 /**
  * The root layout of the website that wraps the entire app.

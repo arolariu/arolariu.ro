@@ -144,6 +144,7 @@ const nextConfig: NextConfig = {
     // Disable server minification in development
     serverMinification: !isDebugBuild,
 
+    globalNotFound: true,
     typedEnv: true,
     optimizePackageImports: ["@arolariu/components"],
     serverActions: {

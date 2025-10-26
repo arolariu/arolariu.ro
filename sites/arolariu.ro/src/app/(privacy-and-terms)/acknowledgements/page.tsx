@@ -2,8 +2,8 @@ import licenses from "@/../licenses.json";
 import {TIMESTAMP} from "@/lib/utils.generic";
 import {createMetadata} from "@/metadata";
 import type {NodePackagesJSON} from "@/types";
+import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
-import type {Metadata} from "next/types";
 import RenderAcknowledgementsScreen from "./island";
 
 /**

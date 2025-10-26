@@ -47,6 +47,7 @@ export default function RenderGenerativeView({invoices}: Readonly<Props>): React
 
   // todo: complete this.
   console.log(invoices);
+  console.log(setMessages);
 
   return (
     <motion.div

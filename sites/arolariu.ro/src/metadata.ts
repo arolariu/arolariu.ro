@@ -149,7 +149,7 @@ type PartialMetadata = Readonly<
   >
 >;
 
-export const createMetadata = (partialMetadata: PartialMetadata): Readonly<Metadata> => {
+export const createMetadata = (partialMetadata: PartialMetadata = {}): Readonly<Metadata> => {
   const {title, description, openGraph, twitter, locale, ...rest} = partialMetadata;
 
   const LOCALE_ALTERNATES: ReadonlyMap<string, string> = new Map<string, string>([
@@ -157,7 +157,7 @@ export const createMetadata = (partialMetadata: PartialMetadata): Readonly<Metad
     ["ro", "ro_RO"],
   ]);
 
-  return {
+  const generatedMetadata: Metadata = {
     ...metadata,
     ...rest,
     ...(title && {title}),
@@ -175,5 +175,7 @@ export const createMetadata = (partialMetadata: PartialMetadata): Readonly<Metad
       ...(title && {title}),
       ...(description && {description}),
     },
-  } satisfies Metadata;
+  };
+
+  return generatedMetadata;
 };
