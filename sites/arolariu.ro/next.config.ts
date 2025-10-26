@@ -151,8 +151,6 @@ const nextConfig: NextConfig = {
     },
   },
 
-  transpilePackages: ["@arolariu/components"],
-
   typescript: {
     ignoreBuildErrors: false,
     tsconfigPath: "tsconfig.json",
