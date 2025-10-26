@@ -75,27 +75,26 @@ jobs:
           generate: 'true'
           cache-key-prefix: 'website'
 
+      - name: 🔨 Build components library
+        run: npm run build:components
+        env:
+          USE_CDN: "false"
+
       - name: 🧪 Running Jest Unit tests...
         working-directory: './sites/arolariu.ro'
-        run: |
-          npm ci --prefer-offline --no-audit
-          npm run test:unit
+        run: npm run test:unit
         env: # We will use local assets for the tests
           USE_CDN: "false"
 
       - name: 🧪 Running Playwright E2E Component tests...
         working-directory: './sites/arolariu.ro'
-        run: |
-          npm ci --prefer-offline --no-audit
-          npm run test:e2e
+        run: npm run test:e2e
         env: # We will use local assets for the tests
           USE_CDN: "false"
 
       - name: 🧪 Preparing UI tests (Building Storybook)...
         working-directory: './sites/arolariu.ro'
-        run: |
-          npm ci --prefer-offline --no-audit
-          npm run storybook:build --quiet
+        run: npm run storybook:build --quiet
         env: # We will use local assets for the tests
           USE_CDN: "false"
 
