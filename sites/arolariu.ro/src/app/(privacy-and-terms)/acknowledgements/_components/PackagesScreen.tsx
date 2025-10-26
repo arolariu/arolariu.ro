@@ -232,7 +232,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
               <div className='grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3'>
                 {filteredAndSortedPackages.map((pkg, index) => (
                   <motion.div
-                    key={pkg.name + pkg.version}
+                    key={`${pkg.name}#${pkg.version}#${pkg.dependents?.length ?? 0}`}
                     initial={{opacity: 0, y: 20}}
                     animate={{opacity: 1, y: 0}}
                     transition={{duration: 0.3, delay: index * 0.1}}>
@@ -257,7 +257,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                           </div>
                           <div className='mt-4 flex items-center justify-between'>
                             <Link
-                              href={new URL(pkg.homepage)}
+                              href={pkg.homepage}
                               target='_blank'
                               rel='noopener noreferrer'
                               className='text-muted-foreground hover:text-primary flex items-center text-sm transition-colors'>
@@ -302,7 +302,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                   </TableHeader>
                   <TableBody>
                     {filteredAndSortedPackages.map((pkg) => (
-                      <TableRow key={pkg.name + pkg.version}>
+                      <TableRow key={`${pkg.name}#${pkg.version}#${pkg.dependents?.length ?? 0}`}>
                         <TableCell className='font-bold'>{pkg.name}</TableCell>
                         <TableCell className='hidden md:table-cell'>{pkg.version}</TableCell>
                         <TableCell className='hidden md:table-cell'>
@@ -317,7 +317,7 @@ export default function PackagesScreen({packages}: Readonly<Props>): React.JSX.E
                         </TableCell>
                         <TableCell>
                           <Link
-                            href={new URL(pkg.homepage)}
+                            href={pkg.homepage}
                             target='_blank'
                             rel='noopener noreferrer'
                             className='hover:bg-muted rounded-md p-2 transition-colors'
