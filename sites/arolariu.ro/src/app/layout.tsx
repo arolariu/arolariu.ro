@@ -1,17 +1,26 @@
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {getCookie} from "@/lib/actions/cookies";
+import type {Viewport} from "next";
 import {getLocale} from "next-intl/server";
 import {Suspense} from "react";
 import Eula from "./EULA";
 import Loading from "./loading";
 import ContextProviders from "./providers";
 
+// @ts-ignore -- css file has no typings.
 import "@arolariu/components/styles.css";
+
+// @ts-ignore -- css file has no typings.
 import "./globals.css";
+
 import Tracking from "./tracking";
 
 export {metadata} from "@/metadata";
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
 
 /**
  * The root layout of the website that wraps the entire app.
