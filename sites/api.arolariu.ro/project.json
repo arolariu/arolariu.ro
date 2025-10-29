@@ -11,20 +11,6 @@
         "cwd": "."
       }
     },
-    "clean": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "dotnet clean",
-        "cwd": "sites/api.arolariu.ro"
-      }
-    },
-    "restore": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "dotnet restore",
-        "cwd": "sites/api.arolariu.ro"
-      }
-    },
     "test": {
       "executor": "nx:run-commands",
       "options": {
@@ -36,13 +22,6 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "dotnet run --project src/Core",
-        "cwd": "sites/api.arolariu.ro"
-      }
-    },
-    "docker:build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "docker build -t api.arolariu.ro .",
         "cwd": "sites/api.arolariu.ro"
       }
     }
