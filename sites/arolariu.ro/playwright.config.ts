@@ -48,10 +48,11 @@ const projectsToRun = allProjects.filter((project) => {
 export default defineConfig({
   fullyParallel: true,
   retries: weAreInCI ? 1 : 2,
-  workers: "75%",
+  workers: weAreInCI ? "75%" : "100%",
   timeout: 60 * 1000, // 60 seconds - 1 minute
   projects: projectsToRun,
   outputDir: "code-cov/playwright-report",
+  maxFailures: weAreInCI ? 5 : 10, // Stop after these many failures
 
   reporter: [
     ["html", {outputFolder: "code-cov/playwright-report/html", open: "never"}],
@@ -70,7 +71,7 @@ export default defineConfig({
 
   webServer: [
     {
-      command: "yarn dev",
+      command: "npm run dev",
       reuseExistingServer: !weAreInCI,
       url: "https://localhost:3000",
       timeout: 300 * 1000, // 300 seconds - 5 minutes
