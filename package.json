@@ -24,21 +24,12 @@
   },
   "scripts": {
     "__runner__based__commands__start__": "⚠️ The below section contains commands based on NX runner.",
-    "affected": "nx affected",
-    "affected:build": "nx affected --target=build",
-    "affected:test": "nx affected --target=test",
     "build": "nx run-many --target=build --all",
     "build:api": "nx run api:build",
     "build:components": "nx run components:build",
     "build:cv": "nx run cv:build",
     "build:docs": "nx run docs:build",
     "build:website": "nx run website:build",
-    "clean": "nx run-many --target=clean --all",
-    "clean:api": "nx run api:clean",
-    "clean:components": "nx run components:clean",
-    "clean:cv": "nx run cv:clean",
-    "clean:docs": "nx run docs:clean",
-    "clean:website": "nx run website:clean",
     "dev": "nx run-many --target=dev --all --parallel",
     "dev:api": "nx run api:dev",
     "dev:components": "nx run components:dev",
@@ -263,7 +254,7 @@
   },
   "overrides": {
     "@storybook/nextjs": {
-      "next": "16.0.0"
+      "next": "16.0.1"
     }
   }
 }
