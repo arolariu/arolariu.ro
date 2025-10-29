@@ -1,4 +1,5 @@
 import {ESLint, Linter} from "eslint";
+import type {Config} from "eslint/config";
 import process from "node:process";
 import pc from "picocolors";
 import eslintConfig from "../eslint.config.ts";
@@ -11,7 +12,7 @@ type LintTarget = "all" | "packages" | "website" | "cv";
  * @param lintTarget The target to load the ESLint config for.
  * @returns The ESLint configuration for the specified target.
  */
-function loadESLintConfig(lintTarget: LintTarget): Linter.Config<Linter.RulesRecord> | Linter.Config<Linter.RulesRecord>[] {
+function loadESLintConfig(lintTarget: LintTarget): Config | Config[] {
   switch (lintTarget) {
     case "all":
       return eslintConfig;
@@ -87,7 +88,7 @@ async function startESLint(lintTarget: LintTarget): Promise<number> {
       console.log(pc.gray("─────────────────────────────────────────────────"));
     }
   } else {
-    const config = lintConfig as Linter.Config<Linter.RulesRecord>;
+    const config = lintConfig as Config;
     totalErrors = await runESLint(config);
   }
 
