@@ -44,11 +44,13 @@ export type CreateMerchantDtoPayload = {
   parentCompanyId: string;
 };
 
+/** Represents the data transfer object payload for updating a merchant. */
 export type UpdateMerchantDtoPayload<T = string> = {
   /** The unique identifier of the merchant. */
   id: T;
 } & Partial<Omit<Merchant, "id">>;
 
+/** Represents the data transfer object payload for deleting a merchant. */
 export type DeleteMerchantDtoPayload<T = string> = {
   /** The unique identifier of the merchant. */
   id: T;

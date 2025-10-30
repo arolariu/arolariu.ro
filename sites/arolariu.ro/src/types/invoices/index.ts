@@ -1,4 +1,4 @@
-export type {Allergen} from "./Allergen";
+export type {Allergen, CreateAllergenDtoPayload, DeleteAllergenDtoPayload, UpdateAllergenDtoPayload} from "./Allergen";
 
 /** Invoice-related types */
 export {
@@ -19,7 +19,14 @@ export {
   type UpdateMerchantDtoPayload,
 } from "./Merchant";
 
-export {PaymentType, type PaymentInformation} from "./Payment";
+/** Payment information-related types */
+export {
+  PaymentType,
+  type CreatePaymentInformationDtoPayload,
+  type DeletePaymentInformationDtoPayload,
+  type PaymentInformation,
+  type UpdatePaymentInformationDtoPayload,
+} from "./Payment";
 
 /** Product-related types */
 export {

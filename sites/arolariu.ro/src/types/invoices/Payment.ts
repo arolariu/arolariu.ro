@@ -32,3 +32,18 @@ export type PaymentInformation = {
   /** The total tax amount of the payment. */
   totalTaxAmount: number;
 };
+
+/** Represents the data transfer object payload for creating payment information. */
+export type CreatePaymentInformationDtoPayload = Partial<PaymentInformation>;
+
+/** Represents the data transfer object payload for updating payment information. */
+export type UpdatePaymentInformationDtoPayload = Partial<PaymentInformation>;
+
+/** Represents the data transfer object payload for deleting payment information. */
+export type DeletePaymentInformationDtoPayload = {
+  /** The date when the payment was made. */
+  transactionDate: Date;
+
+  /** The type of payment used. */
+  paymentType: PaymentType;
+};

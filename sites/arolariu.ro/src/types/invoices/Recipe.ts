@@ -49,6 +49,14 @@ export type Recipe = {
   referenceForMoreDetails: string;
 };
 
+/** Represents the data transfer object payload for creating a recipe. */
 export type CreateRecipeDtoPayload = Partial<Recipe>;
+
+/** Represents the data transfer object payload for updating a recipe. */
 export type UpdateRecipeDtoPayload = Partial<Recipe>;
-export type DeleteRecipeDtoPayload = {name: string};
+
+/** Represents the data transfer object payload for deleting a recipe. */
+export type DeleteRecipeDtoPayload = {
+  /** The name of the recipe. */
+  name: string;
+};

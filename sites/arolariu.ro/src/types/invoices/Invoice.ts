@@ -93,6 +93,7 @@ export type CreateInvoiceDtoPayload = {
   metadata: Record<SpecialMetadataKeys | (string & {}), string>;
 };
 
+/** Represents the data transfer object payload for updating an invoice. */
 export type UpdateInvoiceDtoPayload<T = string> = {
   /** The unique identifier of the invoice. */
   id: T;
@@ -101,6 +102,7 @@ export type UpdateInvoiceDtoPayload<T = string> = {
   userIdentifier: string;
 } & Partial<Omit<Invoice, "id" | "userIdentifier">>;
 
+/** Represents the data transfer object payload for deleting an invoice. */
 export type DeleteInvoiceDtoPayload<T = string> = {
   /** The unique identifier of the invoice to be deleted. */
   id: T;

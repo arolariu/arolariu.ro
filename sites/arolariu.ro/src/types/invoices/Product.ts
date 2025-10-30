@@ -61,6 +61,19 @@ export interface Product {
   metadata: ProductMetadata;
 }
 
+/** Represents the data transfer object payload for creating a product. */
 export type CreateProductDtoPayload = Partial<Product>;
+
+/** Represents the data transfer object payload for updating a product. */
 export type UpdateProductDtoPayload = Partial<Product>;
-export type DeleteProductDtoPayload = {rawName: string} | {productCode: string};
+
+/** Represents the data transfer object payload for deleting a product. */
+export type DeleteProductDtoPayload =
+  | {
+      /** The raw name of the product. */
+      rawName: string;
+    }
+  | {
+      /** The product code of the product. */
+      productCode: string;
+    };
