@@ -186,3 +186,7 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+button {
+  cursor: pointer;
+}

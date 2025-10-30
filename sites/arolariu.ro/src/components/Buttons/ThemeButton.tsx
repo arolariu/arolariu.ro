@@ -2,8 +2,38 @@
 
 import {motion} from "motion/react";
 import {useTheme} from "next-themes";
-import {useCallback, useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {TbMoon, TbSun} from "react-icons/tb";
+
+const MoonIcon = (): React.JSX.Element => {
+  return (
+    <motion.div
+      className='absolute inset-0 flex items-center justify-center'
+      initial={false}
+      animate={{
+        scale: 1,
+        opacity: 1,
+      }}
+      transition={{duration: 0.2}}>
+      <TbMoon className='h-6 w-6 text-zinc-800 dark:text-zinc-200' />
+    </motion.div>
+  );
+};
+
+const SunIcon = (): React.JSX.Element => {
+  return (
+    <motion.div
+      className='absolute inset-0 flex items-center justify-center'
+      initial={false}
+      animate={{
+        scale: 1,
+        opacity: 1,
+      }}
+      transition={{duration: 0.2}}>
+      <TbSun className='h-6 w-6 text-zinc-800 dark:text-zinc-200' />
+    </motion.div>
+  );
+};
 
 /**
  * The theme switcher button component.
@@ -33,26 +63,7 @@ export default function ThemeButton(): React.JSX.Element {
       onClick={handleSetTheme}
       aria-label='Toggle theme'
       whileTap={{scale: 0.95}}>
-      <motion.div
-        className='absolute inset-0 flex items-center justify-center'
-        initial={false}
-        animate={{
-          scale: theme === "dark" ? 1 : 0,
-          opacity: theme === "dark" ? 1 : 0,
-        }}
-        transition={{duration: 0.2}}>
-        <TbMoon className='h-6 w-6 text-zinc-800 dark:text-zinc-200' />
-      </motion.div>
-      <motion.div
-        className='absolute inset-0 flex items-center justify-center'
-        initial={false}
-        animate={{
-          scale: theme === "light" ? 1 : 0,
-          opacity: theme === "light" ? 1 : 0,
-        }}
-        transition={{duration: 0.2}}>
-        <TbSun className='h-6 w-6 text-zinc-800 dark:text-zinc-200' />
-      </motion.div>
+      {theme === "dark" ? <SunIcon /> : <MoonIcon />}
     </motion.button>
   );
 }

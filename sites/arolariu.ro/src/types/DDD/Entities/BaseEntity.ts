@@ -1,13 +1,9 @@
+import type {IAuditable} from "./";
+
 /**
  * Represents a base entity from the Domain-Driven Design concepts.
  */
-export interface BaseEntity<T> {
+export interface BaseEntity<T> extends IAuditable {
+  /** The unique identifier for the entity, generally a GUID. */
   id: T;
-  createdAt: Date;
-  createdBy: string;
-  lastUpdatedAt: Date;
-  lastUpdatedBy: string;
-  numberOfUpdates: number;
-  isImportant: boolean;
-  isSoftDeleted: boolean;
 }

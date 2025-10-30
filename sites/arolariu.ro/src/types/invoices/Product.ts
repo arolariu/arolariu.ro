@@ -30,14 +30,33 @@ export enum ProductCategory {
  * Represents a product from the invoice domain system.
  */
 export interface Product {
+  /** The raw name of the product. */
   rawName: string;
+
+  /** The generic name of the product. */
   genericName: string;
+
+  /** The category of the product. */
   category: ProductCategory;
+
+  /** The quantity of the product. */
   quantity: number;
+
+  /** The unit of measurement for the product quantity. */
   quantityUnit: string;
+
+  /** The product code (e.g., barcode) of the product. */
   productCode: string;
+
+  /** The unit price of the product. */
   price: number;
+
+  /** The total price of the product (price * quantity). */
   totalPrice: number;
+
+  /** The list of detected allergens in the product. */
   detectedAllergens: Allergen[];
+
+  /** The metadata associated with the product. */
   metadata: ProductMetadata;
 }

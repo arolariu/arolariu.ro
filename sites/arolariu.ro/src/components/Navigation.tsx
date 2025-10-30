@@ -208,7 +208,7 @@ export function MobileNavigation(): React.JSX.Element {
         onClick={toggleMobile}
         aria-expanded={mobileOpen}
         aria-controls='mobile-navigation'
-        className='inline-flex cursor-pointer items-center justify-center rounded-md p-2 hover:bg-gray-100 sm:hidden'>
+        className='inline-flex cursor-pointer items-center justify-center rounded-md p-2 hover:bg-gray-100 md:hidden'>
         <span className='sr-only'>Open navigation</span>
         <TbMenu className='h-6 w-6' />
       </Button>
@@ -228,7 +228,7 @@ export function MobileNavigation(): React.JSX.Element {
               <Button
                 onClick={toggleMobile}
                 aria-label='Close navigation'
-                className='cursor-pointer p-2 text-gray-500 hover:text-gray-700'>
+                className='cursor-pointer bg-white p-2 text-black'>
                 ✕
               </Button>
             </div>

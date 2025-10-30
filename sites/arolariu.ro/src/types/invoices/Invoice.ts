@@ -80,9 +80,23 @@ export interface Invoice extends NamedEntity<string> {
   additionalMetadata: Record<string, string>;
 }
 
-export interface InvoicePayload {
+type SpecialMetadataKeys = "isImportant" | "requiresAnalysis";
+
+/**
+ * Represents the data transfer object payload for creating an invoice.
+ */
+export type CreateInvoiceDtoPayload = {
+  /** The user identifier associated with the invoice. */
   userIdentifier: string;
-  photoIdentifier: string;
-  photoLocation: string;
-  photoMetadata: Record<string, string>;
-}
+
+  /** The metadata associated with the invoice. */
+  metadata: Record<SpecialMetadataKeys | (string & {}), string>;
+};
+
+export type UpdateInvoiceDtoPayload<T = string> = {
+  /** The unique identifier of the invoice. */
+  id: T;
+
+  /** The user identifier associated with the invoice. */
+  userIdentifier: string;
+} & Partial<Omit<Invoice, "id" | "userIdentifier">>;
