@@ -24,6 +24,25 @@ EXPOSE 8080 8081
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
+
+# Environment variables from workflow context
+ARG API_NAME
+ARG API_URL
+ARG COMMIT_SHA
+ARG INFRA
+ARG AZURE_TENANT_ID
+ARG AZURE_SUBSCRIPTION_ID
+ARG AZURE_CLIENT_ID
+
+# Make them available as environment variables during build
+ENV API_NAME=${API_NAME} \
+    API_URL=${API_URL} \
+    COMMIT_SHA=${COMMIT_SHA} \
+    INFRA=${INFRA} \
+    AZURE_TENANT_ID=${AZURE_TENANT_ID} \
+    AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID} \
+    AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+
 WORKDIR /src
 
 # 1. Copy central build + package management metadata FIRST (required for restore)
@@ -58,6 +77,25 @@ RUN dotnet publish src/Core/arolariu.Backend.Core.csproj \
 
 # Final layer - runtime image with published app.
 FROM base AS final
+
+# Re-declare ARGs to make them available in this stage
+ARG API_NAME
+ARG API_URL
+ARG COMMIT_SHA
+ARG INFRA
+ARG AZURE_TENANT_ID
+ARG AZURE_SUBSCRIPTION_ID
+ARG AZURE_CLIENT_ID
+
+# Set runtime environment variables
+ENV API_NAME=${API_NAME} \
+    API_URL=${API_URL} \
+    COMMIT_SHA=${COMMIT_SHA} \
+    INFRA=${INFRA} \
+    AZURE_TENANT_ID=${AZURE_TENANT_ID} \
+    AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID} \
+    AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+
 WORKDIR /app
 
 USER root
