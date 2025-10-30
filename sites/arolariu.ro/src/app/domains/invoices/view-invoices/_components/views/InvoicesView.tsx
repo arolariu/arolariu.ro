@@ -1,6 +1,6 @@
 "use client";
 
-import {usePaginationWithSearch, useWindowSize} from "@/hooks";
+import {usePaginationWithSearch} from "@/hooks";
 import type {Invoice} from "@/types/invoices";
 import {
   Button,
@@ -19,6 +19,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  useWindowSize,
 } from "@arolariu/components";
 import {useCallback, useState} from "react";
 import {TbCards, TbCategory, TbClock, TbFilter, TbMoon, TbSearch, TbSun, TbTable} from "react-icons/tb";

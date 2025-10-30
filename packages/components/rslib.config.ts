@@ -26,6 +26,7 @@ const bundlerConfig = defineConfig({
     entry: {
       index: ["./src/**"],
     },
+    exclude: ["**/*.spec.ts", "**/*.spec.tsx", "**/*.test.ts", "**/*.test.tsx"],
     tsconfigPath: path.resolve(__dirname, "./tsconfig.json"),
   },
   lib: [
