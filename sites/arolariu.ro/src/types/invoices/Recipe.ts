@@ -48,3 +48,7 @@ export type Recipe = {
   /** A reference for more details about the recipe. */
   referenceForMoreDetails: string;
 };
+
+export type CreateRecipeDtoPayload = Partial<Recipe>;
+export type UpdateRecipeDtoPayload = Partial<Recipe>;
+export type DeleteRecipeDtoPayload = {name: string};

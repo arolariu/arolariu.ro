@@ -100,3 +100,11 @@ export type UpdateInvoiceDtoPayload<T = string> = {
   /** The user identifier associated with the invoice. */
   userIdentifier: string;
 } & Partial<Omit<Invoice, "id" | "userIdentifier">>;
+
+export type DeleteInvoiceDtoPayload<T = string> = {
+  /** The unique identifier of the invoice to be deleted. */
+  id: T;
+
+  /** The user identifier associated with the invoice. */
+  userIdentifier: string;
+};

@@ -60,3 +60,7 @@ export interface Product {
   /** The metadata associated with the product. */
   metadata: ProductMetadata;
 }
+
+export type CreateProductDtoPayload = Partial<Product>;
+export type UpdateProductDtoPayload = Partial<Product>;
+export type DeleteProductDtoPayload = {rawName: string} | {productCode: string};

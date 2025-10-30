@@ -48,3 +48,11 @@ export type UpdateMerchantDtoPayload<T = string> = {
   /** The unique identifier of the merchant. */
   id: T;
 } & Partial<Omit<Merchant, "id">>;
+
+export type DeleteMerchantDtoPayload<T = string> = {
+  /** The unique identifier of the merchant. */
+  id: T;
+
+  /** The unique identifier of the parent company. */
+  parentCompanyId: string;
+};
