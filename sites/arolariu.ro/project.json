@@ -17,31 +17,10 @@
         "components:build"
       ]
     },
-    "build:before": {
+    "build:storybook": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npm run build:before",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "build:after": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run build:after",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "build:debug": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run build:debug",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "analyze": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run analyze",
+        "command": "npm run storybook:build",
         "cwd": "sites/arolariu.ro"
       }
     },
@@ -55,31 +34,10 @@
         "components:build"
       ]
     },
-    "dev:classic": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run dev:classic",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "dev:debug": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run dev:debug",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
     "start": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npm run start",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "start:debug": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run start:debug",
         "cwd": "sites/arolariu.ro"
       }
     },
@@ -90,66 +48,10 @@
         "cwd": "sites/arolariu.ro"
       }
     },
-    "test:jest": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run test:jest",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "test:playwright": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run test:playwright",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "test:storybook": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run test:storybook",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "clean": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run clean",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "setup": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run setup",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "setup:azure": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run setup:azure",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "setup:local": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run setup:local",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
     "storybook": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npm run storybook",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "storybook:build": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run storybook:build",
         "cwd": "sites/arolariu.ro"
       }
     }

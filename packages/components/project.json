@@ -14,20 +14,6 @@
         "{projectRoot}/dist"
       ]
     },
-    "build:clean": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run build:clean",
-        "cwd": "packages/components"
-      }
-    },
-    "build:exports": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run build:exports",
-        "cwd": "packages/components"
-      }
-    },
     "build:storybook": {
       "executor": "nx:run-commands",
       "options": {
@@ -39,20 +25,6 @@
       ]
     },
     "storybook": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run storybook",
-        "cwd": "packages/components"
-      }
-    },
-    "clean": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run build:clean",
-        "cwd": "packages/components"
-      }
-    },
-    "dev": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npm run storybook",

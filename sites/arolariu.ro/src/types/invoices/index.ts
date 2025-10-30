@@ -1,6 +1,48 @@
-export {type Allergen} from "./Allergen";
-export {InvoiceAnalysisOptions, InvoiceCategory, type Invoice, type InvoicePayload} from "./Invoice";
-export {MerchantCategory, type Merchant} from "./Merchant";
-export {PaymentType, type PaymentInformation} from "./Payment";
-export {ProductCategory, type Product, type ProductMetadata} from "./Product";
-export {RecipeComplexity, type Recipe} from "./Recipe";
+export type {Allergen, CreateAllergenDtoPayload, DeleteAllergenDtoPayload, UpdateAllergenDtoPayload} from "./Allergen";
+
+/** Invoice-related types */
+export {
+  InvoiceAnalysisOptions,
+  InvoiceCategory,
+  type CreateInvoiceDtoPayload,
+  type DeleteInvoiceDtoPayload,
+  type Invoice,
+  type UpdateInvoiceDtoPayload,
+} from "./Invoice";
+
+/** Merchant-related types */
+export {
+  MerchantCategory,
+  type CreateMerchantDtoPayload,
+  type DeleteMerchantDtoPayload,
+  type Merchant,
+  type UpdateMerchantDtoPayload,
+} from "./Merchant";
+
+/** Payment information-related types */
+export {
+  PaymentType,
+  type CreatePaymentInformationDtoPayload,
+  type DeletePaymentInformationDtoPayload,
+  type PaymentInformation,
+  type UpdatePaymentInformationDtoPayload,
+} from "./Payment";
+
+/** Product-related types */
+export {
+  ProductCategory,
+  type CreateProductDtoPayload,
+  type DeleteProductDtoPayload,
+  type Product,
+  type ProductMetadata,
+  type UpdateProductDtoPayload,
+} from "./Product";
+
+/** Recipe-related types */
+export {
+  RecipeComplexity,
+  type CreateRecipeDtoPayload,
+  type DeleteRecipeDtoPayload,
+  type Recipe,
+  type UpdateRecipeDtoPayload,
+} from "./Recipe";

@@ -186,7 +186,6 @@ internal static class WebApplicationBuilderExtensions
   /// of environment-specific configuration logic.
   /// </para>
   /// </remarks>
-  [SuppressMessage("Style", "IDE0051:Remove unused private members", Justification = "Reserved for future local development configuration implementation")]
   private static void AddLocalConfiguration(this WebApplicationBuilder builder)
   {
     var services = builder.Services;
@@ -255,32 +254,35 @@ internal static class WebApplicationBuilderExtensions
     var services = builder.Services;
     var configuration = builder.Configuration;
     var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
-    Console.WriteLine(">>> Environment: " + environment);
+    Console.WriteLine($">>> [arolariu.ro::build] Environment variable: {environment}");
 
     #region Setting up the service configuration.
     configuration.AddEnvironmentVariables();
     configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
     configuration.AddJsonFile($"appsettings.{environment}.json", optional: false, reloadOnChange: true);
 
-    // TODO: add logic to differentiate between local and cloud environments.
-    if (true == true)
+    var infrastructure = Environment.GetEnvironmentVariable("INFRA");
+    Console.WriteLine($">>> [arolariu.ro::build] Infrastructure variable: {infrastructure}");
+
+    switch (infrastructure)
     {
-      AddAzureConfiguration(builder);
+      case "azure":
+        AddAzureConfiguration(builder);
+        break;
+      case "local":
+        AddLocalConfiguration(builder);
+        break;
+      default:
+        throw new ArgumentException("The `INFRA` env. var. is not defined! Aborting...");
     }
     #endregion
 
     services.AddHttpClient();
     services.AddHttpContextAccessor();
-    services.AddCors(options =>
-    {
-      options.AddPolicy("AllowAllOrigins", builder =>
-      {
-        builder
+    services.AddCors(options => options.AddPolicy("AllowAllOrigins", builder => builder
           .AllowAnyOrigin()
           .AllowAnyMethod()
-          .AllowAnyHeader();
-      });
-    });
+          .AllowAnyHeader()));
 
     services.AddLocalization();
     services.AddOpenApi();

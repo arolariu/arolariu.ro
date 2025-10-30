@@ -175,7 +175,7 @@ export default function Eula({locale}: Readonly<Props>): React.JSX.Element {
               </TabsTrigger>
               <Separator
                 orientation='vertical'
-                className='border-muted-foreground/50 h-6 w-6 rounded-xl border-2'
+                className='border-muted-foreground/50 h-6 rounded-xl border-2'
               />
               <TabsTrigger
                 value='ro'

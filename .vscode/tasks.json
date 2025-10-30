@@ -1,7 +1,19 @@
 {
   "version": "2.0.0",
   "tasks": [
-     {
+    {
+      "label": "Tests: Unit Test All",
+      "type": "shell",
+      "command": "npm run test:unit",
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: Integration Test All",
+      "type": "shell",
+      "command": "npm run test:e2e",
+      "problemMatcher": []
+    },
+    {
       "label": "Checks: Format Run",
       "type": "shell",
       "command": "npm run format",

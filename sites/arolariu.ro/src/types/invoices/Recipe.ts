@@ -4,9 +4,16 @@ import type {Product} from "./index.ts";
  * Enum representing the complexity of a recipe.
  */
 export enum RecipeComplexity {
+  /** Unknown complexity */
   Unknown = 0,
+
+  /** Easy complexity */
   Easy = 1,
+
+  /** Normal complexity */
   Normal = 2,
+
+  /** Hard complexity */
   Hard = 3,
 }
 
@@ -14,13 +21,42 @@ export enum RecipeComplexity {
  * Represents a recipe from the invoice domain system.
  */
 export type Recipe = {
+  /** The name of the recipe. */
   name: string;
+
+  /** The description of the recipe. */
   description: string;
-  duration: string;
+
+  /** The duration of the recipe, in minutes */
+  duration: number;
+
+  /** The complexity level of the recipe. */
   complexity: RecipeComplexity;
+
+  /** The list of ingredients for the recipe. */
   ingredients: Product[];
+
+  /** The cooking instructions for the recipe. */
   instructions: string;
+
+  /** The preparation time for the recipe, in minutes */
   preparationTime: number;
+
+  /** The cooking time for the recipe, in minutes */
   cookingTime: number;
+
+  /** A reference for more details about the recipe. */
   referenceForMoreDetails: string;
+};
+
+/** Represents the data transfer object payload for creating a recipe. */
+export type CreateRecipeDtoPayload = Partial<Recipe>;
+
+/** Represents the data transfer object payload for updating a recipe. */
+export type UpdateRecipeDtoPayload = Partial<Recipe>;
+
+/** Represents the data transfer object payload for deleting a recipe. */
+export type DeleteRecipeDtoPayload = {
+  /** The name of the recipe. */
+  name: string;
 };
