@@ -42,8 +42,8 @@ export type UpdatePaymentInformationDtoPayload = Partial<PaymentInformation>;
 /** Represents the data transfer object payload for deleting payment information. */
 export type DeletePaymentInformationDtoPayload = {
   /** The date when the payment was made. */
-  transactionDate: Date;
+  readonly transactionDate: Date;
 
   /** The type of payment used. */
-  paymentType: PaymentType;
+  readonly paymentType: PaymentType;
 };
