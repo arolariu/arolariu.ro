@@ -96,84 +96,41 @@ describe("createIndexedDBStorage", () => {
     });
   });
 
-  describe("Browser Environment", () => {
-    it("should handle missing indexedDB gracefully in getItem", async () => {
-      // Save original indexedDB
-      const originalIndexedDB = globalThis.indexedDB;
+  describe("SSR Environment", () => {
+    it("should return undefined in SSR context (no window)", () => {
+      // Save original window
+      const originalWindow = globalThis.window;
 
-      // Remove indexedDB to simulate SSR environment
+      // Remove window to simulate SSR environment
       // @ts-expect-error - Intentionally setting to undefined for testing
-      delete globalThis.indexedDB;
-
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      delete globalThis.window;
 
       const storage = createIndexedDBStorage();
-      const result = await storage.getItem("test-key");
 
-      expect(result).toBeNull();
-      expect(consoleWarnSpy).toHaveBeenCalledWith("IndexedDB is not available in this environment!");
+      expect(storage).toBeUndefined();
 
-      // Restore indexedDB
-      globalThis.indexedDB = originalIndexedDB;
-      consoleWarnSpy.mockRestore();
+      // Restore window
+      globalThis.window = originalWindow;
     });
 
-    it("should handle missing indexedDB gracefully in setItem", async () => {
-      // Save original indexedDB
-      const originalIndexedDB = globalThis.indexedDB;
+    it("should not call getDatabase in SSR context", () => {
+      // Save original window
+      const originalWindow = globalThis.window;
 
-      // Remove indexedDB to simulate SSR environment
+      // Remove window to simulate SSR environment
       // @ts-expect-error - Intentionally setting to undefined for testing
-      delete globalThis.indexedDB;
+      delete globalThis.window;
 
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
       const storage = createIndexedDBStorage();
-      await storage.setItem("test-key", "value" as any);
 
-      expect(consoleWarnSpy).toHaveBeenCalledWith("IndexedDB is not available in this environment!");
+      // Storage should be undefined, so no warnings should be logged
+      expect(storage).toBeUndefined();
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
 
-      // Restore indexedDB
-      globalThis.indexedDB = originalIndexedDB;
-      consoleWarnSpy.mockRestore();
-    });
-
-    it("should handle missing indexedDB gracefully in removeItem", async () => {
-      // Save original indexedDB
-      const originalIndexedDB = globalThis.indexedDB;
-
-      // Remove indexedDB to simulate SSR environment
-      // @ts-expect-error - Intentionally setting to undefined for testing
-      delete globalThis.indexedDB;
-
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-      const storage = createIndexedDBStorage();
-      await storage.removeItem("test-key");
-
-      expect(consoleWarnSpy).toHaveBeenCalledWith("IndexedDB is not available in this environment!");
-
-      // Restore indexedDB
-      globalThis.indexedDB = originalIndexedDB;
-      consoleWarnSpy.mockRestore();
-    });
-
-    it("should warn only once when getDatabase is called multiple times without indexedDB", async () => {
-      const originalIndexedDB = globalThis.indexedDB;
-      // @ts-expect-error - Intentionally setting to undefined for testing
-      delete globalThis.indexedDB;
-
-      const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-      const storage = createIndexedDBStorage();
-      await storage.getItem("test-1");
-      await storage.getItem("test-2");
-      await storage.setItem("test-3", "value" as any);
-
-      // Should warn multiple times (once per getDatabase call)
-      expect(consoleWarnSpy.mock.calls.length).toBeGreaterThan(0);
-
-      globalThis.indexedDB = originalIndexedDB;
+      // Restore window
+      globalThis.window = originalWindow;
       consoleWarnSpy.mockRestore();
     });
   });
