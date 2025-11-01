@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {InvoiceCreatorProvider} from "../_context/InvoiceCreatorContext";
+import {withInvoiceCreatorContext} from "@/.storybook/decorators";
 import type {InvoiceScan} from "../_types/InvoiceScan";
 import TableDisplay from "./TableDisplay";
 
@@ -35,46 +35,13 @@ const mockScans: InvoiceScan[] = [
   createMockScan("5", "receipt-restaurant.jpg", "image", 2.1 * 1024 * 1024),
 ];
 
-// Mock context provider with scans
-const MockInvoiceCreatorProvider = ({
-  children,
-  scans = [],
-}: {
-  children: React.ReactNode;
-  scans?: InvoiceScan[];
-}) => {
-  // Create a minimal mock of the context
-  const mockContextValue = {
-    scans,
-    isUploading: false,
-    uploadProgress: 0,
-    isProcessingNext: false,
-    addFiles: () => {},
-    removeScan: (id: string) => console.log("Remove scan:", id),
-    clearAll: () => console.log("Clear all"),
-    rotateScan: async (id: string, degrees: number) => console.log("Rotate scan:", id, degrees),
-    renameScan: (id: string, newName: string) => console.log("Rename scan:", id, newName),
-    processNextStep: async () => console.log("Process next step"),
-  };
-
-  return <InvoiceCreatorProvider>{children}</InvoiceCreatorProvider>;
-};
-
 const meta: Meta<typeof TableDisplay> = {
   title: "Invoices/CreateInvoice/TableDisplay",
   component: TableDisplay,
   parameters: {
     layout: "padded",
   },
-  decorators: [
-    (Story, context) => (
-      <MockInvoiceCreatorProvider scans={context.args.scans || []}>
-        <div className="max-w-6xl mx-auto p-4">
-          <Story />
-        </div>
-      </MockInvoiceCreatorProvider>
-    ),
-  ],
+  decorators: [withInvoiceCreatorContext],
 };
 
 export default meta;

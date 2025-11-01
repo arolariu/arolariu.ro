@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {InvoiceCreatorProvider} from "../_context/InvoiceCreatorContext";
+import {withInvoiceCreatorContext} from "@/.storybook/decorators";
 import type {InvoiceScan} from "../_types/InvoiceScan";
 import CarouselDisplay from "./CarouselDisplay";
 
@@ -35,32 +35,13 @@ const mockScans: InvoiceScan[] = [
   createMockScan("5", "receipt-restaurant.jpg", "image", 2.1 * 1024 * 1024),
 ];
 
-// Mock context provider with scans
-const MockInvoiceCreatorProvider = ({
-  children,
-  scans = [],
-}: {
-  children: React.ReactNode;
-  scans?: InvoiceScan[];
-}) => {
-  return <InvoiceCreatorProvider>{children}</InvoiceCreatorProvider>;
-};
-
 const meta: Meta<typeof CarouselDisplay> = {
   title: "Invoices/CreateInvoice/CarouselDisplay",
   component: CarouselDisplay,
   parameters: {
     layout: "padded",
   },
-  decorators: [
-    (Story, context) => (
-      <MockInvoiceCreatorProvider scans={context.args.scans || []}>
-        <div className="max-w-5xl mx-auto p-4">
-          <Story />
-        </div>
-      </MockInvoiceCreatorProvider>
-    ),
-  ],
+  decorators: [withInvoiceCreatorContext],
 };
 
 export default meta;

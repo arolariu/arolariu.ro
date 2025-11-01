@@ -1,7 +1,7 @@
 "use client";
 
 import {generateGuid} from "@/lib/utils.generic";
-import {createInvoiceAction} from "@/lib/actions/invoices/createInvoice";
+import {bulkCreateInvoicesAction} from "@/lib/actions/invoices/bulkCreateInvoices";
 import {toast} from "@arolariu/components";
 import {createContext, use, useCallback, useMemo, useRef, useState} from "react";
 import type {InvoiceScan, InvoiceScanType} from "../_types/InvoiceScan";
@@ -186,6 +186,9 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
     isProcessingRef.current = true;
     setIsProcessingNext(true);
 
+    // Create toast IDs map for each scan to update toasts
+    const toastIds = new Map<string, string | number>();
+
     try {
       // Fetch user information
       const userResponse = await fetch("/api/user");
@@ -194,56 +197,87 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
       }
       const {userIdentifier, userJwt} = await userResponse.json();
 
-      if (!userIdentifier || !userJwt) {
-        throw new Error("User authentication is required");
-      }
+      // Mark all scans as processing and create loading toasts
+      setScans((prev) => prev.map((s) => {
+        const toastId = toast.loading(`Processing ${s.name}...`, {
+          description: "Uploading to server",
+        });
+        toastIds.set(s.id, toastId);
+        return {...s, isProcessing: true};
+      }));
 
+      // Prepare scans data for bulk action
+      const scansData = scans.map((scan) => ({
+        file: scan.file,
+        name: scan.name,
+        type: scan.type,
+        uploadedAt: scan.uploadedAt.toISOString(),
+      }));
 
+      // Submit all scans via bulk action (processes in batches of 10)
+      const result = await bulkCreateInvoicesAction({
+        scans: scansData,
+        userIdentifier,
+        userJwt,
+      });
 
-      // Process each scan
-      const copy = [...scans];
-      for (const scan of copy) {
-        setScans((prev) => prev.map((s) => (s.id === scan.id ? {...s, isProcessing: true} : s)));
+      // Process results and update toasts
+      result.results.forEach((scanResult) => {
+        const scan = scans.find((s) => s.name === scanResult.scanName);
+        if (!scan) {
+          return;
+        }
 
-        try {
-          // Create FormData with the scan file
-          const formData = new FormData();
-          formData.append("file", scan.file);
-          formData.append("userIdentifier", userIdentifier);
-          formData.append("metadata", JSON.stringify({
-            requiresAnalysis: "true",
-            fileName: scan.name,
-            fileType: scan.type,
-            uploadedAt: scan.uploadedAt.toISOString(),
-          }));
-
-          // Submit to backend API via server action
-          const result = await createInvoiceAction({formData, userIdentifier, userJwt});
-
-          if (!result.success) {
-            throw new Error(result.error || `Failed to upload ${scan.name}`);
-          }
-
-          toast.success(`Successfully processed ${scan.name}.`);
+        const toastId = toastIds.get(scan.id);
+        
+        if (scanResult.success) {
+          // Update toast to success
+          toast.success(`Successfully processed ${scanResult.scanName}`, {
+            id: toastId,
+            description: "Invoice created",
+          });
           
           // Remove successfully processed scan
           setScans((prev) => {
             const updated = prev.filter((s) => s.id !== scan.id);
-            URL.revokeObjectURL(scan.preview);
+            if (scan.preview) {
+              URL.revokeObjectURL(scan.preview);
+            }
             return updated;
           });
-        } catch (error) {
-          console.error(`Error processing ${scan.name}:`, error);
-          toast.error(`Failed to process ${scan.name}. Please try again.`);
+        } else {
+          // Update toast to error
+          toast.error(`Failed to process ${scanResult.scanName}`, {
+            id: toastId,
+            description: scanResult.error || "Unknown error",
+          });
+          
+          // Mark scan as not processing
           setScans((prev) => prev.map((s) => (s.id === scan.id ? {...s, isProcessing: false} : s)));
         }
-      }
+      });
 
-      if (scans.length > 0 && scans.every((s) => !s.isProcessing)) {
-        toast.info("All files have been processed (or skipped due to failure).");
+      // Show summary toast
+      if (result.totalProcessed > 0) {
+        toast.success(`Processed ${result.totalProcessed} of ${scans.length} file(s)`, {
+          description: result.totalFailed > 0 ? `${result.totalFailed} failed` : "All files processed successfully",
+        });
+      } else {
+        toast.error("Failed to process any files", {
+          description: "Please check your connection and try again",
+        });
       }
     } catch (error) {
       console.error("Error in processNextStep:", error);
+      
+      // Update all loading toasts to error
+      toastIds.forEach((toastId) => {
+        toast.error("Processing failed", {
+          id: toastId,
+          description: error instanceof Error ? error.message : "Unknown error",
+        });
+      });
+      
       toast.error(error instanceof Error ? error.message : "Failed to process files");
       // Reset all scans to not processing state
       setScans((prev) => prev.map((s) => ({...s, isProcessing: false})));

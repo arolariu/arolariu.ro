@@ -176,10 +176,17 @@ export default function TableDisplay(): React.JSX.Element | null {
           </TableHeader>
           <TableBody>
             {paginatedItems.map((scan, index) => (
-              <TableRow key={scan.id}>
+              <TableRow 
+                key={scan.id}
+                className={scan.isProcessing ? 'opacity-50 bg-purple-50/50 dark:bg-purple-950/20' : ''}>
                 <TableCell className='font-medium'>{(currentPage - 1) * pageSize + index + 1}</TableCell>
                 <TableCell className='max-w-xs truncate font-medium'>
-                  {scan.name}
+                  <div className='flex items-center gap-2'>
+                    {scan.isProcessing && (
+                      <div className='h-4 w-4 animate-spin rounded-full border-2 border-purple-600 border-t-transparent' />
+                    )}
+                    <span>{scan.name}</span>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${

@@ -1,5 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
-import {InvoiceCreatorProvider} from "../_context/InvoiceCreatorContext";
+import {withInvoiceCreatorContext} from "@/.storybook/decorators";
 import type {InvoiceScan} from "../_types/InvoiceScan";
 import GridDisplay from "./GridDisplay";
 
@@ -36,32 +36,13 @@ const mockScans: InvoiceScan[] = [
   createMockScan("6", "invoice-2024-03.jpg", "image", 2.8 * 1024 * 1024),
 ];
 
-// Mock context provider with scans
-const MockInvoiceCreatorProvider = ({
-  children,
-  scans = [],
-}: {
-  children: React.ReactNode;
-  scans?: InvoiceScan[];
-}) => {
-  return <InvoiceCreatorProvider>{children}</InvoiceCreatorProvider>;
-};
-
 const meta: Meta<typeof GridDisplay> = {
   title: "Invoices/CreateInvoice/GridDisplay",
   component: GridDisplay,
   parameters: {
     layout: "padded",
   },
-  decorators: [
-    (Story, context) => (
-      <MockInvoiceCreatorProvider scans={context.args.scans || []}>
-        <div className="max-w-7xl mx-auto p-4">
-          <Story />
-        </div>
-      </MockInvoiceCreatorProvider>
-    ),
-  ],
+  decorators: [withInvoiceCreatorContext],
 };
 
 export default meta;
