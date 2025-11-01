@@ -90,6 +90,7 @@ export type CreateInvoiceDtoPayload = {
   readonly userIdentifier: string;
 
   /** The metadata associated with the invoice. */
+  // eslint-disable-next-line sonarjs/no-useless-intersection -- we want to allow extensibility.
   readonly metadata: Record<SpecialMetadataKeys | (string & {}), string>;
 };
 

@@ -28,12 +28,8 @@ const websiteEslintConfig = defineConfig({
   name: "[@arolariu/website]",
   files: ["sites/arolariu.ro/**/*.{ts,tsx}"],
   ignores: [
-    "**/node_modules/**",
-    "**/.storybook/**",
-    "**/*.config.{js,ts}",
-    "**/*.{test,spec,stories}.{ts,tsx}",
-    "**/.next/**",
-    "**/out/**",
+    "**/{node_modules,.storybook,.next,out,bin,scripts}/**", // dirs
+    "**/*.{test,config,spec,setup,stories}.{js,jsx,ts,tsx}", // files
   ],
   languageOptions: {
     ecmaVersion: "latest",
@@ -191,6 +187,7 @@ const websiteEslintConfig = defineConfig({
 
     "functional/no-let": "off", // Sometimes we need mutable data.
     "functional/no-classes": "off", // We allow classes and OOP concepts.
+    "functional/readonly-type": "off", // We use readonly keyword to enforce when not using TS types.
     "functional/no-return-void": "off", // Some functions are pure.
     "functional/immutable-data": "off", // Sometimes we need mutable data.
     "functional/no-mixed-types": "off", // We allow mixed types in functions.
@@ -209,6 +206,7 @@ const websiteEslintConfig = defineConfig({
     "perfectionist/sort-enums": "off", // this rule is biased; we use Prettier for sorting.
     "perfectionist/sort-objects": "off", // this rule is biased; we use Prettier for sorting.
     "perfectionist/sort-modules": "off", // this rule is biased; we use Prettier for sorting.
+    "perfectionist/sort-classes": "off", // this rule is biased; we use Prettier for sorting.
     "perfectionist/sort-imports": "off", // this rule is biased; we use Prettier for sorting.
     "perfectionist/sort-exports": "off", // this rule is biased; we use Prettier for sorting.
     "perfectionist/sort-jsx-props": "off", // this rule is biased; we use Prettier for sorting.

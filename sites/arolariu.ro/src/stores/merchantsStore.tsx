@@ -22,32 +22,32 @@ interface MerchantsState {
 interface MerchantsActions {
   /**
    * Sets the complete list of merchants
-   * @param merchants - The new merchants array
+   * @param merchants The new merchants array
    */
   setMerchants: (merchants: Merchant[]) => void;
 
   /**
    * Adds a single merchant to the store
-   * @param merchant - The merchant to add
+   * @param merchant The merchant to add
    */
   addMerchant: (merchant: Merchant) => void;
 
   /**
    * Removes a merchant by ID
-   * @param merchantId - The ID of the merchant to remove
+   * @param merchantId The ID of the merchant to remove
    */
   removeMerchant: (merchantId: string) => void;
 
   /**
    * Updates an existing merchant
-   * @param merchantId - The ID of the merchant to update
-   * @param updates - Partial merchant data to update
+   * @param merchantId The ID of the merchant to update
+   * @param updates Partial merchant data to update
    */
   updateMerchant: (merchantId: string, updates: Partial<Merchant>) => void;
 
   /**
    * Finds a merchant by ID
-   * @param merchantId - The ID of the merchant to find
+   * @param merchantId The ID of the merchant to find
    * @returns The merchant if found, undefined otherwise
    */
   getMerchantById: (merchantId: string) => Merchant | undefined;
@@ -176,10 +176,9 @@ const prodStore = create<MerchantsStore>()(
 
 /**
  * Merchants store hook - automatically uses development or production version
- * based on NODE_ENV. Persists data in IndexedDB for offline support.
- *
- * @returns The merchants store with state and actions
- *
+ * based on NODE_ENV.
+ * @remarks Persists data in IndexedDB for offline support.
+ * @returns The merchants store with state and actions.
  * @example
  * ```tsx
  * function MerchantsList() {

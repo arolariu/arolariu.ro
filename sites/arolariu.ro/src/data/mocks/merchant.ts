@@ -8,7 +8,6 @@ import {faker} from "@faker-js/faker";
 
 /**
  * Builder class for creating mock Merchant objects with fluent API
- *
  * @example
  * ```typescript
  * const merchant = new MerchantBuilder()
@@ -42,6 +41,8 @@ export class MerchantBuilder {
 
   /**
    * Set the merchant ID
+   * @param id The merchant ID
+   * @returns The MerchantBuilder instance for chaining
    */
   withId(id: string): this {
     this.merchant.id = id;
@@ -50,6 +51,8 @@ export class MerchantBuilder {
 
   /**
    * Set the merchant name
+   * @param name The merchant name
+   * @returns The MerchantBuilder instance for chaining
    */
   withName(name: string): this {
     this.merchant.name = name;
@@ -58,6 +61,8 @@ export class MerchantBuilder {
 
   /**
    * Set the merchant description
+   * @param description The merchant description
+   * @returns The MerchantBuilder instance for chaining
    */
   withDescription(description: string): this {
     this.merchant.description = description;
@@ -66,6 +71,8 @@ export class MerchantBuilder {
 
   /**
    * Set the creation date
+   * @param date The creation date
+   * @returns The MerchantBuilder instance for chaining
    */
   withCreatedAt(date: Date): this {
     this.merchant.createdAt = date;
@@ -74,6 +81,8 @@ export class MerchantBuilder {
 
   /**
    * Set the creator ID
+   * @param userId The creator user ID
+   * @returns The MerchantBuilder instance for chaining
    */
   withCreatedBy(userId: string): this {
     this.merchant.createdBy = userId;
@@ -82,6 +91,8 @@ export class MerchantBuilder {
 
   /**
    * Set the last updated date
+   * @param date The last updated date
+   * @returns The MerchantBuilder instance for chaining
    */
   withLastUpdatedAt(date: Date): this {
     this.merchant.lastUpdatedAt = date;
@@ -90,6 +101,8 @@ export class MerchantBuilder {
 
   /**
    * Set the last updater ID
+   * @param userId The last updater user ID
+   * @returns The MerchantBuilder instance for chaining
    */
   withLastUpdatedBy(userId: string): this {
     this.merchant.lastUpdatedBy = userId;
@@ -98,6 +111,8 @@ export class MerchantBuilder {
 
   /**
    * Set the number of updates
+   * @param count The number of updates
+   * @returns The MerchantBuilder instance for chaining
    */
   withNumberOfUpdates(count: number): this {
     this.merchant.numberOfUpdates = count;
@@ -106,6 +121,8 @@ export class MerchantBuilder {
 
   /**
    * Set whether the merchant is important
+   * @param isImportant Whether the merchant is important
+   * @returns The MerchantBuilder instance for chaining
    */
   withIsImportant(isImportant: boolean): this {
     this.merchant.isImportant = isImportant;
@@ -114,6 +131,8 @@ export class MerchantBuilder {
 
   /**
    * Set whether the merchant is soft deleted
+   * @param isSoftDeleted Whether the merchant is soft deleted
+   * @returns The MerchantBuilder instance for chaining
    */
   withIsSoftDeleted(isSoftDeleted: boolean): this {
     this.merchant.isSoftDeleted = isSoftDeleted;
@@ -122,6 +141,8 @@ export class MerchantBuilder {
 
   /**
    * Set the merchant category
+   * @param category The merchant category
+   * @returns The MerchantBuilder instance for chaining
    */
   withCategory(category: MerchantCategory): this {
     this.merchant.category = category;
@@ -130,6 +151,8 @@ export class MerchantBuilder {
 
   /**
    * Set the merchant address
+   * @param address The merchant address
+   * @returns The MerchantBuilder instance for chaining
    */
   withAddress(address: string): this {
     this.merchant.address = address;
@@ -138,6 +161,8 @@ export class MerchantBuilder {
 
   /**
    * Set the merchant phone number
+   * @param phoneNumber The merchant phone number
+   * @returns The MerchantBuilder instance for chaining
    */
   withPhoneNumber(phoneNumber: string): this {
     this.merchant.phoneNumber = phoneNumber;
@@ -146,6 +171,8 @@ export class MerchantBuilder {
 
   /**
    * Set the parent company ID
+   * @param companyId The parent company ID
+   * @returns The MerchantBuilder instance for chaining
    */
   withParentCompanyId(companyId: string): this {
     this.merchant.parentCompanyId = companyId;
@@ -154,6 +181,7 @@ export class MerchantBuilder {
 
   /**
    * Build and return the merchant object
+   * @returns The constructed {@link Merchant} object
    */
   build(): Merchant {
     return {...this.merchant};
@@ -161,6 +189,8 @@ export class MerchantBuilder {
 
   /**
    * Create multiple merchants with the same configuration
+   * @param count The number of merchants to create
+   * @returns An array of constructed {@link Merchant} objects
    */
   buildMany(count: number): Merchant[] {
     return Array.from({length: count}, () => {
@@ -174,6 +204,7 @@ export class MerchantBuilder {
 
 /**
  * Factory function to create a new MerchantBuilder
+ * @returns A new instance of {@link MerchantBuilder}
  */
 export function createMerchantBuilder(): MerchantBuilder {
   return new MerchantBuilder();
@@ -181,6 +212,7 @@ export function createMerchantBuilder(): MerchantBuilder {
 
 /**
  * Generate a single random merchant
+ * @returns A randomly generated {@link Merchant} object
  */
 export function generateRandomMerchant(): Merchant {
   return new MerchantBuilder().build();
@@ -188,6 +220,8 @@ export function generateRandomMerchant(): Merchant {
 
 /**
  * Generate multiple random merchants
+ * @param count The number of merchants to generate
+ * @returns An array of randomly generated {@link Merchant} objects
  */
 export function generateRandomMerchants(count: number): Merchant[] {
   return Array.from({length: count}, generateRandomMerchant);

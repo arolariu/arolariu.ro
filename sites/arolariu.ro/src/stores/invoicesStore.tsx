@@ -24,38 +24,38 @@ interface InvoicesState {
 interface InvoicesActions {
   /**
    * Sets the complete list of invoices
-   * @param invoices - The new invoices array
+   * @param invoices The new invoices array
    */
   setInvoices: (invoices: Invoice[]) => void;
 
   /**
    * Sets the selected invoices
-   * @param selectedInvoices - The new selected invoices array
+   * @param selectedInvoices The new selected invoices array
    */
   setSelectedInvoices: (selectedInvoices: Invoice[]) => void;
 
   /**
    * Adds a single invoice to the store
-   * @param invoice - The invoice to add
+   * @param invoice The invoice to add
    */
   addInvoice: (invoice: Invoice) => void;
 
   /**
    * Removes an invoice by ID
-   * @param invoiceId - The ID of the invoice to remove
+   * @param invoiceId The ID of the invoice to remove
    */
   removeInvoice: (invoiceId: string) => void;
 
   /**
    * Updates an existing invoice
-   * @param invoiceId - The ID of the invoice to update
-   * @param updates - Partial invoice data to update
+   * @param invoiceId The ID of the invoice to update
+   * @param updates Partial invoice data to update
    */
   updateInvoice: (invoiceId: string, updates: Partial<Invoice>) => void;
 
   /**
    * Toggles an invoice's selection status
-   * @param invoice - The invoice to toggle
+   * @param invoice The invoice to toggle
    */
   toggleInvoiceSelection: (invoice: Invoice) => void;
 
@@ -218,10 +218,9 @@ const prodStore = create<InvoicesStore>()(
 
 /**
  * Invoices store hook - automatically uses development or production version
- * based on NODE_ENV. Persists data in IndexedDB for offline support.
- *
- * @returns The invoices store with state and actions
- *
+ * based on NODE_ENV.
+ * @remarks Persists data in IndexedDB for offline support.
+ * @returns The invoices store with state and actions.
  * @example
  * ```tsx
  * function InvoicesList() {

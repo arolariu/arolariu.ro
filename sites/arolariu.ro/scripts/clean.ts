@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 import {execSync} from "child_process";
 import fs from "node:fs";
 import os from "node:os";

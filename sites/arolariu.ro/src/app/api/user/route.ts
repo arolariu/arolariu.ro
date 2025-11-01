@@ -33,7 +33,6 @@ const requestDurationHistogram = createHistogram("api.user.duration", "Request d
  * For guest users:
  * - Returns null user with guest JWT token
  * - JWT contains guest identifier and limited permissions
- *
  * @returns The user information including user object, identifier, and JWT token
  */
 export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
@@ -84,7 +83,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             addSpanEvent("token.generate.complete");
 
             const userInformation: UserInformation = {
-              user: user,
+              user,
               userIdentifier: userId,
               userJwt: token ?? "",
             };

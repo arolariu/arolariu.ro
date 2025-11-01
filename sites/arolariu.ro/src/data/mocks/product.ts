@@ -8,7 +8,6 @@ import {faker} from "@faker-js/faker";
 
 /**
  * Builder class for creating mock Product objects with fluent API
- *
  * @example
  * ```typescript
  * const product = new ProductBuilder()
@@ -45,6 +44,8 @@ export class ProductBuilder {
 
   /**
    * Set the raw name (as it appears on the receipt)
+   * @param rawName The raw product name
+   * @returns The ProductBuilder instance for chaining
    */
   withRawName(rawName: string): this {
     this.product.rawName = rawName;
@@ -53,6 +54,8 @@ export class ProductBuilder {
 
   /**
    * Set the generic name (normalized/cleaned name)
+   * @param genericName The generic product name
+   * @returns The ProductBuilder instance for chaining
    */
   withGenericName(genericName: string): this {
     this.product.genericName = genericName;
@@ -61,6 +64,8 @@ export class ProductBuilder {
 
   /**
    * Set the product code/barcode
+   * @param code The product code
+   * @returns The ProductBuilder instance for chaining
    */
   withProductCode(code: string): this {
     this.product.productCode = code;
@@ -69,6 +74,8 @@ export class ProductBuilder {
 
   /**
    * Set the product category
+   * @param category The product category
+   * @returns The ProductBuilder instance for chaining
    */
   withCategory(category: ProductCategory): this {
     this.product.category = category;
@@ -77,6 +84,8 @@ export class ProductBuilder {
 
   /**
    * Set the unit price
+   * @param price The unit price
+   * @returns The ProductBuilder instance for chaining
    */
   withPrice(price: number): this {
     this.product.price = price;
@@ -86,6 +95,8 @@ export class ProductBuilder {
 
   /**
    * Set the quantity
+   * @param quantity The product quantity
+   * @returns The ProductBuilder instance for chaining
    */
   withQuantity(quantity: number): this {
     this.product.quantity = quantity;
@@ -95,6 +106,8 @@ export class ProductBuilder {
 
   /**
    * Set the quantity unit
+   * @param unit The quantity unit
+   * @returns The ProductBuilder instance for chaining
    */
   withQuantityUnit(unit: string): this {
     this.product.quantityUnit = unit;
@@ -103,6 +116,8 @@ export class ProductBuilder {
 
   /**
    * Set the total price directly (overrides calculated value)
+   * @param totalPrice The total price
+   * @returns The ProductBuilder instance for chaining
    */
   withTotalPrice(totalPrice: number): this {
     this.product.totalPrice = totalPrice;
@@ -111,6 +126,8 @@ export class ProductBuilder {
 
   /**
    * Set detected allergens
+   * @param allergens The detected allergens
+   * @returns The ProductBuilder instance for chaining
    */
   withDetectedAllergens(allergens: Allergen[]): this {
     this.product.detectedAllergens = allergens;
@@ -119,6 +136,8 @@ export class ProductBuilder {
 
   /**
    * Add random allergens to the product
+   * @param count Optional number of allergens to add
+   * @returns The ProductBuilder instance for chaining
    */
   withRandomAllergens(count?: number): this {
     const allergenNames = [
@@ -152,6 +171,8 @@ export class ProductBuilder {
 
   /**
    * Set product metadata
+   * @param metadata The product metadata
+   * @returns The ProductBuilder instance for chaining
    */
   withMetadata(metadata: {isComplete?: boolean; isEdited?: boolean; isSoftDeleted?: boolean}): this {
     this.product.metadata = {
@@ -163,6 +184,7 @@ export class ProductBuilder {
 
   /**
    * Build and return the product object
+   * @returns The constructed {@link Product} object
    */
   build(): Product {
     return {...this.product};
@@ -170,6 +192,8 @@ export class ProductBuilder {
 
   /**
    * Create multiple products with the same configuration
+   * @param count The number of products to create
+   * @returns An array of constructed {@link Product} objects
    */
   buildMany(count: number): Product[] {
     return Array.from({length: count}, () => {
@@ -184,6 +208,7 @@ export class ProductBuilder {
 
 /**
  * Factory function to create a new ProductBuilder
+ * @returns A new instance of {@link ProductBuilder}
  */
 export function createProductBuilder(): ProductBuilder {
   return new ProductBuilder();
@@ -191,6 +216,7 @@ export function createProductBuilder(): ProductBuilder {
 
 /**
  * Generate a single random product
+ * @returns A randomly generated {@link Product} object
  */
 export function generateRandomProduct(): Product {
   return new ProductBuilder().withRandomAllergens().build();
@@ -198,6 +224,8 @@ export function generateRandomProduct(): Product {
 
 /**
  * Generate multiple random products
+ * @param count The number of products to generate
+ * @returns An array of randomly generated {@link Product} objects
  */
 export function generateRandomProducts(count: number): Product[] {
   return Array.from({length: count}, generateRandomProduct);
