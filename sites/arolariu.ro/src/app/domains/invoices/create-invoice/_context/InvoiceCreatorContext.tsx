@@ -197,11 +197,8 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
         throw new Error("User authentication is required");
       }
 
-      // Get API URL from environment
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      if (!apiUrl) {
-        throw new Error("API URL is not configured");
-      }
+      // Dynamically import the server action
+      const {createInvoiceAction} = await import("@/lib/actions/invoices/createInvoice");
 
       // Process each scan
       const copy = [...scans];
@@ -220,17 +217,11 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
             uploadedAt: scan.uploadedAt.toISOString(),
           }));
 
-          // Submit to backend API
-          const response = await fetch(`${apiUrl}/rest/v1/invoices`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${userJwt}`,
-            },
-            body: formData,
-          });
+          // Submit to backend API via server action
+          const result = await createInvoiceAction(formData, userIdentifier, userJwt);
 
-          if (!response.ok) {
-            throw new Error(`Failed to upload ${scan.name}: ${response.statusText}`);
+          if (!result.success) {
+            throw new Error(result.error || `Failed to upload ${scan.name}`);
           }
 
           toast.success(`Successfully processed ${scan.name}.`);
