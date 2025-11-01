@@ -1,10 +1,10 @@
 "use client";
 
 import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
+import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useUserInformation} from "./index";
-import {useZustandStore} from "./stateStore";
 
 type HookOutputType = Readonly<{
   invoices: Invoice[];
@@ -20,8 +20,8 @@ export function useInvoices(): HookOutputType {
   const {userInformation} = useUserInformation();
   const [isError, setIsError] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const possiblyStaleInvoices = useZustandStore((state) => state.invoices);
-  const setPossiblyStaleInvoices = useZustandStore((state) => state.setInvoices);
+  const possiblyStaleInvoices = useInvoicesStore((state) => state.invoices);
+  const setPossiblyStaleInvoices = useInvoicesStore((state) => state.setInvoices);
 
   useEffect(() => {
     const fetchInvoicesForUser = async () => {

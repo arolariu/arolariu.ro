@@ -1,4 +1,4 @@
-import {useZustandStore} from "@/hooks/stateStore";
+import {useInvoicesStore} from "@/stores";
 import {type Invoice} from "@/types/invoices";
 import {useCallback, useEffect} from "react";
 import {GridView} from "./GridView";
@@ -22,7 +22,7 @@ type Props = {
  */
 export default function InvoicesTable(props: Readonly<Props>): React.JSX.Element {
   const {mode, currentPage, pageSize, setCurrentPage, setPageSize, totalPages, paginatedInvoices: invoices} = props;
-  const setSelectedInvoices = useZustandStore((state) => state.setSelectedInvoices);
+  const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
 
   const handleNextPage = useCallback(
     () => {

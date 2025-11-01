@@ -1,4 +1,4 @@
-import {useZustandStore} from "@/hooks/stateStore";
+import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory, type Invoice} from "@/types/invoices";
 import {
   Badge,
@@ -33,8 +33,8 @@ type TableViewProps = {
 
 export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element => {
   const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
-  const selectedInvoices = useZustandStore((state) => state.selectedInvoices);
-  const setSelectedInvoices = useZustandStore((state) => state.setSelectedInvoices);
+  const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
+  const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
 
   const handleSelectInvoice = useCallback(
     (invoiceId: string) => {
