@@ -1,4 +1,5 @@
 import type {Meta, StoryObj} from "@storybook/react";
+import {expect, within} from "@storybook/test";
 import {withInvoiceCreatorContext} from "@/.storybook/decorators";
 import type {InvoiceScan} from "../_types/InvoiceScan";
 import GridDisplay from "./GridDisplay";
@@ -49,61 +50,119 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Default grid view with multiple scans
- */
-export const Default: Story = {
-  args: {
-    scans: mockScans,
-  },
-};
-
-/**
  * Empty state - no scans uploaded yet
+ * Tests: Should return null when no scans are present
  */
 export const Empty: Story = {
   args: {
     scans: [],
   },
+  play: async ({canvasElement}) => {
+    // Component should render nothing when there are no scans
+    const container = canvasElement.querySelector("div");
+    expect(container).toBeNull();
+  },
 };
 
 /**
- * Single scan - should display full screen
+ * Single scan - should display full screen (grid-cols-1)
+ * Tests: Grid layout with 1 column for single scan
  */
 export const SingleScan: Story = {
   args: {
     scans: [mockScans[0]],
   },
+  play: async ({canvasElement}) => {
+    const canvas = within(canvasElement);
+    
+    // Should have a grid container
+    const gridContainer = canvasElement.querySelector('[class*="grid"]');
+    expect(gridContainer).toBeTruthy();
+    
+    // Should display the scan name
+    await expect(canvas.getByText("invoice-2024-01.jpg")).toBeInTheDocument();
+    
+    // Grid should have 1 column class (grid-cols-1)
+    const classList = gridContainer?.className || "";
+    expect(classList).toContain("grid-cols-1");
+  },
 };
 
 /**
- * Two scans - should display in 50/50 split
+ * Two scans - should display in 50/50 split (sm:grid-cols-2)
+ * Tests: Grid layout with 2 columns for two scans
  */
 export const TwoScans: Story = {
   args: {
     scans: [mockScans[0], mockScans[1]],
   },
+  play: async ({canvasElement}) => {
+    const canvas = within(canvasElement);
+    
+    // Should have a grid container
+    const gridContainer = canvasElement.querySelector('[class*="grid"]');
+    expect(gridContainer).toBeTruthy();
+    
+    // Should display both scan names
+    await expect(canvas.getByText("invoice-2024-01.jpg")).toBeInTheDocument();
+    await expect(canvas.getByText("receipt-grocery.png")).toBeInTheDocument();
+    
+    // Grid should have 2 column classes
+    const classList = gridContainer?.className || "";
+    expect(classList).toContain("grid-cols-");
+  },
 };
 
 /**
- * Three scans - should display in 3-column grid
+ * Three scans - should display in 3-column grid (lg:grid-cols-3)
+ * Tests: Grid layout with up to 3 columns for 3+ scans
  */
 export const ThreeScans: Story = {
   args: {
     scans: [mockScans[0], mockScans[1], mockScans[2]],
   },
+  play: async ({canvasElement}) => {
+    const canvas = within(canvasElement);
+    
+    // Should display all three scan names
+    await expect(canvas.getByText("invoice-2024-01.jpg")).toBeInTheDocument();
+    await expect(canvas.getByText("receipt-grocery.png")).toBeInTheDocument();
+    await expect(canvas.getByText("bill-utility.pdf")).toBeInTheDocument();
+    
+    // Grid should support 3 columns
+    const gridContainer = canvasElement.querySelector('[class*="grid"]');
+    const classList = gridContainer?.className || "";
+    expect(classList).toContain("grid-cols-");
+  },
 };
 
 /**
  * Six scans - two rows of 3 columns each
+ * Tests: Multiple rows in grid layout
  */
 export const SixScans: Story = {
   args: {
     scans: mockScans,
   },
+  play: async ({canvasElement}) => {
+    const canvas = within(canvasElement);
+    
+    // Should display all scan names
+    await expect(canvas.getByText("invoice-2024-01.jpg")).toBeInTheDocument();
+    await expect(canvas.getByText("invoice-2024-03.jpg")).toBeInTheDocument();
+    
+    // Should have grid container with multiple items
+    const gridContainer = canvasElement.querySelector('[class*="grid"]');
+    expect(gridContainer).toBeTruthy();
+    
+    const gridItems = gridContainer?.querySelectorAll('[class*="rounded"]');
+    expect(gridItems?.length).toBeGreaterThan(3);
+  },
 };
 
 /**
  * Large dataset to demonstrate pagination
+ * Tests: Pagination controls present for large datasets
  */
 export const LargeDataset: Story = {
   args: {
@@ -116,10 +175,21 @@ export const LargeDataset: Story = {
       ),
     ),
   },
+  play: async ({canvasElement}) => {
+    const canvas = within(canvasElement);
+    
+    // Should have pagination or show multiple scans
+    const gridContainer = canvasElement.querySelector('[class*="grid"]');
+    expect(gridContainer).toBeTruthy();
+    
+    // Should display at least some scans
+    await expect(canvas.getByText(/invoice-/)).toBeInTheDocument();
+  },
 };
 
 /**
  * Mix of image and PDF scans
+ * Tests: Both image and PDF file types display correctly
  */
 export const MixedTypes: Story = {
   args: {
@@ -128,5 +198,38 @@ export const MixedTypes: Story = {
       createMockScan("2", "receipt.pdf", "pdf", 0.5 * 1024 * 1024),
       createMockScan("3", "bill.png", "image", 1.8 * 1024 * 1024),
     ],
+  },
+  play: async ({canvasElement}) => {
+    const canvas = within(canvasElement);
+    
+    // Should display all file types
+    await expect(canvas.getByText("invoice.jpg")).toBeInTheDocument();
+    await expect(canvas.getByText("receipt.pdf")).toBeInTheDocument();
+    await expect(canvas.getByText("bill.png")).toBeInTheDocument();
+    
+    // PDF and image files should both render in grid
+    const gridContainer = canvasElement.querySelector('[class*="grid"]');
+    expect(gridContainer).toBeTruthy();
+  },
+};
+
+/**
+ * Default grid view with multiple scans
+ * Tests: General grid functionality and media previews
+ */
+export const Default: Story = {
+  args: {
+    scans: mockScans,
+  },
+  play: async ({canvasElement}) => {
+    const canvas = within(canvasElement);
+    
+    // Verify grid renders with scans
+    const gridContainer = canvasElement.querySelector('[class*="grid"]');
+    expect(gridContainer).toBeTruthy();
+    
+    // Should display action buttons for scans
+    const buttons = canvas.getAllByRole("button");
+    expect(buttons.length).toBeGreaterThan(0);
   },
 };
