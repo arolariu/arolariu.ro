@@ -72,7 +72,7 @@ export class InvoiceBuilder {
   /**
    * Set the invoice ID
    * @param id The invoice ID
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withId(id: string): this {
     this.invoice.id = id;
@@ -82,7 +82,7 @@ export class InvoiceBuilder {
   /**
    * Set the invoice name
    * @param name The invoice name
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withName(name: string): this {
     this.invoice.name = name;
@@ -92,7 +92,7 @@ export class InvoiceBuilder {
   /**
    * Set the invoice description
    * @param description The invoice description
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withDescription(description: string): this {
     this.invoice.description = description;
@@ -102,7 +102,7 @@ export class InvoiceBuilder {
   /**
    * Set the creation date
    * @param date The creation date
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withCreatedAt(date: Date): this {
     this.invoice.createdAt = date;
@@ -112,7 +112,7 @@ export class InvoiceBuilder {
   /**
    * Set the last updated date
    * @param date The last updated date
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withLastUpdatedAt(date: Date): this {
     this.invoice.lastUpdatedAt = date;
@@ -122,7 +122,7 @@ export class InvoiceBuilder {
   /**
    * Set the user identifier
    * @param userId The user identifier
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withUserIdentifier(userId: string): this {
     this.invoice.userIdentifier = userId;
@@ -132,7 +132,7 @@ export class InvoiceBuilder {
   /**
    * Set the shared with list
    * @param userIds The user IDs to share the invoice with
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withSharedWith(userIds: string[]): this {
     this.invoice.sharedWith = userIds;
@@ -142,7 +142,7 @@ export class InvoiceBuilder {
   /**
    * Set the invoice category
    * @param category The invoice category
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withCategory(category: InvoiceCategory): this {
     this.invoice.category = category;
@@ -152,7 +152,7 @@ export class InvoiceBuilder {
   /**
    * Set the photo location
    * @param url The photo location URL
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withPhotoLocation(url: string): this {
     this.invoice.photoLocation = url;
@@ -162,7 +162,7 @@ export class InvoiceBuilder {
   /**
    * Set the merchant reference
    * @param merchantId The merchant ID
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withMerchantReference(merchantId: string): this {
     this.invoice.merchantReference = merchantId;
@@ -172,7 +172,7 @@ export class InvoiceBuilder {
   /**
    * Set the items list
    * @param items The invoice items
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withItems(items: Product[]): this {
     this.invoice.items = items;
@@ -182,7 +182,7 @@ export class InvoiceBuilder {
   /**
    * Set payment information
    * @param paymentInfo The payment information
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withPaymentInformation(paymentInfo: PaymentInformation | null): this {
     this.invoice.paymentInformation = paymentInfo;
@@ -192,7 +192,7 @@ export class InvoiceBuilder {
   /**
    * Set possible recipes
    * @param recipes The possible recipes
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withPossibleRecipes(recipes: Recipe[]): this {
     this.invoice.possibleRecipes = recipes;
@@ -202,7 +202,7 @@ export class InvoiceBuilder {
   /**
    * Set additional metadata
    * @param metadata The additional metadata
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withAdditionalMetadata(metadata: Record<string, string>): this {
     this.invoice.additionalMetadata = metadata;
@@ -212,7 +212,7 @@ export class InvoiceBuilder {
   /**
    * Generate a random number of items for the invoice
    * @param count Optional number of items to generate
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withRandomItems(count?: number): this {
     const itemCount = count ?? faker.number.int({min: 3, max: 10});
@@ -223,7 +223,7 @@ export class InvoiceBuilder {
   /**
    * Generate random recipes
    * @param count Optional number of recipes to generate
-   * @return The InvoiceBuilder instance for chaining
+   * @returns The InvoiceBuilder instance for chaining
    */
   withRandomRecipes(count?: number): this {
     const recipeCount = count ?? faker.number.int({min: 0, max: 3});
@@ -243,7 +243,7 @@ export class InvoiceBuilder {
 
   /**
    * Build and return the invoice object
-   * @return The constructed {@link Invoice} object
+   * @returns The constructed {@link Invoice} object
    */
   build(): Invoice {
     return {...this.invoice};
@@ -252,7 +252,7 @@ export class InvoiceBuilder {
   /**
    * Create multiple invoices with the same configuration
    * @param count The number of invoices to create
-   * @return An array of constructed {@link Invoice} objects
+   * @returns An array of constructed {@link Invoice} objects
    */
   buildMany(count: number): Invoice[] {
     return Array.from({length: count}, () => this.build());
@@ -261,7 +261,7 @@ export class InvoiceBuilder {
 
 /**
  * Factory function to create a new InvoiceBuilder
- * @return A new instance of {@link InvoiceBuilder}
+ * @returns A new instance of {@link InvoiceBuilder}
  */
 export function createInvoiceBuilder(): InvoiceBuilder {
   return new InvoiceBuilder();
@@ -269,7 +269,7 @@ export function createInvoiceBuilder(): InvoiceBuilder {
 
 /**
  * Generate a single random invoice
- * @return A randomly generated {@link Invoice} object
+ * @returns A randomly generated {@link Invoice} object
  */
 export function generateRandomInvoice(): Invoice {
   return new InvoiceBuilder().withRandomItems().withRandomRecipes().build();
@@ -278,7 +278,7 @@ export function generateRandomInvoice(): Invoice {
 /**
  * Generate multiple random invoices
  * @param count The number of invoices to generate
- * @return An array of randomly generated {@link Invoice} objects
+ * @returns An array of randomly generated {@link Invoice} objects
  */
 export function generateRandomInvoices(count: number): Invoice[] {
   return Array.from({length: count}, generateRandomInvoice);

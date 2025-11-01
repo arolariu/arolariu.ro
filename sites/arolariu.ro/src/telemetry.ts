@@ -46,7 +46,6 @@ import {BatchSpanProcessor} from "@opentelemetry/sdk-trace-node";
 
 /**
  * Log levels for structured logging.
- *
  * @remarks
  * - `info`: Informational messages about normal application operation
  * - `warn`: Warning messages for potentially harmful situations
@@ -57,7 +56,6 @@ export type LogLevel = "debug" | "info" | "warn" | "error";
 
 /**
  * Rendering context for Next.js operations.
- *
  * @remarks
  * - `server`: Server-side rendering (SSR) or server components
  * - `client`: Client-side rendering (CSR) after hydration
@@ -78,7 +76,6 @@ export type HttpStatusCategory = "success" | "redirect" | "client_error" | "serv
 
 /**
  * Operation types for span naming.
- *
  * @remarks
  * Use these prefixes for consistent span naming:
  * - `http.server.*`: Incoming HTTP requests
@@ -106,7 +103,6 @@ export type SpanOperationType =
 
 /**
  * Metric name types for type-safe metric creation.
- *
  * @remarks
  * Follow OpenTelemetry semantic conventions:
  * - Use dots for namespacing (e.g., `http.server.requests`)
@@ -126,7 +122,6 @@ export type MetricName =
 
 /**
  * Standard semantic attribute keys for HTTP operations.
- *
  * @see {@link https://opentelemetry.io/docs/specs/semconv/http/}
  */
 export interface HttpAttributes {
@@ -208,7 +203,6 @@ export interface NextJsAttributes {
 
 /**
  * Standard semantic attribute keys for database operations.
- *
  * @see {@link https://opentelemetry.io/docs/specs/semconv/database/}
  */
 export interface DatabaseAttributes {
@@ -315,7 +309,6 @@ export interface ErrorAttributes {
 
 /**
  * Union type of all standard attribute interfaces for type-safe attribute setting.
- *
  * @remarks
  * Use this for operations that require semantic attributes.
  * For custom attributes, use `Record<string, string | number | boolean>`.
@@ -326,7 +319,6 @@ export type SemanticAttributes = Partial<
 
 /**
  * General attributes that can be attached to spans, events, and metrics.
- *
  * @remarks
  * - Use `SemanticAttributes` for standard OpenTelemetry semantic conventions
  * - Use this type for custom attributes specific to your application
@@ -427,7 +419,6 @@ export interface LogEntry {
  * - Azure Monitor: https://dc.services.visualstudio.com
  * - Jaeger: http://jaeger-collector:4318
  * - Custom OTLP receivers
- *
  * @remarks
  * Set via `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable.
  * Falls back to localhost for local development.
@@ -441,7 +432,6 @@ const otlpEndpoint = process.env["OTEL_EXPORTER_OTLP_ENDPOINT"] ?? "http://local
  *
  * Exports trace spans to the configured OTLP endpoint using HTTP protocol.
  * Traces provide distributed request flow visibility across services.
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/trace/}
  */
 const traceExporter = new OTLPTraceExporter({
@@ -454,7 +444,6 @@ const traceExporter = new OTLPTraceExporter({
  *
  * Exports metrics to the configured OTLP endpoint using HTTP protocol.
  * Metrics provide quantitative measurements of application behavior.
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/metrics/}
  */
 const metricExporter = new OTLPMetricExporter({
@@ -470,13 +459,11 @@ const metricExporter = new OTLPMetricExporter({
  * - Trace and metric exporters
  * - Automatic instrumentation for common libraries
  * - Span and metric processors
- *
  * @remarks
  * - Metrics are exported every 60 seconds via periodic reader
  * - Traces are batched before export for efficiency
  * - File system instrumentation is disabled to reduce noise
  * - Auto-instrumentation covers HTTP, fetch, DNS, and other Node.js APIs
- *
  * @see {@link https://opentelemetry.io/docs/languages/js/getting-started/nodejs/}
  */
 const sdk = new NodeSDK({
@@ -506,15 +493,12 @@ const sdk = new NodeSDK({
  *
  * This should be called early in the application lifecycle, typically in the
  * Next.js instrumentation hook (`instrumentation.ts`) before any other code runs.
- *
  * @remarks
  * - Starts automatic instrumentation for HTTP, fetch, and other Node.js APIs
  * - Initializes trace and metric exporters
  * - Sets up periodic metric export (every 60 seconds)
  * - Configures batch span processing for efficiency
- *
  * @throws Will log error to console but not throw if initialization fails
- *
  * @example
  * // In instrumentation.ts
  * import { startTelemetry } from '@/lib/telemetry';
@@ -541,17 +525,13 @@ export function startTelemetry(): void {
  *
  * Flushes any pending telemetry data and cleanly terminates exporters.
  * This ensures no data loss when the application terminates.
- *
  * @remarks
  * - Flushes all pending spans and metrics
  * - Closes connections to OTLP endpoints
  * - Stops all instrumentation
  * - Should be called before process exit
- *
  * @returns Promise that resolves when shutdown is complete
- *
  * @throws Will log error to console but not throw if shutdown fails
- *
  * @example
  * // Manual shutdown
  * import { stopTelemetry } from '@/lib/telemetry';
@@ -560,7 +540,6 @@ export function startTelemetry(): void {
  *   await stopTelemetry();
  *   process.exit(0);
  * });
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/trace/sdk/#shutdown}
  */
 export async function stopTelemetry(): Promise<void> {
@@ -577,7 +556,6 @@ export async function stopTelemetry(): Promise<void> {
  *
  * Automatically registered when this module is imported.
  * Ensures telemetry data is flushed before process termination.
- *
  * @remarks
  * Handles:
  * - SIGTERM: Graceful termination signal (e.g., from Docker, Kubernetes)
@@ -599,12 +577,10 @@ process.on("SIGINT", async () => {
 
 /**
  * Create HTTP semantic attributes for server operations.
- *
  * @param method - HTTP method
  * @param statusCode - HTTP status code
  * @param options - Additional HTTP attributes
  * @returns Type-safe HTTP attributes
- *
  * @example
  * const attrs = createHttpServerAttributes('GET', 200, {
  *   route: '/api/users/:id',
@@ -628,12 +604,10 @@ export function createHttpServerAttributes(
 
 /**
  * Create HTTP semantic attributes for client operations.
- *
  * @param method - HTTP method
  * @param url - Full URL or target
  * @param statusCode - Optional HTTP status code
  * @returns Type-safe HTTP attributes
- *
  * @example
  * const attrs = createHttpClientAttributes('POST', 'https://api.example.com/users', 201);
  */
@@ -652,11 +626,9 @@ export function createHttpClientAttributes(method: HttpMethod, url: string, stat
 
 /**
  * Create Next.js rendering semantic attributes.
- *
  * @param renderContext - Rendering context (server, client, edge, api)
  * @param options - Additional Next.js attributes
  * @returns Type-safe Next.js attributes
- *
  * @example
  * const attrs = createNextJsAttributes('server', {
  *   route: '/dashboard/[id]',
@@ -686,12 +658,10 @@ export function createNextJsAttributes(
 
 /**
  * Create database operation semantic attributes.
- *
  * @param system - Database system (postgresql, mongodb, redis, etc.)
  * @param operation - Database operation (SELECT, INSERT, UPDATE, etc.)
  * @param options - Additional database attributes
  * @returns Type-safe database attributes
- *
  * @example
  * const attrs = createDatabaseAttributes('postgresql', 'SELECT', {
  *   name: 'production',
@@ -714,13 +684,11 @@ export function createDatabaseAttributes(
 
 /**
  * Create cache operation semantic attributes.
- *
  * @param system - Cache system (redis, memory, nextjs, etc.)
  * @param operation - Cache operation (get, set, delete, clear)
  * @param hit - Whether the operation was a cache hit
  * @param key - Optional cache key (sanitized)
  * @returns Type-safe cache attributes
- *
  * @example
  * const attrs = createCacheAttributes('redis', 'get', true, 'user:profile');
  */
@@ -740,11 +708,9 @@ export function createCacheAttributes(
 
 /**
  * Create authentication semantic attributes.
- *
  * @param authenticated - Whether the user is authenticated
  * @param options - Additional auth attributes
  * @returns Type-safe authentication attributes
- *
  * @example
  * const attrs = createAuthAttributes(true, {
  *   role: 'admin',
@@ -766,11 +732,9 @@ export function createAuthAttributes(
 
 /**
  * Create error semantic attributes from an error object.
- *
  * @param error - Error object or unknown value
  * @param handled - Whether the error was handled
  * @returns Type-safe error attributes
- *
  * @example
  * try {
  *   await riskyOperation();
@@ -954,7 +918,6 @@ export async function withSpan<T>(
  * addSpanEvent('cache.hit', { cache_key: 'user:123' });
  * addSpanEvent('validation.start');
  * addSpanEvent('retry.attempt', { attempt: 2, delay_ms: 1000 });
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/trace/api/#add-events}
  */
 export function addSpanEvent(name: string, attributes?: TelemetryAttributes): void {
@@ -984,7 +947,6 @@ export function addSpanEvent(name: string, attributes?: TelemetryAttributes): vo
  *   'http.status_code': 201,
  *   'user.authenticated': true,
  * });
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/trace/api/#set-attributes}
  * @see {@link https://opentelemetry.io/docs/specs/semconv/http/}
  */
@@ -1159,14 +1121,12 @@ export function createHistogram(name: MetricName, description?: string, unit?: s
  * @param description - Human-readable description of what the metric measures
  * @param unit - Optional unit of measurement (e.g., "1", "connections", "bytes")
  * @returns UpDownCounter instrument for recording values with type-safe attributes
- *
  * @remarks
  * - Values can increase or decrease (unlike regular counters)
  * - Use add() with positive or negative values
  * - Ideal for tracking current state or active resources
  * - Backends typically report the current sum
  * - Not suitable for rates or totals (use counter instead)
- *
  * @example
  * const activeConnections = createUpDownCounter(
  *   'http.server.active_requests',
@@ -1187,13 +1147,11 @@ export function createHistogram(name: MetricName, description?: string, unit?: s
  *   'http.method': 'GET',
  *   'next.render_context': 'api',
  * });
- *
  * @example
  * // Cache size tracking
  * const cacheSize = createUpDownCounter('cache.size.bytes', 'Current cache size in bytes', 'bytes');
  * cacheSize.add(1024, { 'cache.system': 'redis' }); // Item cached
  * cacheSize.add(-1024, { 'cache.system': 'redis' }); // Item evicted
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/metrics/api/#updowncounter}
  */
 export function createUpDownCounter(name: MetricName, description?: string, unit?: string) {
