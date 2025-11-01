@@ -41,10 +41,11 @@ let dbInstance: ZustandDB | null = null;
 /**
  * Gets or creates the database instance
  *
- * @returns The database instance or null if IndexedDB is not available
+ * @returns The database instance or null if not in browser environment
  */
 function getDatabase(): ZustandDB | null {
   if (typeof indexedDB === "undefined") {
+    console.warn("IndexedDB is not available in this environment!");
     return null;
   }
 
@@ -56,7 +57,7 @@ function getDatabase(): ZustandDB | null {
  * Creates a Dexie-based IndexedDB storage adapter for Zustand persist middleware.
  * Uses Dexie for robust, type-safe IndexedDB operations with automatic error handling.
  *
- * @returns PersistStorage interface implementation for IndexedDB using Dexie, or undefined in SSR contexts
+ * @returns PersistStorage interface implementation for IndexedDB using Dexie
  *
  * @example
  * ```typescript
@@ -69,12 +70,7 @@ function getDatabase(): ZustandDB | null {
  * );
  * ```
  */
-export function createIndexedDBStorage<S>(): PersistStorage<S> | undefined {
-  // Early return for SSR contexts - prevent any IndexedDB code from running
-  if (typeof window === "undefined") {
-    return undefined;
-  }
-
+export function createIndexedDBStorage<S>(): PersistStorage<S> {
   return {
     /**
      * Retrieves an item from IndexedDB using Dexie.
