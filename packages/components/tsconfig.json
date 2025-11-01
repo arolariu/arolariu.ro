@@ -12,9 +12,7 @@
     "experimentalDecorators": true,
     "outDir": "dist",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "removeComments": false,
     "rootDir": "src",
@@ -22,20 +20,20 @@
     "noImplicitReturns": false,
     "strictPropertyInitialization": false,
     "strictNullChecks": false,
-    "target": "ES2020",
     "types": [
       "@types/node",
       "@types/react",
       "@types/react-dom"
     ]
   },
-  "exclude": [
+"exclude": [
     "node_modules",
-    "dist/**",
-    ".storybook/**",
-    "**/*.{test,stories}.{ts,tsx}"
+    "dist",
+    ".storybook"
   ],
   "include": [
-    "src"
+    "**/*.d.ts",
+    "**/*.ts",
+    "**/*.tsx"
   ]
 }
