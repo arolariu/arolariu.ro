@@ -14,7 +14,7 @@ import TableDisplay from "../_views/TableDisplay";
  */
 export default function UploadPreview(): React.JSX.Element | null {
   const {scans} = useInvoiceCreator();
-  const [view, setView] = useState("grid");
+  const [view, setView] = useState("table");
   const gridRef = useRef<HTMLDivElement | null>(null);
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const tableRef = useRef<HTMLDivElement | null>(null);

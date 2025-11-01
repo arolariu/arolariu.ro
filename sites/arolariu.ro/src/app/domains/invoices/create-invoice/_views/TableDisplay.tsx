@@ -1,7 +1,33 @@
-import {Button, Input, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {
+  Button,
+  Input,
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@arolariu/components";
+import {usePaginationWithSearch} from "@/hooks";
 import {motion} from "motion/react";
 import {useCallback, useState} from "react";
-import {TbEdit, TbRotateClockwise, TbTrash} from "react-icons/tb";
+import {TbEdit, TbTrash} from "react-icons/tb";
 import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
 
 /**
@@ -10,24 +36,18 @@ import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
  * @returns JSX.Element that displays a table of invoice scans.
  */
 export default function TableDisplay(): React.JSX.Element | null {
-  const {scans, rotateScan, renameScan, removeScan} = useInvoiceCreator();
+  const {scans, renameScan, removeScan} = useInvoiceCreator();
   const [query, setQuery] = useState("");
 
-  const filteredScans = scans.filter((scan) => 
-    scan.name.toLowerCase().includes(query.toLowerCase())
-  );
+  const {paginatedItems, currentPage, totalPages, pageSize, setPageSize, setCurrentPage} = usePaginationWithSearch({
+    items: scans,
+    initialPageSize: 10,
+    searchQuery: query,
+  });
 
   const handleQueryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
   }, []);
-
-  const handleRotate = useCallback(
-    (id: string) => (e: React.MouseEvent<HTMLButtonElement>) => {
-      e.stopPropagation();
-      rotateScan(id, 90);
-    },
-    [rotateScan],
-  );
 
   const handleRename = useCallback(
     (scan: {id: string; name: string}) => (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -48,6 +68,75 @@ export default function TableDisplay(): React.JSX.Element | null {
     [removeScan],
   );
 
+  const handlePageSizeChange = useCallback(
+    (value: string) => {
+      setPageSize(Number(value));
+      setCurrentPage(1);
+    },
+    [setPageSize, setCurrentPage],
+  );
+
+  const handlePrevClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      if (currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    },
+    [currentPage, setCurrentPage],
+  );
+
+  const handleNextClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      if (currentPage < totalPages) {
+        setCurrentPage(currentPage + 1);
+      }
+    },
+    [currentPage, totalPages, setCurrentPage],
+  );
+
+  const handlePageClick = useCallback(
+    (page: number) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      setCurrentPage(page);
+    },
+    [setCurrentPage],
+  );
+
+  // Build visible pages with ellipses
+  const getVisiblePages = useCallback(() => {
+    if (totalPages <= 1) {
+      return [1];
+    }
+    const delta = 2;
+    const range: number[] = [];
+    const result: Array<number | string> = [];
+
+    for (const i of Array.from(
+      {length: Math.max(0, Math.min(totalPages - 1, currentPage + delta) - Math.max(2, currentPage - delta) + 1)},
+      (_, offset) => Math.max(2, currentPage - delta) + offset,
+    )) {
+      range.push(i);
+    }
+
+    if (currentPage - delta > 2) {
+      result.push(1, "...");
+    } else {
+      result.push(1);
+    }
+
+    result.push(...range);
+
+    if (currentPage + delta < totalPages - 1) {
+      result.push("...", totalPages);
+    } else if (totalPages > 1) {
+      result.push(totalPages);
+    }
+
+    return result;
+  }, [currentPage, totalPages]);
+
   if (scans.length === 0) {
     return null;
   }
@@ -65,7 +154,7 @@ export default function TableDisplay(): React.JSX.Element | null {
           />
         </div>
         <div className='shrink-0 text-sm text-gray-600 dark:text-gray-400'>
-          {filteredScans.length} of {scans.length} shown
+          {paginatedItems.length} of {scans.length} shown
         </div>
       </div>
 
@@ -86,9 +175,9 @@ export default function TableDisplay(): React.JSX.Element | null {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredScans.map((scan, index) => (
+            {paginatedItems.map((scan, index) => (
               <TableRow key={scan.id}>
-                <TableCell className='font-medium'>{index + 1}</TableCell>
+                <TableCell className='font-medium'>{(currentPage - 1) * pageSize + index + 1}</TableCell>
                 <TableCell className='max-w-xs truncate font-medium'>
                   {scan.name}
                 </TableCell>
@@ -111,22 +200,6 @@ export default function TableDisplay(): React.JSX.Element | null {
                 <TableCell>
                   <div className='flex justify-end gap-2'>
                     <TooltipProvider>
-                      {scan.type === "image" && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size='sm'
-                              variant='ghost'
-                              className='h-8 w-8 cursor-pointer p-0'
-                              onClick={handleRotate(scan.id)}
-                              disabled={scan.isProcessing}>
-                              <TbRotateClockwise className='h-4 w-4' />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Rotate 90°</TooltipContent>
-                        </Tooltip>
-                      )}
-
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
@@ -162,6 +235,65 @@ export default function TableDisplay(): React.JSX.Element | null {
           </TableBody>
         </Table>
       </motion.div>
+
+      {/* Pagination Controls */}
+      <div className='mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row'>
+        <div className='flex items-center gap-2'>
+          <span className='text-sm text-gray-600 dark:text-gray-400'>Rows per page:</span>
+          <Select
+            value={String(pageSize)}
+            onValueChange={handlePageSizeChange}>
+            <SelectTrigger className='h-8 w-20'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='10'>10</SelectItem>
+              <SelectItem value='20'>20</SelectItem>
+              <SelectItem value='50'>50</SelectItem>
+              <SelectItem value='100'>100</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {totalPages > 1 && (
+          <Pagination>
+            <PaginationContent className='justify-center'>
+              <PaginationItem>
+                <PaginationPrevious
+                  href='#'
+                  onClick={handlePrevClick}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+
+              {getVisiblePages().map((p, idx) =>
+                p === "..." ? (
+                  <PaginationItem key={`dots-${idx}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={`page-${p}`}>
+                    <PaginationLink
+                      href='#'
+                      onClick={handlePageClick(p as number)}
+                      isActive={currentPage === p}>
+                      {p}
+                    </PaginationLink>
+                  </PaginationItem>
+                ),
+              )}
+
+              <PaginationItem>
+                <PaginationNext
+                  href='#'
+                  onClick={handleNextClick}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </div>
     </>
   );
 }

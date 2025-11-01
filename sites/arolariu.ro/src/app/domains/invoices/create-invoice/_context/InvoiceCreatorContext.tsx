@@ -1,6 +1,7 @@
 "use client";
 
 import {generateGuid} from "@/lib/utils.generic";
+import {createInvoiceAction} from "@/lib/actions/invoices/createInvoice";
 import {toast} from "@arolariu/components";
 import {createContext, use, useCallback, useMemo, useRef, useState} from "react";
 import type {InvoiceScan, InvoiceScanType} from "../_types/InvoiceScan";
@@ -197,8 +198,7 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
         throw new Error("User authentication is required");
       }
 
-      // Dynamically import the server action
-      const {createInvoiceAction} = await import("@/lib/actions/invoices/createInvoice");
+
 
       // Process each scan
       const copy = [...scans];
@@ -218,7 +218,7 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
           }));
 
           // Submit to backend API via server action
-          const result = await createInvoiceAction(formData, userIdentifier, userJwt);
+          const result = await createInvoiceAction({formData, userIdentifier, userJwt});
 
           if (!result.success) {
             throw new Error(result.error || `Failed to upload ${scan.name}`);

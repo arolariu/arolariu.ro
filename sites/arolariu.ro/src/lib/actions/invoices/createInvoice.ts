@@ -2,27 +2,30 @@
 
 import {API_URL} from "@/lib/utils.server";
 
+type CreateInvoiceActionInput = {
+  formData: FormData;
+  userIdentifier: string;
+  userJwt: string;
+};
+
+type CreateInvoiceActionOutput = {
+  success: boolean;
+  error?: string;
+  data?: unknown;
+};
+
 /**
  * Server action to create a new invoice by uploading a scan file.
  * This action handles the file upload and metadata submission to the backend API.
- * @param formData FormData containing the file and metadata
- * @param userIdentifier The user's unique identifier
- * @param userJwt The user's JWT token for authentication
+ * @param input The input parameters for creating an invoice
  * @returns Promise resolving to the response from the API
  */
-export async function createInvoiceAction(
-  formData: FormData,
-  userIdentifier: string,
-  userJwt: string,
-): Promise<{success: boolean; error?: string; data?: unknown}> {
+export async function createInvoiceAction({
+  formData,
+  userIdentifier,
+  userJwt,
+}: CreateInvoiceActionInput): Promise<CreateInvoiceActionOutput> {
   try {
-    if (!API_URL) {
-      return {
-        success: false,
-        error: "API URL is not configured",
-      };
-    }
-
     if (!userIdentifier || !userJwt) {
       return {
         success: false,
@@ -31,7 +34,7 @@ export async function createInvoiceAction(
     }
 
     // Submit to backend API
-    const response = await fetch(`${API_URL}/rest/v1/invoices`, {
+    const response = await fetch(`${API_URL}/rest/v2/invoices`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${userJwt}`,
