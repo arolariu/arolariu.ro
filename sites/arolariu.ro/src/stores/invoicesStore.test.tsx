@@ -550,4 +550,78 @@ describe("useInvoicesStore", () => {
       expect(result.current.getState().selectedInvoices).toHaveLength(0);
     });
   });
+
+  describe("Production Store", () => {
+    it("should use production store when NODE_ENV is production", async () => {
+      // Mock NODE_ENV as production before importing
+      vi.stubEnv("NODE_ENV", "production");
+
+      // Clear the module cache to force re-evaluation
+      vi.resetModules();
+
+      // Dynamically import the store to get the production version
+      const {useInvoicesStore: prodStore} = await import("./invoicesStore");
+
+      const {result} = renderHook(() => prodStore());
+
+      // Test setInvoices
+      act(() => {
+        result.current.setInvoices([mockInvoice1, mockInvoice2]);
+      });
+
+      expect(result.current.invoices).toHaveLength(2);
+
+      // Test setSelectedInvoices
+      act(() => {
+        result.current.setSelectedInvoices([mockInvoice1]);
+      });
+
+      expect(result.current.selectedInvoices).toHaveLength(1);
+
+      // Test addInvoice
+      act(() => {
+        result.current.addInvoice(mockInvoice3);
+      });
+
+      expect(result.current.invoices).toHaveLength(3);
+
+      // Test removeInvoice
+      act(() => {
+        result.current.removeInvoice(mockInvoice2.id);
+      });
+
+      expect(result.current.invoices).toHaveLength(2);
+
+      // Test updateInvoice
+      act(() => {
+        result.current.updateInvoice(mockInvoice1.id, {name: "Updated in Prod"});
+      });
+
+      expect(result.current.invoices[0]?.name).toBe("Updated in Prod");
+
+      // Test toggleInvoiceSelection
+      act(() => {
+        result.current.toggleInvoiceSelection(mockInvoice3);
+      });
+
+      expect(result.current.selectedInvoices).toHaveLength(2);
+
+      // Test clearSelectedInvoices
+      act(() => {
+        result.current.clearSelectedInvoices();
+      });
+
+      expect(result.current.selectedInvoices).toHaveLength(0);
+
+      // Test clearInvoices
+      act(() => {
+        result.current.clearInvoices();
+      });
+
+      expect(result.current.invoices).toHaveLength(0);
+
+      // Restore environment
+      vi.unstubAllEnvs();
+    });
+  });
 });

@@ -83,6 +83,7 @@
     "recharts": "*",
     "resend": "*",
     "three": "*",
+    "uuid": "*",
     "zustand": "*"
   },
   "devDependencies": {

@@ -1,4 +1,5 @@
 import {Currency} from "@/types/DDD";
+import {v4 as uuidv4} from "uuid";
 
 export const SITE_ENV = process.env["SITE_ENV"] ?? "";
 export const SITE_URL = process.env["SITE_URL"] ?? "";
@@ -8,52 +9,15 @@ export const TIMESTAMP = process.env["TIMESTAMP"] ?? "";
 export const CONFIG_STORE = process.env["CONFIG_STORE"] ?? "";
 
 /**
- * Function that generates a GUID via random number generation.
- * @returns A UUIDv4 compliant GUID, converted to a string.
+ * Function that generates a GUID using the uuid package.
+ * @returns A UUIDv4 compliant GUID, as a string.
  * @example
  * GUID: b23090df-9e68-4c12-ae2a-5368db13b6c1
  * GUID: 8b3f7b7e-6b1b-4b7b-8b1b-4b7b8b1b4b7b
  * GUID: b1624a43-1f96-4d22-b94f-d030cc5df437
  */
-export function generateGuid(arraybuffer?: ArrayBuffer): Readonly<string> {
-  if (arraybuffer) {
-    const byte_array = new Uint8Array(arraybuffer);
-
-    // Set version (4) and variant (10)
-    byte_array[6] = (byte_array[6]! & 0x0f) | 0x40;
-    byte_array[8] = (byte_array[8]! & 0x3f) | 0x80;
-
-    const uuid_hex = [...byte_array].map((b) => b.toString(16).padStart(2, "0")).join("");
-
-    const uuid_str = `${uuid_hex.slice(0, 8)}-${uuid_hex.slice(8, 12)}-${uuid_hex.slice(12, 16)}-${uuid_hex.slice(16, 20)}-${uuid_hex.slice(20, 32)}`;
-
-    return uuid_str;
-  } else {
-    const bytes = new Uint8Array(16);
-
-    // Prefer cryptographically strong randomness
-    if (typeof globalThis.crypto?.getRandomValues === "function") {
-      globalThis.crypto.getRandomValues(bytes);
-    } else {
-      // Fallback (not cryptographically strong)
-      for (let i = 0; i < 16; i++) {
-        // eslint-disable-next-line security/detect-object-injection -- not applicable.
-        bytes[i] =
-          // eslint-disable-next-line sonarjs/pseudo-random -- this is safe.
-          Math.trunc(Math.random() * 256);
-      }
-    }
-
-    // Set version (4) and variant (10)
-    bytes[6] = (bytes[6]! & 0x0f) | 0x40;
-    bytes[8] = (bytes[8]! & 0x3f) | 0x80;
-
-    // Convert to 8-4-4-4-12 hex format
-    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-    const uuid_str = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-
-    return uuid_str;
-  }
+export function generateGuid(): Readonly<string> {
+  return uuidv4();
 }
 
 /**

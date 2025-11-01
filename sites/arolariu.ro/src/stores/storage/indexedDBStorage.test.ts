@@ -21,6 +21,79 @@ describe("createIndexedDBStorage", () => {
       expect(typeof storage.setItem).toBe("function");
       expect(typeof storage.removeItem).toBe("function");
     });
+
+    it("should return null from getItem on database error", async () => {
+      const storage = createIndexedDBStorage();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      // Mock Dexie to throw an error
+      const originalIndexedDB = globalThis.indexedDB;
+      Object.defineProperty(globalThis, "indexedDB", {
+        value: {
+          open: vi.fn().mockImplementation(() => {
+            throw new Error("Database error");
+          }),
+        },
+        writable: true,
+        configurable: true,
+      });
+
+      const result = await storage.getItem("test-key");
+
+      expect(result).toBeNull();
+      expect(consoleErrorSpy).toHaveBeenCalled();
+
+      globalThis.indexedDB = originalIndexedDB;
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("should handle setItem errors gracefully", async () => {
+      const storage = createIndexedDBStorage();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      // Mock Dexie to throw an error
+      const originalIndexedDB = globalThis.indexedDB;
+      Object.defineProperty(globalThis, "indexedDB", {
+        value: {
+          open: vi.fn().mockImplementation(() => {
+            throw new Error("Database error");
+          }),
+        },
+        writable: true,
+        configurable: true,
+      });
+
+      await storage.setItem("test-key", "test-value" as any);
+
+      expect(consoleErrorSpy).toHaveBeenCalled();
+
+      globalThis.indexedDB = originalIndexedDB;
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("should handle removeItem errors gracefully", async () => {
+      const storage = createIndexedDBStorage();
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      // Mock Dexie to throw an error
+      const originalIndexedDB = globalThis.indexedDB;
+      Object.defineProperty(globalThis, "indexedDB", {
+        value: {
+          open: vi.fn().mockImplementation(() => {
+            throw new Error("Database error");
+          }),
+        },
+        writable: true,
+        configurable: true,
+      });
+
+      await storage.removeItem("test-key");
+
+      expect(consoleErrorSpy).toHaveBeenCalled();
+
+      globalThis.indexedDB = originalIndexedDB;
+      consoleErrorSpy.mockRestore();
+    });
   });
 
   describe("Browser Environment", () => {
