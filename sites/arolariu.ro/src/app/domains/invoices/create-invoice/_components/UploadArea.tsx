@@ -82,6 +82,7 @@ export default function UploadArea(): React.JSX.Element | null {
         <p className='mb-8 text-sm text-gray-500 dark:text-gray-400'>Supports JPG, PNG, PDF files up to 10MB each</p>
         <Button
           type='button'
+          onClick={handleClick}
           className='cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-3 text-lg text-white shadow-lg transition-all duration-300 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl'
           disabled={isUploading}
           size='lg'>

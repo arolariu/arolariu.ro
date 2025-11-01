@@ -26,13 +26,6 @@ export async function createInvoiceAction({
   userJwt,
 }: ActionInputType): Promise<ActionOutputType> {
   try {
-    if (!userIdentifier || !userJwt) {
-      return {
-        success: false,
-        error: "User authentication is required",
-      };
-    }
-
     // Submit to backend API
     const response = await fetch(`${API_URL}/rest/v2/invoices`, {
       method: "POST",
