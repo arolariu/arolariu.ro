@@ -1,4 +1,5 @@
 import {act, renderHook} from "@testing-library/react";
+import {describe, expect, it} from "vitest";
 import {usePaginationWithSearch} from "./usePagination";
 
 describe("usePaginationItems hook", () => {
@@ -291,6 +292,20 @@ describe("usePaginationItems hook", () => {
     expect(result.current.paginatedItems[0]).toEqual({id: 1, name: "Item 1"});
     expect(result.current.paginatedItems[1]).toEqual({id: 2, name: 123});
     expect(result.current.paginatedItems[2]).toEqual({id: 3, name: true});
+  });
+
+  it("should handle items with circular references gracefully", () => {
+    const circularItem: any = {id: 1, name: "Circular Item"};
+    circularItem.self = circularItem; // Creates circular reference
+
+    const items = [{id: 0, name: "Normal Item"}, circularItem, {id: 2, name: "Another Normal Item"}];
+
+    const {result} = renderHook(() => usePaginationWithSearch({items, searchQuery: "Item"}));
+
+    // Should filter out the circular item (JSON.stringify will fail in catch block)
+    expect(result.current.paginatedItems).toHaveLength(2);
+    expect(result.current.paginatedItems[0]).toEqual({id: 0, name: "Normal Item"});
+    expect(result.current.paginatedItems[1]).toEqual({id: 2, name: "Another Normal Item"});
   });
 
   it("should handle items with missing IDs", () => {

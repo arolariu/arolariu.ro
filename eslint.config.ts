@@ -1,12 +1,9 @@
 import eslintPlugin from "@eslint/js";
 import eslintPluginNext from "@next/eslint-plugin-next";
 import eslintPluginFileProgress from "eslint-plugin-file-progress";
-import eslintPluginFunctional from "eslint-plugin-functional";
-import eslintPluginJest from "eslint-plugin-jest";
 import eslintPluginJsDoc from "eslint-plugin-jsdoc";
 import eslintPluginJsxA11y from "eslint-plugin-jsx-a11y";
 import eslintPluginNode from "eslint-plugin-n";
-import eslintPluginPerfectionist from "eslint-plugin-perfectionist";
 import {defineConfig} from "eslint/config";
 // @ts-ignore -- no types for this.
 import eslintPluginPromise from "eslint-plugin-promise";
@@ -28,12 +25,8 @@ const websiteEslintConfig = defineConfig({
   name: "[@arolariu/website]",
   files: ["sites/arolariu.ro/**/*.{ts,tsx}"],
   ignores: [
-    "**/node_modules/**",
-    "**/.storybook/**",
-    "**/*.config.{js,ts}",
-    "**/*.{test,spec,stories}.{ts,tsx}",
-    "**/.next/**",
-    "**/out/**",
+    "**/{node_modules,.storybook,.next,out,bin,scripts}/**", // dirs
+    "**/*.{test,config,spec,setup,stories}.{js,jsx,ts,tsx}", // files
   ],
   languageOptions: {
     ecmaVersion: "latest",
@@ -65,10 +58,6 @@ const websiteEslintConfig = defineConfig({
     "react-hooks-extra": eslintPluginReactHooksExtra,
     "react-web-api": eslintPluginReactWebAPI,
     "react-naming-convention": eslintPluginReactNamingConvention,
-    perfectionist: eslintPluginPerfectionist,
-    // @ts-ignore - the plugin is not typed correctly.
-    functional: eslintPluginFunctional,
-    jest: eslintPluginJest,
     jsdoc: eslintPluginJsDoc,
     "jsx-a11y": eslintPluginJsxA11y,
     promise: eslintPluginPromise,
@@ -90,17 +79,11 @@ const websiteEslintConfig = defineConfig({
     ...eslintPluginReactNamingConvention.configs.recommended.rules,
     ...eslintPluginReactWebAPI.configs.recommended.rules,
     ...eslintPluginReactX.configs["recommended-type-checked"].rules,
-    ...eslintPluginFunctional.configs.recommended.rules,
-    ...eslintPluginFunctional.configs.stylistic.rules,
-    ...eslintPluginFunctional.configs["all"].rules,
     ...eslintPluginReact.configs.all.rules,
     // @ts-ignore - the plugin is not typed correctly.
     ...eslintPluginReactHooks.configs.recommended.rules,
     ...eslintPluginReactHooks.configs["recommended-latest"].rules,
     ...eslintPluginUnicorn.configs.all.rules,
-    ...eslintPluginPerfectionist.configs["recommended-alphabetical"].rules,
-    ...eslintPluginPerfectionist.configs["recommended-natural"].rules,
-    ...eslintPluginPerfectionist.configs["recommended-line-length"].rules,
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
@@ -110,9 +93,6 @@ const websiteEslintConfig = defineConfig({
     ...eslintPluginJsDoc.configs["flat/logical-typescript-error"].rules,
     ...eslintPluginJsxA11y.configs.recommended.rules,
     ...eslintPluginJsxA11y.configs.strict.rules,
-    ...eslintPluginJest.configs["flat/style"].rules,
-    ...eslintPluginJest.configs["flat/recommended"].rules,
-    ...eslintPluginJest.configs["flat/all"].rules,
     ...eslintPluginNode.configs["flat/recommended"].rules,
     ...eslintPluginNext.configs.recommended.rules,
     ...eslintPluginPromise.configs["flat/recommended"].rules,
@@ -188,37 +168,6 @@ const websiteEslintConfig = defineConfig({
     "unicorn/no-typeof-undefined": "off", // We allow typeof undefined comparison checks.
     "unicorn/prevent-abbreviations": "off", // this rule is biased.
     "unicorn/no-abusive-eslint-disable": "warn", // Warn about abusive eslint-disable usage.
-
-    "functional/no-let": "off", // Sometimes we need mutable data.
-    "functional/no-classes": "off", // We allow classes and OOP concepts.
-    "functional/no-return-void": "off", // Some functions are pure.
-    "functional/immutable-data": "off", // Sometimes we need mutable data.
-    "functional/no-mixed-types": "off", // We allow mixed types in functions.
-    "functional/no-try-statements": "off", // Server Actions function on try/catch.
-    "functional/no-promise-reject": "off", // Sometimes we have to reject promises.
-    "functional/no-loop-statements": "off", // Sometimes we need loops.
-    "functional/no-this-expressions": "off", // We allow OOP concepts.
-    "functional/no-throw-statements": "off", // Server Actions can throw.
-    "functional/no-class-inheritance": "off", // We allow OOP concepts such as inheritance.
-    "functional/functional-parameters": "off", // Functions can have no parameters.
-    "functional/prefer-immutable-types": "off", // Some types need to be mutable.
-    "functional/no-expression-statements": "off", // Hook setters are pure; biased rule.
-    "functional/no-conditional-statements": "off", // Ternary operators are not a silver bullet.
-    "functional/type-declaration-immutability": "off", // Some types need to be mutable.
-
-    "perfectionist/sort-enums": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-objects": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-modules": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-imports": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-exports": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-jsx-props": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-interfaces": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-switch-case": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-union-types": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-object-types": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-named-imports": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-named-exports": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-intersection-types": "off", // this rule is biased; we use Prettier for sorting.
   },
   settings: {
     react: {
@@ -260,9 +209,6 @@ const cvEslintConfig = defineConfig({
   },
   plugins: {
     "@eslint/js": eslintPlugin,
-    perfectionist: eslintPluginPerfectionist,
-    // @ts-ignore - the plugin is not typed correctly.
-    functional: eslintPluginFunctional,
     promise: eslintPluginPromise,
     progress: eslintPluginFileProgress,
     sonarjs: eslintPluginSonarJs,
@@ -275,13 +221,7 @@ const cvEslintConfig = defineConfig({
     ...eslintPluginFileProgress.configs["recommended-ci"].rules,
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
-    ...eslintPluginFunctional.configs.recommended.rules,
-    ...eslintPluginFunctional.configs.stylistic.rules,
-    ...eslintPluginFunctional.configs["all"].rules,
     ...eslintPluginUnicorn.configs.all.rules,
-    ...eslintPluginPerfectionist.configs["recommended-alphabetical"].rules,
-    ...eslintPluginPerfectionist.configs["recommended-natural"].rules,
-    ...eslintPluginPerfectionist.configs["recommended-line-length"].rules,
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
@@ -316,35 +256,8 @@ const cvEslintConfig = defineConfig({
     "unicorn/prefer-dom-node-append": "off", // We support older browsers.
     "unicorn/prefer-dom-node-remove": "off", // We support older browsers.
 
-    "functional/no-let": "off", // Sometimes we need mutable data.
-    "functional/no-classes": "off", // We allow classes and OOP concepts.
-    "functional/no-return-void": "off", // Some functions are pure.
-    "functional/no-mixed-types": "off", // We allow mixed types in functions.
-    "functional/immutable-data": "off", // Sometimes we need mutable data.
-    "functional/no-try-statements": "off", // We allow try/catch.
-    "functional/no-this-expressions": "off", // We allow OOP concepts.
-    "functional/functional-parameters": "off", // Functions can have no parameters.
-    "functional/prefer-immutable-types": "off", // Some types need to be mutable.
-    "functional/no-expression-statements": "off", // We allow expression statements.
-    "functional/no-conditional-statements": "off", // Ternary operators are not a silver bullet.
-
     "n/no-missing-import": "off", // Barrel and index files are blindly caught by this rule.
     "n/no-unsupported-features/node-builtins": "off", // We use Node.js v24+ built-ins.
-
-    "perfectionist/sort-enums": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-objects": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-classes": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-modules": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-imports": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-exports": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-jsx-props": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-interfaces": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-switch-case": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-union-types": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-object-types": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-named-imports": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-named-exports": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-intersection-types": "off", // this rule is biased; we use Prettier for sorting.
   },
   settings: {
     node: {
@@ -396,9 +309,6 @@ const packagesEslintConfig = defineConfig({
     "react-hooks-extra": eslintPluginReactHooksExtra,
     "react-web-api": eslintPluginReactWebAPI,
     "react-naming-convention": eslintPluginReactNamingConvention,
-    perfectionist: eslintPluginPerfectionist,
-    // @ts-ignore - the plugin is not typed correctly.
-    functional: eslintPluginFunctional,
     jsdoc: eslintPluginJsDoc,
     "jsx-a11y": eslintPluginJsxA11y,
     promise: eslintPluginPromise,
@@ -418,16 +328,10 @@ const packagesEslintConfig = defineConfig({
     ...eslintPluginReactNamingConvention.configs.recommended.rules,
     ...eslintPluginReactWebAPI.configs.recommended.rules,
     ...eslintPluginReactX.configs["recommended-type-checked"].rules,
-    ...eslintPluginFunctional.configs.recommended.rules,
-    ...eslintPluginFunctional.configs.stylistic.rules,
-    ...eslintPluginFunctional.configs["all"].rules,
     ...eslintPluginReact.configs.all.rules,
     // @ts-ignore - the plugin is not typed correctly.
     ...eslintPluginReactHooks.configs.recommended.rules,
     ...eslintPluginUnicorn.configs.all.rules,
-    ...eslintPluginPerfectionist.configs["recommended-alphabetical"].rules,
-    ...eslintPluginPerfectionist.configs["recommended-natural"].rules,
-    ...eslintPluginPerfectionist.configs["recommended-line-length"].rules,
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
@@ -519,33 +423,6 @@ const packagesEslintConfig = defineConfig({
     "unicorn/prevent-abbreviations": "off", // this rule is biased.
     "unicorn/explicit-length-check": "off", // .size sometimes returns a string, not a number.
     "unicorn/no-abusive-eslint-disable": "warn", // We warn about eslint-disable comments.
-
-    "functional/no-let": "off", // Sometimes we need mutable data.
-    "functional/no-return-void": "off", // Some functions are pure.
-    "functional/immutable-data": "off", // Sometimes we need mutable data.
-    "functional/no-mixed-types": "off", // We allow mixed types in functions.
-    "functional/no-loop-statements": "off", // Sometimes we need loops.
-    "functional/no-throw-statements": "off", // Use Context can throw.
-    "functional/no-this-expressions": "off", // We allow OOP concepts.
-    "functional/functional-parameters": "off", // Functions can have no parameters.
-    "functional/prefer-immutable-types": "off", // Some types need to be mutable.
-    "functional/no-conditional-statements": "off", // Ternary operators are not a silver bullet.
-    "functional/no-expression-statements": "off", // Hook setters are pure; biased rule.
-    "functional/type-declaration-immutability": "off", // Some types need to be mutable.
-
-    "perfectionist/sort-enums": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-objects": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-modules": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-imports": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-exports": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-jsx-props": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-interfaces": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-switch-case": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-union-types": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-object-types": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-named-imports": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-named-exports": "off", // this rule is biased; we use Prettier for sorting.
-    "perfectionist/sort-intersection-types": "off", // this rule is biased; we use Prettier for sorting.
   },
   settings: {
     react: {

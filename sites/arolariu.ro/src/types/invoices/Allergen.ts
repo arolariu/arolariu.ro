@@ -21,5 +21,5 @@ export type UpdateAllergenDtoPayload = Partial<Allergen>;
 /** Represents the data transfer object payload for deleting an allergen. */
 export type DeleteAllergenDtoPayload = {
   /** The name of the allergen. */
-  name: string;
+  readonly name: string;
 };

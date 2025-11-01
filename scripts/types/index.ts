@@ -60,9 +60,9 @@ type ApiUrl<Environment extends string> = Environment extends "production" ? "ht
  * - `SITE_URL`: The full URL of the site for the given environment.
  */
 type TypedSiteEnvironmentVariables<Environment extends EnvironmentOptions> = Readonly<{
-  SITE_ENV: Uppercase<Environment>;
-  SITE_NAME: SiteName<Environment>;
-  SITE_URL: SiteUrl<Environment>;
+  readonly SITE_ENV: Uppercase<Environment>;
+  readonly SITE_NAME: SiteName<Environment>;
+  readonly SITE_URL: SiteUrl<Environment>;
 }>;
 
 /**
@@ -74,16 +74,16 @@ type TypedSiteEnvironmentVariables<Environment extends EnvironmentOptions> = Rea
  * - `API_URL`: The full URL of the API for the given environment.
  */
 type TypedApiEnvironmentVariables<Environment extends EnvironmentOptions> = Readonly<{
-  API_ENV: Uppercase<Environment>;
-  API_NAME: ApiName<Environment>;
-  API_URL: ApiUrl<Environment>;
+  readonly API_ENV: Uppercase<Environment>;
+  readonly API_NAME: ApiName<Environment>;
+  readonly API_URL: ApiUrl<Environment>;
 }>;
 
 type AuthEnvironmentVariables = Readonly<{
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string;
-  CLERK_SECRET_KEY: string;
-  API_JWT: string;
-  RESEND_API_KEY: string;
+  readonly NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string;
+  readonly CLERK_SECRET_KEY: string;
+  readonly API_JWT: string;
+  readonly RESEND_API_KEY: string;
 }>;
 
 /**
@@ -95,9 +95,9 @@ type AuthEnvironmentVariables = Readonly<{
  * - `USE_CDN`: A boolean flag indicating whether to use a CDN for static assets.
  */
 type MetadataEnvironmentVariables = Readonly<{
-  TIMESTAMP: string;
-  COMMIT_SHA: string;
-  USE_CDN: boolean;
+  readonly TIMESTAMP: string;
+  readonly COMMIT_SHA: string;
+  readonly USE_CDN: boolean;
 }>;
 
 /**
@@ -149,7 +149,7 @@ export type TypedEnvironment<
  *
  * @see TypedEnvironment
  */
-export type TypedProductionEnvironmentVariablesType = TypedEnvironment<"production", "production">;
+export type TypedProductionEnvironmentVariablesType = Readonly<TypedEnvironment<"production", "production">>;
 
 /**
  * Represents the strongly typed environment variable contract for the development deployment.
@@ -160,7 +160,7 @@ export type TypedProductionEnvironmentVariablesType = TypedEnvironment<"producti
  *
  * @see TypedEnvironment
  */
-export type TypedDevelopmentEnvironmentVariablesType = TypedEnvironment<"development", "production">;
+export type TypedDevelopmentEnvironmentVariablesType = Readonly<TypedEnvironment<"development", "production">>;
 
 /**
  * Enumerates environment variable keys that satisfy both of the following constraints:

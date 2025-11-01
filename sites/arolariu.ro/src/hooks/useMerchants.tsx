@@ -1,10 +1,10 @@
 "use client";
 
 import fetchMerchants from "@/lib/actions/invoices/fetchMerchants";
+import {useMerchantsStore} from "@/stores";
 import type {Merchant} from "@/types/invoices";
 import {useEffect, useState} from "react";
 import {useUserInformation} from "./index";
-import {useZustandStore} from "./stateStore";
 
 type HookOutputType = Readonly<{
   merchant: Merchant[];
@@ -20,8 +20,8 @@ export function useMerchants(): HookOutputType {
   const {userInformation} = useUserInformation();
   const [isError, setIsError] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const possiblyStaleMerchants = useZustandStore((state) => state.merchants);
-  const setPossiblyStaleMerchants = useZustandStore((state) => state.setMerchants);
+  const possiblyStaleMerchants = useMerchantsStore((state) => state.merchants);
+  const setPossiblyStaleMerchants = useMerchantsStore((state) => state.setMerchants);
 
   useEffect(() => {
     const fetchMerchantsForUser = async () => {

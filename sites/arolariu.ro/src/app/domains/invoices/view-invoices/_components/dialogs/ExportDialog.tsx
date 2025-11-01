@@ -1,6 +1,6 @@
 "use client";
 
-import {useZustandStore} from "@/hooks/stateStore";
+import {useInvoicesStore} from "@/stores";
 import {
   Button,
   Checkbox,
@@ -35,7 +35,7 @@ export default function ExportDialog(): React.JSX.Element {
   });
 
   const {isOpen, open, close} = useDialog("INVOICES_EXPORT");
-  const selectedInvoices = useZustandStore((state) => state.selectedInvoices);
+  const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
 
   const handleExport = useCallback(
     async (e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {

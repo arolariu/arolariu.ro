@@ -5,16 +5,11 @@
     "exactOptionalPropertyTypes": false,
     "allowArbitraryExtensions": true,
     "erasableSyntaxOnly": false,
+    "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
+    "plugins": [{ "name": "next" }],
     "types": [
       "@types/node",
       "@types/react",
@@ -22,17 +17,12 @@
     ]
   },
   "exclude": [
-    ".storybook/**",
-    "**/*.{test,spec,stories}.{ts,tsx}",
-    "node_modules"
+    "node_modules",
+    ".storybook"
   ],
   "include": [
     "**/*.d.ts",
     "**/*.ts",
-    "**/*.tsx",
-    "next-env.d.ts",
-    ".next/types/**/*.ts",
-    "next.config.ts",
-    "postcss.config.js"
+    "**/*.tsx"
   ]
 }

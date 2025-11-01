@@ -1,7 +1,6 @@
 /**
  * Provides a consistent audit metadata contract for domain entities, ensuring creation,
  * modification, and lifecycle details are captured for traceability and compliance.
- *
  * @remarks
  * Implement this interface on domain entities that require audit trails. It tracks the
  * creator, the most recent modifier, update counts, and state flags commonly used in

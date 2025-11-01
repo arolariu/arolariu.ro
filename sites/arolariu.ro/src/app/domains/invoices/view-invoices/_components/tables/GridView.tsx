@@ -1,4 +1,4 @@
-import {useZustandStore} from "@/hooks/stateStore";
+import {useInvoicesStore} from "@/stores";
 import {type Invoice} from "@/types/invoices";
 import {
   Button,
@@ -21,8 +21,8 @@ import {TbCalendar, TbEye} from "react-icons/tb";
 import InvoiceTableActions from "./InvoiceTableActions";
 
 export const GridView = ({invoices}: Readonly<{invoices: Invoice[]}>): React.JSX.Element => {
-  const selectedInvoices = useZustandStore((state) => state.selectedInvoices);
-  const setSelectedInvoices = useZustandStore((state) => state.setSelectedInvoices);
+  const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
+  const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
 
   const handleSelectInvoice = useCallback(
     (invoiceId: string) => {

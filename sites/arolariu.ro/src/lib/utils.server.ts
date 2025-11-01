@@ -48,7 +48,6 @@ export async function convertBase64ToBlob(base64String: string): Promise<Blob> {
 /**
  * Creates a JWT token using the jose library.
  * This function signs the payload with the provided secret using HS256 algorithm.
- *
  * @param payload The JWT payload containing claims (iss, aud, sub, iat, exp, etc.)
  * @param secret The secret key for signing the token (base64 encoded)
  * @returns Promise resolving to the signed JWT token string
@@ -104,7 +103,6 @@ export type JwtVerificationResult = {valid: true; payload: Record<string, any>} 
 /**
  * Verifies and decodes a JWT token using the jose library.
  * This function validates the signature, expiration, and not-before claims.
- *
  * @param token The JWT token string to verify
  * @param secret The secret key used to verify the token signature (base64 encoded)
  * @returns Promise resolving to verification result with decoded payload if valid, or error if invalid

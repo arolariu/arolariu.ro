@@ -32,29 +32,29 @@ export interface Merchant extends NamedEntity<string> {
 /** Represents the data transfer object payload for creating a merchant. */
 export type CreateMerchantDtoPayload = {
   /** The name of the merchant. */
-  name: string;
+  readonly name: string;
 
   /** The description of the merchant. */
-  description: string;
+  readonly description: string;
 
   /** The address of the merchant. */
-  address: string;
+  readonly address: string;
 
   /** The unique identifier of the parent company. */
-  parentCompanyId: string;
+  readonly parentCompanyId: string;
 };
 
 /** Represents the data transfer object payload for updating a merchant. */
 export type UpdateMerchantDtoPayload<T = string> = {
   /** The unique identifier of the merchant. */
-  id: T;
+  readonly id: T;
 } & Partial<Omit<Merchant, "id">>;
 
 /** Represents the data transfer object payload for deleting a merchant. */
 export type DeleteMerchantDtoPayload<T = string> = {
   /** The unique identifier of the merchant. */
-  id: T;
+  readonly id: T;
 
   /** The unique identifier of the parent company. */
-  parentCompanyId: string;
+  readonly parentCompanyId: string;
 };

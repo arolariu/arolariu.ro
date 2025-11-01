@@ -58,5 +58,5 @@ export type UpdateRecipeDtoPayload = Partial<Recipe>;
 /** Represents the data transfer object payload for deleting a recipe. */
 export type DeleteRecipeDtoPayload = {
   /** The name of the recipe. */
-  name: string;
+  readonly name: string;
 };

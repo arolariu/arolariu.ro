@@ -71,9 +71,9 @@ export type UpdateProductDtoPayload = Partial<Product>;
 export type DeleteProductDtoPayload =
   | {
       /** The raw name of the product. */
-      rawName: string;
+      readonly rawName: string;
     }
   | {
       /** The product code of the product. */
-      productCode: string;
+      readonly productCode: string;
     };

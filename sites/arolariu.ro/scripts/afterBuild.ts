@@ -1,5 +1,3 @@
-/* eslint-disable */
-
 export async function main() {
   console.info("[arolariu.ro::afterBuild] Running after build scripts...");
 

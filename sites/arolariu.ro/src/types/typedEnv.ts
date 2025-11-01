@@ -13,28 +13,28 @@ type ApiUrl<T extends string> = T extends "production" ? "https://api.arolariu.r
 
 // Strongly-typed environment variable definitions with automatic inference
 type SiteEnvironmentVariables<Env extends "production" | "development"> = Readonly<{
-  SITE_ENV: Uppercase<Env>;
-  SITE_NAME: SiteName<Env>;
-  SITE_URL: SiteUrl<Env>;
+  readonly SITE_ENV: Uppercase<Env>;
+  readonly SITE_NAME: SiteName<Env>;
+  readonly SITE_URL: SiteUrl<Env>;
 }>;
 
 type ApiEnvironmentVariables<Env extends "production"> = Readonly<{
-  API_ENV: Uppercase<Env>;
-  API_NAME: ApiName<Env>;
-  API_URL: ApiUrl<Env>;
+  readonly API_ENV: Uppercase<Env>;
+  readonly API_NAME: ApiName<Env>;
+  readonly API_URL: ApiUrl<Env>;
 }>;
 
 type AuthEnvironmentVariables = Readonly<{
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string;
-  CLERK_SECRET_KEY: string;
-  API_JWT: string;
-  RESEND_API_KEY: string;
+  readonly NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string;
+  readonly CLERK_SECRET_KEY: string;
+  readonly API_JWT: string;
+  readonly RESEND_API_KEY: string;
 }>;
 
 type MetadataEnvironmentVariables = Readonly<{
-  TIMESTAMP: string;
-  COMMIT_SHA: string;
-  USE_CDN: boolean;
+  readonly TIMESTAMP: string;
+  readonly COMMIT_SHA: string;
+  readonly USE_CDN: boolean;
 }>;
 
 /**

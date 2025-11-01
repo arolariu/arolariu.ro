@@ -87,26 +87,27 @@ type SpecialMetadataKeys = "isImportant" | "requiresAnalysis";
  */
 export type CreateInvoiceDtoPayload = {
   /** The user identifier associated with the invoice. */
-  userIdentifier: string;
+  readonly userIdentifier: string;
 
   /** The metadata associated with the invoice. */
-  metadata: Record<SpecialMetadataKeys | (string & {}), string>;
+  // eslint-disable-next-line sonarjs/no-useless-intersection -- we want to allow extensibility.
+  readonly metadata: Record<SpecialMetadataKeys | (string & {}), string>;
 };
 
 /** Represents the data transfer object payload for updating an invoice. */
 export type UpdateInvoiceDtoPayload<T = string> = {
   /** The unique identifier of the invoice. */
-  id: T;
+  readonly id: T;
 
   /** The user identifier associated with the invoice. */
-  userIdentifier: string;
+  readonly userIdentifier: string;
 } & Partial<Omit<Invoice, "id" | "userIdentifier">>;
 
 /** Represents the data transfer object payload for deleting an invoice. */
 export type DeleteInvoiceDtoPayload<T = string> = {
   /** The unique identifier of the invoice to be deleted. */
-  id: T;
+  readonly id: T;
 
   /** The user identifier associated with the invoice. */
-  userIdentifier: string;
+  readonly userIdentifier: string;
 };

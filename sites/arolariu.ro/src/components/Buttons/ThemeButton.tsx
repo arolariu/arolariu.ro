@@ -5,35 +5,31 @@ import {useTheme} from "next-themes";
 import React, {useCallback, useEffect, useState} from "react";
 import {TbMoon, TbSun} from "react-icons/tb";
 
-const MoonIcon = (): React.JSX.Element => {
-  return (
-    <motion.div
-      className='absolute inset-0 flex items-center justify-center'
-      initial={false}
-      animate={{
-        scale: 1,
-        opacity: 1,
-      }}
-      transition={{duration: 0.2}}>
-      <TbMoon className='h-6 w-6 text-zinc-800 dark:text-zinc-200' />
-    </motion.div>
-  );
-};
+const MoonIcon = (): React.JSX.Element => (
+  <motion.div
+    className='absolute inset-0 flex items-center justify-center'
+    initial={false}
+    animate={{
+      scale: 1,
+      opacity: 1,
+    }}
+    transition={{duration: 0.2}}>
+    <TbMoon className='h-6 w-6 text-zinc-800 dark:text-zinc-200' />
+  </motion.div>
+);
 
-const SunIcon = (): React.JSX.Element => {
-  return (
-    <motion.div
-      className='absolute inset-0 flex items-center justify-center'
-      initial={false}
-      animate={{
-        scale: 1,
-        opacity: 1,
-      }}
-      transition={{duration: 0.2}}>
-      <TbSun className='h-6 w-6 text-zinc-800 dark:text-zinc-200' />
-    </motion.div>
-  );
-};
+const SunIcon = (): React.JSX.Element => (
+  <motion.div
+    className='absolute inset-0 flex items-center justify-center'
+    initial={false}
+    animate={{
+      scale: 1,
+      opacity: 1,
+    }}
+    transition={{duration: 0.2}}>
+    <TbSun className='h-6 w-6 text-zinc-800 dark:text-zinc-200' />
+  </motion.div>
+);
 
 /**
  * The theme switcher button component.
