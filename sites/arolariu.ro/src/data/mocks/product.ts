@@ -158,14 +158,12 @@ export class ProductBuilder {
     ];
 
     const allergenCount = count ?? faker.number.int({min: 0, max: 3});
-    this.product.detectedAllergens = Array.from({length: allergenCount}, () => {
-      const allergenName = faker.helpers.arrayElement(allergenNames);
-      return {
-        name: allergenName,
-        description: faker.lorem.sentence(),
-        learnMoreAddress: faker.internet.url(),
-      };
-    });
+    const selectedAllergenNames = faker.helpers.arrayElements(allergenNames, allergenCount);
+    this.product.detectedAllergens = selectedAllergenNames.map((allergenName) => ({
+      name: allergenName,
+      description: faker.lorem.sentence(),
+      learnMoreAddress: faker.internet.url(),
+    }));
     return this;
   }
 
