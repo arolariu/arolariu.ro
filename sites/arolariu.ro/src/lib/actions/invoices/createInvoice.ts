@@ -2,17 +2,17 @@
 
 import {API_URL} from "@/lib/utils.server";
 
-type CreateInvoiceActionInput = {
+type ActionInputType = Readonly<{
   formData: FormData;
   userIdentifier: string;
   userJwt: string;
-};
+}>;
 
-type CreateInvoiceActionOutput = {
+type ActionOutputType = Readonly<{
   success: boolean;
   error?: string;
   data?: unknown;
-};
+}>;
 
 /**
  * Server action to create a new invoice by uploading a scan file.
@@ -24,7 +24,7 @@ export async function createInvoiceAction({
   formData,
   userIdentifier,
   userJwt,
-}: CreateInvoiceActionInput): Promise<CreateInvoiceActionOutput> {
+}: ActionInputType): Promise<ActionOutputType> {
   try {
     if (!userIdentifier || !userJwt) {
       return {
