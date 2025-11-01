@@ -1,3 +1,4 @@
+import {describe, expect, it, vi} from "vitest";
 import {extractBase64FromBlob, isBrowserStorageAvailable} from "./utils.client";
 
 describe("extractBase64FromBlob", () => {
@@ -24,10 +25,10 @@ describe("extractBase64FromBlob", () => {
 describe("isBrowserStorageAvailable", () => {
   it("should return true for available localStorage", () => {
     const mockLocalStorage = {
-      setItem: jest.fn(),
-      getItem: jest.fn(),
-      removeItem: jest.fn(),
-      clear: jest.fn(),
+      setItem: vi.fn(),
+      getItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
       length: 0,
     };
     Object.defineProperty(window, "localStorage", {
@@ -39,10 +40,10 @@ describe("isBrowserStorageAvailable", () => {
 
   it("should return true for available sessionStorage", () => {
     const mockSessionStorage = {
-      setItem: jest.fn(),
-      getItem: jest.fn(),
-      removeItem: jest.fn(),
-      clear: jest.fn(),
+      setItem: vi.fn(),
+      getItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
       length: 0,
     };
     Object.defineProperty(window, "sessionStorage", {

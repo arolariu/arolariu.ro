@@ -1,5 +1,6 @@
 import {act, renderHook} from "@testing-library/react";
 import type {ReactNode} from "react";
+import {describe, expect, test, vi} from "vitest";
 import {DialogProvider, useDialog} from "./DialogContext";
 
 // Wrapper component to provide context for the hooks
@@ -99,7 +100,7 @@ describe("useDialog", () => {
   });
 
   test("it throws when used outside of provider", () => {
-    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     expect(() => {
       renderHook(() => useDialog("INVOICE_SHARE"));
