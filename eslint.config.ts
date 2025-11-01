@@ -1,7 +1,6 @@
 import eslintPlugin from "@eslint/js";
 import eslintPluginNext from "@next/eslint-plugin-next";
 import eslintPluginFileProgress from "eslint-plugin-file-progress";
-import eslintPluginJest from "eslint-plugin-jest";
 import eslintPluginJsDoc from "eslint-plugin-jsdoc";
 import eslintPluginJsxA11y from "eslint-plugin-jsx-a11y";
 import eslintPluginNode from "eslint-plugin-n";
@@ -59,7 +58,6 @@ const websiteEslintConfig = defineConfig({
     "react-hooks-extra": eslintPluginReactHooksExtra,
     "react-web-api": eslintPluginReactWebAPI,
     "react-naming-convention": eslintPluginReactNamingConvention,
-    jest: eslintPluginJest,
     jsdoc: eslintPluginJsDoc,
     "jsx-a11y": eslintPluginJsxA11y,
     promise: eslintPluginPromise,
@@ -95,9 +93,6 @@ const websiteEslintConfig = defineConfig({
     ...eslintPluginJsDoc.configs["flat/logical-typescript-error"].rules,
     ...eslintPluginJsxA11y.configs.recommended.rules,
     ...eslintPluginJsxA11y.configs.strict.rules,
-    ...eslintPluginJest.configs["flat/style"].rules,
-    ...eslintPluginJest.configs["flat/recommended"].rules,
-    ...eslintPluginJest.configs["flat/all"].rules,
     ...eslintPluginNode.configs["flat/recommended"].rules,
     ...eslintPluginNext.configs.recommended.rules,
     ...eslintPluginPromise.configs["flat/recommended"].rules,
