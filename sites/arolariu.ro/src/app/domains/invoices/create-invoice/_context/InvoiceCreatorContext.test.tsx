@@ -402,7 +402,7 @@ describe("InvoiceCreatorContext", () => {
     );
 
     act(() => {
-      screen.getByTestId("add-files-btn").click();
+      screen.getByRole("button", {name: /add files/i}).click();
     });
 
     await act(async () => {
@@ -410,11 +410,11 @@ describe("InvoiceCreatorContext", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId("scans-count")).toHaveTextContent("1");
+      expect(screen.getByText(/scans: 1/i)).toBeInTheDocument();
     });
 
     await act(async () => {
-      screen.getByTestId("rotate-scan-btn").click();
+      screen.getByRole("button", {name: /rotate scan/i}).click();
     });
 
     await waitFor(() => {
@@ -430,7 +430,6 @@ describe("InvoiceCreatorContext", () => {
       return (
         <div>
           <button
-            data-testid="add-pdf"
             onClick={() => {
               const file = new File(["pdf content"], "test.pdf", {
                 type: "application/pdf",
@@ -446,12 +445,11 @@ describe("InvoiceCreatorContext", () => {
             Add PDF
           </button>
           <button
-            data-testid="rotate"
             onClick={() =>
               context.scans[0] && context.rotateScan(context.scans[0].id, 90)
             }
           >
-            Rotate
+            Rotate PDF
           </button>
         </div>
       );
@@ -464,7 +462,7 @@ describe("InvoiceCreatorContext", () => {
     );
 
     act(() => {
-      screen.getByTestId("add-pdf").click();
+      screen.getByRole("button", {name: /add pdf/i}).click();
     });
 
     await act(async () => {
@@ -472,7 +470,7 @@ describe("InvoiceCreatorContext", () => {
     });
 
     await act(async () => {
-      screen.getByTestId("rotate").click();
+      screen.getByRole("button", {name: /rotate pdf/i}).click();
     });
 
     expect(toast.error).toHaveBeenCalledWith(
