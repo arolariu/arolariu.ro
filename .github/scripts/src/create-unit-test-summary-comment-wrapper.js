@@ -1,5 +1,5 @@
 /**
- * Wrapper script for executing create-pr-comment.ts with Node.js 24's native TypeScript support.
+ * Wrapper script for executing create-unit-test-summary-comment.ts with Node.js TypeScript support.
  * This is called from GitHub Actions and passes the required context objects to the TypeScript module.
  *
  * @param {object} params - GitHub Actions context parameters
@@ -9,10 +9,10 @@
  * @param {typeof import('@actions/exec')} params.exec - GitHub Actions exec utilities
  * @returns {Promise<void>}
  */
-export default async function createPRCommentWrapper({github, context, core, exec}) {
-  // Import the TypeScript module directly using Node.js 24's experimental TypeScript support
-  const {default: createPRComment} = await import("./create-pr-comment.ts");
+export default async function createUnitTestSummaryCommentWrapper({github, context, core, exec}) {
+  // Import the TypeScript module directly using Node.js TypeScript support
+  const {default: createUnitTestSummaryComment} = await import("./create-unit-test-summary-comment.ts");
 
   // Execute the main function with the provided parameters
-  await createPRComment({github, context, core, exec});
+  await createUnitTestSummaryComment({github, context, core, exec});
 }

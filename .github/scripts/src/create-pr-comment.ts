@@ -1,174 +1,99 @@
 /**
- * @fileoverview Creates comprehensive PR comments with test results and bundle analysis
+ * @fileoverview Core pull request comment creation utilities
  * @module src/create-pr-comment
- */
-
-import {compareBundleSizes, generateBundleSizeMarkdown} from "../lib/bundle-size-helper.ts";
-import {BUNDLE_TARGET_FOLDERS} from "../lib/constants.ts";
-import {getBranchCommitComparisonSection} from "../lib/git-helper.ts";
-import getJestResultsSection from "../lib/jest-helper.ts";
-import getPlaywrightResultsSection from "../lib/playwright-helper.ts";
-import {generateWorkflowInfoSection} from "../lib/pr-comment-builder.ts";
-import {getPRNumber} from "../lib/pr-helper.ts";
-import type {ScriptParams, WorkflowInfo} from "../types/index.ts";
-
-/**
- * Extracts and validates required environment variables for PR comment creation
- * @param core - GitHub Actions core utilities for error reporting
- * @returns Object containing commit SHA, run ID, branch name, and job status; or null if any required variable is missing
+ *
+ * This module provides the foundational, reusable logic for posting comments to GitHub
+ * pull requests. It serves as a generic utility that can be used by any comment generation
+ * module (e.g., unit test summaries, hygiene checks, build reports).
+ *
+ * **Key Features:**
+ * - **PR Context Validation**: Automatically validates PR number from environment
+ * - **Error Handling**: Graceful failure without breaking workflows
+ * - **Logging**: Comprehensive debug and info logging for observability
+ * - **Reusability**: Accepts pre-formatted markdown content from any source
+ *
+ * **Design Philosophy:**
+ * This module intentionally focuses on the "how" (posting) rather than the "what" (content).
+ * Content generation should be delegated to specific modules that import and use this utility.
+ *
  * @example
  * ```typescript
- * const vars = extractEnvironmentVariables(core);
- * if (!vars) {
- *   throw new Error('Missing required environment variables');
- * }
- * console.log(`Processing commit ${vars.currentCommitSha}`);
+ * // In a specific comment generator (e.g., create-unit-test-summary-comment.ts)
+ * import { createPRComment } from './create-pr-comment.ts';
+ *
+ * const commentMarkdown = generateMyCommentContent();
+ * await createPRComment(params, commentMarkdown);
  * ```
+ *
+ * @see {@link getPRContext} - Validates and extracts PR context from environment
+ * @see {@link postPRComment} - Low-level GitHub API comment posting
  */
-function extractEnvironmentVariables(core: ScriptParams["core"]): {
-  currentCommitSha: string;
-  runId: string;
-  branchName: string;
-  jobStatus: string;
-} | null {
-  const currentCommitSha = process.env["COMMIT_SHA"];
-  const runId = process.env["RUN_ID"];
-  const branchName = process.env["BRANCH_NAME"];
-  const jobStatus = process.env["JOB_STATUS"] ?? "unknown";
 
-  if (!currentCommitSha || !runId || !branchName) {
-    core.setFailed("Missing one or more essential environment variables (COMMIT_SHA, RUN_ID, BRANCH_NAME). Cannot create PR comment.");
-    return null;
-  }
-
-  return {currentCommitSha, runId, branchName, jobStatus};
-}
+import {getPRContext, postPRComment} from "../lib/pr-helper.ts";
+import type {ScriptParams} from "../types/index.ts";
 
 /**
- * Generates the bundle size comparison section with error handling
- * @param params - The script parameters
- * @param targetFolders - An array of folder paths to compare
- * @returns Markdown string for the bundle size comparison section
+ * Creates a comment on a pull request with the provided markdown content
+ *
+ * This is the core utility function for posting PR comments. It handles all the
+ * orchestration needed to safely post a comment:
+ *
+ * 1. **PR Context Validation**: Checks if running in a PR context (via PR_NUMBER env var)
+ * 2. **Comment Posting**: Uses the GitHub API to create the comment
+ * 3. **Error Handling**: Logs failures without throwing to prevent workflow breakage
+ *
+ * @param params - Script execution parameters containing GitHub Octokit client and context
+ * @param commentBody - Pre-formatted markdown content to post as the PR comment
+ * @returns Promise that resolves when the comment is posted successfully or skipped gracefully
+ *
+ * @remarks
+ * - **Non-throwing**: This function never throws; failures are logged and the workflow continues
+ * - **PR Number Source**: Reads from `PR_NUMBER` environment variable (set by workflow)
+ * - **Performance**: Minimal overhead; validation and posting are optimized for speed
+ * - **Extensibility**: Can be used by any module that needs to post PR comments
+ *
+ * @example
+ * ```typescript
+ * // Simple usage with static content
+ * await createPRComment(params, '## ✅ Build Successful\n\nAll checks passed!');
+ *
+ * // Usage with dynamically generated content
+ * const testResults = await generateTestResultsMarkdown();
+ * await createPRComment(params, testResults);
+ *
+ * // Function returns normally even if PR context is missing
+ * await createPRComment(params, 'This will be skipped if not in PR context');
+ * ```
+ *
+ * @see {@link getPRContext} - Validates PR context and extracts metadata
+ * @see {@link postPRComment} - Performs the actual GitHub API call
  */
-async function getBundleSizeComparisonSection(params: ScriptParams, targetFolders: string[]): Promise<string> {
+export async function createPRComment(params: ScriptParams, commentBody: string): Promise<void> {
   const {core} = params;
-
-  try {
-    const comparisons = await compareBundleSizes(params, targetFolders);
-    return generateBundleSizeMarkdown(comparisons);
-  } catch (error) {
-    const err = error as Error;
-    core.error(`Failed to generate bundle size comparison: ${err.message}`);
-    return `### 📦 Bundle Size Analysis (vs. Main)\n\n_Error generating bundle size comparison: ${err.message}_\n\n----\n`;
-  }
-}
-
-/**
- * Builds the complete PR comment body
- * @param params - Script parameters
- * @param workflowInfo - Workflow and PR information
- * @param currentCommitSha - Full commit SHA
- * @returns Promise resolving to the complete comment body
- */
-async function buildCommentBody(params: ScriptParams, workflowInfo: WorkflowInfo, currentCommitSha: string): Promise<string> {
-  const {core} = params;
-  let commentBody = "";
-
-  core.debug("Building workflow info section...");
-  // Add workflow info section
-  commentBody += generateWorkflowInfoSection(workflowInfo);
-
-  core.debug("Building branch/commit comparison section...");
-  // Add branch/commit comparison
-  commentBody += await getBranchCommitComparisonSection(params, currentCommitSha, workflowInfo.shortCurrentCommitSha);
-
-  core.debug("Building Jest test results section...");
-  // Add test results
-  commentBody += await getJestResultsSection(core);
-
-  core.debug("Building Playwright test results section...");
-  commentBody += await getPlaywrightResultsSection(workflowInfo.jobStatus, workflowInfo.workflowRunUrl);
-
-  core.debug("Building bundle size comparison section...");
-  // Add bundle size analysis
-  commentBody += await getBundleSizeComparisonSection(params, BUNDLE_TARGET_FOLDERS);
-
-  core.debug(`Comment body assembled: ${commentBody.split("\n").length} lines`);
-  return commentBody;
-}
-
-/**
- * Main function to create a comment on a pull request with test and build results.
- * @param params - The script parameters.
- * @returns A promise that resolves when the comment is created or if the process is skipped.
- */
-export default async function createPRComment(params: ScriptParams): Promise<void> {
-  const {github: octokit, context, core} = params;
 
   core.info("🚀 Starting PR comment creation process...");
 
-  // Validate PR number using shared helper
-  core.debug("Validating PR number...");
-  const prNumber = getPRNumber(core);
-  if (prNumber === null) {
-    core.warning("⏭️ No PR number found - skipping comment creation");
-    return;
-  }
-  core.info(`📋 Target PR: #${prNumber}`);
-
-  // Extract and validate environment variables
-  core.debug("Extracting environment variables...");
-  const envVars = extractEnvironmentVariables(core);
-  if (envVars === null) {
-    core.error("❌ Missing required environment variables");
+  // Validate PR context
+  const prContext = getPRContext(params);
+  if (prContext === null) {
+    core.warning("⏭️ No PR context found - skipping comment creation");
     return;
   }
 
-  const {currentCommitSha, runId, branchName, jobStatus} = envVars;
-  const repoOwner = context.repo.owner;
-  const repoName = context.repo.repo;
+  const {prNumber, prUrl} = prContext;
+  core.info(`📋 Target PR: #${prNumber} (${prUrl})`);
 
-  core.info(`🔧 Workflow context: ${repoOwner}/${repoName}, Branch: ${branchName}, Status: ${jobStatus}`);
-  core.debug(`Commit SHA: ${currentCommitSha}, Run ID: ${runId}`);
+  // Post comment
+  const success = await postPRComment(params, prNumber, commentBody);
 
-  // Build URLs and metadata
-  const shortCurrentCommitSha = currentCommitSha.substring(0, 7);
-  const workflowRunUrl = `https://github.com/${repoOwner}/${repoName}/actions/runs/${runId}`;
-  const commitUrl = `https://github.com/${repoOwner}/${repoName}/commit/${currentCommitSha}`;
-  const prUrl = `https://github.com/${repoOwner}/${repoName}/pull/${prNumber}`;
-
-  const workflowInfo: WorkflowInfo = {
-    prNumber,
-    prUrl,
-    runId,
-    workflowRunUrl,
-    shortCurrentCommitSha,
-    commitUrl,
-    branchName,
-    jobStatus,
-  };
-
-  // Build comment body
-  core.info("📝 Building comment body with test results and analysis...");
-  const commentBody = await buildCommentBody(params, workflowInfo, currentCommitSha);
-  core.debug(`Comment body length: ${commentBody.length} characters`);
-
-  // Post comment to PR
-  try {
-    core.info(`💬 Posting comment to PR #${prNumber}...`);
-    await octokit.rest.issues.createComment({
-      owner: repoOwner,
-      repo: repoName,
-      issue_number: prNumber,
-      body: commentBody,
-    });
+  if (success) {
     core.info(`✓ Successfully commented on PR #${prNumber}`);
-    core.notice(`PR comment posted: ${prUrl}`);
-    console.log(`Successfully commented on PR #${prNumber}.`);
-  } catch (error) {
-    const err = error as Error;
-    core.error(`❌ Failed to create PR comment: ${err.message}`);
-    core.error(`Stack trace: ${err.stack ?? "No stack trace available"}`);
-    core.setFailed(`Failed to create PR comment for PR #${prNumber}: ${err.message}`);
+  } else {
+    core.warning(`⚠️ Failed to post comment to PR #${prNumber}`);
   }
 }
+
+/**
+ * Default export for backwards compatibility and GitHub Actions usage
+ */
+export default createPRComment;

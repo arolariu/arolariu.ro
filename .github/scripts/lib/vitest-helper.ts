@@ -3,7 +3,7 @@ import path from "node:path";
 import type {ScriptParams} from "../types/index.ts";
 
 /**
- * Interface for Jest coverage statistics per category (lines, statements, etc.)
+ * Interface for Vitest coverage statistics per category (lines, statements, etc.)
  */
 interface CoverageStats {
   total: number;
@@ -13,7 +13,7 @@ interface CoverageStats {
 }
 
 /**
- * Interface for Jest coverage summary for a single file or total.
+ * Interface for Vitest coverage summary for a single file or total.
  */
 interface CoverageFileSummary {
   lines: CoverageStats;
@@ -23,9 +23,9 @@ interface CoverageFileSummary {
 }
 
 /**
- * Interface for the overall Jest coverage summary object.
+ * Interface for the overall Vitest coverage summary object.
  */
-interface JestCoverageSummary {
+interface VitestCoverageSummary {
   total: CoverageFileSummary; // For "All files"
   [filePath: string]: CoverageFileSummary; // For individual files, keys are absolute paths
 }
@@ -33,7 +33,7 @@ interface JestCoverageSummary {
 async function getCoverageFromJson(coverageJsonPath: string, workspaceRoot: string, core: ScriptParams["core"]): Promise<string> {
   try {
     const coverageSummaryRaw = await fs.readFile(coverageJsonPath, "utf8");
-    const coverageSummaryData: JestCoverageSummary = JSON.parse(coverageSummaryRaw);
+    const coverageSummaryData: VitestCoverageSummary = JSON.parse(coverageSummaryRaw);
 
     let table = `| File                    | % Statements | % Branch | % Functions | % Lines |\n`;
     table += `|-------------------------|---------|----------|---------|---------|\n`;
@@ -75,7 +75,7 @@ async function getCoverageFromJson(coverageJsonPath: string, workspaceRoot: stri
     return table;
   } catch (error) {
     const err = error as Error;
-    core.warning(`Could not read or parse Jest coverage summary from ${coverageJsonPath}: ${err.message}`);
+    core.warning(`Could not read or parse Vitest coverage summary from ${coverageJsonPath}: ${err.message}`);
     return `| Error reading/parsing ${path.basename(
       coverageJsonPath,
     )}. | N/A     | N/A      | N/A     | N/A     |\n|-------------------------|---------|----------|---------|---------|\n\n`;
@@ -83,15 +83,15 @@ async function getCoverageFromJson(coverageJsonPath: string, workspaceRoot: stri
 }
 
 /**
- * Generates the Jest test results section.
+ * Generates the Vitest test results section.
  * @param core - The GitHub Actions core helper.
- * @returns Markdown string for the Jest test results section.
+ * @returns Markdown string for the Vitest test results section.
  */
-export default async function getJestResultsSection(core: ScriptParams["core"]): Promise<string> {
-  let section = `### 🧪 Jest Test Results\n\n`;
+export default async function getVitestResultsSection(core: ScriptParams["core"]): Promise<string> {
+  let section = `### 🧪 Vitest Test Results\n\n`;
   const coverageSummaryJsonPath = path.join(
     process.env["GITHUB_WORKSPACE"] ?? ".",
-    "sites/arolariu.ro/code-cov/jest-report/coverage-summary.json",
+    "sites/arolariu.ro/coverage/vitest/coverage-summary.json",
   );
   const workspaceRoot = process.env["GITHUB_WORKSPACE"] ?? "";
 

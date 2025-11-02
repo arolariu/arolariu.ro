@@ -14,7 +14,9 @@ This directory contains all GitHub Actions workflows and their supporting TypeSc
 │   │   ├── check-code-hygiene.ts     # Code hygiene checks (format, lint, stats)
 │   │   ├── check-code-hygiene-wrapper.js
 │   │   ├── create-e2e-failure-issue.ts
-│   │   ├── create-pr-comment.ts
+│   │   ├── create-pr-comment.ts      # Core PR comment creation logic
+│   │   ├── create-unit-test-summary-comment.ts  # Unit test summary PR comments
+│   │   ├── create-unit-test-summary-comment-wrapper.js
 │   │   └── post-hygiene-comment.ts
 │   ├── lib/                          # Utility modules
 │   │   ├── bundle-size-helper.ts
@@ -23,7 +25,7 @@ This directory contains all GitHub Actions workflows and their supporting TypeSc
 │   │   ├── file-system-helper.ts
 │   │   ├── git-helper.ts
 │   │   ├── issue-creator.ts
-│   │   ├── jest-helper.ts
+│   │   ├── vitest-helper.ts
 │   │   ├── markdown-builder.ts
 │   │   ├── newman-parser.ts
 │   │   ├── playwright-helper.ts
@@ -134,7 +136,8 @@ Reusable action that handles:
   - `COMMENT_TYPE=summary`: Final summary
 
 - **create-e2e-failure-issue.ts**: Create GitHub issue for E2E test failures
-- **create-pr-comment.ts**: Generic PR comment creation
+- **create-pr-comment.ts**: Core PR comment posting logic (generic utility)
+- **create-unit-test-summary-comment.ts**: Generate and post comprehensive test result comments (Vitest + Playwright + bundle analysis)
 
 ### Utility Modules (lib/)
 
@@ -146,7 +149,7 @@ Reusable action that handles:
 - **env-helper.ts**: Environment variable access
 - **file-system-helper.ts**: File system operations
 - **issue-creator.ts**: GitHub issue creation
-- **jest-helper.ts**: Jest test result parsing
+- **vitest-helper.ts**: Vitest test result parsing and coverage reporting
 - **playwright-helper.ts**: Playwright E2E result parsing
 - **newman-parser.ts**: Newman API test result parsing
 - **status-helper.ts**: GitHub check status management

@@ -5,7 +5,7 @@
   "description": "Helper package that contains type-safe scripts for GitHub Actions workflows.",
   "type": "module",
   "scripts": {
-    "test:jest-helper": "node --experimental-strip-types lib/jest-helper.test.ts"
+    "test:vitest-helper": "tsx lib/vitest-helper.test.ts"
   },
   "dependencies": {
     "@actions/core": "1.11.1",

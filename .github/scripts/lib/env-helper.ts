@@ -177,3 +177,75 @@ export function getEnvVarAsInt(key: string, defaultValue: number): number {
   const parsed = Number.parseInt(value, 10);
   return Number.isNaN(parsed) ? defaultValue : parsed;
 }
+
+/**
+ * Context information extracted from workflow environment variables
+ * Used for building PR comments and workflow-related operations
+ */
+export interface WorkflowContext {
+  /** Full commit SHA */
+  commitSha: string;
+  /** GitHub Actions run ID */
+  runId: string;
+  /** Branch name */
+  branchName: string;
+  /** Job status (success, failure, cancelled, etc.) */
+  jobStatus: string;
+}
+
+/**
+ * Extracts workflow-specific environment variables required for PR comment generation
+ * These variables are typically set by the workflow and are common across different comment types
+ *
+ * @param core - GitHub Actions core utilities for error reporting
+ * @returns Object containing workflow context information, or null if required variables are missing
+ * @throws Never throws, returns null on validation failure after setting workflow failure
+ *
+ * @example
+ * ```typescript
+ * const context = extractWorkflowContext(core);
+ * if (!context) {
+ *   core.error('Cannot proceed without workflow context');
+ *   return;
+ * }
+ * console.log(`Processing commit ${context.commitSha} on ${context.branchName}`);
+ * ```
+ *
+ * @remarks
+ * This function is designed to be reusable across different PR comment generators.
+ * Required environment variables:
+ * - `COMMIT_SHA`: The commit being built/tested
+ * - `RUN_ID`: The GitHub Actions workflow run identifier
+ * - `BRANCH_NAME`: The branch being processed
+ * - `JOB_STATUS`: The current job status (optional, defaults to "unknown")
+ */
+export function extractWorkflowContext(core: ScriptParams["core"]): WorkflowContext | null {
+  core.debug("Extracting workflow context from environment variables");
+
+  const commitSha = getEnvVar("COMMIT_SHA");
+  const runId = getEnvVar("RUN_ID");
+  const branchName = getEnvVar("BRANCH_NAME");
+  const jobStatus = getEnvVar("JOB_STATUS", "unknown");
+
+  // Validate required variables
+  const missingVars: string[] = [];
+  if (!commitSha) missingVars.push("COMMIT_SHA");
+  if (!runId) missingVars.push("RUN_ID");
+  if (!branchName) missingVars.push("BRANCH_NAME");
+
+  if (missingVars.length > 0) {
+    const errorMessage = `Missing required workflow environment variables: ${missingVars.join(", ")}`;
+    core.setFailed(errorMessage);
+    core.error(`❌ ${errorMessage}`);
+    return null;
+  }
+
+  core.debug(`✓ Successfully extracted workflow context: commit=${commitSha?.substring(0, 7)}, branch=${branchName}, runId=${runId}`);
+
+  return {
+    commitSha: commitSha!,
+    runId: runId!,
+    branchName: branchName!,
+    jobStatus: jobStatus!,
+  };
+}
