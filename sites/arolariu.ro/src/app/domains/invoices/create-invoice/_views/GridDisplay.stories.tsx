@@ -1,6 +1,6 @@
+import {withInvoiceCreatorContext} from ".storybook/decorators";
 import type {Meta, StoryObj} from "@storybook/react";
 import {expect, within} from "@storybook/test";
-import {withInvoiceCreatorContext} from "@/.storybook/decorators";
 import type {InvoiceScan} from "../_types/InvoiceScan";
 import GridDisplay from "./GridDisplay";
 
@@ -8,7 +8,7 @@ import GridDisplay from "./GridDisplay";
 const createMockScan = (id: string, name: string, type: "image" | "pdf", size: number): InvoiceScan => {
   const blob = new Blob([`mock-${type}-data`], {type: type === "pdf" ? "application/pdf" : "image/jpeg"});
   const file = new File([blob], name, {type: blob.type});
-  
+
   return {
     id,
     file,
@@ -74,14 +74,14 @@ export const SingleScan: Story = {
   },
   play: async ({canvasElement}) => {
     const canvas = within(canvasElement);
-    
+
     // Should have a grid container
     const gridContainer = canvasElement.querySelector('[class*="grid"]');
     expect(gridContainer).toBeTruthy();
-    
+
     // Should display the scan name
     await expect(canvas.getByText("invoice-2024-01.jpg")).toBeInTheDocument();
-    
+
     // Grid should have 1 column class (grid-cols-1)
     const classList = gridContainer?.className || "";
     expect(classList).toContain("grid-cols-1");
@@ -98,15 +98,15 @@ export const TwoScans: Story = {
   },
   play: async ({canvasElement}) => {
     const canvas = within(canvasElement);
-    
+
     // Should have a grid container
     const gridContainer = canvasElement.querySelector('[class*="grid"]');
     expect(gridContainer).toBeTruthy();
-    
+
     // Should display both scan names
     await expect(canvas.getByText("invoice-2024-01.jpg")).toBeInTheDocument();
     await expect(canvas.getByText("receipt-grocery.png")).toBeInTheDocument();
-    
+
     // Grid should have 2 column classes
     const classList = gridContainer?.className || "";
     expect(classList).toContain("grid-cols-");
@@ -123,12 +123,12 @@ export const ThreeScans: Story = {
   },
   play: async ({canvasElement}) => {
     const canvas = within(canvasElement);
-    
+
     // Should display all three scan names
     await expect(canvas.getByText("invoice-2024-01.jpg")).toBeInTheDocument();
     await expect(canvas.getByText("receipt-grocery.png")).toBeInTheDocument();
     await expect(canvas.getByText("bill-utility.pdf")).toBeInTheDocument();
-    
+
     // Grid should support 3 columns
     const gridContainer = canvasElement.querySelector('[class*="grid"]');
     const classList = gridContainer?.className || "";
@@ -146,15 +146,15 @@ export const SixScans: Story = {
   },
   play: async ({canvasElement}) => {
     const canvas = within(canvasElement);
-    
+
     // Should display all scan names
     await expect(canvas.getByText("invoice-2024-01.jpg")).toBeInTheDocument();
     await expect(canvas.getByText("invoice-2024-03.jpg")).toBeInTheDocument();
-    
+
     // Should have grid container with multiple items
     const gridContainer = canvasElement.querySelector('[class*="grid"]');
     expect(gridContainer).toBeTruthy();
-    
+
     const gridItems = gridContainer?.querySelectorAll('[class*="rounded"]');
     expect(gridItems?.length).toBeGreaterThan(3);
   },
@@ -167,21 +167,16 @@ export const SixScans: Story = {
 export const LargeDataset: Story = {
   args: {
     scans: Array.from({length: 15}, (_, i) =>
-      createMockScan(
-        `scan-${i}`,
-        `invoice-${String(i + 1).padStart(3, "0")}.jpg`,
-        "image",
-        Math.random() * 5 * 1024 * 1024,
-      ),
+      createMockScan(`scan-${i}`, `invoice-${String(i + 1).padStart(3, "0")}.jpg`, "image", Math.random() * 5 * 1024 * 1024),
     ),
   },
   play: async ({canvasElement}) => {
     const canvas = within(canvasElement);
-    
+
     // Should have pagination or show multiple scans
     const gridContainer = canvasElement.querySelector('[class*="grid"]');
     expect(gridContainer).toBeTruthy();
-    
+
     // Should display at least some scans
     await expect(canvas.getByText(/invoice-/)).toBeInTheDocument();
   },
@@ -201,12 +196,12 @@ export const MixedTypes: Story = {
   },
   play: async ({canvasElement}) => {
     const canvas = within(canvasElement);
-    
+
     // Should display all file types
     await expect(canvas.getByText("invoice.jpg")).toBeInTheDocument();
     await expect(canvas.getByText("receipt.pdf")).toBeInTheDocument();
     await expect(canvas.getByText("bill.png")).toBeInTheDocument();
-    
+
     // PDF and image files should both render in grid
     const gridContainer = canvasElement.querySelector('[class*="grid"]');
     expect(gridContainer).toBeTruthy();
@@ -223,11 +218,11 @@ export const Default: Story = {
   },
   play: async ({canvasElement}) => {
     const canvas = within(canvasElement);
-    
+
     // Verify grid renders with scans
     const gridContainer = canvasElement.querySelector('[class*="grid"]');
     expect(gridContainer).toBeTruthy();
-    
+
     // Should display action buttons for scans
     const buttons = canvas.getAllByRole("button");
     expect(buttons.length).toBeGreaterThan(0);

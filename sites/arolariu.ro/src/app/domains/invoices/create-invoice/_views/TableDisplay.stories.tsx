@@ -1,6 +1,6 @@
+import {withInvoiceCreatorContext} from ".storybook/decorators";
 import type {Meta, StoryObj} from "@storybook/react";
-import {expect, within, userEvent, waitFor} from "@storybook/test";
-import {withInvoiceCreatorContext} from "@/.storybook/decorators";
+import {expect, userEvent, waitFor, within} from "@storybook/test";
 import type {InvoiceScan} from "../_types/InvoiceScan";
 import TableDisplay from "./TableDisplay";
 
@@ -8,7 +8,7 @@ import TableDisplay from "./TableDisplay";
 const createMockScan = (id: string, name: string, type: "image" | "pdf", size: number): InvoiceScan => {
   const blob = new Blob([`mock-${type}-data`], {type: type === "pdf" ? "application/pdf" : "image/jpeg"});
   const file = new File([blob], name, {type: blob.type});
-  
+
   return {
     id,
     file,
@@ -74,7 +74,7 @@ export const Default: Story = {
   },
   play: async ({canvasElement}) => {
     const canvas = within(canvasElement);
-    
+
     // Verify table headers are present
     await expect(canvas.getByText("#")).toBeInTheDocument();
     await expect(canvas.getByText("File Name")).toBeInTheDocument();
@@ -82,18 +82,18 @@ export const Default: Story = {
     await expect(canvas.getByText("Size")).toBeInTheDocument();
     await expect(canvas.getByText("Uploaded")).toBeInTheDocument();
     await expect(canvas.getByText("Actions")).toBeInTheDocument();
-    
+
     // Verify scans are displayed
     await expect(canvas.getByText("invoice-2024-01.jpg")).toBeInTheDocument();
     await expect(canvas.getByText("receipt-grocery.png")).toBeInTheDocument();
     await expect(canvas.getByText("bill-utility.pdf")).toBeInTheDocument();
-    
+
     // Verify search input is present
     await expect(canvas.getByPlaceholderText(/search by filename/i)).toBeInTheDocument();
-    
+
     // Verify results count
     await expect(canvas.getByText(/5 of 5 shown/i)).toBeInTheDocument();
-    
+
     // Verify file type badges
     await expect(canvas.getByText("IMAGE")).toBeInTheDocument();
     await expect(canvas.getByText("PDF")).toBeInTheDocument();
@@ -110,16 +110,16 @@ export const SingleScan: Story = {
   },
   play: async ({canvasElement}) => {
     const canvas = within(canvasElement);
-    
+
     // Verify scan is displayed
     await expect(canvas.getByText("invoice-2024-01.jpg")).toBeInTheDocument();
-    
+
     // Verify file size is formatted correctly (2.5 MB)
     await expect(canvas.getByText(/2\.50 MB/i)).toBeInTheDocument();
-    
+
     // Verify upload time is displayed
     await expect(canvas.getByText(/10:00/i)).toBeInTheDocument();
-    
+
     // Verify results count for single scan
     await expect(canvas.getByText(/1 of 1 shown/i)).toBeInTheDocument();
   },
@@ -140,13 +140,13 @@ export const SearchFiltering: Story = {
   play: async ({canvasElement}) => {
     const canvas = within(canvasElement);
     const user = userEvent.setup();
-    
+
     // Get search input
     const searchInput = canvas.getByPlaceholderText(/search by filename/i);
-    
+
     // Type search query
     await user.type(searchInput, "receipt");
-    
+
     // Wait for filtering to apply
     await waitFor(async () => {
       // Only "receipt-002.pdf" should be visible
@@ -157,11 +157,11 @@ export const SearchFiltering: Story = {
       // Results count should update
       await expect(canvas.getByText(/1 of 3 shown/i)).toBeInTheDocument();
     });
-    
+
     // Clear and search for non-existent file
     await user.clear(searchInput);
     await user.type(searchInput, "nonexistent");
-    
+
     await waitFor(async () => {
       // Should show 0 results
       await expect(canvas.getByText(/0 of 3 shown/i)).toBeInTheDocument();
@@ -187,23 +187,23 @@ export const LargeDataset: Story = {
   play: async ({canvasElement}) => {
     const canvas = within(canvasElement);
     const user = userEvent.setup();
-    
+
     // Verify pagination controls are present
     await expect(canvas.getByText(/rows per page:/i)).toBeInTheDocument();
-    
+
     // Verify first row is numbered 1
     const tableRows = canvas.getAllByRole("row");
     // First row is header, second row is data row
     if (tableRows.length > 1) {
-      const firstDataRow = tableRows[1];
+      const firstDataRow = tableRows[1] as HTMLElement;
       const cells = within(firstDataRow).getAllByRole("cell");
       expect(cells[0]).toHaveTextContent("1");
     }
-    
+
     // Click on page size selector to verify options
     const pageSizeButton = canvas.getByRole("combobox");
     await user.click(pageSizeButton);
-    
+
     await waitFor(async () => {
       // Should show options: 10, 20, 50, 100
       await expect(canvas.getByRole("option", {name: "10"})).toBeInTheDocument();
@@ -227,11 +227,11 @@ export const WithProcessingScans: Story = {
   },
   play: async ({canvasElement}) => {
     const canvas = within(canvasElement);
-    
+
     // Verify processing indicators are present
     // Processing rows should have reduced opacity or special styling
     const tableRows = canvas.getAllByRole("row");
-    
+
     // Check that processing scans have disabled action buttons
     // Note: This is a visual test - the actual implementation details may vary
     await expect(tableRows.length).toBeGreaterThan(1);
@@ -248,11 +248,11 @@ export const ActionButtons: Story = {
   },
   play: async ({canvasElement}) => {
     const canvas = within(canvasElement);
-    
+
     // Should have action buttons (rename, delete)
     const buttons = canvas.getAllByRole("button");
     expect(buttons.length).toBeGreaterThan(0);
-    
+
     // Should NOT have rotate button (table view doesn't show rotation)
     const rotateButtons = canvas.queryAllByLabelText(/rotate/i);
     expect(rotateButtons.length).toBe(0);
