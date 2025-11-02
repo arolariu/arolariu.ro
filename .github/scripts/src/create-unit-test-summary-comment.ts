@@ -103,21 +103,25 @@ async function buildUnitTestSummaryCommentBody(params: ScriptParams, workflowInf
   // Add workflow info section
   commentBody += generateWorkflowInfoSection(workflowInfo);
 
-  core.debug("Building branch/commit comparison section...");
-  // Add branch/commit comparison
-  commentBody += await getBranchCommitComparisonSection(params, currentCommitSha, workflowInfo.shortCurrentCommitSha);
+  core.debug("Building branch/commit comparison, Vitest, Playwright, and bundle size sections in parallel...");
+  // Start all independent async operations in parallel
+  const [
+    branchCommitComparisonSection,
+    vitestResultsSection,
+    playwrightResultsSection,
+    bundleSizeComparisonSection,
+  ] = await Promise.all([
+    getBranchCommitComparisonSection(params, currentCommitSha, workflowInfo.shortCurrentCommitSha),
+    getVitestResultsSection(core),
+    getPlaywrightResultsSection(workflowInfo.jobStatus, workflowInfo.workflowRunUrl),
+    getBundleSizeComparisonSection(params, BUNDLE_TARGET_FOLDERS),
+  ]);
 
-  core.debug("Building Vitest test results section...");
-  // Add test results
-  commentBody += await getVitestResultsSection(core);
-
-  core.debug("Building Playwright test results section...");
-  commentBody += await getPlaywrightResultsSection(workflowInfo.jobStatus, workflowInfo.workflowRunUrl);
-
-  core.debug("Building bundle size comparison section...");
-  // Add bundle size analysis
-  commentBody += await getBundleSizeComparisonSection(params, BUNDLE_TARGET_FOLDERS);
-
+  // Concatenate results in order
+  commentBody += branchCommitComparisonSection;
+  commentBody += vitestResultsSection;
+  commentBody += playwrightResultsSection;
+  commentBody += bundleSizeComparisonSection;
   core.debug(`Comment body assembled: ${commentBody.split("\n").length} lines`);
   return commentBody;
 }
