@@ -345,7 +345,7 @@ Copilot automatically applies specialized instructions based on the files you're
 |-----------|---------------------|------------|
 | `.github/workflows/*.yml` | GitHub Actions CI/CD | Workflow structure, caching, monorepo patterns |
 | `**/*.ts` | TypeScript Development | Strict typing, DDD patterns, type safety |
-| `**/*.tsx, *.jsx` | React Development | Functional components, hooks, RSC patterns |
+| `**/*.jsx, **/*.tsx` | React Development | Functional components, hooks, RSC patterns |
 | `sites/arolariu.ro/**/*` | Next.js Frontend | App Router, Server Components, performance |
 | `**/*.cs` | .NET Backend | DDD architecture, SOLID principles, testing |
 | `**/*.bicep` | Azure Infrastructure | IaC best practices, security, cost optimization |
