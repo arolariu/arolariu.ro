@@ -1,4 +1,4 @@
-import {describe, it, expect, vi, beforeEach} from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 import {createInvoiceAction} from "./createInvoice";
 
 // Mock the server utils
@@ -19,12 +19,15 @@ describe("createInvoiceAction", () => {
     const formData = new FormData();
     formData.append("file", mockFile);
     formData.append("userIdentifier", "user-123");
-    formData.append("metadata", JSON.stringify({
-      requiresAnalysis: "true",
-      fileName: "test.jpg",
-      fileType: "image",
-      uploadedAt: "2024-01-01T00:00:00.000Z",
-    }));
+    formData.append(
+      "metadata",
+      JSON.stringify({
+        requiresAnalysis: "true",
+        fileName: "test.jpg",
+        fileType: "image",
+        uploadedAt: "2024-01-01T00:00:00.000Z",
+      }),
+    );
 
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,

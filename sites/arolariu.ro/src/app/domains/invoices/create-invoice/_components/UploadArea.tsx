@@ -40,8 +40,7 @@ export default function UploadArea(): React.JSX.Element | null {
     return null;
   }
 
-  const {onClick, onKeyDown, onDrop, onDragEnter, onDragOver, onDragLeave, ...restRootProps} =
-    getRootProps();
+  const {onClick, onKeyDown, onDrop, onDragEnter, onDragOver, onDragLeave, ...restRootProps} = getRootProps();
 
   const {onChange, ...restInputProps} = getInputProps();
 
@@ -82,7 +81,10 @@ export default function UploadArea(): React.JSX.Element | null {
           size='lg'>
           {isUploading ? "Processing..." : "Choose Files"}
         </Button>
-        <input {...restInputProps} onChange={onChange} />
+        <input
+          {...restInputProps}
+          onChange={onChange}
+        />
       </motion.div>
     </motion.div>
   );

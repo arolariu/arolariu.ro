@@ -1,3 +1,4 @@
+import {usePaginationWithSearch} from "@/hooks";
 import {
   Button,
   Input,
@@ -24,7 +25,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
-import {usePaginationWithSearch} from "@/hooks";
 import {motion} from "motion/react";
 import {useCallback, useState} from "react";
 import {TbEdit, TbTrash} from "react-icons/tb";
@@ -176,9 +176,9 @@ export default function TableDisplay(): React.JSX.Element | null {
           </TableHeader>
           <TableBody>
             {paginatedItems.map((scan, index) => (
-              <TableRow 
+              <TableRow
                 key={scan.id}
-                className={scan.isProcessing ? 'opacity-50 bg-purple-50/50 dark:bg-purple-950/20' : ''}>
+                className={scan.isProcessing ? "bg-purple-50/50 opacity-50 dark:bg-purple-950/20" : ""}>
                 <TableCell className='font-medium'>{(currentPage - 1) * pageSize + index + 1}</TableCell>
                 <TableCell className='max-w-xs truncate font-medium'>
                   <div className='flex items-center gap-2'>
@@ -189,11 +189,12 @@ export default function TableDisplay(): React.JSX.Element | null {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                    scan.type === "pdf" 
-                      ? "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300"
-                      : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-                  }`}>
+                  <span
+                    className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                      scan.type === "pdf"
+                        ? "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300"
+                        : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                    }`}>
                     {scan.type.toUpperCase()}
                   </span>
                 </TableCell>

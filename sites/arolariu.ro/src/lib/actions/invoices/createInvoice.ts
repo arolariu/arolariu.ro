@@ -20,11 +20,7 @@ type ActionOutputType = Readonly<{
  * @param input The input parameters for creating an invoice
  * @returns Promise resolving to the response from the API
  */
-export async function createInvoiceAction({
-  formData,
-  userIdentifier,
-  userJwt,
-}: ActionInputType): Promise<ActionOutputType> {
+export async function createInvoiceAction({formData, userIdentifier, userJwt}: ActionInputType): Promise<ActionOutputType> {
   try {
     // Submit to backend API
     const response = await fetch(`${API_URL}/rest/v2/invoices`, {
