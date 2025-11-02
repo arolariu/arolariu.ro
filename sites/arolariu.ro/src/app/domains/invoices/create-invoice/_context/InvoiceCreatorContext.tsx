@@ -374,7 +374,6 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
           // Prepare FormData for this scan
           const formData = new FormData();
           formData.append("file", scan.file);
-          formData.append("userIdentifier", userIdentifier);
           formData.append(
             "metadata",
             JSON.stringify({

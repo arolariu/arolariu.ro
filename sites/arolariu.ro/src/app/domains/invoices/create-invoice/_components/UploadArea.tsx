@@ -1,4 +1,4 @@
-import {Button} from "@arolariu/components";
+import {Input} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useCallback} from "react";
 import {useDropzone} from "react-dropzone";
@@ -40,8 +40,6 @@ export default function UploadArea(): React.JSX.Element | null {
     return null;
   }
 
-  const {onClick: handleClick, onChange: handleChange} = getRootProps();
-
   return (
     <div
       className={`mb-16 rounded-lg border-2 border-dashed p-16 text-center transition-all duration-300 ${
@@ -61,19 +59,12 @@ export default function UploadArea(): React.JSX.Element | null {
           {isDragActive ? "Drop your files here..." : "Drag and drop your files here, or click to browse"}
         </p>
         <p className='mb-8 text-sm text-gray-500 dark:text-gray-400'>Supports JPG, PNG, PDF files up to 10MB each</p>
-        <Button
-          type='button'
-          onClick={handleClick}
-          className='cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-3 text-lg text-white shadow-lg transition-all duration-300 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl'
-          disabled={isUploading}
-          size='lg'>
-          {isUploading ? "Processing..." : "Choose Files"}
-        </Button>
-        <input
-          title='Upload Invoice Scans'
-          onChange={handleChange}
+        <Input
           {...getInputProps()}
-        />
+          className='cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-3 text-lg text-white shadow-lg transition-all duration-300 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl'
+          disabled={isUploading}>
+          {isUploading ? "Processing..." : "Choose Files"}
+        </Input>
       </motion.div>
     </div>
   );

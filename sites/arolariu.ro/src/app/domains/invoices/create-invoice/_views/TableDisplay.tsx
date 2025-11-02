@@ -52,10 +52,7 @@ export default function TableDisplay(): React.JSX.Element | null {
   const handleRename = useCallback(
     (scan: {id: string; name: string}) => (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      const newName = prompt("Enter new filename:", scan.name);
-      if (newName) {
-        renameScan(scan.id, newName);
-      }
+      // todo: add dialog spawn.
     },
     [renameScan],
   );
