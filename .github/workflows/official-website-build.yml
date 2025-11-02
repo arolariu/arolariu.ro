@@ -75,7 +75,7 @@ jobs:
           generate: 'true'
           cache-key-prefix: 'website'
 
-      - name: 🧪 Running Jest Unit tests...
+      - name: 🧪 Running Vitest Unit tests...
         working-directory: './sites/arolariu.ro'
         run: npm run test:unit
         env: # We will use local assets for the tests
@@ -120,9 +120,9 @@ jobs:
             const { execSync } = require('child_process');
             execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
 
-            // Import and execute the wrapper script that uses Node.js 24's native TypeScript support
-            const { default: createPRCommentWrapper } = await import('./.github/scripts/src/create-pr-comment-wrapper.js');
-            await createPRCommentWrapper({ github, context, core, exec });
+            // Import and execute the wrapper script for unit test summary comments
+            const { default: createUnitTestSummaryCommentWrapper } = await import('./.github/scripts/src/create-unit-test-summary-comment-wrapper.js');
+            await createUnitTestSummaryCommentWrapper({ github, context, core, exec });
 
       - name: ☂️ Uploading code coverage report to CodeCov
         uses: codecov/codecov-action@v5
