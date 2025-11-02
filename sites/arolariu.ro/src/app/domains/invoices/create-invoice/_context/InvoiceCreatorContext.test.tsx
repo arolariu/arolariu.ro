@@ -35,48 +35,71 @@ function TestComponent() {
   
   return (
     <div>
-      <div data-testid="scans-count">{context.scans.length}</div>
-      <div data-testid="is-uploading">{context.isUploading.toString()}</div>
-      <div data-testid="upload-progress">{context.uploadProgress}</div>
-      <div data-testid="is-processing">{context.isProcessingNext.toString()}</div>
-      <button
-        data-testid="add-files-btn"
-        onClick={() => {
-          const file = new File(["content"], "test.jpg", {type: "image/jpeg"});
-          const fileList = {
-            0: file,
-            length: 1,
-            item: (index: number) => (index === 0 ? file : null),
-          } as FileList;
-          context.addFiles(fileList);
-        }}
-      >
-        Add Files
-      </button>
-      <button
-        data-testid="remove-scan-btn"
-        onClick={() => context.scans[0] && context.removeScan(context.scans[0].id)}
-      >
-        Remove Scan
-      </button>
-      <button data-testid="clear-all-btn" onClick={() => context.clearAll()}>
-        Clear All
-      </button>
-      <button
-        data-testid="rename-scan-btn"
-        onClick={() => context.scans[0] && context.renameScan(context.scans[0].id, "newname")}
-      >
-        Rename
-      </button>
-      <button
-        data-testid="rotate-scan-btn"
-        onClick={() => context.scans[0] && context.rotateScan(context.scans[0].id, 90)}
-      >
-        Rotate
-      </button>
-      <button data-testid="process-btn" onClick={() => context.processNextStep()}>
-        Process
-      </button>
+      <div aria-label="Status Information">
+        <p>Uploaded Scans: {context.scans.length}</p>
+        <p>Is Uploading: {context.isUploading ? "Yes" : "No"}</p>
+        <p>Upload Progress: {context.uploadProgress}%</p>
+        <p>Is Processing: {context.isProcessingNext ? "Yes" : "No"}</p>
+        {context.scans.length > 0 && (
+          <div aria-label="Scan Details">
+            <p>Scan Name: {context.scans[0].name}</p>
+            <p>Scan Type: {context.scans[0].type}</p>
+          </div>
+        )}
+      </div>
+      <div aria-label="Actions">
+        <button
+          onClick={() => {
+            const file = new File(["content"], "test.jpg", {type: "image/jpeg"});
+            const fileList = {
+              0: file,
+              length: 1,
+              item: (index: number) => (index === 0 ? file : null),
+            } as FileList;
+            context.addFiles(fileList);
+          }}
+        >
+          Add Files
+        </button>
+        <button
+          onClick={() => {
+            const file = new File(["large content"], "large.jpg", {type: "image/jpeg"});
+            Object.defineProperty(file, "size", {value: 11 * 1024 * 1024}); // 11MB
+            const fileList = {
+              0: file,
+              length: 1,
+              item: (index: number) => (index === 0 ? file : null),
+            } as FileList;
+            context.addFiles(fileList);
+          }}
+        >
+          Add Large File
+        </button>
+        <button
+          onClick={() => {
+            const file = new File(["pdf content"], "document.pdf", {type: "application/pdf"});
+            const fileList = {
+              0: file,
+              length: 1,
+              item: (index: number) => (index === 0 ? file : null),
+            } as FileList;
+            context.addFiles(fileList);
+          }}
+        >
+          Add PDF
+        </button>
+        <button onClick={() => context.scans[0] && context.removeScan(context.scans[0].id)}>
+          Remove Scan
+        </button>
+        <button onClick={() => context.clearAll()}>Clear All</button>
+        <button onClick={() => context.scans[0] && context.renameScan(context.scans[0].id, "newname")}>
+          Rename
+        </button>
+        <button onClick={() => context.scans[0] && context.rotateScan(context.scans[0].id, 90)}>
+          Rotate
+        </button>
+        <button onClick={() => context.processNextStep()}>Process</button>
+      </div>
     </div>
   );
 }
@@ -99,10 +122,10 @@ describe("InvoiceCreatorContext", () => {
       </InvoiceCreatorProvider>
     );
 
-    expect(screen.getByTestId("scans-count")).toHaveTextContent("0");
-    expect(screen.getByTestId("is-uploading")).toHaveTextContent("false");
-    expect(screen.getByTestId("upload-progress")).toHaveTextContent("0");
-    expect(screen.getByTestId("is-processing")).toHaveTextContent("false");
+    expect(screen.getByText(/uploaded scans: 0/i)).toBeInTheDocument();
+    expect(screen.getByText(/is uploading: no/i)).toBeInTheDocument();
+    expect(screen.getByText(/upload progress: 0%/i)).toBeInTheDocument();
+    expect(screen.getByText(/is processing: no/i)).toBeInTheDocument();
   });
 
   it("should throw error when used outside provider", () => {
@@ -123,11 +146,11 @@ describe("InvoiceCreatorContext", () => {
     );
 
     act(() => {
-      screen.getByTestId("add-files-btn").click();
+      screen.getByRole("button", {name: /add files/i}).click();
     });
 
     // Should set uploading state
-    expect(screen.getByTestId("is-uploading")).toHaveTextContent("true");
+    expect(screen.getByText(/is uploading: yes/i)).toBeInTheDocument();
 
     // Fast-forward timers to complete upload
     await act(async () => {
@@ -136,20 +159,14 @@ describe("InvoiceCreatorContext", () => {
 
     // Should have 1 scan after upload completes
     await waitFor(() => {
-      expect(screen.getByTestId("scans-count")).toHaveTextContent("1");
+      expect(screen.getByText(/uploaded scans: 1/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId("is-uploading")).toHaveTextContent("false");
+    expect(screen.getByText(/is uploading: no/i)).toBeInTheDocument();
     expect(toast.success).toHaveBeenCalledWith("1 file(s) uploaded successfully!");
   });
 
   it("should validate file types", async () => {
-    render(
-      <InvoiceCreatorProvider>
-        <TestComponent />
-      </InvoiceCreatorProvider>
-    );
-
     const invalidFile = new File(["content"], "test.txt", {type: "text/plain"});
     const fileList = {
       0: invalidFile,
@@ -157,64 +174,39 @@ describe("InvoiceCreatorContext", () => {
       item: (index: number) => (index === 0 ? invalidFile : null),
     } as FileList;
 
-    const component = render(
+    const TestInvalidFile = () => {
+      const context = useInvoiceCreator();
+      return (
+        <button onClick={() => context.addFiles(fileList)}>
+          Add Invalid File
+        </button>
+      );
+    };
+
+    render(
       <InvoiceCreatorProvider>
-        <div data-testid="custom-component">
-          <button
-            data-testid="add-invalid-file"
-            onClick={() => {
-              const context = useInvoiceCreator();
-              context.addFiles(fileList);
-            }}
-          />
-        </div>
+        <TestInvalidFile />
       </InvoiceCreatorProvider>
     );
 
-    // This test needs refactoring since we can't access context outside the component
-    // For now, skip detailed validation testing
-    expect(component).toBeDefined();
+    act(() => {
+      screen.getByRole("button", {name: /add invalid file/i}).click();
+    });
+
+    expect(toast.error).toHaveBeenCalledWith(
+      expect.stringContaining("Invalid file type")
+    );
   });
 
   it("should reject files larger than 10MB", () => {
-    const largeFile = new File(
-      [new ArrayBuffer(11 * 1024 * 1024)],
-      "large.jpg",
-      {type: "image/jpeg"}
-    );
-    const fileList = {
-      0: largeFile,
-      length: 1,
-      item: (index: number) => (index === 0 ? largeFile : null),
-    } as FileList;
-
     render(
       <InvoiceCreatorProvider>
         <TestComponent />
       </InvoiceCreatorProvider>
     );
 
-    // Add this via the test component's context
-    const TestComponentWithValidation = () => {
-      const context = useInvoiceCreator();
-      return (
-        <button
-          data-testid="add-large-file"
-          onClick={() => context.addFiles(fileList)}
-        >
-          Add Large File
-        </button>
-      );
-    };
-
-    const {rerender} = render(
-      <InvoiceCreatorProvider>
-        <TestComponentWithValidation />
-      </InvoiceCreatorProvider>
-    );
-
     act(() => {
-      screen.getByTestId("add-large-file").click();
+      screen.getByRole("button", {name: /add large file/i}).click();
     });
 
     expect(toast.error).toHaveBeenCalledWith(
@@ -236,15 +228,8 @@ describe("InvoiceCreatorContext", () => {
       const context = useInvoiceCreator();
       return (
         <div>
-          <button
-            data-testid="add-pdf"
-            onClick={() => context.addFiles(fileList)}
-          >
-            Add PDF
-          </button>
-          <div data-testid="scan-type">
-            {context.scans[0]?.type || "none"}
-          </div>
+          <button onClick={() => context.addFiles(fileList)}>Add PDF</button>
+          <div>{context.scans[0]?.type || "none"}</div>
         </div>
       );
     };
@@ -256,7 +241,7 @@ describe("InvoiceCreatorContext", () => {
     );
 
     act(() => {
-      screen.getByTestId("add-pdf").click();
+      screen.getByRole("button", {name: /add pdf/i}).click();
     });
 
     await act(async () => {
@@ -264,7 +249,7 @@ describe("InvoiceCreatorContext", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId("scan-type")).toHaveTextContent("pdf");
+      expect(screen.getByText("pdf")).toBeInTheDocument();
     });
   });
 
@@ -327,6 +312,12 @@ describe("InvoiceCreatorContext", () => {
 
     // Clear all
     act(() => {
+      screen.getByRole("button", {name: /clear all/i}).click();
+    });
+
+    expect(screen.getByText(/scans: 0/i)).toBeInTheDocument();
+  });
+    act(() => {
       screen.getByTestId("clear-all-btn").click();
     });
 
@@ -339,7 +330,6 @@ describe("InvoiceCreatorContext", () => {
       return (
         <div>
           <button
-            data-testid="add-file"
             onClick={() => {
               const file = new File(["content"], "original.jpg", {
                 type: "image/jpeg",
@@ -352,19 +342,16 @@ describe("InvoiceCreatorContext", () => {
               context.addFiles(fileList);
             }}
           >
-            Add
+            Add File
           </button>
           <button
-            data-testid="rename"
             onClick={() =>
               context.scans[0] && context.renameScan(context.scans[0].id, "renamed")
             }
           >
-            Rename
+            Rename Scan
           </button>
-          <div data-testid="scan-name">
-            {context.scans[0]?.name || "none"}
-          </div>
+          <div>Current name: {context.scans[0]?.name || "none"}</div>
         </div>
       );
     };
@@ -376,7 +363,7 @@ describe("InvoiceCreatorContext", () => {
     );
 
     act(() => {
-      screen.getByTestId("add-file").click();
+      screen.getByRole("button", {name: /add file/i}).click();
     });
 
     await act(async () => {
@@ -384,15 +371,15 @@ describe("InvoiceCreatorContext", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId("scan-name")).toHaveTextContent("original.jpg");
+      expect(screen.getByText(/current name: original\.jpg/i)).toBeInTheDocument();
     });
 
     act(() => {
-      screen.getByTestId("rename").click();
+      screen.getByRole("button", {name: /rename scan/i}).click();
     });
 
     await waitFor(() => {
-      expect(screen.getByTestId("scan-name")).toHaveTextContent("renamed.jpg");
+      expect(screen.getByText(/current name: renamed\.jpg/i)).toBeInTheDocument();
     });
 
     expect(toast.success).toHaveBeenCalledWith(
