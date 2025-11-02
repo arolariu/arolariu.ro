@@ -6,7 +6,7 @@
 import {compareBundleSizes, generateBundleSizeMarkdown} from "../lib/bundle-size-helper.ts";
 import {BUNDLE_TARGET_FOLDERS} from "../lib/constants.ts";
 import {getBranchCommitComparisonSection} from "../lib/git-helper.ts";
-import getJestResultsSection from "../lib/jest-helper.ts";
+import getVitestResultsSection from "../lib/vitest-helper.ts";
 import getPlaywrightResultsSection from "../lib/playwright-helper.ts";
 import {generateWorkflowInfoSection} from "../lib/pr-comment-builder.ts";
 import {getPRNumber} from "../lib/pr-helper.ts";
@@ -82,9 +82,9 @@ async function buildCommentBody(params: ScriptParams, workflowInfo: WorkflowInfo
   // Add branch/commit comparison
   commentBody += await getBranchCommitComparisonSection(params, currentCommitSha, workflowInfo.shortCurrentCommitSha);
 
-  core.debug("Building Jest test results section...");
+  core.debug("Building Vitest test results section...");
   // Add test results
-  commentBody += await getJestResultsSection(core);
+  commentBody += await getVitestResultsSection(core);
 
   core.debug("Building Playwright test results section...");
   commentBody += await getPlaywrightResultsSection(workflowInfo.jobStatus, workflowInfo.workflowRunUrl);
