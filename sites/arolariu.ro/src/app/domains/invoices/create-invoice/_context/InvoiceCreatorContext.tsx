@@ -1,12 +1,26 @@
 "use client";
 
 import {generateGuid} from "@/lib/utils.generic";
-import {bulkCreateInvoicesAction} from "@/lib/actions/invoices/bulkCreateInvoices";
+import {createInvoiceAction} from "@/lib/actions/invoices/createInvoice";
 import {toast} from "@arolariu/components";
 import {createContext, use, useCallback, useMemo, useRef, useState} from "react";
 import type {InvoiceScan, InvoiceScanType} from "../_types/InvoiceScan";
 import {rotateImageImpl} from "../_utils/fileActions";
 
+/**
+ * Context type definition for the Invoice Creator.
+ * 
+ * @property {InvoiceScan[]} scans - Array of all invoice scans currently loaded
+ * @property {boolean} isUploading - Flag indicating if files are currently being uploaded
+ * @property {number} uploadProgress - Upload progress percentage (0-100)
+ * @property {boolean} isProcessingNext - Flag indicating if scans are being processed for submission
+ * @property {Function} addFiles - Function to add new files to the scan list
+ * @property {Function} removeScan - Function to remove a specific scan by ID
+ * @property {Function} clearAll - Function to remove all scans
+ * @property {Function} rotateScan - Function to rotate an image scan by degrees
+ * @property {Function} renameScan - Function to rename a scan
+ * @property {Function} processNextStep - Function to submit all scans to the backend API
+ */
 interface InvoiceCreatorContextType {
   scans: InvoiceScan[];
   isUploading: boolean;
@@ -21,21 +35,77 @@ interface InvoiceCreatorContextType {
   processNextStep: () => Promise<void>;
 }
 
+/**
+ * Classifies a file as either PDF or image based on its MIME type.
+ * 
+ * @param {File} file - The file to classify
+ * @returns {InvoiceScanType} Either "pdf" or "image"
+ */
 const classify = (file: File): InvoiceScanType => (file.type === "application/pdf" ? "pdf" : "image");
+
+/**
+ * React Context for managing invoice scan creation state and operations.
+ * 
+ * This context provides:
+ * - Scan management (add, remove, clear, rename, rotate)
+ * - Upload progress tracking
+ * - Processing state management
+ * - Backend API submission
+ */
 const InvoiceCreatorContext = createContext<InvoiceCreatorContextType | undefined>(undefined);
 
 /**
- * This component provides the context for the invoice creator.
- * It manages the state of invoice scans and upload status.
- * @returns The InvoiceCreatorContext provider component.
+ * Provider component for the Invoice Creator Context.
+ * 
+ * This component manages all state and operations for creating invoices from scanned files.
+ * It handles file validation, upload progress simulation, scan manipulation, and submission
+ * to the backend API.
+ * 
+ * Features:
+ * - Accepts JPG, PNG, and PDF files up to 10MB each
+ * - Simulates upload progress with visual feedback
+ * - Allows scan rotation (images only), renaming, and removal
+ * - Submits scans one-by-one to the backend API with proper error handling
+ * - Provides toast notifications for all operations
+ * - Automatically cleans up blob URLs to prevent memory leaks
+ * 
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Child components to render within the provider
+ * @returns {JSX.Element} The provider component wrapping children
+ * 
+ * @example
+ * ```tsx
+ * <InvoiceCreatorProvider>
+ *   <UploadArea />
+ *   <UploadPreview />
+ * </InvoiceCreatorProvider>
+ * ```
  */
-export function InvoiceCreatorProvider({children}: Readonly<{children: React.ReactNode}>) {
+export function InvoiceCreatorProvider({children}: Readonly<{children: React.ReactNode}>){
   const [scans, setScans] = useState<InvoiceScan[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isProcessingNext, setIsProcessingNext] = useState(false);
   const isProcessingRef = useRef(false);
 
+  /**
+   * Adds new files to the scan list with validation.
+   * 
+   * Validates each file for:
+   * - Supported types (JPG, PNG, PDF)
+   * - Maximum size (10MB)
+   * 
+   * Creates blob URLs for preview and simulates upload progress.
+   * Shows toast notifications for validation errors and successful uploads.
+   * 
+   * @param {FileList} files - List of files to add
+   * 
+   * @example
+   * ```tsx
+   * const { addFiles } = useInvoiceCreator();
+   * <input type="file" onChange={(e) => e.target.files && addFiles(e.target.files)} />
+   * ```
+   */
   const addFiles = useCallback(
     (files: FileList) => {
       if (!files || files.length === 0) {
@@ -107,6 +177,19 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
     [],
   );
 
+  /**
+   * Removes a specific scan from the list by ID.
+   * 
+   * Automatically revokes the blob URL to prevent memory leaks.
+   * 
+   * @param {string} id - Unique identifier of the scan to remove
+   * 
+   * @example
+   * ```tsx
+   * const { removeScan } = useInvoiceCreator();
+   * <button onClick={() => removeScan(scan.id)}>Delete</button>
+   * ```
+   */
   const removeScan = useCallback((id: string) => {
     console.log(">>> Removing scan with id:", id);
     setScans((prev) => {
@@ -118,14 +201,41 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
     });
   }, []);
 
+  /**
+   * Clears all scans from the list.
+   * 
+   * Revokes all blob URLs to prevent memory leaks.
+   * 
+   * @example
+   * ```tsx
+   * const { clearAll } = useInvoiceCreator();
+   * <button onClick={clearAll}>Clear All</button>
+   * ```
+   */
   const clearAll = useCallback(() => {
-    console.log(">>> Cleaing all scans...");
+    console.log(">>> Clearing all scans...");
     setScans((prev) => {
       prev.forEach((s) => s.preview && URL.revokeObjectURL(s.preview));
       return [];
     });
   }, []);
 
+  /**
+   * Rotates an image scan by the specified degrees.
+   * 
+   * Only works for image scans (JPG, PNG). PDF rotation is not supported.
+   * Creates a new blob URL for the rotated image and revokes the old one.
+   * 
+   * @param {string} id - Unique identifier of the scan to rotate
+   * @param {number} degrees - Rotation amount in degrees (typically 90, 180, or 270)
+   * @returns {Promise<void>} Resolves when rotation completes
+   * 
+   * @example
+   * ```tsx
+   * const { rotateScan } = useInvoiceCreator();
+   * <button onClick={() => rotateScan(scan.id, 90)}>Rotate 90°</button>
+   * ```
+   */
   const rotateScan = useCallback(
     async (id: string, degrees: number) => {
       console.log(">>> Rotating scan with id:", id);
@@ -154,6 +264,21 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
     [scans],
   );
 
+  /**
+   * Renames a scan while preserving its file extension.
+   * 
+   * The extension is automatically retained from the original filename.
+   * Creates a new File object with the updated name.
+   * 
+   * @param {string} id - Unique identifier of the scan to rename
+   * @param {string} newName - New name for the scan (with or without extension)
+   * 
+   * @example
+   * ```tsx
+   * const { renameScan } = useInvoiceCreator();
+   * <button onClick={() => renameScan(scan.id, "Invoice-2024-01")}>Rename</button>
+   * ```
+   */
   const renameScan = useCallback((id: string, newName: string) => {
     console.log(">>> Renaming scan with id:", id);
     setScans((prev) =>
@@ -172,6 +297,30 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
     );
   }, []);
 
+  /**
+   * Processes and submits all scans to the backend API.
+   * 
+   * This function:
+   * 1. Validates there are scans to process
+   * 2. Prevents concurrent execution using a ref guard
+   * 3. Fetches user credentials from the BFF (/api/user)
+   * 4. Submits each scan one-by-one to the backend API
+   * 5. Shows loading toasts that update to success/error for each scan
+   * 6. Removes successfully processed scans from the list
+   * 7. Displays a summary toast with total results
+   * 
+   * Each scan is processed independently - one failure doesn't stop others.
+   * Successfully processed scans are removed from the list.
+   * Failed scans remain for retry.
+   * 
+   * @returns {Promise<void>} Resolves when all scans have been processed
+   * 
+   * @example
+   * ```tsx
+   * const { processNextStep } = useInvoiceCreator();
+   * <button onClick={processNextStep}>Submit All</button>
+   * ```
+   */
   const processNextStep = useCallback(async () => {
     if (isProcessingRef.current) {
       return;
@@ -185,6 +334,10 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
     // Set processing flag before async work
     isProcessingRef.current = true;
     setIsProcessingNext(true);
+
+    // Track results for summary
+    let totalProcessed = 0;
+    let totalFailed = 0;
 
     // Create toast IDs map for each scan to update toasts
     const toastIds = new Map<string, string | number>();
@@ -206,61 +359,77 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
         return {...s, isProcessing: true};
       }));
 
-      // Prepare scans data for bulk action
-      const scansData = scans.map((scan) => ({
-        file: scan.file,
-        name: scan.name,
-        type: scan.type,
-        uploadedAt: scan.uploadedAt.toISOString(),
-      }));
-
-      // Submit all scans via bulk action (processes in batches of 10)
-      const result = await bulkCreateInvoicesAction({
-        scans: scansData,
-        userIdentifier,
-        userJwt,
-      });
-
-      // Process results and update toasts
-      result.results.forEach((scanResult) => {
-        const scan = scans.find((s) => s.name === scanResult.scanName);
-        if (!scan) {
-          return;
-        }
-
+      // Process each scan one by one
+      for (const scan of scans) {
         const toastId = toastIds.get(scan.id);
         
-        if (scanResult.success) {
-          // Update toast to success
-          toast.success(`Successfully processed ${scanResult.scanName}`, {
-            id: toastId,
-            description: "Invoice created",
+        try {
+          // Prepare FormData for this scan
+          const formData = new FormData();
+          formData.append("file", scan.file);
+          formData.append("userIdentifier", userIdentifier);
+          formData.append("metadata", JSON.stringify({
+            requiresAnalysis: "true",
+            fileName: scan.name,
+            fileType: scan.type,
+            uploadedAt: scan.uploadedAt.toISOString(),
+          }));
+
+          // Submit this scan to the backend
+          const result = await createInvoiceAction({
+            formData,
+            userIdentifier,
+            userJwt,
           });
+
+          if (result.success) {
+            totalProcessed++;
+            
+            // Update toast to success
+            toast.success(`Successfully processed ${scan.name}`, {
+              id: toastId,
+              description: "Invoice created",
+            });
+            
+            // Remove successfully processed scan
+            setScans((prev) => {
+              const updated = prev.filter((s) => s.id !== scan.id);
+              if (scan.preview) {
+                URL.revokeObjectURL(scan.preview);
+              }
+              return updated;
+            });
+          } else {
+            totalFailed++;
+            
+            // Update toast to error
+            toast.error(`Failed to process ${scan.name}`, {
+              id: toastId,
+              description: result.error || "Unknown error",
+            });
+            
+            // Mark scan as not processing
+            setScans((prev) => prev.map((s) => (s.id === scan.id ? {...s, isProcessing: false} : s)));
+          }
+        } catch (scanError) {
+          totalFailed++;
+          console.error(`Error processing scan ${scan.name}:`, scanError);
           
-          // Remove successfully processed scan
-          setScans((prev) => {
-            const updated = prev.filter((s) => s.id !== scan.id);
-            if (scan.preview) {
-              URL.revokeObjectURL(scan.preview);
-            }
-            return updated;
-          });
-        } else {
           // Update toast to error
-          toast.error(`Failed to process ${scanResult.scanName}`, {
+          toast.error(`Failed to process ${scan.name}`, {
             id: toastId,
-            description: scanResult.error || "Unknown error",
+            description: scanError instanceof Error ? scanError.message : "Unknown error",
           });
           
           // Mark scan as not processing
           setScans((prev) => prev.map((s) => (s.id === scan.id ? {...s, isProcessing: false} : s)));
         }
-      });
+      }
 
       // Show summary toast
-      if (result.totalProcessed > 0) {
-        toast.success(`Processed ${result.totalProcessed} of ${scans.length} file(s)`, {
-          description: result.totalFailed > 0 ? `${result.totalFailed} failed` : "All files processed successfully",
+      if (totalProcessed > 0) {
+        toast.success(`Processed ${totalProcessed} of ${scans.length} file(s)`, {
+          description: totalFailed > 0 ? `${totalFailed} failed` : "All files processed successfully",
         });
       } else {
         toast.error("Failed to process any files", {
@@ -308,8 +477,35 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
 }
 
 /**
- * This hook provides the context value for the invoice creator.
- * @returns The context value for the invoice creator.
+ * Custom hook to access the Invoice Creator Context.
+ * 
+ * Must be used within an InvoiceCreatorProvider component.
+ * Provides access to all scan management operations and state.
+ * 
+ * @returns {InvoiceCreatorContextType} Context value with scan state and operations
+ * @throws {Error} If used outside of InvoiceCreatorProvider
+ * 
+ * @example
+ * ```tsx
+ * function MyComponent() {
+ *   const {
+ *     scans,
+ *     addFiles,
+ *     removeScan,
+ *     processNextStep,
+ *     isProcessingNext
+ *   } = useInvoiceCreator();
+ * 
+ *   return (
+ *     <div>
+ *       <input type="file" onChange={(e) => e.target.files && addFiles(e.target.files)} />
+ *       <button onClick={processNextStep} disabled={isProcessingNext}>
+ *         Submit {scans.length} scan(s)
+ *       </button>
+ *     </div>
+ *   );
+ * }
+ * ```
  */
 export function useInvoiceCreator() {
   const context = use(InvoiceCreatorContext);
