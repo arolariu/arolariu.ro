@@ -184,10 +184,8 @@ export default async function createUnitTestSummaryComment(params: ScriptParams)
   const commitUrl = `https://github.com/${repoOwner}/${repoName}/commit/${commitSha}`;
 
   // Construct workflow information object for comment generation
-  // PR-specific fields (prNumber, prUrl) are placeholders as they're resolved by createPRComment
+  // PR context (number, URL) is now resolved by getPRContext; not included here
   const workflowInfo: WorkflowInfo = {
-    prNumber: 0, // Resolved by createPRComment from PR_NUMBER env var
-    prUrl: "", // Constructed by createPRComment after PR validation
     runId,
     workflowRunUrl,
     shortCurrentCommitSha: shortCommitSha,
