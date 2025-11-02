@@ -40,9 +40,16 @@ export default function UploadArea(): React.JSX.Element | null {
     return null;
   }
 
-  const {onClick, onKeyDown, onDrop, onDragEnter, onDragOver, onDragLeave, ...restRootProps} = getRootProps();
+  const rootProps = getRootProps();
+  const inputProps = getInputProps();
 
-  const {onChange, ...restInputProps} = getInputProps();
+  const handleClick = rootProps.onClick;
+  const handleKeyDown = rootProps.onKeyDown;
+  const handleDrop = rootProps.onDrop;
+  const handleDragEnter = rootProps.onDragEnter;
+  const handleDragOver = rootProps.onDragOver;
+  const handleDragLeave = rootProps.onDragLeave;
+  const handleChange = inputProps.onChange;
 
   return (
     <motion.div
@@ -58,10 +65,10 @@ export default function UploadArea(): React.JSX.Element | null {
           ? "scale-105 border-purple-400 bg-purple-50 dark:bg-purple-900/20"
           : "border-gray-300 bg-gray-50 hover:border-purple-400 hover:bg-purple-50 dark:border-gray-600 dark:bg-gray-900/50 dark:hover:bg-purple-900/20"
       } ${isUploading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-      onDrop={onDrop}
-      onDragEnter={onDragEnter}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}>
+      onDrop={handleDrop}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}>
       <motion.div
         animate={isDragActive ? {scale: 1.05} : {scale: 1}}
         transition={{duration: 0.2}}>
@@ -75,15 +82,21 @@ export default function UploadArea(): React.JSX.Element | null {
         <p className='mb-8 text-sm text-gray-500 dark:text-gray-400'>Supports JPG, PNG, PDF files up to 10MB each</p>
         <Button
           type='button'
-          onClick={onClick}
+          onClick={handleClick}
           className='cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-3 text-lg text-white shadow-lg transition-all duration-300 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl'
           disabled={isUploading}
           size='lg'>
           {isUploading ? "Processing..." : "Choose Files"}
         </Button>
         <input
-          {...restInputProps}
-          onChange={onChange}
+          title='Upload Invoice Scans'
+          accept={inputProps.accept}
+          multiple={inputProps.multiple}
+          onChange={handleChange}
+          style={inputProps.style}
+          tabIndex={inputProps.tabIndex}
+          type={inputProps.type}
+          autoComplete={inputProps.autoComplete}
         />
       </motion.div>
     </motion.div>
