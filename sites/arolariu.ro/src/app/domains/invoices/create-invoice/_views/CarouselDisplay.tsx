@@ -9,7 +9,7 @@ import {
   CarouselPrevious,
 } from "@arolariu/components";
 import {motion} from "motion/react";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import MediaPreview from "../_components/MediaPreview";
 import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
 
@@ -21,11 +21,10 @@ export default function CarouselDisplay(): React.JSX.Element | null {
   const [api, setApi] = useState<CarouselApi | null>(null);
   const [current, setCurrent] = useState(1);
   const [count, setCount] = useState(0);
+  const {scans} = useInvoiceCreator();
 
   useEffect(() => {
     if (!api) {
-      setCurrent(1);
-      setCount(0);
       return;
     }
 
@@ -44,7 +43,13 @@ export default function CarouselDisplay(): React.JSX.Element | null {
       api.off("reInit", update);
     };
   }, [api]);
-  const {scans} = useInvoiceCreator();
+
+  const handleDotClick = useCallback(
+    (index: number) => () => {
+      api?.scrollTo(index);
+    },
+    [api],
+  );
 
   if (scans.length === 0) {
     return null;
@@ -102,7 +107,7 @@ export default function CarouselDisplay(): React.JSX.Element | null {
                       ? "h-3 w-8 bg-gradient-to-r from-purple-600 to-pink-600"
                       : "h-3 w-3 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500"
                   }`}
-                  onClick={() => api?.scrollTo(i)}
+                  onClick={handleDotClick(i)}
                   aria-label={`Go to slide ${i + 1}`}
                 />
               );

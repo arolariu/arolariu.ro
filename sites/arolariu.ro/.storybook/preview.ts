@@ -1,7 +1,7 @@
 import {type Preview} from "@storybook/react";
 
 import "../src/app/globals.css";
-import {withThemes, withTranslations} from "./utils";
+import {withTheme, withThemes, withTranslations} from "./decorators";
 
 const preview: Preview = {
   parameters: {
@@ -20,8 +20,32 @@ const preview: Preview = {
     },
   },
   tags: ["autodocs"],
-  decorators: [withThemes, withTranslations],
+  decorators: [withThemes, withTheme, withTranslations],
   globalTypes: {
+    // Theme toggler
+    theme: {
+      name: "Theme",
+      description: "Global theme for components",
+      toolbar: {
+        icon: "circlehollow",
+        items: [
+          {
+            value: "light",
+            icon: "circlehollow",
+            title: "Light",
+          },
+          {
+            value: "dark",
+            icon: "circle",
+            title: "Dark",
+          },
+        ],
+        showName: true,
+        dynamicTitle: true,
+      },
+    },
+
+    // Localization toggler
     locale: {
       name: "Locale",
       description: "Internationalization locale",
