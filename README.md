@@ -94,6 +94,11 @@
     - [🌐 Website Pipelines](#-website-pipelines)
     - [⚙️ API Pipelines](#️-api-pipelines)
     - [🎯 Pipeline Features](#-pipeline-features)
+  - [🤖 GitHub Copilot Integration](#-github-copilot-integration)
+    - [📚 Comprehensive Documentation](#-comprehensive-documentation)
+    - [🎯 Context-Aware Assistance](#-context-aware-assistance)
+    - [📖 Architecture Documentation](#-architecture-documentation)
+    - [🚀 Getting Started with Copilot](#-getting-started-with-copilot)
   - [📊 Repository Statistics](#-repository-statistics)
     - [Activity Metrics](#activity-metrics)
       - [📅 Commit Timeline](#-commit-timeline)
@@ -320,6 +325,49 @@ npx nx run api:dev
 - ✅ **Blue-Green Deployments** - Zero-downtime releases
 - ✅ **Automatic Rollbacks** - Health check failures trigger rollback
 - ✅ **Environment Promotion** - Preview → Production workflow
+
+---
+
+## 🤖 GitHub Copilot Integration
+
+This repository is fully configured with **GitHub Copilot instructions** to provide context-aware AI assistance during development.
+
+### 📚 Comprehensive Documentation
+
+- **Main Instructions**: `.github/copilot-instructions.md` - Monorepo architecture, tech stack, and cross-cutting concerns
+- **Specialized Instructions**: `.github/instructions/` - Domain-specific guidelines for different file types
+
+### 🎯 Context-Aware Assistance
+
+Copilot automatically applies specialized instructions based on the files you're editing:
+
+| File Type | Instructions Applied | Key Topics |
+|-----------|---------------------|------------|
+| `.github/workflows/*.yml` | GitHub Actions CI/CD | Workflow structure, caching, monorepo patterns |
+| `**/*.ts` | TypeScript Development | Strict typing, DDD patterns, type safety |
+| `**/*.tsx, *.jsx` | React Development | Functional components, hooks, RSC patterns |
+| `sites/arolariu.ro/**/*` | Next.js Frontend | App Router, Server Components, performance |
+| `**/*.cs` | .NET Backend | DDD architecture, SOLID principles, testing |
+| `**/*.bicep` | Azure Infrastructure | IaC best practices, security, cost optimization |
+
+### 📖 Architecture Documentation
+
+For detailed architectural decisions and patterns:
+- **Frontend RFCs** (1000-1999): `docs/rfc/` - OpenTelemetry, metadata, documentation standards
+- **Backend RFCs** (2000-2999): `docs/rfc/` - Domain-Driven Design, modular monolith
+- **Domain Docs**: `docs/frontend/` and `docs/backend/` - Implementation details
+
+### 🚀 Getting Started with Copilot
+
+1. **Open any file** in the repository
+2. Copilot loads relevant instructions automatically
+3. Get context-aware suggestions based on:
+   - Project architecture and patterns
+   - Technology-specific best practices
+   - Code quality standards
+   - Security guidelines
+
+Learn more: [GitHub Copilot Documentation](https://docs.github.com/en/copilot) | [Instructions Setup](.github/instructions/README.md)
 
 ---
 
