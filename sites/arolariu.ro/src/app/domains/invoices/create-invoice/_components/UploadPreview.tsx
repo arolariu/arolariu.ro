@@ -1,20 +1,23 @@
 import {Separator, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useLayoutEffect, useRef, useState} from "react";
-import {TbGrid3X3, TbList} from "react-icons/tb";
+import {TbGrid3X3, TbList, TbTable} from "react-icons/tb";
 import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
 import CarouselDisplay from "../_views/CarouselDisplay";
 import GridDisplay from "../_views/GridDisplay";
+import TableDisplay from "../_views/TableDisplay";
 
 /**
  * Upload preview component for invoice scans.
+ * Supports three display modes: grid, carousel, and table.
  * @returns JSX.Element that displays the upload preview for invoice scans.
  */
 export default function UploadPreview(): React.JSX.Element | null {
   const {scans} = useInvoiceCreator();
-  const [view, setView] = useState("grid");
+  const [view, setView] = useState("table");
   const gridRef = useRef<HTMLDivElement | null>(null);
   const carouselRef = useRef<HTMLDivElement | null>(null);
+  const tableRef = useRef<HTMLDivElement | null>(null);
   const [maxHeight, setMaxHeight] = useState<number | null>(null);
 
   // Measure once scans change so we can reserve vertical space & avoid layout shift.
@@ -27,7 +30,8 @@ export default function UploadPreview(): React.JSX.Element | null {
     requestAnimationFrame(() => {
       const gh = gridRef.current?.offsetHeight || 0;
       const ch = carouselRef.current?.offsetHeight || 0;
-      const next = Math.max(gh, ch);
+      const th = tableRef.current?.offsetHeight || 0;
+      const next = Math.max(gh, ch, th);
       if (next && next !== maxHeight) {
         setMaxHeight(next);
       }
@@ -62,6 +66,13 @@ export default function UploadPreview(): React.JSX.Element | null {
             <TbList className='mr-2 h-4 w-4' />
             <span className='hidden sm:inline'>Carousel</span>
           </TabsTrigger>
+          <Separator orientation='vertical' />
+          <TabsTrigger
+            value='table'
+            className='cursor-pointer data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-500 data-[state=active]:text-white'>
+            <TbTable className='mr-2 h-4 w-4' />
+            <span className='hidden sm:inline'>Table</span>
+          </TabsTrigger>
         </TabsList>
 
         <div
@@ -85,6 +96,16 @@ export default function UploadPreview(): React.JSX.Element | null {
             }>
             <div ref={carouselRef}>
               <CarouselDisplay />
+            </div>
+          </TabsContent>
+          <TabsContent
+            value='table'
+            forceMount
+            className={
+              view === "table" ? "relative opacity-100 transition-opacity" : "pointer-events-none absolute inset-0 -z-10 opacity-0"
+            }>
+            <div ref={tableRef}>
+              <TableDisplay />
             </div>
           </TabsContent>
         </div>
