@@ -40,35 +40,16 @@ export default function UploadArea(): React.JSX.Element | null {
     return null;
   }
 
-  const rootProps = getRootProps();
-  const inputProps = getInputProps();
-
-  const handleClick = rootProps.onClick;
-  const handleKeyDown = rootProps.onKeyDown;
-  const handleDrop = rootProps.onDrop;
-  const handleDragEnter = rootProps.onDragEnter;
-  const handleDragOver = rootProps.onDragOver;
-  const handleDragLeave = rootProps.onDragLeave;
-  const handleChange = inputProps.onChange;
+  const {onClick: handleClick, onChange: handleChange} = getRootProps();
 
   return (
-    <motion.div
-      initial={{opacity: 0, scale: 0.95}}
-      animate={{opacity: 1, scale: 1}}
-      transition={{duration: 0.25}}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role={rootProps.role}
-      tabIndex={rootProps.tabIndex}
+    <div
       className={`mb-16 rounded-lg border-2 border-dashed p-16 text-center transition-all duration-300 ${
         isDragActive
           ? "scale-105 border-purple-400 bg-purple-50 dark:bg-purple-900/20"
           : "border-gray-300 bg-gray-50 hover:border-purple-400 hover:bg-purple-50 dark:border-gray-600 dark:bg-gray-900/50 dark:hover:bg-purple-900/20"
       } ${isUploading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-      onDrop={handleDrop}
-      onDragEnter={handleDragEnter}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}>
+      {...getRootProps()}>
       <motion.div
         animate={isDragActive ? {scale: 1.05} : {scale: 1}}
         transition={{duration: 0.2}}>
@@ -90,15 +71,10 @@ export default function UploadArea(): React.JSX.Element | null {
         </Button>
         <input
           title='Upload Invoice Scans'
-          accept={inputProps.accept}
-          multiple={inputProps.multiple}
           onChange={handleChange}
-          style={inputProps.style}
-          tabIndex={inputProps.tabIndex}
-          type={inputProps.type}
-          autoComplete={inputProps.autoComplete}
+          {...getInputProps()}
         />
       </motion.div>
-    </motion.div>
+    </div>
   );
 }
