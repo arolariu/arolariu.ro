@@ -8,6 +8,16 @@ import type {InvoiceScan, InvoiceScanType} from "../_types/InvoiceScan";
 import {rotateImageImpl} from "../_utils/fileActions";
 
 /**
+ * Maximum file size allowed for uploads (10MB)
+ */
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+/**
+ * Set of accepted file MIME types for invoice scans
+ */
+const ACCEPTED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "application/pdf"]);
+
+/**
  * Context type definition for the Invoice Creator.
  * 
  * @property {InvoiceScan[]} scans - Array of all invoice scans currently loaded
@@ -128,18 +138,16 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
       }, 100);
 
       const newScans: InvoiceScan[] = [];
-      const maxFileSize = 10 * 1024 * 1024; // 10MB
-      const acceptedTypes = new Set(["image/jpeg", "image/jpg", "image/png", "application/pdf"]);
       
       Array.from(files).forEach((file) => {
         // Validate file type
-        if (!acceptedTypes.has(file.type)) {
+        if (!ACCEPTED_TYPES.has(file.type)) {
           toast.error(`Unsupported file type: ${file.name}. Only JPG, PNG, and PDF files are allowed.`);
           return;
         }
 
         // Validate file size
-        if (file.size > maxFileSize) {
+        if (file.size > MAX_FILE_SIZE) {
           toast.error(`File too large: ${file.name}. Maximum size is 10MB.`);
           return;
         }

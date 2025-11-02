@@ -13,10 +13,7 @@ vi.mock("@arolariu/components", () => ({
   },
 }));
 
-vi.mock("@/lib/utils.generic", () => ({
-  generateGuid: vi.fn(() => "test-guid-123"),
-}));
-
+// Mock only what's necessary - external API calls and side effects
 vi.mock("@/lib/actions/invoices/createInvoice", () => ({
   createInvoiceAction: vi.fn(),
 }));
@@ -26,11 +23,11 @@ vi.mock("../_utils/fileActions", () => ({
 }));
 
 // Mock URL.createObjectURL and revokeObjectURL
-global.URL.createObjectURL = vi.fn(() => "blob:test-url");
-global.URL.revokeObjectURL = vi.fn();
+globalThis.URL.createObjectURL = vi.fn(() => "blob:test-url");
+globalThis.URL.revokeObjectURL = vi.fn();
 
 // Mock fetch
-global.fetch = vi.fn();
+globalThis.fetch = vi.fn();
 
 // Test component that uses the context
 function TestComponent() {

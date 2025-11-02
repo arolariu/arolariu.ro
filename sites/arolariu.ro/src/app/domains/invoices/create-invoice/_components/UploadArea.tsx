@@ -40,16 +40,17 @@ export default function UploadArea(): React.JSX.Element | null {
     return null;
   }
 
-  const rootProps = getRootProps();
-  const inputProps = getInputProps();
-
-  const handleClick = rootProps.onClick;
-  const handleKeyDown = rootProps.onKeyDown;
-  const handleDrop = rootProps.onDrop;
-  const handleDragEnter = rootProps.onDragEnter;
-  const handleDragOver = rootProps.onDragOver;
-  const handleDragLeave = rootProps.onDragLeave;
-  const handleChange = inputProps.onChange;
+  const {
+    onClick: handleClick,
+    onKeyDown: handleKeyDown,
+    onDrop: handleDrop,
+    onDragEnter: handleDragEnter,
+    onDragOver: handleDragOver,
+    onDragLeave: handleDragLeave,
+    ...restRootProps
+  } = getRootProps();
+  
+  const {onChange: handleChange, ...restInputProps} = getInputProps();
 
   return (
     <motion.div
@@ -89,13 +90,8 @@ export default function UploadArea(): React.JSX.Element | null {
           {isUploading ? "Processing..." : "Choose Files"}
         </Button>
         <input
-          accept={inputProps.accept}
-          multiple={inputProps.multiple}
+          {...restInputProps}
           onChange={handleChange}
-          style={inputProps.style}
-          tabIndex={inputProps.tabIndex}
-          type={inputProps.type}
-          autoComplete={inputProps.autoComplete}
         />
       </motion.div>
     </motion.div>

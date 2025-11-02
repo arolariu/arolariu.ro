@@ -91,7 +91,7 @@ export const TwoScans: Story = {
   args: {
     scans: [mockScans[0], mockScans[1]],
   },
-  play: async ({canvasElement}) => {
+  play: async ({canvasElement, args}) => {
     const canvas = within(canvasElement);
 
     // Should have carousel navigation buttons
@@ -99,7 +99,9 @@ export const TwoScans: Story = {
     expect(buttons.length).toBeGreaterThan(0);
 
     // Should display first scan
-    await expect(canvas.getByText("invoice-2024-01.jpg")).toBeInTheDocument();
+    if (args.scans && args.scans.length > 0) {
+      await expect(canvas.getByText(args.scans[0].name)).toBeInTheDocument();
+    }
   },
 };
 
