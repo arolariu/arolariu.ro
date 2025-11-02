@@ -7,12 +7,24 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import getVitestResultsSection from "./vitest-helper.ts";
 
+// Minimal ScriptParams['core'] type for testing
+interface CoreMock {
+  info: (message: string) => void;
+  warning: (message: string) => void;
+  error: (message: string) => void;
+  debug: (message: string) => void;
+  setFailed?: (message: string) => void;
+  notice?: (message: string) => void;
+}
+
 // Mock core object for testing
-const mockCore = {
+const mockCore: Partial<CoreMock> = {
   info: (message: string) => console.log(`[INFO] ${message}`),
   warning: (message: string) => console.warn(`[WARN] ${message}`),
   error: (message: string) => console.error(`[ERROR] ${message}`),
   debug: (message: string) => console.log(`[DEBUG] ${message}`),
+  setFailed: (message: string) => console.error(`[FAILED] ${message}`),
+  notice: (message: string) => console.log(`[NOTICE] ${message}`),
 };
 
 /**
