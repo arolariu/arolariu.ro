@@ -23,7 +23,7 @@ This directory contains all GitHub Actions workflows and their supporting TypeSc
 │   │   ├── file-system-helper.ts
 │   │   ├── git-helper.ts
 │   │   ├── issue-creator.ts
-│   │   ├── jest-helper.ts
+│   │   ├── vitest-helper.ts
 │   │   ├── markdown-builder.ts
 │   │   ├── newman-parser.ts
 │   │   ├── playwright-helper.ts
@@ -146,7 +146,7 @@ Reusable action that handles:
 - **env-helper.ts**: Environment variable access
 - **file-system-helper.ts**: File system operations
 - **issue-creator.ts**: GitHub issue creation
-- **jest-helper.ts**: Jest test result parsing
+- **vitest-helper.ts**: Vitest test result parsing and coverage reporting
 - **playwright-helper.ts**: Playwright E2E result parsing
 - **newman-parser.ts**: Newman API test result parsing
 - **status-helper.ts**: GitHub check status management
