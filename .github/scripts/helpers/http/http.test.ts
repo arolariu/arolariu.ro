@@ -7,7 +7,9 @@ import { createHttpHelper } from './index';
 import * as httpClient from '@actions/http-client';
 
 // Mock @actions/http-client
-vi.mock('@actions/http-client');
+vi.mock('@actions/http-client', () => ({
+  HttpClient: vi.fn()
+}));
 
 describe('HttpHelper', () => {
   let mockClient: any;
@@ -25,7 +27,7 @@ describe('HttpHelper', () => {
       head: vi.fn()
     };
 
-    vi.mocked(httpClient.HttpClient).mockImplementation(() => mockClient);
+    vi.mocked(httpClient.HttpClient).mockImplementation(() => mockClient as any);
     httpHelper = createHttpHelper();
   });
 

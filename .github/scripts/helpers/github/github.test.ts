@@ -53,10 +53,27 @@ describe('GitHubHelper', () => {
   });
 
   describe('getPullRequest', () => {
-    it('should return PR number from context', () => {
+    it('should return PR context from payload', () => {
+      // Update mock to have full PR object
+      const originalPayload = github.context.payload;
+      github.context.payload = {
+        pull_request: {
+          number: 123,
+          title: 'Test PR',
+          html_url: 'https://github.com/test/repo/pull/123',
+          state: 'open',
+          base: { ref: 'main' },
+          head: { ref: 'feature' },
+          user: { login: 'test-user' }
+        }
+      };
+      
       const pr = ghHelper.getPullRequest();
       
-      expect(pr).toEqual({ number: 123 });
+      expect(pr?.number).toBe(123);
+      expect(pr?.title).toBe('Test PR');
+      
+      github.context.payload = originalPayload;
     });
 
     it('should return null when not in PR context', () => {
@@ -200,7 +217,12 @@ describe('GitHubHelper', () => {
         data: { 
           number: 42, 
           title: 'Test Issue',
-          body: 'Issue body' 
+          body: 'Issue body',
+          state: 'open',
+          html_url: 'https://github.com/test/repo/issues/42',
+          user: { login: 'test-user' },
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z'
         }
       });
 
@@ -217,7 +239,16 @@ describe('GitHubHelper', () => {
 
     it('should create issue with labels', async () => {
       mockOctokit.rest.issues.create.mockResolvedValue({
-        data: { number: 42, title: 'Test', body: 'Body' }
+        data: { 
+          number: 42, 
+          title: 'Test', 
+          body: 'Body',
+          state: 'open',
+          html_url: 'https://github.com/test/repo/issues/42',
+          user: { login: 'test-user' },
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z'
+        }
       });
 
       await ghHelper.createIssue('Test', 'Body', ['bug', 'high-priority']);
@@ -247,17 +278,24 @@ describe('GitHubHelper', () => {
     });
   });
 
-  describe('getRepoInfo', () => {
+  describe('getRepository', () => {
     it('should return repository information', async () => {
       mockOctokit.rest.repos.get.mockResolvedValue({
         data: {
           name: 'test-repo',
           full_name: 'test-owner/test-repo',
-          default_branch: 'main'
+          default_branch: 'main',
+          description: 'Test repository',
+          private: false,
+          html_url: 'https://github.com/test-owner/test-repo',
+          owner: {
+            login: 'test-owner',
+            type: 'User'
+          }
         }
       });
 
-      const info = await ghHelper.getRepoInfo();
+      const info = await ghHelper.getRepository();
 
       expect(info.name).toBe('test-repo');
       expect(info.full_name).toBe('test-owner/test-repo');
