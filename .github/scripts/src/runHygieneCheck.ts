@@ -55,62 +55,6 @@ interface BundleSizeComparison {
 }
 
 /**
- * Retrieves file sizes for specified folders from a given git branch
- * @param branchName - The name of the branch (e.g., 'refs/remotes/origin/main', 'HEAD')
- * @param targetFolders - An array of folder paths to inspect
- * @returns A map of file paths to their sizes in bytes
- */
-async function getFileSizesFromGit(branchName: string, targetFolders: string[]): Promise<Record<string, number>> {
-  const filesMap: Record<string, number> = {};
-
-  for (const folder of targetFolders) {
-    try {
-      const folderPath = folder.endsWith("/") ? folder.slice(0, -1) : folder;
-      const {stdout, stderr, exitCode} = await exec.getExecOutput(`git ls-tree -r -l ${branchName} -- ${folderPath}`, [], {
-        ignoreReturnCode: true,
-        silent: true,
-      });
-
-      if (exitCode !== 0) {
-        core.debug(`git ls-tree for branch '${branchName}' and folder '${folderPath}' exited with ${exitCode}`);
-        if (stderr?.includes("fatal: Not a valid object name")) {
-          core.warning(`Branch '${branchName}' or path '${folderPath}' might not exist or was not fetched correctly`);
-        }
-        continue;
-      }
-
-      if (!stdout?.trim()) {
-        continue;
-      }
-
-      const lines = stdout.trim().split("\n");
-      for (const line of lines) {
-        if (!line.trim()) continue;
-        const parts = line.split("\t");
-        if (parts.length === 2 && parts[0] && parts[1]) {
-          const meta = parts[0].trim().split(/\s+/);
-          if (meta.length === 4 && meta[1] === "blob" && meta[3]) {
-            const filePath = parts[1];
-            const sizeStr = meta[3];
-            if (sizeStr !== "-") {
-              const size = Number.parseInt(sizeStr, 10);
-              if (!Number.isNaN(size)) {
-                filesMap[filePath] = size;
-              }
-            }
-          }
-        }
-      }
-    } catch (error) {
-      const err = error as Error;
-      core.error(`Error processing folder ${folder} for branch ${branchName}: ${err.message}`);
-    }
-  }
-
-  return filesMap;
-}
-
-/**
  * Compares file sizes for a specific folder between main and preview branches
  * @param folder - Folder path to analyze
  * @param mainBranchFiles - Record of file paths to sizes from main branch
@@ -187,11 +131,11 @@ async function compareBundleSizes(targetFolders: string[]): Promise<BundleSizeCo
 
     // Get file sizes from both branches
     core.info("Retrieving file sizes from main branch...");
-    const mainBranchFiles = await getFileSizesFromGit("refs/remotes/origin/main", targetFolders);
+    const mainBranchFiles = await git.getFileSizes("refs/remotes/origin/main", targetFolders);
     core.debug(`Found ${Object.keys(mainBranchFiles).length} files in main branch`);
 
     core.info("Retrieving file sizes from preview branch...");
-    const previewBranchFiles = await getFileSizesFromGit("HEAD", targetFolders);
+    const previewBranchFiles = await git.getFileSizes("HEAD", targetFolders);
     core.debug(`Found ${Object.keys(previewBranchFiles).length} files in preview branch`);
 
     // Compare each folder
