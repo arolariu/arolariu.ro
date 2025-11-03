@@ -14,22 +14,22 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@actions/artifact": "^4",
-    "@actions/attest": "^2",
-    "@actions/cache": "^4",
-    "@actions/core": "^1",
-    "@actions/exec": "^1",
-    "@actions/github": "^6",
-    "@actions/glob": "^0",
-    "@actions/http-client": "^3",
-    "@actions/io": "^2",
-    "@actions/tool-cache": "^2",
-    "pretty-bytes": "^7.1.0"
+    "@actions/artifact": "4.0.0",
+    "@actions/attest": "2.0.0",
+    "@actions/cache": "4.1.0",
+    "@actions/core": "1.11.1",
+    "@actions/exec": "1.1.1",
+    "@actions/github": "6.0.1",
+    "@actions/glob": "0.5.0",
+    "@actions/http-client": "3.0.0",
+    "@actions/io": "2.0.0",
+    "@actions/tool-cache": "2.0.2",
+    "pretty-bytes": "7.1.0"
   },
   "devDependencies": {
-    "@types/node": "^24.10.0",
-    "@vitest/ui": "^4.0.6",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.6"
+    "@types/node": "24.10.0",
+    "@vitest/ui": "4.0.6",
+    "typescript": "5.9.3",
+    "vitest": "4.0.6"
   }
 }
