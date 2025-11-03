@@ -5,8 +5,10 @@
   "description": "Type-safe GitHub Actions toolkit-based scripts following SOLID principles and clean code architecture.",
   "type": "module",
   "scripts": {
-    "test": "node --test helpers/**/*.test.ts",
-    "test:vitest-helper": "tsx lib/vitest-helper.test.ts"
+    "test": "vitest run",
+    "test:vitest-helper": "tsx lib/vitest-helper.test.ts",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@actions/artifact": "^2.1.11",
@@ -23,7 +25,9 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.0",
-    "typescript": "^5.9.3"
+    "@vitest/ui": "^4.0.6",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.6"
   },
   "engines": {
     "node": ">=24.0.0"
