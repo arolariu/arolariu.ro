@@ -1,14 +1,14 @@
 /**
  * @fileoverview HTTP client operations using @actions/http-client
  * @module helpers/http
- * 
+ *
  * Provides a clean, type-safe API for HTTP operations in GitHub Actions.
  * Uses @actions/http-client for making HTTP requests with proper error handling.
  * Follows Single Responsibility Principle by focusing on HTTP operations.
  */
 
-import * as http from "@actions/http-client";
 import * as core from "@actions/core";
+import * as http from "@actions/http-client";
 
 /**
  * HTTP request options
@@ -33,13 +33,13 @@ export interface HttpRequestOptions {
  */
 export interface HttpResponse<T = unknown> {
   /** HTTP status code */
-  statusCode: number;
+  readonly statusCode: number;
   /** Response headers */
-  headers: Record<string, string>;
+  readonly headers: Readonly<Record<string, string>>;
   /** Response body (parsed if JSON) */
-  body: T;
+  readonly body: T;
   /** Whether request was successful (2xx status) */
-  success: boolean;
+  readonly success: boolean;
 }
 
 /**
@@ -120,12 +120,7 @@ export interface IHttpHelper {
    * @param options - Request options
    * @returns Promise resolving to HTTP response
    */
-  request<T = unknown>(
-    method: string,
-    url: string,
-    body?: string | JsonBody,
-    options?: HttpRequestOptions
-  ): Promise<HttpResponse<T>>;
+  request<T = unknown>(method: string, url: string, body?: string | JsonBody, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
 }
 
 /**
@@ -308,12 +303,12 @@ export class HttpHelper implements IHttpHelper {
       const response = await this.client.get(url, this.createHeaders(options));
 
       // Save to destination
-      const { writeFile } = await import("node:fs/promises");
-      const { dirname } = await import("node:path");
-      const { mkdir } = await import("node:fs/promises");
+      const {writeFile} = await import("node:fs/promises");
+      const {dirname} = await import("node:path");
+      const {mkdir} = await import("node:fs/promises");
 
       // Ensure destination directory exists
-      await mkdir(dirname(destination), { recursive: true });
+      await mkdir(dirname(destination), {recursive: true});
 
       // Write file
       const body = await response.readBody();
@@ -333,7 +328,7 @@ export class HttpHelper implements IHttpHelper {
     method: string,
     url: string,
     body?: string | JsonBody,
-    options?: HttpRequestOptions
+    options?: HttpRequestOptions,
   ): Promise<HttpResponse<T>> {
     try {
       core.debug(`${method.toUpperCase()} ${url}`);
@@ -357,19 +352,19 @@ export class HttpHelper implements IHttpHelper {
  * @example
  * ```typescript
  * const http = createHttpHelper('my-action/1.0');
- * 
+ *
  * // GET request
  * const response = await http.get('https://api.example.com/data');
  * if (response.success) {
  *   console.log(response.body);
  * }
- * 
+ *
  * // POST request with body
  * await http.post('https://api.example.com/create', {
  *   name: 'test',
  *   value: 123
  * });
- * 
+ *
  * // Download file
  * await http.download(
  *   'https://example.com/file.zip',

@@ -20,11 +20,11 @@ export type OctokitClient = ReturnType<typeof github.getOctokit>;
  */
 export interface RepositoryInfo {
   /** Repository owner (username or organization) */
-  owner: string;
+  readonly owner: string;
   /** Repository name */
-  name: string;
+  readonly name: string;
   /** Full repository name in owner/name format */
-  fullName: string;
+  readonly fullName: string;
 }
 
 /**
@@ -32,19 +32,19 @@ export interface RepositoryInfo {
  */
 export interface PullRequestContext {
   /** PR number */
-  number: number;
+  readonly number: number;
   /** PR title */
-  title: string;
+  readonly title: string;
   /** PR URL */
-  url: string;
+  readonly url: string;
   /** PR state (open, closed, merged) */
-  state: string;
+  readonly state: string;
   /** Base branch (target) */
-  base: string;
+  readonly base: string;
   /** Head branch (source) */
-  head: string;
+  readonly head: string;
   /** PR author */
-  author: string;
+  readonly author: string;
 }
 
 /**
@@ -52,17 +52,17 @@ export interface PullRequestContext {
  */
 export interface Comment {
   /** Comment ID */
-  id: number;
+  readonly id: number;
   /** Comment body (markdown) */
-  body: string;
+  readonly body: string;
   /** Comment author */
-  author: string;
+  readonly author: string;
   /** Comment creation date */
-  createdAt: string;
+  readonly createdAt: string;
   /** Comment update date */
-  updatedAt: string;
+  readonly updatedAt: string;
   /** Comment URL */
-  url: string;
+  readonly url: string;
 }
 
 /**
@@ -70,19 +70,19 @@ export interface Comment {
  */
 export interface IssueInfo {
   /** Issue number */
-  number: number;
+  readonly number: number;
   /** Issue title */
-  title: string;
+  readonly title: string;
   /** Issue body */
-  body: string;
+  readonly body: string;
   /** Issue state (open, closed) */
-  state: string;
+  readonly state: string;
   /** Issue URL */
-  url: string;
+  readonly url: string;
   /** Issue labels */
-  labels: string[];
+  readonly labels: readonly string[];
   /** Issue assignees */
-  assignees: string[];
+  readonly assignees: readonly string[];
 }
 
 /**

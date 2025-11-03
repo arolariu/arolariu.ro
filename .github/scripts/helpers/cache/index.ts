@@ -43,11 +43,11 @@ export interface CacheRestoreOptions {
  */
 export interface CacheRestoreResult {
   /** Whether cache was hit */
-  hit: boolean;
+  readonly hit: boolean;
   /** Key that was matched (may be restore key) */
-  matchedKey?: string;
+  readonly matchedKey?: string;
   /** Primary key that was requested */
-  requestedKey: string;
+  readonly requestedKey: string;
 }
 
 /**
@@ -55,9 +55,9 @@ export interface CacheRestoreResult {
  */
 export interface CacheSaveResult {
   /** Cache ID */
-  id: number;
+  readonly id: number;
   /** Cache key */
-  key: string;
+  readonly key: string;
 }
 
 /**

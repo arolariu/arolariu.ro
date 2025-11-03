@@ -46,11 +46,11 @@ export interface DownloadOptions {
  */
 export interface ArtifactInfo {
   /** Artifact ID */
-  id: number;
+  readonly id: number;
   /** Artifact name */
-  name: string;
+  readonly name: string;
   /** Artifact size in bytes */
-  size: number;
+  readonly size: number;
 }
 
 /**
@@ -58,11 +58,11 @@ export interface ArtifactInfo {
  */
 export interface UploadResult {
   /** Artifact ID */
-  id: number;
+  readonly id: number;
   /** Number of files uploaded */
-  fileCount: number;
+  readonly fileCount: number;
   /** Total size in bytes */
-  size: number;
+  readonly size: number;
 }
 
 /**
@@ -70,9 +70,9 @@ export interface UploadResult {
  */
 export interface DownloadResult {
   /** Artifact ID */
-  id: number;
+  readonly id: number;
   /** Download path */
-  downloadPath: string;
+  readonly downloadPath: string;
 }
 
 /**

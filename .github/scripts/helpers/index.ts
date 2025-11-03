@@ -7,11 +7,15 @@
 export * from "./artifacts/index.ts";
 export * from "./cache/index.ts";
 export * from "./comments/index.ts";
+export * from "./constants.ts";
 export * from "./environment/index.ts";
 export * from "./filesystem/index.ts";
 export * from "./git/index.ts";
 export * from "./github/index.ts";
 export * from "./http/index.ts";
+export * from "./newman/index.ts";
+export * from "./playwright/index.ts";
+export * from "./vitest/index.ts";
 
 // Re-export default instances for convenience
 export {artifacts} from "./artifacts/index.ts";
@@ -20,6 +24,9 @@ export {env} from "./environment/index.ts";
 export {fs} from "./filesystem/index.ts";
 export {git} from "./git/index.ts";
 export {httpClient as http} from "./http/index.ts";
+export {newman} from "./newman/index.ts";
+export {playwright} from "./playwright/index.ts";
+export {vitest} from "./vitest/index.ts";
 
 /**
  * Helper factory functions
@@ -49,6 +56,15 @@ export const Helpers = {
 
   /** Creates HTTP client instance */
   createHttp: (userAgent?: string) => import("./http/index.ts").then((m) => m.createHttpHelper(userAgent)),
+
+  /** Creates Newman parser instance */
+  createNewman: () => import("./newman/index.ts").then((m) => m.createNewmanHelper()),
+
+  /** Creates Playwright helper instance */
+  createPlaywright: () => import("./playwright/index.ts").then((m) => m.createPlaywrightHelper()),
+
+  /** Creates Vitest helper instance */
+  createVitest: () => import("./vitest/index.ts").then((m) => m.createVitestHelper()),
 } as const;
 
 /**

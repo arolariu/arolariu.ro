@@ -15,13 +15,13 @@ import * as exec from "@actions/exec";
  */
 export interface GitDiffStats {
   /** Number of files changed */
-  filesChanged: number;
+  readonly filesChanged: number;
   /** Number of lines added */
-  linesAdded: number;
+  readonly linesAdded: number;
   /** Number of lines deleted */
-  linesDeleted: number;
+  readonly linesDeleted: number;
   /** Raw diff stat output */
-  rawStats: string;
+  readonly rawStats: string;
 }
 
 /**
@@ -29,17 +29,17 @@ export interface GitDiffStats {
  */
 export interface GitCommit {
   /** Full commit SHA */
-  sha: string;
+  readonly sha: string;
   /** Short commit SHA (7 chars) */
-  shortSha: string;
+  readonly shortSha: string;
   /** Commit message */
-  message: string;
+  readonly message: string;
   /** Author name */
-  author: string;
+  readonly author: string;
   /** Author email */
-  email: string;
+  readonly email: string;
   /** Commit timestamp */
-  timestamp: string;
+  readonly timestamp: string;
 }
 
 /**
@@ -47,13 +47,13 @@ export interface GitCommit {
  */
 export interface GitFile {
   /** File path */
-  path: string;
+  readonly path: string;
   /** File size in bytes */
-  size: number;
+  readonly size: number;
   /** Git object type (blob, tree, etc.) */
-  type: string;
+  readonly type: string;
   /** Git object hash */
-  hash: string;
+  readonly hash: string;
 }
 
 /**
@@ -61,13 +61,13 @@ export interface GitFile {
  */
 export interface GitBranch {
   /** Branch name */
-  name: string;
+  readonly name: string;
   /** Full commit SHA */
-  sha: string;
+  readonly sha: string;
   /** Short commit SHA */
-  shortSha: string;
+  readonly shortSha: string;
   /** Whether this is the current branch */
-  isCurrent: boolean;
+  readonly isCurrent: boolean;
 }
 
 /**
@@ -110,7 +110,7 @@ export interface IGitHelper {
    * @param headRef - Head reference
    * @returns Promise resolving to array of changed file paths
    */
-  getChangedFiles(baseRef: string, headRef: string): Promise<string[]>;
+  getChangedFiles(baseRef: string, headRef: string): Promise<readonly string[]>;
 
   /**
    * Gets file sizes from a Git tree
@@ -118,7 +118,7 @@ export interface IGitHelper {
    * @param paths - Array of paths to inspect
    * @returns Promise resolving to map of file paths to sizes
    */
-  getFileSizes(treeRef: string, paths: string[]): Promise<Record<string, number>>;
+  getFileSizes(treeRef: string, paths: readonly string[]): Promise<Record<string, number>>;
 
   /**
    * Gets commit information
@@ -153,7 +153,7 @@ export interface IGitHelper {
    * @param remote - Optional remote name to list remote branches
    * @returns Promise resolving to array of branch information
    */
-  listBranches(remote?: string): Promise<GitBranch[]>;
+  listBranches(remote?: string): Promise<readonly GitBranch[]>;
 
   /**
    * Creates a new branch
@@ -177,7 +177,10 @@ export interface IGitHelper {
    * @param options - Execution options
    * @returns Promise resolving to command output
    */
-  exec(args: string[], options?: GitOptions): Promise<{stdout: string; stderr: string; exitCode: number}>;
+  exec(
+    args: readonly string[],
+    options?: GitOptions,
+  ): Promise<{readonly stdout: string; readonly stderr: string; readonly exitCode: number}>;
 }
 
 /**
@@ -254,7 +257,7 @@ export class GitHelper implements IGitHelper {
   /**
    * {@inheritDoc IGitHelper.getChangedFiles}
    */
-  async getChangedFiles(baseRef: string, headRef: string): Promise<string[]> {
+  async getChangedFiles(baseRef: string, headRef: string): Promise<readonly string[]> {
     core.debug(`Getting changed files between ${baseRef} and ${headRef}`);
 
     const result = await exec.getExecOutput("git", ["diff", "--name-only", baseRef, headRef], {
@@ -272,7 +275,7 @@ export class GitHelper implements IGitHelper {
   /**
    * {@inheritDoc IGitHelper.getFileSizes}
    */
-  async getFileSizes(treeRef: string, paths: string[]): Promise<Record<string, number>> {
+  async getFileSizes(treeRef: string, paths: readonly string[]): Promise<Record<string, number>> {
     const filesMap: Record<string, number> = {};
 
     for (const path of paths) {
@@ -394,7 +397,7 @@ export class GitHelper implements IGitHelper {
   /**
    * {@inheritDoc IGitHelper.listBranches}
    */
-  async listBranches(remote?: string): Promise<GitBranch[]> {
+  async listBranches(remote?: string): Promise<readonly GitBranch[]> {
     const args = ["branch", "--list", "--format=%(refname:short)|%(objectname)|%(objectname:short)|%(HEAD)"];
     if (remote) {
       args.push("--remote");
@@ -457,7 +460,10 @@ export class GitHelper implements IGitHelper {
   /**
    * {@inheritDoc IGitHelper.exec}
    */
-  async exec(args: string[], options: GitOptions = {}): Promise<{stdout: string; stderr: string; exitCode: number}> {
+  async exec(
+    args: readonly string[],
+    options: GitOptions = {},
+  ): Promise<{readonly stdout: string; readonly stderr: string; readonly exitCode: number}> {
     const execOptions: Parameters<typeof exec.getExecOutput>[2] = {
       ignoreReturnCode: options.ignoreReturnCode ?? false,
       silent: options.silent ?? false,
@@ -466,7 +472,7 @@ export class GitHelper implements IGitHelper {
       execOptions.cwd = options.cwd;
     }
 
-    const result = await exec.getExecOutput("git", args, execOptions);
+    const result = await exec.getExecOutput("git", [...args], execOptions);
 
     return result;
   }

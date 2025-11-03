@@ -22,24 +22,8 @@
  */
 
 import * as core from "@actions/core";
-import {createGitHubHelper, env, fs, git} from "../helpers/index.ts";
+import {BUNDLE_TARGET_FOLDERS, STATUS_EMOJI_UNIT_TESTS, createGitHubHelper, env, fs, git, vitest} from "../helpers/index.ts";
 import type {WorkflowInfo} from "../types/index.ts";
-
-/**
- * Bundle target folders for size comparison
- */
-const BUNDLE_TARGET_FOLDERS: string[] = ["sites/arolariu.ro", "sites/api.arolariu.ro", "sites/docs.arolariu.ro"];
-
-/**
- * Status emoji mapping for workflow states
- */
-const STATUS_EMOJI = {
-  success: "✅",
-  failure: "❌",
-  cancelled: "⚠️",
-  skipped: "⏭️",
-  unknown: "❓",
-} as const;
 
 /**
  * Workflow context extracted from environment variables
@@ -76,7 +60,8 @@ function extractWorkflowContext(core: typeof import("@actions/core")): WorkflowC
  * @returns Markdown formatted workflow info section
  */
 function generateWorkflowInfoSection(workflowInfo: WorkflowInfo): string {
-  const statusEmoji = STATUS_EMOJI[workflowInfo.jobStatus as keyof typeof STATUS_EMOJI] ?? STATUS_EMOJI.unknown;
+  const statusEmoji =
+    STATUS_EMOJI_UNIT_TESTS[workflowInfo.jobStatus as keyof typeof STATUS_EMOJI_UNIT_TESTS] ?? STATUS_EMOJI_UNIT_TESTS.unknown;
   const statusText = workflowInfo.jobStatus.charAt(0).toUpperCase() + workflowInfo.jobStatus.slice(1);
 
   let section = `## ${statusEmoji} Tests ${statusText} for [\`${workflowInfo.shortCurrentCommitSha}\`](${workflowInfo.commitUrl})\n\n`;
@@ -127,39 +112,32 @@ async function getBranchCommitComparisonSection(currentCommitSha: string, shortC
  * @returns Markdown formatted Vitest results section
  */
 async function getVitestResultsSection(): Promise<string> {
-  let section = `### 🧪 Vitest Unit Tests\n\n`;
+  const coverageJsonPath = "sites/arolariu.ro/code-cov/coverage-summary.json";
 
   try {
-    const coverageJsonPath = "sites/arolariu.ro/code-cov/coverage-summary.json";
     const exists = await fs.exists(coverageJsonPath);
 
     if (!exists) {
+      let section = `### 🧪 Vitest Unit Tests\n\n`;
       section += `⚠️ No coverage data found at \`${coverageJsonPath}\`\n\n`;
       section += `----\n`;
       return section;
     }
 
-    const coverageData = await fs.readJson<any>(coverageJsonPath);
-    const total = coverageData.total;
+    // Parse coverage using vitest helper
+    const coverageData = await vitest.parseCoverage(coverageJsonPath, fs);
 
-    if (total) {
-      section += `| Category    | Coverage |\n`;
-      section += `|-------------|----------|\n`;
-      section += `| Statements  | ${total.statements.pct}% |\n`;
-      section += `| Branches    | ${total.branches.pct}% |\n`;
-      section += `| Functions   | ${total.functions.pct}% |\n`;
-      section += `| Lines       | ${total.lines.pct}% |\n\n`;
-    } else {
-      section += `✅ Tests passed! Coverage data structure not available.\n\n`;
-    }
+    // Generate markdown section
+    return vitest.generateMarkdownSection(coverageData);
   } catch (error) {
     const err = error as Error;
     core.warning(`Failed to read Vitest coverage: ${err.message}`);
-    section += `⚠️ Could not read coverage data: ${err.message}\n\n`;
-  }
 
-  section += `----\n`;
-  return section;
+    let section = `### 🧪 Vitest Unit Tests\n\n`;
+    section += `⚠️ Could not read coverage data: ${err.message}\n\n`;
+    section += `----\n`;
+    return section;
+  }
 }
 
 /**
@@ -188,7 +166,7 @@ async function getPlaywrightResultsSection(jobStatus: string, workflowRunUrl: st
  * @param targetFolders - Folders to analyze
  * @returns Markdown formatted bundle size comparison
  */
-async function getBundleSizeComparisonSection(targetFolders: string[]): Promise<string> {
+async function getBundleSizeComparisonSection(targetFolders: readonly string[]): Promise<string> {
   try {
     let section = `### 📦 Bundle Size Analysis (vs. Main)\n\n`;
 

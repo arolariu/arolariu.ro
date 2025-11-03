@@ -30,17 +30,17 @@ export interface FileOperationOptions {
  */
 export interface FileInfo {
   /** Absolute file path */
-  path: string;
+  readonly path: string;
   /** File size in bytes */
-  size: number;
+  readonly size: number;
   /** Whether the path is a directory */
-  isDirectory: boolean;
+  readonly isDirectory: boolean;
   /** Whether the path is a file */
-  isFile: boolean;
+  readonly isFile: boolean;
   /** Creation time */
-  created: Date;
+  readonly created: Date;
   /** Last modified time */
-  modified: Date;
+  readonly modified: Date;
 }
 
 /**
@@ -161,7 +161,7 @@ export interface IFileSystemHelper {
    * @param options - Traversal options
    * @returns Promise resolving to array of file paths
    */
-  list(path: string, options?: TraversalOptions): Promise<string[]>;
+  list(path: string, options?: TraversalOptions): Promise<readonly string[]>;
 
   /**
    * Finds files matching a pattern
@@ -170,7 +170,7 @@ export interface IFileSystemHelper {
    * @param maxDepth - Maximum depth to search (-1 for unlimited)
    * @returns Promise resolving to array of matching file paths
    */
-  find(directory: string, pattern: RegExp, maxDepth?: number): Promise<string[]>;
+  find(directory: string, pattern: RegExp, maxDepth?: number): Promise<readonly string[]>;
 
   /**
    * Reads the last N lines from a file (tail operation)
@@ -418,7 +418,7 @@ export class FileSystemHelper implements IFileSystemHelper {
   /**
    * {@inheritDoc IFileSystemHelper.list}
    */
-  async list(path: string, options: TraversalOptions = {}): Promise<string[]> {
+  async list(path: string, options: TraversalOptions = {}): Promise<readonly string[]> {
     try {
       core.debug(`Listing directory: ${path}`);
 
@@ -451,7 +451,7 @@ export class FileSystemHelper implements IFileSystemHelper {
   /**
    * {@inheritDoc IFileSystemHelper.find}
    */
-  async find(directory: string, pattern: RegExp, maxDepth: number = -1): Promise<string[]> {
+  async find(directory: string, pattern: RegExp, maxDepth: number = -1): Promise<readonly string[]> {
     try {
       core.debug(`Finding files in ${directory} matching ${pattern}`);
 

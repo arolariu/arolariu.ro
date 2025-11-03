@@ -1,7 +1,7 @@
 /**
  * @fileoverview Environment variable management utilities for GitHub Actions
  * @module helpers/environment
- * 
+ *
  * Provides a clean, type-safe API for working with environment variables in GitHub Actions workflows.
  * Follows Single Responsibility Principle by focusing solely on environment access and validation.
  */
@@ -28,25 +28,25 @@ export interface EnvConfig {
  */
 export interface GitHubEnvContext {
   /** Full commit SHA */
-  sha: string;
+  readonly sha: string;
   /** Git reference (e.g., refs/heads/main) */
-  ref: string;
+  readonly ref: string;
   /** Actor who triggered the workflow */
-  actor: string;
+  readonly actor: string;
   /** Event name that triggered the workflow */
-  eventName: string;
+  readonly eventName: string;
   /** Repository in owner/name format */
-  repository: string;
+  readonly repository: string;
   /** Unique run ID */
-  runId: string;
+  readonly runId: string;
   /** Run number (incremental) */
-  runNumber: string;
+  readonly runNumber: string;
   /** Workflow name */
-  workflow: string;
+  readonly workflow: string;
   /** Job name */
-  job: string;
+  readonly job: string;
   /** Action name */
-  action: string;
+  readonly action: string;
 }
 
 /**
@@ -76,7 +76,7 @@ export interface IEnvironmentHelper {
    * @returns Record mapping variable names to values
    * @throws Sets workflow failure if any variable is missing
    */
-  getRequiredBatch(keys: string[]): Record<string, string>;
+  getRequiredBatch(keys: readonly string[]): Readonly<Record<string, string>>;
 
   /**
    * Checks if an environment variable exists and has a value
@@ -161,7 +161,7 @@ export class EnvironmentHelper implements IEnvironmentHelper {
   /**
    * {@inheritDoc IEnvironmentHelper.getRequiredBatch}
    */
-  getRequiredBatch(keys: string[]): Record<string, string> {
+  getRequiredBatch(keys: readonly string[]): Readonly<Record<string, string>> {
     const result: Record<string, string> = {};
     const missingVars: string[] = [];
 
@@ -244,7 +244,7 @@ export class EnvironmentHelper implements IEnvironmentHelper {
    * {@inheritDoc IEnvironmentHelper.getWithValidation}
    */
   getWithValidation(config: EnvConfig): string | undefined {
-    const { key, defaultValue, required = false, validator } = config;
+    const {key, defaultValue, required = false, validator} = config;
 
     const value = this.get(key, defaultValue);
 

@@ -21,26 +21,80 @@
  */
 
 import {basename} from "node:path";
-import {fs} from "../helpers/index.ts";
-import type {NewmanExecutionStats, NewmanFailedRequest, NewmanReport} from "../types/newman-types.ts";
-import type {BackendHealthCheck, E2ETestResults, TestArtifactPaths, WorkflowMetadata} from "../types/workflow-types.ts";
+import {
+  AUTOMATED_TEST_FAILURE_LABELS,
+  DEFAULT_ARTIFACTS_DIR,
+  DEFAULT_GITHUB_SERVER_URL,
+  DEFAULT_LOG_TAIL_LENGTH,
+  HEALTH_CHECK_FILENAME,
+  STATUS_EMOJI,
+  fs,
+  newman,
+} from "../helpers/index.ts";
+import type {NewmanReport} from "../helpers/newman/index.ts";
+
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
 
 /**
- * Constants
+ * Status of a job or workflow execution
  */
-const DEFAULT_LOG_TAIL_LENGTH = 50;
-const DEFAULT_GITHUB_SERVER_URL = "https://github.com";
-const DEFAULT_ARTIFACTS_DIR = "logs";
-const HEALTH_CHECK_FILENAME = "backend-health.json";
-const AUTOMATED_TEST_FAILURE_LABELS: string[] = ["bug", "automated-test-failure"];
+export type JobStatus = "success" | "failure" | "cancelled" | "skipped" | "unknown";
 
-const STATUS_EMOJI = {
-  success: "✅",
-  failure: "❌",
-  cancelled: "⚠️",
-  skipped: "⚠️",
-  unknown: "⚠️",
-} as const;
+/**
+ * Test execution result with duration tracking
+ */
+export interface TestJobResult {
+  readonly status: JobStatus;
+  readonly duration?: string;
+}
+
+/**
+ * E2E test results for both frontend and backend
+ */
+export interface E2ETestResults {
+  readonly frontend: TestJobResult;
+  readonly backend: TestJobResult;
+}
+
+/**
+ * Workflow execution metadata
+ */
+export interface WorkflowMetadata {
+  readonly name: string;
+  readonly runId: string;
+  readonly runNumber: string;
+  readonly eventName: string;
+  readonly serverUrl: string;
+  readonly repository: string;
+  readonly executionDate: string;
+}
+
+/**
+ * Backend health check response structure
+ */
+export interface BackendHealthCheck {
+  readonly status: string;
+  readonly timestamp: string;
+  readonly dependencies?: Record<string, unknown>;
+  readonly version?: string;
+  readonly [key: string]: unknown;
+}
+
+/**
+ * Test artifact paths for logs and reports
+ */
+export interface TestArtifactPaths {
+  readonly logs?: readonly string[];
+  readonly reports?: readonly string[];
+  readonly healthCheck?: string;
+  readonly summaries?: readonly string[];
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
 
 /**
  * Discovers test artifacts in the specified directory
@@ -48,7 +102,13 @@ const STATUS_EMOJI = {
  * @returns Object containing paths to discovered artifacts
  */
 async function discoverTestArtifacts(baseDir: string): Promise<TestArtifactPaths> {
-  const artifacts: TestArtifactPaths = {
+  // Use mutable types internally for building, will be readonly on return
+  const artifacts: {
+    logs: string[];
+    reports: string[];
+    summaries: string[];
+    healthCheck?: string;
+  } = {
     logs: [],
     reports: [],
     summaries: [],
@@ -66,11 +126,11 @@ async function discoverTestArtifacts(baseDir: string): Promise<TestArtifactPaths
       const filePath = `${baseDir}/${file}`;
 
       if (file.endsWith(".log")) {
-        artifacts.logs?.push(filePath);
+        artifacts.logs.push(filePath);
       } else if (file.endsWith(".json") && file.includes("newman")) {
-        artifacts.reports?.push(filePath);
+        artifacts.reports.push(filePath);
       } else if (file.endsWith(".md") && file.includes("summary")) {
-        artifacts.summaries?.push(filePath);
+        artifacts.summaries.push(filePath);
       } else if (file === HEALTH_CHECK_FILENAME) {
         artifacts.healthCheck = filePath;
       }
@@ -80,144 +140,6 @@ async function discoverTestArtifacts(baseDir: string): Promise<TestArtifactPaths
   }
 
   return artifacts;
-}
-
-/**
- * Parses a Newman JSON report to extract execution statistics
- * @param reportData - Raw Newman report object
- * @returns Structured execution statistics
- */
-function parseNewmanReport(reportData: NewmanReport): NewmanExecutionStats {
-  const run = reportData.run;
-  const stats = run.stats;
-  const timings = run.timings;
-
-  const totalRequests = stats.requests.total;
-  const failedRequests = stats.requests.failed;
-  const successRate = totalRequests > 0 ? ((totalRequests - failedRequests) / totalRequests) * 100 : 0;
-
-  const totalAssertions = stats.assertions.total;
-  const failedAssertions = stats.assertions.failed;
-  const assertionSuccessRate = totalAssertions > 0 ? ((totalAssertions - failedAssertions) / totalAssertions) * 100 : 0;
-
-  const responseTimeMin = timings.responseAverage > 0 ? Math.round(timings.responseMin) : 0;
-  const responseTimeMax = timings.responseMax > 0 ? Math.round(timings.responseMax) : 0;
-  const responseTimeAvg = timings.responseAverage > 0 ? Math.round(timings.responseAverage) : 0;
-  const totalDuration = Math.round(timings.completed - timings.started);
-
-  const failures: NewmanFailedRequest[] = [];
-
-  for (const execution of run.executions) {
-    const item = execution.item;
-    const request = execution.request;
-    const response = execution.response;
-
-    const hasFailedAssertions = execution.assertions?.some((assertion) => assertion.error !== undefined) ?? false;
-    const hasResponseError = response?.code !== undefined && response.code >= 400;
-
-    if (hasFailedAssertions || hasResponseError) {
-      const failedAssertionsList = execution.assertions?.filter((assertion) => assertion.error !== undefined) ?? [];
-
-      failures.push({
-        name: item.name,
-        method: request.method,
-        url: request.url?.toString() ?? "Unknown URL",
-        statusCode: response?.code ?? 0,
-        responseTime: response?.responseTime ?? 0,
-        failedAssertions: failedAssertionsList.map((assertion) => ({
-          assertion: assertion.assertion,
-          error: assertion.error?.message ?? "Unknown error",
-        })),
-      });
-    }
-  }
-
-  return {
-    collectionName: reportData.collection.info.name,
-    totalRequests,
-    failedRequests,
-    successRate,
-    totalAssertions,
-    failedAssertions,
-    assertionSuccessRate,
-    timings: {
-      started: new Date(timings.started).toISOString(),
-      completed: new Date(timings.completed).toISOString(),
-      totalDuration,
-      responseTimeMin,
-      responseTimeMax,
-      responseTimeAvg,
-    },
-    failures,
-  };
-}
-
-/**
- * Categorizes Newman test failures by type
- * @param stats - Newman execution statistics
- * @returns Categorized failure counts
- */
-function categorizeFailures(stats: NewmanExecutionStats) {
-  let clientErrors = 0;
-  let serverErrors = 0;
-  let timeouts = 0;
-  let assertionFailures = 0;
-  let other = 0;
-
-  for (const failure of stats.failures) {
-    if (failure.statusCode === 0 || failure.statusCode === undefined) {
-      timeouts++;
-    } else if (failure.statusCode >= 400 && failure.statusCode < 500) {
-      clientErrors++;
-    } else if (failure.statusCode >= 500) {
-      serverErrors++;
-    } else if (failure.failedAssertions.length > 0) {
-      assertionFailures++;
-    } else {
-      other++;
-    }
-  }
-
-  return {clientErrors, serverErrors, timeouts, assertionFailures, other};
-}
-
-/**
- * Generates markdown section for Newman test results
- * @param stats - Newman execution statistics
- * @param testType - Type of test (Frontend/Backend)
- * @returns Markdown formatted Newman results section
- */
-function generateNewmanResultsSection(stats: NewmanExecutionStats, testType: string): string {
-  let section = `\n## 📊 ${testType} Newman Test Results\n\n`;
-  section += `| Metric | Value |\n`;
-  section += `|--------|-------|\n`;
-  section += `| Total Requests | ${stats.totalRequests} |\n`;
-  section += `| Failed Requests | ${stats.failedRequests} |\n`;
-  section += `| Success Rate | ${stats.successRate.toFixed(2)}% |\n`;
-  section += `| Total Assertions | ${stats.totalAssertions} |\n`;
-  section += `| Failed Assertions | ${stats.failedAssertions} |\n`;
-  section += `| Assertion Success Rate | ${stats.assertionSuccessRate.toFixed(2)}% |\n`;
-  section += `| Response Time (min/avg/max) | ${stats.timings.responseTimeMin}ms / ${stats.timings.responseTimeAvg}ms / ${stats.timings.responseTimeMax}ms |\n`;
-  section += `| Total Duration | ${stats.timings.totalDuration}ms |\n\n`;
-
-  if (stats.failures.length > 0) {
-    section += `### Failed Requests\n\n`;
-    for (const failure of stats.failures) {
-      section += `- **${failure.method} ${failure.name}**\n`;
-      section += `  - URL: \`${failure.url}\`\n`;
-      section += `  - Status: ${failure.statusCode === 0 ? "Timeout" : failure.statusCode}\n`;
-      section += `  - Response Time: ${failure.responseTime}ms\n`;
-      if (failure.failedAssertions.length > 0) {
-        section += `  - Failed Assertions:\n`;
-        for (const assertion of failure.failedAssertions) {
-          section += `    - ${assertion.assertion}: ${assertion.error}\n`;
-        }
-      }
-      section += `\n`;
-    }
-  }
-
-  return section;
 }
 
 /**
@@ -485,12 +407,12 @@ async function loadLogTails(artifacts: TestArtifactPaths, tailLength: number = D
  * ```
  */
 async function loadNewmanReports(artifacts: TestArtifactPaths): Promise<{
-  frontend: ReturnType<typeof parseNewmanReport> | null;
-  backend: ReturnType<typeof parseNewmanReport> | null;
+  frontend: ReturnType<typeof newman.parseReport> | null;
+  backend: ReturnType<typeof newman.parseReport> | null;
 }> {
-  const newman = {
-    frontend: null as ReturnType<typeof parseNewmanReport> | null,
-    backend: null as ReturnType<typeof parseNewmanReport> | null,
+  const reports = {
+    frontend: null as ReturnType<typeof newman.parseReport> | null,
+    backend: null as ReturnType<typeof newman.parseReport> | null,
   };
 
   // Find Newman JSON reports
@@ -501,7 +423,7 @@ async function loadNewmanReports(artifacts: TestArtifactPaths): Promise<{
   if (frontendReport && (await fs.exists(frontendReport))) {
     try {
       const reportData = await fs.readJson<NewmanReport>(frontendReport);
-      newman.frontend = parseNewmanReport(reportData);
+      reports.frontend = newman.parseReport(reportData);
     } catch (error) {
       console.warn(`Failed to parse frontend Newman report:`, error);
     }
@@ -511,13 +433,13 @@ async function loadNewmanReports(artifacts: TestArtifactPaths): Promise<{
   if (backendReport && (await fs.exists(backendReport))) {
     try {
       const reportData = await fs.readJson<NewmanReport>(backendReport);
-      newman.backend = parseNewmanReport(reportData);
+      reports.backend = newman.parseReport(reportData);
     } catch (error) {
       console.warn(`Failed to parse backend Newman report:`, error);
     }
   }
 
-  return newman;
+  return reports;
 }
 
 /**
@@ -544,20 +466,20 @@ async function generateIssueBody(metadata: WorkflowMetadata, results: E2ETestRes
   body += generateJobStatusTable(results);
 
   // Add Newman test results (detailed statistics)
-  const newman = await loadNewmanReports(artifacts);
-  if (newman.frontend) {
-    body += generateNewmanResultsSection(newman.frontend, "Frontend");
+  const newmanReports = await loadNewmanReports(artifacts);
+  if (newmanReports.frontend) {
+    body += newman.generateMarkdownSection(newmanReports.frontend, "Frontend");
   }
-  if (newman.backend) {
-    body += generateNewmanResultsSection(newman.backend, "Backend");
+  if (newmanReports.backend) {
+    body += newman.generateMarkdownSection(newmanReports.backend, "Backend");
   }
 
   // Add failure categorization if we have Newman data
-  if (newman.frontend || newman.backend) {
+  if (newmanReports.frontend || newmanReports.backend) {
     body += "\n## 📊 Failure Analysis\n\n";
 
-    if (newman.frontend) {
-      const frontendCategories = categorizeFailures(newman.frontend);
+    if (newmanReports.frontend) {
+      const frontendCategories = newman.categorizeFailures(newmanReports.frontend);
       body += "### Frontend Failure Breakdown\n\n";
       body += `- **Client Errors (4xx):** ${frontendCategories.clientErrors}\n`;
       body += `- **Server Errors (5xx):** ${frontendCategories.serverErrors}\n`;
@@ -566,8 +488,8 @@ async function generateIssueBody(metadata: WorkflowMetadata, results: E2ETestRes
       body += `- **Other Errors:** ${frontendCategories.other}\n\n`;
     }
 
-    if (newman.backend) {
-      const backendCategories = categorizeFailures(newman.backend);
+    if (newmanReports.backend) {
+      const backendCategories = newman.categorizeFailures(newmanReports.backend);
       body += "### Backend Failure Breakdown\n\n";
       body += `- **Client Errors (4xx):** ${backendCategories.clientErrors}\n`;
       body += `- **Server Errors (5xx):** ${backendCategories.serverErrors}\n`;
@@ -689,7 +611,7 @@ export default async function runLiveTestAction(): Promise<void> {
       repo: context.repo.repo,
       title: issueTitle,
       body: issueBody,
-      labels: AUTOMATED_TEST_FAILURE_LABELS,
+      labels: [...AUTOMATED_TEST_FAILURE_LABELS],
       assignees: ["arolariu"],
     });
 

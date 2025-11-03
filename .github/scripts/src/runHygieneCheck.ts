@@ -27,12 +27,14 @@
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
 import prettyBytes from "pretty-bytes";
-import {createCommentBuilder, createGitHubHelper, env, git} from "../helpers/index.ts";
-
-/**
- * Constants
- */
-const BUNDLE_TARGET_FOLDERS: string[] = ["sites/arolariu.ro", "sites/api.arolariu.ro", "sites/docs.arolariu.ro"];
+import {
+  BUNDLE_TARGET_FOLDERS,
+  HYGIENE_CHECK_COMMENT_IDENTIFIER,
+  createCommentBuilder,
+  createGitHubHelper,
+  env,
+  git,
+} from "../helpers/index.ts";
 
 /**
  * Bundle size comparison types
@@ -118,7 +120,7 @@ function compareFolderSizes(
  * @param targetFolders - Array of folder paths to analyze
  * @returns Promise resolving to array of comparison results, one per folder
  */
-async function compareBundleSizes(targetFolders: string[]): Promise<BundleSizeComparison[]> {
+async function compareBundleSizes(targetFolders: readonly string[]): Promise<BundleSizeComparison[]> {
   const results: BundleSizeComparison[] = [];
 
   try {
@@ -309,15 +311,10 @@ export interface CodeHygieneResult {
   /** Linting error output (lint mode) */
   lintOutput?: string;
   /** List of changed files (detect mode) */
-  changedFiles?: string[];
+  changedFiles?: readonly string[];
   /** Error message if check failed */
   error?: string;
 }
-
-/**
- * Unique identifier for the hygiene check comment
- */
-const COMMENT_IDENTIFIER = "arolariu-hygiene-check-comment";
 
 // ============================================================================
 // CHANGE DETECTION
@@ -800,7 +797,7 @@ function generateUnifiedComment(): string {
   comment += `_Last updated: ${new Date().toISOString()}_\n`;
 
   // Add hidden identifier
-  comment += `\n<!-- ${COMMENT_IDENTIFIER} -->\n`;
+  comment += `\n<!-- ${HYGIENE_CHECK_COMMENT_IDENTIFIER} -->\n`;
 
   core.info("Generated unified hygiene comment (extended version)");
   return comment;
@@ -828,7 +825,7 @@ async function postHygieneComment(): Promise<CodeHygieneResult> {
     const commentBody = generateUnifiedComment();
 
     // Use upsert to create or update comment
-    await gh.upsertComment(pr.number, commentBody, COMMENT_IDENTIFIER);
+    await gh.upsertComment(pr.number, commentBody, HYGIENE_CHECK_COMMENT_IDENTIFIER);
 
     core.info(`✅ Successfully posted hygiene comment`);
     core.notice(`PR hygiene comment: ${pr.url}`);
