@@ -196,6 +196,7 @@ jobs:
         env:
           CHECK_MODE: "stats"
           HEAD_REF: ${{ env.HEAD_REF }}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
           script: |
             // Install dependencies required by the script
@@ -296,6 +297,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v8
         env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
           # Status derivations
           STATS_RESULT: ${{ needs.code-summary.result }}
           FORMATTING_RESULT: ${{ needs.format.outputs.format-needed == 'true' && 'failure' || 'success' }}
