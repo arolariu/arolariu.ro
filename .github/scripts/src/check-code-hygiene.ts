@@ -1,13 +1,15 @@
 /**
  * @fileoverview Performs comprehensive code hygiene checks including statistics, formatting, and linting
  * @module src/check-code-hygiene
+ * 
+ * @refactored Uses new helpers for cleaner implementation
  */
 
+import * as core from "@actions/core";
+import * as exec from "@actions/exec";
+import { env, git, fs } from "../helpers/index.ts";
 import {compareBundleSizes, generateBundleSizeMarkdown} from "../lib/bundle-size-helper.ts";
 import {BUNDLE_TARGET_FOLDERS} from "../lib/constants.ts";
-import {getEnvVar} from "../lib/env-helper.ts";
-import {ensureBranchFetched, getGitDiffStats} from "../lib/git-helper.ts";
-import type {ScriptParams} from "../types/index.ts";
 
 /**
  * Check mode for the code hygiene script
@@ -57,23 +59,20 @@ export interface CodeHygieneResult {
 /**
  * Computes statistics about code changes between commits
  * Compares current commit against BOTH main branch AND previous commit (if not first)
- * @param params - Script execution parameters
  * @returns Promise resolving to statistics result
  */
-async function checkStats(params: ScriptParams): Promise<CodeHygieneResult> {
-  const {core, exec} = params;
-
+async function checkStats(): Promise<CodeHygieneResult> {
   try {
     core.info("🔍 Computing code statistics...");
 
-    const headRef = getEnvVar("HEAD_REF") ?? getEnvVar("GITHUB_SHA") ?? "HEAD";
+    const headRef = env.get("HEAD_REF") ?? env.get("GITHUB_SHA") ?? "HEAD";
 
     // Ensure we have the base branch fetched
-    await ensureBranchFetched(params, "main");
+    await git.fetchBranch("main");
 
     // Compare against main branch
     core.info("📊 Comparing against main branch...");
-    const diffVsMain = await getGitDiffStats(params, "origin/main", headRef);
+    const diffVsMain = await git.getDiffStats("origin/main", headRef);
     core.info(`📊 vs Main: ${diffVsMain.filesChanged} files, +${diffVsMain.linesAdded} -${diffVsMain.linesDeleted}`);
 
     // Try to compare against previous commit (HEAD~1)
@@ -88,8 +87,8 @@ async function checkStats(params: ScriptParams): Promise<CodeHygieneResult> {
 
       if (prevCommitCheck.exitCode === 0) {
         core.info("📊 Comparing against previous commit...");
-        diffVsPrev = await getGitDiffStats(params, "HEAD~1", headRef);
-        core.info(`� vs Previous: ${diffVsPrev.filesChanged} files, +${diffVsPrev.linesAdded} -${diffVsPrev.linesDeleted}`);
+        diffVsPrev = await git.getDiffStats("HEAD~1", headRef);
+        core.info(`📊 vs Previous: ${diffVsPrev.filesChanged} files, +${diffVsPrev.linesAdded} -${diffVsPrev.linesDeleted}`);
       } else {
         core.info("ℹ️ No previous commit found (first commit in PR)");
         isFirstCommit = true;
@@ -155,11 +154,9 @@ async function checkStats(params: ScriptParams): Promise<CodeHygieneResult> {
 
 /**
  * Checks code formatting using Prettier
- * @param params - Script execution parameters
  * @returns Promise resolving to formatting check result
  */
-async function checkFormatting(params: ScriptParams): Promise<CodeHygieneResult> {
-  const {core, exec} = params;
+async function checkFormatting(): Promise<CodeHygieneResult> {
 
   try {
     core.info("🎨 Checking code formatting...");
@@ -223,11 +220,9 @@ async function checkFormatting(params: ScriptParams): Promise<CodeHygieneResult>
 
 /**
  * Checks code linting using ESLint
- * @param params - Script execution parameters
  * @returns Promise resolving to linting check result
  */
-async function checkLinting(params: ScriptParams): Promise<CodeHygieneResult> {
-  const {core, exec} = params;
+async function checkLinting(): Promise<CodeHygieneResult> {
 
   try {
     core.info("🔍 Running linting checks...");
@@ -279,13 +274,10 @@ async function checkLinting(params: ScriptParams): Promise<CodeHygieneResult> {
 
 /**
  * Main function that orchestrates code hygiene checks based on mode
- * @param params - Script execution parameters containing GitHub Actions context
  * @returns Promise that resolves when checks complete
  */
-export default async function checkCodeHygiene(params: ScriptParams): Promise<void> {
-  const {core} = params;
-
-  const mode = (getEnvVar("CHECK_MODE", "stats") ?? "stats") as CheckMode;
+export default async function checkCodeHygiene(): Promise<void> {
+  const mode = (env.get("CHECK_MODE", "stats")) as CheckMode;
 
   core.info(`🧹 Running code hygiene check in '${mode}' mode`);
 
@@ -293,15 +285,15 @@ export default async function checkCodeHygiene(params: ScriptParams): Promise<vo
 
   switch (mode) {
     case "stats": {
-      result = await checkStats(params);
+      result = await checkStats();
       break;
     }
     case "format": {
-      result = await checkFormatting(params);
+      result = await checkFormatting();
       break;
     }
     case "lint": {
-      result = await checkLinting(params);
+      result = await checkLinting();
       break;
     }
     default: {
