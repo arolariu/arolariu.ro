@@ -1,91 +1,77 @@
 /**
  * @fileoverview Posts a unified comprehensive code hygiene check result as a single PR comment
  * @module src/post-hygiene-comment
+ * 
+ * @refactored Uses new helpers for cleaner implementation
  */
 
-import {getEnvVar} from "../lib/env-helper.ts";
-import {getPRNumber} from "../lib/pr-helper.ts";
-import {formatCommitSha, getStatusEmoji} from "../lib/status-helper.ts";
-import type {ScriptParams} from "../types/index.ts";
+import * as core from "@actions/core";
+import { env, createGitHubHelper, createCommentBuilder } from "../helpers/index.ts";
 
 /**
  * Unique identifier for the hygiene check comment
  */
-const COMMENT_IDENTIFIER = "<!-- arolariu-hygiene-check-comment -->";
+const COMMENT_IDENTIFIER = "arolariu-hygiene-check-comment";
 
 /**
- * Finds existing hygiene comment on the PR
- * @param params - Script parameters
- * @param prNumber - PR number
- * @returns Comment ID if found, null otherwise
+ * Formats a commit SHA to short form
  */
-async function findExistingComment(params: ScriptParams, prNumber: number): Promise<number | null> {
-  const {github, context, core} = params;
+function formatCommitSha(sha: string): string {
+  return sha.substring(0, 7);
+}
 
-  try {
-    const {data: comments} = await github.rest.issues.listComments({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      issue_number: prNumber,
-    });
-
-    const existingComment = comments.find((comment) => comment.body?.includes(COMMENT_IDENTIFIER));
-
-    if (existingComment) {
-      core.info(`Found existing hygiene comment #${existingComment.id}`);
-      return existingComment.id;
-    }
-
-    return null;
-  } catch (error) {
-    const err = error as Error;
-    core.warning(`Failed to search for existing comment: ${err.message}`);
-    return null;
+/**
+ * Gets status emoji for result
+ */
+function getStatusEmoji(status: string): string {
+  switch (status) {
+    case "success": return "✅";
+    case "failure": return "❌";
+    case "warning": return "⚠️";
+    default: return "❓";
   }
 }
 
 /**
  * Generates the unified comprehensive hygiene comment
- * @param params - Script parameters
  * @returns Markdown string for the complete hygiene check report
  */
-function generateUnifiedComment(params: ScriptParams): string {
-  const {core} = params;
+function generateUnifiedComment(): string {
 
   // Core status information
-  const statsResult = getEnvVar("STATS_RESULT", "unknown");
-  const formattingResult = getEnvVar("FORMATTING_RESULT", "unknown");
-  const lintingResult = getEnvVar("LINTING_RESULT", "unknown");
+  const statsResult = env.get("STATS_RESULT", "unknown");
+  const formattingResult = env.get("FORMATTING_RESULT", "unknown");
+  const lintingResult = env.get("LINTING_RESULT", "unknown");
 
   // Primary diff stats
-  const filesChanged = getEnvVar("FILES_CHANGED", "0");
-  const linesAdded = getEnvVar("LINES_ADDED", "0");
-  const linesDeleted = getEnvVar("LINES_DELETED", "0");
+  const filesChanged = env.get("FILES_CHANGED", "0");
+  const linesAdded = env.get("LINES_ADDED", "0");
+  const linesDeleted = env.get("LINES_DELETED", "0");
 
   // Previous commit comparison
-  const filesChangedVsPrev = getEnvVar("FILES_CHANGED_VS_PREV", "0");
-  const linesAddedVsPrev = getEnvVar("LINES_ADDED_VS_PREV", "0");
-  const linesDeletedVsPrev = getEnvVar("LINES_DELETED_VS_PREV", "0");
-  const isFirstCommit = getEnvVar("IS_FIRST_COMMIT", "false") === "true";
+  const filesChangedVsPrev = env.get("FILES_CHANGED_VS_PREV", "0");
+  const linesAddedVsPrev = env.get("LINES_ADDED_VS_PREV", "0");
+  const linesDeletedVsPrev = env.get("LINES_DELETED_VS_PREV", "0");
+  const isFirstCommit = env.getBoolean("IS_FIRST_COMMIT", false);
 
   // Formatting
-  const formatNeeded = getEnvVar("FORMAT_NEEDED") === "true";
-  const filesNeedingFormat = getEnvVar("FILES_NEEDING_FORMAT")?.split(",").filter(Boolean) || [];
+  const formatNeeded = env.getBoolean("FORMAT_NEEDED", false);
+  const filesNeedingFormat = env.get("FILES_NEEDING_FORMAT")?.split(",").filter(Boolean) || [];
 
   // Linting
-  const lintPassed = getEnvVar("LINT_PASSED") === "true";
-  const lintOutput = getEnvVar("LINT_OUTPUT", "");
+  const lintPassed = env.getBoolean("LINT_PASSED", false);
+  const lintOutput = env.get("LINT_OUTPUT", "");
 
   // Bundle size
-  const bundleSizeMarkdown = getEnvVar("BUNDLE_SIZE_MARKDOWN", "_Not available_");
+  const bundleSizeMarkdown = env.get("BUNDLE_SIZE_MARKDOWN", "_Not available_");
 
   // Extended metrics
-  const topExtensionsTable = getEnvVar("TOP_EXTENSION_TABLE");
-  const topDirectoriesTable = getEnvVar("TOP_DIRECTORY_TABLE");
-  const churn = getEnvVar("CHURN");
-  const netChange = getEnvVar("NET_CHANGE");
+  const topExtensionsTable = env.get("TOP_EXTENSION_TABLE");
+  const topDirectoriesTable = env.get("TOP_DIRECTORY_TABLE");
+  const churn = env.get("CHURN");
+  const netChange = env.get("NET_CHANGE");
 
-  const commitSha = getEnvVar("GITHUB_SHA", "unknown");
+  const commitSha = env.get("GITHUB_SHA", "unknown");
 
   // Overall status calculation (stats considered informational; still included)
   const allPassed = formattingResult === "success" && lintingResult === "success" && statsResult === "success";
@@ -93,19 +79,33 @@ function generateUnifiedComment(params: ScriptParams): string {
   const statusEmoji = allPassed ? "✅" : "⚠️";
   const statusText = allPassed ? "All Checks Passed" : "Issues Found";
 
-  let comment = `${COMMENT_IDENTIFIER}\n\n`;
-  comment += `# ${statusEmoji} Code Hygiene Report: ${statusText}\n\n`;
-  comment += `**Commit:** \`${formatCommitSha(commitSha ?? "unknown")}\`\n\n`;
+  // Use comment builder for cleaner generation
+  const builder = createCommentBuilder();
+  
+  builder
+    .addHeading(`${statusEmoji} Code Hygiene Report: ${statusText}`, 1)
+    .addParagraph(`**Commit:** \`${formatCommitSha(commitSha)}\``)
+    .addNewline();
 
   // Summary matrix
-  comment += `## 📋 Check Summary\n\n`;
-  comment += `| Check | Status | Result |\n`;
-  comment += `|-------|--------|--------|\n`;
-  comment += `| 📊 Statistics | ${getStatusEmoji(statsResult ?? "unknown")} | ${statsResult} |\n`;
-  comment += `| 🎨 Formatting | ${getStatusEmoji(formattingResult ?? "unknown")} | ${formattingResult} |\n`;
-  comment += `| 🔍 Linting | ${getStatusEmoji(lintingResult ?? "unknown")} | ${lintingResult} |\n\n`;
+  builder
+    .addHeading("📋 Check Summary", 2)
+    .addTable(
+      [
+        { header: "Check", align: "left" },
+        { header: "Status", align: "center" },
+        { header: "Result", align: "left" }
+      ],
+      [
+        [`📊 Statistics`, getStatusEmoji(statsResult), statsResult],
+        [`🎨 Formatting`, getStatusEmoji(formattingResult), formattingResult],
+        [`🔍 Linting`, getStatusEmoji(lintingResult), lintingResult]
+      ]
+    )
+    .addNewline();
 
   // Diff summary vs base
+  let comment = builder.build();
   comment += `## 📊 Code Changes vs Main Branch\n\n`;
   comment += `**Files Changed:** ${filesChanged}  \n`;
   comment += `**Lines Added:** +${linesAdded}  \n`;
@@ -199,6 +199,9 @@ function generateUnifiedComment(params: ScriptParams): string {
   // Footer
   comment += `---\n\n`;
   comment += `_Last updated: ${new Date().toISOString()}_\n`;
+  
+  // Add hidden identifier
+  comment += `\n<!-- ${COMMENT_IDENTIFIER} -->\n`;
 
   core.info("Generated unified hygiene comment (extended version)");
   return comment;
@@ -206,49 +209,32 @@ function generateUnifiedComment(params: ScriptParams): string {
 
 /**
  * Posts or updates the unified hygiene comment on the PR
- * @param params - Script execution parameters
+ * 
+ * @refactored Uses new GitHub helper with upsert pattern
  */
-export default async function postHygieneComment(params: ScriptParams): Promise<void> {
-  const {github, context, core} = params;
-
-  // Check if we're in a PR context
-  const prNumber = getPRNumber(core);
-  if (prNumber === null) {
-    core.info("Not a PR context - skipping comment");
-    return;
-  }
-
-  core.info(`📝 Posting unified hygiene comment to PR #${prNumber}`);
-
-  const commentBody = generateUnifiedComment(params);
-
+export default async function postHygieneComment(): Promise<void> {
   try {
-    // Try to find existing comment
-    const existingCommentId = await findExistingComment(params, prNumber);
+    // Get GitHub token and create helper
+    const token = env.getRequired("GITHUB_TOKEN");
+    const gh = createGitHubHelper(token);
 
-    if (existingCommentId) {
-      // Update existing comment
-      core.info(`Updating existing comment #${existingCommentId}`);
-      await github.rest.issues.updateComment({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        comment_id: existingCommentId,
-        body: commentBody,
-      });
-      core.info(`✅ Successfully updated comment #${existingCommentId}`);
-    } else {
-      // Create new comment
-      core.info("Creating new hygiene comment");
-      const {data: comment} = await github.rest.issues.createComment({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        issue_number: prNumber,
-        body: commentBody,
-      });
-      core.info(`✅ Successfully created comment #${comment.id}`);
+    // Check if we're in a PR context
+    const pr = gh.getPullRequest();
+    if (!pr) {
+      core.info("Not a PR context - skipping comment");
+      return;
     }
 
-    core.notice(`PR hygiene comment: https://github.com/${context.repo.owner}/${context.repo.repo}/pull/${prNumber}`);
+    core.info(`📝 Posting unified hygiene comment to PR #${pr.number}`);
+
+    // Generate comment body
+    const commentBody = generateUnifiedComment();
+
+    // Use upsert to create or update comment
+    await gh.upsertComment(pr.number, commentBody, COMMENT_IDENTIFIER);
+
+    core.info(`✅ Successfully posted hygiene comment`);
+    core.notice(`PR hygiene comment: ${pr.url}`);
   } catch (error) {
     const err = error as Error;
     core.error(`❌ Failed to post/update hygiene comment: ${err.message}`);
