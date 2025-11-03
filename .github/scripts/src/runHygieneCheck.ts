@@ -26,9 +26,302 @@
 
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
+import prettyBytes from "pretty-bytes";
 import {createCommentBuilder, createGitHubHelper, env, git} from "../helpers/index.ts";
-import {compareBundleSizes, generateBundleSizeMarkdown} from "../lib/bundle-size-helper.ts";
-import {BUNDLE_TARGET_FOLDERS} from "../lib/constants.ts";
+
+/**
+ * Constants
+ */
+const BUNDLE_TARGET_FOLDERS: string[] = ["sites/arolariu.ro", "sites/api.arolariu.ro", "sites/docs.arolariu.ro"];
+
+/**
+ * Bundle size comparison types
+ */
+interface FileComparisonItem {
+  path: string;
+  mainSize: number;
+  previewSize: number;
+  diff: number;
+  status: "Added" | "Removed" | "Modified";
+}
+
+interface BundleSizeComparison {
+  folder: string;
+  mainTotalSize: number;
+  previewTotalSize: number;
+  totalDiff: number;
+  filesChanged: FileComparisonItem[];
+  hasChanges: boolean;
+}
+
+/**
+ * Retrieves file sizes for specified folders from a given git branch
+ * @param branchName - The name of the branch (e.g., 'refs/remotes/origin/main', 'HEAD')
+ * @param targetFolders - An array of folder paths to inspect
+ * @returns A map of file paths to their sizes in bytes
+ */
+async function getFileSizesFromGit(branchName: string, targetFolders: string[]): Promise<Record<string, number>> {
+  const filesMap: Record<string, number> = {};
+
+  for (const folder of targetFolders) {
+    try {
+      const folderPath = folder.endsWith("/") ? folder.slice(0, -1) : folder;
+      const {stdout, stderr, exitCode} = await exec.getExecOutput(`git ls-tree -r -l ${branchName} -- ${folderPath}`, [], {
+        ignoreReturnCode: true,
+        silent: true,
+      });
+
+      if (exitCode !== 0) {
+        core.debug(`git ls-tree for branch '${branchName}' and folder '${folderPath}' exited with ${exitCode}`);
+        if (stderr?.includes("fatal: Not a valid object name")) {
+          core.warning(`Branch '${branchName}' or path '${folderPath}' might not exist or was not fetched correctly`);
+        }
+        continue;
+      }
+
+      if (!stdout?.trim()) {
+        continue;
+      }
+
+      const lines = stdout.trim().split("\n");
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const parts = line.split("\t");
+        if (parts.length === 2 && parts[0] && parts[1]) {
+          const meta = parts[0].trim().split(/\s+/);
+          if (meta.length === 4 && meta[1] === "blob" && meta[3]) {
+            const filePath = parts[1];
+            const sizeStr = meta[3];
+            if (sizeStr !== "-") {
+              const size = Number.parseInt(sizeStr, 10);
+              if (!Number.isNaN(size)) {
+                filesMap[filePath] = size;
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      const err = error as Error;
+      core.error(`Error processing folder ${folder} for branch ${branchName}: ${err.message}`);
+    }
+  }
+
+  return filesMap;
+}
+
+/**
+ * Compares file sizes for a specific folder between main and preview branches
+ * @param folder - Folder path to analyze
+ * @param mainBranchFiles - Record of file paths to sizes from main branch
+ * @param previewBranchFiles - Record of file paths to sizes from preview branch
+ * @returns Comparison result containing total sizes, differences, and changed files
+ */
+function compareFolderSizes(
+  folder: string,
+  mainBranchFiles: Record<string, number>,
+  previewBranchFiles: Record<string, number>,
+): BundleSizeComparison {
+  const filesInFolder: FileComparisonItem[] = [];
+  let folderMainTotalSize = 0;
+  let folderPreviewTotalSize = 0;
+
+  // Collect all relevant file paths
+  const relevantFilePaths = new Set<string>();
+  for (const p of Object.keys(mainBranchFiles)) {
+    if (p.startsWith(folder + "/")) relevantFilePaths.add(p);
+  }
+  for (const p of Object.keys(previewBranchFiles)) {
+    if (p.startsWith(folder + "/")) relevantFilePaths.add(p);
+  }
+
+  // Compare each file
+  for (const path of relevantFilePaths) {
+    const mainSize = mainBranchFiles[path];
+    const previewSize = previewBranchFiles[path];
+
+    if (mainSize !== undefined) folderMainTotalSize += mainSize;
+    if (previewSize !== undefined) folderPreviewTotalSize += previewSize;
+
+    if (mainSize === undefined && previewSize !== undefined) {
+      // File added
+      filesInFolder.push({path, mainSize: 0, previewSize, diff: previewSize, status: "Added"});
+    } else if (mainSize !== undefined && previewSize === undefined) {
+      // File removed
+      filesInFolder.push({path, mainSize, previewSize: 0, diff: -mainSize, status: "Removed"});
+    } else if (mainSize !== undefined && previewSize !== undefined && mainSize !== previewSize) {
+      // File modified
+      const diff = previewSize - mainSize;
+      filesInFolder.push({path, mainSize, previewSize, diff, status: "Modified"});
+    }
+  }
+
+  const folderDiff = folderPreviewTotalSize - folderMainTotalSize;
+  const hasChanges = filesInFolder.length > 0 || folderDiff !== 0;
+
+  return {
+    folder,
+    mainTotalSize: folderMainTotalSize,
+    previewTotalSize: folderPreviewTotalSize,
+    totalDiff: folderDiff,
+    filesChanged: filesInFolder,
+    hasChanges,
+  };
+}
+
+/**
+ * Fetches and compares file sizes between main and preview branches for specified folders
+ * @param targetFolders - Array of folder paths to analyze
+ * @returns Promise resolving to array of comparison results, one per folder
+ */
+async function compareBundleSizes(targetFolders: string[]): Promise<BundleSizeComparison[]> {
+  const results: BundleSizeComparison[] = [];
+
+  try {
+    core.info(`🔍 Starting bundle size comparison for ${targetFolders.length} folder(s)`);
+
+    // Fetch main branch
+    core.debug("Fetching main branch for comparison...");
+    await exec.getExecOutput("git fetch origin main:refs/remotes/origin/main --depth=1 --no-tags --quiet");
+    core.debug("✓ Main branch fetched successfully");
+
+    // Get file sizes from both branches
+    core.info("Retrieving file sizes from main branch...");
+    const mainBranchFiles = await getFileSizesFromGit("refs/remotes/origin/main", targetFolders);
+    core.debug(`Found ${Object.keys(mainBranchFiles).length} files in main branch`);
+
+    core.info("Retrieving file sizes from preview branch...");
+    const previewBranchFiles = await getFileSizesFromGit("HEAD", targetFolders);
+    core.debug(`Found ${Object.keys(previewBranchFiles).length} files in preview branch`);
+
+    // Compare each folder
+    for (const folder of targetFolders) {
+      core.debug(`Comparing folder: ${folder}`);
+      const comparison = compareFolderSizes(folder, mainBranchFiles, previewBranchFiles);
+      results.push(comparison);
+
+      if (comparison.hasChanges) {
+        core.info(`📊 ${folder}: ${comparison.filesChanged.length} file(s) changed, total diff: ${comparison.totalDiff} bytes`);
+      } else {
+        core.debug(`${folder}: No changes detected`);
+      }
+    }
+
+    core.info(`✓ Bundle size comparison completed for ${results.length} folder(s)`);
+    return results;
+  } catch (error) {
+    const err = error as Error;
+    core.error(`❌ Bundle size comparison failed: ${err.message}`);
+    throw new Error(`Failed to compare bundle sizes: ${err.message}`);
+  }
+}
+
+/**
+ * Generates a markdown table showing individual file changes within a folder
+ * @param folder - Folder path for calculating relative paths
+ * @param filesChanged - Array of file comparison items with size differences
+ * @returns Markdown table string with file-level change details
+ */
+function generateFileChangesTable(folder: string, filesChanged: FileComparisonItem[]): string {
+  let table = `| File Path (relative to folder) | Main Branch | Preview Branch | Difference | Status   |\n`;
+  table += `|--------------------------------|-------------|----------------|------------|----------|\n`;
+
+  filesChanged.sort((a, b) => a.path.localeCompare(b.path));
+
+  for (const item of filesChanged) {
+    let itemDiffSign = "";
+    if (item.diff > 0) {
+      itemDiffSign = "+";
+    } else if (item.diff < 0) {
+      itemDiffSign = "-";
+    }
+
+    const itemDiffDisplay = item.diff === 0 ? "---" : `${itemDiffSign}${prettyBytes(Math.abs(item.diff))}`;
+    const relativePath = item.path.substring(folder.length + 1);
+
+    table += `| \`${relativePath}\` | ${prettyBytes(item.mainSize ?? 0)} | ${prettyBytes(
+      item.previewSize ?? 0,
+    )} | ${itemDiffDisplay} | ${item.status} |\n`;
+  }
+
+  table += `\n`;
+  return table;
+}
+
+/**
+ * Generates a markdown collapsible section for a single folder's size comparison
+ * @param comparison - Bundle size comparison data for one folder
+ * @returns Markdown string with <details> element containing folder analysis
+ */
+function generateFolderComparisonMarkdown(comparison: BundleSizeComparison): string {
+  const {folder, mainTotalSize, previewTotalSize, totalDiff, filesChanged, hasChanges} = comparison;
+
+  let section = `<details>\n`;
+
+  if (!hasChanges) {
+    section += `<summary><strong>\`${folder}\`</strong> - No changes (Preview: ${prettyBytes(
+      previewTotalSize,
+    )}, Main: ${prettyBytes(mainTotalSize)})</summary>\n`;
+    section += `  _No file changes detected in this folder._\n\n`;
+    section += `</details>\n\n`;
+    return section;
+  }
+
+  // Determine diff display
+  let diffSign = "";
+  if (totalDiff > 0) {
+    diffSign = "+";
+  } else if (totalDiff < 0) {
+    diffSign = "-";
+  }
+  const diffDisplay = totalDiff === 0 ? "---" : `${diffSign}${prettyBytes(Math.abs(totalDiff))}`;
+
+  // Determine folder status
+  let folderStatusText = "Modified";
+  if (filesChanged.length === 0 && totalDiff !== 0) {
+    folderStatusText = "Size Changed";
+  } else if (previewTotalSize === 0 && mainTotalSize > 0) {
+    folderStatusText = "Removed";
+  } else if (mainTotalSize === 0 && previewTotalSize > 0) {
+    folderStatusText = "Added";
+  } else if (totalDiff === 0 && filesChanged.length > 0) {
+    folderStatusText = "Internally Modified";
+  }
+
+  section += `<summary><strong>\`${folder}\`</strong> - Total Diff: ${diffDisplay} (Preview: ${prettyBytes(
+    previewTotalSize,
+  )} vs Main: ${prettyBytes(mainTotalSize)}) - ${filesChanged.length} file(s) changed (${folderStatusText})</summary>\n\n`;
+
+  if (filesChanged.length > 0) {
+    section += generateFileChangesTable(folder, filesChanged);
+  } else {
+    section += `  _No individual file changes in this folder, but total size may have changed due to other factors._\n\n`;
+  }
+
+  section += `</details>\n\n`;
+  return section;
+}
+
+/**
+ * Generates a markdown section summarizing all bundle size comparisons
+ * @param comparisons - Array of bundle size comparison results
+ * @returns Formatted markdown string with expandable folder sections
+ */
+function generateBundleSizeMarkdown(comparisons: BundleSizeComparison[]): string {
+  let section = `### 📦 Bundle Size Analysis (vs. Main)\n\n`;
+  const anyChanges = comparisons.some((c) => c.hasChanges);
+
+  for (const comp of comparisons) {
+    section += generateFolderComparisonMarkdown(comp);
+  }
+
+  if (!anyChanges) {
+    section += "No significant changes in bundle sizes for monitored folders.\n\n";
+  }
+
+  section += `----\n`;
+  return section;
+}
 
 /**
  * Check mode for the code hygiene script
@@ -191,11 +484,7 @@ async function checkStats(): Promise<CodeHygieneResult> {
     let bundleSizeMarkdown = "";
 
     try {
-      const github = await import("@actions/github");
-      const octokit = github.getOctokit(process.env["GITHUB_TOKEN"] ?? "");
-      const context = github.context;
-      const params = {github: octokit, context, core, exec};
-      const comparisons = await compareBundleSizes(params, BUNDLE_TARGET_FOLDERS);
+      const comparisons = await compareBundleSizes(BUNDLE_TARGET_FOLDERS);
       bundleSizeMarkdown = generateBundleSizeMarkdown(comparisons);
     } catch (error) {
       const err = error as Error;
