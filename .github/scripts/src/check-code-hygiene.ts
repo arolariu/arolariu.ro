@@ -1,8 +1,6 @@
 /**
  * @fileoverview Performs comprehensive code hygiene checks including statistics, formatting, and linting
  * @module src/check-code-hygiene
- * 
- * @refactored Uses new helpers for cleaner implementation
  */
 
 import * as core from "@actions/core";

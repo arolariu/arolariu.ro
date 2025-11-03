@@ -1,8 +1,6 @@
 /**
  * @fileoverview Posts a unified comprehensive code hygiene check result as a single PR comment
  * @module src/post-hygiene-comment
- * 
- * @refactored Uses new helpers for cleaner implementation
  */
 
 import * as core from "@actions/core";

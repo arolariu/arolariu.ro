@@ -2,8 +2,6 @@
  * @fileoverview Lightweight change detection for hygiene pipeline gating.
  * Determines if there are any file changes between BASE_REF and HEAD_REF and
  * exposes minimal outputs to allow downstream jobs to short‑circuit.
- * 
- * @refactored Uses new helpers from @actions/toolkit with clean architecture
  */
 
 import * as core from "@actions/core";

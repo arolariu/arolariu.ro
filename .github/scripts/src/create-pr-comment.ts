@@ -2,8 +2,6 @@
  * @fileoverview Core pull request comment creation utilities
  * @module src/create-pr-comment
  *
- * @refactored Uses new GitHub helper for cleaner API
- *
  * This module provides the foundational, reusable logic for posting comments to GitHub
  * pull requests. It serves as a generic utility that can be used by any comment generation
  * module (e.g., unit test summaries, hygiene checks, build reports).
@@ -29,8 +27,6 @@ import { env, createGitHubHelper } from "../helpers/index.ts";
 
 /**
  * Creates a comment on a pull request with the provided markdown content
- *
- * @refactored Uses new GitHub helper - no params needed
  *
  * @param commentBody - Pre-formatted markdown content to post as the PR comment
  * @returns Promise that resolves when the comment is posted successfully or skipped gracefully
