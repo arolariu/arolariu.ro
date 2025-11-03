@@ -108,17 +108,16 @@ async function buildUnitTestSummaryCommentBody(workflowInfo: WorkflowInfo, curre
   const github = await import("@actions/github");
   const octokit = github.getOctokit(process.env["GITHUB_TOKEN"] ?? "");
   const params = {github: octokit, context, core, exec};
+
   commentBody += await getBranchCommitComparisonSection(params, currentCommitSha, workflowInfo.shortCurrentCommitSha);
 
   core.debug("Building Vitest test results section...");
-  // Add test results
   commentBody += await getVitestResultsSection(core);
 
   core.debug("Building Playwright test results section...");
   commentBody += await getPlaywrightResultsSection(workflowInfo.jobStatus, workflowInfo.workflowRunUrl);
 
   core.debug("Building bundle size comparison section...");
-  // Add bundle size analysis
   commentBody += await getBundleSizeComparisonSection(BUNDLE_TARGET_FOLDERS);
 
   core.debug(`Comment body assembled: ${commentBody.split("\n").length} lines`);
@@ -176,23 +175,22 @@ export default async function createUnitTestSummaryComment(): Promise<void> {
   core.info(`🔧 Workflow context: ${repoOwner}/${repoName}, Branch: ${branchName}, Status: ${jobStatus}`);
   core.debug(`Commit SHA: ${commitSha.substring(0, 7)}..., Run ID: ${runId}`);
 
-  // Build URLs and metadata for the comment
-  // Note: PR number is extracted and validated by createPRComment
   const shortCommitSha = commitSha.substring(0, 7);
   const workflowRunUrl = `https://github.com/${repoOwner}/${repoName}/actions/runs/${runId}`;
   const commitUrl = `https://github.com/${repoOwner}/${repoName}/commit/${commitSha}`;
+  const prUrl = context.payload.pull_request?.html_url || "";
+  const prNumber = context.payload.pull_request?.number || 0;
 
   // Construct workflow information object for comment generation
-  // PR-specific fields (prNumber, prUrl) are placeholders as they're resolved by createPRComment
   const workflowInfo: WorkflowInfo = {
-    prNumber: 0, // Resolved by createPRComment from PR_NUMBER env var
-    prUrl: "", // Constructed by createPRComment after PR validation
     runId,
     workflowRunUrl,
     shortCurrentCommitSha: shortCommitSha,
     commitUrl,
     branchName,
     jobStatus,
+    prNumber,
+    prUrl,
   };
 
   // Generate the complete comment body with all test results and analysis
