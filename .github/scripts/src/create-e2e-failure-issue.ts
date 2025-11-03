@@ -321,7 +321,7 @@ async function generateIssueBody(metadata: WorkflowMetadata, results: E2ETestRes
  * console.log('E2E failure issue created successfully');
  * ```
  */
-export default async function createE2EFailureIssue(params: ScriptParams): Promise<void> {
+export default async function createE2EFailureIssue(): Promise<void> {
   const {github: octokit, context, core} = params;
 
   try {

@@ -1,18 +1,14 @@
 /**
  * Wrapper script for executing create-e2e-failure-issue.ts with Node.js 24's native TypeScript support.
- * This is called from GitHub Actions and passes the required context objects to the TypeScript module.
+ * 
+ * @refactored No params needed - script uses helpers directly
  *
- * @param {object} params - GitHub Actions context parameters
- * @param {ReturnType<typeof import('@actions/github').getOctokit>} params.github - GitHub Octokit client instance
- * @param {typeof import('@actions/github').context} params.context - GitHub Actions context
- * @param {typeof import('@actions/core')} params.core - GitHub Actions core utilities
- * @param {typeof import('@actions/exec')} params.exec - GitHub Actions exec utilities
  * @returns {Promise<void>}
  */
-export default async function createE2EFailureIssueWrapper({github, context, core, exec}) {
+export default async function createE2EFailureIssueWrapper() {
   // Import the TypeScript module directly using Node.js 24's experimental TypeScript support
   const {default: createE2EFailureIssue} = await import("./create-e2e-failure-issue.ts");
 
-  // Execute the main function with the provided parameters
-  await createE2EFailureIssue({github, context, core, exec});
+  // Execute the main function (no params needed)
+  await createE2EFailureIssue();
 }

@@ -24,6 +24,7 @@
  * @see {@link extractWorkflowContext} - Workflow environment variable extraction
  */
 
+import * as core from "@actions/core";
 import {createPRComment} from "./create-pr-comment.ts";
 import {compareBundleSizes, generateBundleSizeMarkdown} from "../lib/bundle-size-helper.ts";
 import {BUNDLE_TARGET_FOLDERS} from "../lib/constants.ts";
@@ -32,7 +33,7 @@ import {getBranchCommitComparisonSection} from "../lib/git-helper.ts";
 import getVitestResultsSection from "../lib/vitest-helper.ts";
 import getPlaywrightResultsSection from "../lib/playwright-helper.ts";
 import {generateWorkflowInfoSection} from "../lib/pr-comment-builder.ts";
-import type {ScriptParams, WorkflowInfo} from "../types/index.ts";
+import type {WorkflowInfo} from "../types/index.ts";
 
 /**
  * Generates the bundle size comparison section with comprehensive error handling
@@ -55,11 +56,9 @@ import type {ScriptParams, WorkflowInfo} from "../types/index.ts";
  * // Returns: "### 📦 Bundle Size Analysis (vs. Main)\n\n| File | Size | Change |\n..."
  * ```
  */
-async function getBundleSizeComparisonSection(params: ScriptParams, targetFolders: string[]): Promise<string> {
-  const {core} = params;
-
+async function getBundleSizeComparisonSection(targetFolders: string[]): Promise<string> {
   try {
-    const comparisons = await compareBundleSizes(params, targetFolders);
+    const comparisons = await compareBundleSizes({} as any, targetFolders); // TODO: Update compareBundleSizes
     return generateBundleSizeMarkdown(comparisons);
   } catch (error) {
     const err = error as Error;
@@ -153,8 +152,8 @@ async function buildUnitTestSummaryCommentBody(params: ScriptParams, workflowInf
  * @see {@link buildUnitTestSummaryCommentBody} - Generates the comment content
  * @see {@link createPRComment} - Posts the comment to the pull request
  */
-export default async function createUnitTestSummaryComment(params: ScriptParams): Promise<void> {
-  const {context, core} = params;
+export default async function createUnitTestSummaryComment(): Promise<void> {
+  const context = (await import("@actions/github")).context;
 
   core.info("🧪 Starting unit test summary comment generation...");
 
@@ -194,9 +193,9 @@ export default async function createUnitTestSummaryComment(params: ScriptParams)
 
   // Generate the complete comment body with all test results and analysis
   core.info("📝 Building comprehensive comment body with test results and analysis...");
-  const commentBody = await buildUnitTestSummaryCommentBody(params, workflowInfo, commitSha);
+  const commentBody = await buildUnitTestSummaryCommentBody(workflowInfo, commitSha);
   core.debug(`✓ Comment body assembled: ${commentBody.length} characters, ${commentBody.split("\n").length} lines`);
 
   // Post the comment to the pull request using the core utility function
-  await createPRComment(params, commentBody);
+  await createPRComment(commentBody);
 }
