@@ -313,8 +313,8 @@ export class VitestHelper implements IVitestHelper {
 
     for (const {filePath, coverage} of filesToShow) {
       const displayPath = workspaceRoot ? path.relative(workspaceRoot, filePath) : path.basename(filePath);
-      // Normalize path separators to forward slashes for consistency
-      const normalizedPath = displayPath.replaceAll("\\", "/");
+      // Normalize path using POSIX rules for cross-platform consistency
+      const normalizedPath = path.posix.normalize(displayPath);
       const fileName = normalizedPath.length > 40 ? `...${normalizedPath.slice(-37)}` : normalizedPath;
 
       const formatPct = (pct: number): string => {
