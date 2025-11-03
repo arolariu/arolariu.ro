@@ -182,5 +182,6 @@ jobs:
             const { execSync } = require('child_process');
             execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
 
-            const {default: createE2EFailureIssueWrapper} = await import('${{ github.workspace }}/.github/scripts/src/create-e2e-failure-issue-wrapper.js');
-            await createE2EFailureIssueWrapper({github, context, core, exec});
+            // Import and execute the unified live test action script
+            const {default: runLiveTestAction} = await import('${{ github.workspace }}/.github/scripts/src/runLiveTestAction.ts');
+            await runLiveTestAction();

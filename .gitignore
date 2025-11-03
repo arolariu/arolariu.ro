@@ -22,6 +22,7 @@
 **/*.tsbuildinfo
 **/__generated__/**
 **/.eslintcache
+**/test-file.txt
 
 # Exceptions:
 !.vs/settings.vssettings
