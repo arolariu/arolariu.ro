@@ -1,6 +1,23 @@
 /**
- * @fileoverview Creates GitHub issues for E2E test failures with detailed diagnostics
- * @module src/create-e2e-failure-issue
+ * @fileoverview Unified live test (E2E) action script for GitHub Actions workflows
+ * @module src/runLiveTestAction
+ *
+ * This module handles all live/E2E test failure tracking and reporting:
+ * - **Test Result Extraction**: Gathers frontend and backend test execution results
+ * - **Artifact Discovery**: Finds and parses Newman reports, logs, and health checks
+ * - **Failure Analysis**: Categorizes failures by type (client errors, server errors, timeouts, etc.)
+ * - **Issue Creation**: Creates comprehensive GitHub issues for test failures with detailed diagnostics
+ * - **Duplicate Prevention**: Checks for existing issues to avoid duplicates
+ *
+ * The script automatically discovers test artifacts, analyzes Newman test reports, and generates
+ * detailed failure reports that include health check data, log tails, and categorized error analysis.
+ *
+ * @example
+ * ```typescript
+ * // Called from GitHub Actions workflow
+ * const { default: runLiveTestAction } = await import('./runLiveTestAction.ts');
+ * await runLiveTestAction();
+ * ```
  */
 
 import {basename} from "node:path";
@@ -309,19 +326,17 @@ async function generateIssueBody(metadata: WorkflowMetadata, results: E2ETestRes
 }
 
 /**
- * Main function to create a GitHub issue for E2E test failures
+ * Main function to create a GitHub issue for E2E/live test failures
  * Creates or updates an issue with comprehensive failure diagnostics including logs, health checks, and test results
- * @param params - Script parameters from GitHub Actions containing Octokit client, context, and core utilities
  * @returns Promise that resolves when the issue is created or updated successfully
  * @throws {Error} When issue creation/update fails or artifact discovery encounters errors
  * @example
  * ```typescript
- * const params = {github: octokit, context: {...}, core: {...}, exec: {...}};
- * await createE2EFailureIssue(params);
+ * await runLiveTestAction();
  * console.log('E2E failure issue created successfully');
  * ```
  */
-export default async function createE2EFailureIssue(): Promise<void> {
+export default async function runLiveTestAction(): Promise<void> {
   const github = await import("@actions/github");
   const octokit = github.getOctokit(process.env["GITHUB_TOKEN"] ?? "");
   const context = github.context;

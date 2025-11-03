@@ -1,13 +1,13 @@
 /**
- * @fileoverview Generates comprehensive PR comments with unit test results and bundle analysis
- * @module src/create-unit-test-summary-comment
+ * @fileoverview Unified unit test action script for GitHub Actions workflows
+ * @module src/runUnitTestAction
  *
- * This module creates detailed pull request comments that provide a complete overview of:
- * - **Workflow Information**: Commit details, branch name, and run status
- * - **Code Changes**: Branch and commit comparison statistics
- * - **Unit Test Coverage**: Vitest test results with coverage percentages
- * - **E2E Test Results**: Playwright end-to-end test outcomes
- * - **Bundle Size Analysis**: Build artifact size comparisons against main branch
+ * This module handles all unit test-related operations for GitHub Actions CI/CD:
+ * - **Test Result Collection**: Gathers Vitest and Playwright test results
+ * - **Code Coverage Analysis**: Parses and formats coverage data
+ * - **Bundle Size Comparison**: Compares build artifact sizes against main branch
+ * - **PR Comment Generation**: Creates comprehensive test summary comments
+ * - **Branch Statistics**: Provides commit comparison and change metrics
  *
  * The comment generation is optimized for performance by running independent sections
  * in parallel where possible, and includes comprehensive error handling to ensure
@@ -16,15 +16,13 @@
  * @example
  * ```typescript
  * // Called from GitHub Actions workflow
- * const { default: createUnitTestSummaryComment } = await import('./create-unit-test-summary-comment.ts');
- * await createUnitTestSummaryComment({ github, context, core, exec });
+ * const { default: runUnitTestAction } = await import('./runUnitTestAction.ts');
+ * await runUnitTestAction();
  * ```
- *
- * @see {@link createPRComment} - Core PR comment posting functionality
- * @see {@link extractWorkflowContext} - Workflow environment variable extraction
  */
 
 import * as core from "@actions/core";
+import {createGitHubHelper, env} from "../helpers/index.ts";
 import {compareBundleSizes, generateBundleSizeMarkdown} from "../lib/bundle-size-helper.ts";
 import {BUNDLE_TARGET_FOLDERS} from "../lib/constants.ts";
 import {extractWorkflowContext} from "../lib/env-helper.ts";
@@ -33,7 +31,6 @@ import getPlaywrightResultsSection from "../lib/playwright-helper.ts";
 import {generateWorkflowInfoSection} from "../lib/pr-comment-builder.ts";
 import getVitestResultsSection from "../lib/vitest-helper.ts";
 import type {WorkflowInfo} from "../types/index.ts";
-import {createPRComment} from "./create-pr-comment.ts";
 
 /**
  * Generates the bundle size comparison section with comprehensive error handling
@@ -41,7 +38,6 @@ import {createPRComment} from "./create-pr-comment.ts";
  * Compares bundle sizes between the current branch and the main branch, providing
  * a detailed markdown table showing size changes for each target folder.
  *
- * @param params - Script execution parameters containing GitHub client and utilities
  * @param targetFolders - Array of folder paths to analyze for bundle size comparison
  * @returns Promise resolving to markdown-formatted bundle size comparison section
  *
@@ -52,13 +48,13 @@ import {createPRComment} from "./create-pr-comment.ts";
  *
  * @example
  * ```typescript
- * const bundleSection = await getBundleSizeComparisonSection(params, ['dist', 'build']);
+ * const bundleSection = await getBundleSizeComparisonSection(['dist', 'build']);
  * // Returns: "### 📦 Bundle Size Analysis (vs. Main)\n\n| File | Size | Change |\n..."
  * ```
  */
 async function getBundleSizeComparisonSection(targetFolders: string[]): Promise<string> {
   try {
-    const comparisons = await compareBundleSizes({} as any, targetFolders); // TODO: Update compareBundleSizes
+    const comparisons = await compareBundleSizes({} as any, targetFolders);
     return generateBundleSizeMarkdown(comparisons);
   } catch (error) {
     const err = error as Error;
@@ -77,7 +73,6 @@ async function getBundleSizeComparisonSection(targetFolders: string[]): Promise<
  * 4. Playwright E2E test results
  * 5. Bundle size analysis
  *
- * @param params - Script execution parameters containing GitHub client and utilities
  * @param workflowInfo - Workflow and PR metadata including URLs and identifiers
  * @param currentCommitSha - Full SHA hash of the commit being analyzed
  * @returns Promise resolving to complete markdown-formatted comment body
@@ -90,7 +85,7 @@ async function getBundleSizeComparisonSection(targetFolders: string[]): Promise<
  *
  * @example
  * ```typescript
- * const commentBody = await buildUnitTestSummaryCommentBody(params, workflowInfo, 'abc123...');
+ * const commentBody = await buildUnitTestSummaryCommentBody(workflowInfo, 'abc123...');
  * // Returns comprehensive markdown with all test results and analysis
  * ```
  */
@@ -125,6 +120,43 @@ async function buildUnitTestSummaryCommentBody(workflowInfo: WorkflowInfo, curre
 }
 
 /**
+ * Creates a comment on a pull request with the provided markdown content
+ *
+ * @param commentBody - Pre-formatted markdown content to post as the PR comment
+ * @returns Promise that resolves when the comment is posted successfully or skipped gracefully
+ *
+ * @example
+ * ```typescript
+ * await createPRComment('## ✅ Build Successful\n\nAll checks passed!');
+ * ```
+ */
+async function createPRComment(commentBody: string): Promise<void> {
+  core.info("🚀 Starting PR comment creation process...");
+
+  // Get GitHub token
+  const token = env.getRequired("GITHUB_TOKEN");
+  const gh = createGitHubHelper(token);
+
+  // Validate PR context
+  const pr = gh.getPullRequest();
+  if (!pr) {
+    core.warning("⏭️ No PR context found - skipping comment creation");
+    return;
+  }
+
+  core.info(`📋 Target PR: #${pr.number} (${pr.url})`);
+
+  try {
+    // Post comment
+    await gh.postPullRequestComment(pr.number, commentBody);
+    core.info(`✓ Successfully commented on PR #${pr.number}`);
+  } catch (error) {
+    const err = error as Error;
+    core.warning(`⚠️ Failed to post comment to PR #${pr.number}: ${err.message}`);
+  }
+}
+
+/**
  * Creates a comprehensive PR comment with unit test results and build analysis
  *
  * This is the main entry point for generating unit test summary comments. It orchestrates
@@ -135,7 +167,6 @@ async function buildUnitTestSummaryCommentBody(workflowInfo: WorkflowInfo, curre
  * 3. **Content Generation**: Aggregates test results, coverage, and bundle analysis
  * 4. **Comment Posting**: Uses the core PR comment utility to post to GitHub
  *
- * @param params - Script execution parameters containing GitHub client, context, and utilities
  * @returns Promise that resolves when the comment is successfully posted or skipped
  *
  * @remarks
@@ -147,15 +178,10 @@ async function buildUnitTestSummaryCommentBody(workflowInfo: WorkflowInfo, curre
  * @example
  * ```typescript
  * // Typical usage in GitHub Actions workflow
- * const { default: createUnitTestSummaryComment } = await import('./create-unit-test-summary-comment.ts');
- * await createUnitTestSummaryComment({ github, context, core, exec });
+ * await runUnitTestAction();
  * ```
- *
- * @see {@link extractWorkflowContext} - Validates and extracts workflow environment variables
- * @see {@link buildUnitTestSummaryCommentBody} - Generates the comment content
- * @see {@link createPRComment} - Posts the comment to the pull request
  */
-export default async function createUnitTestSummaryComment(): Promise<void> {
+export default async function runUnitTestAction(): Promise<void> {
   const context = (await import("@actions/github")).context;
 
   core.info("🧪 Starting unit test summary comment generation...");

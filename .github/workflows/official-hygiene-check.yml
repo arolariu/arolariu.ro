@@ -48,15 +48,16 @@ jobs:
         env:
           BASE_REF: ${{ env.BASE_REF }}
           HEAD_REF: ${{ env.HEAD_REF }}
+          CHECK_MODE: "detect"
         with:
           script: |
             // Install dependencies required by the script
             const { execSync } = require('child_process');
             execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
 
-            // Import and execute the wrapper script for change detection
-            const {default: detectChangesWrapper} = await import('./.github/scripts/src/detect-changes-wrapper.js');
-            await detectChangesWrapper({github, context, core, exec});
+            // Import and execute the unified hygiene check script in detect mode
+            const {default: runHygieneCheck} = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheck.ts');
+            await runHygieneCheck();
 
   format:
     name: 🎨 Format
@@ -201,9 +202,9 @@ jobs:
             const { execSync } = require('child_process');
             execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
 
-            // Import and execute the wrapper script for code hygiene checks
-            const {default: checkCodeHygieneWrapper} = await import('./.github/scripts/src/check-code-hygiene-wrapper.js');
-            await checkCodeHygieneWrapper({github, context, core, exec});
+            // Import and execute the unified hygiene check script in stats mode
+            const {default: runHygieneCheck} = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheck.ts');
+            await runHygieneCheck();
 
       - name: 📈 Extended diff impact metrics
         id: extra-stats
@@ -320,16 +321,16 @@ jobs:
           CHURN: ${{ needs.code-summary.outputs.churn }}
           NET_CHANGE: ${{ needs.code-summary.outputs.net-change }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          COMMENT_TYPE: "summary"
+          CHECK_MODE: "comment"
         with:
           script: |
             // Install dependencies required by the script
             const { execSync } = require('child_process');
             execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
 
-            // Import and execute the wrapper script for hygiene summary comments
-            const {default: postHygieneCommentWrapper} = await import('./.github/scripts/src/post-hygiene-comment-wrapper.js');
-            await postHygieneCommentWrapper({github, context, core, exec});
+            // Import and execute the unified hygiene check script in comment mode
+            const {default: runHygieneCheck} = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheck.ts');
+            await runHygieneCheck();
 
       - name: ✅ All hygiene checks passed
         if: needs.format.outputs.format-needed == 'false' && needs.lint.outputs.lint-passed == 'true'
