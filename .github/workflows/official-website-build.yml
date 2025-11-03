@@ -120,9 +120,9 @@ jobs:
             const { execSync } = require('child_process');
             execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
 
-            // Import and execute the wrapper script for unit test summary comments
-            const { default: createUnitTestSummaryCommentWrapper } = await import('./.github/scripts/src/create-unit-test-summary-comment-wrapper.js');
-            await createUnitTestSummaryCommentWrapper({ github, context, core, exec });
+            // Import and execute the unified unit test action script
+            const { default: runUnitTestAction } = await import('${{ github.workspace }}/.github/scripts/src/runUnitTestAction.ts');
+            await runUnitTestAction();
 
       - name: ☂️ Uploading code coverage report to CodeCov
         uses: codecov/codecov-action@v5
