@@ -50,7 +50,12 @@ jobs:
           HEAD_REF: ${{ env.HEAD_REF }}
         with:
           script: |
-            const {default: detectChangesWrapper} = await import('${{ github.workspace }}/.github/scripts/src/detect-changes-wrapper.js');
+            // Install dependencies required by the script
+            const { execSync } = require('child_process');
+            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
+
+            // Import and execute the wrapper script for change detection
+            const {default: detectChangesWrapper} = await import('./.github/scripts/src/detect-changes-wrapper.js');
             await detectChangesWrapper({github, context, core, exec});
 
   format:
@@ -192,7 +197,12 @@ jobs:
           HEAD_REF: ${{ env.HEAD_REF }}
         with:
           script: |
-            const {default: checkCodeHygieneWrapper} = await import('${{ github.workspace }}/.github/scripts/src/check-code-hygiene-wrapper.js');
+            // Install dependencies required by the script
+            const { execSync } = require('child_process');
+            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
+
+            // Import and execute the wrapper script for code hygiene checks
+            const {default: checkCodeHygieneWrapper} = await import('./.github/scripts/src/check-code-hygiene-wrapper.js');
             await checkCodeHygieneWrapper({github, context, core, exec});
 
       - name: 📈 Extended diff impact metrics
@@ -313,7 +323,12 @@ jobs:
           COMMENT_TYPE: "summary"
         with:
           script: |
-            const {default: postHygieneCommentWrapper} = await import('${{ github.workspace }}/.github/scripts/src/post-hygiene-comment-wrapper.js');
+            // Install dependencies required by the script
+            const { execSync } = require('child_process');
+            execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
+
+            // Import and execute the wrapper script for hygiene summary comments
+            const {default: postHygieneCommentWrapper} = await import('./.github/scripts/src/post-hygiene-comment-wrapper.js');
             await postHygieneCommentWrapper({github, context, core, exec});
 
       - name: ✅ All hygiene checks passed
