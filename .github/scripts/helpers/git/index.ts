@@ -1,14 +1,14 @@
 /**
  * @fileoverview Git operations using @actions/exec
  * @module helpers/git
- * 
+ *
  * Provides a clean, type-safe API for Git operations in GitHub Actions.
  * Uses @actions/exec for executing Git commands with proper error handling.
  * Follows Single Responsibility Principle by focusing solely on Git operations.
  */
 
-import * as exec from "@actions/exec";
 import * as core from "@actions/core";
+import * as exec from "@actions/exec";
 
 /**
  * Git diff statistics
@@ -177,7 +177,7 @@ export interface IGitHelper {
    * @param options - Execution options
    * @returns Promise resolving to command output
    */
-  exec(args: string[], options?: GitOptions): Promise<{ stdout: string; stderr: string; exitCode: number }>;
+  exec(args: string[], options?: GitOptions): Promise<{stdout: string; stderr: string; exitCode: number}>;
 }
 
 /**
@@ -278,14 +278,10 @@ export class GitHelper implements IGitHelper {
     for (const path of paths) {
       try {
         const folderPath = path.endsWith("/") ? path.slice(0, -1) : path;
-        const { stdout, stderr, exitCode } = await exec.getExecOutput(
-          "git",
-          ["ls-tree", "-r", "-l", treeRef, "--", folderPath],
-          {
-            ignoreReturnCode: true,
-            silent: true,
-          }
-        );
+        const {stdout, stderr, exitCode} = await exec.getExecOutput("git", ["ls-tree", "-r", "-l", treeRef, "--", folderPath], {
+          ignoreReturnCode: true,
+          silent: true,
+        });
 
         if (exitCode !== 0) {
           core.debug(`git ls-tree for '${treeRef}' and path '${folderPath}' exited with ${exitCode}`);
@@ -461,12 +457,16 @@ export class GitHelper implements IGitHelper {
   /**
    * {@inheritDoc IGitHelper.exec}
    */
-  async exec(args: string[], options: GitOptions = {}): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-    const result = await exec.getExecOutput("git", args, {
-      cwd: options.cwd,
+  async exec(args: string[], options: GitOptions = {}): Promise<{stdout: string; stderr: string; exitCode: number}> {
+    const execOptions: Parameters<typeof exec.getExecOutput>[2] = {
       ignoreReturnCode: options.ignoreReturnCode ?? false,
       silent: options.silent ?? false,
-    });
+    };
+    if (options.cwd) {
+      execOptions.cwd = options.cwd;
+    }
+
+    const result = await exec.getExecOutput("git", args, execOptions);
 
     return result;
   }

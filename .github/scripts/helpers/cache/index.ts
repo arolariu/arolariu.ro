@@ -1,7 +1,7 @@
 /**
  * @fileoverview Cache management using @actions/cache
  * @module helpers/cache
- * 
+ *
  * Provides a clean API for caching dependencies and build outputs.
  * Uses @actions/cache for saving and restoring cached files.
  * Follows Single Responsibility Principle by focusing on cache operations.
@@ -127,11 +127,9 @@ export class CacheHelper implements ICacheHelper {
       core.info(`💾 Saving cache with key: ${options.key}`);
       core.debug(`Caching paths: ${options.paths.join(", ")}`);
 
-      const cacheId = await cache.saveCache(
-        options.paths,
-        options.key,
-        { uploadChunkSize: options.uploadChunkSize }
-      );
+      const saveOptions = options.uploadChunkSize ? {uploadChunkSize: options.uploadChunkSize} : {};
+
+      const cacheId = await cache.saveCache(options.paths, options.key, saveOptions);
 
       core.info(`✅ Cache saved successfully: ${options.key}`);
       core.info(`   Cache ID: ${cacheId}`);
@@ -142,7 +140,7 @@ export class CacheHelper implements ICacheHelper {
       };
     } catch (error) {
       const err = error as Error;
-      
+
       // Check for specific cache errors
       if (err.message.includes("Cache already exists")) {
         core.warning(`Cache with key '${options.key}' already exists`);
@@ -160,21 +158,18 @@ export class CacheHelper implements ICacheHelper {
   async restore(options: CacheRestoreOptions): Promise<CacheRestoreResult> {
     try {
       core.info(`📦 Restoring cache with key: ${options.key}`);
-      
+
       if (options.restoreKeys && options.restoreKeys.length > 0) {
         core.debug(`Fallback keys: ${options.restoreKeys.join(", ")}`);
       }
 
-      const cacheKey = await cache.restoreCache(
-        options.paths,
-        options.key,
-        options.restoreKeys,
-        { downloadChunkSize: options.downloadChunkSize }
-      );
+      const restoreOptions = options.downloadChunkSize ? {lookupOnly: false} : {};
+
+      const cacheKey = await cache.restoreCache(options.paths, options.key, options.restoreKeys, restoreOptions);
 
       if (!cacheKey) {
         core.warning(`❌ Cache miss: ${options.key}`);
-        
+
         if (options.failOnMiss) {
           throw new Error(`Cache not found for key: ${options.key}`);
         }
@@ -207,12 +202,16 @@ export class CacheHelper implements ICacheHelper {
    */
   async exists(key: string, paths: string[], restoreKeys?: string[]): Promise<boolean> {
     try {
-      const result = await this.restore({
+      const restoreOpts: CacheRestoreOptions = {
         key,
         paths,
-        restoreKeys,
         failOnMiss: false,
-      });
+      };
+      if (restoreKeys) {
+        restoreOpts.restoreKeys = restoreKeys;
+      }
+
+      const result = await this.restore(restoreOpts);
 
       return result.hit;
     } catch {
@@ -224,8 +223,8 @@ export class CacheHelper implements ICacheHelper {
    * {@inheritDoc ICacheHelper.generateKey}
    */
   async generateKey(prefix: string, files: string[], suffix?: string): Promise<string> {
-    const { createHash } = await import("node:crypto");
-    const { readFile } = await import("node:fs/promises");
+    const {createHash} = await import("node:crypto");
+    const {readFile} = await import("node:fs/promises");
 
     try {
       core.debug(`Generating cache key from files: ${files.join(", ")}`);
@@ -238,7 +237,8 @@ export class CacheHelper implements ICacheHelper {
           const content = await readFile(file, "utf-8");
           hash.update(content);
         } catch (error) {
-          core.warning(`Could not read file for cache key generation: ${file}`);
+          const err = error as Error;
+          core.warning(`Could not read file for cache key generation: ${file} - ${err.message}`);
         }
       }
 
@@ -298,7 +298,7 @@ export class CacheHelper implements ICacheHelper {
 
       if (!result.hit) {
         core.info(`Cache miss - will save after workflow completes`);
-        
+
         // Register post-job action to save cache
         core.saveState("cache-key", key);
         core.saveState("cache-paths", JSON.stringify(paths));
@@ -308,7 +308,7 @@ export class CacheHelper implements ICacheHelper {
     } catch (error) {
       const err = error as Error;
       core.warning(`Auto-cache failed: ${err.message}`);
-      
+
       return {
         hit: false,
         requestedKey: prefix,
@@ -400,14 +400,14 @@ export const CacheConfigs = {
  * @example
  * ```typescript
  * const cache = createCacheHelper();
- * 
+ *
  * // Restore cache
  * const result = await cache.restore({
  *   key: 'npm-cache-v1-abc123',
  *   paths: ['node_modules'],
  *   restoreKeys: ['npm-cache-v1-', 'npm-cache-']
  * });
- * 
+ *
  * if (result.hit) {
  *   console.log('Cache hit!');
  * } else {
@@ -417,7 +417,7 @@ export const CacheConfigs = {
  *     paths: ['node_modules']
  *   });
  * }
- * 
+ *
  * // Or use auto-cache for convenience
  * await cache.autoCache('npm', ['node_modules'], ['package-lock.json']);
  * ```

@@ -25,15 +25,15 @@
  */
 
 import * as core from "@actions/core";
-import {createPRComment} from "./create-pr-comment.ts";
 import {compareBundleSizes, generateBundleSizeMarkdown} from "../lib/bundle-size-helper.ts";
 import {BUNDLE_TARGET_FOLDERS} from "../lib/constants.ts";
 import {extractWorkflowContext} from "../lib/env-helper.ts";
 import {getBranchCommitComparisonSection} from "../lib/git-helper.ts";
-import getVitestResultsSection from "../lib/vitest-helper.ts";
 import getPlaywrightResultsSection from "../lib/playwright-helper.ts";
 import {generateWorkflowInfoSection} from "../lib/pr-comment-builder.ts";
+import getVitestResultsSection from "../lib/vitest-helper.ts";
 import type {WorkflowInfo} from "../types/index.ts";
+import {createPRComment} from "./create-pr-comment.ts";
 
 /**
  * Generates the bundle size comparison section with comprehensive error handling
@@ -94,8 +94,7 @@ async function getBundleSizeComparisonSection(targetFolders: string[]): Promise<
  * // Returns comprehensive markdown with all test results and analysis
  * ```
  */
-async function buildUnitTestSummaryCommentBody(params: ScriptParams, workflowInfo: WorkflowInfo, currentCommitSha: string): Promise<string> {
-  const {core} = params;
+async function buildUnitTestSummaryCommentBody(workflowInfo: WorkflowInfo, currentCommitSha: string): Promise<string> {
   let commentBody = "";
 
   core.debug("Building workflow info section...");
@@ -104,6 +103,11 @@ async function buildUnitTestSummaryCommentBody(params: ScriptParams, workflowInf
 
   core.debug("Building branch/commit comparison section...");
   // Add branch/commit comparison
+  const exec = await import("@actions/exec");
+  const context = (await import("@actions/github")).context;
+  const github = await import("@actions/github");
+  const octokit = github.getOctokit(process.env["GITHUB_TOKEN"] ?? "");
+  const params = {github: octokit, context, core, exec};
   commentBody += await getBranchCommitComparisonSection(params, currentCommitSha, workflowInfo.shortCurrentCommitSha);
 
   core.debug("Building Vitest test results section...");
@@ -115,7 +119,7 @@ async function buildUnitTestSummaryCommentBody(params: ScriptParams, workflowInf
 
   core.debug("Building bundle size comparison section...");
   // Add bundle size analysis
-  commentBody += await getBundleSizeComparisonSection(params, BUNDLE_TARGET_FOLDERS);
+  commentBody += await getBundleSizeComparisonSection(BUNDLE_TARGET_FOLDERS);
 
   core.debug(`Comment body assembled: ${commentBody.split("\n").length} lines`);
   return commentBody;

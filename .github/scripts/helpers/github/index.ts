@@ -1,14 +1,14 @@
 /**
  * @fileoverview GitHub API operations using @actions/github
  * @module helpers/github
- * 
+ *
  * Provides a clean, type-safe API for GitHub operations in GitHub Actions.
  * Uses @actions/github (Octokit) for GitHub REST and GraphQL APIs.
  * Follows Single Responsibility Principle by focusing on GitHub API operations.
  */
 
-import * as github from "@actions/github";
 import * as core from "@actions/core";
+import * as github from "@actions/github";
 
 /**
  * Type alias for the Octokit client
@@ -173,7 +173,7 @@ export interface IGitHubHelper {
       state?: "open" | "closed";
       labels?: string[];
       assignees?: string[];
-    }
+    },
   ): Promise<IssueInfo>;
 
   /**
@@ -188,11 +188,7 @@ export interface IGitHubHelper {
    * @param options - Filtering options
    * @returns Promise resolving to array of issues
    */
-  listIssues(options?: {
-    state?: "open" | "closed" | "all";
-    labels?: string[];
-    assignee?: string;
-  }): Promise<IssueInfo[]>;
+  listIssues(options?: {state?: "open" | "closed" | "all"; labels?: string[]; assignee?: string}): Promise<IssueInfo[]>;
 
   /**
    * Adds labels to an issue or PR
@@ -233,8 +229,8 @@ export class GitHubHelper implements IGitHubHelper {
   constructor(token: string, context?: typeof github.context) {
     this.client = github.getOctokit(token);
     this.context = context ?? github.context;
-    
-    const { owner, repo } = this.context.repo;
+
+    const {owner, repo} = this.context.repo;
     this.repo = {
       owner,
       name: repo,
@@ -254,19 +250,19 @@ export class GitHubHelper implements IGitHubHelper {
    */
   getPullRequest(): PullRequestContext | null {
     const pr = this.context.payload.pull_request;
-    
+
     if (!pr) {
       return null;
     }
 
     return {
       number: pr.number,
-      title: pr.title,
-      url: pr.html_url,
-      state: pr.state,
-      base: pr.base.ref,
-      head: pr.head.ref,
-      author: pr.user.login,
+      title: pr["title"],
+      url: pr["html_url"] ?? "",
+      state: pr["state"],
+      base: pr["base"].ref,
+      head: pr["head"].ref,
+      author: pr["user"]?.login ?? "",
     };
   }
 
@@ -385,9 +381,9 @@ export class GitHubHelper implements IGitHubHelper {
    */
   async findComment(prNumber: number, searchString: string): Promise<Comment | null> {
     const comments = await this.listPullRequestComments(prNumber);
-    
+
     const found = comments.find((comment) => comment.body.includes(searchString));
-    
+
     return found ?? null;
   }
 
@@ -413,14 +409,20 @@ export class GitHubHelper implements IGitHubHelper {
     try {
       core.info(`Creating issue: ${title}`);
 
-      const response = await this.client.rest.issues.create({
+      const createOptions: Parameters<typeof this.client.rest.issues.create>[0] = {
         owner: this.repo.owner,
         repo: this.repo.name,
         title,
         body,
-        labels,
-        assignees,
-      });
+      };
+      if (labels) {
+        createOptions.labels = labels;
+      }
+      if (assignees) {
+        createOptions.assignees = assignees;
+      }
+
+      const response = await this.client.rest.issues.create(createOptions);
 
       core.info(`✅ Issue created: #${response.data.number}`);
 
@@ -430,7 +432,7 @@ export class GitHubHelper implements IGitHubHelper {
         body: response.data.body ?? "",
         state: response.data.state,
         url: response.data.html_url,
-        labels: response.data.labels.map((label) => (typeof label === "string" ? label : label.name ?? "")),
+        labels: response.data.labels.map((label) => (typeof label === "string" ? label : (label.name ?? ""))),
         assignees: response.data.assignees?.map((assignee) => assignee.login) ?? [],
       };
     } catch (error) {
@@ -450,7 +452,7 @@ export class GitHubHelper implements IGitHubHelper {
       state?: "open" | "closed";
       labels?: string[];
       assignees?: string[];
-    }
+    },
   ): Promise<IssueInfo> {
     try {
       core.info(`Updating issue #${issueNumber}`);
@@ -468,7 +470,7 @@ export class GitHubHelper implements IGitHubHelper {
         body: response.data.body ?? "",
         state: response.data.state,
         url: response.data.html_url,
-        labels: response.data.labels.map((label) => (typeof label === "string" ? label : label.name ?? "")),
+        labels: response.data.labels.map((label) => (typeof label === "string" ? label : (label.name ?? ""))),
         assignees: response.data.assignees?.map((assignee) => assignee.login) ?? [],
       };
     } catch (error) {
@@ -494,7 +496,7 @@ export class GitHubHelper implements IGitHubHelper {
         body: response.data.body ?? "",
         state: response.data.state,
         url: response.data.html_url,
-        labels: response.data.labels.map((label) => (typeof label === "string" ? label : label.name ?? "")),
+        labels: response.data.labels.map((label) => (typeof label === "string" ? label : (label.name ?? ""))),
         assignees: response.data.assignees?.map((assignee) => assignee.login) ?? [],
       };
     } catch (error) {
@@ -506,19 +508,27 @@ export class GitHubHelper implements IGitHubHelper {
   /**
    * {@inheritDoc IGitHubHelper.listIssues}
    */
-  async listIssues(options: {
-    state?: "open" | "closed" | "all";
-    labels?: string[];
-    assignee?: string;
-  } = {}): Promise<IssueInfo[]> {
+  async listIssues(
+    options: {
+      state?: "open" | "closed" | "all";
+      labels?: string[];
+      assignee?: string;
+    } = {},
+  ): Promise<IssueInfo[]> {
     try {
-      const response = await this.client.rest.issues.listForRepo({
+      const listOptions: Parameters<typeof this.client.rest.issues.listForRepo>[0] = {
         owner: this.repo.owner,
         repo: this.repo.name,
         state: options.state ?? "open",
-        labels: options.labels?.join(","),
-        assignee: options.assignee,
-      });
+      };
+      if (options.labels) {
+        listOptions.labels = options.labels.join(",");
+      }
+      if (options.assignee) {
+        listOptions.assignee = options.assignee;
+      }
+
+      const response = await this.client.rest.issues.listForRepo(listOptions);
 
       return response.data.map((issue) => ({
         number: issue.number,
@@ -526,7 +536,7 @@ export class GitHubHelper implements IGitHubHelper {
         body: issue.body ?? "",
         state: issue.state,
         url: issue.html_url,
-        labels: issue.labels.map((label) => (typeof label === "string" ? label : label.name ?? "")),
+        labels: issue.labels.map((label) => (typeof label === "string" ? label : (label.name ?? ""))),
         assignees: issue.assignees?.map((assignee) => assignee.login) ?? [],
       }));
     } catch (error) {

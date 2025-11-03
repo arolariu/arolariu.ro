@@ -5,7 +5,7 @@
 
 import * as core from "@actions/core";
 import * as exec from "@actions/exec";
-import { env, git, fs } from "../helpers/index.ts";
+import {env, git} from "../helpers/index.ts";
 import {compareBundleSizes, generateBundleSizeMarkdown} from "../lib/bundle-size-helper.ts";
 import {BUNDLE_TARGET_FOLDERS} from "../lib/constants.ts";
 
@@ -101,6 +101,10 @@ async function checkStats(): Promise<CodeHygieneResult> {
     let bundleSizeMarkdown = "";
 
     try {
+      const github = await import("@actions/github");
+      const octokit = github.getOctokit(process.env["GITHUB_TOKEN"] ?? "");
+      const context = github.context;
+      const params = {github: octokit, context, core, exec};
       const comparisons = await compareBundleSizes(params, BUNDLE_TARGET_FOLDERS);
       bundleSizeMarkdown = generateBundleSizeMarkdown(comparisons);
     } catch (error) {
@@ -155,7 +159,6 @@ async function checkStats(): Promise<CodeHygieneResult> {
  * @returns Promise resolving to formatting check result
  */
 async function checkFormatting(): Promise<CodeHygieneResult> {
-
   try {
     core.info("🎨 Checking code formatting...");
 
@@ -221,7 +224,6 @@ async function checkFormatting(): Promise<CodeHygieneResult> {
  * @returns Promise resolving to linting check result
  */
 async function checkLinting(): Promise<CodeHygieneResult> {
-
   try {
     core.info("🔍 Running linting checks...");
 
@@ -275,7 +277,7 @@ async function checkLinting(): Promise<CodeHygieneResult> {
  * @returns Promise that resolves when checks complete
  */
 export default async function checkCodeHygiene(): Promise<void> {
-  const mode = (env.get("CHECK_MODE", "stats")) as CheckMode;
+  const mode = env.get("CHECK_MODE", "stats") as CheckMode;
 
   core.info(`🧹 Running code hygiene check in '${mode}' mode`);
 

@@ -22,7 +22,7 @@ import {
   generateNextStepsSection,
 } from "../lib/markdown-builder.ts";
 import {categorizeFailures, generateNewmanResultsSection, parseNewmanReport} from "../lib/newman-parser.ts";
-import type {ScriptParams} from "../types/index.ts";
+
 import type {NewmanReport} from "../types/newman-types.ts";
 import type {BackendHealthCheck, E2ETestResults, TestArtifactPaths, WorkflowMetadata} from "../types/workflow-types.ts";
 
@@ -322,7 +322,10 @@ async function generateIssueBody(metadata: WorkflowMetadata, results: E2ETestRes
  * ```
  */
 export default async function createE2EFailureIssue(): Promise<void> {
-  const {github: octokit, context, core} = params;
+  const github = await import("@actions/github");
+  const octokit = github.getOctokit(process.env["GITHUB_TOKEN"] ?? "");
+  const context = github.context;
+  const core = await import("@actions/core");
 
   try {
     core.info("🚀 Starting E2E failure issue creation process...");

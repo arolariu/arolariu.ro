@@ -1,15 +1,19 @@
 /**
  * @fileoverview Artifact management using @actions/artifact
  * @module helpers/artifacts
- * 
+ *
  * Provides a clean API for uploading and downloading artifacts in GitHub Actions.
  * Uses @actions/artifact for managing build outputs, test results, and other files.
  * Follows Single Responsibility Principle by focusing on artifact operations.
  */
 
-import * as artifact from "@actions/artifact";
+import {
+  DefaultArtifactClient,
+  type DownloadArtifactOptions as ActionsDownloadOptions,
+  type UploadArtifactOptions as ActionsUploadOptions,
+} from "@actions/artifact";
 import * as core from "@actions/core";
-import { glob } from "@actions/glob";
+import * as glob from "@actions/glob";
 
 /**
  * Artifact upload options
@@ -29,8 +33,10 @@ export interface UploadOptions {
  * Artifact download options
  */
 export interface DownloadOptions {
-  /** Artifact name to download */
-  name: string;
+  /** Artifact name or ID to download */
+  name?: string;
+  /** Artifact ID (alternative to name) */
+  artifactId?: number;
   /** Destination directory */
   destination: string;
 }
@@ -118,10 +124,10 @@ export interface IArtifactHelper {
  * Implementation of artifact helper
  */
 export class ArtifactHelper implements IArtifactHelper {
-  private client: ReturnType<typeof artifact.create>;
+  private readonly client: DefaultArtifactClient;
 
   constructor() {
-    this.client = artifact.create();
+    this.client = new DefaultArtifactClient();
   }
 
   /**
@@ -130,7 +136,7 @@ export class ArtifactHelper implements IArtifactHelper {
   async upload(options: UploadOptions): Promise<UploadResult> {
     try {
       core.info(`📦 Uploading artifact: ${options.name}`);
-      
+
       // Resolve glob patterns to actual file paths
       const globber = await glob.create(options.files.join("\n"));
       const files = await globber.glob();
@@ -141,29 +147,24 @@ export class ArtifactHelper implements IArtifactHelper {
 
       core.info(`Found ${files.length} files to upload`);
 
-      const uploadOptions: {
-        retentionDays?: number;
-      } = {};
-
-      if (options.retentionDays !== undefined) {
-        uploadOptions.retentionDays = options.retentionDays;
+      const actionsUploadOptions: ActionsUploadOptions = {};
+      if (options.retentionDays) {
+        actionsUploadOptions.retentionDays = options.retentionDays;
       }
 
-      const response = await this.client.uploadArtifact(
-        options.name,
-        files,
-        options.rootDirectory ?? process.cwd(),
-        uploadOptions
-      );
+      const response = await this.client.uploadArtifact(options.name, files, options.rootDirectory ?? process.cwd(), actionsUploadOptions);
+
+      const artifactId = response.id ?? 0;
+      const artifactSize = response.size ?? 0;
 
       core.info(`✅ Artifact uploaded successfully: ${options.name}`);
-      core.info(`   ID: ${response.id}`);
-      core.info(`   Size: ${response.size} bytes`);
+      core.info(`   ID: ${artifactId}`);
+      core.info(`   Size: ${artifactSize} bytes`);
 
       return {
-        id: response.id,
+        id: artifactId,
         fileCount: files.length,
-        size: response.size,
+        size: artifactSize,
       };
     } catch (error) {
       const err = error as Error;
@@ -177,23 +178,44 @@ export class ArtifactHelper implements IArtifactHelper {
    */
   async download(options: DownloadOptions): Promise<DownloadResult> {
     try {
-      core.info(`📥 Downloading artifact: ${options.name}`);
+      let artifactId: number;
+      let displayName: string;
 
-      const response = await this.client.downloadArtifact(
-        options.name,
-        options.destination
-      );
+      if (options.artifactId) {
+        artifactId = options.artifactId;
+        displayName = `ID ${artifactId}`;
+      } else if (options.name) {
+        // Get artifact by name first
+        core.info(`Looking up artifact by name: ${options.name}`);
+        const artifact = await this.client.getArtifact(options.name);
+        artifactId = artifact.artifact.id;
+        displayName = options.name;
+      } else {
+        throw new Error("Either 'name' or 'artifactId' must be provided");
+      }
 
-      core.info(`✅ Artifact downloaded successfully: ${options.name}`);
-      core.info(`   Path: ${response.downloadPath}`);
+      core.info(`📥 Downloading artifact: ${displayName}`);
+
+      const actionsDownloadOptions: ActionsDownloadOptions = {};
+      if (options.destination) {
+        actionsDownloadOptions.path = options.destination;
+      }
+
+      const response = await this.client.downloadArtifact(artifactId, actionsDownloadOptions);
+
+      const downloadPath = response.downloadPath ?? options.destination;
+
+      core.info(`✅ Artifact downloaded successfully: ${displayName}`);
+      core.info(`   Path: ${downloadPath}`);
 
       return {
-        id: response.artifactId,
-        downloadPath: response.downloadPath,
+        id: artifactId,
+        downloadPath,
       };
     } catch (error) {
       const err = error as Error;
-      core.error(`❌ Failed to download artifact '${options.name}': ${err.message}`);
+      const displayName = options.name ?? `ID ${options.artifactId}`;
+      core.error(`❌ Failed to download artifact '${displayName}': ${err.message}`);
       throw new Error(`Failed to download artifact: ${err.message}`);
     }
   }
@@ -222,29 +244,32 @@ export class ArtifactHelper implements IArtifactHelper {
    * {@inheritDoc IArtifactHelper.uploadDirectory}
    */
   async uploadDirectory(name: string, directory: string, retentionDays?: number): Promise<UploadResult> {
-    return this.upload({
+    const uploadOptions: UploadOptions = {
       name,
       files: [`${directory}/**/*`],
       rootDirectory: directory,
-      retentionDays,
-    });
+    };
+    if (retentionDays) {
+      uploadOptions.retentionDays = retentionDays;
+    }
+    return this.upload(uploadOptions);
   }
 
   /**
    * {@inheritDoc IArtifactHelper.uploadFiles}
    */
-  async uploadFiles(
-    name: string,
-    files: string[],
-    rootDirectory?: string,
-    retentionDays?: number
-  ): Promise<UploadResult> {
-    return this.upload({
+  async uploadFiles(name: string, files: string[], rootDirectory?: string, retentionDays?: number): Promise<UploadResult> {
+    const uploadOptions: UploadOptions = {
       name,
       files,
-      rootDirectory,
-      retentionDays,
-    });
+    };
+    if (rootDirectory) {
+      uploadOptions.rootDirectory = rootDirectory;
+    }
+    if (retentionDays) {
+      uploadOptions.retentionDays = retentionDays;
+    }
+    return this.upload(uploadOptions);
   }
 }
 
@@ -254,13 +279,13 @@ export class ArtifactHelper implements IArtifactHelper {
  * @example
  * ```typescript
  * const artifacts = createArtifactHelper();
- * 
+ *
  * // Upload test results
  * await artifacts.uploadDirectory('test-results', './test-output', 30);
- * 
+ *
  * // Upload specific files
  * await artifacts.uploadFiles('logs', ['app.log', 'error.log'], './', 7);
- * 
+ *
  * // Download an artifact
  * await artifacts.download({ name: 'build-output', destination: './download' });
  * ```

@@ -5,7 +5,7 @@
  */
 
 import * as core from "@actions/core";
-import { env, git } from "../helpers/index.ts";
+import {env, git} from "../helpers/index.ts";
 
 /**
  * Change detection result
@@ -25,7 +25,7 @@ interface ChangeDetectionResult {
  */
 export default async function detectChanges(): Promise<void> {
   // Get Git references from environment
-  const baseRef = env.get("BASE_REF", "origin/main");
+  const baseRef = env.get("BASE_REF", "origin/main") ?? "origin/main";
   const headRef = env.get("HEAD_REF") ?? env.get("GITHUB_SHA") ?? "HEAD";
 
   core.info(`🔍 Performing change detection between '${baseRef}' and '${headRef}'`);
@@ -47,28 +47,34 @@ export default async function detectChanges(): Promise<void> {
     core.setOutput("has-changes", hasChanges ? "true" : "false");
     core.setOutput("changed-files", changedFiles.join(","));
     core.setOutput("changed-files-count", changedFiles.length.toString());
-    core.setOutput("result", JSON.stringify({
-      success: true,
-      changedFiles
-    } satisfies ChangeDetectionResult));
+    core.setOutput(
+      "result",
+      JSON.stringify({
+        success: true,
+        changedFiles,
+      } satisfies ChangeDetectionResult),
+    );
 
-    result = { success: true, changedFiles };
+    result = {success: true, changedFiles};
     core.info(`✅ Change detection complete: ${changedFiles.length} file(s) changed.`);
   } catch (error) {
     const err = error as Error;
-    
+
     // Set failure outputs
     core.setOutput("has-changes", "false");
     core.setOutput("changed-files", "");
     core.setOutput("changed-files-count", "0");
-    core.setOutput("result", JSON.stringify({
-      success: false,
-      changedFiles: [],
-      error: err.message
-    } satisfies ChangeDetectionResult));
-    
+    core.setOutput(
+      "result",
+      JSON.stringify({
+        success: false,
+        changedFiles: [],
+        error: err.message,
+      } satisfies ChangeDetectionResult),
+    );
+
     core.error(`❌ Change detection failed: ${err.message}`);
-    result = { success: false, changedFiles: [], error: err.message };
+    result = {success: false, changedFiles: [], error: err.message};
   }
 
   if (!result.success) {

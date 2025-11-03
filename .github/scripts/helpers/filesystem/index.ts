@@ -1,17 +1,17 @@
 /**
  * @fileoverview File system operations using @actions/io and native Node.js fs
  * @module helpers/filesystem
- * 
+ *
  * Provides a clean, unified API for file system operations in GitHub Actions.
  * Combines @actions/io for cross-platform operations with native fs for advanced features.
  * Follows Single Responsibility Principle by focusing solely on file operations.
  */
 
-import * as io from "@actions/io";
 import * as core from "@actions/core";
-import { access, readdir, readFile, writeFile, mkdir, stat, rm } from "node:fs/promises";
-import { join, dirname } from "node:path";
-import { constants } from "node:fs";
+import * as io from "@actions/io";
+import {constants} from "node:fs";
+import {access, readdir, readFile, rm, stat, writeFile} from "node:fs/promises";
+import {dirname, join} from "node:path";
 
 /**
  * File system operation options
@@ -186,6 +186,30 @@ export interface IFileSystemHelper {
    * @returns Promise resolving when directory exists
    */
   ensureDirectory(path: string): Promise<void>;
+
+  /**
+   * Reads a file (alias for readText for backward compatibility)
+   * @param path - Path to file
+   * @param encoding - File encoding (default: utf-8)
+   * @returns Promise resolving to file content
+   */
+  readFile(path: string, encoding?: BufferEncoding): Promise<string>;
+
+  /**
+   * Writes to a file (alias for writeText for backward compatibility)
+   * @param path - Path to file
+   * @param content - Content to write
+   * @param options - Write options
+   * @returns Promise resolving when write completes
+   */
+  writeFile(path: string, content: string, options?: FileOperationOptions): Promise<void>;
+
+  /**
+   * Creates a directory with parent directories (alias for ensureDirectory)
+   * @param path - Directory path
+   * @returns Promise resolving when directory exists
+   */
+  mkdirP(path: string): Promise<void>;
 }
 
 /**
@@ -243,6 +267,14 @@ export class FileSystemHelper implements IFileSystemHelper {
   }
 
   /**
+   * {@inheritDoc IFileSystemHelper.readFile}
+   * @deprecated Use readText instead
+   */
+  async readFile(path: string, encoding: BufferEncoding = "utf-8"): Promise<string> {
+    return this.readText(path, encoding);
+  }
+
+  /**
    * {@inheritDoc IFileSystemHelper.readJson}
    */
   async readJson<T = unknown>(path: string): Promise<T> {
@@ -262,16 +294,24 @@ export class FileSystemHelper implements IFileSystemHelper {
   async writeText(path: string, content: string, options: FileOperationOptions = {}): Promise<void> {
     try {
       core.debug(`Writing text file: ${path}`);
-      
+
       if (options.recursive) {
         await this.ensureDirectory(dirname(path));
       }
 
-      await writeFile(path, content, { encoding: options.encoding ?? "utf-8" });
+      await writeFile(path, content, {encoding: options.encoding ?? "utf-8"});
     } catch (error) {
       const err = error as Error;
       throw new Error(`Failed to write text file '${path}': ${err.message}`);
     }
+  }
+
+  /**
+   * {@inheritDoc IFileSystemHelper.writeFile}
+   * @deprecated Use writeText instead
+   */
+  async writeFile(path: string, content: string, options: FileOperationOptions = {}): Promise<void> {
+    return this.writeText(path, content, options);
   }
 
   /**
@@ -294,7 +334,7 @@ export class FileSystemHelper implements IFileSystemHelper {
   async copy(source: string, destination: string, options: FileOperationOptions = {}): Promise<void> {
     try {
       core.debug(`Copying from ${source} to ${destination}`);
-      
+
       await io.cp(source, destination, {
         recursive: options.recursive ?? true,
         force: options.force ?? false,
@@ -311,7 +351,7 @@ export class FileSystemHelper implements IFileSystemHelper {
   async move(source: string, destination: string, options: FileOperationOptions = {}): Promise<void> {
     try {
       core.debug(`Moving from ${source} to ${destination}`);
-      
+
       await io.mv(source, destination, {
         force: options.force ?? false,
       });
@@ -327,7 +367,7 @@ export class FileSystemHelper implements IFileSystemHelper {
   async remove(path: string, options: FileOperationOptions = {}): Promise<void> {
     try {
       core.debug(`Removing: ${path}`);
-      
+
       if (await this.exists(path)) {
         await rm(path, {
           recursive: options.recursive ?? true,
@@ -343,10 +383,10 @@ export class FileSystemHelper implements IFileSystemHelper {
   /**
    * {@inheritDoc IFileSystemHelper.createDirectory}
    */
-  async createDirectory(path: string, options: FileOperationOptions = {}): Promise<void> {
+  async createDirectory(path: string, _options: FileOperationOptions = {}): Promise<void> {
     try {
       core.debug(`Creating directory: ${path}`);
-      
+
       await io.mkdirP(path);
     } catch (error) {
       const err = error as Error;
@@ -360,7 +400,7 @@ export class FileSystemHelper implements IFileSystemHelper {
   async getInfo(path: string): Promise<FileInfo> {
     try {
       const stats = await stat(path);
-      
+
       return {
         path,
         size: stats.size,
@@ -381,8 +421,8 @@ export class FileSystemHelper implements IFileSystemHelper {
   async list(path: string, options: TraversalOptions = {}): Promise<string[]> {
     try {
       core.debug(`Listing directory: ${path}`);
-      
-      const entries = await readdir(path, { withFileTypes: true });
+
+      const entries = await readdir(path, {withFileTypes: true});
       const result: string[] = [];
 
       for (const entry of entries) {
@@ -391,7 +431,7 @@ export class FileSystemHelper implements IFileSystemHelper {
         }
 
         const fullPath = join(path, entry.name);
-        
+
         if (options.pattern) {
           if (options.pattern.test(entry.name)) {
             result.push(fullPath);
@@ -414,8 +454,8 @@ export class FileSystemHelper implements IFileSystemHelper {
   async find(directory: string, pattern: RegExp, maxDepth: number = -1): Promise<string[]> {
     try {
       core.debug(`Finding files in ${directory} matching ${pattern}`);
-      
-      const entries = await readdir(directory, { withFileTypes: true, recursive: maxDepth === -1 });
+
+      const entries = await readdir(directory, {withFileTypes: true, recursive: maxDepth === -1});
       const result: string[] = [];
 
       for (const entry of entries) {
@@ -438,11 +478,11 @@ export class FileSystemHelper implements IFileSystemHelper {
   async readTail(path: string, lineCount: number): Promise<string> {
     try {
       core.debug(`Reading last ${lineCount} lines from ${path}`);
-      
+
       const content = await this.readText(path);
       const lines = content.split("\n");
       const tailLines = lines.slice(-lineCount);
-      
+
       return tailLines.join("\n");
     } catch (error) {
       const err = error as Error;
@@ -455,8 +495,16 @@ export class FileSystemHelper implements IFileSystemHelper {
    */
   async ensureDirectory(path: string): Promise<void> {
     if (!(await this.exists(path))) {
-      await this.createDirectory(path, { recursive: true });
+      await this.createDirectory(path, {recursive: true});
     }
+  }
+
+  /**
+   * {@inheritDoc IFileSystemHelper.mkdirP}
+   * @deprecated Use ensureDirectory instead
+   */
+  async mkdirP(path: string): Promise<void> {
+    return this.ensureDirectory(path);
   }
 }
 

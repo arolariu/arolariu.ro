@@ -4,7 +4,7 @@
  */
 
 import * as core from "@actions/core";
-import { env, createGitHubHelper, createCommentBuilder } from "../helpers/index.ts";
+import {createCommentBuilder, createGitHubHelper, env} from "../helpers/index.ts";
 
 /**
  * Unique identifier for the hygiene check comment
@@ -23,10 +23,14 @@ function formatCommitSha(sha: string): string {
  */
 function getStatusEmoji(status: string): string {
   switch (status) {
-    case "success": return "✅";
-    case "failure": return "❌";
-    case "warning": return "⚠️";
-    default: return "❓";
+    case "success":
+      return "✅";
+    case "failure":
+      return "❌";
+    case "warning":
+      return "⚠️";
+    default:
+      return "❓";
   }
 }
 
@@ -35,21 +39,20 @@ function getStatusEmoji(status: string): string {
  * @returns Markdown string for the complete hygiene check report
  */
 function generateUnifiedComment(): string {
-
   // Core status information
-  const statsResult = env.get("STATS_RESULT", "unknown");
-  const formattingResult = env.get("FORMATTING_RESULT", "unknown");
-  const lintingResult = env.get("LINTING_RESULT", "unknown");
+  const statsResult = env.get("STATS_RESULT", "unknown") ?? "unknown";
+  const formattingResult = env.get("FORMATTING_RESULT", "unknown") ?? "unknown";
+  const lintingResult = env.get("LINTING_RESULT", "unknown") ?? "unknown";
 
   // Primary diff stats
-  const filesChanged = env.get("FILES_CHANGED", "0");
-  const linesAdded = env.get("LINES_ADDED", "0");
-  const linesDeleted = env.get("LINES_DELETED", "0");
+  const filesChanged = env.get("FILES_CHANGED", "0") ?? "0";
+  const linesAdded = env.get("LINES_ADDED", "0") ?? "0";
+  const linesDeleted = env.get("LINES_DELETED", "0") ?? "0";
 
   // Previous commit comparison
-  const filesChangedVsPrev = env.get("FILES_CHANGED_VS_PREV", "0");
-  const linesAddedVsPrev = env.get("LINES_ADDED_VS_PREV", "0");
-  const linesDeletedVsPrev = env.get("LINES_DELETED_VS_PREV", "0");
+  const filesChangedVsPrev = env.get("FILES_CHANGED_VS_PREV", "0") ?? "0";
+  const linesAddedVsPrev = env.get("LINES_ADDED_VS_PREV", "0") ?? "0";
+  const linesDeletedVsPrev = env.get("LINES_DELETED_VS_PREV", "0") ?? "0";
   const isFirstCommit = env.getBoolean("IS_FIRST_COMMIT", false);
 
   // Formatting
@@ -58,10 +61,10 @@ function generateUnifiedComment(): string {
 
   // Linting
   const lintPassed = env.getBoolean("LINT_PASSED", false);
-  const lintOutput = env.get("LINT_OUTPUT", "");
+  const lintOutput = env.get("LINT_OUTPUT", "") ?? "";
 
   // Bundle size
-  const bundleSizeMarkdown = env.get("BUNDLE_SIZE_MARKDOWN", "_Not available_");
+  const bundleSizeMarkdown = env.get("BUNDLE_SIZE_MARKDOWN", "_Not available_") ?? "_Not available_";
 
   // Extended metrics
   const topExtensionsTable = env.get("TOP_EXTENSION_TABLE");
@@ -69,7 +72,7 @@ function generateUnifiedComment(): string {
   const churn = env.get("CHURN");
   const netChange = env.get("NET_CHANGE");
 
-  const commitSha = env.get("GITHUB_SHA", "unknown");
+  const commitSha = env.get("GITHUB_SHA", "unknown") ?? "unknown";
 
   // Overall status calculation (stats considered informational; still included)
   const allPassed = formattingResult === "success" && lintingResult === "success" && statsResult === "success";
@@ -79,7 +82,7 @@ function generateUnifiedComment(): string {
 
   // Use comment builder for cleaner generation
   const builder = createCommentBuilder();
-  
+
   builder
     .addHeading(`${statusEmoji} Code Hygiene Report: ${statusText}`, 1)
     .addParagraph(`**Commit:** \`${formatCommitSha(commitSha)}\``)
@@ -90,15 +93,15 @@ function generateUnifiedComment(): string {
     .addHeading("📋 Check Summary", 2)
     .addTable(
       [
-        { header: "Check", align: "left" },
-        { header: "Status", align: "center" },
-        { header: "Result", align: "left" }
+        {header: "Check", align: "left"},
+        {header: "Status", align: "center"},
+        {header: "Result", align: "left"},
       ],
       [
         [`📊 Statistics`, getStatusEmoji(statsResult), statsResult],
         [`🎨 Formatting`, getStatusEmoji(formattingResult), formattingResult],
-        [`🔍 Linting`, getStatusEmoji(lintingResult), lintingResult]
-      ]
+        [`🔍 Linting`, getStatusEmoji(lintingResult), lintingResult],
+      ],
     )
     .addNewline();
 
@@ -197,7 +200,7 @@ function generateUnifiedComment(): string {
   // Footer
   comment += `---\n\n`;
   comment += `_Last updated: ${new Date().toISOString()}_\n`;
-  
+
   // Add hidden identifier
   comment += `\n<!-- ${COMMENT_IDENTIFIER} -->\n`;
 
@@ -207,7 +210,7 @@ function generateUnifiedComment(): string {
 
 /**
  * Posts or updates the unified hygiene comment on the PR
- * 
+ *
  * @refactored Uses new GitHub helper with upsert pattern
  */
 export default async function postHygieneComment(): Promise<void> {
