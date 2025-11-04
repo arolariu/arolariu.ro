@@ -36,6 +36,10 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
   const {open: openEditDialog} = useDialog("INVOICE_METADATA", "edit", metadata);
   const {open: openDeleteDialog} = useDialog("INVOICE_METADATA", "delete", metadata);
 
+  const handleAddFirstMetadata = () => {
+    openAddDialog();
+  };
+
   return (
     <motion.div
       initial={{opacity: 0, y: 10}}

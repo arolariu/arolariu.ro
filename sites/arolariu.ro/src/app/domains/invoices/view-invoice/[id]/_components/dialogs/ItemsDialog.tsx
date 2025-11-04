@@ -43,6 +43,11 @@ export default function ItemsDialog(): React.JSX.Element {
     items: editableItems,
   });
 
+  const handleSaveChanges = () => {
+    // TODO: Implement save functionality
+    close();
+  };
+
   const handleAddNewItem = () => {
     const newItem: Product = {
       rawName: "",

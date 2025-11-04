@@ -31,6 +31,15 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
   const {open} = useDialog("INVOICE_SHARE", "edit", invoice);
   const {userInformation} = useUserInformation();
 
+  // Placeholder handlers for features not yet implemented
+  const handleRemoveAccess = () => {
+    // TODO: Implement remove access functionality
+  };
+
+  const handleMarkPrivate = () => {
+    // TODO: Implement mark as private functionality
+  };
+
   return (
     <Card className='group transition-shadow duration-300 hover:shadow-md'>
       <CardHeader>
@@ -63,7 +72,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                   <Button
                     variant='outline'
                     className='group ml-auto cursor-pointer'
-                    onClick={() => {}}>
+                    onClick={handleRemoveAccess}>
                     <TbLockCog className='mr-2 h-4 w-4' />
                     <span>Manage Sharing</span>
                   </Button>
@@ -100,7 +109,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                         <Button
                           variant='ghost'
                           className='ml-auto cursor-pointer'
-                          onClick={() => {}}>
+                          onClick={handleRemoveAccess}>
                           <TbDeselect className='h-4 w-4' />
                         </Button>
                       </TooltipTrigger>
@@ -140,7 +149,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
               <Button
                 variant='destructive'
                 className='w-full cursor-pointer'
-                onClick={() => {}}>
+                onClick={handleMarkPrivate}>
                 <span>Mark as Private</span>
                 <TbLock className='ml-2 h-4 w-4 transition-transform' />
               </Button>

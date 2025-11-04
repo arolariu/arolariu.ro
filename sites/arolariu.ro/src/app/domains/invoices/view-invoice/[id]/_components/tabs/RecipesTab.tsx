@@ -46,6 +46,14 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
     }
   };
 
+  const handleGenerateRecipe = () => {
+    // TODO: Implement AI recipe generation
+  };
+
+  const handleCreateFirstRecipe = () => {
+    openAddDialog();
+  };
+
   return (
     <motion.div
       initial={{opacity: 0, y: 10}}
