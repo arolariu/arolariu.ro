@@ -84,10 +84,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
-      - name: 🎨 Run Prettier
-        run: npm run format
-
-      - name: 🔍 Check for changes
+      - name: 🎨 Check formatting
         id: check
         run: ./.github/scripts/hygiene/check-format.sh
 
@@ -140,9 +137,7 @@ jobs:
 
       - name: 🧪 Run unit tests
         id: test
-        run: |
-          npm run test:unit
-          echo "result=success" >> "$GITHUB_OUTPUT"
+        run: ./.github/scripts/hygiene/check-unit-tests.sh
 
   # ============================================================================
   # CODE STATISTICS & BUNDLE SIZE ANALYSIS

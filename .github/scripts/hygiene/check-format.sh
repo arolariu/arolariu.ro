@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# Check for formatting changes after running prettier
+# Run formatting and check for changes
 # Outputs: format-needed, files-needing-format
 
 set -euo pipefail
+
+# Run prettier formatting
+npm run format
 
 DIFF="$(git diff --name-only || true)"
 if [ -n "$DIFF" ]; then

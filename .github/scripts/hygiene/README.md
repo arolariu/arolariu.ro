@@ -5,7 +5,7 @@ This directory contains shell scripts used by the `official-hygiene-check.yml` w
 ## Scripts
 
 ### `check-format.sh`
-Checks for formatting changes after running prettier.
+Runs prettier formatting and checks for any changes.
 
 **Outputs:**
 - `format-needed`: `true` if files need formatting, `false` otherwise
@@ -26,6 +26,17 @@ Runs linting and captures output.
 **Usage:**
 ```bash
 ./.github/scripts/hygiene/check-lint.sh
+```
+
+### `check-unit-tests.sh`
+Runs unit tests across all projects.
+
+**Outputs:**
+- `result`: `success` if tests passed
+
+**Usage:**
+```bash
+./.github/scripts/hygiene/check-unit-tests.sh
 ```
 
 ### `compute-extra-stats.sh`
