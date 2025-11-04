@@ -2,9 +2,13 @@
 # Run linting and capture output
 # Outputs: lint-passed, lint-output
 
+set -e
+
+# Temporarily disable exit on error to capture output
 set +e
 npm run lint > lint_output.txt 2>&1
 EXIT_CODE=$?
+set -e
 
 if [ "$EXIT_CODE" -eq 0 ]; then
   echo "lint-passed=true" >> "$GITHUB_OUTPUT"

@@ -29,10 +29,7 @@ Runs linting and captures output.
 ```
 
 ### `check-unit-tests.sh`
-Runs unit tests across all projects.
-
-**Outputs:**
-- `result`: `success` if tests passed
+Runs unit tests across all projects. Exits with non-zero code on failure.
 
 **Usage:**
 ```bash

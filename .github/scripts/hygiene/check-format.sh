@@ -2,12 +2,12 @@
 # Run formatting and check for changes
 # Outputs: format-needed, files-needing-format
 
-set -euo pipefail
+set -e
 
 # Run prettier formatting
 npm run format
 
-DIFF="$(git diff --name-only || true)"
+DIFF="$(git diff --name-only)"
 if [ -n "$DIFF" ]; then
   echo "format-needed=true" >> "$GITHUB_OUTPUT"
   echo "files-needing-format=$(echo "$DIFF" | paste -sd, -)" >> "$GITHUB_OUTPUT"

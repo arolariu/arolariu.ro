@@ -120,8 +120,6 @@ jobs:
     timeout-minutes: 15
     needs: setup
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
-    outputs:
-      test-result: ${{ steps.test.outputs.result }}
     steps:
       - name: 🛫 Checkout
         uses: actions/checkout@v5
@@ -220,8 +218,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Job results
           STATS_RESULT: ${{ needs.stats.result }}
-          FORMATTING_RESULT: ${{ needs.format.result == 'success' && 'success' || 'failure' }}
-          LINTING_RESULT: ${{ needs.lint.result }}
           # Core statistics from stats job
           FILES_CHANGED: ${{ needs.stats.outputs.files-changed }}
           LINES_ADDED: ${{ needs.stats.outputs.lines-added }}
