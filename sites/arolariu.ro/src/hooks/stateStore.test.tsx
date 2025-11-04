@@ -1,23 +1,17 @@
 import {act, renderHook} from "@testing-library/react";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {beforeEach, describe, expect, it} from "vitest";
 import type {Invoice, Merchant} from "@/types/invoices";
 import {useZustandStore} from "./stateStore";
 
 describe("useZustandStore", () => {
-  const originalEnv = process.env.NODE_ENV;
-
   beforeEach(() => {
     // Clear the store before each test
-    const {getState, setState} = useZustandStore;
+    const {setState} = useZustandStore;
     setState({
       invoices: [],
       selectedInvoices: [],
       merchants: [],
     });
-  });
-
-  afterAll(() => {
-    process.env.NODE_ENV = originalEnv;
   });
 
   describe("initial state", () => {

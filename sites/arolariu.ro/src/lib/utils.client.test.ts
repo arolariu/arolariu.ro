@@ -29,7 +29,7 @@ describe("extractBase64FromBlob", () => {
       result: "",
     };
 
-    global.FileReader = vi.fn(function (this: ReturnType<typeof vi.fn>) {
+    global.FileReader = vi.fn(function () {
       return mockReader;
     }) as unknown as typeof FileReader;
   });

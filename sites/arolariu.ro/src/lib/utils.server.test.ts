@@ -25,7 +25,7 @@ vi.mock("resend", () => ({
 // Mock jose library for JWT operations
 vi.mock("jose", () => {
   class MockSignJWT {
-    constructor(public payload: any) {}
+    constructor(public payload: Record<string, unknown>) {}
 
     setProtectedHeader() {
       return this;
@@ -375,13 +375,13 @@ describe("verifyJwtToken", () => {
     const {jwtVerify} = await import("jose");
 
     // Mock jwtVerify to return payload without sub
-    (jwtVerify as any).mockResolvedValueOnce({
+    vi.mocked(jwtVerify).mockResolvedValueOnce({
       payload: {
         iss: "test-issuer",
         aud: "test-audience",
         iat: Math.floor(Date.now() / 1000),
       },
-    });
+    } as any);
 
     const token = "test.jwt.token";
     const secret = "test-secret";
@@ -399,13 +399,13 @@ describe("verifyJwtToken", () => {
     const {jwtVerify} = await import("jose");
 
     // Mock jwtVerify to return payload without iss
-    (jwtVerify as any).mockResolvedValueOnce({
+    vi.mocked(jwtVerify).mockResolvedValueOnce({
       payload: {
         sub: "user123",
         aud: "test-audience",
         iat: Math.floor(Date.now() / 1000),
       },
-    });
+    } as any);
 
     const token = "test.jwt.token";
     const secret = "test-secret";
@@ -424,7 +424,7 @@ describe("verifyJwtToken", () => {
 
     // Mock jwtVerify to throw an Error
     const mockError = new Error("Token expired");
-    (jwtVerify as any).mockRejectedValueOnce(mockError);
+    vi.mocked(jwtVerify).mockRejectedValueOnce(mockError);
 
     const token = "expired.token";
     const secret = "test-secret";
@@ -442,7 +442,7 @@ describe("verifyJwtToken", () => {
     const {jwtVerify} = await import("jose");
 
     // Mock jwtVerify to throw a non-Error object
-    (jwtVerify as any).mockRejectedValueOnce("String error");
+    vi.mocked(jwtVerify).mockRejectedValueOnce("String error" as any);
 
     const token = "invalid.token";
     const secret = "test-secret";
