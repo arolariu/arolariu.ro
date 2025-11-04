@@ -52,7 +52,7 @@
     "test:unit": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo 'No unit tests configured for cv site yet'",
+        "command": "npm run test:unit",
         "cwd": "sites/cv.arolariu.ro"
       }
     },

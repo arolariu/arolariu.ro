@@ -24,8 +24,12 @@ function triggerDownload(blob: Blob, filename: string): Result<void> {
  */
 export function downloadText(text: string, filename: string, mime = "text/plain"): Result<void> {
   if (!globalThis.window) return error(new Error("download not available (SSR)"));
-  const blob = new Blob([text], {type: mime});
-  return triggerDownload(blob, filename);
+  try {
+    const blob = new Blob([text], {type: mime});
+    return triggerDownload(blob, filename);
+  } catch (error_: unknown) {
+    return error(error_ instanceof Error ? error_ : new Error(String(error_)));
+  }
 }
 
 /**
