@@ -24,7 +24,7 @@ class ZustandDB extends Dexie {
   stores!: Table<StoreItem, string>;
 
   /**
-   * Creates a new ZustandDB instance
+   * Creates a new ZustandDB instance and configures the schema.
    */
   constructor() {
     super("arolariu-zustand-store");
@@ -39,8 +39,7 @@ class ZustandDB extends Dexie {
 let dbInstance: ZustandDB | null = null;
 
 /**
- * Gets or creates the database instance
- *
+ * Gets or creates the singleton database instance.
  * @returns The database instance or null if not in browser environment
  */
 function getDatabase(): ZustandDB | null {
@@ -56,9 +55,7 @@ function getDatabase(): ZustandDB | null {
 /**
  * Creates a Dexie-based IndexedDB storage adapter for Zustand persist middleware.
  * Uses Dexie for robust, type-safe IndexedDB operations with automatic error handling.
- *
  * @returns PersistStorage interface implementation for IndexedDB using Dexie
- *
  * @example
  * ```typescript
  * const storage = createIndexedDBStorage();
@@ -74,8 +71,7 @@ export function createIndexedDBStorage<S>(): PersistStorage<S> {
   return {
     /**
      * Retrieves an item from IndexedDB using Dexie.
-     *
-     * @param name - The key to retrieve
+     * @param name The key to retrieve
      * @returns Promise resolving to the stored value or null if not found
      */
     getItem: async (name: string): Promise<StorageValue<S> | null> => {
@@ -95,9 +91,8 @@ export function createIndexedDBStorage<S>(): PersistStorage<S> {
 
     /**
      * Stores an item in IndexedDB using Dexie.
-     *
-     * @param name - The key to store the value under
-     * @param value - The value to store (serialized state)
+     * @param name The key to store the value under
+     * @param value The value to store (serialized state)
      */
     setItem: async (name: string, value: StorageValue<S>): Promise<void> => {
       try {
@@ -117,8 +112,7 @@ export function createIndexedDBStorage<S>(): PersistStorage<S> {
 
     /**
      * Removes an item from IndexedDB using Dexie.
-     *
-     * @param name - The key to remove
+     * @param name The key to remove
      */
     removeItem: async (name: string): Promise<void> => {
       try {
