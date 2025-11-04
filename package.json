@@ -39,6 +39,7 @@
     "nx": "nx",
     "graph": "nx graph",
     "test": "nx run-many --target=test --all",
+    "test:unit": "nx run-many --target=test:unit --all",
     "test:api": "nx run api:test",
     "test:components": "nx run components:test",
     "test:cv": "nx run cv:test",
