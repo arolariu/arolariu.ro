@@ -3,7 +3,13 @@ import {convertBase64ToBlob, getMimeTypeFromBase64} from "./utils.server";
 
 // Mock the telemetry module
 vi.mock("@/telemetry", () => ({
-  withSpan: vi.fn((name, fn) => fn({setAttributes: vi.fn(), setStatus: vi.fn()})),
+  withSpan: vi.fn((name, fn) =>
+    fn({
+      setAttributes: vi.fn(),
+      setStatus: vi.fn(),
+      recordException: vi.fn(),
+    })
+  ),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
   recordSpanError: vi.fn(),
