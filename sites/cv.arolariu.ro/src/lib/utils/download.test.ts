@@ -98,10 +98,15 @@ describe("download utilities", () => {
         class BlobMock implements Blob {
           readonly size: number = 0;
           readonly type: string = "";
+
+          bytes(): Promise<Uint8Array<ArrayBuffer>> {
+            throw new Error("Not implemented");
+          }
+
           slice(): Blob {
             throw new Error("Not implemented");
           }
-          stream(): ReadableStream<Uint8Array> {
+          stream(): ReadableStream<Uint8Array<ArrayBuffer>> {
             throw new Error("Not implemented");
           }
           text(): Promise<string> {
@@ -114,7 +119,6 @@ describe("download utilities", () => {
             throw new Error("Blob creation failed");
           }
         }
-        // @ts-expect-error - intentionally override global Blob for test
         globalThis.Blob = BlobMock as unknown as typeof Blob;
 
         const result = downloadText("test", "test.txt");
