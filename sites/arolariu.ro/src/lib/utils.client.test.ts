@@ -1,217 +1,510 @@
-import {describe, expect, it, vi} from "vitest";
-import {extractBase64FromBlob, isBrowserStorageAvailable} from "./utils.client";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {
+  dumpBrowserInformation,
+  extractBase64FromBlob,
+  isBrowserStorageAvailable,
+  retrieveNavigatorInformation,
+  retrieveScreenInformation,
+} from "./utils.client";
 
 describe("extractBase64FromBlob", () => {
-  it("should extract base64 string from a blob", async () => {
-    const blob = new Blob(["Hello, world!"], {type: "text/plain"});
-    const base64String = await extractBase64FromBlob(blob);
-    expect(base64String).toMatch(/^data:text\/plain;base64,/);
+  it("should extract Base64 string from Blob", async () => {
+    const mockBase64 = "data:text/plain;base64,SGVsbG8gV29ybGQ=";
+    const mockBlob = new Blob(["Hello World"], {type: "text/plain"});
+
+    // Mock FileReader implementation
+    const mockReader = {
+      readAsDataURL: vi.fn(),
+      addEventListener: vi.fn((event, callback) => {
+        if (event === "load") {
+          // Simulate load event
+          setTimeout(() => {
+            mockReader.result = mockBase64;
+            callback();
+          }, 0);
+        }
+      }),
+      result: mockBase64,
+    };
+
+    global.FileReader = vi.fn(function (this: any) {
+      return mockReader;
+    }) as any;
+
+    const result = await extractBase64FromBlob(mockBlob);
+
+    expect(result).toBe(mockBase64);
+    expect(mockReader.readAsDataURL).toHaveBeenCalledWith(mockBlob);
   });
 
-  it("should handle empty blob", async () => {
-    const blob = new Blob([], {type: "text/plain"});
-    const base64String = await extractBase64FromBlob(blob);
-    expect(base64String).toBe("data:text/plain;base64,");
+  it("should handle empty Blob", async () => {
+    const mockBase64 = "data:application/octet-stream;base64,";
+    const mockBlob = new Blob([], {type: "application/octet-stream"});
+
+    const mockReader = {
+      readAsDataURL: vi.fn(),
+      addEventListener: vi.fn((event, callback) => {
+        if (event === "load") {
+          setTimeout(() => {
+            mockReader.result = mockBase64;
+            callback();
+          }, 0);
+        }
+      }),
+      result: mockBase64,
+    };
+
+    global.FileReader = vi.fn(function (this: any) {
+      return mockReader;
+    }) as any;
+
+    const result = await extractBase64FromBlob(mockBlob);
+
+    expect(result).toBe(mockBase64);
   });
 
-  it("should handle binary data", async () => {
-    const binaryData = new Uint8Array([72, 101, 108, 108, 111]);
-    const blob = new Blob([binaryData], {type: "application/octet-stream"});
-    const base64String = await extractBase64FromBlob(blob);
-    expect(base64String).toMatch(/^data:application\/octet-stream;base64,/);
+  it("should handle different MIME types", async () => {
+    const mockBase64 = "data:image/png;base64,iVBORw0KGgo=";
+    const mockBlob = new Blob(["fake-image-data"], {type: "image/png"});
+
+    const mockReader = {
+      readAsDataURL: vi.fn(),
+      addEventListener: vi.fn((event, callback) => {
+        if (event === "load") {
+          setTimeout(() => {
+            mockReader.result = mockBase64;
+            callback();
+          }, 0);
+        }
+      }),
+      result: mockBase64,
+    };
+
+    global.FileReader = vi.fn(function (this: any) {
+      return mockReader;
+    }) as any;
+
+    const result = await extractBase64FromBlob(mockBlob);
+
+    expect(result).toBe(mockBase64);
   });
 });
 
 describe("isBrowserStorageAvailable", () => {
-  it("should return true for available localStorage", () => {
-    const mockLocalStorage = {
-      setItem: vi.fn(),
-      getItem: vi.fn(),
-      removeItem: vi.fn(),
-      clear: vi.fn(),
+  let mockStorage: Storage;
+
+  beforeEach(() => {
+    // Create a mock storage object
+    mockStorage = {
       length: 0,
-    };
-    Object.defineProperty(window, "localStorage", {
-      value: mockLocalStorage,
-      writable: true,
-    });
-    expect(isBrowserStorageAvailable("localStorage")).toBe(true);
-  });
-
-  it("should return true for available sessionStorage", () => {
-    const mockSessionStorage = {
+      clear: vi.fn(),
+      getItem: vi.fn(),
+      key: vi.fn(),
+      removeItem: vi.fn(),
       setItem: vi.fn(),
-      getItem: vi.fn(),
-      removeItem: vi.fn(),
-      clear: vi.fn(),
-      length: 0,
-    };
-    Object.defineProperty(window, "sessionStorage", {
-      value: mockSessionStorage,
-      writable: true,
-    });
-    expect(isBrowserStorageAvailable("sessionStorage")).toBe(true);
-  });
-
-  it("should return false if localStorage is not available", () => {
-    const originalLocalStorage = window.localStorage;
-    Object.defineProperty(window, "localStorage", {
-      value: undefined,
-      writable: true,
-    });
-    expect(isBrowserStorageAvailable("localStorage")).toBe(false);
-    Object.defineProperty(window, "localStorage", {
-      value: originalLocalStorage,
-      writable: true,
-    }); // Restore original localStorage
-  });
-
-  it("should return false if sessionStorage is not available", () => {
-    const originalSessionStorage = window.sessionStorage;
-    Object.defineProperty(window, "sessionStorage", {
-      value: undefined,
-      writable: true,
-    });
-    expect(isBrowserStorageAvailable("sessionStorage")).toBe(false);
-    Object.defineProperty(window, "sessionStorage", {
-      value: originalSessionStorage,
-      writable: true,
-    }); // Restore original sessionStorage
-  });
-
-  it("should return true when QuotaExceededError is thrown with existing storage", () => {
-    const mockStorage = {
-      setItem: vi.fn().mockImplementation(() => {
-        const error = new DOMException("QuotaExceededError", "QuotaExceededError");
-        Object.defineProperty(error, "name", {
-          value: "QuotaExceededError",
-          writable: true,
-        });
-        throw error;
-      }),
-      getItem: vi.fn(),
-      removeItem: vi.fn(),
-      clear: vi.fn(),
-      length: 5, // Storage has items
     };
 
-    Object.defineProperty(window, "localStorage", {
-      value: mockStorage,
+    // Reset window object
+    Object.defineProperty(global, "window", {
+      value: {},
       writable: true,
       configurable: true,
     });
+  });
 
-    expect(isBrowserStorageAvailable("localStorage")).toBe(true);
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("localStorage", () => {
+    it("should return true when localStorage is available", () => {
+      Object.defineProperty(window, "localStorage", {
+        value: mockStorage,
+        writable: true,
+        configurable: true,
+      });
+
+      const result = isBrowserStorageAvailable("localStorage");
+
+      expect(result).toBe(true);
+      expect(mockStorage.setItem).toHaveBeenCalledWith("__storage_test__", "__storage_test__");
+      expect(mockStorage.removeItem).toHaveBeenCalledWith("__storage_test__");
+    });
+
+    it("should return false when localStorage throws SecurityError", () => {
+      Object.defineProperty(window, "localStorage", {
+        get: () => {
+          throw new DOMException("SecurityError", "SecurityError");
+        },
+        configurable: true,
+      });
+
+      const result = isBrowserStorageAvailable("localStorage");
+
+      expect(result).toBe(false);
+    });
+
+    it("should return true when QuotaExceededError and storage has items", () => {
+      const storageWithItems = {...mockStorage, length: 5};
+      Object.defineProperty(window, "localStorage", {
+        value: storageWithItems,
+        writable: true,
+        configurable: true,
+      });
+
+      storageWithItems.setItem = vi.fn(() => {
+        throw new DOMException("QuotaExceededError", "QuotaExceededError");
+      });
+
+      const result = isBrowserStorageAvailable("localStorage");
+
+      expect(result).toBe(true);
+    });
+
+    it("should return false when QuotaExceededError and storage is empty", () => {
+      Object.defineProperty(window, "localStorage", {
+        value: mockStorage,
+        writable: true,
+        configurable: true,
+      });
+
+      mockStorage.setItem = vi.fn(() => {
+        throw new DOMException("QuotaExceededError", "QuotaExceededError");
+      });
+
+      const result = isBrowserStorageAvailable("localStorage");
+
+      expect(result).toBe(false);
+    });
+
+    it("should return false when storage is undefined", () => {
+      Object.defineProperty(window, "localStorage", {
+        get: () => {
+          throw new DOMException("NotFoundError", "NotFoundError");
+        },
+        configurable: true,
+      });
+
+      const result = isBrowserStorageAvailable("localStorage");
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe("sessionStorage", () => {
+    it("should return true when sessionStorage is available", () => {
+      Object.defineProperty(window, "sessionStorage", {
+        value: mockStorage,
+        writable: true,
+        configurable: true,
+      });
+
+      const result = isBrowserStorageAvailable("sessionStorage");
+
+      expect(result).toBe(true);
+      expect(mockStorage.setItem).toHaveBeenCalledWith("__storage_test__", "__storage_test__");
+      expect(mockStorage.removeItem).toHaveBeenCalledWith("__storage_test__");
+    });
+
+    it("should return false when sessionStorage throws SecurityError", () => {
+      Object.defineProperty(window, "sessionStorage", {
+        get: () => {
+          throw new DOMException("SecurityError", "SecurityError");
+        },
+        configurable: true,
+      });
+
+      const result = isBrowserStorageAvailable("sessionStorage");
+
+      expect(result).toBe(false);
+    });
+
+    it("should return true when QuotaExceededError and storage has items", () => {
+      const storageWithItems = {...mockStorage, length: 3};
+      Object.defineProperty(window, "sessionStorage", {
+        value: storageWithItems,
+        writable: true,
+        configurable: true,
+      });
+
+      storageWithItems.setItem = vi.fn(() => {
+        throw new DOMException("QuotaExceededError", "QuotaExceededError");
+      });
+
+      const result = isBrowserStorageAvailable("sessionStorage");
+
+      expect(result).toBe(true);
+    });
+
+    it("should return false when QuotaExceededError and storage is empty", () => {
+      Object.defineProperty(window, "sessionStorage", {
+        value: mockStorage,
+        writable: true,
+        configurable: true,
+      });
+
+      mockStorage.setItem = vi.fn(() => {
+        throw new DOMException("QuotaExceededError", "QuotaExceededError");
+      });
+
+      const result = isBrowserStorageAvailable("sessionStorage");
+
+      expect(result).toBe(false);
+    });
   });
 });
 
 describe("retrieveNavigatorInformation", () => {
-  it("should retrieve navigator information", async () => {
-    const {retrieveNavigatorInformation} = await import("./utils.client");
-    const info = retrieveNavigatorInformation();
-
-    expect(info).toHaveProperty("userAgent");
-    expect(info).toHaveProperty("language");
-    expect(info).toHaveProperty("languages");
-    expect(info).toHaveProperty("cookieEnabled");
-    expect(info).toHaveProperty("doNotTrack");
-    expect(info).toHaveProperty("hardwareConcurrency");
-    expect(info).toHaveProperty("maxTouchPoints");
+  beforeEach(() => {
+    // Mock globalThis.navigator
+    Object.defineProperty(globalThis, "navigator", {
+      value: {
+        userAgent: "Mozilla/5.0 (Test Browser)",
+        language: "en-US",
+        languages: ["en-US", "en", "ro"],
+        cookieEnabled: true,
+        doNotTrack: null,
+        hardwareConcurrency: 8,
+        maxTouchPoints: 0,
+      },
+      writable: true,
+      configurable: true,
+    });
   });
 
-  it("should return correct types for navigator properties", async () => {
-    const {retrieveNavigatorInformation} = await import("./utils.client");
-    const info = retrieveNavigatorInformation();
+  it("should retrieve navigator information", () => {
+    const result = retrieveNavigatorInformation();
 
-    expect(typeof info.userAgent).toBe("string");
-    expect(typeof info.language).toBe("string");
-    expect(Array.isArray(info.languages)).toBe(true);
-    expect(typeof info.cookieEnabled).toBe("boolean");
-    expect(typeof info.hardwareConcurrency).toBe("number");
-    // maxTouchPoints may be undefined in test environment
-    expect(["number", "undefined"].includes(typeof info.maxTouchPoints)).toBe(true);
+    expect(result).toEqual({
+      userAgent: "Mozilla/5.0 (Test Browser)",
+      language: "en-US",
+      languages: ["en-US", "en", "ro"],
+      cookieEnabled: true,
+      doNotTrack: null,
+      hardwareConcurrency: 8,
+      maxTouchPoints: 0,
+    });
+  });
+
+  it("should return readonly object", () => {
+    const result = retrieveNavigatorInformation();
+
+    // TypeScript ensures readonly at compile-time via 'as const'
+    // At runtime, the object is not frozen but is a plain object
+    expect(typeof result).toBe("object");
+    expect(result).toBeDefined();
+  });
+
+  it("should handle mobile device navigator", () => {
+    Object.defineProperty(globalThis, "navigator", {
+      value: {
+        userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)",
+        language: "en-US",
+        languages: ["en-US"],
+        cookieEnabled: true,
+        doNotTrack: "1",
+        hardwareConcurrency: 4,
+        maxTouchPoints: 5,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    const result = retrieveNavigatorInformation();
+
+    expect(result.maxTouchPoints).toBe(5);
+    expect(result.hardwareConcurrency).toBe(4);
+  });
+
+  it("should handle disabled cookies", () => {
+    Object.defineProperty(globalThis, "navigator", {
+      value: {
+        userAgent: "Mozilla/5.0",
+        language: "en",
+        languages: ["en"],
+        cookieEnabled: false,
+        doNotTrack: null,
+        hardwareConcurrency: 2,
+        maxTouchPoints: 0,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    const result = retrieveNavigatorInformation();
+
+    expect(result.cookieEnabled).toBe(false);
   });
 });
 
 describe("retrieveScreenInformation", () => {
-  it("should retrieve screen information", async () => {
-    const {retrieveScreenInformation} = await import("./utils.client");
-    const info = retrieveScreenInformation();
-
-    expect(info).toHaveProperty("width");
-    expect(info).toHaveProperty("height");
-    expect(info).toHaveProperty("availWidth");
-    expect(info).toHaveProperty("availHeight");
-    expect(info).toHaveProperty("colorDepth");
-    expect(info).toHaveProperty("pixelDepth");
+  beforeEach(() => {
+    // Mock globalThis.screen
+    Object.defineProperty(globalThis, "screen", {
+      value: {
+        width: 1920,
+        height: 1080,
+        availWidth: 1920,
+        availHeight: 1040,
+        colorDepth: 24,
+        pixelDepth: 24,
+      },
+      writable: true,
+      configurable: true,
+    });
   });
 
-  it("should return correct types for screen properties", async () => {
-    const {retrieveScreenInformation} = await import("./utils.client");
-    const info = retrieveScreenInformation();
+  it("should retrieve screen information", () => {
+    const result = retrieveScreenInformation();
 
-    expect(typeof info.width).toBe("number");
-    expect(typeof info.height).toBe("number");
-    expect(typeof info.availWidth).toBe("number");
-    expect(typeof info.availHeight).toBe("number");
-    expect(typeof info.colorDepth).toBe("number");
-    expect(typeof info.pixelDepth).toBe("number");
+    expect(result).toEqual({
+      width: 1920,
+      height: 1080,
+      availWidth: 1920,
+      availHeight: 1040,
+      colorDepth: 24,
+      pixelDepth: 24,
+    });
   });
 
-  it("should return non-negative values for screen dimensions", async () => {
-    const {retrieveScreenInformation} = await import("./utils.client");
-    const info = retrieveScreenInformation();
+  it("should return readonly object", () => {
+    const result = retrieveScreenInformation();
 
-    // In test environment, screen values may be 0
-    expect(info.width).toBeGreaterThanOrEqual(0);
-    expect(info.height).toBeGreaterThanOrEqual(0);
-    expect(info.availWidth).toBeGreaterThanOrEqual(0);
-    expect(info.availHeight).toBeGreaterThanOrEqual(0);
+    // TypeScript ensures readonly at compile-time via 'as const'
+    // At runtime, the object is not frozen but is a plain object
+    expect(typeof result).toBe("object");
+    expect(result).toBeDefined();
+  });
+
+  it("should handle mobile screen dimensions", () => {
+    Object.defineProperty(globalThis, "screen", {
+      value: {
+        width: 375,
+        height: 812,
+        availWidth: 375,
+        availHeight: 734,
+        colorDepth: 24,
+        pixelDepth: 24,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    const result = retrieveScreenInformation();
+
+    expect(result.width).toBe(375);
+    expect(result.height).toBe(812);
+    expect(result.availHeight).toBe(734);
+  });
+
+  it("should handle high DPI screens", () => {
+    Object.defineProperty(globalThis, "screen", {
+      value: {
+        width: 3840,
+        height: 2160,
+        availWidth: 3840,
+        availHeight: 2100,
+        colorDepth: 30,
+        pixelDepth: 30,
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    const result = retrieveScreenInformation();
+
+    expect(result.width).toBe(3840);
+    expect(result.height).toBe(2160);
+    expect(result.colorDepth).toBe(30);
   });
 });
 
 describe("dumpBrowserInformation", () => {
-  it("should return a JSON string", async () => {
-    const {dumpBrowserInformation} = await import("./utils.client");
-    const dump = dumpBrowserInformation();
+  beforeEach(() => {
+    // Mock both navigator and screen
+    Object.defineProperty(globalThis, "navigator", {
+      value: {
+        userAgent: "Mozilla/5.0 (Test Browser)",
+        language: "en-US",
+        languages: ["en-US", "en"],
+        cookieEnabled: true,
+        doNotTrack: null,
+        hardwareConcurrency: 8,
+        maxTouchPoints: 0,
+      },
+      writable: true,
+      configurable: true,
+    });
 
-    expect(typeof dump).toBe("string");
-    expect(() => JSON.parse(dump)).not.toThrow();
+    Object.defineProperty(globalThis, "screen", {
+      value: {
+        width: 1920,
+        height: 1080,
+        availWidth: 1920,
+        availHeight: 1040,
+        colorDepth: 24,
+        pixelDepth: 24,
+      },
+      writable: true,
+      configurable: true,
+    });
   });
 
-  it("should contain navigation and screen information", async () => {
-    const {dumpBrowserInformation} = await import("./utils.client");
-    const dump = dumpBrowserInformation();
-    const parsed = JSON.parse(dump);
+  it("should return JSON string with browser information", () => {
+    const result = dumpBrowserInformation();
 
+    expect(typeof result).toBe("string");
+    expect(() => JSON.parse(result)).not.toThrow();
+
+    const parsed = JSON.parse(result);
     expect(parsed).toHaveProperty("navigationInformation");
     expect(parsed).toHaveProperty("screenInformation");
   });
 
-  it("should include core navigator properties in the dump", async () => {
-    const {dumpBrowserInformation} = await import("./utils.client");
-    const dump = dumpBrowserInformation();
-    const parsed = JSON.parse(dump);
+  it("should include navigator information in dump", () => {
+    const result = dumpBrowserInformation();
+    const parsed = JSON.parse(result);
 
-    // Test only properties that are reliably serialized in all environments
-    expect(parsed.navigationInformation).toHaveProperty("userAgent");
-    expect(parsed.navigationInformation).toHaveProperty("language");
-    expect(parsed.navigationInformation).toHaveProperty("languages");
-    expect(parsed.navigationInformation).toHaveProperty("cookieEnabled");
-    expect(parsed.navigationInformation).toHaveProperty("hardwareConcurrency");
-    // maxTouchPoints and doNotTrack may not be serialized in test environments
+    expect(parsed.navigationInformation).toEqual({
+      userAgent: "Mozilla/5.0 (Test Browser)",
+      language: "en-US",
+      languages: ["en-US", "en"],
+      cookieEnabled: true,
+      doNotTrack: null,
+      hardwareConcurrency: 8,
+      maxTouchPoints: 0,
+    });
   });
 
-  it("should include all screen properties in the dump", async () => {
-    const {dumpBrowserInformation} = await import("./utils.client");
-    const dump = dumpBrowserInformation();
-    const parsed = JSON.parse(dump);
+  it("should include screen information in dump", () => {
+    const result = dumpBrowserInformation();
+    const parsed = JSON.parse(result);
 
-    expect(parsed.screenInformation).toHaveProperty("width");
-    expect(parsed.screenInformation).toHaveProperty("height");
-    expect(parsed.screenInformation).toHaveProperty("availWidth");
-    expect(parsed.screenInformation).toHaveProperty("availHeight");
-    expect(parsed.screenInformation).toHaveProperty("colorDepth");
-    expect(parsed.screenInformation).toHaveProperty("pixelDepth");
+    expect(parsed.screenInformation).toEqual({
+      width: 1920,
+      height: 1080,
+      availWidth: 1920,
+      availHeight: 1040,
+      colorDepth: 24,
+      pixelDepth: 24,
+    });
+  });
+
+  it("should return readonly string", () => {
+    const result = dumpBrowserInformation();
+
+    // Strings are primitives and immutable by nature in JavaScript
+    expect(typeof result).toBe("string");
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("should handle complete browser information dump", () => {
+    const result = dumpBrowserInformation();
+    const parsed = JSON.parse(result);
+
+    // Verify structure completeness
+    expect(Object.keys(parsed)).toHaveLength(2);
+    expect(Object.keys(parsed.navigationInformation)).toHaveLength(7);
+    expect(Object.keys(parsed.screenInformation)).toHaveLength(6);
   });
 });
