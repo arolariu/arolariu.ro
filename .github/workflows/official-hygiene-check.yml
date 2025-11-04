@@ -32,7 +32,7 @@ jobs:
       changed-files: ${{ steps.detect.outputs.changed-files }}
       changed-files-count: ${{ steps.detect.outputs.changed-files-count }}
     steps:
-      - name: 🛫 Checkout repository
+      - name: 🛫 Checking out the repository...
         uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Full history for accurate diff analysis
@@ -45,7 +45,7 @@ jobs:
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
           install-node-dependencies: 'true'
 
-      - name: 🔎 Detect changes
+      - name: 🔎 Detecting changes...
         id: detect
         uses: actions/github-script@v8
         env:
@@ -72,19 +72,19 @@ jobs:
       format-needed: ${{ steps.check.outputs.format-needed }}
       files-needing-format: ${{ steps.check.outputs.files-needing-format }}
     steps:
-      - name: 🛫 Checkout
+      - name: 🛫 Checking out the repository...
         uses: actions/checkout@v5
         with:
           fetch-depth: 1
           ref: ${{ env.HEAD_REF }}
 
-      - name: 📦 Setup workspace
+      - name: 📦 Setting up the workspace...
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
-      - name: 🎨 Check formatting
+      - name: 🎨 Checking the formatting...
         id: check
         run: ./.github/scripts/hygiene/check-format.sh
 
@@ -98,19 +98,19 @@ jobs:
       lint-passed: ${{ steps.lint.outputs.lint-passed }}
       lint-output: ${{ steps.lint.outputs.lint-output }}
     steps:
-      - name: 🛫 Checkout
+      - name: 🛫 Checking out the repository...
         uses: actions/checkout@v5
         with:
           fetch-depth: 1
           ref: ${{ env.HEAD_REF }}
 
-      - name: 📦 Setup workspace
+      - name: 📦 Setting up the workspace...
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
-      - name: 🔍 Run ESLint
+      - name: 🔍 Checking the linting...
         id: lint
         run: ./.github/scripts/hygiene/check-lint.sh
 
@@ -121,19 +121,19 @@ jobs:
     needs: setup
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     steps:
-      - name: 🛫 Checkout
+      - name: 🛫 Checking out the repository...
         uses: actions/checkout@v5
         with:
           fetch-depth: 1
           ref: ${{ env.HEAD_REF }}
 
-      - name: 📦 Setup workspace
+      - name: 📦 Setting up the workspace...
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
-      - name: 🧪 Run unit tests
+      - name: 🧪 Running unit tests...
         id: test
         run: ./.github/scripts/hygiene/check-unit-tests.sh
 
@@ -160,19 +160,19 @@ jobs:
       churn: ${{ steps.extra-stats.outputs.churn }}
       net-change: ${{ steps.extra-stats.outputs.net-change }}
     steps:
-      - name: 🛫 Checkout
+      - name: 🛫 Checking out the repository...
         uses: actions/checkout@v5
         with:
           fetch-depth: 0 # Full history for bundle comparison
           ref: ${{ env.HEAD_REF }}
 
-      - name: 📦 Setup workspace
+      - name: 📦 Setting up the workspace...
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
-      - name: 📊 Compute statistics
+      - name: 📊 Computing statistics...
         id: stats
         uses: actions/github-script@v8
         env:
@@ -199,12 +199,12 @@ jobs:
     needs: [setup, format, lint, test, stats]
     if: always()
     steps:
-      - name: 🛫 Checkout
+      - name: 🛫 Checking out the repository...
         uses: actions/checkout@v5
         with:
           fetch-depth: 1
 
-      - name: 📦 Setup workspace
+      - name: 📦 Setting up the workspace...
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
