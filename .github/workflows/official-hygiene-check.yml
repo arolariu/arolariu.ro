@@ -43,7 +43,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
-          install-node-dependencies: 'false' # Scripts dir will install its own deps
+          install-node-dependencies: 'true'
 
       - name: 🔎 Detect changes
         id: detect
