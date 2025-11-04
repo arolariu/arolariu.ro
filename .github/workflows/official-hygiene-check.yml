@@ -42,7 +42,7 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-setup'
+          cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
           install-node-dependencies: 'false' # Scripts dir will install its own deps
 
       - name: 🔎 Detect changes
@@ -82,27 +82,14 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-format'
+          cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
       - name: 🎨 Run Prettier
         run: npm run format
 
       - name: 🔍 Check for changes
         id: check
-        run: |
-          DIFF="$(git diff --name-only || true)"
-          if [ -n "$DIFF" ]; then
-            echo "format-needed=true" >> "$GITHUB_OUTPUT"
-            echo "files-needing-format=$(echo "$DIFF" | paste -sd, -)" >> "$GITHUB_OUTPUT"
-            echo "❌ Files need formatting:"
-            echo "$DIFF"
-            git --no-pager diff
-            exit 1
-          else
-            echo "format-needed=false" >> "$GITHUB_OUTPUT"
-            echo "files-needing-format=" >> "$GITHUB_OUTPUT"
-            echo "✅ All files properly formatted"
-          fi
+        run: ./.github/scripts/hygiene/check-format.sh
 
   lint:
     name: 🔍 Lint Check
@@ -124,27 +111,11 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-lint'
+          cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
       - name: 🔍 Run ESLint
         id: lint
-        run: |
-          set +e
-          npm run lint > lint_output.txt 2>&1
-          EXIT_CODE=$?
-          if [ "$EXIT_CODE" -eq 0 ]; then
-            echo "lint-passed=true" >> "$GITHUB_OUTPUT"
-            echo "lint-output=All checks passed!" >> "$GITHUB_OUTPUT"
-          else
-            echo "lint-passed=false" >> "$GITHUB_OUTPUT"
-            TRUNCATED_CONTENT="$(head -c 50000 lint_output.txt)"
-            {
-              echo "lint-output<<EOF"
-              echo "$TRUNCATED_CONTENT"
-              echo "EOF"
-            } >> "$GITHUB_OUTPUT"
-            exit 1
-          fi
+        run: ./.github/scripts/hygiene/check-lint.sh
 
   test:
     name: 🧪 Unit Tests
@@ -165,7 +136,7 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-test'
+          cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
       - name: 🧪 Run unit tests
         id: test
@@ -206,7 +177,7 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-stats'
+          cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
       - name: 📊 Compute statistics
         id: stats
@@ -224,71 +195,7 @@ jobs:
 
       - name: 📈 Extended diff metrics
         id: extra-stats
-        run: |
-          set -e
-          BASE_BRANCH="origin/main"
-          TARGET_REF="${{ env.HEAD_REF }}"
-
-          echo "Generating extended diff metrics vs $BASE_BRANCH...$TARGET_REF"
-          git diff --name-only "$BASE_BRANCH"..."$TARGET_REF" > changed_files.txt || true
-
-          if [ ! -s changed_files.txt ]; then
-            echo "No changed files for extended stats."
-            echo "top-ext-markdown=| Ext | Files |\n|-----|-------|\n" >> "$GITHUB_OUTPUT"
-            echo "top-dir-markdown=| Directory | Files |\n|-----------|-------|\n" >> "$GITHUB_OUTPUT"
-            echo "churn=0" >> "$GITHUB_OUTPUT"
-            echo "net-change=0" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # Compute churn & net-change
-          git diff --numstat "$BASE_BRANCH"..."$TARGET_REF" > numstat.txt || true
-          ADD=$(awk '{a+=$1} END {print a+0}' numstat.txt)
-          DEL=$(awk '{d+=$2} END {print d+0}' numstat.txt)
-          CHURN=$(( ADD + DEL ))
-          NET=$(( ADD - DEL ))
-
-          # Top extensions
-          awk -F. '{
-            if (NF==1) ext="(noext)";
-            else ext=$NF;
-            count[ext]++
-          } END {
-            for (e in count) print count[e], e
-          }' changed_files.txt | sort -nr | head -5 > top_ext.txt
-
-          # Top directories
-          awk -F/ '{
-            d=$1;
-            if (d=="." || d=="") d="(root)";
-            count[d]++
-          } END {
-            for (d in count) print count[d], d
-          }' changed_files.txt | sort -nr | head -5 > top_dir.txt
-
-          {
-            echo '| Ext | Files |'
-            echo '|-----|-------|'
-            awk '{print "| " $2 " | " $1 " |"}' top_ext.txt
-          } > top_ext.md
-
-          {
-            echo '| Directory | Files |'
-            echo '|-----------|-------|'
-            awk '{print "| " $2 " | " $1 " |"}' top_dir.txt
-          } > top_dir.md
-
-          {
-            echo "top-ext-markdown<<EOF"
-            cat top_ext.md
-            echo "EOF"
-            echo "top-dir-markdown<<EOF"
-            cat top_dir.md
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-          echo "churn=$CHURN" >> "$GITHUB_OUTPUT"
-          echo "net-change=$NET" >> "$GITHUB_OUTPUT"
+        run: ./.github/scripts/hygiene/compute-extra-stats.sh "origin/main" "${{ env.HEAD_REF }}"
 
   # ============================================================================
   # CONSOLIDATED SUMMARY & REPORTING
@@ -308,7 +215,7 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-summary'
+          cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
           install-node-dependencies: 'false'
 
       - name: 💬 Post hygiene comment
