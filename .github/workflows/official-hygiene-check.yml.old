@@ -1,4 +1,4 @@
-name: "Code Hygiene Check"
+name: "official-hygiene-check"
 
 permissions:
   contents: read
@@ -14,39 +14,36 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "24"
   COMMIT_SHA: ${{ github.sha }}
   BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'origin/main' }}
   HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
-  # ============================================================================
-  # SETUP & CHANGE DETECTION
-  # ============================================================================
   setup:
-    name: 🧩 Setup & Change Detection
+    name: 🧩 Setup / Change Detection
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      has-changes: ${{ steps.detect.outputs.has-changes }}
-      changed-files: ${{ steps.detect.outputs.changed-files }}
-      changed-files-count: ${{ steps.detect.outputs.changed-files-count }}
+      has-changes: ${{ steps.detect-changes.outputs.has-changes }}
+      changed-files: ${{ steps.detect-changes.outputs.changed-files }}
+      changed-files-count: ${{ steps.detect-changes.outputs.changed-files-count }}
+      base-ref: ${{ env.BASE_REF }}
+      head-ref: ${{ env.HEAD_REF }}
     steps:
-      - name: 🛫 Checkout repository
+      - name: 🛫 Checkout repository (full for diff)
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0 # Full history for accurate diff analysis
+          fetch-depth: 0 # Always fetch full history for accurate diff analysis; avoids incomplete detection for large PRs
           ref: ${{ env.HEAD_REF }}
 
-      - name: 📦 Setup workspace
+      - name: 📦 Setup workspace (dependencies & cache)
         uses: ./.github/actions/setup-workspace
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-setup'
-          install-node-dependencies: 'false' # Scripts dir will install its own deps
+          node-version: '24'
+          cache-key-prefix: 'hygiene'
 
-      - name: 🔎 Detect changes
-        id: detect
+      - name: 🔎 Detect changed files (lightweight)
+        id: detect-changes
         uses: actions/github-script@v8
         env:
           BASE_REF: ${{ env.BASE_REF }}
@@ -54,25 +51,26 @@ jobs:
           CHECK_MODE: "detect"
         with:
           script: |
+            // Install dependencies required by the script
             const { execSync } = require('child_process');
             execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
+
+            // Import and execute the unified hygiene check script in detect mode
             const {default: runHygieneCheck} = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheck.ts');
             await runHygieneCheck();
 
-  # ============================================================================
-  # PARALLEL QUALITY CHECKS
-  # ============================================================================
   format:
-    name: 🎨 Format Check
+    name: 🎨 Format
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: setup
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     outputs:
-      format-needed: ${{ steps.check.outputs.format-needed }}
-      files-needing-format: ${{ steps.check.outputs.files-needing-format }}
+      format-needed: ${{ steps.detect-format.outputs.format-needed }}
+      files-needing-format: ${{ steps.detect-format.outputs.files-needing-format }}
+      file-count: ${{ steps.detect-format.outputs.file-count }}
     steps:
-      - name: 🛫 Checkout
+      - name: 🛫 Checkout (shallow)
         uses: actions/checkout@v5
         with:
           fetch-depth: 1
@@ -81,40 +79,49 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-format'
+          node-version: '24'
+          cache-key-prefix: 'hygiene'
 
-      - name: 🎨 Run Prettier
-        run: npm run format
-
-      - name: 🔍 Check for changes
-        id: check
+      - name: 🎨 Run Prettier (enforced)
         run: |
+          echo "Running formatter (validation-only expectation: repo should already be formatted)..."
+          npm run format
+
+      - name: 🔍 Detect formatting diff
+        id: detect-format
+        run: |
+          set -e
           DIFF="$(git diff --name-only || true)"
           if [ -n "$DIFF" ]; then
             echo "format-needed=true" >> "$GITHUB_OUTPUT"
             echo "files-needing-format=$(echo "$DIFF" | paste -sd, -)" >> "$GITHUB_OUTPUT"
-            echo "❌ Files need formatting:"
+            echo "file-count=$(echo "$DIFF" | grep -c '^' || echo 0)" >> "$GITHUB_OUTPUT"
+            echo "Unformatted files detected:"
             echo "$DIFF"
-            git --no-pager diff
-            exit 1
           else
             echo "format-needed=false" >> "$GITHUB_OUTPUT"
             echo "files-needing-format=" >> "$GITHUB_OUTPUT"
-            echo "✅ All files properly formatted"
+            echo "file-count=0" >> "$GITHUB_OUTPUT"
+            echo "Repository is properly formatted."
           fi
 
+      - name: ❌ Fail if formatting needed
+        if: steps.detect-format.outputs.format-needed == 'true'
+        run: |
+          echo "::error::Unformatted files detected. Run 'npm run format' locally and commit the changes."
+          exit 1
+
   lint:
-    name: 🔍 Lint Check
+    name: 🔍 Lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: setup
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     outputs:
-      lint-passed: ${{ steps.lint.outputs.lint-passed }}
-      lint-output: ${{ steps.lint.outputs.lint-output }}
+      lint-passed: ${{ steps.run-lint.outputs.lint-passed }}
+      lint-output: ${{ steps.run-lint.outputs.lint-output }}
     steps:
-      - name: 🛫 Checkout
+      - name: 🛫 Checkout (shallow)
         uses: actions/checkout@v5
         with:
           fetch-depth: 1
@@ -123,108 +130,93 @@ jobs:
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-lint'
+          node-version: '24'
+          cache-key-prefix: 'hygiene'
 
       - name: 🔍 Run ESLint
-        id: lint
+        id: run-lint
         run: |
           set +e
+          echo "Running ESLint..."
           npm run lint > lint_output.txt 2>&1
           EXIT_CODE=$?
           if [ "$EXIT_CODE" -eq 0 ]; then
             echo "lint-passed=true" >> "$GITHUB_OUTPUT"
-            echo "lint-output=All checks passed!" >> "$GITHUB_OUTPUT"
           else
             echo "lint-passed=false" >> "$GITHUB_OUTPUT"
+          fi
+          # Truncate to 50000 chars
             TRUNCATED_CONTENT="$(head -c 50000 lint_output.txt)"
             {
               echo "lint-output<<EOF"
               echo "$TRUNCATED_CONTENT"
               echo "EOF"
             } >> "$GITHUB_OUTPUT"
+          if [ "$EXIT_CODE" -ne 0 ]; then
+            echo "::error::Linting errors detected."
             exit 1
           fi
 
-  test:
-    name: 🧪 Unit Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: setup
-    if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
-    steps:
-      - name: 🛫 Checkout
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 1
-          ref: ${{ env.HEAD_REF }}
-
-      - name: 📦 Setup workspace
-        uses: ./.github/actions/setup-workspace
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-test'
-
-      - name: 🧪 Run unit tests
-        run: npm run test:unit
-
-  # ============================================================================
-  # CODE STATISTICS & BUNDLE SIZE ANALYSIS
-  # ============================================================================
-  stats:
-    name: 📊 Code Statistics & Bundle Analysis
+  code-summary:
+    name: 📊 Code Summary / Stats
     runs-on: ubuntu-latest
     timeout-minutes: 12
     needs: setup
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     outputs:
-      files-changed: ${{ steps.stats.outputs.files-changed }}
-      lines-added: ${{ steps.stats.outputs.lines-added }}
-      lines-deleted: ${{ steps.stats.outputs.lines-deleted }}
-      files-changed-vs-prev: ${{ steps.stats.outputs.files-changed-vs-prev }}
-      lines-added-vs-prev: ${{ steps.stats.outputs.lines-added-vs-prev }}
-      lines-deleted-vs-prev: ${{ steps.stats.outputs.lines-deleted-vs-prev }}
-      is-first-commit: ${{ steps.stats.outputs.is-first-commit }}
-      bundle-size-markdown: ${{ steps.stats.outputs.bundle-size-markdown }}
+      files-changed: ${{ steps.check-stats.outputs.files-changed }}
+      lines-added: ${{ steps.check-stats.outputs.lines-added }}
+      lines-deleted: ${{ steps.check-stats.outputs.lines-deleted }}
+      has-changes: ${{ steps.check-stats.outputs.has-changes }}
+      bundle-size-markdown: ${{ steps.check-stats.outputs.bundle-size-markdown }}
+      files-changed-vs-prev: ${{ steps.check-stats.outputs['files-changed-vs-prev'] }}
+      lines-added-vs-prev: ${{ steps.check-stats.outputs['lines-added-vs-prev'] }}
+      lines-deleted-vs-prev: ${{ steps.check-stats.outputs['lines-deleted-vs-prev'] }}
+      is-first-commit: ${{ steps.check-stats.outputs['is-first-commit'] }}
       top-ext-markdown: ${{ steps.extra-stats.outputs.top-ext-markdown }}
       top-dir-markdown: ${{ steps.extra-stats.outputs.top-dir-markdown }}
       churn: ${{ steps.extra-stats.outputs.churn }}
       net-change: ${{ steps.extra-stats.outputs.net-change }}
     steps:
-      - name: 🛫 Checkout
+      - name: 🛫 Checkout (full for diff & bundle compare)
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0 # Full history for bundle comparison
+          fetch-depth: 0
           ref: ${{ env.HEAD_REF }}
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-stats'
+          node-version: '24'
+          cache-key-prefix: 'hygiene'
 
-      - name: 📊 Compute statistics
-        id: stats
+      - name: 📊 Compute statistics (git diff + bundle sizes)
+        id: check-stats
         uses: actions/github-script@v8
         env:
           CHECK_MODE: "stats"
           HEAD_REF: ${{ env.HEAD_REF }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
           script: |
+            // Install dependencies required by the script
             const { execSync } = require('child_process');
             execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
+
+            // Import and execute the unified hygiene check script in stats mode
             const {default: runHygieneCheck} = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheck.ts');
             await runHygieneCheck();
 
-      - name: 📈 Extended diff metrics
+      - name: 📈 Extended diff impact metrics
         id: extra-stats
         run: |
           set -e
+          # Use origin/main as base
           BASE_BRANCH="origin/main"
-          TARGET_REF="${{ env.HEAD_REF }}"
+          TARGET_REF="${HEAD_REF:-HEAD}"
 
           echo "Generating extended diff metrics vs $BASE_BRANCH...$TARGET_REF"
+
           git diff --name-only "$BASE_BRANCH"..."$TARGET_REF" > changed_files.txt || true
 
           if [ ! -s changed_files.txt ]; then
@@ -239,9 +231,9 @@ jobs:
           # Compute churn & net-change
           git diff --numstat "$BASE_BRANCH"..."$TARGET_REF" > numstat.txt || true
           ADD=$(awk '{a+=$1} END {print a+0}' numstat.txt)
-          DEL=$(awk '{d+=$2} END {print d+0}' numstat.txt)
-          CHURN=$(( ADD + DEL ))
-          NET=$(( ADD - DEL ))
+            DEL=$(awk '{d+=$2} END {print d+0}' numstat.txt)
+          CHURN=$(( (ADD + DEL) ))
+          NET=$(( (ADD - DEL) ))
 
           # Top extensions
           awk -F. '{
@@ -252,7 +244,7 @@ jobs:
             for (e in count) print count[e], e
           }' changed_files.txt | sort -nr | head -5 > top_ext.txt
 
-          # Top directories
+          # Top directories (first path segment)
           awk -F/ '{
             d=$1;
             if (d=="." || d=="") d="(root)";
@@ -285,72 +277,69 @@ jobs:
           echo "churn=$CHURN" >> "$GITHUB_OUTPUT"
           echo "net-change=$NET" >> "$GITHUB_OUTPUT"
 
-  # ============================================================================
-  # CONSOLIDATED SUMMARY & REPORTING
-  # ============================================================================
   summary:
-    name: 📋 Summary & PR Comment
+    name: 📋 Consolidated Hygiene Summary
     runs-on: ubuntu-latest
-    needs: [setup, format, lint, test, stats]
+    needs: [setup, format, lint, code-summary]
     if: always()
     steps:
-      - name: 🛫 Checkout
+      - name: 🛫 Checkout (summary context)
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 1
 
-      - name: 📦 Setup workspace
+      - name: 📦 Setup workspace (no deps)
         uses: ./.github/actions/setup-workspace
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache-key-prefix: 'hygiene-summary'
+          node-version: '24'
           install-node-dependencies: 'false'
+          cache-key-prefix: 'hygiene'
 
-      - name: 💬 Post hygiene comment
+      - name: 💬 Post consolidated hygiene comment
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v8
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Job results
-          STATS_RESULT: ${{ needs.stats.result }}
-          FORMATTING_RESULT: ${{ needs.format.result == 'success' && 'success' || 'failure' }}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          # Status derivations
+          STATS_RESULT: ${{ needs.code-summary.result }}
+          FORMATTING_RESULT: ${{ needs.format.outputs.format-needed == 'true' && 'failure' || 'success' }}
           LINTING_RESULT: ${{ needs.lint.result }}
-          # Core statistics from stats job
-          FILES_CHANGED: ${{ needs.stats.outputs.files-changed }}
-          LINES_ADDED: ${{ needs.stats.outputs.lines-added }}
-          LINES_DELETED: ${{ needs.stats.outputs.lines-deleted }}
-          FILES_CHANGED_VS_PREV: ${{ needs.stats.outputs.files-changed-vs-prev }}
-          LINES_ADDED_VS_PREV: ${{ needs.stats.outputs.lines-added-vs-prev }}
-          LINES_DELETED_VS_PREV: ${{ needs.stats.outputs.lines-deleted-vs-prev }}
-          IS_FIRST_COMMIT: ${{ needs.stats.outputs.is-first-commit }}
-          BUNDLE_SIZE_MARKDOWN: ${{ needs.stats.outputs.bundle-size-markdown }}
-          # Extended metrics
-          TOP_EXTENSION_TABLE: ${{ needs.stats.outputs.top-ext-markdown }}
-          TOP_DIRECTORY_TABLE: ${{ needs.stats.outputs.top-dir-markdown }}
-          CHURN: ${{ needs.stats.outputs.churn }}
-          NET_CHANGE: ${{ needs.stats.outputs.net-change }}
           # Formatting
           FORMAT_NEEDED: ${{ needs.format.outputs.format-needed }}
           FILES_NEEDING_FORMAT: ${{ needs.format.outputs.files-needing-format }}
           # Linting
           LINT_PASSED: ${{ needs.lint.outputs.lint-passed }}
           LINT_OUTPUT: ${{ needs.lint.outputs.lint-output }}
-          # Workflow context
-          CHECK_MODE: "comment"
+          # Core stats
+          FILES_CHANGED: ${{ needs.code-summary.outputs.files-changed }}
+          LINES_ADDED: ${{ needs.code-summary.outputs.lines-added }}
+          LINES_DELETED: ${{ needs.code-summary.outputs.lines-deleted }}
+          FILES_CHANGED_VS_PREV: ${{ needs.code-summary.outputs['files-changed-vs-prev'] }}
+          LINES_ADDED_VS_PREV: ${{ needs.code-summary.outputs['lines-added-vs-prev'] }}
+          LINES_DELETED_VS_PREV: ${{ needs.code-summary.outputs['lines-deleted-vs-prev'] }}
+          IS_FIRST_COMMIT: ${{ needs.code-summary.outputs['is-first-commit'] }}
+          BUNDLE_SIZE_MARKDOWN: ${{ needs.code-summary.outputs.bundle-size-markdown }}
+          # Extended stats
+          TOP_EXTENSION_TABLE: ${{ needs.code-summary.outputs.top-ext-markdown }}
+          TOP_DIRECTORY_TABLE: ${{ needs.code-summary.outputs.top-dir-markdown }}
+          CHURN: ${{ needs.code-summary.outputs.churn }}
+          NET_CHANGE: ${{ needs.code-summary.outputs.net-change }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          CHECK_MODE: "comment"
         with:
           script: |
+            // Install dependencies required by the script
             const { execSync } = require('child_process');
             execSync('cd .github/scripts && npm ci', { stdio: 'inherit' });
+
+            // Import and execute the unified hygiene check script in comment mode
             const {default: runHygieneCheck} = await import('${{ github.workspace }}/.github/scripts/src/runHygieneCheck.ts');
             await runHygieneCheck();
 
-      - name: ✅ Success check
-        if: needs.format.outputs.format-needed == 'false' && needs.lint.outputs.lint-passed == 'true' && needs.test.result == 'success'
-        run: echo "🎉 All hygiene checks passed!"
+      - name: ✅ All hygiene checks passed
+        if: needs.format.outputs.format-needed == 'false' && needs.lint.outputs.lint-passed == 'true'
+        run: echo "🎉 All code hygiene checks passed successfully!"
 
-      - name: ❌ Failure check
-        if: needs.format.outputs.format-needed == 'true' || needs.lint.outputs.lint-passed == 'false' || needs.test.result != 'success'
+      - name: ❌ Fail workflow (format or lint failed)
+        if: needs.format.outputs.format-needed == 'true' || needs.lint.outputs.lint-passed == 'false'
         run: |
-          echo "::error::Code hygiene checks failed. See PR comment for details."
+          echo "::error::Code hygiene checks failed (format or lint issues). See consolidated comment for details."
           exit 1
