@@ -106,12 +106,4 @@ beforeEach(() => {
       dispatchEvent: vi.fn(),
     })),
   });
-
-  // Mock SvelteKit $app/environment
-  vi.mock("$app/environment", () => ({
-    browser: true,
-    building: false,
-    dev: true,
-    version: "test",
-  }));
 });
