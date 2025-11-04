@@ -30,6 +30,13 @@
         "command": "npm run storybook",
         "cwd": "packages/components"
       }
+    },
+    "test:unit": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo 'No unit tests configured for components yet'",
+        "cwd": "packages/components"
+      }
     }
   },
   "tags": [
