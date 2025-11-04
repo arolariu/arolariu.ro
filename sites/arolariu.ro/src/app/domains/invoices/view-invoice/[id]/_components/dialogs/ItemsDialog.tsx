@@ -1,6 +1,6 @@
 "use client";
 
-import {useCallback} from "react";
+import {useCallback, useState} from "react";
 import {usePaginationWithSearch} from "@/hooks";
 import {Invoice, Product, ProductCategory} from "@/types/invoices";
 import {
@@ -20,7 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from "@arolariu/components";
-import {useState} from "react";
 import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 
@@ -68,6 +67,11 @@ export default function ItemsDialog(): React.JSX.Element {
     };
     setEditableItems((prev) => [...prev, newItem]);
   }, [setEditableItems]);
+
+  const handleDeleteItem = useCallback((item: Product) => {
+    const newItems = editableItems.filter((i) => i.rawName !== item.rawName);
+    setEditableItems(newItems);
+  }, [editableItems, setEditableItems]);
 
   const handleValueChange = useCallback((e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const {name, value} = e.target;
@@ -200,10 +204,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       <Button
                         variant='ghost'
                         size='icon'
-                        onClick={() => {
-                          const newItems = editableItems.filter((i) => i.rawName !== item.rawName);
-                          setEditableItems(newItems);
-                        }}>
+                        onClick={() => handleDeleteItem(item)}>
                         <TbTrash className='h-4 w-4 text-red-500' />
                       </Button>
                     </TableCell>

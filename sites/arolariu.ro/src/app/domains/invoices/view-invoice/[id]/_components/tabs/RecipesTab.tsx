@@ -35,17 +35,17 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
 
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: recipes, initialPageSize: 4});
 
-  const handleNextPage = () => {
+  const handleNextPage = useCallback(() => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
-  };
+  }, [currentPage, totalPages, setCurrentPage]);
 
-  const handlePreviousPage = () => {
+  const handlePreviousPage = useCallback(() => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
-  };
+  }, [currentPage, setCurrentPage]);
 
   const handleGenerateRecipe = useCallback(() => {
     // TODO: Implement AI recipe generation

@@ -495,13 +495,12 @@ const sdk = new NodeSDK({
  *
  * This should be called early in the application lifecycle, typically in the
  * Next.js instrumentation hook (`instrumentation.ts`) before any other code runs.
- * @throws {Error} If SDK initialization fails
  * @remarks
  * - Starts automatic instrumentation for HTTP, fetch, and other Node.js APIs
  * - Initializes trace and metric exporters
  * - Sets up periodic metric export (every 60 seconds)
  * - Configures batch span processing for efficiency
- * @throws Will log error to console but not throw if initialization fails
+ * @throws {Error} Will log error to console if initialization fails
  * @example
  * // In instrumentation.ts
  * import { startTelemetry } from '@/lib/telemetry';
@@ -527,14 +526,13 @@ export function startTelemetry(): void {
  *
  * Flushes any pending telemetry data and cleanly terminates exporters.
  * This ensures no data loss when the application terminates.
- * @throws {Error} If shutdown fails or times out
  * @remarks
  * - Flushes all pending spans and metrics
  * - Closes connections to OTLP endpoints
  * - Stops all instrumentation
  * - Should be called before process exit
  * @returns Promise that resolves when shutdown is complete
- * @throws Will log error to console but not throw if shutdown fails
+ * @throws {Error} Will log error to console if shutdown fails or times out
  * @example
  * // Manual shutdown
  * import { stopTelemetry } from '@/lib/telemetry';
@@ -567,12 +565,14 @@ export async function stopTelemetry(): Promise<void> {
 // eslint-disable-next-line n/no-process-exit -- Required for graceful shutdown on SIGTERM
 process.on("SIGTERM", async () => {
   await stopTelemetry();
+  // eslint-disable-next-line n/no-process-exit -- Required for graceful shutdown on SIGTERM
   process.exit(0);
 });
 
 // eslint-disable-next-line n/no-process-exit -- Required for graceful shutdown on SIGINT
 process.on("SIGINT", async () => {
   await stopTelemetry();
+  // eslint-disable-next-line n/no-process-exit -- Required for graceful shutdown on SIGINT
   process.exit(0);
 });
 
@@ -813,10 +813,9 @@ export function getMeter(name = "arolariu-website"): Meter {
 /**
  * Executes a function within a traced span with automatic lifecycle management.
  *
- * This is the recommended way to create spans for async operations. It handles:
- * - Span creation and context propagation
- * - Automatic success/error status setting
- * - Exception recording
+ * This is the recommended way to create spans for async operations. It handles
+ * span creation with context propagation, automatic success/error status setting,
+ * and exception recording.
  * @throws {Error} Rethrows any error from the wrapped function after recording
  * - Span cleanup and end timing
  * @template T - Return type of the function
