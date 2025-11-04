@@ -12,7 +12,13 @@
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "test": "npm run test:unit",
+    "test:unit": "npm run test:vitest",
+    "test:vitest": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "*",
@@ -21,12 +27,15 @@
     "@tailwindcss/forms": "*",
     "@tailwindcss/typography": "*",
     "@tailwindcss/vite": "*",
+    "@testing-library/svelte": "*",
+    "@types/node": "*",
     "svelte": "*",
     "svelte-adapter-azure-swa": "*",
     "svelte-check": "*",
     "svelte-pdf": "*",
     "tailwindcss": "*",
     "typescript": "*",
-    "vite": "*"
+    "vite": "*",
+    "vitest": "*"
   }
 }
