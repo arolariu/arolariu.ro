@@ -3,6 +3,7 @@
  * Tests the GET handler that returns CV data in JSON Resume format
  */
 
+import type {RequestEvent} from "@sveltejs/kit";
 import {describe, expect, it, vi} from "vitest";
 import {GET} from "./+server";
 
@@ -21,7 +22,7 @@ vi.mock("@/data/json", () => ({
 
 describe("CV JSON API Endpoint", () => {
   // Mock RequestEvent - the GET handler doesn't use it, but it's required by the type
-  const mockEvent = {} as any;
+  const mockEvent = {} as RequestEvent;
 
   describe("GET /rest/json", () => {
     it("should return JSON response with CV data", async () => {
