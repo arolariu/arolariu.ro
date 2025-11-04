@@ -152,6 +152,8 @@ jobs:
     timeout-minutes: 15
     needs: setup
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
+    outputs:
+      test-result: ${{ steps.test.outputs.result }}
     steps:
       - name: 🛫 Checkout
         uses: actions/checkout@v5
@@ -166,7 +168,10 @@ jobs:
           cache-key-prefix: 'hygiene-test'
 
       - name: 🧪 Run unit tests
-        run: npm run test:unit
+        id: test
+        run: |
+          npm run test:unit
+          echo "result=success" >> "$GITHUB_OUTPUT"
 
   # ============================================================================
   # CODE STATISTICS & BUNDLE SIZE ANALYSIS
