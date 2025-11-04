@@ -1,5 +1,6 @@
 "use client";
 
+import {useCallback} from "react";
 import {usePaginationWithSearch} from "@/hooks";
 import type {Recipe} from "@/types/invoices";
 import {
@@ -46,13 +47,13 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
     }
   };
 
-  const handleGenerateRecipe = () => {
+  const handleGenerateRecipe = useCallback(() => {
     // TODO: Implement AI recipe generation
-  };
+  }, []);
 
-  const handleCreateFirstRecipe = () => {
+  const handleCreateFirstRecipe = useCallback(() => {
     openAddDialog();
-  };
+  }, [openAddDialog]);
 
   return (
     <motion.div

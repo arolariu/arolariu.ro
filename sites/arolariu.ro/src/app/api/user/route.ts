@@ -24,7 +24,7 @@ const authenticatedUserCounter = createCounter("user.authenticated.requests", "T
 const requestDurationHistogram = createHistogram("api.user.duration", "Request duration in milliseconds", "ms");
 
 /**
- * The GET handler for the user route.
+ * Handles GET requests to retrieve user information.
  * Returns user information for both authenticated (Clerk) and guest users.
  *
  * For authenticated users:

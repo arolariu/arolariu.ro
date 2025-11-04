@@ -1,3 +1,4 @@
+import {useCallback} from "react";
 import {useUserInformation} from "@/hooks";
 import type {Invoice} from "@/types/invoices";
 import {
@@ -32,18 +33,18 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
   const {userInformation} = useUserInformation();
 
   // Placeholder handlers for features not yet implemented
-  const handleManageSharing = () => {
+  const handleManageSharing = useCallback(() => {
     // TODO: Implement manage sharing dialog
     open();
-  };
+  }, [open]);
 
-  const handleRemoveAccess = () => {
+  const handleRemoveAccess = useCallback(() => {
     // TODO: Implement remove access functionality for specific user
-  };
+  }, []);
 
-  const handleMarkPrivate = () => {
+  const handleMarkPrivate = useCallback(() => {
     // TODO: Implement mark as private functionality
-  };
+  }, []);
 
   return (
     <Card className='group transition-shadow duration-300 hover:shadow-md'>

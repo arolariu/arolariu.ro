@@ -10,16 +10,13 @@
  * NOTE: This file exceeds max-lines due to comprehensive telemetry utilities.
  * Splitting would reduce cohesion of related observability functions.
  * See RFC 1001 for architectural justification.
- *
  * @module telemetry
  * @see {@link https://opentelemetry.io/docs/languages/js/getting-started/nodejs/}
  * @see {@link https://opentelemetry.io/docs/specs/otel/}
- *
  * @example
  * // Initialize in instrumentation.ts
  * import { startTelemetry } from '@/lib/telemetry';
  * startTelemetry();
- *
  * @example
  * // Use in application code
  * import { withSpan, createCounter, logWithTrace } from '@/lib/telemetry';
@@ -317,7 +314,7 @@ export interface ErrorAttributes {
  * Union type of all standard attribute interfaces for type-safe attribute setting.
  * @remarks
  * Use this for operations that require semantic attributes.
- * For custom attributes, use `Record<string, string | number | boolean>`.
+ * For custom attributes, use `Record&lt;string, string | number | boolean>`.
  */
 export type SemanticAttributes = Partial<
   HttpAttributes & NextJsAttributes & DatabaseAttributes & CacheAttributes & AuthAttributes & ErrorAttributes
@@ -428,7 +425,6 @@ export interface LogEntry {
  * @remarks
  * Set via `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable.
  * Falls back to localhost for local development.
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/protocol/exporter/}
  */
 const otlpEndpoint = process.env["OTEL_EXPORTER_OTLP_ENDPOINT"] ?? "http://localhost:4318";
@@ -495,10 +491,11 @@ const sdk = new NodeSDK({
 // #region SDK Lifecycle Management
 
 /**
- * Initialize and start the OpenTelemetry SDK.
+ * Initializes and starts the OpenTelemetry SDK.
  *
  * This should be called early in the application lifecycle, typically in the
  * Next.js instrumentation hook (`instrumentation.ts`) before any other code runs.
+ * @throws {Error} If SDK initialization fails
  * @remarks
  * - Starts automatic instrumentation for HTTP, fetch, and other Node.js APIs
  * - Initializes trace and metric exporters
@@ -514,7 +511,6 @@ const sdk = new NodeSDK({
  *     startTelemetry();
  *   }
  * }
- *
  * @see {@link https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation}
  */
 export function startTelemetry(): void {
@@ -527,10 +523,11 @@ export function startTelemetry(): void {
 }
 
 /**
- * Gracefully shut down the OpenTelemetry SDK.
+ * Gracefully shuts down the OpenTelemetry SDK.
  *
  * Flushes any pending telemetry data and cleanly terminates exporters.
  * This ensures no data loss when the application terminates.
+ * @throws {Error} If shutdown fails or times out
  * @remarks
  * - Flushes all pending spans and metrics
  * - Closes connections to OTLP endpoints
@@ -567,11 +564,13 @@ export async function stopTelemetry(): Promise<void> {
  * - SIGTERM: Graceful termination signal (e.g., from Docker, Kubernetes)
  * - SIGINT: Interrupt signal (e.g., Ctrl+C in terminal)
  */
+// eslint-disable-next-line n/no-process-exit -- Required for graceful shutdown on SIGTERM
 process.on("SIGTERM", async () => {
   await stopTelemetry();
   process.exit(0);
 });
 
+// eslint-disable-next-line n/no-process-exit -- Required for graceful shutdown on SIGINT
 process.on("SIGINT", async () => {
   await stopTelemetry();
   process.exit(0);
@@ -582,10 +581,10 @@ process.on("SIGINT", async () => {
 // #region Semantic Attribute Helpers
 
 /**
- * Create HTTP semantic attributes for server operations.
- * @param method HTTP method
- * @param statusCode HTTP status code
- * @param options Additional HTTP attributes
+ * Creates HTTP semantic attributes for server operations.
+ * @param method The HTTP method (GET, POST, etc.)
+ * @param statusCode The HTTP response status code
+ * @param options Additional HTTP-related attributes
  * @returns Type-safe HTTP attributes
  * @example
  * const attrs = createHttpServerAttributes('GET', 200, {
@@ -609,10 +608,10 @@ export function createHttpServerAttributes(
 }
 
 /**
- * Create HTTP semantic attributes for client operations.
- * @param method HTTP method
- * @param url Full URL or target
- * @param statusCode Optional HTTP status code
+ * Creates HTTP semantic attributes for client operations.
+ * @param method The HTTP method being used
+ * @param url The full URL being requested
+ * @param statusCode The HTTP response status code (optional)
  * @returns Type-safe HTTP attributes
  * @example
  * const attrs = createHttpClientAttributes('POST', 'https://api.example.com/users', 201);
@@ -769,21 +768,17 @@ export function createErrorAttributes(error: Error | unknown, handled: boolean):
  *
  * Tracers are used to create spans that represent units of work or operations.
  * Each tracer is identified by a name, typically matching the service or library name.
- *
  * @param name Tracer name, typically the service or library name. Defaults to "arolariu-website"
  * @returns Tracer instance for creating spans
- *
  * @remarks
  * - Tracer names should follow semantic conventions
  * - Use the same tracer name consistently within a module or service
  * - Tracer instances are cached by the OpenTelemetry API
- *
  * @example
  * const tracer = getTracer('my-service');
  * const span = tracer.startSpan('operation.name');
  * // ... do work
  * span.end();
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/trace/api/#tracer}
  */
 export function getTracer(name = "arolariu-website"): Tracer {
@@ -795,20 +790,16 @@ export function getTracer(name = "arolariu-website"): Tracer {
  *
  * Meters are used to create metric instruments (counters, histograms, etc.)
  * that record quantitative measurements about application behavior.
- *
  * @param name Meter name, typically the service or library name. Defaults to "arolariu-website"
  * @returns Meter instance for creating metric instruments
- *
  * @remarks
  * - Meter names should follow semantic conventions
  * - Use the same meter name consistently within a module or service
  * - Meter instances are cached by the OpenTelemetry API
- *
  * @example
  * const meter = getMeter('my-service');
  * const counter = meter.createCounter('requests.total');
  * counter.add(1, { method: 'GET' });
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/metrics/api/#meter}
  */
 export function getMeter(name = "arolariu-website"): Meter {
@@ -820,28 +811,25 @@ export function getMeter(name = "arolariu-website"): Meter {
 // #region Span Utilities
 
 /**
- * Execute a function within a traced span with automatic lifecycle management.
+ * Executes a function within a traced span with automatic lifecycle management.
  *
  * This is the recommended way to create spans for async operations. It handles:
  * - Span creation and context propagation
  * - Automatic success/error status setting
  * - Exception recording
+ * @throws {Error} Rethrows any error from the wrapped function after recording
  * - Span cleanup and end timing
- *
  * @template T - Return type of the function
  * @param spanName Name of the span following semantic conventions (e.g., "http.server.request", "db.query")
  * @param fn Async function to execute within the span. Receives the span for adding attributes/events
  * @param attributes Optional type-safe attributes to set on span creation
  * @returns Promise resolving to the function's return value
- *
  * @throws Re-throws any error from the function after recording it in the span
- *
  * @remarks
  * - Span name must follow the `SpanOperationType` pattern for type safety
  * - Use dot notation for hierarchical naming (e.g., "http.client.request")
  * - Add high-cardinality data as events, not attributes
  * - The span is available in the callback for adding dynamic attributes
- *
  * @example
  * // API route with HTTP attributes
  * const result = await withSpan('api.user.get', async (span) => {
@@ -851,7 +839,6 @@ export function getMeter(name = "arolariu-website"): Meter {
  *   'http.status_code': 200,
  *   'next.render_context': 'api',
  * });
- *
  * @example
  * // Database operation with semantic attributes
  * const data = await withSpan(
@@ -868,7 +855,6 @@ export function getMeter(name = "arolariu-website"): Meter {
  *     'db.collection': 'users',
  *   }
  * );
- *
  * @example
  * // Next.js Server Component rendering
  * const content = await withSpan('component.UserProfile', async (span) => {
@@ -877,7 +863,6 @@ export function getMeter(name = "arolariu-website"): Meter {
  *   'next.render_context': 'server',
  *   'next.server_components': true,
  * });
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/trace/api/#span}
  * @see {@link https://opentelemetry.io/docs/specs/semconv/}
  */
@@ -910,16 +895,13 @@ export async function withSpan<T>(
  *
  * Events represent discrete occurrences at a specific point in time during a span.
  * They're useful for recording timestamps of significant operations or milestones.
- *
  * @param name Event name (e.g., "cache.hit", "validation.complete")
  * @param attributes Optional attributes providing event context
- *
  * @remarks
  * - Events are timestamped automatically
  * - Use events for high-cardinality data (unlike span attributes)
  * - If no span is active, this is a no-op (safe to call)
  * - Events appear in trace visualization tools
- *
  * @example
  * addSpanEvent('cache.hit', { cache_key: 'user:123' });
  * addSpanEvent('validation.start');
@@ -938,15 +920,12 @@ export function addSpanEvent(name: string, attributes?: TelemetryAttributes): vo
  *
  * Attributes provide contextual information about the operation represented by the span.
  * They should be low-cardinality values suitable for grouping and filtering.
- *
  * @param attributes Key-value pairs to attach to the span
- *
  * @remarks
  * - Use semantic conventions where possible
  * - Avoid high-cardinality values (user IDs, timestamps, request IDs)
  * - Attributes can be used for filtering and grouping in observability tools
  * - If no span is active, this is a no-op (safe to call)
- *
  * @example
  * setSpanAttributes({
  *   'http.method': 'POST',
@@ -968,16 +947,13 @@ export function setSpanAttributes(attributes: TelemetryAttributes): void {
  *
  * Marks the span as failed and records exception details for debugging.
  * This provides visibility into failures in distributed tracing tools.
- *
  * @param error Error object or unknown value to record
  * @param message Optional custom error message. Defaults to error.message
- *
  * @remarks
  * - Sets span status to ERROR
  * - Records exception with stack trace
  * - If no span is active, this is a no-op (safe to call)
  * - Error is not thrown by this function; handle that separately
- *
  * @example
  * try {
  *   await riskyOperation();
@@ -985,7 +961,6 @@ export function setSpanAttributes(attributes: TelemetryAttributes): void {
  *   recordSpanError(error, 'Failed to process user data');
  *   // Handle error...
  * }
- *
  * @example
  * // In a span callback
  * await withSpan('process.data', async (span) => {
@@ -996,7 +971,6 @@ export function setSpanAttributes(attributes: TelemetryAttributes): void {
  *     throw error;
  *   }
  * });
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/trace/api/#record-exception}
  */
 export function recordSpanError(error: Error | unknown, message?: string): void {
@@ -1019,19 +993,16 @@ export function recordSpanError(error: Error | unknown, message?: string): void 
  *
  * Counters are monotonically increasing values used to track totals.
  * They can only go up (or reset to zero). Use for counting events or operations.
- *
  * @param name Metric name following semantic conventions (e.g., "http.server.requests")
  * @param description Human-readable description of what the metric measures
  * @param unit Optional unit of measurement (e.g., "1", "requests", "bytes")
  * @returns Counter instrument for recording values with type-safe attributes
- *
  * @remarks
  * - Counter values should only increase
  * - Use add() with positive values only
  * - Include units in the name (e.g., "requests", "bytes", "errors")
  * - Keep attribute cardinality low to avoid metric explosion
  * - Counters are aggregated as sums in backends
- *
  * @example
  * const requestCounter = createCounter(
  *   'http.server.requests',
@@ -1045,7 +1016,6 @@ export function recordSpanError(error: Error | unknown, message?: string): void 
  *   'http.status_code': 200,
  *   'next.render_context': 'api',
  * });
- *
  * @example
  * // User action counter
  * const userActionCounter = createCounter('user.actions', 'Total user actions');
@@ -1053,7 +1023,6 @@ export function recordSpanError(error: Error | unknown, message?: string): void 
  *   'user.authenticated': true,
  *   'user.role': 'admin',
  * });
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/metrics/api/#counter}
  * @see {@link https://opentelemetry.io/docs/specs/semconv/general/metrics/}
  */
@@ -1067,19 +1036,16 @@ export function createCounter(name: MetricName, description?: string, unit?: str
  *
  * Histograms record distributions of values (e.g., latency, request size).
  * They track count, sum, min, max, and bucketed distributions.
- *
  * @param name Metric name following semantic conventions (e.g., "http.server.duration")
  * @param description Human-readable description of what the metric measures
  * @param unit Optional unit of measurement (e.g., "ms", "bytes", "s")
  * @returns Histogram instrument for recording values with type-safe attributes
- *
  * @remarks
  * - Use for measurements that vary over time
  * - Ideal for latency, duration, size metrics
  * - Backends typically aggregate as percentiles (p50, p95, p99)
  * - Include units in the name (e.g., "duration.ms", "size.bytes")
  * - Values can be any non-negative number
- *
  * @example
  * const durationHistogram = createHistogram(
  *   'http.server.duration',
@@ -1096,7 +1062,6 @@ export function createCounter(name: MetricName, description?: string, unit?: str
  *   'http.route': '/api/users',
  *   'http.status_code': 201,
  * });
- *
  * @example
  * // Page load time histogram
  * const pageLoadHistogram = createHistogram(
@@ -1108,7 +1073,6 @@ export function createCounter(name: MetricName, description?: string, unit?: str
  *   'next.render_context': 'server',
  *   'next.page_type': 'dynamic',
  * });
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/metrics/api/#histogram}
  * @see {@link https://opentelemetry.io/docs/specs/semconv/http/http-metrics/}
  */
@@ -1122,7 +1086,6 @@ export function createHistogram(name: MetricName, description?: string, unit?: s
  *
  * Up-down counters track values that can increase or decrease.
  * Use for gauges like active connections, queue depth, or resource utilization.
- *
  * @param name Metric name following semantic conventions (e.g., "http.server.active_requests")
  * @param description Human-readable description of what the metric measures
  * @param unit Optional unit of measurement (e.g., "1", "connections", "bytes")
@@ -1174,12 +1137,10 @@ export function createUpDownCounter(name: MetricName, description?: string, unit
  *
  * Provides JSON-formatted logging with automatic trace context injection.
  * This enables correlation between logs and traces in observability platforms.
- *
  * @param level Log level (debug, info, warn, error)
  * @param message Human-readable log message
  * @param attributes Additional structured data to include in the log entry
  * @param context Optional rendering context (server, client, edge, api)
- *
  * @remarks
  * - Automatically includes trace ID and span ID when within an active span
  * - Outputs JSON to stdout/stderr for structured log ingestion
@@ -1187,14 +1148,12 @@ export function createUpDownCounter(name: MetricName, description?: string, unit
  * - Use attributes for structured data instead of string interpolation
  * - Logs are written to appropriate console stream based on level
  * - Debug logs are only emitted in development mode
- *
  * @example
  * // Basic logging with context
  * logWithTrace('info', 'User logged in', {
  *   'user.authenticated': true,
  *   'auth.method': 'clerk',
  * }, 'api');
- *
  * @example
  * // API route logging
  * await withSpan('api.user.create', async (span) => {
@@ -1216,14 +1175,12 @@ export function createUpDownCounter(name: MetricName, description?: string, unit
  *     }, 'api');
  *   }
  * });
- *
  * @example
  * // Server component logging
  * logWithTrace('debug', 'Rendering user profile', {
  *   'next.render_context': 'server',
  *   'next.server_components': true,
  * }, 'server');
- *
  * @example
  * // Output format
  * {
@@ -1236,7 +1193,6 @@ export function createUpDownCounter(name: MetricName, description?: string, unit
  *   "user.authenticated": true,
  *   "auth.method": "clerk"
  * }
- *
  * @see {@link https://opentelemetry.io/docs/specs/otel/logs/}
  * @see {@link https://www.w3.org/TR/trace-context/}
  */

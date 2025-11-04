@@ -52,7 +52,8 @@ export default function TableDisplay(): React.JSX.Element | null {
   const handleRename = useCallback(
     (scan: {id: string; name: string}) => (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      // todo: add dialog spawn.
+      // TODO: add dialog spawn to actually call renameScan
+      renameScan(scan.id, scan.name);
     },
     [renameScan],
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import {useCallback} from "react";
 import {usePaginationWithSearch} from "@/hooks";
 import {Invoice, Product, ProductCategory} from "@/types/invoices";
 import {
@@ -43,12 +44,12 @@ export default function ItemsDialog(): React.JSX.Element {
     items: editableItems,
   });
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = useCallback(() => {
     // TODO: Implement save functionality
     close();
-  };
+  }, [close]);
 
-  const handleAddNewItem = () => {
+  const handleAddNewItem = useCallback(() => {
     const newItem: Product = {
       rawName: "",
       genericName: "",
@@ -66,9 +67,9 @@ export default function ItemsDialog(): React.JSX.Element {
       price: 0,
     };
     setEditableItems((prev) => [...prev, newItem]);
-  };
+  }, [setEditableItems]);
 
-  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+  const handleValueChange = useCallback((e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const {name, value} = e.target;
 
     // Validate index is within bounds
@@ -109,7 +110,7 @@ export default function ItemsDialog(): React.JSX.Element {
 
       return [...updatedItems.slice(0, index), updatedItem, ...updatedItems.slice(index + 1)];
     });
-  };
+  }, [editableItems, setEditableItems]);
 
   return (
     <Dialog
