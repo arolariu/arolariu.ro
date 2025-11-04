@@ -48,6 +48,13 @@
         "cwd": "sites/arolariu.ro"
       }
     },
+    "test:unit": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run test:vitest",
+        "cwd": "sites/arolariu.ro"
+      }
+    },
     "storybook": {
       "executor": "nx:run-commands",
       "options": {

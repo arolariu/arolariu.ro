@@ -49,6 +49,13 @@
         "cwd": "sites/cv.arolariu.ro"
       }
     },
+    "test:unit": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo 'No unit tests configured for cv site yet'",
+        "cwd": "sites/cv.arolariu.ro"
+      }
+    },
     "format": {
       "executor": "nx:run-commands",
       "options": {
