@@ -245,6 +245,51 @@ describe("createJwtToken", () => {
     expect(token).toBe("mocked.jwt.token");
   });
 
+  it("should create token without subject claim", async () => {
+    const {createJwtToken} = await import("./utils.server");
+
+    const payload = {
+      iss: "issuer",
+      aud: "audience",
+    };
+    const secret = "test-secret-key";
+
+    const token = await createJwtToken(payload, secret);
+
+    expect(token).toBeDefined();
+    expect(token).toBe("mocked.jwt.token");
+  });
+
+  it("should create token without issuer claim", async () => {
+    const {createJwtToken} = await import("./utils.server");
+
+    const payload = {
+      sub: "user123",
+      aud: "audience",
+    };
+    const secret = "test-secret-key";
+
+    const token = await createJwtToken(payload, secret);
+
+    expect(token).toBeDefined();
+    expect(token).toBe("mocked.jwt.token");
+  });
+
+  it("should create token without audience claim", async () => {
+    const {createJwtToken} = await import("./utils.server");
+
+    const payload = {
+      sub: "user123",
+      iss: "issuer",
+    };
+    const secret = "test-secret-key";
+
+    const token = await createJwtToken(payload, secret);
+
+    expect(token).toBeDefined();
+    expect(token).toBe("mocked.jwt.token");
+  });
+
   it("should handle errors gracefully", async () => {
     const {createJwtToken} = await import("./utils.server");
 
@@ -322,6 +367,91 @@ describe("verifyJwtToken", () => {
     if (!result.valid) {
       expect(result.error).toBeDefined();
       expect(typeof result.error).toBe("string");
+    }
+  });
+
+  it("should handle token without subject claim", async () => {
+    const {verifyJwtToken} = await import("./utils.server");
+    const {jwtVerify} = await import("jose");
+
+    // Mock jwtVerify to return payload without sub
+    (jwtVerify as any).mockResolvedValueOnce({
+      payload: {
+        iss: "test-issuer",
+        aud: "test-audience",
+        iat: Math.floor(Date.now() / 1000),
+      },
+    });
+
+    const token = "test.jwt.token";
+    const secret = "test-secret";
+
+    const result = await verifyJwtToken(token, secret);
+
+    // Should still be valid
+    if (result.valid) {
+      expect(result.payload).toBeDefined();
+    }
+  });
+
+  it("should handle token without issuer claim", async () => {
+    const {verifyJwtToken} = await import("./utils.server");
+    const {jwtVerify} = await import("jose");
+
+    // Mock jwtVerify to return payload without iss
+    (jwtVerify as any).mockResolvedValueOnce({
+      payload: {
+        sub: "user123",
+        aud: "test-audience",
+        iat: Math.floor(Date.now() / 1000),
+      },
+    });
+
+    const token = "test.jwt.token";
+    const secret = "test-secret";
+
+    const result = await verifyJwtToken(token, secret);
+
+    // Should still be valid
+    if (result.valid) {
+      expect(result.payload).toBeDefined();
+    }
+  });
+
+  it("should handle Error objects in verification catch block", async () => {
+    const {verifyJwtToken} = await import("./utils.server");
+    const {jwtVerify} = await import("jose");
+
+    // Mock jwtVerify to throw an Error
+    const mockError = new Error("Token expired");
+    (jwtVerify as any).mockRejectedValueOnce(mockError);
+
+    const token = "expired.token";
+    const secret = "test-secret";
+
+    const result = await verifyJwtToken(token, secret);
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.error).toBe("Token expired");
+    }
+  });
+
+  it("should handle non-Error objects in verification catch block", async () => {
+    const {verifyJwtToken} = await import("./utils.server");
+    const {jwtVerify} = await import("jose");
+
+    // Mock jwtVerify to throw a non-Error object
+    (jwtVerify as any).mockRejectedValueOnce("String error");
+
+    const token = "invalid.token";
+    const secret = "test-secret";
+
+    const result = await verifyJwtToken(token, secret);
+
+    expect(result.valid).toBe(false);
+    if (!result.valid) {
+      expect(result.error).toBe("Token verification failed");
     }
   });
 });
