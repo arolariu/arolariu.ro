@@ -7,6 +7,10 @@
  * - Structured logging with trace correlation
  * - OTLP HTTP exporters for traces and metrics
  *
+ * NOTE: This file exceeds max-lines due to comprehensive telemetry utilities.
+ * Splitting would reduce cohesion of related observability functions.
+ * See RFC 1001 for architectural justification.
+ *
  * @module telemetry
  * @see {@link https://opentelemetry.io/docs/languages/js/getting-started/nodejs/}
  * @see {@link https://opentelemetry.io/docs/specs/otel/}
@@ -29,6 +33,8 @@
  *   return await doWork();
  * });
  */
+
+/* eslint-disable max-lines -- Comprehensive telemetry module with related observability utilities. See RFC 1001. Splitting would reduce cohesion. */
 
 // #region Imports
 
@@ -577,9 +583,9 @@ process.on("SIGINT", async () => {
 
 /**
  * Create HTTP semantic attributes for server operations.
- * @param method - HTTP method
- * @param statusCode - HTTP status code
- * @param options - Additional HTTP attributes
+ * @param method HTTP method
+ * @param statusCode HTTP status code
+ * @param options Additional HTTP attributes
  * @returns Type-safe HTTP attributes
  * @example
  * const attrs = createHttpServerAttributes('GET', 200, {
@@ -604,9 +610,9 @@ export function createHttpServerAttributes(
 
 /**
  * Create HTTP semantic attributes for client operations.
- * @param method - HTTP method
- * @param url - Full URL or target
- * @param statusCode - Optional HTTP status code
+ * @param method HTTP method
+ * @param url Full URL or target
+ * @param statusCode Optional HTTP status code
  * @returns Type-safe HTTP attributes
  * @example
  * const attrs = createHttpClientAttributes('POST', 'https://api.example.com/users', 201);
@@ -626,8 +632,8 @@ export function createHttpClientAttributes(method: HttpMethod, url: string, stat
 
 /**
  * Create Next.js rendering semantic attributes.
- * @param renderContext - Rendering context (server, client, edge, api)
- * @param options - Additional Next.js attributes
+ * @param renderContext Rendering context (server, client, edge, api)
+ * @param options Additional Next.js attributes
  * @returns Type-safe Next.js attributes
  * @example
  * const attrs = createNextJsAttributes('server', {
@@ -658,9 +664,9 @@ export function createNextJsAttributes(
 
 /**
  * Create database operation semantic attributes.
- * @param system - Database system (postgresql, mongodb, redis, etc.)
- * @param operation - Database operation (SELECT, INSERT, UPDATE, etc.)
- * @param options - Additional database attributes
+ * @param system Database system (postgresql, mongodb, redis, etc.)
+ * @param operation Database operation (SELECT, INSERT, UPDATE, etc.)
+ * @param options Additional database attributes
  * @returns Type-safe database attributes
  * @example
  * const attrs = createDatabaseAttributes('postgresql', 'SELECT', {
@@ -684,10 +690,10 @@ export function createDatabaseAttributes(
 
 /**
  * Create cache operation semantic attributes.
- * @param system - Cache system (redis, memory, nextjs, etc.)
- * @param operation - Cache operation (get, set, delete, clear)
- * @param hit - Whether the operation was a cache hit
- * @param key - Optional cache key (sanitized)
+ * @param system Cache system (redis, memory, nextjs, etc.)
+ * @param operation Cache operation (get, set, delete, clear)
+ * @param hit Whether the operation was a cache hit
+ * @param key Optional cache key (sanitized)
  * @returns Type-safe cache attributes
  * @example
  * const attrs = createCacheAttributes('redis', 'get', true, 'user:profile');
@@ -708,8 +714,8 @@ export function createCacheAttributes(
 
 /**
  * Create authentication semantic attributes.
- * @param authenticated - Whether the user is authenticated
- * @param options - Additional auth attributes
+ * @param authenticated Whether the user is authenticated
+ * @param options Additional auth attributes
  * @returns Type-safe authentication attributes
  * @example
  * const attrs = createAuthAttributes(true, {
@@ -732,8 +738,8 @@ export function createAuthAttributes(
 
 /**
  * Create error semantic attributes from an error object.
- * @param error - Error object or unknown value
- * @param handled - Whether the error was handled
+ * @param error Error object or unknown value
+ * @param handled Whether the error was handled
  * @returns Type-safe error attributes
  * @example
  * try {
@@ -764,7 +770,7 @@ export function createErrorAttributes(error: Error | unknown, handled: boolean):
  * Tracers are used to create spans that represent units of work or operations.
  * Each tracer is identified by a name, typically matching the service or library name.
  *
- * @param name - Tracer name, typically the service or library name. Defaults to "arolariu-website"
+ * @param name Tracer name, typically the service or library name. Defaults to "arolariu-website"
  * @returns Tracer instance for creating spans
  *
  * @remarks
@@ -790,7 +796,7 @@ export function getTracer(name = "arolariu-website"): Tracer {
  * Meters are used to create metric instruments (counters, histograms, etc.)
  * that record quantitative measurements about application behavior.
  *
- * @param name - Meter name, typically the service or library name. Defaults to "arolariu-website"
+ * @param name Meter name, typically the service or library name. Defaults to "arolariu-website"
  * @returns Meter instance for creating metric instruments
  *
  * @remarks
@@ -823,9 +829,9 @@ export function getMeter(name = "arolariu-website"): Meter {
  * - Span cleanup and end timing
  *
  * @template T - Return type of the function
- * @param spanName - Name of the span following semantic conventions (e.g., "http.server.request", "db.query")
- * @param fn - Async function to execute within the span. Receives the span for adding attributes/events
- * @param attributes - Optional type-safe attributes to set on span creation
+ * @param spanName Name of the span following semantic conventions (e.g., "http.server.request", "db.query")
+ * @param fn Async function to execute within the span. Receives the span for adding attributes/events
+ * @param attributes Optional type-safe attributes to set on span creation
  * @returns Promise resolving to the function's return value
  *
  * @throws Re-throws any error from the function after recording it in the span
@@ -905,8 +911,8 @@ export async function withSpan<T>(
  * Events represent discrete occurrences at a specific point in time during a span.
  * They're useful for recording timestamps of significant operations or milestones.
  *
- * @param name - Event name (e.g., "cache.hit", "validation.complete")
- * @param attributes - Optional attributes providing event context
+ * @param name Event name (e.g., "cache.hit", "validation.complete")
+ * @param attributes Optional attributes providing event context
  *
  * @remarks
  * - Events are timestamped automatically
@@ -933,7 +939,7 @@ export function addSpanEvent(name: string, attributes?: TelemetryAttributes): vo
  * Attributes provide contextual information about the operation represented by the span.
  * They should be low-cardinality values suitable for grouping and filtering.
  *
- * @param attributes - Key-value pairs to attach to the span
+ * @param attributes Key-value pairs to attach to the span
  *
  * @remarks
  * - Use semantic conventions where possible
@@ -963,8 +969,8 @@ export function setSpanAttributes(attributes: TelemetryAttributes): void {
  * Marks the span as failed and records exception details for debugging.
  * This provides visibility into failures in distributed tracing tools.
  *
- * @param error - Error object or unknown value to record
- * @param message - Optional custom error message. Defaults to error.message
+ * @param error Error object or unknown value to record
+ * @param message Optional custom error message. Defaults to error.message
  *
  * @remarks
  * - Sets span status to ERROR
@@ -1014,9 +1020,9 @@ export function recordSpanError(error: Error | unknown, message?: string): void 
  * Counters are monotonically increasing values used to track totals.
  * They can only go up (or reset to zero). Use for counting events or operations.
  *
- * @param name - Metric name following semantic conventions (e.g., "http.server.requests")
- * @param description - Human-readable description of what the metric measures
- * @param unit - Optional unit of measurement (e.g., "1", "requests", "bytes")
+ * @param name Metric name following semantic conventions (e.g., "http.server.requests")
+ * @param description Human-readable description of what the metric measures
+ * @param unit Optional unit of measurement (e.g., "1", "requests", "bytes")
  * @returns Counter instrument for recording values with type-safe attributes
  *
  * @remarks
@@ -1062,9 +1068,9 @@ export function createCounter(name: MetricName, description?: string, unit?: str
  * Histograms record distributions of values (e.g., latency, request size).
  * They track count, sum, min, max, and bucketed distributions.
  *
- * @param name - Metric name following semantic conventions (e.g., "http.server.duration")
- * @param description - Human-readable description of what the metric measures
- * @param unit - Optional unit of measurement (e.g., "ms", "bytes", "s")
+ * @param name Metric name following semantic conventions (e.g., "http.server.duration")
+ * @param description Human-readable description of what the metric measures
+ * @param unit Optional unit of measurement (e.g., "ms", "bytes", "s")
  * @returns Histogram instrument for recording values with type-safe attributes
  *
  * @remarks
@@ -1117,9 +1123,9 @@ export function createHistogram(name: MetricName, description?: string, unit?: s
  * Up-down counters track values that can increase or decrease.
  * Use for gauges like active connections, queue depth, or resource utilization.
  *
- * @param name - Metric name following semantic conventions (e.g., "http.server.active_requests")
- * @param description - Human-readable description of what the metric measures
- * @param unit - Optional unit of measurement (e.g., "1", "connections", "bytes")
+ * @param name Metric name following semantic conventions (e.g., "http.server.active_requests")
+ * @param description Human-readable description of what the metric measures
+ * @param unit Optional unit of measurement (e.g., "1", "connections", "bytes")
  * @returns UpDownCounter instrument for recording values with type-safe attributes
  * @remarks
  * - Values can increase or decrease (unlike regular counters)
@@ -1169,10 +1175,10 @@ export function createUpDownCounter(name: MetricName, description?: string, unit
  * Provides JSON-formatted logging with automatic trace context injection.
  * This enables correlation between logs and traces in observability platforms.
  *
- * @param level - Log level (debug, info, warn, error)
- * @param message - Human-readable log message
- * @param attributes - Additional structured data to include in the log entry
- * @param context - Optional rendering context (server, client, edge, api)
+ * @param level Log level (debug, info, warn, error)
+ * @param message Human-readable log message
+ * @param attributes Additional structured data to include in the log entry
+ * @param context Optional rendering context (server, client, edge, api)
  *
  * @remarks
  * - Automatically includes trace ID and span ID when within an active span

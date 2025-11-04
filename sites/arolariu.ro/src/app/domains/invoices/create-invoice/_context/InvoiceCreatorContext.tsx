@@ -310,6 +310,7 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
    * <button onClick={processNextStep}>Submit All</button>
    * ```
    */
+  // eslint-disable-next-line sonarjs/cognitive-complexity -- Complex sequential workflow with proper error handling and user feedback. Refactoring would reduce readability.
   const processNextStep = useCallback(async () => {
     if (isProcessingRef.current) {
       return;
