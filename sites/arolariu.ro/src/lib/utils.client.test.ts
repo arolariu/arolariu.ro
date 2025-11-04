@@ -8,28 +8,36 @@ import {
 } from "./utils.client";
 
 describe("extractBase64FromBlob", () => {
-  it("should extract Base64 string from Blob", async () => {
-    const mockBase64 = "data:text/plain;base64,SGVsbG8gV29ybGQ=";
-    const mockBlob = new Blob(["Hello World"], {type: "text/plain"});
+  let mockReader: {
+    readAsDataURL: ReturnType<typeof vi.fn>;
+    addEventListener: ReturnType<typeof vi.fn>;
+    result: string;
+  };
 
-    // Mock FileReader implementation
-    const mockReader = {
+  beforeEach(() => {
+    // Create a reusable mock FileReader that will be configured in each test
+    mockReader = {
       readAsDataURL: vi.fn(),
       addEventListener: vi.fn((event, callback) => {
         if (event === "load") {
           // Simulate load event
           setTimeout(() => {
-            mockReader.result = mockBase64;
             callback();
           }, 0);
         }
       }),
-      result: mockBase64,
+      result: "",
     };
 
-    global.FileReader = vi.fn(function (this: any) {
+    global.FileReader = vi.fn(function (this: ReturnType<typeof vi.fn>) {
       return mockReader;
-    }) as any;
+    }) as unknown as typeof FileReader;
+  });
+
+  it("should extract Base64 string from Blob", async () => {
+    const mockBase64 = "data:text/plain;base64,SGVsbG8gV29ybGQ=";
+    const mockBlob = new Blob(["Hello World"], {type: "text/plain"});
+    mockReader.result = mockBase64;
 
     const result = await extractBase64FromBlob(mockBlob);
 
@@ -40,23 +48,7 @@ describe("extractBase64FromBlob", () => {
   it("should handle empty Blob", async () => {
     const mockBase64 = "data:application/octet-stream;base64,";
     const mockBlob = new Blob([], {type: "application/octet-stream"});
-
-    const mockReader = {
-      readAsDataURL: vi.fn(),
-      addEventListener: vi.fn((event, callback) => {
-        if (event === "load") {
-          setTimeout(() => {
-            mockReader.result = mockBase64;
-            callback();
-          }, 0);
-        }
-      }),
-      result: mockBase64,
-    };
-
-    global.FileReader = vi.fn(function (this: any) {
-      return mockReader;
-    }) as any;
+    mockReader.result = mockBase64;
 
     const result = await extractBase64FromBlob(mockBlob);
 
@@ -66,23 +58,7 @@ describe("extractBase64FromBlob", () => {
   it("should handle different MIME types", async () => {
     const mockBase64 = "data:image/png;base64,iVBORw0KGgo=";
     const mockBlob = new Blob(["fake-image-data"], {type: "image/png"});
-
-    const mockReader = {
-      readAsDataURL: vi.fn(),
-      addEventListener: vi.fn((event, callback) => {
-        if (event === "load") {
-          setTimeout(() => {
-            mockReader.result = mockBase64;
-            callback();
-          }, 0);
-        }
-      }),
-      result: mockBase64,
-    };
-
-    global.FileReader = vi.fn(function (this: any) {
-      return mockReader;
-    }) as any;
+    mockReader.result = mockBase64;
 
     const result = await extractBase64FromBlob(mockBlob);
 
