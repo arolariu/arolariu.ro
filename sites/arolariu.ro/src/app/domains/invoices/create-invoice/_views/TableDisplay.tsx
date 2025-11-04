@@ -179,9 +179,9 @@ export default function TableDisplay(): React.JSX.Element | null {
                 <TableCell className='font-medium'>{(currentPage - 1) * pageSize + index + 1}</TableCell>
                 <TableCell className='max-w-xs truncate font-medium'>
                   <div className='flex items-center gap-2'>
-                    {scan.isProcessing && (
+                    {scan.isProcessing ? (
                       <div className='h-4 w-4 animate-spin rounded-full border-2 border-purple-600 border-t-transparent' />
-                    )}
+                    ) : null}
                     <span>{scan.name}</span>
                   </div>
                 </TableCell>
@@ -273,7 +273,7 @@ export default function TableDisplay(): React.JSX.Element | null {
 
               {getVisiblePages().map((p, idx) =>
                 p === "..." ? (
-                  <PaginationItem key={`dots-${idx}`}>
+                  <PaginationItem key={`ellipsis-${idx < getVisiblePages().length / 2 ? 'start' : 'end'}`}>
                     <PaginationEllipsis />
                   </PaginationItem>
                 ) : (

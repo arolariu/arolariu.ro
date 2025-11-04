@@ -59,7 +59,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
         // Check authentication
         addSpanEvent("auth.check.start");
         const {getToken, userId} = await auth();
-        addSpanEvent("auth.check.complete", {authenticated: !!userId});
+        addSpanEvent("auth.check.complete", {authenticated: Boolean(userId)});
 
         // Authenticated user with Clerk
         if (userId) {
@@ -89,7 +89,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             };
 
             authSpan.setAttributes({
-              "user.has_token": !!token,
+              "user.has_token": Boolean(token),
               "response.status": 200,
             });
 

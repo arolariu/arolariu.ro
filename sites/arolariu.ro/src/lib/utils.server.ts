@@ -90,7 +90,7 @@ export async function createJwtToken(payload: Readonly<JWTPayload>, secret: Read
       recordSpanError(error, "Failed to create JWT token");
       const errorMessage = error instanceof Error ? error.message : "Failed to create JWT token";
       logWithTrace("error", "JWT token creation failed", {error: errorMessage}, "server");
-      throw new Error(errorMessage);
+      throw new Error(errorMessage, {cause: error});
     }
   });
 }
