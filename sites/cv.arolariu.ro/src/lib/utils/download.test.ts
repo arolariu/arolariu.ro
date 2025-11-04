@@ -94,10 +94,28 @@ describe("download utilities", () => {
 
     describe("error handling", () => {
       it("should return error when blob creation fails", () => {
-        // @ts-expect-error - mock Blob constructor to throw
-        globalThis.Blob = function () {
-          throw new Error("Blob creation failed");
-        };
+        // Mock Blob constructor to throw, but preserve Blob's interface
+        class BlobMock implements Blob {
+          readonly size: number = 0;
+          readonly type: string = "";
+          slice(): Blob {
+            throw new Error("Not implemented");
+          }
+          stream(): ReadableStream<Uint8Array> {
+            throw new Error("Not implemented");
+          }
+          text(): Promise<string> {
+            throw new Error("Not implemented");
+          }
+          arrayBuffer(): Promise<ArrayBuffer> {
+            throw new Error("Not implemented");
+          }
+          constructor(...args: unknown[]) {
+            throw new Error("Blob creation failed");
+          }
+        }
+        // @ts-expect-error - intentionally override global Blob for test
+        globalThis.Blob = BlobMock as unknown as typeof Blob;
 
         const result = downloadText("test", "test.txt");
 
