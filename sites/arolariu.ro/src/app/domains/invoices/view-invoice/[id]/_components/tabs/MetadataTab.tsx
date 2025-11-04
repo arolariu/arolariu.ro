@@ -123,7 +123,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
             <div className='py-8 text-center'>
               <p className='text-muted-foreground mb-4'>No metadata fields added yet</p>
               <Button
-                onClick={() => {}}
+                onClick={handleAddFirstMetadata}
                 variant='outline'>
                 <TbPlus className='mr-2 h-4 w-4' />
                 Add Your First Metadata Field

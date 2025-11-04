@@ -267,7 +267,7 @@ export default function ItemsDialog(): React.JSX.Element {
             onClick={close}>
             Cancel
           </Button>
-          <Button onClick={() => {}}>
+          <Button onClick={handleSaveChanges}>
             <TbDisc className='mr-2 h-4 w-4' />
             Save Changes
           </Button>

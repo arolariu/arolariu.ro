@@ -73,7 +73,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                   <Button
                     variant='ghost'
                     className='cursor-pointer'
-                    onClick={() => {}}
+                    onClick={handleGenerateRecipe}
                     size='sm'>
                     <TbConfetti className='mr-2 h-4 w-4' />
                     Generate
@@ -114,7 +114,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
             <div className='py-8 text-center'>
               <p className='text-muted-foreground mb-4'>No recipes available yet</p>
               <Button
-                onClick={() => {}}
+                onClick={handleCreateFirstRecipe}
                 variant='outline'
                 className='cursor-pointer'>
                 <TbPlus className='mr-2 h-4 w-4' />

@@ -32,8 +32,13 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
   const {userInformation} = useUserInformation();
 
   // Placeholder handlers for features not yet implemented
+  const handleManageSharing = () => {
+    // TODO: Implement manage sharing dialog
+    open();
+  };
+
   const handleRemoveAccess = () => {
-    // TODO: Implement remove access functionality
+    // TODO: Implement remove access functionality for specific user
   };
 
   const handleMarkPrivate = () => {
@@ -72,7 +77,7 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
                   <Button
                     variant='outline'
                     className='group ml-auto cursor-pointer'
-                    onClick={handleRemoveAccess}>
+                    onClick={handleManageSharing}>
                     <TbLockCog className='mr-2 h-4 w-4' />
                     <span>Manage Sharing</span>
                   </Button>
