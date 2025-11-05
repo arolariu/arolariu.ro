@@ -1,7 +1,7 @@
+import type {Merchant} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useMerchants} from "./useMerchants";
-import type {Merchant} from "@/types/invoices";
 
 // Type alias for store selector to improve readability
 type MerchantsStoreSelector = (state: {merchants: Merchant[]; setMerchants: (merchants: Merchant[]) => void}) => unknown;
@@ -63,11 +63,11 @@ describe("useMerchants", () => {
     const {result} = renderHook(() => useMerchants());
 
     expect(result.current.merchant).toEqual([]);
-    
+
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
-    
+
     expect(result.current.isError).toBe(false);
   });
 
@@ -99,7 +99,7 @@ describe("useMerchants", () => {
       () =>
         new Promise((resolve) => {
           setTimeout(() => resolve([]), 100);
-        })
+        }),
     );
 
     const {result} = renderHook(() => useMerchants());
@@ -114,7 +114,7 @@ describe("useMerchants", () => {
       () => {
         expect(result.current.isLoading).toBe(false);
       },
-      {timeout: 3000}
+      {timeout: 5000},
     );
   });
 

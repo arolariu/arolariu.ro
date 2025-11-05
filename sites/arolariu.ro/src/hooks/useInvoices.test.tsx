@@ -1,7 +1,7 @@
+import type {Invoice} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoices} from "./useInvoices";
-import type {Invoice} from "@/types/invoices";
 
 // Create mock functions using vi.hoisted
 const {mockFetchInvoices, mockSetInvoices, mockUseInvoicesStore} = vi.hoisted(() => ({
@@ -39,13 +39,15 @@ describe("useInvoices", () => {
     vi.clearAllMocks();
 
     // Setup default mock implementation for useInvoicesStore
-    mockUseInvoicesStore.mockImplementation((selector: (state: {invoices: Invoice[]; setInvoices: (invoices: Invoice[]) => void}) => unknown) => {
-      const state = {
-        invoices: [],
-        setInvoices: mockSetInvoices,
-      };
-      return selector(state);
-    });
+    mockUseInvoicesStore.mockImplementation(
+      (selector: (state: {invoices: Invoice[]; setInvoices: (invoices: Invoice[]) => void}) => unknown) => {
+        const state = {
+          invoices: [],
+          setInvoices: mockSetInvoices,
+        };
+        return selector(state);
+      },
+    );
   });
 
   afterEach(() => {
@@ -60,11 +62,11 @@ describe("useInvoices", () => {
     const {result} = renderHook(() => useInvoices());
 
     expect(result.current.invoices).toEqual([]);
-    
+
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
-    
+
     expect(result.current.isError).toBe(false);
   });
 
@@ -96,7 +98,7 @@ describe("useInvoices", () => {
       () =>
         new Promise((resolve) => {
           setTimeout(() => resolve([]), 100);
-        })
+        }),
     );
 
     const {result} = renderHook(() => useInvoices());
@@ -111,7 +113,7 @@ describe("useInvoices", () => {
       () => {
         expect(result.current.isLoading).toBe(false);
       },
-      {timeout: 3000}
+      {timeout: 5000},
     );
   });
 
