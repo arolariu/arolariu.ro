@@ -8,7 +8,7 @@ vi.mock("@/telemetry", () => ({
       setAttributes: vi.fn(),
       setStatus: vi.fn(),
       recordException: vi.fn(),
-    })
+    }),
   ),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
@@ -300,6 +300,44 @@ describe("createJwtToken", () => {
 
     const token = await createJwtToken(payload, secret);
     expect(token).toBeDefined();
+  });
+
+  it("should handle Error object in catch block", async () => {
+    // Import SignJWT from the mocked jose module
+    const {SignJWT} = await import("jose");
+
+    // Override the sign method to throw an Error
+    const originalSign = SignJWT.prototype.sign;
+    SignJWT.prototype.sign = vi.fn().mockRejectedValueOnce(new Error("Signing failed"));
+
+    const {createJwtToken} = await import("./utils.server");
+
+    const payload = {sub: "user123"};
+    const secret = "test-secret";
+
+    await expect(createJwtToken(payload, secret)).rejects.toThrow("Signing failed");
+
+    // Restore original method
+    SignJWT.prototype.sign = originalSign;
+  });
+
+  it("should handle non-Error object in catch block", async () => {
+    // Import SignJWT from the mocked jose module
+    const {SignJWT} = await import("jose");
+
+    // Override the sign method to throw a non-Error object
+    const originalSign = SignJWT.prototype.sign;
+    SignJWT.prototype.sign = vi.fn().mockRejectedValueOnce("String error message");
+
+    const {createJwtToken} = await import("./utils.server");
+
+    const payload = {sub: "user123"};
+    const secret = "test-secret";
+
+    await expect(createJwtToken(payload, secret)).rejects.toThrow("Failed to create JWT token");
+
+    // Restore original method
+    SignJWT.prototype.sign = originalSign;
   });
 });
 

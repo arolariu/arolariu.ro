@@ -1,7 +1,7 @@
-import {act, renderHook} from "@testing-library/react";
-import {beforeEach, describe, expect, it} from "vitest";
 import {InvoiceBuilder} from "@/data/mocks/invoice";
 import {MerchantBuilder} from "@/data/mocks/merchant";
+import {act, renderHook} from "@testing-library/react";
+import {beforeEach, describe, expect, it} from "vitest";
 import {useZustandStore} from "./stateStore";
 
 describe("useZustandStore", () => {
@@ -226,9 +226,9 @@ describe("useZustandStore", () => {
     it("should use devStore in test environment", () => {
       // In test environment, NODE_ENV is "test"
       expect(process.env.NODE_ENV).not.toBe("production");
-      
+
       const {result} = renderHook(() => useZustandStore());
-      
+
       // The store should work properly in test mode
       expect(result.current.invoices).toEqual([]);
       expect(typeof result.current.setInvoices).toBe("function");

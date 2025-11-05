@@ -94,27 +94,39 @@ describe("useInvoices", () => {
   });
 
   it("should set loading state during fetch", async () => {
-    mockFetchInvoices.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          setTimeout(() => resolve([]), 100);
-        }),
-    );
-
-    const {result} = renderHook(() => useInvoices());
-
-    // Initially should be loading
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(true);
+    // Use a controlled promise to test loading states
+    let resolveFunc: (value: never[]) => void;
+    const promise = new Promise<never[]>((resolve) => {
+      resolveFunc = resolve;
     });
 
-    // Eventually should finish loading
-    await waitFor(
-      () => {
-        expect(result.current.isLoading).toBe(false);
-      },
-      {timeout: 10000},
-    );
+    mockFetchInvoices.mockReturnValue(promise);
+
+    const {result, unmount} = renderHook(() => useInvoices());
+
+    try {
+      // Wait for loading to start
+      await waitFor(
+        () => {
+          expect(result.current.isLoading).toBe(true);
+        },
+        {timeout: 2000},
+      );
+
+      // Resolve the promise
+      resolveFunc!([]);
+
+      // Wait for loading to finish
+      await waitFor(
+        () => {
+          expect(result.current.isLoading).toBe(false);
+        },
+        {timeout: 2000},
+      );
+    } finally {
+      // Ensure cleanup
+      unmount();
+    }
   });
 
   it("should handle fetch error", async () => {
@@ -145,7 +157,7 @@ describe("useInvoices", () => {
     // Import dynamically to override the mock
     const indexModule = await import("./index");
     vi.spyOn(indexModule, "useUserInformation").mockReturnValue({
-      userInformation: null,
+      userInformation: null!,
       isLoading: true,
       isError: false,
     } as ReturnType<typeof indexModule.useUserInformation>);

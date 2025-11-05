@@ -22,7 +22,7 @@ describe("FontContext", () => {
   beforeEach(() => {
     // Mock localStorage
     localStorageMock = {};
-    global.localStorage = {
+    globalThis.localStorage = {
       getItem: vi.fn((key: string) => localStorageMock[key] ?? null),
       setItem: vi.fn((key: string, value: string) => {
         localStorageMock[key] = value;
@@ -167,6 +167,111 @@ describe("FontContext", () => {
         result.current.setFont("dyslexic");
       });
       expect(result.current.fontType).toBe("dyslexic");
+    });
+
+    it("should handle storage event with invalid font type", () => {
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      expect(result.current.fontType).toBe("normal");
+
+      // Simulate storage event with invalid font type
+      act(() => {
+        const storageEvent = new StorageEvent("storage", {
+          key: "selectedFont",
+          newValue: "invalid-font-type",
+        });
+        globalThis.dispatchEvent(storageEvent);
+      });
+
+      // Should remain normal since invalid type was provided
+      expect(result.current.fontType).toBe("normal");
+    });
+
+    it("should handle storage event with null value", () => {
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      // Simulate storage event with null value (ignored)
+      act(() => {
+        const storageEvent = new StorageEvent("storage", {
+          key: "selectedFont",
+          newValue: null,
+        });
+        globalThis.dispatchEvent(storageEvent);
+      });
+
+      // Should remain unchanged
+      expect(result.current.fontType).toBe("normal");
+    });
+
+    it("should handle storage event for different key", () => {
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      // Simulate storage event for a different key
+      act(() => {
+        const storageEvent = new StorageEvent("storage", {
+          key: "some-other-key",
+          newValue: "dyslexic",
+        });
+        globalThis.dispatchEvent(storageEvent);
+      });
+
+      // Should remain unchanged since it's a different key
+      expect(result.current.fontType).toBe("normal");
+    });
+
+    it("should preserve font-sans class when applying custom font", () => {
+      // Set document to have font-sans class
+      document.documentElement.className = "font-sans some-other-class";
+
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      // Should apply the custom font while preserving font-sans
+      expect(result.current.fontType).toBe("normal");
+      expect(document.documentElement.className).toContain("font-sans");
+    });
+
+    it("should preserve font-serif class when applying custom font", () => {
+      // Set document to have font-serif class
+      document.documentElement.className = "font-serif some-other-class";
+
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      renderHook(() => useFontContext(), {wrapper});
+
+      // Should preserve font-serif
+      expect(document.documentElement.className).toContain("font-serif");
+    });
+
+    it("should preserve font-mono class when applying custom font", () => {
+      // Set document to have font-mono class
+      document.documentElement.className = "font-mono some-other-class";
+
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      renderHook(() => useFontContext(), {wrapper});
+
+      // Should preserve font-mono
+      expect(document.documentElement.className).toContain("font-mono");
+    });
+
+    it("should remove custom font- classes when applying new font", () => {
+      // Set document to have custom font class
+      document.documentElement.className = "font-custom some-other-class";
+
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      renderHook(() => useFontContext(), {wrapper});
+
+      // Should not contain font-custom anymore
+      expect(document.documentElement.className).not.toContain("font-custom");
     });
   });
 

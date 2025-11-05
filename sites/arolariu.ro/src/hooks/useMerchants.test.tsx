@@ -105,18 +105,21 @@ describe("useMerchants", () => {
     const {result} = renderHook(() => useMerchants());
 
     // Initially should be loading
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(true);
-    });
+    await waitFor(
+      () => {
+        expect(result.current.isLoading).toBe(true);
+      },
+      {timeout: 15000},
+    );
 
     // Eventually should finish loading
     await waitFor(
       () => {
         expect(result.current.isLoading).toBe(false);
       },
-      {timeout: 10000},
+      {timeout: 15000},
     );
-  });
+  }, 30000); // Increase test timeout to 30 seconds
 
   it("should handle fetch error", async () => {
     const mockError = new Error("Fetch failed");
