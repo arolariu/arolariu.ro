@@ -1,6 +1,3 @@
-/**
- * @vitest-environment jsdom
- */
 import {act, renderHook} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {FontContextProvider, useFontContext} from "./FontContext";
@@ -138,7 +135,7 @@ describe("FontContext", () => {
     it("should not apply font class if already present", () => {
       // Set the font class to be already present
       document.documentElement.className = "caudex-font";
-      
+
       const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
 
       const {result} = renderHook(() => useFontContext(), {wrapper});
@@ -177,11 +174,11 @@ describe("FontContext", () => {
     it("should throw error when used outside provider", () => {
       // Suppress console.error for this test since we expect an error to be thrown
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      
+
       expect(() => {
         renderHook(() => useFontContext());
       }).toThrow("useFontContext must be used within a FontContextProvider");
-      
+
       consoleSpy.mockRestore();
     });
   });

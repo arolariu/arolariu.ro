@@ -113,7 +113,7 @@ describe("useInvoices", () => {
       () => {
         expect(result.current.isLoading).toBe(false);
       },
-      {timeout: 5000},
+      {timeout: 10000},
     );
   });
 

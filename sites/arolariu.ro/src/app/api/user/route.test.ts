@@ -1,6 +1,6 @@
+import type {UserInformation} from "@/types";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {GET} from "./route";
-import type {UserInformation} from "@/types";
 
 // Create hoisted mocks
 const {mockAuth, mockCurrentUser, mockCreateJwtToken, mockWithSpan} = vi.hoisted(() => ({
@@ -123,7 +123,7 @@ describe("GET /api/user", () => {
         role: "guest",
         userIdentifier: "00000000-0000-0000-0000-000000000000",
       }),
-      "mock-api-jwt-secret"
+      "mock-api-jwt-secret",
     );
   });
 
@@ -143,12 +143,12 @@ describe("GET /api/user", () => {
         iat: expect.any(Number),
         nbf: expect.any(Number),
       }),
-      "mock-api-jwt-secret"
+      "mock-api-jwt-secret",
     );
 
     const callArgs = mockCreateJwtToken.mock.calls[0]?.[0] as Record<string, unknown>;
-    const exp = callArgs.exp as number;
-    const iat = callArgs.iat as number;
+    const exp = callArgs["exp"] as number;
+    const iat = callArgs["iat"] as number;
 
     // Verify expiration is 1 hour (3600 seconds) after issued time
     expect(exp - iat).toBe(3600);
@@ -195,8 +195,6 @@ describe("GET /api/user", () => {
     });
   });
 
-
-
   it("should call telemetry functions for authenticated users", async () => {
     const mockUser = {id: "user-telemetry"};
     mockAuth.mockResolvedValue({
@@ -215,7 +213,7 @@ describe("GET /api/user", () => {
       expect.objectContaining({
         "service.name": "arolariu-website",
         component: "api",
-      })
+      }),
     );
   });
 
@@ -229,11 +227,7 @@ describe("GET /api/user", () => {
 
     await GET();
 
-    expect(mockWithSpan).toHaveBeenCalledWith(
-      "api.user.get",
-      expect.any(Function),
-      expect.any(Object)
-    );
+    expect(mockWithSpan).toHaveBeenCalledWith("api.user.get", expect.any(Function), expect.any(Object));
   });
 
   it("should handle undefined userId from auth", async () => {
