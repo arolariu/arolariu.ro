@@ -185,7 +185,10 @@ const websiteEslintConfig = defineConfig({
 const cvEslintConfig = defineConfig({
   name: "[@arolariu/cv]",
   files: ["sites/cv.arolariu.ro/**/*.ts"],
-  ignores: ["**/node_modules/**", "**/*.config.{js,ts}", "**/*.{test,spec,stories}.{ts,svelte,tsx}", "**/.svelte-kit/**"],
+  ignores: [
+    "**/{node_modules,.storybook,.svelte-kit,out,bin,scripts,__mocks__}/**", // dirs
+    "**/*.{test,config,spec,setup,stories}.{js,jsx,ts,tsx}", // files
+  ],
   languageOptions: {
     ecmaVersion: "latest",
     parser: tseslint.parser,

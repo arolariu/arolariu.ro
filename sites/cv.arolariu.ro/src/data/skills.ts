@@ -2,7 +2,6 @@ import type {Skill} from "@/types";
 
 type SkillAreas = Readonly<"Frontend" | "Backend" | "Tools & Technologies" | "Architecture & Design">;
 
-// eslint-disable-next-line functional/type-declaration-immutability -- broken, fix.
 type SkillStructure = Readonly<{
   title: Readonly<SkillAreas>;
   skills: ReadonlyArray<Skill>;

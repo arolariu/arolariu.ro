@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable */
+
 import * as React from "react";
 
 import {cn} from "@/lib/utilities";

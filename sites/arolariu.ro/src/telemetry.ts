@@ -314,7 +314,7 @@ export interface ErrorAttributes {
  * Union type of all standard attribute interfaces for type-safe attribute setting.
  * @remarks
  * Use this for operations that require semantic attributes.
- * For custom attributes, use `Record<string, string | number | boolean>`.
+ * For custom attributes, use a record of string keys and string, number, or boolean values.
  */
 export type SemanticAttributes = Partial<
   HttpAttributes & NextJsAttributes & DatabaseAttributes & CacheAttributes & AuthAttributes & ErrorAttributes

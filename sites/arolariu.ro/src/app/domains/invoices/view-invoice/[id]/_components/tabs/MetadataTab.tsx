@@ -1,6 +1,5 @@
 "use client";
 
-import {useCallback} from "react";
 import {
   Badge,
   Button,
