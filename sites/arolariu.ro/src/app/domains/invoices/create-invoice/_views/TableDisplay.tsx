@@ -52,7 +52,8 @@ export default function TableDisplay(): React.JSX.Element | null {
   const handleRename = useCallback(
     (scan: {id: string; name: string}) => (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      // TODO: add dialog spawn to actually call renameScan
+      // TODO: This is a placeholder. Currently, renameScan is called with the current name, so nothing is actually renamed.
+      // Implement dialog to get new name before calling renameScan.
       renameScan(scan.id, scan.name);
     },
     [renameScan],
@@ -272,22 +273,25 @@ export default function TableDisplay(): React.JSX.Element | null {
                 />
               </PaginationItem>
 
-              {getVisiblePages().map((p, idx) =>
-                p === "..." ? (
-                  <PaginationItem key={`ellipsis-${idx < getVisiblePages().length / 2 ? 'start' : 'end'}`}>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                ) : (
-                  <PaginationItem key={`page-${p}`}>
-                    <PaginationLink
-                      href='#'
-                      onClick={handlePageClick(p as number)}
-                      isActive={currentPage === p}>
-                      {p}
-                    </PaginationLink>
-                  </PaginationItem>
-                ),
-              )}
+              {(() => {
+                const visiblePages = getVisiblePages();
+                return visiblePages.map((p, idx) =>
+                  p === "..." ? (
+                    <PaginationItem key={`ellipsis-${idx < visiblePages.length / 2 ? 'start' : 'end'}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={`page-${p}`}>
+                      <PaginationLink
+                        href='#'
+                        onClick={handlePageClick(p as number)}
+                        isActive={currentPage === p}>
+                        {p}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ),
+                );
+              })()}
 
               <PaginationItem>
                 <PaginationNext

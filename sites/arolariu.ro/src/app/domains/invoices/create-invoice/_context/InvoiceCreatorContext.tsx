@@ -63,9 +63,9 @@ const classify = (file: File): InvoiceScanType => (file.type === "application/pd
 const InvoiceCreatorContext = createContext<InvoiceCreatorContextType | undefined>(undefined);
 
 /**
- * Provides context for managing the invoice creation workflow.
+ * Manages the invoice creation workflow state and operations.
  *
- * This component manages state and operations for creating invoices from scanned files.
+ * This component provides context for creating invoices from scanned files.
  * It handles file validation, upload progress simulation, scan manipulation, and submission to the backend API.
  *
  * Features:

@@ -47,7 +47,7 @@ export default function UploadArea(): React.JSX.Element | null {
           ? "scale-105 border-purple-400 bg-purple-50 dark:bg-purple-900/20"
           : "border-gray-300 bg-gray-50 hover:border-purple-400 hover:bg-purple-50 dark:border-gray-600 dark:bg-gray-900/50 dark:hover:bg-purple-900/20"
       } ${isUploading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-      // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading props for accessibility and drag-drop functionality
+      // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading props for accessibility
       {...getRootProps()}>
       <motion.div
         animate={isDragActive ? {scale: 1.05} : {scale: 1}}

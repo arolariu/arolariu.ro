@@ -68,22 +68,24 @@ export default function ItemsDialog(): React.JSX.Element {
     setEditableItems((prev) => [...prev, newItem]);
   }, [setEditableItems]);
 
-  const handleDeleteItem = useCallback((item: Product) => {
-    const newItems = editableItems.filter((i) => i.rawName !== item.rawName);
-    setEditableItems(newItems);
-  }, [editableItems, setEditableItems]);
+  // eslint-disable-next-line sonarjs/no-nested-functions -- Curried callback pattern required for item-specific delete handler
+  const handleDeleteItem = useCallback(
+    (item: Product) => () => {
+      setEditableItems((prev) => prev.filter((i) => i.rawName !== item.rawName));
+    },
+    [setEditableItems],
+  );
 
   const handleValueChange = useCallback((e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const {name, value} = e.target;
 
-    // Validate index is within bounds
-    if (index < 0 || index >= editableItems.length) {
-      return; // Early return if index is invalid
-    }
-
     setEditableItems((prev) => {
-      const updatedItems = [...prev];
-      const currentItem = updatedItems.at(index);
+      // Validate index is within bounds
+      if (index < 0 || index >= prev.length) {
+        return prev; // Early return if index is invalid
+      }
+
+      const currentItem = prev.at(index);
 
       if (!currentItem) {
         return prev;
@@ -112,9 +114,9 @@ export default function ItemsDialog(): React.JSX.Element {
         return prev;
       }
 
-      return [...updatedItems.slice(0, index), updatedItem, ...updatedItems.slice(index + 1)];
+      return [...prev.slice(0, index), updatedItem, ...prev.slice(index + 1)];
     });
-  }, [editableItems, setEditableItems]);
+  }, [setEditableItems]);
 
   return (
     <Dialog
@@ -204,7 +206,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       <Button
                         variant='ghost'
                         size='icon'
-                        onClick={() => handleDeleteItem(item)}>
+                        onClick={handleDeleteItem(item)}>
                         <TbTrash className='h-4 w-4 text-red-500' />
                       </Button>
                     </TableCell>

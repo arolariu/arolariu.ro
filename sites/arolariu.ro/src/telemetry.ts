@@ -314,7 +314,7 @@ export interface ErrorAttributes {
  * Union type of all standard attribute interfaces for type-safe attribute setting.
  * @remarks
  * Use this for operations that require semantic attributes.
- * For custom attributes, use `Record&lt;string, string | number | boolean>`.
+ * For custom attributes, use Record of string keys to string, number, or boolean values.
  */
 export type SemanticAttributes = Partial<
   HttpAttributes & NextJsAttributes & DatabaseAttributes & CacheAttributes & AuthAttributes & ErrorAttributes
@@ -815,15 +815,13 @@ export function getMeter(name = "arolariu-website"): Meter {
  *
  * This is the recommended way to create spans for async operations. It handles
  * span creation with context propagation, automatic success/error status setting,
- * and exception recording.
- * @throws {Error} Rethrows any error from the wrapped function after recording
- * - Span cleanup and end timing
- * @template T - Return type of the function
+ * exception recording, span cleanup, and end timing.
+ * @template T Return type of the function
  * @param spanName Name of the span following semantic conventions (e.g., "http.server.request", "db.query")
  * @param fn Async function to execute within the span. Receives the span for adding attributes/events
  * @param attributes Optional type-safe attributes to set on span creation
  * @returns Promise resolving to the function's return value
- * @throws Re-throws any error from the function after recording it in the span
+ * @throws {Error} Re-throws any error from the function after recording it in the span
  * @remarks
  * - Span name must follow the `SpanOperationType` pattern for type safety
  * - Use dot notation for hierarchical naming (e.g., "http.client.request")
