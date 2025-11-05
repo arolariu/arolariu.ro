@@ -4,6 +4,7 @@
  * Extends the base monorepo setup
  */
 
+import "fake-indexeddb/auto";
 import {vi} from "vitest";
 
 // Mock Next.js router
