@@ -1,5 +1,5 @@
 import {addSpanEvent, logWithTrace, recordSpanError, withSpan} from "@/telemetry";
-import {SignJWT, jwtVerify} from "jose";
+import {type JWTPayload, SignJWT, jwtVerify} from "jose";
 import {Blob} from "node:buffer";
 import {Resend} from "resend";
 
@@ -53,7 +53,7 @@ export async function convertBase64ToBlob(base64String: string): Promise<Blob> {
  * @returns Promise resolving to the signed JWT token string
  * @see https://github.com/panva/jose
  */
-export async function createJwtToken(payload: Readonly<Record<string, any>>, secret: Readonly<string>): Promise<Readonly<string>> {
+export async function createJwtToken(payload: Readonly<JWTPayload>, secret: Readonly<string>): Promise<Readonly<string>> {
   return withSpan("auth.jwt.create", async (span) => {
     try {
       const startTime = Date.now();
@@ -88,9 +88,9 @@ export async function createJwtToken(payload: Readonly<Record<string, any>>, sec
       return jwt;
     } catch (error) {
       recordSpanError(error, "Failed to create JWT token");
-      logWithTrace("error", "JWT token creation failed", {error: error instanceof Error ? error.message : "Unknown error"}, "server");
-
-      throw new Error(error instanceof Error ? error.message : "Failed to create JWT token");
+      const errorMessage = error instanceof Error ? error.message : "Failed to create JWT token";
+      logWithTrace("error", "JWT token creation failed", {error: errorMessage}, "server");
+      throw new Error(errorMessage);
     }
   });
 }
