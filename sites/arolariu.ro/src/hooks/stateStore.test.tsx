@@ -234,4 +234,72 @@ describe("useZustandStore", () => {
       expect(typeof result.current.setInvoices).toBe("function");
     });
   });
+
+  describe("setter state preservation", () => {
+    it("should preserve other state when calling setInvoices", () => {
+      const {result} = renderHook(() => useZustandStore());
+
+      const merchant = new MerchantBuilder().withId("m1").withName("Merchant 1").build();
+      const selectedInvoice = new InvoiceBuilder().withId("si1").withName("Selected 1").build();
+      const newInvoice = new InvoiceBuilder().withId("ni1").withName("New Invoice").build();
+
+      act(() => {
+        result.current.setMerchants([merchant]);
+        result.current.setSelectedInvoices([selectedInvoice]);
+      });
+
+      act(() => {
+        result.current.setInvoices([newInvoice]);
+      });
+
+      // Verify all states are maintained properly
+      expect(result.current.invoices).toEqual([newInvoice]);
+      expect(result.current.selectedInvoices).toEqual([selectedInvoice]);
+      expect(result.current.merchants).toEqual([merchant]);
+    });
+
+    it("should preserve other state when calling setSelectedInvoices", () => {
+      const {result} = renderHook(() => useZustandStore());
+
+      const invoice = new InvoiceBuilder().withId("i1").withName("Invoice 1").build();
+      const merchant = new MerchantBuilder().withId("m1").withName("Merchant 1").build();
+      const selected = new InvoiceBuilder().withId("s1").withName("Selected 1").build();
+
+      act(() => {
+        result.current.setInvoices([invoice]);
+        result.current.setMerchants([merchant]);
+      });
+
+      act(() => {
+        result.current.setSelectedInvoices([selected]);
+      });
+
+      // Verify all states are maintained properly
+      expect(result.current.invoices).toEqual([invoice]);
+      expect(result.current.selectedInvoices).toEqual([selected]);
+      expect(result.current.merchants).toEqual([merchant]);
+    });
+
+    it("should preserve other state when calling setMerchants", () => {
+      const {result} = renderHook(() => useZustandStore());
+
+      const invoice = new InvoiceBuilder().withId("i1").withName("Invoice 1").build();
+      const selected = new InvoiceBuilder().withId("s1").withName("Selected 1").build();
+      const merchant = new MerchantBuilder().withId("m1").withName("Merchant 1").build();
+
+      act(() => {
+        result.current.setInvoices([invoice]);
+        result.current.setSelectedInvoices([selected]);
+      });
+
+      act(() => {
+        result.current.setMerchants([merchant]);
+      });
+
+      // Verify all states are maintained properly
+      expect(result.current.invoices).toEqual([invoice]);
+      expect(result.current.selectedInvoices).toEqual([selected]);
+      expect(result.current.merchants).toEqual([merchant]);
+    });
+  });
 });
