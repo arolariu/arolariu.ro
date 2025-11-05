@@ -175,6 +175,7 @@ jobs:
           FRONTEND_DURATION: ${{ needs.frontend.outputs.duration }}
           BACKEND_STATUS: ${{ needs.backend.result }}
           BACKEND_DURATION: ${{ needs.backend.outputs.duration }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ARTIFACTS_DIR: logs
         with:
           script: |
