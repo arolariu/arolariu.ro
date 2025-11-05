@@ -1,7 +1,7 @@
+import type {Merchant} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useMerchant} from "./useMerchant";
-import type {Merchant} from "@/types/invoices";
 
 // Create mock function using vi.hoisted
 const {mockFetchMerchant} = vi.hoisted(() => ({

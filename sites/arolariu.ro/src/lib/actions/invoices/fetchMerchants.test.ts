@@ -1,5 +1,5 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {Merchant} from "@/types/invoices";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import fetchMerchants from "./fetchMerchants";
 
 // Mock API_URL

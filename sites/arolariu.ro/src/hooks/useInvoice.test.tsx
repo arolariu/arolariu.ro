@@ -1,6 +1,6 @@
+import {InvoiceBuilder} from "@/data/mocks/invoice";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {InvoiceBuilder} from "@/data/mocks/invoice";
 import {useInvoice} from "./useInvoice";
 
 // Create mock function using vi.hoisted

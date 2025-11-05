@@ -1,5 +1,5 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {Merchant} from "@/types/invoices";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import fetchMerchant from "./fetchMerchant";
 
 // Mock API_URL
@@ -105,9 +105,7 @@ describe("fetchMerchant", () => {
       status: 401,
     });
 
-    await expect(fetchMerchant("merchant-123", "invalid-token")).rejects.toThrow(
-      "Failed to fetch merchant. Status: 401",
-    );
+    await expect(fetchMerchant("merchant-123", "invalid-token")).rejects.toThrow("Failed to fetch merchant. Status: 401");
   });
 
   it("should handle 500 server error", async () => {

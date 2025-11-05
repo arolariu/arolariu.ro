@@ -1,5 +1,5 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {InvoiceBuilder} from "@/data/mocks/invoice";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import analyzeInvoice from "./analyzeInvoice";
 
 // Mock API_URL

@@ -78,10 +78,7 @@ describe("useUserInformation", () => {
     });
 
     expect(result.current.isError).toBe(true);
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      ">>> Error fetching user information in useUserInformation hook:",
-      expect.any(Error),
-    );
+    expect(consoleErrorSpy).toHaveBeenCalledWith(">>> Error fetching user information in useUserInformation hook:", expect.any(Error));
 
     consoleErrorSpy.mockRestore();
   });

@@ -1,5 +1,5 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import type {Invoice} from "@/types/invoices";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import fetchInvoice from "./fetchInvoice";
 
 // Mock API_URL
@@ -106,9 +106,7 @@ describe("fetchInvoice", () => {
       status: 401,
     });
 
-    await expect(fetchInvoice("invoice-123", "invalid-token")).rejects.toThrow(
-      "Failed to fetch invoice. Status: 401",
-    );
+    await expect(fetchInvoice("invoice-123", "invalid-token")).rejects.toThrow("Failed to fetch invoice. Status: 401");
   });
 
   it("should throw error on 500 server error", async () => {

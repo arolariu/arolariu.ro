@@ -1,6 +1,6 @@
+import {NextRequest} from "next/server";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {POST} from "./route";
-import {NextRequest} from "next/server";
 
 // Create hoisted mock
 const {mockResendSend} = vi.hoisted(() => ({

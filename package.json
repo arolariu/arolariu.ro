@@ -194,6 +194,7 @@
     "eslint-plugin-sonarjs": "3.0.5",
     "eslint-plugin-svelte": "3.12.5",
     "eslint-plugin-unicorn": "62.0.0",
+    "fake-indexeddb": "6.2.4",
     "globals": "16.4.0",
     "html2canvas": "1.4.1",
     "input-otp": "1.4.2",

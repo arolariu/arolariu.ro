@@ -1,7 +1,7 @@
-import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import updateInvoice from "./updateInvoice";
 import type {UserInformation} from "@/types";
 import type {Invoice} from "@/types/invoices";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import updateInvoice from "./updateInvoice";
 
 // Mock API_URL
 vi.mock("@/lib/utils.server", () => ({
@@ -96,8 +96,6 @@ describe("updateInvoice", () => {
 
     expect(result).toBeNull();
   });
-
-
 
   it("should handle 500 server error", async () => {
     const mockInvoice: Partial<Invoice> = {
