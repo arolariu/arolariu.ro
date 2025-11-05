@@ -47,6 +47,7 @@ export default function UploadArea(): React.JSX.Element | null {
           ? "scale-105 border-purple-400 bg-purple-50 dark:bg-purple-900/20"
           : "border-gray-300 bg-gray-50 hover:border-purple-400 hover:bg-purple-50 dark:border-gray-600 dark:bg-gray-900/50 dark:hover:bg-purple-900/20"
       } ${isUploading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+      // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading props for accessibility
       {...getRootProps()}>
       <motion.div
         animate={isDragActive ? {scale: 1.05} : {scale: 1}}
@@ -60,6 +61,7 @@ export default function UploadArea(): React.JSX.Element | null {
         </p>
         <p className='mb-8 text-sm text-gray-500 dark:text-gray-400'>Supports JPG, PNG, PDF files up to 10MB each</p>
         <Input
+          // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading input props for proper file upload functionality
           {...getInputProps()}
           className='cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-3 text-lg text-white shadow-lg transition-all duration-300 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl'
           disabled={isUploading}>

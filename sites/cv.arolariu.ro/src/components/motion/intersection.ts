@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-magic-numbers */
 
-// eslint-disable-next-line functional/type-declaration-immutability -- broken, fix.
 type IntersectParameters = Readonly<{
   threshold?: number | number[];
   root?: Element | Document | null;
@@ -45,7 +44,6 @@ export function intersect(node: HTMLElement, parameters: IntersectParameters = {
     cleanup();
     observer = new IntersectionObserver(
       (entries) => {
-        // eslint-disable-next-line functional/no-loop-statements -- readability
         for (const entry of entries) {
           if (entry.target !== node) continue;
           if (entry.isIntersecting) {

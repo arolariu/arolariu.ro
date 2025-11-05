@@ -169,7 +169,7 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
  * This hook provides the current value of the FontContext. It must be used
  * within a FontContextProvider; otherwise, it will throw an error.
  * @returns The current context value of FontContext.
- * @throws Error if used outside of a FontContextProvider.
+ * @throws {Error} If used outside of a FontContextProvider.
  * @example
  * ```tsx
  * const { font, setFont } = useFontContext();

@@ -24,15 +24,10 @@ const authenticatedUserCounter = createCounter("user.authenticated.requests", "T
 const requestDurationHistogram = createHistogram("api.user.duration", "Request duration in milliseconds", "ms");
 
 /**
- * The GET handler for the user route.
- * Returns user information for both authenticated (Clerk) and guest users.
+ * Retrieves user information for authenticated or guest users.
  *
- * For authenticated users:
- * - Returns Clerk user object with valid JWT from Clerk
- *
- * For guest users:
- * - Returns null user with guest JWT token
- * - JWT contains guest identifier and limited permissions
+ * For authenticated users, returns Clerk user object with valid JWT.
+ * For guest users, returns null user with guest JWT containing identifier and limited permissions.
  * @returns The user information including user object, identifier, and JWT token
  */
 export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
@@ -59,7 +54,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
         // Check authentication
         addSpanEvent("auth.check.start");
         const {getToken, userId} = await auth();
-        addSpanEvent("auth.check.complete", {authenticated: !!userId});
+        addSpanEvent("auth.check.complete", {authenticated: Boolean(userId)});
 
         // Authenticated user with Clerk
         if (userId) {
@@ -89,7 +84,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             };
 
             authSpan.setAttributes({
-              "user.has_token": !!token,
+              "user.has_token": Boolean(token),
               "response.status": 200,
             });
 
