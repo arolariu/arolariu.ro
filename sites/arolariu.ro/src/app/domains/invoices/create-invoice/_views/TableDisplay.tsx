@@ -281,7 +281,7 @@ export default function TableDisplay(): React.JSX.Element | null {
                 return visiblePages.map((p, idx) =>
                   p === "..." ? (
                     <PaginationItem
-                      // eslint-disable-next-line react/no-array-index-key -- IGNORE ---
+                      // eslint-disable-next-line react/no-array-index-key -- Ellipsis placeholders have no stable identifier and their position is deterministic within the pagination range
                       key={`ellipsis-${idx}`}>
                       <PaginationEllipsis />
                     </PaginationItem>
