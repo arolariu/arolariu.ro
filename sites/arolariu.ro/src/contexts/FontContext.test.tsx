@@ -1,3 +1,6 @@
+/**
+ * @vitest-environment jsdom
+ */
 import {act, renderHook} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {FontContextProvider, useFontContext} from "./FontContext";
@@ -22,7 +25,7 @@ describe("FontContext", () => {
   beforeEach(() => {
     // Mock localStorage
     localStorageMock = {};
-    vi.stubGlobal("localStorage", {
+    global.localStorage = {
       getItem: vi.fn((key: string) => localStorageMock[key] ?? null),
       setItem: vi.fn((key: string, value: string) => {
         localStorageMock[key] = value;
@@ -33,27 +36,13 @@ describe("FontContext", () => {
       clear: vi.fn(() => {
         localStorageMock = {};
       }),
-    });
-
-    // Mock document.documentElement
-    vi.stubGlobal("document", {
-      documentElement: {
-        className: "",
-        classList: {
-          contains: vi.fn((className: string) => {
-            return globalThis.document.documentElement.className.includes(className);
-          }),
-          remove: vi.fn((className: string) => {
-            const classes = globalThis.document.documentElement.className.split(" ");
-            globalThis.document.documentElement.className = classes.filter((c) => c !== className).join(" ");
-          }),
-        },
-      },
-    });
+      length: 0,
+      key: vi.fn(),
+    } as Storage;
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    vi.clearAllMocks();
   });
 
   describe("FontContextProvider", () => {
@@ -145,13 +134,55 @@ describe("FontContext", () => {
       expect(result.current.font.className).toBeTruthy();
       expect(result.current.fontClassName).toBe(result.current.font.className);
     });
+
+    it("should not apply font class if already present", () => {
+      // Set the font class to be already present
+      document.documentElement.className = "caudex-font";
+      
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      // Should remain normal font and class should still be present
+      expect(result.current.fontType).toBe("normal");
+      expect(document.documentElement.className).toContain("caudex-font");
+    });
+
+    it("should switch between fonts multiple times", () => {
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      // Switch to dyslexic
+      act(() => {
+        result.current.setFont("dyslexic");
+      });
+      expect(result.current.fontType).toBe("dyslexic");
+
+      // Switch back to normal
+      act(() => {
+        result.current.setFont("normal");
+      });
+      expect(result.current.fontType).toBe("normal");
+
+      // Switch to dyslexic again
+      act(() => {
+        result.current.setFont("dyslexic");
+      });
+      expect(result.current.fontType).toBe("dyslexic");
+    });
   });
 
   describe("useFontContext", () => {
     it("should throw error when used outside provider", () => {
+      // Suppress console.error for this test since we expect an error to be thrown
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      
       expect(() => {
         renderHook(() => useFontContext());
       }).toThrow("useFontContext must be used within a FontContextProvider");
+      
+      consoleSpy.mockRestore();
     });
   });
 });

@@ -253,4 +253,17 @@ describe("GET /api/user", () => {
     expect(data.user).toBeNull();
     expect(data.userIdentifier).toBe("00000000-0000-0000-0000-000000000000");
   });
+
+  it("should handle non-Error exception types and fallback to guest user", async () => {
+    mockAuth.mockRejectedValue("String error"); // Throw a non-Error type
+
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    const data: UserInformation = await response.json();
+
+    // Should fallback to guest user on non-Error exception
+    expect(data.user).toBeNull();
+    expect(data.userIdentifier).toBe("00000000-0000-0000-0000-000000000000");
+  });
 });
