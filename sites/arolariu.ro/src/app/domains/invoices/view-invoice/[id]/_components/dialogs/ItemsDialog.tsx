@@ -68,9 +68,9 @@ export default function ItemsDialog(): React.JSX.Element {
     setEditableItems((prev) => [...prev, newItem]);
   }, [setEditableItems]);
 
-  // eslint-disable-next-line sonarjs/no-nested-functions -- Curried callback pattern required for item-specific delete handler
   const handleDeleteItem = useCallback(
     (item: Product) => () => {
+      // eslint-disable-next-line sonarjs/no-nested-functions -- Curried callback pattern required for item-specific delete handler
       setEditableItems((prev) => prev.filter((i) => i.rawName !== item.rawName));
     },
     [setEditableItems],

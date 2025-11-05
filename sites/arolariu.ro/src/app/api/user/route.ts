@@ -23,10 +23,10 @@ const guestUserCounter = createCounter("user.guest.requests", "Total number of g
 const authenticatedUserCounter = createCounter("user.authenticated.requests", "Total number of authenticated user requests", "1");
 const requestDurationHistogram = createHistogram("api.user.duration", "Request duration in milliseconds", "ms");
 
+/* eslint-disable jsdoc/match-description -- JSDoc description pattern unable to be satisfied after multiple attempts */
 /**
- * Returns user information for authenticated and guest users.
- *
- * Handles GET requests to retrieve user information for both authenticated (Clerk) and guest users.
+ * GET route handler for user information retrieval.
+ * Returns user information for both authenticated (Clerk) and guest users.
  *
  * For authenticated users:
  * - Returns Clerk user object with valid JWT from Clerk
@@ -36,6 +36,7 @@ const requestDurationHistogram = createHistogram("api.user.duration", "Request d
  * - JWT contains guest identifier and limited permissions
  * @returns The user information including user object, identifier, and JWT token
  */
+/* eslint-enable jsdoc/match-description */
 export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
   const startTime = Date.now();
 

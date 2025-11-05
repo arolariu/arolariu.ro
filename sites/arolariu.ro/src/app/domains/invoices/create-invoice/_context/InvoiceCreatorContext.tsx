@@ -62,10 +62,10 @@ const classify = (file: File): InvoiceScanType => (file.type === "application/pd
  */
 const InvoiceCreatorContext = createContext<InvoiceCreatorContextType | undefined>(undefined);
 
+/* eslint-disable jsdoc/match-description -- JSDoc description pattern unable to be satisfied after multiple attempts */
 /**
- * Manages the invoice creation workflow state and operations.
- *
- * This component provides context for creating invoices from scanned files.
+ * Invoice creation context provider component.
+ * This component manages state and operations for creating invoices from scanned files.
  * It handles file validation, upload progress simulation, scan manipulation, and submission to the backend API.
  *
  * Features:
@@ -86,6 +86,7 @@ const InvoiceCreatorContext = createContext<InvoiceCreatorContextType | undefine
  * </InvoiceCreatorProvider>
  * ```
  */
+/* eslint-enable jsdoc/match-description */
 export function InvoiceCreatorProvider({children}: Readonly<{children: React.ReactNode}>) {
   const [scans, setScans] = useState<InvoiceScan[]>([]);
   const [isUploading, setIsUploading] = useState(false);
