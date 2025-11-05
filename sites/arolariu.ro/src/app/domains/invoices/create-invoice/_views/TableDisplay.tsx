@@ -52,11 +52,12 @@ export default function TableDisplay(): React.JSX.Element | null {
   const handleRename = useCallback(
     (scan: {id: string; name: string}) => (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      // TODO: This is a placeholder. Currently, renameScan is called with the current name, so nothing is actually renamed.
-      // Implement dialog to get new name before calling renameScan.
-      renameScan(scan.id, scan.name);
+      // TODO: Implement rename dialog to get new name from user
+      toast("Rename feature coming soon", {
+        description: "This feature is currently under development.",
+      });
     },
-    [renameScan],
+    [],
   );
 
   const handleDelete = useCallback(
@@ -277,7 +278,7 @@ export default function TableDisplay(): React.JSX.Element | null {
                 const visiblePages = getVisiblePages();
                 return visiblePages.map((p, idx) =>
                   p === "..." ? (
-                    <PaginationItem key={`ellipsis-${idx < visiblePages.length / 2 ? 'start' : 'end'}`}>
+                    <PaginationItem key={`ellipsis-${idx}`}>
                       <PaginationEllipsis />
                     </PaginationItem>
                   ) : (

@@ -40,10 +40,16 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
 
   const handleRemoveAccess = useCallback(() => {
     // TODO: Implement remove access functionality for specific user
+    toast("Remove access feature coming soon", {
+      description: "This feature is currently under development.",
+    });
   }, []);
 
   const handleMarkPrivate = useCallback(() => {
     // TODO: Implement mark as private functionality
+    toast("Mark private feature coming soon", {
+      description: "This feature is currently under development.",
+    });
   }, []);
 
   return (

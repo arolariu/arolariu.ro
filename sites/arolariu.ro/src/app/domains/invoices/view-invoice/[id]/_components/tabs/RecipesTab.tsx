@@ -49,6 +49,9 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
 
   const handleGenerateRecipe = useCallback(() => {
     // TODO: Implement AI recipe generation
+    toast("AI recipe generation coming soon", {
+      description: "This feature is currently under development.",
+    });
   }, []);
 
   const handleCreateFirstRecipe = useCallback(() => {

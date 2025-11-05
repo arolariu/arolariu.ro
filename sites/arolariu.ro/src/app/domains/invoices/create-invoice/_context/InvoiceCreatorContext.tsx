@@ -62,20 +62,14 @@ const classify = (file: File): InvoiceScanType => (file.type === "application/pd
  */
 const InvoiceCreatorContext = createContext<InvoiceCreatorContextType | undefined>(undefined);
 
-/* eslint-disable jsdoc/match-description, jsdoc/require-jsdoc -- JSDoc description pattern unable to be satisfied */
-
 /**
- * Invoice creation context provider component.
- * This component manages state and operations for creating invoices from scanned files.
- * It handles file validation, upload progress simulation, scan manipulation, and submission to the backend API.
+ * Provides context for invoice creation workflow.
  *
- * Features:
- * - Accepts JPG, PNG, and PDF files up to 10MB each
- * - Simulates upload progress with visual feedback
- * - Allows scan rotation (images only), renaming, and removal
- * - Submits scans one-by-one to the backend API with proper error handling
- * - Provides toast notifications for all operations
- * - Automatically cleans up blob URLs to prevent memory leaks
+ * Manages state and operations for creating invoices from scanned files.
+ * Handles file validation, upload progress simulation, scan manipulation, and submission to the backend API.
+ *
+ * Features include JPG/PNG/PDF support up to 10MB, progress feedback, scan rotation/renaming/removal,
+ * one-by-one submission with error handling, toast notifications, and automatic blob URL cleanup.
  * @param props Component props
  * @param props.children Child components to render within the provider
  * @returns The provider component wrapping children
@@ -87,7 +81,6 @@ const InvoiceCreatorContext = createContext<InvoiceCreatorContextType | undefine
  * </InvoiceCreatorProvider>
  * ```
  */
-/* eslint-enable jsdoc/match-description */
 export function InvoiceCreatorProvider({children}: Readonly<{children: React.ReactNode}>) {
   const [scans, setScans] = useState<InvoiceScan[]>([]);
   const [isUploading, setIsUploading] = useState(false);

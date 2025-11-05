@@ -37,10 +37,6 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
   const {open: openEditDialog} = useDialog("INVOICE_METADATA", "edit", metadata);
   const {open: openDeleteDialog} = useDialog("INVOICE_METADATA", "delete", metadata);
 
-  const handleAddFirstMetadata = useCallback(() => {
-    openAddDialog();
-  }, [openAddDialog]);
-
   return (
     <motion.div
       initial={{opacity: 0, y: 10}}
@@ -124,7 +120,7 @@ export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Elem
             <div className='py-8 text-center'>
               <p className='text-muted-foreground mb-4'>No metadata fields added yet</p>
               <Button
-                onClick={handleAddFirstMetadata}
+                onClick={openAddDialog}
                 variant='outline'>
                 <TbPlus className='mr-2 h-4 w-4' />
                 Add Your First Metadata Field
