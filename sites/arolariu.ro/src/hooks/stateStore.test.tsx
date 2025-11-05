@@ -1,6 +1,7 @@
 import {act, renderHook} from "@testing-library/react";
 import {beforeEach, describe, expect, it} from "vitest";
-import type {Invoice, Merchant} from "@/types/invoices";
+import {InvoiceBuilder} from "@/data/mocks/invoice";
+import {MerchantBuilder} from "@/data/mocks/merchant";
 import {useZustandStore} from "./stateStore";
 
 describe("useZustandStore", () => {
@@ -38,13 +39,13 @@ describe("useZustandStore", () => {
     it("should set invoices in the store", () => {
       const {result} = renderHook(() => useZustandStore());
 
-      const mockInvoices: Partial<Invoice>[] = [
-        {id: "inv-1", name: "Invoice 1", totalAmount: 100},
-        {id: "inv-2", name: "Invoice 2", totalAmount: 200},
+      const mockInvoices = [
+        new InvoiceBuilder().withId("inv-1").withName("Invoice 1").build(),
+        new InvoiceBuilder().withId("inv-2").withName("Invoice 2").build(),
       ];
 
       act(() => {
-        result.current.setInvoices(mockInvoices as Invoice[]);
+        result.current.setInvoices(mockInvoices);
       });
 
       expect(result.current.invoices).toEqual(mockInvoices);
@@ -53,17 +54,17 @@ describe("useZustandStore", () => {
     it("should replace existing invoices", () => {
       const {result} = renderHook(() => useZustandStore());
 
-      const initialInvoices: Partial<Invoice>[] = [{id: "inv-1", name: "Invoice 1"}];
-      const newInvoices: Partial<Invoice>[] = [{id: "inv-2", name: "Invoice 2"}];
+      const initialInvoices = [new InvoiceBuilder().withId("inv-1").withName("Invoice 1").build()];
+      const newInvoices = [new InvoiceBuilder().withId("inv-2").withName("Invoice 2").build()];
 
       act(() => {
-        result.current.setInvoices(initialInvoices as Invoice[]);
+        result.current.setInvoices(initialInvoices);
       });
 
       expect(result.current.invoices).toEqual(initialInvoices);
 
       act(() => {
-        result.current.setInvoices(newInvoices as Invoice[]);
+        result.current.setInvoices(newInvoices);
       });
 
       expect(result.current.invoices).toEqual(newInvoices);
@@ -72,10 +73,10 @@ describe("useZustandStore", () => {
     it("should handle empty invoice array", () => {
       const {result} = renderHook(() => useZustandStore());
 
-      const invoices: Partial<Invoice>[] = [{id: "inv-1", name: "Invoice 1"}];
+      const invoices = [new InvoiceBuilder().withId("inv-1").withName("Invoice 1").build()];
 
       act(() => {
-        result.current.setInvoices(invoices as Invoice[]);
+        result.current.setInvoices(invoices);
       });
 
       act(() => {
@@ -90,10 +91,10 @@ describe("useZustandStore", () => {
     it("should set selected invoices in the store", () => {
       const {result} = renderHook(() => useZustandStore());
 
-      const mockSelectedInvoices: Partial<Invoice>[] = [{id: "inv-1", name: "Selected Invoice"}];
+      const mockSelectedInvoices = [new InvoiceBuilder().withId("inv-1").withName("Selected Invoice").build()];
 
       act(() => {
-        result.current.setSelectedInvoices(mockSelectedInvoices as Invoice[]);
+        result.current.setSelectedInvoices(mockSelectedInvoices);
       });
 
       expect(result.current.selectedInvoices).toEqual(mockSelectedInvoices);
@@ -102,20 +103,20 @@ describe("useZustandStore", () => {
     it("should update selection independently of invoices array", () => {
       const {result} = renderHook(() => useZustandStore());
 
-      const allInvoices: Partial<Invoice>[] = [
-        {id: "inv-1", name: "Invoice 1"},
-        {id: "inv-2", name: "Invoice 2"},
-        {id: "inv-3", name: "Invoice 3"},
+      const allInvoices = [
+        new InvoiceBuilder().withId("inv-1").withName("Invoice 1").build(),
+        new InvoiceBuilder().withId("inv-2").withName("Invoice 2").build(),
+        new InvoiceBuilder().withId("inv-3").withName("Invoice 3").build(),
       ];
 
-      const selectedInvoices: Partial<Invoice>[] = [
-        {id: "inv-1", name: "Invoice 1"},
-        {id: "inv-3", name: "Invoice 3"},
+      const selectedInvoices = [
+        new InvoiceBuilder().withId("inv-1").withName("Invoice 1").build(),
+        new InvoiceBuilder().withId("inv-3").withName("Invoice 3").build(),
       ];
 
       act(() => {
-        result.current.setInvoices(allInvoices as Invoice[]);
-        result.current.setSelectedInvoices(selectedInvoices as Invoice[]);
+        result.current.setInvoices(allInvoices);
+        result.current.setSelectedInvoices(selectedInvoices);
       });
 
       expect(result.current.invoices).toHaveLength(3);
@@ -125,10 +126,10 @@ describe("useZustandStore", () => {
     it("should clear selected invoices when set to empty array", () => {
       const {result} = renderHook(() => useZustandStore());
 
-      const selected: Partial<Invoice>[] = [{id: "inv-1", name: "Invoice 1"}];
+      const selected = [new InvoiceBuilder().withId("inv-1").withName("Invoice 1").build()];
 
       act(() => {
-        result.current.setSelectedInvoices(selected as Invoice[]);
+        result.current.setSelectedInvoices(selected);
       });
 
       expect(result.current.selectedInvoices).toEqual(selected);
@@ -145,13 +146,13 @@ describe("useZustandStore", () => {
     it("should set merchants in the store", () => {
       const {result} = renderHook(() => useZustandStore());
 
-      const mockMerchants: Partial<Merchant>[] = [
-        {id: "merchant-1", name: "Merchant 1"},
-        {id: "merchant-2", name: "Merchant 2"},
+      const mockMerchants = [
+        new MerchantBuilder().withId("merchant-1").withName("Merchant 1").build(),
+        new MerchantBuilder().withId("merchant-2").withName("Merchant 2").build(),
       ];
 
       act(() => {
-        result.current.setMerchants(mockMerchants as Merchant[]);
+        result.current.setMerchants(mockMerchants);
       });
 
       expect(result.current.merchants).toEqual(mockMerchants);
@@ -160,15 +161,15 @@ describe("useZustandStore", () => {
     it("should replace existing merchants", () => {
       const {result} = renderHook(() => useZustandStore());
 
-      const initialMerchants: Partial<Merchant>[] = [{id: "merchant-1", name: "Merchant 1"}];
-      const newMerchants: Partial<Merchant>[] = [{id: "merchant-2", name: "Merchant 2"}];
+      const initialMerchants = [new MerchantBuilder().withId("merchant-1").withName("Merchant 1").build()];
+      const newMerchants = [new MerchantBuilder().withId("merchant-2").withName("Merchant 2").build()];
 
       act(() => {
-        result.current.setMerchants(initialMerchants as Merchant[]);
+        result.current.setMerchants(initialMerchants);
       });
 
       act(() => {
-        result.current.setMerchants(newMerchants as Merchant[]);
+        result.current.setMerchants(newMerchants);
       });
 
       expect(result.current.merchants).toEqual(newMerchants);
@@ -177,10 +178,10 @@ describe("useZustandStore", () => {
     it("should handle empty merchant array", () => {
       const {result} = renderHook(() => useZustandStore());
 
-      const merchants: Partial<Merchant>[] = [{id: "merchant-1", name: "Merchant 1"}];
+      const merchants = [new MerchantBuilder().withId("merchant-1").withName("Merchant 1").build()];
 
       act(() => {
-        result.current.setMerchants(merchants as Merchant[]);
+        result.current.setMerchants(merchants);
       });
 
       act(() => {
@@ -195,14 +196,14 @@ describe("useZustandStore", () => {
     it("should maintain state independence between different store slices", () => {
       const {result} = renderHook(() => useZustandStore());
 
-      const invoices: Partial<Invoice>[] = [{id: "inv-1", name: "Invoice 1"}];
-      const selectedInvoices: Partial<Invoice>[] = [{id: "inv-1", name: "Invoice 1"}];
-      const merchants: Partial<Merchant>[] = [{id: "merchant-1", name: "Merchant 1"}];
+      const invoices = [new InvoiceBuilder().withId("inv-1").withName("Invoice 1").build()];
+      const selectedInvoices = [new InvoiceBuilder().withId("inv-1").withName("Invoice 1").build()];
+      const merchants = [new MerchantBuilder().withId("merchant-1").withName("Merchant 1").build()];
 
       act(() => {
-        result.current.setInvoices(invoices as Invoice[]);
-        result.current.setSelectedInvoices(selectedInvoices as Invoice[]);
-        result.current.setMerchants(merchants as Merchant[]);
+        result.current.setInvoices(invoices);
+        result.current.setSelectedInvoices(selectedInvoices);
+        result.current.setMerchants(merchants);
       });
 
       expect(result.current.invoices).toEqual(invoices);

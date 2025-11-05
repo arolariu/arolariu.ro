@@ -1,7 +1,7 @@
 import {renderHook, waitFor} from "@testing-library/react";
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {InvoiceBuilder} from "@/data/mocks/invoice";
 import {useInvoice} from "./useInvoice";
-import type {Invoice} from "@/types/invoices";
 
 // Create mock function using vi.hoisted
 const {mockFetchInvoice} = vi.hoisted(() => ({
@@ -40,10 +40,9 @@ describe("useInvoice", () => {
   });
 
   it("should initialize with null invoice and loading state", () => {
-    mockFetchInvoice.mockResolvedValue({
-      id: "invoice-123",
-      name: "Test Invoice",
-    });
+    const mockInvoice = new InvoiceBuilder().withId("invoice-123").withName("Test Invoice").build();
+
+    mockFetchInvoice.mockResolvedValue(mockInvoice);
 
     const {result} = renderHook(() => useInvoice({invoiceIdentifier: "invoice-123"}));
 
@@ -53,11 +52,7 @@ describe("useInvoice", () => {
   });
 
   it("should fetch invoice successfully", async () => {
-    const mockInvoice: Partial<Invoice> = {
-      id: "invoice-123",
-      name: "Test Invoice",
-      totalAmount: 100.5,
-    };
+    const mockInvoice = new InvoiceBuilder().withId("invoice-123").withName("Test Invoice").build();
 
     mockFetchInvoice.mockResolvedValue(mockInvoice);
 
@@ -101,7 +96,8 @@ describe("useInvoice", () => {
     expect(result.current.invoice).toBeNull();
 
     // Resolve the promise
-    resolvePromise!({id: "invoice-123", name: "Test"});
+    const mockInvoice = new InvoiceBuilder().withId("invoice-123").withName("Test").build();
+    resolvePromise!(mockInvoice);
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);

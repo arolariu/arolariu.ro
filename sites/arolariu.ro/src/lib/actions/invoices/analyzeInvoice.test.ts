@@ -1,6 +1,6 @@
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
+import {InvoiceBuilder} from "@/data/mocks/invoice";
 import analyzeInvoice from "./analyzeInvoice";
-import type {Invoice} from "@/types/invoices";
 
 // Mock API_URL
 vi.mock("@/lib/utils.server", () => ({
@@ -24,10 +24,7 @@ describe("analyzeInvoice", () => {
   });
 
   it("should analyze invoice successfully", async () => {
-    const mockInvoice: Partial<Invoice> = {
-      id: "invoice-1",
-      name: "Analyzed Invoice",
-    };
+    const mockInvoice = new InvoiceBuilder().withId("invoice-1").withName("Analyzed Invoice").build();
 
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,

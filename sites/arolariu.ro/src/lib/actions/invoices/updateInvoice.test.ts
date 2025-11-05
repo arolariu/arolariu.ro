@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import updateInvoice from "./updateInvoice";
 import type {UserInformation} from "@/types";
 import type {Invoice} from "@/types/invoices";
