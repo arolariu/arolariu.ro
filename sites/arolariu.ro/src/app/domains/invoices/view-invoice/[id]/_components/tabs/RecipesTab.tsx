@@ -1,5 +1,6 @@
 "use client";
 
+import {useCallback} from "react";
 import {usePaginationWithSearch} from "@/hooks";
 import type {Recipe} from "@/types/invoices";
 import {
@@ -34,17 +35,28 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
 
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: recipes, initialPageSize: 4});
 
-  const handleNextPage = () => {
+  const handleNextPage = useCallback(() => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
-  };
+  }, [currentPage, totalPages, setCurrentPage]);
 
-  const handlePreviousPage = () => {
+  const handlePreviousPage = useCallback(() => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1);
     }
-  };
+  }, [currentPage, setCurrentPage]);
+
+  const handleGenerateRecipe = useCallback(() => {
+    // TODO: Implement AI recipe generation
+    toast("AI recipe generation coming soon", {
+      description: "This feature is currently under development.",
+    });
+  }, []);
+
+  const handleCreateFirstRecipe = useCallback(() => {
+    openAddDialog();
+  }, [openAddDialog]);
 
   return (
     <motion.div
@@ -65,7 +77,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
                   <Button
                     variant='ghost'
                     className='cursor-pointer'
-                    onClick={() => {}}
+                    onClick={handleGenerateRecipe}
                     size='sm'>
                     <TbConfetti className='mr-2 h-4 w-4' />
                     Generate
@@ -106,7 +118,7 @@ export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Elemen
             <div className='py-8 text-center'>
               <p className='text-muted-foreground mb-4'>No recipes available yet</p>
               <Button
-                onClick={() => {}}
+                onClick={handleCreateFirstRecipe}
                 variant='outline'
                 className='cursor-pointer'>
                 <TbPlus className='mr-2 h-4 w-4' />

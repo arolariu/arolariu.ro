@@ -70,8 +70,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set the invoice ID
-   * @param id The invoice ID
+   * Sets the unique identifier for the invoice.
+   * @param id Unique identifier to assign
    * @returns The InvoiceBuilder instance for chaining
    */
   withId(id: string): this {
@@ -80,8 +80,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set the invoice name
-   * @param name The invoice name
+   * Sets the display name for the invoice.
+   * @param name Display name to assign
    * @returns The InvoiceBuilder instance for chaining
    */
   withName(name: string): this {
@@ -90,8 +90,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set the invoice description
-   * @param description The invoice description
+   * Sets a detailed description for the invoice.
+   * @param description Description text to assign
    * @returns The InvoiceBuilder instance for chaining
    */
   withDescription(description: string): this {
@@ -100,8 +100,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set the creation date
-   * @param date The creation date
+   * Sets when the invoice was created.
+   * @param date Creation timestamp
    * @returns The InvoiceBuilder instance for chaining
    */
   withCreatedAt(date: Date): this {
@@ -110,8 +110,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set the last updated date
-   * @param date The last updated date
+   * Sets when the invoice was last modified.
+   * @param date Last modification timestamp
    * @returns The InvoiceBuilder instance for chaining
    */
   withLastUpdatedAt(date: Date): this {
@@ -120,8 +120,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set the user identifier
-   * @param userId The user identifier
+   * Sets which user owns this invoice.
+   * @param userId Owner's unique identifier
    * @returns The InvoiceBuilder instance for chaining
    */
   withUserIdentifier(userId: string): this {
@@ -130,8 +130,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set the shared with list
-   * @param userIds The user IDs to share the invoice with
+   * Sets which users have access to this invoice.
+   * @param userIds Array of user identifiers with shared access
    * @returns The InvoiceBuilder instance for chaining
    */
   withSharedWith(userIds: string[]): this {
@@ -140,8 +140,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set the invoice category
-   * @param category The invoice category
+   * Sets the business category of the invoice.
+   * @param category Category classification
    * @returns The InvoiceBuilder instance for chaining
    */
   withCategory(category: InvoiceCategory): this {
@@ -150,8 +150,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set the photo location
-   * @param url The photo location URL
+   * Sets the storage URL for the invoice image.
+   * @param url Location where the photo is stored
    * @returns The InvoiceBuilder instance for chaining
    */
   withPhotoLocation(url: string): this {
@@ -160,8 +160,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set the merchant reference
-   * @param merchantId The merchant ID
+   * Links the invoice to a specific merchant.
+   * @param merchantId Reference to the merchant entity
    * @returns The InvoiceBuilder instance for chaining
    */
   withMerchantReference(merchantId: string): this {
@@ -170,8 +170,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set the items list
-   * @param items The invoice items
+   * Sets the list of purchased products.
+   * @param items Array of products on this invoice
    * @returns The InvoiceBuilder instance for chaining
    */
   withItems(items: Product[]): this {
@@ -180,8 +180,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set payment information
-   * @param paymentInfo The payment information
+   * Sets how the invoice was paid.
+   * @param paymentInfo Payment method and transaction details
    * @returns The InvoiceBuilder instance for chaining
    */
   withPaymentInformation(paymentInfo: PaymentInformation | null): this {
@@ -190,8 +190,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set possible recipes
-   * @param recipes The possible recipes
+   * Sets potential recipes that can be made from invoice items.
+   * @param recipes Array of recipe suggestions
    * @returns The InvoiceBuilder instance for chaining
    */
   withPossibleRecipes(recipes: Recipe[]): this {
@@ -200,8 +200,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Set additional metadata
-   * @param metadata The additional metadata
+   * Sets custom key-value metadata for the invoice.
+   * @param metadata Additional properties as key-value pairs
    * @returns The InvoiceBuilder instance for chaining
    */
   withAdditionalMetadata(metadata: Record<string, string>): this {
@@ -210,8 +210,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Generate a random number of items for the invoice
-   * @param count Optional number of items to generate
+   * Generates random product items for testing.
+   * @param count Number of items to generate (defaults to 3-10)
    * @returns The InvoiceBuilder instance for chaining
    */
   withRandomItems(count?: number): this {
@@ -221,8 +221,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Generate random recipes
-   * @param count Optional number of recipes to generate
+   * Generates random recipe suggestions for testing.
+   * @param count Number of recipes to generate (defaults to 0-3)
    * @returns The InvoiceBuilder instance for chaining
    */
   withRandomRecipes(count?: number): this {
@@ -242,7 +242,7 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Build and return the invoice object
+   * Constructs the final invoice object from builder state.
    * @returns The constructed {@link Invoice} object
    */
   build(): Invoice {
@@ -250,8 +250,8 @@ export class InvoiceBuilder {
   }
 
   /**
-   * Create multiple invoices with the same configuration
-   * @param count The number of invoices to create
+   * Creates multiple invoice instances with the same configuration.
+   * @param count How many invoices to create
    * @returns An array of constructed {@link Invoice} objects
    */
   buildMany(count: number): Invoice[] {
@@ -260,7 +260,7 @@ export class InvoiceBuilder {
 }
 
 /**
- * Factory function to create a new InvoiceBuilder
+ * Creates a new invoice builder instance for fluent configuration.
  * @returns A new instance of {@link InvoiceBuilder}
  */
 export function createInvoiceBuilder(): InvoiceBuilder {
@@ -268,7 +268,7 @@ export function createInvoiceBuilder(): InvoiceBuilder {
 }
 
 /**
- * Generate a single random invoice
+ * Generates a complete random invoice for testing purposes.
  * @returns A randomly generated {@link Invoice} object
  */
 export function generateRandomInvoice(): Invoice {
@@ -276,8 +276,8 @@ export function generateRandomInvoice(): Invoice {
 }
 
 /**
- * Generate multiple random invoices
- * @param count The number of invoices to generate
+ * Generates multiple random invoices for testing purposes.
+ * @param count How many invoices to generate
  * @returns An array of randomly generated {@link Invoice} objects
  */
 export function generateRandomInvoices(count: number): Invoice[] {

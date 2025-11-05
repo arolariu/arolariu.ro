@@ -19,17 +19,16 @@ const ACCEPTED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "applica
 
 /**
  * Context type definition for the Invoice Creator.
- *
  * @property {InvoiceScan[]} scans - Array of all invoice scans currently loaded
  * @property {boolean} isUploading - Flag indicating if files are currently being uploaded
  * @property {number} uploadProgress - Upload progress percentage (0-100)
  * @property {boolean} isProcessingNext - Flag indicating if scans are being processed for submission
- * @property {Function} addFiles - Function to add new files to the scan list
- * @property {Function} removeScan - Function to remove a specific scan by ID
- * @property {Function} clearAll - Function to remove all scans
- * @property {Function} rotateScan - Function to rotate an image scan by degrees
- * @property {Function} renameScan - Function to rename a scan
- * @property {Function} processNextStep - Function to submit all scans to the backend API
+ * @property {(files: FileList) => void} addFiles - Function to add new files to the scan list
+ * @property {(id: string) => void} removeScan - Function to remove a specific scan by ID
+ * @property {() => void} clearAll - Function to remove all scans
+ * @property {(id: string, degrees: number) => Promise<void>} rotateScan - Function to rotate an image scan by degrees
+ * @property {(id: string, newName: string) => void} renameScan - Function to rename a scan
+ * @property {() => Promise<void>} processNextStep - Function to submit all scans to the backend API
  */
 interface InvoiceCreatorContextType {
   scans: InvoiceScan[];
@@ -47,9 +46,8 @@ interface InvoiceCreatorContextType {
 
 /**
  * Classifies a file as either PDF or image based on its MIME type.
- *
- * @param {File} file - The file to classify
- * @returns {InvoiceScanType} Either "pdf" or "image"
+ * @param file The file to classify
+ * @returns Either "pdf" or "image"
  */
 const classify = (file: File): InvoiceScanType => (file.type === "application/pdf" ? "pdf" : "image");
 
@@ -65,24 +63,16 @@ const classify = (file: File): InvoiceScanType => (file.type === "application/pd
 const InvoiceCreatorContext = createContext<InvoiceCreatorContextType | undefined>(undefined);
 
 /**
- * Provider component for the Invoice Creator Context.
+ * Provides context for invoice creation workflow.
  *
- * This component manages all state and operations for creating invoices from scanned files.
- * It handles file validation, upload progress simulation, scan manipulation, and submission
- * to the backend API.
+ * Manages state and operations for creating invoices from scanned files.
+ * Handles file validation, upload progress simulation, scan manipulation, and submission to the backend API.
  *
- * Features:
- * - Accepts JPG, PNG, and PDF files up to 10MB each
- * - Simulates upload progress with visual feedback
- * - Allows scan rotation (images only), renaming, and removal
- * - Submits scans one-by-one to the backend API with proper error handling
- * - Provides toast notifications for all operations
- * - Automatically cleans up blob URLs to prevent memory leaks
- *
- * @param {Object} props - Component props
- * @param {React.ReactNode} props.children - Child components to render within the provider
- * @returns {JSX.Element} The provider component wrapping children
- *
+ * Features include JPG/PNG/PDF support up to 10MB, progress feedback, scan rotation/renaming/removal,
+ * one-by-one submission with error handling, toast notifications, and automatic blob URL cleanup.
+ * @param props Component props
+ * @param props.children Child components to render within the provider
+ * @returns The provider component wrapping children
  * @example
  * ```tsx
  * <InvoiceCreatorProvider>
@@ -107,9 +97,7 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
    *
    * Creates blob URLs for preview and simulates upload progress.
    * Shows toast notifications for validation errors and successful uploads.
-   *
-   * @param {FileList} files - List of files to add
-   *
+   * @param {FileList} files List of files to add
    * @example
    * ```tsx
    * const { addFiles } = useInvoiceCreator();
@@ -186,9 +174,7 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
    * Removes a specific scan from the list by ID.
    *
    * Automatically revokes the blob URL to prevent memory leaks.
-   *
-   * @param {string} id - Unique identifier of the scan to remove
-   *
+   * @param {string} id Unique identifier of the scan to remove
    * @example
    * ```tsx
    * const { removeScan } = useInvoiceCreator();
@@ -210,7 +196,6 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
    * Clears all scans from the list.
    *
    * Revokes all blob URLs to prevent memory leaks.
-   *
    * @example
    * ```tsx
    * const { clearAll } = useInvoiceCreator();
@@ -230,11 +215,9 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
    *
    * Only works for image scans (JPG, PNG). PDF rotation is not supported.
    * Creates a new blob URL for the rotated image and revokes the old one.
-   *
-   * @param {string} id - Unique identifier of the scan to rotate
-   * @param {number} degrees - Rotation amount in degrees (typically 90, 180, or 270)
+   * @param {string} id Unique identifier of the scan to rotate
+   * @param {number} degrees Rotation amount in degrees (typically 90, 180, or 270)
    * @returns {Promise<void>} Resolves when rotation completes
-   *
    * @example
    * ```tsx
    * const { rotateScan } = useInvoiceCreator();
@@ -274,10 +257,8 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
    *
    * The extension is automatically retained from the original filename.
    * Creates a new File object with the updated name.
-   *
-   * @param {string} id - Unique identifier of the scan to rename
-   * @param {string} newName - New name for the scan (with or without extension)
-   *
+   * @param {string} id Unique identifier of the scan to rename
+   * @param {string} newName New name for the scan (with or without extension)
    * @example
    * ```tsx
    * const { renameScan } = useInvoiceCreator();
@@ -317,15 +298,14 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
    * Each scan is processed independently - one failure doesn't stop others.
    * Successfully processed scans are removed from the list.
    * Failed scans remain for retry.
-   *
    * @returns {Promise<void>} Resolves when all scans have been processed
-   *
    * @example
    * ```tsx
    * const { processNextStep } = useInvoiceCreator();
    * <button onClick={processNextStep}>Submit All</button>
    * ```
    */
+  // eslint-disable-next-line sonarjs/cognitive-complexity -- Complex sequential workflow with proper error handling and user feedback. Refactoring would reduce readability.
   const processNextStep = useCallback(async () => {
     if (isProcessingRef.current) {
       return;
@@ -490,10 +470,8 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
  *
  * Must be used within an InvoiceCreatorProvider component.
  * Provides access to all scan management operations and state.
- *
- * @returns {InvoiceCreatorContextType} Context value with scan state and operations
+ * @returns Context value with scan state and operations
  * @throws {Error} If used outside of InvoiceCreatorProvider
- *
  * @example
  * ```tsx
  * function MyComponent() {

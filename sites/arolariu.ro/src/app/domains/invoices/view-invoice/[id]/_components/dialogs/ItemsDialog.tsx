@@ -1,5 +1,6 @@
 "use client";
 
+import {useCallback, useState} from "react";
 import {usePaginationWithSearch} from "@/hooks";
 import {Invoice, Product, ProductCategory} from "@/types/invoices";
 import {
@@ -19,7 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from "@arolariu/components";
-import {useState} from "react";
 import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 
@@ -43,7 +43,12 @@ export default function ItemsDialog(): React.JSX.Element {
     items: editableItems,
   });
 
-  const handleAddNewItem = () => {
+  const handleSaveChanges = useCallback(() => {
+    // TODO: Implement save functionality
+    close();
+  }, [close]);
+
+  const handleAddNewItem = useCallback(() => {
     const newItem: Product = {
       rawName: "",
       genericName: "",
@@ -61,19 +66,26 @@ export default function ItemsDialog(): React.JSX.Element {
       price: 0,
     };
     setEditableItems((prev) => [...prev, newItem]);
-  };
+  }, [setEditableItems]);
 
-  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+  const handleDeleteItem = useCallback(
+    (item: Product) => () => {
+      // eslint-disable-next-line sonarjs/no-nested-functions -- Curried callback pattern required for item-specific delete handler
+      setEditableItems((prev) => prev.filter((i) => i.rawName !== item.rawName));
+    },
+    [setEditableItems],
+  );
+
+  const handleValueChange = useCallback((e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const {name, value} = e.target;
 
-    // Validate index is within bounds
-    if (index < 0 || index >= editableItems.length) {
-      return; // Early return if index is invalid
-    }
-
     setEditableItems((prev) => {
-      const updatedItems = [...prev];
-      const currentItem = updatedItems.at(index);
+      // Validate index is within bounds
+      if (index < 0 || index >= prev.length) {
+        return prev; // Early return if index is invalid
+      }
+
+      const currentItem = prev.at(index);
 
       if (!currentItem) {
         return prev;
@@ -102,9 +114,9 @@ export default function ItemsDialog(): React.JSX.Element {
         return prev;
       }
 
-      return [...updatedItems.slice(0, index), updatedItem, ...updatedItems.slice(index + 1)];
+      return [...prev.slice(0, index), updatedItem, ...prev.slice(index + 1)];
     });
-  };
+  }, [setEditableItems]);
 
   return (
     <Dialog
@@ -194,10 +206,7 @@ export default function ItemsDialog(): React.JSX.Element {
                       <Button
                         variant='ghost'
                         size='icon'
-                        onClick={() => {
-                          const newItems = editableItems.filter((i) => i.rawName !== item.rawName);
-                          setEditableItems(newItems);
-                        }}>
+                        onClick={handleDeleteItem(item)}>
                         <TbTrash className='h-4 w-4 text-red-500' />
                       </Button>
                     </TableCell>
@@ -262,7 +271,7 @@ export default function ItemsDialog(): React.JSX.Element {
             onClick={close}>
             Cancel
           </Button>
-          <Button onClick={() => {}}>
+          <Button onClick={handleSaveChanges}>
             <TbDisc className='mr-2 h-4 w-4' />
             Save Changes
           </Button>

@@ -20,7 +20,7 @@ type Props = {
  * including strong, em, br, code, ul, li, and span elements.
  * @param props The props object containing the sectionKey and textKey
  * @returns The formatted internationalized text content
- * @throws Throws an error if the specified text key is not found in the namespace
+ * @throws {Error} If the specified text key is not found in the namespace
  * @example
  * ```tsx
  * <RichText a11ySectionKey="about" a11yTextKey="description" />

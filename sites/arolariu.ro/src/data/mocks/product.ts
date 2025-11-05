@@ -43,8 +43,8 @@ export class ProductBuilder {
   }
 
   /**
-   * Set the raw name (as it appears on the receipt)
-   * @param rawName The raw product name
+   * Sets the raw product name as it appears on the receipt.
+   * @param rawName Unprocessed name from receipt
    * @returns The ProductBuilder instance for chaining
    */
   withRawName(rawName: string): this {
@@ -53,8 +53,8 @@ export class ProductBuilder {
   }
 
   /**
-   * Set the generic name (normalized/cleaned name)
-   * @param genericName The generic product name
+   * Sets the normalized/cleaned generic product name.
+   * @param genericName Standardized product name
    * @returns The ProductBuilder instance for chaining
    */
   withGenericName(genericName: string): this {
@@ -63,8 +63,8 @@ export class ProductBuilder {
   }
 
   /**
-   * Set the product code/barcode
-   * @param code The product code
+   * Sets the product code or barcode identifier.
+   * @param code SKU, EAN, or UPC code
    * @returns The ProductBuilder instance for chaining
    */
   withProductCode(code: string): this {
@@ -73,8 +73,8 @@ export class ProductBuilder {
   }
 
   /**
-   * Set the product category
-   * @param category The product category
+   * Sets the product category classification.
+   * @param category Type or class of product
    * @returns The ProductBuilder instance for chaining
    */
   withCategory(category: ProductCategory): this {
@@ -83,8 +83,8 @@ export class ProductBuilder {
   }
 
   /**
-   * Set the unit price
-   * @param price The unit price
+   * Sets the unit price and recalculates total price.
+   * @param price Price per unit
    * @returns The ProductBuilder instance for chaining
    */
   withPrice(price: number): this {
@@ -94,8 +94,8 @@ export class ProductBuilder {
   }
 
   /**
-   * Set the quantity
-   * @param quantity The product quantity
+   * Sets the quantity and recalculates total price.
+   * @param quantity Number of units purchased
    * @returns The ProductBuilder instance for chaining
    */
   withQuantity(quantity: number): this {
@@ -105,8 +105,8 @@ export class ProductBuilder {
   }
 
   /**
-   * Set the quantity unit
-   * @param unit The quantity unit
+   * Sets the measurement unit for quantity.
+   * @param unit Measurement unit (e.g., kg, pcs, l)
    * @returns The ProductBuilder instance for chaining
    */
   withQuantityUnit(unit: string): this {
@@ -115,8 +115,8 @@ export class ProductBuilder {
   }
 
   /**
-   * Set the total price directly (overrides calculated value)
-   * @param totalPrice The total price
+   * Overrides the total price without recalculating.
+   * @param totalPrice Final price to set directly
    * @returns The ProductBuilder instance for chaining
    */
   withTotalPrice(totalPrice: number): this {
@@ -125,8 +125,8 @@ export class ProductBuilder {
   }
 
   /**
-   * Set detected allergens
-   * @param allergens The detected allergens
+   * Sets the list of detected allergens for this product.
+   * @param allergens Array of allergen identifiers
    * @returns The ProductBuilder instance for chaining
    */
   withDetectedAllergens(allergens: Allergen[]): this {
@@ -135,8 +135,8 @@ export class ProductBuilder {
   }
 
   /**
-   * Add random allergens to the product
-   * @param count Optional number of allergens to add
+   * Generates random allergens for testing purposes.
+   * @param count Number of allergens to generate (defaults to 0-3)
    * @returns The ProductBuilder instance for chaining
    */
   withRandomAllergens(count?: number): this {
@@ -168,8 +168,8 @@ export class ProductBuilder {
   }
 
   /**
-   * Set product metadata
-   * @param metadata The product metadata
+   * Sets custom metadata flags for the product.
+   * @param metadata Flags for completion, edit status, and soft deletion
    * @returns The ProductBuilder instance for chaining
    */
   withMetadata(metadata: {isComplete?: boolean; isEdited?: boolean; isSoftDeleted?: boolean}): this {
@@ -181,7 +181,7 @@ export class ProductBuilder {
   }
 
   /**
-   * Build and return the product object
+   * Constructs the final product object from builder state.
    * @returns The constructed {@link Product} object
    */
   build(): Product {
@@ -189,8 +189,8 @@ export class ProductBuilder {
   }
 
   /**
-   * Create multiple products with the same configuration
-   * @param count The number of products to create
+   * Creates multiple product instances with unique identifiers.
+   * @param count How many products to create
    * @returns An array of constructed {@link Product} objects
    */
   buildMany(count: number): Product[] {
@@ -205,7 +205,7 @@ export class ProductBuilder {
 }
 
 /**
- * Factory function to create a new ProductBuilder
+ * Creates a new product builder instance for fluent configuration.
  * @returns A new instance of {@link ProductBuilder}
  */
 export function createProductBuilder(): ProductBuilder {
@@ -213,7 +213,7 @@ export function createProductBuilder(): ProductBuilder {
 }
 
 /**
- * Generate a single random product
+ * Generates a complete random product for testing purposes.
  * @returns A randomly generated {@link Product} object
  */
 export function generateRandomProduct(): Product {
@@ -221,8 +221,8 @@ export function generateRandomProduct(): Product {
 }
 
 /**
- * Generate multiple random products
- * @param count The number of products to generate
+ * Generates multiple random products for testing purposes.
+ * @param count How many products to generate
  * @returns An array of randomly generated {@link Product} objects
  */
 export function generateRandomProducts(count: number): Product[] {

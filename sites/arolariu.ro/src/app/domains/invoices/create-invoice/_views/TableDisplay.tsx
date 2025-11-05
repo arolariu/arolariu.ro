@@ -20,6 +20,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  toast,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -52,7 +53,11 @@ export default function TableDisplay(): React.JSX.Element | null {
   const handleRename = useCallback(
     (scan: {id: string; name: string}) => (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      // todo: add dialog spawn.
+      // TODO: Implement rename dialog to get new name from user
+      renameScan(scan.id, scan.name);
+      toast("Rename feature coming soon", {
+        description: "This feature is currently under development.",
+      });
     },
     [renameScan],
   );
@@ -179,9 +184,9 @@ export default function TableDisplay(): React.JSX.Element | null {
                 <TableCell className='font-medium'>{(currentPage - 1) * pageSize + index + 1}</TableCell>
                 <TableCell className='max-w-xs truncate font-medium'>
                   <div className='flex items-center gap-2'>
-                    {scan.isProcessing && (
+                    {scan.isProcessing ? (
                       <div className='h-4 w-4 animate-spin rounded-full border-2 border-purple-600 border-t-transparent' />
-                    )}
+                    ) : null}
                     <span>{scan.name}</span>
                   </div>
                 </TableCell>
@@ -271,22 +276,27 @@ export default function TableDisplay(): React.JSX.Element | null {
                 />
               </PaginationItem>
 
-              {getVisiblePages().map((p, idx) =>
-                p === "..." ? (
-                  <PaginationItem key={`dots-${idx}`}>
-                    <PaginationEllipsis />
-                  </PaginationItem>
-                ) : (
-                  <PaginationItem key={`page-${p}`}>
-                    <PaginationLink
-                      href='#'
-                      onClick={handlePageClick(p as number)}
-                      isActive={currentPage === p}>
-                      {p}
-                    </PaginationLink>
-                  </PaginationItem>
-                ),
-              )}
+              {(() => {
+                const visiblePages = getVisiblePages();
+                return visiblePages.map((p, idx) =>
+                  p === "..." ? (
+                    <PaginationItem
+                      // eslint-disable-next-line react/no-array-index-key -- IGNORE ---
+                      key={`ellipsis-${idx}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={`page-${p}`}>
+                      <PaginationLink
+                        href='#'
+                        onClick={handlePageClick(p as number)}
+                        isActive={currentPage === p}>
+                        {p}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ),
+                );
+              })()}
 
               <PaginationItem>
                 <PaginationNext

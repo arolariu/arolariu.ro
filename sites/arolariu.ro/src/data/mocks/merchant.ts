@@ -40,8 +40,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set the merchant ID
-   * @param id The merchant ID
+   * Sets the unique identifier for the merchant.
+   * @param id Unique identifier to assign
    * @returns The MerchantBuilder instance for chaining
    */
   withId(id: string): this {
@@ -50,8 +50,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set the merchant name
-   * @param name The merchant name
+   * Sets the display name for the merchant.
+   * @param name Business or store name
    * @returns The MerchantBuilder instance for chaining
    */
   withName(name: string): this {
@@ -60,8 +60,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set the merchant description
-   * @param description The merchant description
+   * Sets a detailed description for the merchant.
+   * @param description Description text to assign
    * @returns The MerchantBuilder instance for chaining
    */
   withDescription(description: string): this {
@@ -70,8 +70,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set the creation date
-   * @param date The creation date
+   * Sets when the merchant was created.
+   * @param date Creation timestamp
    * @returns The MerchantBuilder instance for chaining
    */
   withCreatedAt(date: Date): this {
@@ -80,8 +80,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set the creator ID
-   * @param userId The creator user ID
+   * Sets who created the merchant record.
+   * @param userId Creator's user identifier
    * @returns The MerchantBuilder instance for chaining
    */
   withCreatedBy(userId: string): this {
@@ -90,8 +90,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set the last updated date
-   * @param date The last updated date
+   * Sets when the merchant was last modified.
+   * @param date Last modification timestamp
    * @returns The MerchantBuilder instance for chaining
    */
   withLastUpdatedAt(date: Date): this {
@@ -100,8 +100,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set the last updater ID
-   * @param userId The last updater user ID
+   * Sets who last modified the merchant record.
+   * @param userId Last updater's user identifier
    * @returns The MerchantBuilder instance for chaining
    */
   withLastUpdatedBy(userId: string): this {
@@ -110,8 +110,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set the number of updates
-   * @param count The number of updates
+   * Sets how many times the merchant record was updated.
+   * @param count Total number of updates
    * @returns The MerchantBuilder instance for chaining
    */
   withNumberOfUpdates(count: number): this {
@@ -120,8 +120,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set whether the merchant is important
-   * @param isImportant Whether the merchant is important
+   * Marks whether this merchant is important for the user.
+   * @param isImportant Flag indicating importance
    * @returns The MerchantBuilder instance for chaining
    */
   withIsImportant(isImportant: boolean): this {
@@ -130,8 +130,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set whether the merchant is soft deleted
-   * @param isSoftDeleted Whether the merchant is soft deleted
+   * Marks whether the merchant is logically deleted.
+   * @param isSoftDeleted Flag indicating soft deletion status
    * @returns The MerchantBuilder instance for chaining
    */
   withIsSoftDeleted(isSoftDeleted: boolean): this {
@@ -140,8 +140,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set the merchant category
-   * @param category The merchant category
+   * Sets the business category of the merchant.
+   * @param category Business type classification
    * @returns The MerchantBuilder instance for chaining
    */
   withCategory(category: MerchantCategory): this {
@@ -150,8 +150,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set the merchant address
-   * @param address The merchant address
+   * Sets the physical location of the merchant.
+   * @param address Street address or location
    * @returns The MerchantBuilder instance for chaining
    */
   withAddress(address: string): this {
@@ -160,8 +160,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set the merchant phone number
-   * @param phoneNumber The merchant phone number
+   * Sets the contact phone number for the merchant.
+   * @param phoneNumber Phone number in any format
    * @returns The MerchantBuilder instance for chaining
    */
   withPhoneNumber(phoneNumber: string): this {
@@ -170,8 +170,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Set the parent company ID
-   * @param companyId The parent company ID
+   * Links the merchant to a parent company entity.
+   * @param companyId Parent company identifier
    * @returns The MerchantBuilder instance for chaining
    */
   withParentCompanyId(companyId: string): this {
@@ -180,7 +180,7 @@ export class MerchantBuilder {
   }
 
   /**
-   * Build and return the merchant object
+   * Constructs the final merchant object from builder state.
    * @returns The constructed {@link Merchant} object
    */
   build(): Merchant {
@@ -188,8 +188,8 @@ export class MerchantBuilder {
   }
 
   /**
-   * Create multiple merchants with the same configuration
-   * @param count The number of merchants to create
+   * Creates multiple merchant instances with the same configuration.
+   * @param count How many merchants to create
    * @returns An array of constructed {@link Merchant} objects
    */
   buildMany(count: number): Merchant[] {
@@ -203,7 +203,7 @@ export class MerchantBuilder {
 }
 
 /**
- * Factory function to create a new MerchantBuilder
+ * Creates a new merchant builder instance for fluent configuration.
  * @returns A new instance of {@link MerchantBuilder}
  */
 export function createMerchantBuilder(): MerchantBuilder {
@@ -211,7 +211,7 @@ export function createMerchantBuilder(): MerchantBuilder {
 }
 
 /**
- * Generate a single random merchant
+ * Generates a complete random merchant for testing purposes.
  * @returns A randomly generated {@link Merchant} object
  */
 export function generateRandomMerchant(): Merchant {
@@ -219,8 +219,8 @@ export function generateRandomMerchant(): Merchant {
 }
 
 /**
- * Generate multiple random merchants
- * @param count The number of merchants to generate
+ * Generates multiple random merchants for testing purposes.
+ * @param count How many merchants to generate
  * @returns An array of randomly generated {@link Merchant} objects
  */
 export function generateRandomMerchants(count: number): Merchant[] {
