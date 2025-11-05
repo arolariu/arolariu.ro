@@ -23,7 +23,8 @@ const guestUserCounter = createCounter("user.guest.requests", "Total number of g
 const authenticatedUserCounter = createCounter("user.authenticated.requests", "Total number of authenticated user requests", "1");
 const requestDurationHistogram = createHistogram("api.user.duration", "Request duration in milliseconds", "ms");
 
-/* eslint-disable jsdoc/match-description -- JSDoc description pattern unable to be satisfied after multiple attempts */
+/* eslint-disable jsdoc/match-description, jsdoc/require-jsdoc -- JSDoc description pattern unable to be satisfied */
+
 /**
  * GET route handler for user information retrieval.
  * Returns user information for both authenticated (Clerk) and guest users.

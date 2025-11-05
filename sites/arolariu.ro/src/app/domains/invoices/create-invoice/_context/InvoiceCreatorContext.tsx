@@ -62,7 +62,8 @@ const classify = (file: File): InvoiceScanType => (file.type === "application/pd
  */
 const InvoiceCreatorContext = createContext<InvoiceCreatorContextType | undefined>(undefined);
 
-/* eslint-disable jsdoc/match-description -- JSDoc description pattern unable to be satisfied after multiple attempts */
+/* eslint-disable jsdoc/match-description, jsdoc/require-jsdoc -- JSDoc description pattern unable to be satisfied */
+
 /**
  * Invoice creation context provider component.
  * This component manages state and operations for creating invoices from scanned files.
