@@ -3,6 +3,9 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useMerchants} from "./useMerchants";
 import type {Merchant} from "@/types/invoices";
 
+// Type alias for store selector to improve readability
+type MerchantsStoreSelector = (state: {merchants: Merchant[]; setMerchants: (merchants: Merchant[]) => void}) => unknown;
+
 // Create mock functions using vi.hoisted
 const {mockFetchMerchants, mockSetMerchants, mockUseMerchantsStore} = vi.hoisted(() => ({
   mockFetchMerchants: vi.fn(),
@@ -39,7 +42,7 @@ describe("useMerchants", () => {
     vi.clearAllMocks();
 
     // Setup default mock implementation for useMerchantsStore
-    mockUseMerchantsStore.mockImplementation((selector: (state: {merchants: Merchant[]; setMerchants: (merchants: Merchant[]) => void}) => unknown) => {
+    mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
       const state = {
         merchants: [],
         setMerchants: mockSetMerchants,

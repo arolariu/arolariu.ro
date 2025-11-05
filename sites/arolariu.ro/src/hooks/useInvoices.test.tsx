@@ -150,7 +150,8 @@ describe("useInvoices", () => {
 
     renderHook(() => useInvoices());
 
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    expect(mockFetchInvoices).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockFetchInvoices).not.toHaveBeenCalled();
+    });
   });
 });

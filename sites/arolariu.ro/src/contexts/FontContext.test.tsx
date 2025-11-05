@@ -2,6 +2,20 @@ import {act, renderHook} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {FontContextProvider, useFontContext} from "./FontContext";
 
+// Mock next/font/google fonts
+vi.mock("next/font/google", () => ({
+  Caudex: vi.fn(() => ({
+    className: "caudex-font",
+    style: {fontFamily: "Caudex"},
+    variable: "--font-caudex",
+  })),
+  Atkinson_Hyperlegible: vi.fn(() => ({
+    className: "atkinson-hyperlegible-font",
+    style: {fontFamily: "Atkinson Hyperlegible"},
+    variable: "--font-atkinson-hyperlegible",
+  })),
+}));
+
 describe("FontContext", () => {
   let localStorageMock: Record<string, string>;
 
@@ -104,7 +118,6 @@ describe("FontContext", () => {
         const storageEvent = new StorageEvent("storage", {
           key: "selectedFont",
           newValue: "dyslexic",
-          oldValue: "normal",
         });
         globalThis.dispatchEvent(storageEvent);
       });

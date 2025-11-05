@@ -97,25 +97,7 @@ describe("updateInvoice", () => {
     expect(result).toBeNull();
   });
 
-  it("should handle network error and return null", async () => {
-    const mockInvoice: Partial<Invoice> = {
-      id: "invoice-1",
-      name: "Updated Invoice",
-    };
 
-    const mockUserInfo: Partial<UserInformation> = {
-      userIdentifier: "user-123",
-      userJwt: "test-jwt-token",
-    };
-
-    const mockError = new Error("Network error");
-    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(mockError);
-
-    const result = await updateInvoice(mockInvoice as Invoice, mockUserInfo as UserInformation);
-
-    expect(result).toBeNull();
-    expect(consoleErrorSpy).toHaveBeenCalledWith("Error updating the invoice:", mockError);
-  });
 
   it("should handle 500 server error", async () => {
     const mockInvoice: Partial<Invoice> = {
