@@ -115,7 +115,7 @@ describe("download utilities", () => {
           arrayBuffer(): Promise<ArrayBuffer> {
             throw new Error("Not implemented");
           }
-          constructor(...args: unknown[]) {
+          constructor(..._args: unknown[]) {
             throw new Error("Blob creation failed");
           }
         }

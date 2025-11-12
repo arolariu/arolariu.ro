@@ -5,10 +5,10 @@
   import ActionButton from "@/presentation/ActionButton.svelte";
 
   export type ActionConfig = {
-    icon?: "print" | "download" | "copy";
+    icon: "print" | "download" | "copy";
     label: string;
-    loading?: boolean;
-    disabled?: boolean;
+    loading: boolean;
+    disabled: boolean;
     onClick: () => void;
   };
 
