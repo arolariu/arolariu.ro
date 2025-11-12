@@ -45,11 +45,15 @@
     {
       icon: "copy",
       label: copySuccess ? ui.buttons.copied : `${ui.buttons.copy} JSON`,
+      loading: false,
+      disabled: false,
       onClick: copyToClipboard,
     },
     {
       icon: "download",
       label: `${ui.buttons.download} JSON`,
+      loading: false,
+      disabled: false,
       onClick: downloadJSONFile,
     },
   ]);

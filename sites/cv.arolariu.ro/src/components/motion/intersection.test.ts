@@ -386,6 +386,7 @@ describe("intersect action", () => {
 
       // Should be same observer instance (not recreated)
       expect(mockObserver.disconnect).not.toHaveBeenCalled();
+      expect(mockObserver).toBe(initialObserver);
     });
   });
 });
