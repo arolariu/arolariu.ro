@@ -5,7 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Hosting;
 
 /// <summary>
 /// Middleware that adds security headers to all HTTP responses to enhance application security posture.
@@ -53,24 +52,16 @@ using Microsoft.Extensions.Hosting;
 /// app.UseMiddleware&lt;SecurityHeadersMiddleware&gt;();
 /// </code>
 /// </example>
+/// <remarks>
+/// Initializes a new instance of the <see cref="SecurityHeadersMiddleware"/> class.
+/// </remarks>
+/// <param name="next">The next middleware delegate in the request pipeline.</param>
 [ExcludeFromCodeCoverage] // Infrastructure middleware - integration tested, not unit tested
 #pragma warning disable CA1812
-internal sealed class SecurityHeadersMiddleware
+internal sealed class SecurityHeadersMiddleware(RequestDelegate next)
 #pragma warning restore CA1812
 {
-  private readonly RequestDelegate _next;
-  private readonly IHostEnvironment _environment;
-
-  /// <summary>
-  /// Initializes a new instance of the <see cref="SecurityHeadersMiddleware"/> class.
-  /// </summary>
-  /// <param name="next">The next middleware delegate in the request pipeline.</param>
-  /// <param name="environment">The hosting environment information for environment-specific configuration.</param>
-  public SecurityHeadersMiddleware(RequestDelegate next, IHostEnvironment environment)
-  {
-    _next = next ?? throw new ArgumentNullException(nameof(next));
-    _environment = environment ?? throw new ArgumentNullException(nameof(environment));
-  }
+  private readonly RequestDelegate _next = next ?? throw new ArgumentNullException(nameof(next));
 
   /// <summary>
   /// Processes an HTTP request by adding security headers to the response.
@@ -89,11 +80,7 @@ internal sealed class SecurityHeadersMiddleware
     // Add security headers that apply to all environments
     AddCommonSecurityHeaders(context);
 
-    // Add production-only security headers
-    if (!_environment.IsDevelopment())
-    {
-      AddProductionSecurityHeaders(context);
-    }
+    AddProductionSecurityHeaders(context);
 
     // Continue processing the request
     await _next(context).ConfigureAwait(false);
