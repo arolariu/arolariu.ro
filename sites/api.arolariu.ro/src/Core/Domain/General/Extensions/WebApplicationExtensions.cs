@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Core.Auth.Modules;
+using arolariu.Backend.Core.Domain.General.Middlewares;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 using HealthChecks.UI.Client;
@@ -99,10 +100,15 @@ internal static class WebApplicationExtensions
   {
     ArgumentNullException.ThrowIfNull(app);
 
-    app.UseStaticFiles();
     app.UseHttpsRedirection();
-    app.UseRequestLocalization();
+
+    #region Middlewares
     app.UseCors("AllowAllOrigins");
+    app.UseMiddleware<SecurityHeadersMiddleware>();
+    #endregion
+
+    app.UseStaticFiles();
+    app.UseRequestLocalization();
     app.UseSwagger(SwaggerConfigurationService.GetSwaggerOptions());
     app.UseSwaggerUI(SwaggerConfigurationService.GetSwaggerUIOptions());
     app.MapOpenApi();

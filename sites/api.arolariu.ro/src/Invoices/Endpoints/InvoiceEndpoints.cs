@@ -26,8 +26,12 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 [ExcludeFromCodeCoverage]
 public static partial class InvoiceEndpoints
 {
+#pragma warning disable CA1823 // Avoid unused private fields
+#pragma warning disable IDE0051 // Remove unused private members
   private const string SemanticVersioning = "3.0.0";
   private const string EndpointNameTag = "Invoices Management System v" + SemanticVersioning;
+#pragma warning restore IDE0051 // Remove unused private members
+#pragma warning restore CA1823 // Avoid unused private fields
 
   /// <summary>
   /// Registers all invoice, invoice analysis and merchant endpoint groups into the application's routing pipeline.
