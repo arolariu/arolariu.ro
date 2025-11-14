@@ -37,3 +37,8 @@
 sites/arolariu.ro/certificates
 sites/arolariu.ro/messages/*.d.json.ts
 sites/arolariu.ro/licenses.json
+
+# Rust artifacts:
+scripts-refactored/target/
+scripts-refactored/**/*.rs.bk
+scripts-refactored/Cargo.lock
