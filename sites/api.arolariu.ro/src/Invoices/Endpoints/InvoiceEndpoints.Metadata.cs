@@ -3,7 +3,6 @@ namespace arolariu.Backend.Domain.Invoices.Endpoints;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -28,7 +27,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="invoiceDto"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Create a new invoice (receipt) in the system.",
@@ -48,10 +46,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> CreateNewInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    CreateInvoiceDto invoiceDto,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromBody, SwaggerRequestBody("The invoice DTO to pass.")] CreateInvoiceDto invoiceDto);
   #endregion
 
   #region HTTP GET /rest/v1/invoices/{id}
@@ -60,7 +57,6 @@ public static partial class InvoiceEndpoints
   /// </summary>
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
-  /// <param name="principal"></param>
   /// <param name="id"></param>
   /// <returns></returns>
   [SwaggerOperation(
@@ -79,10 +75,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveSpecificInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
   #region HTTP GET /rest/v1/invoices
@@ -91,7 +86,6 @@ public static partial class InvoiceEndpoints
   /// </summary>
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves all invoices from the system.",
@@ -109,9 +103,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveAllInvoicesAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext
+    );
   #endregion
 
   #region HTTP PUT /rest/v1/invoices/{id}
@@ -122,7 +116,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoicePayload"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Updates a specific invoice in the system.",
@@ -139,11 +132,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> UpdateSpecificInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    Invoice invoicePayload,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("Invoice payload replacing the stored invoice.")] Invoice invoicePayload);
   #endregion
 
   #region HTTP PATCH /rest/v1/invoices/{id}
@@ -154,7 +146,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoicePayload"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Patches a specific invoice in the system.",
@@ -171,11 +162,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> PatchSpecificInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    Invoice invoicePayload,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("Partial invoice payload applied as a patch.")] Invoice invoicePayload);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}
@@ -185,7 +175,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Deletes a specific invoice from the system.",
@@ -203,10 +192,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices
@@ -215,7 +203,6 @@ public static partial class InvoiceEndpoints
   /// </summary>
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Deletes all invoices from a specific user in the system.",
@@ -233,9 +220,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteInvoicesAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext
+    );
   #endregion
 
   #region HTTP PATCH /rest/v1/invoices/{id}/products
@@ -246,7 +233,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="product"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Adds a product to a specific invoice in the system.",
@@ -265,11 +251,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> AddProductToInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    Product product,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("Product payload that will be appended to the invoice.")] Product product);
   #endregion
 
   #region HTTP GET /rest/v1/invoices/{id}/products
@@ -279,7 +264,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves all products from a specific invoice in the system.",
@@ -297,10 +281,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveProductsFromInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}/products
@@ -311,7 +294,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="productName"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Removes a product from a specific invoice in the system.",
@@ -330,11 +312,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RemoveProductFromInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    string productName,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("Product name that will be removed from the invoice.")] string productName);
   #endregion
 
   #region HTTP PUT /rest/v1/invoices/{id}/products
@@ -346,7 +327,6 @@ public static partial class InvoiceEndpoints
   /// <param name="id"></param>
   /// <param name="productName"></param>
   /// <param name="productInformation"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Updates a product in a specific invoice in the system.",
@@ -365,12 +345,11 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> UpdateProductInInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    string productName,
-    Product productInformation,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
+    [FromQuery, SwaggerParameter("Name of the product targeted for update.", Required = true)] string productName,
+    [FromBody, SwaggerRequestBody("Updated product payload applied to the invoice.")] Product productInformation);
   #endregion
 
   #region HTTP GET /rest/v1/invoices/{id}/merchant
@@ -380,7 +359,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves the merchant from an invoice in the system.",
@@ -398,10 +376,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
   #region HTTP POST /rest/v1/invoices/{id}/merchant
@@ -412,7 +389,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="merchant"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Adds a merchant to an invoice in the system.",
@@ -431,11 +407,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> AddMerchantToInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    Merchant merchant,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("Merchant payload that will be associated with the invoice.")] Merchant merchant);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}/merchant
@@ -445,7 +420,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Removes a merchant from an invoice in the system.",
@@ -464,10 +438,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RemoveMerchantFromInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
   #region HTTP POST /rest/v1/invoices/{id}/scan
@@ -478,7 +451,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoiceScanDto"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Creates a new invoice scan in the system.",
@@ -498,11 +470,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> CreateInvoiceScanAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    InvoiceScan invoiceScanDto,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("Invoice scan payload captured for the invoice.")] InvoiceScan invoiceScanDto);
   #endregion
 
   #region HTTP GET /rest/v1/invoices/{id}/scan
@@ -512,7 +483,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves a specific invoice scan from the system.",
@@ -530,10 +500,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveInvoiceScanAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
   #region HTTP PUT /rest/v1/invoices/{id}/scan
@@ -544,7 +513,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoiceScanDto"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Updates a specific invoice scan in the system.",
@@ -561,11 +529,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> UpdateInvoiceScanAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    InvoiceScan invoiceScanDto,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("Invoice scan payload replacing the stored scan.")] InvoiceScan invoiceScanDto);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}/scan
@@ -575,7 +542,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Deletes a specific invoice scan from the system.",
@@ -593,10 +559,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteInvoiceScanAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
   #region HTTP GET /rest/v1/invoices/{id}/metadata
@@ -606,7 +571,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves the metadata from a specific invoice in the system.",
@@ -624,10 +588,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveInvoiceMetadataAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
   #region HTTP PATCH /rest/v1/invoices/{id}/metadata
@@ -638,7 +601,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoiceMetadataPatch"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Patches the metadata from a specific invoice in the system.",
@@ -656,11 +618,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> PatchInvoiceMetadataAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    IDictionary<string, string> invoiceMetadataPatch,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("Metadata patch represented as key/value pairs.")] IDictionary<string, string> invoiceMetadataPatch);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}/metadata
@@ -671,7 +632,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="metadataKeys"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Deletes specific metadata keys from a specific invoice in the system.",
@@ -689,11 +649,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteInvoiceMetadataAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    IEnumerable<string> metadataKeys,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("Metadata keys that should be deleted from the invoice.")] IEnumerable<string> metadataKeys);
   #endregion
   #endregion
 
@@ -705,7 +664,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="merchantDto"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Creates a new merchant in the system.",
@@ -725,10 +683,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> CreateNewMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    CreateMerchantDto merchantDto,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromBody, SwaggerRequestBody("Merchant payload that will be persisted in the system.")] CreateMerchantDto merchantDto);
   #endregion
 
   #region HTTP GET /rest/v1/merchants
@@ -738,7 +695,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="parentCompanyId"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves all merchants from the system.",
@@ -753,10 +709,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveAllMerchantsAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid parentCompanyId,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromQuery, SwaggerParameter("Parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
   #endregion
 
   #region HTTP GET /rest/v1/merchants/{id}
@@ -767,7 +722,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="parentCompanyId"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves a specific merchant from the system.",
@@ -784,11 +738,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveSpecificMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    Guid parentCompanyId,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
+    [FromQuery, SwaggerParameter("Parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
   #endregion
 
   #region HTTP PUT /rest/v1/merchants/{id}
@@ -799,7 +752,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="merchantPayload"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Updates a specific merchant in the system.",
@@ -816,11 +768,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> UpdateSpecificMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    Merchant merchantPayload,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("Merchant payload that will replace the stored merchant.")] Merchant merchantPayload);
   #endregion
 
   #region HTTP DELETE /rest/v1/merchants/{id}
@@ -831,7 +782,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="parentCompanyId"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Deletes a specific merchant from the system.",
@@ -848,11 +798,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    Guid parentCompanyId,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
+    [FromQuery, SwaggerParameter("Parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
   #endregion
 
   #region HTTP GET /rest/v1/merchants/{id}/invoices
@@ -862,7 +811,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves all invoices from a specific merchant in the system.",
@@ -880,10 +828,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id);
   #endregion
 
   #region HTTP PATCH /rest/v1/merchants/{id}/invoices
@@ -894,7 +841,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoiceIdentifiers"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Adds invoice(s) to a specific merchant in the system.",
@@ -913,11 +859,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> AddInvoiceToMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    IEnumerable<Guid> invoiceIdentifiers,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("Collection of invoice identifiers that will be associated with the merchant.")] IEnumerable<Guid> invoiceIdentifiers);
   #endregion
 
   #region HTTP DELETE /rest/v1/merchants/{id}/invoices
@@ -928,7 +873,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoiceIdentifiers"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Removes invoice(s) from a specific merchant in the system.",
@@ -947,11 +891,10 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RemoveInvoiceFromMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    IEnumerable<Guid> invoiceIdentifiers,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("Collection of invoice identifiers that will be detached from the merchant.")] IEnumerable<Guid> invoiceIdentifiers);
   #endregion
 
   #region HTTP GET /rest/v1/merchants/{id}/products
@@ -961,7 +904,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves all products from a specific merchant in the system.",
@@ -979,10 +921,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveProductsFromMerchantAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id);
   #endregion
   #endregion
 
@@ -993,7 +934,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="options"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Analyzes a specific invoice from the system.",
@@ -1012,9 +952,9 @@ public static partial class InvoiceEndpoints
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> AnalyzeInvoiceAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    AnalysisOptions options,
-    ClaimsPrincipal principal);
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("Analysis options that drive the analyzer pipeline.")] AnalysisOptions options);
 }
+

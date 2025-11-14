@@ -39,7 +39,6 @@ export default mergeConfig(
           // Build artifacts
           "**/node_modules/**",
           "**/build/**",
-          "**/.svelte-kit/**",
           "**/coverage/**",
 
           // Configuration

@@ -36,7 +36,7 @@ public static partial class InvoiceEndpoints
   /// <param name="router">Route builder used during startup; MUST NOT be null.</param>
   private static void MapStandardInvoiceEndpoints(this IEndpointRouteBuilder router)
   {
-    router // Create a new invoice for a given user (extracted from principal context).
+    router // Create a new invoice for the authenticated user (claims read via IHttpContextAccessor).
       .MapPost("/invoices", CreateNewInvoiceAsync)
       .Accepts<CreateInvoiceDto>("application/json")
       .Produces(StatusCodes.Status201Created)
@@ -51,7 +51,7 @@ public static partial class InvoiceEndpoints
       .WithName(nameof(CreateNewInvoiceAsync))
       .RequireAuthorization();
 
-    router // Retrieve all invoices for a given user (extracted from principal context).
+    router // Retrieve all invoices for the authenticated user (claims read via IHttpContextAccessor).
       .MapGet("/invoices", RetrieveAllInvoicesAsync)
       .Produces<IEnumerable<Invoice>>(StatusCodes.Status200OK)
       .ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -62,7 +62,7 @@ public static partial class InvoiceEndpoints
       .WithName(nameof(RetrieveAllInvoicesAsync))
       .RequireAuthorization();
 
-    router // Delete all invoices for a given user (extracted from principal context).
+    router // Delete all invoices for the authenticated user (claims read via IHttpContextAccessor).
       .MapDelete("/invoices", DeleteInvoicesAsync)
       .Produces(StatusCodes.Status204NoContent)
       .ProducesProblem(StatusCodes.Status401Unauthorized)

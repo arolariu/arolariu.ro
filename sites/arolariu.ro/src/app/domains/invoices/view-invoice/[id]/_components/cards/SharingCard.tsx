@@ -1,4 +1,3 @@
-import {useCallback} from "react";
 import {useUserInformation} from "@/hooks";
 import type {Invoice} from "@/types/invoices";
 import {
@@ -16,6 +15,7 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import Image from "next/image";
+import {useCallback} from "react";
 import {TbArrowRight, TbDeselect, TbLock, TbLockCog, TbShare2, TbUser} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 
