@@ -5,6 +5,7 @@
     <UserSecretsId>7e279eb7-fd3d-471a-893d-bd52eca63f54</UserSecretsId>
     <DockerfileFile>..\..\Dockerfile</DockerfileFile>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.AspNetCore.OpenApi.Generated</InterceptorsNamespaces>
   </PropertyGroup>
 
   <ItemGroup Label="Health Checks Packages">
