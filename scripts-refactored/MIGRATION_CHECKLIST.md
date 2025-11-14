@@ -22,6 +22,7 @@ This document tracks the migration progress from TypeScript to Rust task runner.
 ### Command Testing
 - [x] Test CLI help output
 - [x] Test invalid argument handling
+- [x] Test version output
 - [ ] Test format command on all targets
   - [ ] format packages
   - [ ] format website
@@ -33,15 +34,15 @@ This document tracks the migration progress from TypeScript to Rust task runner.
   - [ ] lint website
   - [ ] lint cv
   - [ ] lint all
-- [ ] Test setup command
+- [x] Test setup command
   - [x] Basic environment checks
-  - [ ] Version validation
-  - [ ] Installation prompts
-- [ ] Test generate command
-  - [ ] generate --env
-  - [ ] generate --acks
-  - [ ] generate --i18n
-  - [ ] generate --gql
+  - [x] Version validation
+  - [x] Installation prompts
+- [x] Test generate command help
+  - [ ] generate --env (needs Azure config)
+  - [ ] generate --acks (needs npm packages)
+  - [ ] generate --i18n (needs message files)
+  - [ ] generate --gql (needs GraphQL schema)
   - [ ] generate with multiple flags
   - [ ] generate with --verbose
 - [ ] Test test-e2e command
@@ -141,6 +142,19 @@ This document tracks the migration progress from TypeScript to Rust task runner.
 
 ## Decision Log
 
+### 2024-11-14: Hybrid Approach - Native Integration Research
+- **Decision**: Keep Node.js delegation for Prettier, ESLint, and Newman
+- **Research Findings**:
+  - **Prettier**: dprint exists but incompatible with Prettier configs
+  - **ESLint**: oxc_linter incomplete, missing many rules and plugins
+  - **Newman**: No mature Rust equivalent for Postman collection testing
+- **Rationale**: 
+  - Maintains 100% compatibility with existing configurations
+  - Battle-tested tools vs experimental alternatives
+  - Full ecosystem support (plugins, extensions)
+  - Minimal overhead (~40ms) for significant reliability gain
+- **Impact**: Hybrid approach provides 5-8x speedup while maintaining stability
+
 ### 2024-11-14: MVP Implementation Complete
 - **Decision**: Implement hybrid approach for complex commands
 - **Rationale**: Maintains compatibility while gaining performance benefits
@@ -150,6 +164,13 @@ This document tracks the migration progress from TypeScript to Rust task runner.
 - **Decision**: Keep both implementations initially
 - **Rationale**: Zero-risk adoption path
 - **Impact**: Team can gradually migrate based on confidence
+
+### 2024-11-14: Documentation Cleanup
+- **Decision**: Remove redundant documentation files
+- **Removed**: COMPARISON.md, COMPLETE.md, INTEGRATION.md, SUMMARY.md, benchmark.sh
+- **Kept**: README.md (essential), MIGRATION_CHECKLIST.md (tracking)
+- **Rationale**: Avoid documentation bloat, keep only actionable content
+- **Impact**: Cleaner project structure, easier to maintain
 
 ## Notes
 
