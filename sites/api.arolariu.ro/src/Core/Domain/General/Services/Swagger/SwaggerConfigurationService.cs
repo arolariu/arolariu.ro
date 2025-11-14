@@ -124,7 +124,12 @@ internal static class SwaggerConfigurationService
   /// </remarks>
   internal static SwaggerOptions GetSwaggerOptions()
   {
-    SwaggerOptions options = new SwaggerOptions();
+    SwaggerOptions options = new SwaggerOptions
+    {
+      OpenApiVersion = OpenApiSpecVersion.OpenApi3_1,
+      RouteTemplate = "swagger/{documentName}/swagger.json",
+    };
+
     return options;
   }
 
