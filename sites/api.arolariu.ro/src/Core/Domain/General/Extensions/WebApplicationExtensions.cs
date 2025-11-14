@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Core.Auth.Modules;
+using arolariu.Backend.Core.Domain.General.Middlewares;
 using arolariu.Backend.Core.Domain.General.Services.Swagger;
 
 using HealthChecks.UI.Client;
@@ -98,6 +99,10 @@ internal static class WebApplicationExtensions
   internal static WebApplication AddGeneralApplicationConfiguration(this WebApplication app)
   {
     ArgumentNullException.ThrowIfNull(app);
+
+    #region Middlewares
+    app.UseMiddleware<SecurityHeadersMiddleware>();
+    #endregion
 
     app.UseStaticFiles();
     app.UseHttpsRedirection();
