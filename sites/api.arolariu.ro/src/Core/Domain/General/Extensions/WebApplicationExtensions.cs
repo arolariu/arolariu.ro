@@ -100,14 +100,15 @@ internal static class WebApplicationExtensions
   {
     ArgumentNullException.ThrowIfNull(app);
 
+    app.UseHttpsRedirection();
+
     #region Middlewares
+    app.UseCors("AllowAllOrigins");
     app.UseMiddleware<SecurityHeadersMiddleware>();
     #endregion
 
     app.UseStaticFiles();
-    app.UseHttpsRedirection();
     app.UseRequestLocalization();
-    app.UseCors("AllowAllOrigins");
     app.UseSwagger(SwaggerConfigurationService.GetSwaggerOptions());
     app.UseSwaggerUI(SwaggerConfigurationService.GetSwaggerUIOptions());
     app.MapOpenApi();
