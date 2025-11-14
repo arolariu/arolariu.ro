@@ -1,6 +1,5 @@
 "use client";
 
-import {useCallback} from "react";
 import {usePaginationWithSearch} from "@/hooks";
 import type {Recipe} from "@/types/invoices";
 import {
@@ -16,6 +15,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
+import {useCallback} from "react";
 import {TbConfetti, TbPlus} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 import RecipeCard from "../cards/RecipeCard";

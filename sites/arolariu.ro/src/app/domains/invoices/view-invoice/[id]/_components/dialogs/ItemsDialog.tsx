@@ -1,6 +1,5 @@
 "use client";
 
-import {useCallback, useState} from "react";
 import {usePaginationWithSearch} from "@/hooks";
 import {Invoice, Product, ProductCategory} from "@/types/invoices";
 import {
@@ -20,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@arolariu/components";
+import {useCallback, useState} from "react";
 import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 
@@ -76,47 +76,50 @@ export default function ItemsDialog(): React.JSX.Element {
     [setEditableItems],
   );
 
-  const handleValueChange = useCallback((e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-    const {name, value} = e.target;
+  const handleValueChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+      const {name, value} = e.target;
 
-    setEditableItems((prev) => {
-      // Validate index is within bounds
-      if (index < 0 || index >= prev.length) {
-        return prev; // Early return if index is invalid
-      }
-
-      const currentItem = prev.at(index);
-
-      if (!currentItem) {
-        return prev;
-      }
-
-      // Use specific property assignments with functional approach
-      const getUpdatedItem = (): Product => {
-        switch (name) {
-          case "rawName":
-            return {...currentItem, rawName: value};
-          case "quantity":
-            return {...currentItem, quantity: Number.parseFloat(value)};
-          case "quantityUnit":
-            return {...currentItem, quantityUnit: value};
-          case "price":
-            return {...currentItem, price: Number.parseFloat(value)};
-          default:
-            return currentItem;
+      setEditableItems((prev) => {
+        // Validate index is within bounds
+        if (index < 0 || index >= prev.length) {
+          return prev; // Early return if index is invalid
         }
-      };
 
-      const updatedItem = getUpdatedItem();
+        const currentItem = prev.at(index);
 
-      if (updatedItem === currentItem) {
-        // No changes made
-        return prev;
-      }
+        if (!currentItem) {
+          return prev;
+        }
 
-      return [...prev.slice(0, index), updatedItem, ...prev.slice(index + 1)];
-    });
-  }, [setEditableItems]);
+        // Use specific property assignments with functional approach
+        const getUpdatedItem = (): Product => {
+          switch (name) {
+            case "rawName":
+              return {...currentItem, rawName: value};
+            case "quantity":
+              return {...currentItem, quantity: Number.parseFloat(value)};
+            case "quantityUnit":
+              return {...currentItem, quantityUnit: value};
+            case "price":
+              return {...currentItem, price: Number.parseFloat(value)};
+            default:
+              return currentItem;
+          }
+        };
+
+        const updatedItem = getUpdatedItem();
+
+        if (updatedItem === currentItem) {
+          // No changes made
+          return prev;
+        }
+
+        return [...prev.slice(0, index), updatedItem, ...prev.slice(index + 1)];
+      });
+    },
+    [setEditableItems],
+  );
 
   return (
     <Dialog
