@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Claims;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
@@ -52,19 +53,22 @@ public static partial class InvoiceEndpoints
   }
 
   /// <summary>
-  /// Extracts the domain user identifier (GUID) from the authenticated <see cref="ClaimsPrincipal"/>.
+  /// Extracts the domain user identifier (GUID) from the current <see cref="HttpContext"/>.
   /// </summary>
   /// <remarks>
   /// <para><b>Expected Claim:</b> <c>userIdentifier</c> claim containing a valid GUID string.</para>
   /// <para><b>Fallback:</b> Returns <c>Guid.Empty</c> if claim missing or unparsable (will propagate to downstream validation layers which SHOULD reject).</para>
   /// <para><b>Telemetry:</b> Starts an Activity span for diagnostic correlation of identity resolution.</para>
+  /// <para><b>Context Source:</b> Pulls the <see cref="ClaimsPrincipal"/> from <see cref="IHttpContextAccessor.HttpContext"/>; when absent, a new empty principal is created to avoid null dereferences.</para>
   /// <para><b>Performance:</b> Single-pass LINQ search over claim collection; negligible overhead for typical principal sizes.</para>
   /// </remarks>
-  /// <param name="principal">Authenticated principal (must not be null).</param>
+  /// <param name="httpContextAccessor">Accessor exposing the current <see cref="HttpContext"/>.</param>
   /// <returns>Resolved user GUID or <c>Guid.Empty</c> when claim absent / invalid.</returns>
-  private static Guid RetrieveUserIdentifierClaimFromPrincipal(ClaimsPrincipal principal)
+  private static Guid RetrieveUserIdentifierClaimFromPrincipal(IHttpContextAccessor httpContextAccessor)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveUserIdentifierClaimFromPrincipal));
+
+    var principal = httpContextAccessor.HttpContext?.User ?? new ClaimsPrincipal(new ClaimsIdentity());
     var userIdentifierClaim = principal.Claims.FirstOrDefault(
         predicate: claim => claim.Type == "userIdentifier",
         defaultValue: new Claim(type: "userIdentifier", value: Guid.Empty.ToString()));
@@ -80,13 +84,15 @@ public static partial class InvoiceEndpoints
   /// <para><b>Status:</b> Placeholder implementation returning <c>true</c>; to be replaced with role / claim inspection (e.g. role = "superuser").</para>
   /// <para><b>Future Implementation Notes:</b> Introduce policy constants, cache high-privilege evaluation, and surface explicit audit logging on positive elevation.</para>
   /// <para><b>Security:</b> Must be implemented prior to exposing admin-tier endpoint behaviors; current stub risks privilege over-grant if used unsafely.</para>
+  /// <para><b>Context Source:</b> Accesses the authenticated principal through <see cref="IHttpContextAccessor.HttpContext"/> instead of DI parameters.</para>
   /// <para><b>Telemetry:</b> Activity span added for future diagnostic correlation of elevation checks.</para>
   /// </remarks>
-  /// <param name="principal">Authenticated principal to evaluate.</param>
+  /// <param name="httpContextAccessor">Accessor exposing the current <see cref="HttpContext"/>.</param>
   /// <returns><c>true</c> when super user (always true in current stub); will become conditional after implementation.</returns>
-  private static bool IsPrincipalSuperUser(ClaimsPrincipal principal)
+  private static bool IsPrincipalSuperUser(IHttpContextAccessor httpContextAccessor)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(IsPrincipalSuperUser));
-    return true; // TODO: implement this method.
+    _ = httpContextAccessor.HttpContext?.User;
+    return true; // Placeholder until role/claim evaluation is implemented.
   }
 }

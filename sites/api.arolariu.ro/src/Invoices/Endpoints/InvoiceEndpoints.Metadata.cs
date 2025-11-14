@@ -3,7 +3,6 @@ namespace arolariu.Backend.Domain.Invoices.Endpoints;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -28,7 +27,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="invoiceDto"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Create a new invoice (receipt) in the system.",
@@ -50,7 +48,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> CreateNewInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromBody, SwaggerRequestBody("The invoice DTO to pass.")] CreateInvoiceDto invoiceDto);
   #endregion
 
@@ -60,7 +57,6 @@ public static partial class InvoiceEndpoints
   /// </summary>
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
-  /// <param name="principal"></param>
   /// <param name="id"></param>
   /// <returns></returns>
   [SwaggerOperation(
@@ -81,7 +77,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
@@ -91,7 +86,6 @@ public static partial class InvoiceEndpoints
   /// </summary>
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves all invoices from the system.",
@@ -110,8 +104,8 @@ public static partial class InvoiceEndpoints
   [Authorize]
   internal static partial Task<IResult> RetrieveAllInvoicesAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal);
+    [FromServices] IHttpContextAccessor httpContext
+    );
   #endregion
 
   #region HTTP PUT /rest/v1/invoices/{id}
@@ -122,7 +116,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoicePayload"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Updates a specific invoice in the system.",
@@ -141,7 +134,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> UpdateSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("Invoice payload replacing the stored invoice.")] Invoice invoicePayload);
   #endregion
@@ -154,7 +146,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoicePayload"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Patches a specific invoice in the system.",
@@ -173,7 +164,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> PatchSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("Partial invoice payload applied as a patch.")] Invoice invoicePayload);
   #endregion
@@ -185,7 +175,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Deletes a specific invoice from the system.",
@@ -205,7 +194,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> DeleteInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
@@ -215,7 +203,6 @@ public static partial class InvoiceEndpoints
   /// </summary>
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Deletes all invoices from a specific user in the system.",
@@ -234,8 +221,8 @@ public static partial class InvoiceEndpoints
   [Authorize]
   internal static partial Task<IResult> DeleteInvoicesAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal);
+    [FromServices] IHttpContextAccessor httpContext
+    );
   #endregion
 
   #region HTTP PATCH /rest/v1/invoices/{id}/products
@@ -246,7 +233,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="product"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Adds a product to a specific invoice in the system.",
@@ -267,7 +253,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> AddProductToInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("Product payload that will be appended to the invoice.")] Product product);
   #endregion
@@ -279,7 +264,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves all products from a specific invoice in the system.",
@@ -299,7 +283,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveProductsFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
@@ -311,7 +294,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="productName"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Removes a product from a specific invoice in the system.",
@@ -332,7 +314,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RemoveProductFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("Product name that will be removed from the invoice.")] string productName);
   #endregion
@@ -346,7 +327,6 @@ public static partial class InvoiceEndpoints
   /// <param name="id"></param>
   /// <param name="productName"></param>
   /// <param name="productInformation"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Updates a product in a specific invoice in the system.",
@@ -367,7 +347,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> UpdateProductInInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
     [FromQuery, SwaggerParameter("Name of the product targeted for update.", Required = true)] string productName,
     [FromBody, SwaggerRequestBody("Updated product payload applied to the invoice.")] Product productInformation);
@@ -380,7 +359,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves the merchant from an invoice in the system.",
@@ -400,7 +378,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
@@ -412,7 +389,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="merchant"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Adds a merchant to an invoice in the system.",
@@ -433,7 +409,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> AddMerchantToInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("Merchant payload that will be associated with the invoice.")] Merchant merchant);
   #endregion
@@ -445,7 +420,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Removes a merchant from an invoice in the system.",
@@ -466,7 +440,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RemoveMerchantFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
@@ -478,7 +451,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoiceScanDto"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Creates a new invoice scan in the system.",
@@ -500,7 +472,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> CreateInvoiceScanAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("Invoice scan payload captured for the invoice.")] InvoiceScan invoiceScanDto);
   #endregion
@@ -512,7 +483,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves a specific invoice scan from the system.",
@@ -532,7 +502,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveInvoiceScanAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
@@ -544,7 +513,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoiceScanDto"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Updates a specific invoice scan in the system.",
@@ -563,7 +531,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> UpdateInvoiceScanAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("Invoice scan payload replacing the stored scan.")] InvoiceScan invoiceScanDto);
   #endregion
@@ -575,7 +542,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Deletes a specific invoice scan from the system.",
@@ -595,7 +561,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> DeleteInvoiceScanAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
@@ -606,7 +571,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves the metadata from a specific invoice in the system.",
@@ -626,7 +590,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
   #endregion
 
@@ -638,7 +601,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoiceMetadataPatch"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Patches the metadata from a specific invoice in the system.",
@@ -658,7 +620,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> PatchInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("Metadata patch represented as key/value pairs.")] IDictionary<string, string> invoiceMetadataPatch);
   #endregion
@@ -671,7 +632,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="metadataKeys"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Deletes specific metadata keys from a specific invoice in the system.",
@@ -691,7 +651,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> DeleteInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("Metadata keys that should be deleted from the invoice.")] IEnumerable<string> metadataKeys);
   #endregion
@@ -705,7 +664,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="merchantDto"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Creates a new merchant in the system.",
@@ -727,7 +685,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> CreateNewMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromBody, SwaggerRequestBody("Merchant payload that will be persisted in the system.")] CreateMerchantDto merchantDto);
   #endregion
 
@@ -738,7 +695,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="parentCompanyId"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves all merchants from the system.",
@@ -755,7 +711,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveAllMerchantsAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromQuery, SwaggerParameter("Parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
   #endregion
 
@@ -767,7 +722,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="parentCompanyId"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves a specific merchant from the system.",
@@ -786,7 +740,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveSpecificMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
     [FromQuery, SwaggerParameter("Parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
   #endregion
@@ -799,7 +752,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="merchantPayload"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Updates a specific merchant in the system.",
@@ -818,7 +770,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> UpdateSpecificMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("Merchant payload that will replace the stored merchant.")] Merchant merchantPayload);
   #endregion
@@ -831,7 +782,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="parentCompanyId"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Deletes a specific merchant from the system.",
@@ -850,7 +800,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> DeleteMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
     [FromQuery, SwaggerParameter("Parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
   #endregion
@@ -862,7 +811,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves all invoices from a specific merchant in the system.",
@@ -882,7 +830,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id);
   #endregion
 
@@ -894,7 +841,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoiceIdentifiers"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Adds invoice(s) to a specific merchant in the system.",
@@ -915,7 +861,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> AddInvoiceToMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("Collection of invoice identifiers that will be associated with the merchant.")] IEnumerable<Guid> invoiceIdentifiers);
   #endregion
@@ -928,7 +873,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="invoiceIdentifiers"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Removes invoice(s) from a specific merchant in the system.",
@@ -949,7 +893,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RemoveInvoiceFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("Collection of invoice identifiers that will be detached from the merchant.")] IEnumerable<Guid> invoiceIdentifiers);
   #endregion
@@ -961,7 +904,6 @@ public static partial class InvoiceEndpoints
   /// <param name="invoiceProcessingService"></param>
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Retrieves all products from a specific merchant in the system.",
@@ -981,7 +923,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> RetrieveProductsFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id);
   #endregion
   #endregion
@@ -993,7 +934,6 @@ public static partial class InvoiceEndpoints
   /// <param name="httpContext"></param>
   /// <param name="id"></param>
   /// <param name="options"></param>
-  /// <param name="principal"></param>
   /// <returns></returns>
   [SwaggerOperation(
     Summary = "Analyzes a specific invoice from the system.",
@@ -1014,7 +954,6 @@ public static partial class InvoiceEndpoints
   internal static partial Task<IResult> AnalyzeInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
     [FromBody, SwaggerRequestBody("Analysis options that drive the analyzer pipeline.")] AnalysisOptions options);
 }

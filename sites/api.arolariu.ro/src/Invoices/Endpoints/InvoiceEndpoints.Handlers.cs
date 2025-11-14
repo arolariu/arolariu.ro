@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -25,7 +24,6 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> CreateNewInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     CreateInvoiceDto invoiceDto)
   {
     try
@@ -79,13 +77,12 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveSpecificInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificInvoiceAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -132,13 +129,13 @@ public static partial class InvoiceEndpoints
 
   internal static async partial Task<IResult> RetrieveAllInvoicesAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal)
+    IHttpContextAccessor httpContext
+    )
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveAllInvoicesAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoices = await invoiceProcessingService
         .ReadInvoices(potentialUserIdentifier)
@@ -185,13 +182,13 @@ public static partial class InvoiceEndpoints
 
   internal static async partial Task<IResult> DeleteInvoicesAsync(
     IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal)
+    IHttpContextAccessor httpContext
+    )
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoicesAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       await invoiceProcessingService
         .DeleteInvoices(potentialUserIdentifier)
@@ -238,14 +235,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> UpdateSpecificInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     Invoice invoicePayload)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateSpecificInvoiceAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -300,14 +296,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> PatchSpecificInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     Invoice invoicePayload)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(PatchSpecificInvoiceAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -385,13 +380,12 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> DeleteInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -446,14 +440,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> AddProductToInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     Product product)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AddProductToInvoiceAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -508,13 +501,12 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveProductsFromInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveProductsFromInvoiceAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -561,14 +553,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RemoveProductFromInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     string productName)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveProductFromInvoiceAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleProduct = await invoiceProcessingService
         .GetProduct(productName, id, potentialUserIdentifier)
@@ -623,7 +614,6 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> UpdateProductInInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     string productName,
     Product productInformation)
@@ -631,7 +621,7 @@ public static partial class InvoiceEndpoints
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateProductInInvoiceAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -699,13 +689,12 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveMerchantFromInvoiceAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -765,14 +754,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> AddMerchantToInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     Merchant merchant)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AddMerchantToInvoiceAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -841,13 +829,12 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RemoveMerchantFromInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveMerchantFromInvoiceAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
 
       var possibleInvoice = await invoiceProcessingService
@@ -924,14 +911,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> CreateInvoiceScanAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     InvoiceScan invoiceScanDto)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceScanAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -995,13 +981,12 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveInvoiceScanAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveInvoiceScanAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -1056,14 +1041,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> UpdateInvoiceScanAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     InvoiceScan invoiceScanDto)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceScanAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -1126,13 +1110,12 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> DeleteInvoiceScanAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceScanAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -1195,13 +1178,12 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveInvoiceMetadataAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveInvoiceMetadataAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -1248,14 +1230,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> PatchInvoiceMetadataAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     IDictionary<string, string> invoiceMetadataPatch)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(PatchInvoiceMetadataAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -1315,14 +1296,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> DeleteInvoiceMetadataAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     IEnumerable<string> metadataKeys)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceMetadataAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
@@ -1385,13 +1365,12 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> CreateNewMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     CreateMerchantDto merchantDto)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(CreateNewMerchantAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var merchant = merchantDto.ToMerchant();
       await invoiceProcessingService
@@ -1439,13 +1418,12 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveAllMerchantsAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid parentCompanyId)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveAllMerchantsAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
 
       var possibleMerchants = await invoiceProcessingService
@@ -1494,14 +1472,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveSpecificMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     Guid parentCompanyId)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificMerchantAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id, parentCompanyId)
@@ -1548,14 +1525,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> UpdateSpecificMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     Merchant merchantPayload)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateSpecificMerchantAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id, merchantPayload.ParentCompanyId)
@@ -1610,14 +1586,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> DeleteMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     Guid parentCompanyId)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchantAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id, parentCompanyId)
@@ -1687,13 +1662,12 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveInvoicesFromMerchantAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id)
@@ -1756,14 +1730,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> AddInvoiceToMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     IEnumerable<Guid> invoiceIdentifiers)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AddInvoiceToMerchantAsync), ActivityKind.Server);
-      var potentialUserIdentifer = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifer = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleMerchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
       if (possibleMerchant is null)
@@ -1837,14 +1810,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RemoveInvoiceFromMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     IEnumerable<Guid> invoiceIdentifiers)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RemoveInvoiceFromMerchantAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id)
@@ -1919,13 +1891,12 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> RetrieveProductsFromMerchantAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveProductsFromMerchantAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id)
@@ -1997,14 +1968,13 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> AnalyzeInvoiceAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    ClaimsPrincipal principal,
     Guid id,
     AnalysisOptions options)
   {
     try
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(AnalyzeInvoiceAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(principal);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
