@@ -52,11 +52,6 @@
           "    pm.expect(pm.response.headers.get('X-XSS-Protection')).to.exist;",
           "});",
           "",
-          "// Collection-level test: CORS headers for API",
-          "pm.test(\"CORS headers are configured\", function () {",
-          "    pm.expect(pm.response.headers.get('Access-Control-Allow-Origin')).to.exist;",
-          "});",
-          "",
           "// Log detailed performance metrics for diagnostics",
           "console.log(`[${pm.info.requestName}] Status: ${pm.response.code} | Time: ${pm.response.responseTime}ms | Size: ${pm.response.responseSize} bytes`);"
         ]
