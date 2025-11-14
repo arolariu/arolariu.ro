@@ -126,6 +126,10 @@ internal sealed class SecurityHeadersMiddleware
     // strict-origin-when-cross-origin sends full URL for same-origin,
     // only origin for cross-origin HTTPS, and nothing for HTTP destinations
     headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+
+    // Permissions-Policy: Restricts access to sensitive browser features
+    // Disables camera, microphone, geolocation, payment, and USB for all origins
+    headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
   }
 
   /// <summary>
