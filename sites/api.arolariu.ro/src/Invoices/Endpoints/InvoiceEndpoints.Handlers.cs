@@ -23,10 +23,10 @@ public static partial class InvoiceEndpoints
 {
   #region CRUD operations for the Invoice Standard Endpoints
   internal static async partial Task<IResult> CreateNewInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromBody] CreateInvoiceDto invoiceDto,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    CreateInvoiceDto invoiceDto)
   {
     try
     {
@@ -77,10 +77,10 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveSpecificInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id)
   {
     try
     {
@@ -131,8 +131,8 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveAllInvoicesAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
     ClaimsPrincipal principal)
   {
     try
@@ -184,8 +184,8 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> DeleteInvoicesAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
     ClaimsPrincipal principal)
   {
     try
@@ -236,11 +236,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> UpdateSpecificInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromBody] Invoice invoicePayload,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    Invoice invoicePayload)
   {
     try
     {
@@ -250,7 +250,10 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       var updatedInvoice = await invoiceProcessingService
         .UpdateInvoice(invoicePayload, id, potentialUserIdentifier)
@@ -295,11 +298,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> PatchSpecificInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromBody] Invoice invoicePayload,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    Invoice invoicePayload)
   {
     try
     {
@@ -309,7 +312,10 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       var newInvoice = Invoice.Merge(possibleInvoice, invoicePayload);
 
@@ -319,7 +325,10 @@ public static partial class InvoiceEndpoints
         var possibleMerchant = await invoiceProcessingService
           .ReadMerchant(newInvoice.MerchantReference)
           .ConfigureAwait(false);
-        if (possibleMerchant is null) return TypedResults.BadRequest($"The merchant with id {invoicePayload.MerchantReference} does not exist.");
+        if (possibleMerchant is null)
+        {
+          return TypedResults.BadRequest($"The merchant with id {invoicePayload.MerchantReference} does not exist.");
+        }
 
         if (!possibleMerchant.ReferencedInvoices.Contains(id))
         {
@@ -374,10 +383,10 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> DeleteInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id)
   {
     try
     {
@@ -387,7 +396,10 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       await invoiceProcessingService
         .DeleteInvoice(id, potentialUserIdentifier)
@@ -432,11 +444,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> AddProductToInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromBody] Product product,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    Product product)
   {
     try
     {
@@ -446,7 +458,10 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       await invoiceProcessingService
         .AddProduct(product, id, potentialUserIdentifier)
@@ -491,10 +506,10 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveProductsFromInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id)
   {
     try
     {
@@ -544,11 +559,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RemoveProductFromInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromBody] string productName,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    string productName)
   {
     try
     {
@@ -558,7 +573,10 @@ public static partial class InvoiceEndpoints
       var possibleProduct = await invoiceProcessingService
         .GetProduct(productName, id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleProduct is null) return TypedResults.NotFound();
+      if (possibleProduct is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       await invoiceProcessingService
         .DeleteProduct(productName, id, potentialUserIdentifier)
@@ -603,12 +621,12 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> UpdateProductInInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromQuery] string productName,
-    [FromBody] Product productInformation,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    string productName,
+    Product productInformation)
   {
     try
     {
@@ -618,12 +636,18 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       var possibleProduct = await invoiceProcessingService
         .GetProduct(productName, id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleProduct is null) return TypedResults.NotFound();
+      if (possibleProduct is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       await invoiceProcessingService
         .DeleteProduct(possibleProduct, id, potentialUserIdentifier)
@@ -673,10 +697,10 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id)
   {
     try
     {
@@ -686,8 +710,15 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
-      if (possibleInvoice.MerchantReference == Guid.Empty) return TypedResults.NotFound();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
+
+      if (possibleInvoice.MerchantReference == Guid.Empty)
+      {
+        return TypedResults.NotFound();
+      }
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(possibleInvoice.MerchantReference)
@@ -732,11 +763,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> AddMerchantToInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromBody] Merchant merchant,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    Merchant merchant)
   {
     try
     {
@@ -747,8 +778,15 @@ public static partial class InvoiceEndpoints
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
 
-      if (possibleInvoice is null) return TypedResults.NotFound();
-      if (possibleInvoice.MerchantReference != Guid.Empty) return TypedResults.Conflict();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
+
+      if (possibleInvoice.MerchantReference != Guid.Empty)
+      {
+        return TypedResults.Conflict();
+      }
 
       possibleInvoice.MerchantReference = merchant.id;
       merchant.ReferencedInvoices.Add(possibleInvoice.id);
@@ -801,10 +839,10 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RemoveMerchantFromInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id)
   {
     try
     {
@@ -815,13 +853,23 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
-      if (possibleInvoice.MerchantReference == Guid.Empty) return TypedResults.Conflict();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
+
+      if (possibleInvoice.MerchantReference == Guid.Empty)
+      {
+        return TypedResults.Conflict();
+      }
 
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(possibleInvoice.MerchantReference)
         .ConfigureAwait(false);
-      if (possibleMerchant is null) return TypedResults.NotFound();
+      if (possibleMerchant is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       possibleInvoice.MerchantReference = Guid.Empty;
       possibleMerchant.ReferencedInvoices.Remove(possibleInvoice.id);
@@ -874,11 +922,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> CreateInvoiceScanAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromBody] InvoiceScan invoiceScanDto,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    InvoiceScan invoiceScanDto)
   {
     try
     {
@@ -888,12 +936,18 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       var possibleInvoiceScan = await invoiceProcessingService
         .ReadInvoiceScan(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (InvoiceScan.NotDefault(possibleInvoiceScan)) return TypedResults.Conflict();
+      if (InvoiceScan.NotDefault(possibleInvoiceScan))
+      {
+        return TypedResults.Conflict();
+      }
 
       await invoiceProcessingService
         .UpdateInvoiceScan(invoiceScanDto, id, potentialUserIdentifier)
@@ -939,10 +993,10 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveInvoiceScanAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id)
   {
     try
     {
@@ -952,7 +1006,10 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       var possibleInvoiceScan = await invoiceProcessingService
         .ReadInvoiceScan(id, potentialUserIdentifier)
@@ -997,11 +1054,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> UpdateInvoiceScanAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromBody] InvoiceScan invoiceScanDto,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    InvoiceScan invoiceScanDto)
   {
     try
     {
@@ -1011,12 +1068,18 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       var possibleInvoiceScan = await invoiceProcessingService
         .ReadInvoiceScan(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (InvoiceScan.NotDefault(possibleInvoiceScan) is false) return TypedResults.NotFound();
+      if (InvoiceScan.NotDefault(possibleInvoiceScan) is false)
+      {
+        return TypedResults.NotFound();
+      }
 
       await invoiceProcessingService
         .UpdateInvoiceScan(invoiceScanDto, id, potentialUserIdentifier)
@@ -1061,10 +1124,10 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> DeleteInvoiceScanAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id)
   {
     try
     {
@@ -1074,12 +1137,18 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       var possibleInvoiceScan = await invoiceProcessingService
         .ReadInvoiceScan(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (InvoiceScan.NotDefault(possibleInvoiceScan) is false) return TypedResults.NotFound();
+      if (InvoiceScan.NotDefault(possibleInvoiceScan) is false)
+      {
+        return TypedResults.NotFound();
+      }
 
       await invoiceProcessingService
         .DeleteInvoiceScan(id, potentialUserIdentifier)
@@ -1124,10 +1193,10 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveInvoiceMetadataAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id)
   {
     try
     {
@@ -1177,11 +1246,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> PatchInvoiceMetadataAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromBody] IDictionary<string, string> invoiceMetadataPatch,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    IDictionary<string, string> invoiceMetadataPatch)
   {
     try
     {
@@ -1191,7 +1260,10 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       foreach (var (key, value) in invoiceMetadataPatch)
       {
@@ -1241,11 +1313,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> DeleteInvoiceMetadataAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromBody] IEnumerable<string> metadataKeys,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    IEnumerable<string> metadataKeys)
   {
     try
     {
@@ -1255,7 +1327,10 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       foreach (var key in metadataKeys)
       {
@@ -1308,10 +1383,10 @@ public static partial class InvoiceEndpoints
 
   #region CRUD operations for the Merchant Standard Endpoints
   internal static async partial Task<IResult> CreateNewMerchantAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromBody] CreateMerchantDto merchantDto,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    CreateMerchantDto merchantDto)
   {
     try
     {
@@ -1362,10 +1437,10 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveAllMerchantsAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromQuery] Guid parentCompanyId,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid parentCompanyId)
   {
     try
     {
@@ -1417,11 +1492,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveSpecificMerchantAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromQuery] Guid parentCompanyId,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    Guid parentCompanyId)
   {
     try
     {
@@ -1471,11 +1546,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> UpdateSpecificMerchantAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromBody] Merchant merchantPayload,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    Merchant merchantPayload)
   {
     try
     {
@@ -1485,7 +1560,10 @@ public static partial class InvoiceEndpoints
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id, merchantPayload.ParentCompanyId)
         .ConfigureAwait(false);
-      if (possibleMerchant is null) return TypedResults.NotFound();
+      if (possibleMerchant is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       await invoiceProcessingService
         .UpdateMerchant(merchantPayload, id)
@@ -1530,11 +1608,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> DeleteMerchantAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromQuery] Guid parentCompanyId,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    Guid parentCompanyId)
   {
     try
     {
@@ -1544,7 +1622,10 @@ public static partial class InvoiceEndpoints
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id, parentCompanyId)
         .ConfigureAwait(false);
-      if (possibleMerchant is null) return TypedResults.NotFound();
+      if (possibleMerchant is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       // Before deleting the merchant, we need to remove the reference from all invoices that reference this merchant.
       foreach (var invoiceIdentifier in possibleMerchant.ReferencedInvoices)
@@ -1604,10 +1685,10 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id)
   {
     try
     {
@@ -1617,7 +1698,10 @@ public static partial class InvoiceEndpoints
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id)
         .ConfigureAwait(false);
-      if (possibleMerchant is null) return TypedResults.NotFound();
+      if (possibleMerchant is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       var listOfInvoiceIdentifiers = possibleMerchant.ReferencedInvoices;
       var listOfConcreteInvoices = new List<Invoice>();
@@ -1670,11 +1754,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> AddInvoiceToMerchantAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromBody] IEnumerable<Guid> invoiceIdentifiers,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    IEnumerable<Guid> invoiceIdentifiers)
   {
     try
     {
@@ -1682,13 +1766,19 @@ public static partial class InvoiceEndpoints
       var potentialUserIdentifer = RetrieveUserIdentifierClaimFromPrincipal(principal);
 
       var possibleMerchant = await invoiceProcessingService.ReadMerchant(id).ConfigureAwait(false);
-      if (possibleMerchant is null) return TypedResults.NotFound();
+      if (possibleMerchant is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       var listOfValidInvoices = new HashSet<Invoice>();
       foreach (var identifier in invoiceIdentifiers)
       {
         var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
-        if (potentialInvoice is not null) listOfValidInvoices.Add(potentialInvoice);
+        if (potentialInvoice is not null)
+        {
+          listOfValidInvoices.Add(potentialInvoice);
+        }
       }
 
       foreach (var invoice in listOfValidInvoices)
@@ -1745,11 +1835,11 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RemoveInvoiceFromMerchantAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromBody] IEnumerable<Guid> invoiceIdentifiers,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    IEnumerable<Guid> invoiceIdentifiers)
   {
     try
     {
@@ -1759,13 +1849,19 @@ public static partial class InvoiceEndpoints
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id)
         .ConfigureAwait(false);
-      if (possibleMerchant is null) return TypedResults.NotFound();
+      if (possibleMerchant is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       var listOfInvoicesToBeRemoved = new List<Invoice>();
       foreach (var identifier in invoiceIdentifiers)
       {
         var potentialInvoice = await invoiceProcessingService.ReadInvoice(identifier).ConfigureAwait(false);
-        if (potentialInvoice is not null) listOfInvoicesToBeRemoved.Add(potentialInvoice);
+        if (potentialInvoice is not null)
+        {
+          listOfInvoicesToBeRemoved.Add(potentialInvoice);
+        }
       }
 
       foreach (var invoice in listOfInvoicesToBeRemoved)
@@ -1821,10 +1917,10 @@ public static partial class InvoiceEndpoints
   }
 
   internal static async partial Task<IResult> RetrieveProductsFromMerchantAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id)
   {
     try
     {
@@ -1834,7 +1930,10 @@ public static partial class InvoiceEndpoints
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id)
         .ConfigureAwait(false);
-      if (possibleMerchant is null) return TypedResults.NotFound();
+      if (possibleMerchant is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       var listOfInvoices = possibleMerchant.ReferencedInvoices;
       var listOfProducts = new List<Product>();
@@ -1896,11 +1995,11 @@ public static partial class InvoiceEndpoints
 
   #region Analysis operations
   internal static async partial Task<IResult> AnalyzeInvoiceAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute] Guid id,
-    [FromBody] AnalysisOptions options,
-    ClaimsPrincipal principal)
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    ClaimsPrincipal principal,
+    Guid id,
+    AnalysisOptions options)
   {
     try
     {
@@ -1910,7 +2009,10 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null) return TypedResults.NotFound();
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
 
       await invoiceProcessingService
         .AnalyzeInvoice(options, id, potentialUserIdentifier)
@@ -1959,3 +2061,4 @@ public static partial class InvoiceEndpoints
   }
   #endregion
 }
+
