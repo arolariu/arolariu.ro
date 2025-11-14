@@ -49,8 +49,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(CreateNewInvoiceAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Retrieve all invoices for a given user (extracted from principal context).
       .MapGet("/invoices", RetrieveAllInvoicesAsync)
@@ -61,8 +60,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(RetrieveAllInvoicesAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Delete all invoices for a given user (extracted from principal context).
       .MapDelete("/invoices", DeleteInvoicesAsync)
@@ -73,8 +71,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(DeleteInvoicesAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Retrieve a specific invoice, given its identifier.
       .MapGet("/invoices/{id}", RetrieveSpecificInvoiceAsync)
@@ -86,8 +83,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(RetrieveSpecificInvoiceAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Update a specific invoice, given its identifier.
       .MapPut("/invoices/{id}", UpdateSpecificInvoiceAsync)
@@ -100,8 +96,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(UpdateSpecificInvoiceAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Partially update a specific invoice, given its identifier.
       .MapPatch("/invoices/{id}", PatchSpecificInvoiceAsync)
@@ -114,8 +109,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(PatchSpecificInvoiceAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Delete a specific invoice, given its identifier.
       .MapDelete("/invoices/{id}", DeleteInvoiceAsync)
@@ -127,8 +121,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(DeleteInvoiceAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Retrieve all products for a given invoice.
       .MapGet("/invoices/{id}/products", RetrieveProductsFromInvoiceAsync)
@@ -140,8 +133,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(RetrieveProductsFromInvoiceAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Add a new product to a given invoice.
       .MapPost("/invoices/{id}/products", AddProductToInvoiceAsync)
@@ -156,8 +148,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(AddProductToInvoiceAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Remove a product from a given invoice.
       .MapDelete("/invoices/{id}/products", RemoveProductFromInvoiceAsync)
@@ -170,8 +161,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(RemoveProductFromInvoiceAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Update a product in a given invoice.
       .MapPut("/invoices/{id}/products", UpdateProductInInvoiceAsync)
@@ -184,8 +174,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(UpdateProductInInvoiceAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Retrieve the merchant associated with a given invoice.
       .MapGet("/invoices/{id}/merchant", RetrieveMerchantFromInvoiceAsync)
@@ -197,8 +186,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(RetrieveMerchantFromInvoiceAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Add a merchant to a given invoice.
       .MapPost("/invoices/{id}/merchant", AddMerchantToInvoiceAsync)
@@ -213,8 +201,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(AddMerchantToInvoiceAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Remove the merchant from a given invoice.
       .MapDelete("/invoices/{id}/merchant", RemoveMerchantFromInvoiceAsync)
@@ -226,8 +213,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(RemoveMerchantFromInvoiceAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Create the invoice scan for a given invoice.
       .MapPost("/invoices/{id}/scan", CreateInvoiceScanAsync)
@@ -242,8 +228,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(CreateInvoiceScanAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Retrieve the invoice scan for a given invoice.
       .MapGet("/invoices/{id}/scan", RetrieveInvoiceScanAsync)
@@ -257,8 +242,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(RetrieveInvoiceScanAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Update the invoice scan for a given invoice.
       .MapPut("/invoices/{id}/scan", UpdateInvoiceScanAsync)
@@ -271,8 +255,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(UpdateInvoiceScanAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Delete the invoice scan for a given invoice.
       .MapDelete("/invoices/{id}/scan", DeleteInvoiceScanAsync)
@@ -284,8 +267,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(DeleteInvoiceScanAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Retrieve the invoice metadata for a given invoice.
       .MapGet("/invoices/{id}/metadata", RetrieveInvoiceMetadataAsync)
@@ -297,8 +279,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(RetrieveInvoiceMetadataAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Update the invoice metadata for a given invoice.
       .MapPatch("/invoices/{id}/metadata", PatchInvoiceMetadataAsync)
@@ -311,8 +292,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(PatchInvoiceMetadataAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Delete the invoice metadata for a given invoice.
       .MapDelete("/invoices/{id}/metadata", DeleteInvoiceMetadataAsync)
@@ -325,8 +305,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(DeleteInvoiceMetadataAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
   }
 
   /// <summary>
@@ -352,8 +331,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(RetrieveAllMerchantsAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Create a new merchant.
       .MapPost("/merchants", CreateNewMerchantAsync)
@@ -367,8 +345,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(CreateNewMerchantAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Retrieve a specific merchant, given its identifier.
       .MapGet("/merchants/{id}", RetrieveSpecificMerchantAsync)
@@ -380,8 +357,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(RetrieveSpecificMerchantAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Update a specific merchant, given its identifier.
       .MapPut("/merchants/{id}", UpdateSpecificMerchantAsync)
@@ -394,8 +370,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(UpdateSpecificMerchantAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Delete a specific merchant, given its identifier.
       .MapDelete("/merchants/{id}", DeleteMerchantAsync)
@@ -407,8 +382,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(DeleteMerchantAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Retrieve all invoices associated with a given merchant.
       .MapGet("/merchants/{id}/invoices", RetrieveInvoicesFromMerchantAsync)
@@ -420,8 +394,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(RetrieveInvoicesFromMerchantAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Add invoices to a given merchant.
       .MapPatch("/merchants/{id}/invoices", AddInvoiceToMerchantAsync)
@@ -436,8 +409,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(AddInvoiceToMerchantAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Remove invoices from a given merchant.
       .MapDelete("/merchants/{id}/invoices", RemoveInvoiceFromMerchantAsync)
@@ -450,8 +422,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(RemoveInvoiceFromMerchantAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 
     router // Retrieve all products associated with a given merchant.
       .MapGet("/merchants/{id}/products", RetrieveProductsFromMerchantAsync)
@@ -463,8 +434,7 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(RetrieveProductsFromMerchantAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
   }
 
   /// <summary>
@@ -489,6 +459,5 @@ public static partial class InvoiceEndpoints
       .ProducesProblem(StatusCodes.Status429TooManyRequests)
       .ProducesProblem(StatusCodes.Status500InternalServerError)
       .WithName(nameof(AnalyzeInvoiceAsync))
-      .RequireAuthorization()
-      .WithOpenApi();
+      .RequireAuthorization();
 }

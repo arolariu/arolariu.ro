@@ -76,9 +76,9 @@
     <PackageVersion Include="OpenTelemetry.Api" Version="1.14.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.14.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.13.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.14.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.0.0-beta.11" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.13.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.14.0" />
   </ItemGroup>
   <ItemGroup Label="Application Insights Packages">
     <PackageVersion Include="Microsoft.ApplicationInsights" Version="2.23.0" />
@@ -86,11 +86,11 @@
     <PackageVersion Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.23.0" />
   </ItemGroup>
   <ItemGroup Label="Swagger and OpenAPI Packages">
-    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.0.0" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.Annotations" Version="10.0.0" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.Swagger" Version="10.0.0" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.0.0" />
-    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.0.0" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.0.1" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.Annotations" Version="10.0.1" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.Swagger" Version="10.0.1" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.0.1" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.0.1" />
   </ItemGroup>
   <ItemGroup Label="Authentication and Security Packages">
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.14.0" />

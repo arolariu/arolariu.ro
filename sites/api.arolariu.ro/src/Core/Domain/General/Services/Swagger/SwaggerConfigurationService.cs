@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -198,104 +198,11 @@ internal static class SwaggerConfigurationService
         },
         TermsOfService = new Uri("https://api.arolariu.ro/terms"),
       });
+
       options.EnableAnnotations();
       options.UseInlineDefinitionsForEnums();
       options.DocumentFilter<SwaggerFilterService>();
 
-      options.MapType<IResult>(() => new OpenApiSchema()
-      {
-        Type = "object",
-        Properties = new Dictionary<string, OpenApiSchema>()
-        {
-          ["success"] = new OpenApiSchema()
-          {
-            Type = "boolean",
-            Description = "Indicates whether the operation was successful or not.",
-          },
-          ["message"] = new OpenApiSchema()
-          {
-            Type = "string",
-            Description = "The message associated with the operation.",
-          },
-          ["data"] = new OpenApiSchema()
-          {
-            Type = "object",
-            Description = "The data associated with the operation.",
-          },
-        },
-      });
-
-      options.MapType<ProblemDetails>(() => new OpenApiSchema()
-      {
-        Type = "object",
-        Properties = new Dictionary<string, OpenApiSchema>()
-        {
-          ["type"] = new OpenApiSchema()
-          {
-            Type = "string",
-            Description = "The type of the problem.",
-          },
-          ["title"] = new OpenApiSchema()
-          {
-            Type = "string",
-            Description = "The title of the problem.",
-          },
-          ["status"] = new OpenApiSchema()
-          {
-            Type = "integer",
-            Description = "The status code of the problem.",
-          },
-          ["detail"] = new OpenApiSchema()
-          {
-            Type = "string",
-            Description = "The detail of the problem.",
-          },
-          ["instance"] = new OpenApiSchema()
-          {
-            Type = "string",
-            Description = "The instance of the problem.",
-          },
-        },
-      });
-
-      options.MapType<IEnumerable<KeyValuePair<string, string>>>(() => new OpenApiSchema()
-      {
-        Type = "array",
-        Items = new OpenApiSchema()
-        {
-          Type = "object",
-          Properties = new Dictionary<string, OpenApiSchema>()
-          {
-            ["key"] = new OpenApiSchema()
-            {
-              Type = "string",
-              Description = "The key of the pair.",
-            },
-            ["value"] = new OpenApiSchema()
-            {
-              Type = "string",
-              Description = "The value of the pair.",
-            },
-          },
-        },
-      });
-
-      var jwtReferenceObject = new OpenApiReference()
-      {
-        Id = "Bearer",
-        Type = ReferenceType.SecurityScheme,
-      };
-
-      options.AddSecurityRequirement(new OpenApiSecurityRequirement()
-      {
-        {
-          new OpenApiSecurityScheme()
-          {
-            Reference = jwtReferenceObject
-          },
-          new [] { jwtReferenceObject.Id }
-        },
-      });
 
       options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
       {
@@ -306,7 +213,11 @@ internal static class SwaggerConfigurationService
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
         BearerFormat = "JWT",
-        Reference = jwtReferenceObject
+      });
+
+      options.AddSecurityRequirement((document) => new OpenApiSecurityRequirement()
+      {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = [],
       });
 
       options.UseInlineDefinitionsForEnums();

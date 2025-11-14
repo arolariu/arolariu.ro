@@ -3,7 +3,7 @@ namespace arolariu.Backend.Core.Domain.General.Services.Swagger;
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -111,7 +111,9 @@ internal sealed class SwaggerFilterService : IDocumentFilter
     };
 
     foreach (var endpoint in ignoredEndpoints)
+    {
       swaggerDoc.Paths.Remove(endpoint);
+    }
   }
 
   /// <summary>
