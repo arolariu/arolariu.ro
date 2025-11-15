@@ -120,6 +120,7 @@
     "@vitest/ui": "*",
     "cross-env": "*",
     "cssnano": "*",
+    "daisyui": "*",
     "fake-indexeddb": "*",
     "globals": "*",
     "jiti": "*",
