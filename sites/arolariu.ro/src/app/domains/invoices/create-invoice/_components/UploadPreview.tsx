@@ -13,7 +13,7 @@ import TableDisplay from "../_views/TableDisplay";
  * @returns JSX.Element that displays the upload preview for invoice scans.
  */
 export default function UploadPreview(): React.JSX.Element | null {
-  const {scans} = useInvoiceCreator();
+  const {submissions} = useInvoiceCreator();
   const [view, setView] = useState("table");
   const gridRef = useRef<HTMLDivElement | null>(null);
   const carouselRef = useRef<HTMLDivElement | null>(null);
@@ -22,7 +22,7 @@ export default function UploadPreview(): React.JSX.Element | null {
 
   // Measure once scans change so we can reserve vertical space & avoid layout shift.
   useLayoutEffect(() => {
-    if (scans.length === 0) {
+    if (submissions.length === 0) {
       return;
     }
 
@@ -36,9 +36,9 @@ export default function UploadPreview(): React.JSX.Element | null {
         setMaxHeight(next);
       }
     });
-  }, [scans, view, maxHeight]);
+  }, [submissions, view, maxHeight]);
 
-  if (scans.length === 0) {
+  if (submissions.length === 0) {
     return null;
   }
 

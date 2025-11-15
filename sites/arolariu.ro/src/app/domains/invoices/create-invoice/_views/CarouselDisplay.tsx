@@ -21,7 +21,7 @@ export default function CarouselDisplay(): React.JSX.Element | null {
   const [api, setApi] = useState<CarouselApi | null>(null);
   const [current, setCurrent] = useState(1);
   const [count, setCount] = useState(0);
-  const {scans} = useInvoiceCreator();
+  const {submissions} = useInvoiceCreator();
 
   useEffect(() => {
     if (!api) {
@@ -51,7 +51,7 @@ export default function CarouselDisplay(): React.JSX.Element | null {
     [api],
   );
 
-  if (scans.length === 0) {
+  if (submissions.length === 0) {
     return null;
   }
 
@@ -59,25 +59,25 @@ export default function CarouselDisplay(): React.JSX.Element | null {
     <div className='relative'>
       <Carousel
         setApi={setApi}
-        opts={{align: "center", loop: scans.length > 1}}>
+        opts={{align: "center", loop: submissions.length > 1}}>
         <CarouselContent>
-          {scans.map((scan, index) => (
+          {submissions.map((submission, index) => (
             <CarouselItem
-              key={scan.id}
+              key={submission.id}
               className='basis-full px-4'>
               <motion.div
                 initial={{opacity: 0, scale: 0.95}}
                 animate={{opacity: 1, scale: 1}}
                 transition={{duration: 0.3, delay: index * 0.05}}>
                 <Card className='overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'>
-                  <MediaPreview file={scan} />
+                  <MediaPreview file={submission} />
                 </Card>
               </motion.div>
             </CarouselItem>
           ))}
         </CarouselContent>
 
-        {scans.length > 1 && (
+        {submissions.length > 1 && (
           <>
             <div className='absolute top-1/2 left-2 z-10 -translate-y-1/2 sm:left-4'>
               <CarouselPrevious className='h-12 w-12 cursor-pointer border-2 bg-white/90 shadow-xl backdrop-blur-sm transition-all duration-300 hover:border-purple-300 hover:bg-white dark:bg-gray-900/90 dark:hover:bg-gray-900' />
@@ -89,7 +89,7 @@ export default function CarouselDisplay(): React.JSX.Element | null {
         )}
       </Carousel>
 
-      {scans.length > 1 && (
+      {submissions.length > 1 && (
         <>
           {/* Dots */}
           <motion.div

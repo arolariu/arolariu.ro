@@ -37,11 +37,11 @@ import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
  * @returns JSX.Element that displays a table of invoice scans.
  */
 export default function TableDisplay(): React.JSX.Element | null {
-  const {scans, renameScan, removeScan} = useInvoiceCreator();
+  const {submissions, renameSubmission, removeSubmission} = useInvoiceCreator();
   const [query, setQuery] = useState("");
 
   const {paginatedItems, currentPage, totalPages, pageSize, setPageSize, setCurrentPage} = usePaginationWithSearch({
-    items: scans,
+    items: submissions,
     initialPageSize: 10,
     searchQuery: query,
   });
@@ -51,23 +51,23 @@ export default function TableDisplay(): React.JSX.Element | null {
   }, []);
 
   const handleRename = useCallback(
-    (scan: {id: string; name: string}) => (e: React.MouseEvent<HTMLButtonElement>) => {
+    (submission: {id: string; name: string}) => (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
       // TODO: Implement rename dialog to get new name from user
-      renameScan(scan.id, scan.name);
+      renameSubmission(submission.id, submission.name);
       toast("Rename feature coming soon", {
         description: "This feature is currently under development.",
       });
     },
-    [renameScan],
+    [renameSubmission],
   );
 
   const handleDelete = useCallback(
     (id: string) => (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      removeScan(id);
+      removeSubmission(id);
     },
-    [removeScan],
+    [removeSubmission],
   );
 
   const handlePageSizeChange = useCallback(
@@ -139,7 +139,7 @@ export default function TableDisplay(): React.JSX.Element | null {
     return result;
   }, [currentPage, totalPages]);
 
-  if (scans.length === 0) {
+  if (submissions.length === 0) {
     return null;
   }
 
@@ -156,7 +156,7 @@ export default function TableDisplay(): React.JSX.Element | null {
           />
         </div>
         <div className='shrink-0 text-sm text-gray-600 dark:text-gray-400'>
-          {paginatedItems.length} of {scans.length} shown
+          {paginatedItems.length} of {submissions.length} shown
         </div>
       </div>
 

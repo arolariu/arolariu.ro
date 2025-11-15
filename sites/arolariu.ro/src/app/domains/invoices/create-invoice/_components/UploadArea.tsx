@@ -11,17 +11,17 @@ import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
  * @returns JSX.Element that displays the upload area for invoice scans.
  */
 export default function UploadArea(): React.JSX.Element | null {
-  const {scans, addFiles, isUploading} = useInvoiceCreator();
+  const {submissions, addSubmission} = useInvoiceCreator();
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles.length > 0) {
         const fileList = new DataTransfer();
         acceptedFiles.forEach((file) => fileList.items.add(file));
-        addFiles(fileList.files);
+        addSubmission(fileList.files);
       }
     },
-    [addFiles],
+    [addSubmission],
   );
 
   const {getRootProps, getInputProps, isDragActive} = useDropzone({
@@ -32,11 +32,10 @@ export default function UploadArea(): React.JSX.Element | null {
       "application/pdf": [".pdf"],
     },
     multiple: true,
-    disabled: isUploading,
     maxSize: 10 * 1024 * 1024, // 10MB
   });
 
-  if (scans.length > 0) {
+  if (submissions.length > 0) {
     return null;
   }
 
@@ -46,7 +45,7 @@ export default function UploadArea(): React.JSX.Element | null {
         isDragActive
           ? "scale-105 border-purple-400 bg-purple-50 dark:bg-purple-900/20"
           : "border-gray-300 bg-gray-50 hover:border-purple-400 hover:bg-purple-50 dark:border-gray-600 dark:bg-gray-900/50 dark:hover:bg-purple-900/20"
-      } ${isUploading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+      } cursor-pointer`}
       // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading props for accessibility
       {...getRootProps()}>
       <motion.div
@@ -64,9 +63,8 @@ export default function UploadArea(): React.JSX.Element | null {
           // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading input props for proper file upload functionality
           {...getInputProps()}
           className='cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-3 text-lg text-white shadow-lg transition-all duration-300 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl'
-          disabled={isUploading}>
-          {isUploading ? "Processing..." : "Choose Files"}
-        </Input>
+        />
+        <span>Choose Files</span>
       </motion.div>
     </div>
   );

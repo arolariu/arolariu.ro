@@ -4,24 +4,25 @@ import Image from "next/image";
 import {useCallback} from "react";
 import {TbEdit, TbRotateClockwise, TbTrash} from "react-icons/tb";
 import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
-import type {InvoiceScan} from "../_types/InvoiceScan";
+import type {PendingInvoiceSubmission} from "../_types/InvoiceSubmission";
 
-type MediaPreviewProps = {file: InvoiceScan};
+type MediaPreviewProps = {file: PendingInvoiceSubmission};
 
 /**
  * Media preview component for invoice scans.
  * @returns JSX.Element that displays a preview of the invoice scan.
  */
 export default function MediaPreview({file}: Readonly<MediaPreviewProps>): React.JSX.Element {
-  const {rotateScan, renameScan, removeScan} = useInvoiceCreator();
+  const {rotateSubmissionPhoto, renameSubmission, removeSubmission} = useInvoiceCreator();
   const showProcessing = Boolean(file.isProcessing);
+  const imageAdjustments = file.type === "image" ? file.adjustments : undefined;
 
   const handleRotate = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      rotateScan(file.id, 90);
+      rotateSubmissionPhoto(file.id, 90);
     },
-    [rotateScan, file.id],
+    [rotateSubmissionPhoto, file.id],
   );
 
   const handleRename = useCallback(
@@ -29,18 +30,18 @@ export default function MediaPreview({file}: Readonly<MediaPreviewProps>): React
       e.stopPropagation();
       const newName = prompt("Enter new filename:", file.name);
       if (newName) {
-        renameScan(file.id, newName);
+        renameSubmission(file.id, newName);
       }
     },
-    [renameScan, file.id, file.name],
+    [renameSubmission, file.id, file.name],
   );
 
   const handleDelete = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      removeScan(file.id);
+      removeSubmission(file.id);
     },
-    [removeScan, file.id],
+    [removeSubmission, file.id],
   );
 
   return (
@@ -89,8 +90,8 @@ export default function MediaPreview({file}: Readonly<MediaPreviewProps>): React
             height={300}
             className='h-full w-full object-cover transition-transform duration-500 group-hover:scale-110'
             style={{
-              transform: `rotate(${file.rotation ?? 0}deg)`,
-              filter: `brightness(${file.brightness ?? 100}%) contrast(${file.contrast ?? 100}%) saturate(${file.saturation ?? 100}%)`,
+              transform: `rotate(${imageAdjustments?.rotation ?? 0}deg)`,
+              filter: `brightness(${imageAdjustments?.brightness ?? 100}%) contrast(${imageAdjustments?.contrast ?? 100}%) saturate(${imageAdjustments?.saturation ?? 100}%)`,
             }}
             priority={false}
             // Guard for leaked render: show empty placeholder when preview missing
