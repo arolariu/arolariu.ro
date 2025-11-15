@@ -60,12 +60,12 @@ export default async function NotFound(): Promise<React.JSX.Element> {
               <div className='2xsm:flex-col mt-4 flex items-center justify-between justify-items-center gap-4 md:flex-row'>
                 <Link
                   href='/'
-                  className='btn btn-secondary mx-auto'>
+                  className='border-secondary/40 bg-secondary text-secondary-foreground hover:bg-secondary/90 focus-visible:ring-secondary mx-auto inline-flex items-center justify-center rounded-full border px-6 py-3 text-sm font-semibold shadow-sm transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'>
                   {t("buttons.submitErrorButton")}
                 </Link>
                 <Link
                   href='https://arolariu.ro/'
-                  className='btn btn-primary mx-auto'>
+                  className='border-primary/50 bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary mx-auto inline-flex items-center justify-center rounded-full border px-6 py-3 text-sm font-semibold shadow-sm transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'>
                   {t("buttons.returnButton")}
                 </Link>
               </div>

@@ -29,7 +29,7 @@ export default function AuthCard({title, description, ctaText, cardType}: Readon
       <p className='text-base leading-relaxed'>{description}</p>
       <Link
         href={`/auth/${cardType}/`}
-        className='btn btn-primary mt-6 rounded border-0 bg-indigo-600 p-4 text-white hover:bg-indigo-700 focus:outline-hidden'>
+        className='mt-6 inline-flex w-full items-center justify-center rounded-lg border border-indigo-500 bg-indigo-600 px-4 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:outline-none'>
         {ctaText}
       </Link>
     </article>
