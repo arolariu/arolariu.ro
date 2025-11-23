@@ -14,7 +14,6 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
 
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
@@ -978,14 +977,14 @@ public static partial class InvoiceEndpoints
     }
   }
 
-  internal static async partial Task<IResult> RetrieveInvoiceScanAsync(
+  internal static async partial Task<IResult> RetrieveInvoiceScansAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id)
   {
     try
     {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveInvoiceScanAsync), ActivityKind.Server);
+      using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveInvoiceScansAsync), ActivityKind.Server);
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
 
       var possibleInvoice = await invoiceProcessingService
@@ -1038,10 +1037,70 @@ public static partial class InvoiceEndpoints
     }
   }
 
+  internal static async partial Task<IResult> RetrieveSpecificInvoiceScanAsync(
+    IInvoiceProcessingService invoiceProcessingService,
+    IHttpContextAccessor httpContext,
+    Guid id,
+    Guid scanId)
+  {
+    try
+    {
+      using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificInvoiceScanAsync), ActivityKind.Server);
+      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      var possibleInvoice = await invoiceProcessingService
+        .ReadInvoice(id, potentialUserIdentifier)
+        .ConfigureAwait(false);
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
+      var possibleInvoiceScan = await invoiceProcessingService
+        .ReadInvoiceScan(id, potentialUserIdentifier)
+        .ConfigureAwait(false);
+      return InvoiceScan.NotDefault(possibleInvoiceScan) ? TypedResults.Ok(value: possibleInvoiceScan) : TypedResults.NotFound();
+    }
+    catch (InvoiceProcessingServiceValidationException exception)
+    {
+      return TypedResults.Problem(
+        detail: exception.Message + exception.Source,
+        statusCode: StatusCodes.Status500InternalServerError,
+        title: "The service encountered a processing service validation error.");
+    }
+    catch (InvoiceProcessingServiceDependencyException exception)
+    {
+      return TypedResults.Problem(
+        detail: exception.Message + exception.Source,
+        statusCode: StatusCodes.Status500InternalServerError,
+        title: "The service encountered a processing service dependency error.");
+    }
+    catch (InvoiceProcessingServiceDependencyValidationException exception)
+    {
+      return TypedResults.Problem(
+        detail: exception.Message + exception.Source,
+        statusCode: StatusCodes.Status500InternalServerError,
+        title: "The service encountered a processing service dependency validation error.");
+    }
+    catch (InvoiceProcessingServiceException exception)
+    {
+      return TypedResults.Problem(
+        detail: exception.Message + exception.Source,
+        statusCode: StatusCodes.Status500InternalServerError,
+        title: "The service encountered a processing service error.");
+    }
+    catch (Exception exception)
+    {
+      return TypedResults.Problem(
+        detail: exception.Message + exception.Source,
+        statusCode: StatusCodes.Status500InternalServerError,
+        title: "The service encountered an unexpected internal service error.");
+    }
+  }
+
   internal static async partial Task<IResult> UpdateInvoiceScanAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
+    Guid scanId,
     InvoiceScan invoiceScanDto)
   {
     try
@@ -1110,7 +1169,8 @@ public static partial class InvoiceEndpoints
   internal static async partial Task<IResult> DeleteInvoiceScanAsync(
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
-    Guid id)
+    Guid id,
+    Guid scanId)
   {
     try
     {

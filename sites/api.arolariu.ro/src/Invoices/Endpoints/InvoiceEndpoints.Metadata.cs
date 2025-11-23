@@ -22,82 +22,84 @@ public static partial class InvoiceEndpoints
   #region CRUD operations for the Invoice Standard Endpoints
   #region HTTP POST /rest/v1/invoices
   /// <summary>
-  /// Creates a new invoice.
+  /// Creates a new invoice in the system.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="invoiceDto"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="invoiceDto">The data transfer object containing the details of the invoice to be created.</param>
+  /// <returns>A task representing the asynchronous operation, containing the result of the creation process.</returns>
   [SwaggerOperation(
     Summary = "Create a new invoice (receipt) in the system.",
-    Description = "This request will create a new invoice in the Invoice Management System. " +
-    "This endpoint will validate that the input (Invoice DTO) is valid, " +
-    "and then will perform a series of operations to onboard the invoice into the Invoice Management System.",
+    Description = "This endpoint initiates the creation of a new invoice within the Invoice Management System. " +
+    "It validates the provided Invoice DTO to ensure all required fields are present and correct. " +
+    "Upon successful validation, the invoice is processed and onboarded into the system. " +
+    "This operation requires the user to be authenticated and authorized.",
     OperationId = nameof(CreateNewInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status201Created, "The invoice was created successfully in the system.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice DTO (payload) is not valid. Please respect the request body.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to create a new invoice in the system.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The invoice could not be created due to a conflict (there is another invoice with the same id).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The invoice could not be created due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be created due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status201Created, "The invoice was successfully created in the system.", typeof(Invoice))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice DTO is invalid. Please check the request body for errors.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "An invoice with the same identifier already exists in the system.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> CreateNewInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromBody, SwaggerRequestBody("The invoice DTO to pass.")] CreateInvoiceDto invoiceDto);
+    [FromBody, SwaggerRequestBody("The invoice DTO containing the details for the new invoice.", Required = true)] CreateInvoiceDto invoiceDto);
   #endregion
 
   #region HTTP GET /rest/v1/invoices/{id}
   /// <summary>
-  /// Retrieves a specific invoice.
+  /// Retrieves a specific invoice by its identifier.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice to retrieve.</param>
+  /// <returns>A task representing the asynchronous operation, containing the retrieved invoice.</returns>
   [SwaggerOperation(
     Summary = "Retrieves a specific invoice from the system.",
-    Description = "Retrieves a specific invoice from the Invoice Management System. " +
-    "If the invoice identifier passed into the route is valid, the server will retrieve the invoice, given that the user is allowed to see this invoice.",
+    Description = "This endpoint retrieves the details of a specific invoice identified by its unique ID. " +
+    "The operation checks if the invoice exists and if the authenticated user has the necessary permissions to view it. " +
+    "If successful, the invoice details are returned.",
     OperationId = nameof(RetrieveSpecificInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The invoice was retrieved successfully from the system.", typeof(Invoice))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access this invoice.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be retrieved due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The invoice was successfully retrieved.", typeof(Invoice))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access this invoice.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice to retrieve.", Required = true)] Guid id);
   #endregion
 
   #region HTTP GET /rest/v1/invoices
   /// <summary>
-  /// Retrieves all invoices.
+  /// Retrieves all invoices available to the user.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <returns>A task representing the asynchronous operation, containing the list of invoices.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all invoices from the system.",
-    Description = "Retrieves all invoices from the Invoice Management System. " +
-    "If the user is allowed to see all invoices, the server will retrieve all invoices. " +
-    "This is a high-privillege request.",
+    Description = "This endpoint retrieves a list of all invoices available in the Invoice Management System. " +
+    "Access to this endpoint is restricted to users with high privileges. " +
+    "It returns all invoices that the authenticated user is authorized to view.",
     OperationId = nameof(RetrieveAllInvoicesAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The invoices were retrieved successfully from the system.", typeof(Invoice[]))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this route.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoices could not be found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The invoices were successfully retrieved.", typeof(Invoice[]))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "No invoices were found in the system.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
@@ -110,113 +112,119 @@ public static partial class InvoiceEndpoints
 
   #region HTTP PUT /rest/v1/invoices/{id}
   /// <summary>
-  /// Updates a specific invoice.
+  /// Updates a specific invoice by replacing it entirely.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="invoicePayload"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice to update.</param>
+  /// <param name="invoicePayload">The new invoice data that will replace the existing invoice.</param>
+  /// <returns>A task representing the asynchronous operation, containing the updated invoice.</returns>
   [SwaggerOperation(
     Summary = "Updates a specific invoice in the system.",
-    Description = "This route will allow you to updates a specific invoice from the Invoice Managemnet System.",
+    Description = "This endpoint updates an existing invoice in the Invoice Management System by replacing it entirely with the provided payload. " +
+    "The operation validates the new invoice data against the schema. " +
+    "If the invoice exists and the user has permission, the update is performed.",
     OperationId = nameof(UpdateSpecificInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was updated successfully.", typeof(Invoice))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice information is not valid (please respect the invoice schema).", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be updated due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be updated due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was successfully updated.", typeof(Invoice))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice data is invalid. Please check the request body for errors.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> UpdateSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("Invoice payload replacing the stored invoice.")] Invoice invoicePayload);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice to update.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("The invoice payload that will replace the existing invoice.", Required = true)] Invoice invoicePayload);
   #endregion
 
   #region HTTP PATCH /rest/v1/invoices/{id}
   /// <summary>
-  /// Patches a specific invoice, given a partial invoice payload.
+  /// Patches a specific invoice with partial updates.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="invoicePayload"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice to patch.</param>
+  /// <param name="invoicePayload">The partial invoice data to apply as a patch.</param>
+  /// <returns>A task representing the asynchronous operation, containing the patched invoice.</returns>
   [SwaggerOperation(
     Summary = "Patches a specific invoice in the system.",
-    Description = "This route will allow you to patch a specific invoice from the Invoice Managemnet System.",
+    Description = "This endpoint applies partial updates to an existing invoice in the Invoice Management System. " +
+    "It allows modifying specific fields without replacing the entire resource. " +
+    "The operation validates the partial data and applies the changes if the invoice exists and the user is authorized.",
     OperationId = nameof(PatchSpecificInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was patched successfully.", typeof(Invoice))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice information is not valid (please respect the invoice schema).", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be patched due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be patched due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was successfully patched.", typeof(Invoice))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided partial invoice data is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> PatchSpecificInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("Partial invoice payload applied as a patch.")] Invoice invoicePayload);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice to patch.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("The partial invoice payload to apply as a patch.", Required = true)] Invoice invoicePayload);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}
   /// <summary>
-  /// Deletes a specific invoice.
+  /// Deletes a specific invoice by its identifier.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice to delete.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the deletion.</returns>
   [SwaggerOperation(
     Summary = "Deletes a specific invoice from the system.",
-    Description = "Deletes a specific invoice from the Invoice Management System. " +
-    "If the invoice identifier passed to the route is valid, the server will delete the invoice, given that the user is allowed to delete this invoice.",
+    Description = "This endpoint deletes a specific invoice from the Invoice Management System identified by its ID. " +
+    "The operation checks if the invoice exists and if the authenticated user has the necessary permissions to delete it. " +
+    "Upon success, the invoice is permanently removed.",
     OperationId = nameof(DeleteInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status204NoContent, "The invoice was deleted successfully.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be deleted due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be deleted due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status204NoContent, "The invoice was successfully deleted.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice to delete.", Required = true)] Guid id);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices
   /// <summary>
-  /// Deletes all invoices from a specific user.
+  /// Deletes all invoices associated with the authenticated user.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the deletion.</returns>
   [SwaggerOperation(
     Summary = "Deletes all invoices from a specific user in the system.",
-    Description = "Deletes all invoices from a specific user in the Invoice Management System. " +
-    "If the user identifier passed to the route is valid, the server will delete all invoices from that user, given that the user is allowed to delete these invoices.",
+    Description = "This endpoint deletes all invoices associated with the currently authenticated user from the Invoice Management System. " +
+    "This is a destructive operation that removes all invoice records for the user. " +
+    "The operation requires the user to be authenticated and authorized.",
     OperationId = nameof(DeleteInvoicesAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status204NoContent, "The invoices were deleted successfully.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The user identifier is not valid.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoices could not be deleted due to the user not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could not be deleted due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status204NoContent, "All invoices were successfully deleted.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The request is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "No invoices were found for the user.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteInvoicesAsync(
@@ -229,732 +237,802 @@ public static partial class InvoiceEndpoints
   /// <summary>
   /// Adds a product to a specific invoice.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="product"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice to which the product will be added.</param>
+  /// <param name="product">The product data to add to the invoice.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the addition.</returns>
   [SwaggerOperation(
     Summary = "Adds a product to a specific invoice in the system.",
-    Description = "Adds a product to a specific invoice in the Invoice Management System. " +
-    "If the invoice identifier passed to the route is valid, the server will add the product to the invoice, given that the user is allowed to add products to this invoice.",
+    Description = "This endpoint adds a new product to an existing invoice in the Invoice Management System. " +
+    "The operation validates the product data and checks if the invoice exists. " +
+    "If successful, the product is appended to the invoice's product list.",
     OperationId = nameof(AddProductToInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The product was added to the invoice successfully.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The product information is not valid (please respect the product schema).", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The product could not be added to the invoice due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The product could not be added to the invoice due to a conflict (the product is already in the invoice).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The product could not be added to the invoice due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The product could not be added to the invoice due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The product was successfully added to the invoice.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided product data is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "The product already exists in the invoice.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> AddProductToInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("Product payload that will be appended to the invoice.")] Product product);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("The product payload to be added to the invoice.", Required = true)] Product product);
   #endregion
 
   #region HTTP GET /rest/v1/invoices/{id}/products
   /// <summary>
   /// Retrieves all products from a specific invoice.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice from which to retrieve products.</param>
+  /// <returns>A task representing the asynchronous operation, containing the list of products.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all products from a specific invoice in the system.",
-    Description = "Retrieves all products from a specific invoice in the Invoice Management System. " +
-    "If the invoice identifier passed to the route is valid, the server will retrieve all products from the invoice, given that the user is allowed to see the products.",
+    Description = "This endpoint retrieves the list of products associated with a specific invoice. " +
+    "It checks if the invoice exists and if the user has permission to view its contents. " +
+    "If successful, an array of products is returned.",
     OperationId = nameof(RetrieveProductsFromInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The products were retrieved successfully from the invoice.", typeof(Product[]))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access the products from this invoice.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The products could not be retrieved due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The products could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The products were successfully retrieved.", typeof(Product[]))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the products of this invoice.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveProductsFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}/products
   /// <summary>
   /// Removes a product from a specific invoice.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="productName"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice from which to remove the product.</param>
+  /// <param name="productName">The name of the product to remove.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the removal.</returns>
   [SwaggerOperation(
     Summary = "Removes a product from a specific invoice in the system.",
-    Description = "Removes a product from a specific invoice in the Invoice Management System. " +
-    "If the invoice identifier passed to the route is valid, the server will remove the product from the invoice, given that the user is allowed to remove products from this invoice.",
+    Description = "This endpoint removes a product identified by its name from a specific invoice. " +
+    "The operation checks if the invoice exists and if the product is present in the invoice. " +
+    "If successful, the product is removed from the invoice's product list.",
     OperationId = nameof(RemoveProductFromInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status204NoContent, "The product was removed from the invoice successfully.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The product information is not valid (please respect the product schema).", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The product could not be removed from the invoice due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The product could not be removed from the invoice due to a conflict (the product is not in the invoice).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The product could not be removed from the invoice due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The product could not be deleted due to an internal service error", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status204NoContent, "The product was successfully removed from the invoice.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided product name is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice or the product was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "The product is not associated with the invoice.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RemoveProductFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("Product name that will be removed from the invoice.")] string productName);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("The name of the product to remove.", Required = true)] string productName);
   #endregion
 
   #region HTTP PUT /rest/v1/invoices/{id}/products
   /// <summary>
   /// Updates a product in a specific invoice.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="productName"></param>
-  /// <param name="productInformation"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice containing the product.</param>
+  /// <param name="productName">The name of the product to update.</param>
+  /// <param name="productInformation">The new product data to replace the existing product.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the update.</returns>
   [SwaggerOperation(
     Summary = "Updates a product in a specific invoice in the system.",
-    Description = "Updates a product in a specific invoice in the Invoice Management System. " +
-    "If the invoice identifier passed to the route is valid, the server will update the product in the invoice, given that the user is allowed to update products in this invoice.",
+    Description = "This endpoint updates the details of a specific product within an invoice. " +
+    "It identifies the product by name and replaces its data with the provided payload. " +
+    "The operation validates the new product data and ensures the product exists in the invoice.",
     OperationId = nameof(UpdateProductInInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The product was updated in the invoice successfully.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The product information is not valid (please respect the product schema).", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The product could not be updated in the invoice due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The product could not be updated in the invoice due to a conflict (the product is not in the invoice).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The product could not be updated in the invoice due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The product could not be updated due to an internal service error", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The product was successfully updated in the invoice.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided product data is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice or the product was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "The product is not associated with the invoice.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> UpdateProductInInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
-    [FromQuery, SwaggerParameter("Name of the product targeted for update.", Required = true)] string productName,
-    [FromBody, SwaggerRequestBody("Updated product payload applied to the invoice.")] Product productInformation);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    [FromQuery, SwaggerParameter("The name of the product to update.", Required = true)] string productName,
+    [FromBody, SwaggerRequestBody("The updated product payload.", Required = true)] Product productInformation);
   #endregion
 
   #region HTTP GET /rest/v1/invoices/{id}/merchant
   /// <summary>
-  /// Retrieves the merchant from an invoice.
+  /// Retrieves the merchant associated with a specific invoice.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice from which to retrieve the merchant.</param>
+  /// <returns>A task representing the asynchronous operation, containing the merchant details.</returns>
   [SwaggerOperation(
     Summary = "Retrieves the merchant from an invoice in the system.",
-    Description = "Retrieves the merchant from an invoice in the Invoice Management System. " +
-    "If the invoice identifier passed to the route is valid, the server will retrieve the merchant from the invoice, given that the user is allowed to see the merchant.",
+    Description = "This endpoint retrieves the merchant information associated with a specific invoice. " +
+    "It checks if the invoice exists and if the user has permission to view the merchant details. " +
+    "If successful, the merchant object is returned.",
     OperationId = nameof(RetrieveMerchantFromInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The merchant was retrieved successfully from the invoice.", typeof(Merchant))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access the merchant from this invoice.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant could not be retrieved due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The merchant could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The merchant was successfully retrieved from the invoice.", typeof(Merchant))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the merchant of this invoice.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveMerchantFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
   #endregion
 
   #region HTTP POST /rest/v1/invoices/{id}/merchant
   /// <summary>
-  /// Adds a merchant to an invoice.
+  /// Adds or updates the merchant associated with an invoice.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="merchant"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice to which the merchant will be added.</param>
+  /// <param name="merchant">The merchant data to associate with the invoice.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the addition.</returns>
   [SwaggerOperation(
     Summary = "Adds a merchant to an invoice in the system.",
-    Description = "Adds a merchant to an invoice in the Invoice Management System. " +
-    "If the invoice identifier passed to the route is valid, the server will add the merchant to the invoice, given that the user is allowed to add merchants to this invoice.",
+    Description = "This endpoint associates a merchant with a specific invoice in the Invoice Management System. " +
+    "It validates the merchant data and checks if the invoice exists. " +
+    "If successful, the merchant is linked to the invoice.",
     OperationId = nameof(AddMerchantToInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status201Created, "The merchant was added to the invoice successfully.", typeof(Invoice))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant information is not valid (please respect the merchant schema).", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant could not be added to the invoice due to either not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The merchant could not be added to the invoice due to a conflict.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The merchant could not be added to the invoice due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The merchant could not be added to the invoice due to an internal service error", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status201Created, "The merchant was successfully added to the invoice.", typeof(Invoice))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant data is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "A merchant is already associated with this invoice.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> AddMerchantToInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("Merchant payload that will be associated with the invoice.")] Merchant merchant);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("The merchant payload to be associated with the invoice.", Required = true)] Merchant merchant);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}/merchant
   /// <summary>
-  /// Removes a merchant from an invoice.
+  /// Removes the merchant associated with a specific invoice.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice from which to remove the merchant.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the removal.</returns>
   [SwaggerOperation(
     Summary = "Removes a merchant from an invoice in the system.",
-    Description = "Removes a merchant from an invoice in the Invoice Management System. " +
-    "If the invoice identifier passed to the route is valid, the server will remove the merchant from the invoice, given that the user is allowed to remove merchants from this invoice.",
+    Description = "This endpoint removes the association between a merchant and a specific invoice. " +
+    "The operation checks if the invoice exists and if a merchant is currently associated with it. " +
+    "If successful, the merchant is dissociated from the invoice.",
     OperationId = nameof(RemoveMerchantFromInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status204NoContent, "The merchant was removed from the invoice successfully.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant information is not valid (please respect the merchant schema).", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant could not be removed from the invoice due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The merchant could not be removed from the invoice due to a conflict (the merchant is not in the invoice).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The merchant could not be removed from the invoice due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The merchant could not be removed from the invoice due to an internal service error", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status204NoContent, "The merchant was successfully removed from the invoice.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "No merchant is currently associated with this invoice.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RemoveMerchantFromInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
   #endregion
 
-  #region HTTP POST /rest/v1/invoices/{id}/scan
+  #region HTTP POST /rest/v1/invoices/{id}/scans
   /// <summary>
-  /// Creates a new invoice scan.
+  /// Creates a new scan for a specific invoice.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="invoiceScanDto"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice to which the scan will be added.</param>
+  /// <param name="invoiceScanDto">The invoice scan data to be created.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the creation.</returns>
   [SwaggerOperation(
     Summary = "Creates a new invoice scan in the system.",
-    Description = "This request will create a new invoice scan in the Invoice Management System. " +
-    "This endpoint will validate that the input (Invoice Scan DTO) is valid, " +
-    "and then will perform a series of operations to onboard the invoice scan into the Invoice Management System.",
+    Description = "This endpoint creates a new scan record for a specific invoice in the Invoice Management System. " +
+    "It validates the scan data and associates it with the specified invoice. " +
+    "The operation ensures the invoice exists and the user is authorized to add scans.",
     OperationId = nameof(CreateInvoiceScanAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status201Created, "The invoice scan was created successfully in the system.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice scan DTO (payload) is not valid. Please respect the request body.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to create a new invoice scan in the system.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The invoice scan could not be created due to a conflict (there is another invoice scan with the same id).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The invoice scan could not be created due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice scan could not be created due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status201Created, "The invoice scan was successfully created.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice scan data is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "An invoice scan with the same identifier already exists.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload exceeds the maximum allowed size (1MB).", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> CreateInvoiceScanAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("Invoice scan payload captured for the invoice.")] InvoiceScan invoiceScanDto);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("The invoice scan payload to be created.", Required = true)] InvoiceScan invoiceScanDto);
   #endregion
 
-  #region HTTP GET /rest/v1/invoices/{id}/scan
+  #region HTTP GET /rest/v1/invoices/{id}/scans
   /// <summary>
-  /// Retrieves a specific invoice scan.
+  /// Retrieves all scans associated with a specific invoice.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice from which to retrieve scans.</param>
+  /// <returns>A task representing the asynchronous operation, containing the list of invoice scans.</returns>
   [SwaggerOperation(
-    Summary = "Retrieves a specific invoice scan from the system.",
-    Description = "Retrieves a specific invoice scan from the Invoice Management System. " +
-    "If the invoice scan identifier passed into the route is valid, the server will retrieve the invoice scan, given that the user is allowed to see this invoice scan.",
-    OperationId = nameof(RetrieveInvoiceScanAsync),
+    Summary = "Retrieves all invoice scans from the system.",
+    Description = "This endpoint retrieves all scan records associated with a specific invoice. " +
+    "It checks if the invoice exists and if the user has permission to view its scans. " +
+    "If successful, a list of invoice scans is returned.",
+    OperationId = nameof(RetrieveInvoiceScansAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The invoice scan was retrieved successfully from the system.", typeof(InvoiceScan))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice scan identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access this invoice scan.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice scan could not be retrieved due to the invoice scan not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice scan could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The invoice scans were successfully retrieved.", typeof(InvoiceScan[]))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the scans of this invoice.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
-  internal static partial Task<IResult> RetrieveInvoiceScanAsync(
+  internal static partial Task<IResult> RetrieveInvoiceScansAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
   #endregion
 
-  #region HTTP PUT /rest/v1/invoices/{id}/scan
+  #region HTTP GET /rest/v1/invoices/{id}/scans/{scanId}
+  /// <summary>
+  /// Retrieves a specific invoice scan by its identifier.
+  /// </summary>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice.</param>
+  /// <param name="scanId">The unique identifier of the scan to retrieve.</param>
+  /// <returns>A task representing the asynchronous operation, containing the invoice scan details.</returns>
+  [SwaggerOperation(
+    Summary = "Retrieves a specific invoice scan from the system.",
+    Description = "This endpoint retrieves the details of a specific invoice scan identified by its ID. " +
+    "It ensures the scan belongs to the specified invoice and that the user is authorized to view it. " +
+    "If successful, the invoice scan object is returned.",
+    OperationId = nameof(RetrieveSpecificInvoiceScanAsync),
+    Tags = [EndpointNameTag])]
+  [SwaggerResponse(StatusCodes.Status200OK, "The invoice scan was successfully retrieved.", typeof(InvoiceScan))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided identifiers are invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access this invoice scan.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice scan with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
+  [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
+  [Authorize]
+  internal static partial Task<IResult> RetrieveSpecificInvoiceScanAsync(
+    [FromServices] IInvoiceProcessingService invoiceProcessingService,
+    [FromServices] IHttpContextAccessor httpContext,
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice scan.", Required = true)] Guid scanId);
+  #endregion
+
+  #region HTTP PUT /rest/v1/invoices/{id}/scans/{scanId}
   /// <summary>
   /// Updates a specific invoice scan.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="invoiceScanDto"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice.</param>
+  /// <param name="scanId">The unique identifier of the scan to update.</param>
+  /// <param name="invoiceScanDto">The new invoice scan data to replace the existing scan.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the update.</returns>
   [SwaggerOperation(
     Summary = "Updates a specific invoice scan in the system.",
-    Description = "This route will allow you to updates a specific invoice scan from the Invoice Managemnet System.",
+    Description = "This endpoint updates an existing invoice scan by replacing it with the provided payload. " +
+    "It validates the new scan data and ensures the scan belongs to the specified invoice. " +
+    "If successful, the invoice scan is updated.",
     OperationId = nameof(UpdateInvoiceScanAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice scan was updated successfully.", typeof(InvoiceScan))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice scan information is not valid (please respect the invoice scan schema).", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice scan could not be updated due to the invoice scan not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice scan could not be updated due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice scan was successfully updated.", typeof(InvoiceScan))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice scan data is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice scan with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> UpdateInvoiceScanAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("Invoice scan payload replacing the stored scan.")] InvoiceScan invoiceScanDto);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice scan.", Required = true)] Guid scanId,
+    [FromBody, SwaggerRequestBody("The invoice scan payload that will replace the existing scan.", Required = true)] InvoiceScan invoiceScanDto);
   #endregion
 
-  #region HTTP DELETE /rest/v1/invoices/{id}/scan
+  #region HTTP DELETE /rest/v1/invoices/{id}/scans/{scanId}
   /// <summary>
   /// Deletes a specific invoice scan.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice.</param>
+  /// <param name="scanId">The unique identifier of the scan to delete.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the deletion.</returns>
   [SwaggerOperation(
     Summary = "Deletes a specific invoice scan from the system.",
-    Description = "Deletes a specific invoice scan from the Invoice Management System. " +
-    "If the invoice scan identifier passed to the route is valid, the server will delete the invoice scan, given that the user is allowed to delete this invoice scan.",
+    Description = "This endpoint deletes a specific invoice scan identified by its ID. " +
+    "It ensures the scan belongs to the specified invoice and that the user is authorized to delete it. " +
+    "If successful, the invoice scan is permanently removed.",
     OperationId = nameof(DeleteInvoiceScanAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status204NoContent, "The invoice scan was deleted successfully.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice scan identifier is not valid.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice scan could not be deleted due to the invoice scan not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice scan could not be deleted due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status204NoContent, "The invoice scan was successfully deleted.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided identifiers are invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice scan with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteInvoiceScanAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice scan.", Required = true)] Guid scanId);
   #endregion
 
   #region HTTP GET /rest/v1/invoices/{id}/metadata
   /// <summary>
-  /// Retrieves the metadata from a specific invoice.
+  /// Retrieves the metadata associated with a specific invoice.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice from which to retrieve metadata.</param>
+  /// <returns>A task representing the asynchronous operation, containing the invoice metadata.</returns>
   [SwaggerOperation(
     Summary = "Retrieves the metadata from a specific invoice in the system.",
-    Description = "Retrieves the metadata from a specific invoice in the Invoice Management System. " +
-    "If the invoice identifier passed to the route is valid, the server will retrieve the metadata from the invoice, given that the user is allowed to see the metadata.",
+    Description = "This endpoint retrieves the metadata key-value pairs associated with a specific invoice. " +
+    "It checks if the invoice exists and if the user has permission to view its metadata. " +
+    "If successful, a dictionary of metadata is returned.",
     OperationId = nameof(RetrieveInvoiceMetadataAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The metadata was retrieved successfully from the invoice.", typeof(IDictionary<string, string>))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access the metadata from this invoice.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The metadata could not be retrieved due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The metadata could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The metadata was successfully retrieved.", typeof(IDictionary<string, string>))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the metadata of this invoice.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
   #endregion
 
   #region HTTP PATCH /rest/v1/invoices/{id}/metadata
   /// <summary>
-  /// Patches the metadata from a specific invoice.
+  /// Patches the metadata of a specific invoice.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="invoiceMetadataPatch"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice.</param>
+  /// <param name="invoiceMetadataPatch">The metadata key-value pairs to add or update.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the patch.</returns>
   [SwaggerOperation(
     Summary = "Patches the metadata from a specific invoice in the system.",
-    Description = "Patches the metadata from a specific invoice in the Invoice Management System. " +
-    "If the invoice identifier passed to the route is valid, the server will patch the metadata from the invoice, given that the user is allowed to update the metadata.",
+    Description = "This endpoint updates or adds metadata key-value pairs to a specific invoice. " +
+    "It validates the metadata patch and ensures the invoice exists. " +
+    "If successful, the invoice metadata is updated.",
     OperationId = nameof(PatchInvoiceMetadataAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The metadata was patched successfully in the invoice.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The metadata could not be patched due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The metadata could not be patched due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The metadata was successfully patched.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided metadata patch is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> PatchInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("Metadata patch represented as key/value pairs.")] IDictionary<string, string> invoiceMetadataPatch);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("The metadata key-value pairs to apply as a patch.", Required = true)] IDictionary<string, string> invoiceMetadataPatch);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}/metadata
   /// <summary>
   /// Deletes specific metadata keys from a specific invoice.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="metadataKeys"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice.</param>
+  /// <param name="metadataKeys">The list of metadata keys to remove.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the deletion.</returns>
   [SwaggerOperation(
     Summary = "Deletes specific metadata keys from a specific invoice in the system.",
-    Description = "Deletes specific metadata keys from a specific invoice in the Invoice Management System. " +
-    "If the invoice identifier passed to the route is valid, the server will delete the metadata keys from the invoice, given that the user is allowed to update the metadata.",
+    Description = "This endpoint removes specific metadata keys from a specific invoice. " +
+    "It validates the list of keys and ensures the invoice exists. " +
+    "If successful, the specified metadata keys are removed from the invoice.",
     OperationId = nameof(DeleteInvoiceMetadataAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status204NoContent, "The metadata keys were deleted successfully from the invoice.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The metadata keys could not be deleted due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The metadata keys could not be deleted due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status204NoContent, "The metadata keys were successfully deleted.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided metadata keys are invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteInvoiceMetadataAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("Metadata keys that should be deleted from the invoice.")] IEnumerable<string> metadataKeys);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("The list of metadata keys to delete.", Required = true)] IEnumerable<string> metadataKeys);
   #endregion
   #endregion
 
   #region CRUD operations for the Merchant Standard Endpoints
   #region HTTP POST /rest/v1/merchants
   /// <summary>
-  /// Creates a new merchant.
+  /// Creates a new merchant in the system.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="merchantDto"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="merchantDto">The merchant data transfer object containing the details of the merchant to create.</param>
+  /// <returns>A task representing the asynchronous operation, containing the created merchant identifier.</returns>
   [SwaggerOperation(
     Summary = "Creates a new merchant in the system.",
-    Description = "Creates a new merchant in the Merchant Management System. " +
-    "This endpoint will validate that the input (Merchant DTO) is valid, " +
-    "and then will perform a series of operations to onboard the merchant into the Merchant Management System.",
+    Description = "This endpoint creates a new merchant in the Invoice Management System. " +
+    "It validates the merchant data provided in the DTO and ensures the user has permission to create merchants. " +
+    "If successful, the identifier of the newly created merchant is returned.",
     OperationId = nameof(CreateNewMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status201Created, "The merchant was created successfully in the system.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant DTO (payload) is not valid. Please respect the request body.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to create a new merchant in the system.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The merchant could not be created due to a conflict (there is another merchant with the same id).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The merchant could not be created due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The merchant could not be created due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status201Created, "The merchant was successfully created.", typeof(Guid))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant data is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to create a merchant.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "A merchant with the same details already exists.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload is too large. Please reduce the size of the request.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> CreateNewMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromBody, SwaggerRequestBody("Merchant payload that will be persisted in the system.")] CreateMerchantDto merchantDto);
+    [FromBody, SwaggerRequestBody("The merchant data transfer object.", Required = true)] CreateMerchantDto merchantDto);
   #endregion
 
   #region HTTP GET /rest/v1/merchants
   /// <summary>
-  /// Retrieves all merchants.
+  /// Retrieves all merchants from the system, optionally filtered by parent company.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="parentCompanyId"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="parentCompanyId">The unique identifier of the parent company to filter merchants by.</param>
+  /// <returns>A task representing the asynchronous operation, containing a list of merchants.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all merchants from the system.",
-    Description = "Retrieves all merchants from the Merchant Management System. ",
+    Description = "This endpoint retrieves all merchants from the Invoice Management System. " +
+    "It allows filtering by a parent company identifier. " +
+    "If successful, a list of merchants matching the criteria is returned.",
     OperationId = nameof(RetrieveAllMerchantsAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The merchants were retrieved successfully from the system.", typeof(Merchant[]))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The merchants could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The merchants were successfully retrieved.", typeof(IEnumerable<Merchant>))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the list of merchants.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveAllMerchantsAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromQuery, SwaggerParameter("Parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
+    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
   #endregion
 
   #region HTTP GET /rest/v1/merchants/{id}
   /// <summary>
-  /// Retrieves a specific merchant.
+  /// Retrieves a specific merchant by its identifier.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="parentCompanyId"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the merchant to retrieve.</param>
+  /// <param name="parentCompanyId">The unique identifier of the parent company to validate against.</param>
+  /// <returns>A task representing the asynchronous operation, containing the retrieved merchant.</returns>
   [SwaggerOperation(
     Summary = "Retrieves a specific merchant from the system.",
-    Description = "Retrieves a specific merchant from the Merchant Management System. ",
+    Description = "This endpoint retrieves a specific merchant from the Invoice Management System. " +
+    "It checks if the merchant exists and if the user has permission to view it. " +
+    "If successful, the merchant details are returned.",
     OperationId = nameof(RetrieveSpecificMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The merchant was retrieved successfully from the system.", typeof(Merchant))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access this merchant.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant could not be retrieved due to the merchant not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The merchant could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The merchant was successfully retrieved.", typeof(Merchant))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access this merchant.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveSpecificMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
-    [FromQuery, SwaggerParameter("Parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
+    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
+    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
   #endregion
 
   #region HTTP PUT /rest/v1/merchants/{id}
   /// <summary>
-  /// Updates a specific merchant.
+  /// Updates a specific merchant in the system.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="merchantPayload"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the merchant to update.</param>
+  /// <param name="merchantPayload">The updated merchant object.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the update.</returns>
   [SwaggerOperation(
     Summary = "Updates a specific merchant in the system.",
-    Description = "Updates a specific merchant in the Merchant Management System. ",
+    Description = "This endpoint updates a specific merchant in the Invoice Management System. " +
+    "It validates the updated merchant data and ensures the merchant exists. " +
+    "If successful, the merchant is updated.",
     OperationId = nameof(UpdateSpecificMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The merchant was updated successfully.", typeof(Merchant))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant information is not valid (please respect the merchant schema).", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant could not be updated due to the merchant not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The merchant could not be updated due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The merchant was successfully updated.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant data is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to update this merchant.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> UpdateSpecificMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("Merchant payload that will replace the stored merchant.")] Merchant merchantPayload);
+    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("The updated merchant object.", Required = true)] Merchant merchantPayload);
   #endregion
 
   #region HTTP DELETE /rest/v1/merchants/{id}
   /// <summary>
-  /// Deletes a specific merchant.
+  /// Deletes a specific merchant from the system.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="parentCompanyId"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the merchant to delete.</param>
+  /// <param name="parentCompanyId">The unique identifier of the parent company to validate against.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the deletion.</returns>
   [SwaggerOperation(
     Summary = "Deletes a specific merchant from the system.",
-    Description = "Deletes a specific merchant from the Merchant Management System. ",
+    Description = "This endpoint deletes a specific merchant from the Invoice Management System. " +
+    "It ensures the merchant exists and the user has permission to delete it. " +
+    "If successful, the merchant is removed from the system.",
     OperationId = nameof(DeleteMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status204NoContent, "The merchant was deleted successfully.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant identifier is not valid.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant could not be deleted due to the merchant not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The merchant could not be deleted due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status204NoContent, "The merchant was successfully deleted.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to delete this merchant.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> DeleteMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
-    [FromQuery, SwaggerParameter("Parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
+    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
+    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
   #endregion
 
   #region HTTP GET /rest/v1/merchants/{id}/invoices
   /// <summary>
-  /// Retrieves all invoices from a specific merchant.
+  /// Retrieves all invoices associated with a specific merchant.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the merchant.</param>
+  /// <returns>A task representing the asynchronous operation, containing a list of invoices.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all invoices from a specific merchant in the system.",
-    Description = "Retrieves all invoices from a specific merchant in the Invoice Management System. " +
-    "If the merchant identifier passed to the route is valid, the server will retrieve all invoices from the merchant, given that the user is allowed to see the invoices.",
+    Description = "This endpoint retrieves all invoices associated with a specific merchant in the Invoice Management System. " +
+    "It ensures the merchant exists and the user has permission to view the invoices. " +
+    "If successful, a list of invoices is returned.",
     OperationId = nameof(RetrieveInvoicesFromMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The invoices were retrieved successfully from the merchant.", typeof(Invoice[]))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access the invoices from this merchant.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoices could not be retrieved due to the merchant not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The invoices were successfully retrieved.", typeof(IEnumerable<Invoice>))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the invoices from this merchant.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveInvoicesFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id);
   #endregion
 
   #region HTTP PATCH /rest/v1/merchants/{id}/invoices
   /// <summary>
-  /// Adds invoice(s) to a specific merchant.
+  /// Adds one or more invoices to a specific merchant.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="invoiceIdentifiers"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the merchant.</param>
+  /// <param name="invoiceIdentifiers">The list of invoice identifiers to add.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the addition.</returns>
   [SwaggerOperation(
     Summary = "Adds invoice(s) to a specific merchant in the system.",
-    Description = "Adds invoice(s) to a specific merchant in the Invoice Management System. " +
-    "If the merchant identifier passed to the route is valid, the server will add the invoice(s) to the merchant, given that the user is allowed to add invoices to this merchant.",
+    Description = "This endpoint associates one or more invoices with a specific merchant in the Invoice Management System. " +
+    "It validates the invoice identifiers and ensures the merchant exists. " +
+    "If successful, the invoices are added to the merchant.",
     OperationId = nameof(AddInvoiceToMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice(s) were added to the merchant successfully.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to add invoices to this merchant.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoices could not be added to the merchant due to the merchant not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The invoices could not be added to the merchant due to a conflict (the invoices are already in the merchant).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The invoices could not be added to the merchant due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could not be added to the merchant due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice(s) were successfully added to the merchant.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier or invoice identifiers are invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to add invoices to this merchant.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "One or more invoices are already associated with the merchant.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload is too large. Please reduce the number of invoice identifiers.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> AddInvoiceToMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("Collection of invoice identifiers that will be associated with the merchant.")] IEnumerable<Guid> invoiceIdentifiers);
+    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("The list of invoice identifiers to associate with the merchant.", Required = true)] IEnumerable<Guid> invoiceIdentifiers);
   #endregion
 
   #region HTTP DELETE /rest/v1/merchants/{id}/invoices
   /// <summary>
-  /// Removes invoice(s) from a specific merchant.
+  /// Removes one or more invoices from a specific merchant.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="invoiceIdentifiers"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the merchant.</param>
+  /// <param name="invoiceIdentifiers">The list of invoice identifiers to remove.</param>
+  /// <returns>A task representing the asynchronous operation, indicating the result of the removal.</returns>
   [SwaggerOperation(
     Summary = "Removes invoice(s) from a specific merchant in the system.",
-    Description = "Removes invoice(s) from a specific merchant in the Invoice Management System. " +
-    "If the merchant identifier passed to the route is valid, the server will remove the invoice(s) from the merchant, given that the user is allowed to remove invoices from this merchant.",
+    Description = "This endpoint removes the association between one or more invoices and a specific merchant in the Invoice Management System. " +
+    "It validates the invoice identifiers and ensures the merchant exists. " +
+    "If successful, the invoices are removed from the merchant.",
     OperationId = nameof(RemoveInvoiceFromMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status204NoContent, "The invoice(s) were removed from the merchant successfully.")]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to remove invoices from this merchant.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoices could not be removed from the merchant due to the merchant not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status409Conflict, "The invoices could not be removed from the merchant due to a conflict (the invoices are not in the merchant).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The invoices could not be removed from the merchant due to the payload being too large (keep the request under 1MB).", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoices could not be removed from the merchant due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status204NoContent, "The invoice(s) were successfully removed from the merchant.")]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier or invoice identifiers are invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to remove invoices from this merchant.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status409Conflict, "One or more invoices are not associated with the merchant.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status413PayloadTooLarge, "The request payload is too large. Please reduce the number of invoice identifiers.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RemoveInvoiceFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("Collection of invoice identifiers that will be detached from the merchant.")] IEnumerable<Guid> invoiceIdentifiers);
+    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("The list of invoice identifiers to detach from the merchant.", Required = true)] IEnumerable<Guid> invoiceIdentifiers);
   #endregion
 
   #region HTTP GET /rest/v1/merchants/{id}/products
   /// <summary>
-  /// Retrieves all products from a specific merchant.
+  /// Retrieves all products associated with a specific merchant.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling merchant logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the merchant.</param>
+  /// <returns>A task representing the asynchronous operation, containing a list of products.</returns>
   [SwaggerOperation(
     Summary = "Retrieves all products from a specific merchant in the system.",
-    Description = "Retrieves all products from a specific merchant in the Merchant Management System. " +
-    "If the merchant identifier passed to the route is valid, the server will retrieve all products from the merchant, given that the user is allowed to see the products.",
+    Description = "This endpoint retrieves all products associated with a specific merchant in the Invoice Management System. " +
+    "It ensures the merchant exists and the user has permission to view the products. " +
+    "If successful, a list of products is returned.",
     OperationId = nameof(RetrieveProductsFromMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The products were retrieved successfully from the merchant.", typeof(Product[]))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The merchant identifier is not valid. Please input a valid identifier.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to access the products from this merchant.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate with a valid account.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The products could not be retrieved due to the merchant not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The products could not be retrieved due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The products were successfully retrieved.", typeof(IEnumerable<Product>))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier is invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the products from this merchant.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The merchant with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> RetrieveProductsFromMerchantAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique merchant identifier.", Required = true)] Guid id);
+    [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id);
   #endregion
   #endregion
 
   /// <summary>
-  /// Analyzes a specific invoice.
+  /// Analyzes a specific invoice using AI/ML services.
   /// </summary>
-  /// <param name="invoiceProcessingService"></param>
-  /// <param name="httpContext"></param>
-  /// <param name="id"></param>
-  /// <param name="options"></param>
-  /// <returns></returns>
+  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling analysis logic.</param>
+  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
+  /// <param name="id">The unique identifier of the invoice to analyze.</param>
+  /// <param name="options">The options for the analysis (e.g., detailed, basic).</param>
+  /// <returns>A task representing the asynchronous operation, containing the analysis result.</returns>
   [SwaggerOperation(
-    Summary = "Analyzes a specific invoice from the system.",
-    Description = "Analyzes a specific invoice from the Invoice Management System. " +
-    "If the invoice identifier passed to the route is valid, the server will start analyzing the invoice, given that the user is allowed to perform this operation.",
+    Summary = "Analyzes a specific invoice in the system.",
+    Description = "This endpoint triggers an analysis of a specific invoice using AI/ML services. " +
+    "It allows specifying analysis options to control the depth and type of analysis. " +
+    "If successful, the analysis result is returned.",
     OperationId = nameof(AnalyzeInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was analyzed successfully.", typeof(Invoice))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The invoice identifier is not valid.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "You are not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status402PaymentRequired, "You cannot analyze this invoice. You don't have enough credits.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "You are not authenticated. Please authenticate before hitting this endpoint.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice could not be analyzed due to the invoice not being found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "You have made too many requests, slow down a little.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "The invoice could not be analyzed due to an internal service error.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice analysis has been accepted and is processing.", typeof(Invoice))]
+  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier or analysis options are invalid.", typeof(ValidationProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to analyze this invoice.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status402PaymentRequired, "The user does not have enough credits to perform this analysis.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice with the specified identifier was not found.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
+  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
   [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
   [Authorize]
   internal static partial Task<IResult> AnalyzeInvoiceAsync(
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("Unique invoice identifier.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("Analysis options that drive the analyzer pipeline.")] AnalysisOptions options);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
+    [FromBody, SwaggerRequestBody("The analysis options to configure the pipeline.", Required = true)] AnalysisOptions options);
 }
 
