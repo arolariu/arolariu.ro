@@ -32,7 +32,6 @@ const requestDurationHistogram = createHistogram("api.user.duration", "Request d
  */
 export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
   const startTime = Date.now();
-
   return withSpan(
     "api.user.get",
     async () => {
