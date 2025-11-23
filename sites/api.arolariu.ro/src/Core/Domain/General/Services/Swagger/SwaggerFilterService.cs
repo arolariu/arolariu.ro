@@ -137,7 +137,7 @@ internal sealed class SwaggerFilterService : IDocumentFilter
       foreach (var tag in ignoredTags)
       {
         var openApiTag = new OpenApiTag { Name = tag };
-        swaggerDoc.Tags!.Remove(openApiTag);
+        swaggerDoc.Tags.Remove(openApiTag);
       }
     }
   }
