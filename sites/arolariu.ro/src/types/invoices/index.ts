@@ -4,8 +4,11 @@ export type {Allergen, CreateAllergenDtoPayload, DeleteAllergenDtoPayload, Updat
 export {
   InvoiceAnalysisOptions,
   InvoiceCategory,
+  InvoiceScanType,
   type CreateInvoiceDtoPayload,
+  type CreateInvoiceScanDtoPayload,
   type DeleteInvoiceDtoPayload,
+  type DeleteInvoiceScanDtoPayload,
   type Invoice,
   type UpdateInvoiceDtoPayload,
 } from "./Invoice";

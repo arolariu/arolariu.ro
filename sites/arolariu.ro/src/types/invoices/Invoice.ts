@@ -5,11 +5,34 @@ import type {PaymentInformation, Product, Recipe} from "./index.ts";
  * Represents the options for the invoice analysis.
  */
 export enum InvoiceAnalysisOptions {
+  /** No analysis will be performed on the invoice. */
   NoAnalysis,
+  /** Full analysis will be performed on the invoice. */
   CompleteAnalysis,
+  /** Only the invoice data will be analyzed. */
   InvoiceOnly,
+  /** Only the items on the invoice will be analyzed. */
   InvoiceItemsOnly,
+  /** Only the merchant information will be analyzed. */
   InvoiceMerchantOnly,
+}
+
+/**
+ * Represents the scan type of an invoice scan object.
+ */
+export enum InvoiceScanType {
+  /** JPEG image format */
+  JPG,
+  /** JPEG image format */
+  JPEG,
+  /** PNG image format */
+  PNG,
+  /** PDF document format */
+  PDF,
+  /**  Other image format */
+  OTHER,
+  /** Unknown or unsupported format */
+  UNKNOWN,
 }
 
 /**
@@ -88,7 +111,6 @@ type SpecialMetadataKeys = "isImportant" | "requiresAnalysis";
 export type CreateInvoiceDtoPayload = {
   /** The user identifier associated with the invoice. */
   readonly userIdentifier: string;
-
   /** The metadata associated with the invoice. */
   // eslint-disable-next-line sonarjs/no-useless-intersection -- we want to allow extensibility.
   readonly metadata: Record<SpecialMetadataKeys | (string & {}), string>;
@@ -98,7 +120,6 @@ export type CreateInvoiceDtoPayload = {
 export type UpdateInvoiceDtoPayload<T = string> = {
   /** The unique identifier of the invoice. */
   readonly id: T;
-
   /** The user identifier associated with the invoice. */
   readonly userIdentifier: string;
 } & Partial<Omit<Invoice, "id" | "userIdentifier">>;
@@ -107,7 +128,22 @@ export type UpdateInvoiceDtoPayload<T = string> = {
 export type DeleteInvoiceDtoPayload<T = string> = {
   /** The unique identifier of the invoice to be deleted. */
   readonly id: T;
-
   /** The user identifier associated with the invoice. */
   readonly userIdentifier: string;
+};
+
+/** Represents the data transfer object payload for creating an invoice scan. */
+export type CreateInvoiceScanDtoPayload = {
+  /** The type of the invoice scan. */
+  readonly type: InvoiceScanType;
+  /** The location (URL or path) of the invoice scan. */
+  readonly location: string;
+  /** Additional metadata associated with the invoice scan. */
+  readonly additionalMetadata: Record<string, string>;
+};
+
+/** Represents the data transfer object payload for deleting an invoice scan. */
+export type DeleteInvoiceScanDtoPayload = {
+  /** The unique identifier of the invoice scan to be deleted. */
+  readonly id: string;
 };
