@@ -27,10 +27,16 @@
       "url": "https://learn.microsoft.com/api/mcp"
     },
     "playwright-mcp-server": {
+      "type": "stdio",
       "command": "npx",
       "args": [
         "@playwright/mcp@latest"
       ]
+    },
+    "eslint-mcp-server": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@eslint/mcp@latest"]
     }
   }
 }
