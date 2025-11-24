@@ -1,10 +1,9 @@
 import eslintPlugin from "@eslint/js";
 import eslintPluginNext from "@next/eslint-plugin-next";
-import eslintPluginFileProgress from "eslint-plugin-file-progress";
 import eslintPluginJsDoc from "eslint-plugin-jsdoc";
 import eslintPluginJsxA11y from "eslint-plugin-jsx-a11y";
 import eslintPluginNode from "eslint-plugin-n";
-import {defineConfig} from "eslint/config";
+import {type Config, defineConfig} from "eslint/config";
 // @ts-ignore -- no types for this.
 import eslintPluginPromise from "eslint-plugin-promise";
 import eslintPluginReact from "eslint-plugin-react";
@@ -21,13 +20,9 @@ import eslintPluginUnicorn from "eslint-plugin-unicorn";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
-const websiteEslintConfig = defineConfig({
+const websiteEslintConfig: Config = defineConfig({
   name: "[@arolariu/website]",
   files: ["sites/arolariu.ro/**/*.{ts,tsx}"],
-  ignores: [
-    "**/{node_modules,.storybook,.next,out,bin,scripts}/**", // dirs
-    "**/*.{test,config,spec,setup,stories}.{js,jsx,ts,tsx}", // files
-  ],
   languageOptions: {
     ecmaVersion: "latest",
     parser: tseslint.parser,
@@ -61,7 +56,6 @@ const websiteEslintConfig = defineConfig({
     jsdoc: eslintPluginJsDoc,
     "jsx-a11y": eslintPluginJsxA11y,
     promise: eslintPluginPromise,
-    progress: eslintPluginFileProgress,
     sonarjs: eslintPluginSonarJs,
     security: eslintPluginSecurity,
     unicorn: eslintPluginUnicorn,
@@ -71,7 +65,6 @@ const websiteEslintConfig = defineConfig({
     "@next/next": eslintPluginNext,
   },
   rules: {
-    ...eslintPluginFileProgress.configs["recommended-ci"].rules,
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginReactDOM.configs.recommended.rules,
@@ -180,15 +173,11 @@ const websiteEslintConfig = defineConfig({
   linterOptions: {
     reportUnusedDisableDirectives: false,
   },
-});
+})[0] as Config;
 
-const cvEslintConfig = defineConfig({
+const cvEslintConfig: Config = defineConfig({
   name: "[@arolariu/cv]",
   files: ["sites/cv.arolariu.ro/**/*.ts"],
-  ignores: [
-    "**/{node_modules,.storybook,.svelte-kit,out,bin,scripts,__mocks__}/**", // dirs
-    "**/*.{test,config,spec,setup,stories}.{js,jsx,ts,tsx}", // files
-  ],
   languageOptions: {
     ecmaVersion: "latest",
     parser: tseslint.parser,
@@ -213,7 +202,6 @@ const cvEslintConfig = defineConfig({
   plugins: {
     "@eslint/js": eslintPlugin,
     promise: eslintPluginPromise,
-    progress: eslintPluginFileProgress,
     sonarjs: eslintPluginSonarJs,
     security: eslintPluginSecurity,
     unicorn: eslintPluginUnicorn,
@@ -221,7 +209,6 @@ const cvEslintConfig = defineConfig({
     n: eslintPluginNode,
   },
   rules: {
-    ...eslintPluginFileProgress.configs["recommended-ci"].rules,
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginUnicorn.configs.all.rules,
@@ -270,18 +257,11 @@ const cvEslintConfig = defineConfig({
   linterOptions: {
     reportUnusedDisableDirectives: false,
   },
-});
+})[0] as Config;
 
-const packagesEslintConfig = defineConfig({
+const packagesEslintConfig: Config = defineConfig({
   name: "[@arolariu/packages]",
   files: ["packages/**/*.{ts,tsx}"],
-  ignores: [
-    "**/node_modules/**",
-    "**/.storybook/**",
-    "**/*.config.{js,ts}",
-    "**/*.{test,spec,stories}.{ts,tsx}",
-    "**/{build,dist,scripts}/**",
-  ],
   languageOptions: {
     ecmaVersion: "latest",
     parser: tseslint.parser,
@@ -300,7 +280,7 @@ const packagesEslintConfig = defineConfig({
       errorOnUnknownASTType: true,
       comment: true,
     },
-    globals: {...globals.browser, ...globals.node},
+    globals: {...globals.browser},
   },
   plugins: {
     "@eslint/js": eslintPlugin,
@@ -315,7 +295,6 @@ const packagesEslintConfig = defineConfig({
     jsdoc: eslintPluginJsDoc,
     "jsx-a11y": eslintPluginJsxA11y,
     promise: eslintPluginPromise,
-    progress: eslintPluginFileProgress,
     sonarjs: eslintPluginSonarJs,
     security: eslintPluginSecurity,
     unicorn: eslintPluginUnicorn,
@@ -323,7 +302,6 @@ const packagesEslintConfig = defineConfig({
     n: eslintPluginNode,
   },
   rules: {
-    ...eslintPluginFileProgress.configs["recommended-ci"].rules,
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginReactDOM.configs.recommended.rules,
@@ -438,22 +416,20 @@ const packagesEslintConfig = defineConfig({
   linterOptions: {
     reportUnusedDisableDirectives: false,
   },
-});
+})[0] as Config;
 
 const eslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig);
 
 // Add the global ignores to the default config.
-eslintConfig.forEach((config) => {
-  const ignoreList = [
-    "**/*.d.ts",
-    "**/**/*.d.ts",
-    "**/*.config.{js,ts}",
-    "**/**/*.config.{js,ts}",
-    "**/node_modules/**",
-    "**/*.{test,spec,stories}.{ts,svelte,tsx}",
-    "**/**/*.{test,spec,stories}.{ts,svelte,tsx}",
+for (const individualEslintConfig of eslintConfig) {
+  const eslintPathsIgnoreList = [
+    "**/{node_modules,.storybook,.svelte-kit,.next,out,bin,build,dist,scripts}/**", // dirs
+    "**/*.{test,config,spec,setup,stories,d}.{js,jsx,ts,tsx}", // files
   ];
-  config.ignores = config.ignores ? [...config.ignores, ...ignoreList] : [...ignoreList];
-});
+
+  individualEslintConfig.ignores = individualEslintConfig.ignores
+    ? [...individualEslintConfig.ignores, ...eslintPathsIgnoreList]
+    : [...eslintPathsIgnoreList];
+}
 
 export default eslintConfig;
