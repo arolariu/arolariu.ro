@@ -58,31 +58,22 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
     ValidateMerchantIdentifierIsSet(identifier);
     ValidateParentCompanyIdentifierIsSet(parentCompanyId);
 
-    await invoiceNoSqlBroker.DeleteMerchantAsync(identifier).ConfigureAwait(false);
+    await invoiceNoSqlBroker.DeleteMerchantAsync(identifier, parentCompanyId).ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion
 
   #region Read Merchant Objects API
   /// <inheritdoc/>
-  public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid? parentCompanyId = null) =>
+  public async Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllMerchantObjects));
 
-    if (parentCompanyId is null)
-    {
-      IEnumerable<Merchant> allMerchants = await invoiceNoSqlBroker
-        .ReadMerchantsAsync()
-        .ConfigureAwait(false);
-      return allMerchants;
-    }
-    else
-    {
-      IEnumerable<Merchant> merchants = await invoiceNoSqlBroker
-        .ReadMerchantsAsync((Guid)parentCompanyId)
-        .ConfigureAwait(false);
-      return merchants;
-    }
+
+    IEnumerable<Merchant> merchants = await invoiceNoSqlBroker
+      .ReadMerchantsAsync(parentCompanyId)
+      .ConfigureAwait(false);
+    return merchants;
   }).ConfigureAwait(false);
   #endregion
 
@@ -92,10 +83,8 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchantObject));
-    ValidateMerchantIdentifierIsSet(identifier);
-
     var merchant = await invoiceNoSqlBroker
-      .ReadMerchantAsync(identifier)
+      .ReadMerchantAsync(identifier, parentCompanyId)
       .ConfigureAwait(false);
     return merchant!;
   }).ConfigureAwait(false);
@@ -107,7 +96,7 @@ public partial class MerchantStorageFoundationService : IMerchantStorageFoundati
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateMerchantObject));
-    var currentMerchant = await invoiceNoSqlBroker.ReadMerchantAsync(merchantIdentifier).ConfigureAwait(false);
+    var currentMerchant = await invoiceNoSqlBroker.ReadMerchantAsync(merchantIdentifier, parentCompanyId).ConfigureAwait(false);
     ArgumentNullException.ThrowIfNull(currentMerchant);
 
     var newMerchant = await invoiceNoSqlBroker

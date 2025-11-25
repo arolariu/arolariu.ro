@@ -926,17 +926,11 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      var possibleInvoiceScan = await invoiceProcessingService
-        .ReadInvoiceScan(id, potentialUserIdentifier)
-        .ConfigureAwait(false);
-      if (InvoiceScan.NotDefault(possibleInvoiceScan))
-      {
-        return TypedResults.Conflict();
-      }
+      possibleInvoice.Scans.Add(invoiceScanDto);
 
       await invoiceProcessingService
-        .UpdateInvoiceScan(invoiceScanDto, id, potentialUserIdentifier)
-        .ConfigureAwait(false);
+          .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
+          .ConfigureAwait(false);
 
       return TypedResults.Created();
     }
@@ -990,144 +984,7 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      if (possibleInvoice is null)
-      {
-        return TypedResults.NotFound();
-      }
-
-      var possibleInvoiceScan = await invoiceProcessingService
-        .ReadInvoiceScan(id, potentialUserIdentifier)
-        .ConfigureAwait(false);
-      return InvoiceScan.NotDefault(possibleInvoiceScan) ? TypedResults.Ok(value: possibleInvoiceScan) : TypedResults.NotFound();
-    }
-    catch (InvoiceProcessingServiceValidationException exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service validation error.");
-    }
-    catch (InvoiceProcessingServiceDependencyException exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service dependency error.");
-    }
-    catch (InvoiceProcessingServiceDependencyValidationException exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service dependency validation error.");
-    }
-    catch (InvoiceProcessingServiceException exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service error.");
-    }
-    catch (Exception exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered an unexpected internal service error.");
-    }
-  }
-
-  internal static async partial Task<IResult> RetrieveSpecificInvoiceScanAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    Guid scanId)
-  {
-    try
-    {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificInvoiceScanAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
-      var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
-        .ConfigureAwait(false);
-      if (possibleInvoice is null)
-      {
-        return TypedResults.NotFound();
-      }
-      var possibleInvoiceScan = await invoiceProcessingService
-        .ReadInvoiceScan(id, potentialUserIdentifier)
-        .ConfigureAwait(false);
-      return InvoiceScan.NotDefault(possibleInvoiceScan) ? TypedResults.Ok(value: possibleInvoiceScan) : TypedResults.NotFound();
-    }
-    catch (InvoiceProcessingServiceValidationException exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service validation error.");
-    }
-    catch (InvoiceProcessingServiceDependencyException exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service dependency error.");
-    }
-    catch (InvoiceProcessingServiceDependencyValidationException exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service dependency validation error.");
-    }
-    catch (InvoiceProcessingServiceException exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered a processing service error.");
-    }
-    catch (Exception exception)
-    {
-      return TypedResults.Problem(
-        detail: exception.Message + exception.Source,
-        statusCode: StatusCodes.Status500InternalServerError,
-        title: "The service encountered an unexpected internal service error.");
-    }
-  }
-
-  internal static async partial Task<IResult> UpdateInvoiceScanAsync(
-    IInvoiceProcessingService invoiceProcessingService,
-    IHttpContextAccessor httpContext,
-    Guid id,
-    Guid scanId,
-    InvoiceScan invoiceScanDto)
-  {
-    try
-    {
-      using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceScanAsync), ActivityKind.Server);
-      var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
-
-      var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
-        .ConfigureAwait(false);
-      if (possibleInvoice is null)
-      {
-        return TypedResults.NotFound();
-      }
-
-      var possibleInvoiceScan = await invoiceProcessingService
-        .ReadInvoiceScan(id, potentialUserIdentifier)
-        .ConfigureAwait(false);
-      if (InvoiceScan.NotDefault(possibleInvoiceScan) is false)
-      {
-        return TypedResults.NotFound();
-      }
-
-      await invoiceProcessingService
-        .UpdateInvoiceScan(invoiceScanDto, id, potentialUserIdentifier)
-        .ConfigureAwait(false);
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}/scan", invoiceScanDto);
+      return possibleInvoice is null ? TypedResults.NotFound() : TypedResults.Ok(possibleInvoice.Scans);
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1170,7 +1027,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    Guid scanId)
+    string scanLocationField)
   {
     try
     {
@@ -1185,18 +1042,17 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      var possibleInvoiceScan = await invoiceProcessingService
-        .ReadInvoiceScan(id, potentialUserIdentifier)
-        .ConfigureAwait(false);
-      if (InvoiceScan.NotDefault(possibleInvoiceScan) is false)
+      var possibleScan = possibleInvoice.Scans
+         .FirstOrDefault(scan => scan.Location.ToString() == scanLocationField, InvoiceScan.Default());
+
+      if (InvoiceScan.NotDefault(possibleScan))
       {
-        return TypedResults.NotFound();
+        possibleInvoice.Scans.Remove(possibleScan);
+        return TypedResults.NoContent();
       }
 
-      await invoiceProcessingService
-        .DeleteInvoiceScan(id, potentialUserIdentifier)
-        .ConfigureAwait(false);
-      return TypedResults.NoContent();
+      return TypedResults.NotFound();
+
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1533,7 +1389,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    Guid parentCompanyId)
+    Guid? parentCompanyId)
   {
     try
     {

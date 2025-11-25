@@ -244,35 +244,8 @@ public static partial class InvoiceEndpoints
       .WithName(nameof(RetrieveInvoiceScansAsync))
       .RequireAuthorization();
 
-    router // Retrieve a specific invoice scan for a given invoice.
-      .MapGet("/invoices/{id}/scans/{scanId}", RetrieveSpecificInvoiceScanAsync)
-      .Produces<InvoiceScan>(StatusCodes.Status200OK)
-      .ProducesValidationProblem()
-      .ProducesProblem(StatusCodes.Status401Unauthorized)
-      .ProducesProblem(StatusCodes.Status403Forbidden)
-      .ProducesProblem(StatusCodes.Status404NotFound)
-      .ProducesProblem(StatusCodes.Status409Conflict)
-      .ProducesProblem(StatusCodes.Status413PayloadTooLarge)
-      .ProducesProblem(StatusCodes.Status429TooManyRequests)
-      .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(RetrieveSpecificInvoiceScanAsync))
-      .RequireAuthorization();
-
-    router // Update the invoice scan for a given invoice.
-      .MapPut("/invoices/{id}/scans/{scanId}", UpdateInvoiceScanAsync)
-      .Accepts<InvoiceScan>("application/json")
-      .Produces<InvoiceScan>(StatusCodes.Status202Accepted)
-      .ProducesValidationProblem()
-      .ProducesProblem(StatusCodes.Status401Unauthorized)
-      .ProducesProblem(StatusCodes.Status403Forbidden)
-      .ProducesProblem(StatusCodes.Status404NotFound)
-      .ProducesProblem(StatusCodes.Status429TooManyRequests)
-      .ProducesProblem(StatusCodes.Status500InternalServerError)
-      .WithName(nameof(UpdateInvoiceScanAsync))
-      .RequireAuthorization();
-
     router // Delete the invoice scan for a given invoice.
-      .MapDelete("/invoices/{id}/scans/{scanId}", DeleteInvoiceScanAsync)
+      .MapDelete("/invoices/{id}/scans/{scanLocationField}", DeleteInvoiceScanAsync)
       .Produces(StatusCodes.Status204NoContent)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)

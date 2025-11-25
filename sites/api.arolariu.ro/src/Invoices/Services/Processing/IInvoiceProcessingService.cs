@@ -69,11 +69,11 @@ public interface IInvoiceProcessingService
 
   #region Read Invoices API
   /// <summary>
-  /// Enumerates invoices within an optional partition scope.
+  /// Enumerates invoices within a partition scope.
   /// </summary>
   /// <remarks><b>Pagination:</b> Not implemented (backlog).</remarks>
-  /// <param name="userIdentifier">Optional partition / tenant context.</param>
-  Task<IEnumerable<Invoice>> ReadInvoices(Guid? userIdentifier = null);
+  /// <param name="userIdentifier">Partition / tenant context.</param>
+  Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier);
   #endregion
 
   #region Update Invoice API
@@ -156,39 +156,30 @@ public interface IInvoiceProcessingService
   /// <summary>
   /// Creates (persists) a scan resource associated with an invoice.
   /// </summary>
-  /// <param name="scan">Scan data (raw / encoded representation).</param>
+  /// <param name="scan">Scans data (raw / encoded representation).</param>
   /// <param name="invoiceIdentifier">Invoice id.</param>
   /// <param name="userIdentifier">Optional partition / tenant context.</param>
   Task CreateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier = null);
   #endregion
 
-  #region Read Invoice Scan API
+  #region Read Invoice Scans API
   /// <summary>
-  /// Retrieves the current scan associated with an invoice.
+  /// Retrieves all scans associated with an invoice.
   /// </summary>
   /// <param name="invoiceIdentifier">Invoice id.</param>
   /// <param name="userIdentifier">Optional partition / tenant context.</param>
-  Task<InvoiceScan> ReadInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier = null);
-  #endregion
-
-  #region Update Invoice Scan API
-  /// <summary>
-  /// Replaces existing scan data for an invoice.
-  /// </summary>
-  /// <param name="scan">New scan data object.</param>
-  /// <param name="invoiceIdentifier">Invoice id.</param>
-  /// <param name="userIdentifier">Optional partition / tenant context.</param>
-  /// <returns>Updated scan instance.</returns>
-  Task<InvoiceScan> UpdateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier = null);
+  /// <returns></returns>
+  Task<IEnumerable<InvoiceScan>> ReadInvoiceScans(Guid invoiceIdentifier, Guid? userIdentifier = null);
   #endregion
 
   #region Delete Invoice Scan API
   /// <summary>
   /// Deletes the scan resource for an invoice.
   /// </summary>
+  /// <param name="scan">The invoice scan object</param>
   /// <param name="invoiceIdentifier">Invoice id.</param>
   /// <param name="userIdentifier">Optional partition / tenant context.</param>
-  Task DeleteInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier = null);
+  Task DeleteInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier = null);
   #endregion
 
   #region Create Invoice Metadata API
@@ -255,10 +246,10 @@ public interface IInvoiceProcessingService
 
   #region Read Merchants API
   /// <summary>
-  /// Enumerates merchants optionally filtered by partition / company scope.
+  /// Enumerates merchants optionally filtered by a partition / company scope.
   /// </summary>
-  /// <param name="parentCompanyId">Optional company / partition scope.</param>
-  Task<IEnumerable<Merchant>> ReadMerchants(Guid? parentCompanyId = null);
+  /// <param name="parentCompanyId">Company / partition scope.</param>
+  Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId);
   #endregion
 
   #region Update Merchant API

@@ -8,7 +8,6 @@ using arolariu.Backend.Common.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs;
 
 using Xunit;
 
@@ -28,7 +27,7 @@ internal static class InvoiceBuilder
     Name = GetRandomString(),
     Description = GetRandomString(),
     Category = InvoiceCategory.FAST_FOOD,
-    Scan = InvoiceScan.Default(),
+    Scans = [],
     IsImportant = Random.Next(0, 2) == 1,
     CreatedBy = Guid.NewGuid(),
     CreatedAt = GetRandomDateTimeOffset(),
@@ -56,7 +55,7 @@ internal static class InvoiceBuilder
       Name = name ?? invoice.Name,
       Description = description ?? invoice.Description,
       Category = invoice.Category,
-      Scan = invoice.Scan,
+      Scans = invoice.Scans,
       IsImportant = invoice.IsImportant,
       CreatedBy = invoice.CreatedBy,
       CreatedAt = invoice.CreatedAt,

@@ -94,7 +94,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Read Invoices API
   /// <inheritdoc/>
-  public async Task<IEnumerable<Invoice>> ReadInvoices(Guid? userIdentifier = null) =>
+  public async Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoices));
@@ -107,7 +107,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
 
   #region Read Merchants API
   /// <inheritdoc/>
-  public async Task<IEnumerable<Merchant>> ReadMerchants(Guid? parentCompanyId = null) =>
+  public async Task<IEnumerable<Merchant>> ReadMerchants(Guid parentCompanyId) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadMerchants));
@@ -313,7 +313,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
     var invoice = await invoiceOrchestrationService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier)
       .ConfigureAwait(false);
-    invoice.Scan = scan;
+    invoice.Scans.Add(scan);
 
     await invoiceOrchestrationService
       .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier)
@@ -321,47 +321,29 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   }).ConfigureAwait(false);
   #endregion
 
-  #region Read Invoice Scan API
+  #region Read Invoice Scans API
   /// <inheritdoc/>
-  public async Task<InvoiceScan> ReadInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier = null) =>
+  public async Task<IEnumerable<InvoiceScan>> ReadInvoiceScans(Guid invoiceIdentifier, Guid? userIdentifier = null) =>
   await TryCatchAsync(async () =>
   {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceScan));
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceScans));
     var invoice = await invoiceOrchestrationService
-      .ReadInvoiceObject(invoiceIdentifier, userIdentifier)
-      .ConfigureAwait(false);
-    return invoice.Scan;
-  }).ConfigureAwait(false);
-  #endregion
-
-  #region Update Invoice Scan API
-  /// <inheritdoc/>
-  public async Task<InvoiceScan> UpdateInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier = null) =>
-  await TryCatchAsync(async () =>
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(UpdateInvoiceScan));
-    var invoice = await invoiceOrchestrationService
-      .ReadInvoiceObject(invoiceIdentifier, userIdentifier)
-      .ConfigureAwait(false);
-    invoice.Scan = scan;
-
-    var updatedInvoice = await invoiceOrchestrationService
-      .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier)
-      .ConfigureAwait(false);
-    return updatedInvoice.Scan;
+        .ReadInvoiceObject(invoiceIdentifier, userIdentifier)
+        .ConfigureAwait(false);
+    return invoice.Scans;
   }).ConfigureAwait(false);
   #endregion
 
   #region Delete Invoice Scan API
   /// <inheritdoc/>
-  public async Task DeleteInvoiceScan(Guid invoiceIdentifier, Guid? userIdentifier = null) =>
+  public async Task DeleteInvoiceScan(InvoiceScan scan, Guid invoiceIdentifier, Guid? userIdentifier = null) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceScan));
     var invoice = await invoiceOrchestrationService
       .ReadInvoiceObject(invoiceIdentifier, userIdentifier)
       .ConfigureAwait(false);
-    invoice.Scan = InvoiceScan.Default();
+    invoice.Scans.Remove(scan);
 
     await invoiceOrchestrationService
       .UpdateInvoiceObject(invoice, invoiceIdentifier, userIdentifier)

@@ -28,61 +28,37 @@ public partial class InvoiceNoSqlBroker
   }
 
   /// <inheritdoc/>
-  public async ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier)
+  public async ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceAsync));
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("invoices");
 
-    var partitionKey = new PartitionKey(userIdentifier.ToString());
-    var response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey).ConfigureAwait(false);
-
-    var invoice = response.Resource;
-    return invoice is not null && invoice.IsSoftDeleted
-      ? throw new InvalidOperationException($"The invoice with identifier {invoiceIdentifier} has been deleted.")
-      : invoice;
-  }
-
-  /// <inheritdoc/>
-  public async ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier)
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceAsync));
-    var database = CosmosClient.GetDatabase("primary");
-    var container = database.GetContainer("invoices");
-
-    // We do not have a partition key, so we perform a greedy search.
-    var query = new QueryDefinition("SELECT * FROM c WHERE c.id = @invoiceIdentifier")
-      .WithParameter("@invoiceIdentifier", invoiceIdentifier);
-
-    var iterator = container.GetItemQueryIterator<Invoice>(query);
-    var response = await iterator.ReadNextAsync().ConfigureAwait(false);
-
-    var invoice = response.Resource.Any() ? response.Resource.First() : null;
-    return invoice is not null && invoice.IsSoftDeleted
-      ? throw new InvalidOperationException($"The invoice with identifier {invoiceIdentifier} has been deleted.")
-      : invoice;
-  }
-
-  /// <inheritdoc/>
-  public async ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync()
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoicesAsync));
-    var database = CosmosClient.GetDatabase("primary");
-    var container = database.GetContainer("invoices");
-
-    // We do not have a partition key, so we perform a greedy search.
-    var query = new QueryDefinition("SELECT * FROM c");
-
-    var invoices = new List<Invoice>();
-    var iterator = container.GetItemQueryIterator<Invoice>(query);
-    while (iterator.HasMoreResults)
+    if (userIdentifier.HasValue)
     {
-      var response = await iterator.ReadNextAsync().ConfigureAwait(false);
-      invoices.AddRange([.. response]);
-    }
+      // We have the partition key for the merchant, so we can perform a targeted query (point read).
+      var partitionKey = new PartitionKey(userIdentifier.ToString());
+      var response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey).ConfigureAwait(false);
 
-    var filteredInvoices = invoices.Where(invoice => invoice.IsSoftDeleted == false);
-    return filteredInvoices;
+      var invoice = response.Resource;
+      return invoice is not null && invoice.IsSoftDeleted
+        ? throw new InvalidOperationException($"The invoice with identifier {invoiceIdentifier} does not exist!")
+        : invoice;
+    }
+    else
+    {
+      // We do not have a partition key, so we perform a greedy search.
+      var query = new QueryDefinition("SELECT * FROM c WHERE c.id = @invoiceIdentifier")
+          .WithParameter("@invoiceIdentifier", invoiceIdentifier);
+
+      var iterator = container.GetItemQueryIterator<Invoice>(query);
+      var response = await iterator.ReadNextAsync().ConfigureAwait(false);
+
+      var invoice = response.Resource.Any() ? response.Resource.First() : null;
+      return invoice is not null && invoice.IsSoftDeleted
+          ? throw new InvalidOperationException($"The invoice with identifier {invoiceIdentifier} has been deleted.")
+          : invoice;
+    }
   }
 
   /// <inheritdoc/>
@@ -142,64 +118,51 @@ public partial class InvoiceNoSqlBroker
     return invoice!;
   }
 
+
   /// <inheritdoc/>
-  public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier)
+  public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null)
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync));
     var database = CosmosClient.GetDatabase("primary");
     var container = database.GetContainer("invoices");
 
-    // We do not have a partition key, so we perform a greedy search.
-    var query = new QueryDefinition("SELECT * FROM c WHERE c.id = @invoiceIdentifier")
-      .WithParameter("@invoiceIdentifier", invoiceIdentifier);
-
-    var iterator = container.GetItemQueryIterator<Invoice>(query);
-    var response = await iterator.ReadNextAsync().ConfigureAwait(false);
-    var invoice = response.Resource.FirstOrDefault();
-
-    if (invoice is not null)
+    if (userIdentifier.HasValue)
     {
-      invoice.SoftDelete();
-
-      // Mark the invoice products as soft-deleted.
-      foreach (var product in invoice.Items)
+      // We have the partition key for the merchant, so we can perform a targeted query (point read).
+      var partitionKey = new PartitionKey(userIdentifier.ToString());
+      var response = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey).ConfigureAwait(false);
+      var invoice = response.Resource;
+      if (invoice is not null)
       {
-        product.Metadata = product.Metadata with { IsSoftDeleted = true };
+        // Mark the invoice as soft-deleted.
+        invoice.SoftDelete();
+
+        // Update the invoice and the products.
+        await container
+          .ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey)
+          .ConfigureAwait(false);
       }
-
-      // Update the invoice and the products.
-      var invoiceKey = invoice.id.ToString();
-      var partitionKey = new PartitionKey(invoice.UserIdentifier.ToString());
-
-      await container
-        .ReplaceItemAsync(invoice, invoiceKey, partitionKey)
-        .ConfigureAwait(false);
     }
-  }
-
-  /// <inheritdoc/>
-  public async ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier)
-  {
-    using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceAsync));
-    var database = CosmosClient.GetDatabase("primary");
-    var container = database.GetContainer("invoices");
-    var partitionKey = new PartitionKey(userIdentifier.ToString());
-
-    // Mark the invoice as soft-deleted.
-    var invoiceResponse = await container.ReadItemAsync<Invoice>(invoiceIdentifier.ToString(), partitionKey).ConfigureAwait(false);
-    var invoice = invoiceResponse.Resource;
-    invoice.SoftDelete();
-
-    // Mark the invoice products as soft-deleted.
-    foreach (var product in invoice.Items)
+    else
     {
-      product.Metadata = product.Metadata with { IsSoftDeleted = true };
-    }
+      // We do not have a partition key, so we perform a greedy search.
+      var query = new QueryDefinition("SELECT * FROM c WHERE c.id = @invoiceIdentifier")
+          .WithParameter("@invoiceIdentifier", invoiceIdentifier);
+      var iterator = container.GetItemQueryIterator<Invoice>(query);
+      var response = await iterator.ReadNextAsync().ConfigureAwait(false);
+      var invoice = response.Resource.Any() ? response.Resource.First() : null;
+      if (invoice is not null)
+      {
+        // Mark the invoice as soft-deleted.
+        invoice.SoftDelete();
 
-    // Update the invoice and the products.
-    await container
-      .ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey)
-      .ConfigureAwait(false);
+        // Update the invoice and the products.
+        var partitionKey = new PartitionKey(invoice.UserIdentifier.ToString());
+        await container
+          .ReplaceItemAsync(invoice, invoice.id.ToString(), partitionKey)
+          .ConfigureAwait(false);
+      }
+    }
   }
 
   /// <inheritdoc/>

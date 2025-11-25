@@ -56,36 +56,16 @@ public interface IInvoiceNoSqlBroker
   ValueTask<Invoice> CreateInvoiceAsync(Invoice invoice);
 
   /// <summary>
-  /// Retrieves a single invoice by identifier using a cross-partition (greedy) lookup.
+  /// Retrieves a single invoice by identifier using either a single point read or a cross-partition (greedy) lookup.
   /// </summary>
   /// <remarks>
   /// <para>Performs a non-partition-scoped query (higher RU cost). Use the partition-aware overload when the user / owner identifier is available.</para>
   /// <para>Returns null when not found or soft-deleted.</para>
   /// </remarks>
   /// <param name="invoiceIdentifier">Invoice aggregate identity (GUID).</param>
+  /// <param name="userIdentifier"></param>
   /// <returns>The matching invoice or null.</returns>
-  ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier);
-
-  /// <summary>
-  /// Retrieves a single invoice by identifier scoped to its partition (preferred form).
-  /// </summary>
-  /// <remarks>
-  /// <para>Provides efficient point read when both invoice id and owner (<paramref name="userIdentifier"/>) are known.</para>
-  /// <para>Returns null when not found or soft-deleted.</para>
-  /// </remarks>
-  /// <param name="invoiceIdentifier">Invoice aggregate identity (GUID).</param>
-  /// <param name="userIdentifier">Owner / partition key.</param>
-  /// <returns>The matching invoice or null.</returns>
-  ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
-
-  /// <summary>
-  /// Lists all non soft-deleted invoices across all partitions (cross-partition enumeration).
-  /// </summary>
-  /// <remarks>
-  /// <para>Potentially expensive operation; intended for administrative or analytical scenarios, not per-request user flows.</para>
-  /// </remarks>
-  /// <returns>An enumerable of invoices (may be empty).</returns>
-  ValueTask<IEnumerable<Invoice>> ReadInvoicesAsync();
+  ValueTask<Invoice?> ReadInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null);
 
   /// <summary>
   /// Lists all non soft-deleted invoices for a specific user/partition.
@@ -119,15 +99,6 @@ public interface IInvoiceNoSqlBroker
   ValueTask<Invoice> UpdateInvoiceAsync(Invoice currentInvoice, Invoice updatedInvoice);
 
   /// <summary>
-  /// Soft-deletes an invoice by identifier (cross-partition lookup).
-  /// </summary>
-  /// <remarks>
-  /// <para>Marks invoice and contained products as soft-deleted if found. No-op when not found.</para>
-  /// </remarks>
-  /// <param name="invoiceIdentifier">Invoice identity.</param>
-  ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier);
-
-  /// <summary>
   /// Soft-deletes an invoice by identifier within a known partition.
   /// </summary>
   /// <remarks>
@@ -135,7 +106,7 @@ public interface IInvoiceNoSqlBroker
   /// </remarks>
   /// <param name="invoiceIdentifier">Invoice identity.</param>
   /// <param name="userIdentifier">Partition (owner) identity.</param>
-  ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid userIdentifier);
+  ValueTask DeleteInvoiceAsync(Guid invoiceIdentifier, Guid? userIdentifier = null);
 
   /// <summary>
   /// Soft-deletes all invoices for a given user partition.
@@ -168,17 +139,9 @@ public interface IInvoiceNoSqlBroker
   /// <para>Use partition-aware read patterns (parent company id) where possible to reduce RU consumption.</para>
   /// </remarks>
   /// <param name="merchantIdentifier">Merchant identity.</param>
+  /// <param name="parentCompanyId">The parent company identifier.</param>
   /// <returns>The merchant or null if not found or soft-deleted (if soft-delete introduced later).</returns>
-  ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier);
-
-  /// <summary>
-  /// Lists all merchants (cross-partition enumeration).
-  /// </summary>
-  /// <remarks>
-  /// <para>Potentially expensive; intended for administrative / analytical operations.</para>
-  /// </remarks>
-  /// <returns>An enumerable of merchants (may be empty).</returns>
-  ValueTask<IEnumerable<Merchant>> ReadMerchantsAsync();
+  ValueTask<Merchant?> ReadMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null);
 
   /// <summary>
   /// Lists merchants filtered by parent company partition.
@@ -212,7 +175,7 @@ public interface IInvoiceNoSqlBroker
   /// <para>Current implementation performs a greedy query. If soft-delete is later introduced for merchants, implementation should mark a flag rather than remove.</para>
   /// </remarks>
   /// <param name="merchantIdentifier">Merchant identity.</param>
-  ValueTask DeleteMerchantAsync(Guid merchantIdentifier);
-
+  /// <param name="parentCompanyId">The parent company identifier.</param>
+  ValueTask DeleteMerchantAsync(Guid merchantIdentifier, Guid? parentCompanyId = null);
   #endregion
 }

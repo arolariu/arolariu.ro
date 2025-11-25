@@ -21,7 +21,7 @@ using arolariu.Backend.Domain.Invoices.DTOs;
 /// <para><b>Soft Delete Lifecycle:</b> When soft-deleted at the storage layer, the invoice and each contained product are marked; queries exclude
 /// soft-deleted entities unless explicitly overridden. See service layer deletion logic for cascade behavior.</para>
 /// <para><b>Sentinel Defaults:</b> <c>Guid.Empty</c> for <c>UserIdentifier</c> and <c>MerchantReference</c>, <c>InvoiceCategory.NOT_DEFINED</c> for <c>Category</c>,
-/// and <c>InvoiceScan.Default()</c> for <c>Scan</c> indicate an unenriched or unlinked state. These SHOULD be replaced by upstream enrichment / user input
+/// and <c>InvoiceScan.Default()</c> for <c>Scans</c> indicate an unenriched or unlinked state. These SHOULD be replaced by upstream enrichment / user input
 /// flows prior to final analytical usage.</para>
 /// <para><b>Merge Semantics:</b> See <see cref="Merge(Invoice, Invoice)"/> for partial update precedence rules.</para>
 /// <para><b>Thread-safety:</b> Not thread-safe. Do not share instances across threads without external synchronization.</para>
@@ -56,7 +56,7 @@ public sealed class Invoice : NamedEntity<Guid>
   /// The invoice scan value object.
   /// </summary>
   [JsonPropertyOrder(6)]
-  public InvoiceScan Scan { get; set; } = InvoiceScan.Default();
+  public ICollection<InvoiceScan> Scans { get; init; } = [];
 
   /// <summary>
   /// Payment information (currency, total amount, total tax).
@@ -105,14 +105,28 @@ public sealed class Invoice : NamedEntity<Guid>
   /// <returns>A new <see cref="Invoice"/> instance with immutable identity and sentinel defaults.</returns>
   internal static Invoice Default() => new Invoice
   {
-    id = Guid.CreateVersion7(),
+    id = Guid.Empty,
     UserIdentifier = Guid.Empty,
-    Category = InvoiceCategory.NOT_DEFINED,
-    Scan = InvoiceScan.Default(),
-    PaymentInformation = new PaymentInformation(),
-    MerchantReference = Guid.Empty,
-    AdditionalMetadata = new Dictionary<string, object>(),
   };
+
+  /// <summary>
+  /// Internal method to determine whether an invoice instance is non-default (i.e., has at least one field set to a non-sentinel value).
+  /// </summary>
+  /// <param name="invoice"></param>
+  /// <returns></returns>
+  internal static bool NotDefault(Invoice invoice) =>
+    invoice.id != Guid.Empty && invoice.UserIdentifier != Guid.Empty
+    &&
+    (invoice.Category != InvoiceCategory.NOT_DEFINED ||
+    !string.IsNullOrWhiteSpace(invoice.Name) ||
+    !string.IsNullOrWhiteSpace(invoice.Description) ||
+    invoice.IsImportant != false ||
+    (invoice.Scans is not null && invoice.Scans.Count > 0) ||
+    invoice.PaymentInformation is not null ||
+    invoice.MerchantReference != Guid.Empty ||
+    (invoice.Items is not null && invoice.Items.Count > 0) ||
+    (invoice.PossibleRecipes is not null && invoice.PossibleRecipes.Count > 0) ||
+    (invoice.SharedWith is not null && invoice.SharedWith.Count > 0));
 
   /// <summary>
   /// Produces a new invoice aggregate representing a non-destructive merge of an original invoice and a set of partial updates.
@@ -131,7 +145,7 @@ public sealed class Invoice : NamedEntity<Guid>
   /// <item><term>Name</term><term>!IsNullOrWhiteSpace</term><term>Replace</term><term>Whitespace-only ignored.</term></item>
   /// <item><term>Description</term><term>!IsNullOrWhiteSpace</term><term>Replace</term><term>Trimming not currently applied.</term></item>
   /// <item><term>IsImportant</term><term>Value differs</term><term>Replace</term><term>Boolean toggle recognized.</term></item>
-  /// <item><term>Scan</term><term><see cref="InvoiceScan.NotDefault(InvoiceScan)"/> true</term><term>Replace</term><term>Scan treated as value object snapshot.</term></item>
+  /// <item><term>Scans</term><term><see cref="InvoiceScan.NotDefault(InvoiceScan)"/> true</term><term>Replace</term><term>Scans treated as value object snapshot.</term></item>
   /// <item><term>PaymentInformation</term><term>Not null</term><term>Replace</term><term>Whole object replacement; no deep merge.</term></item>
   /// <item><term>MerchantReference</term><term>!= Guid.Empty</term><term>Replace</term><term>Caller responsible for referential validity.</term></item>
   /// <item><term>Items</term><term>Count > 0</term><term>Concatenate (original + partial)</term><term>No de-duplication; may introduce duplicates.</term></item>
@@ -157,7 +171,7 @@ public sealed class Invoice : NamedEntity<Guid>
       Description = !string.IsNullOrWhiteSpace(partialUpdates.Description) ? partialUpdates.Description : original.Description,
       IsImportant = partialUpdates.IsImportant != original.IsImportant ? partialUpdates.IsImportant : original.IsImportant,
       LastUpdatedAt = DateTime.UtcNow,
-      Scan = InvoiceScan.NotDefault(partialUpdates.Scan) ? partialUpdates.Scan : original.Scan,
+      Scans = partialUpdates.Scans.Count > 0 ? [.. partialUpdates.Scans, .. original.Scans] : original.Scans,
       PaymentInformation = partialUpdates.PaymentInformation ?? original.PaymentInformation,
       MerchantReference = partialUpdates.MerchantReference != Guid.Empty ? partialUpdates.MerchantReference : original.MerchantReference,
       PossibleRecipes = partialUpdates.PossibleRecipes.Count > 0 ? [.. partialUpdates.PossibleRecipes, .. original.PossibleRecipes] : original.PossibleRecipes,

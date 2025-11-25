@@ -526,80 +526,14 @@ public static partial class InvoiceEndpoints
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id);
   #endregion
 
-  #region HTTP GET /rest/v1/invoices/{id}/scans/{scanId}
-  /// <summary>
-  /// Retrieves a specific invoice scan by its identifier.
-  /// </summary>
-  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
-  /// <param name="id">The unique identifier of the invoice.</param>
-  /// <param name="scanId">The unique identifier of the scan to retrieve.</param>
-  /// <returns>A task representing the asynchronous operation, containing the invoice scan details.</returns>
-  [SwaggerOperation(
-    Summary = "Retrieves a specific invoice scan from the system.",
-    Description = "This endpoint retrieves the details of a specific invoice scan identified by its ID. " +
-    "It ensures the scan belongs to the specified invoice and that the user is authorized to view it. " +
-    "If successful, the invoice scan object is returned.",
-    OperationId = nameof(RetrieveSpecificInvoiceScanAsync),
-    Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The invoice scan was successfully retrieved.", typeof(InvoiceScan))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided identifiers are invalid.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access this invoice scan.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice scan with the specified identifier was not found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
-  [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
-  [Authorize]
-  internal static partial Task<IResult> RetrieveSpecificInvoiceScanAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice scan.", Required = true)] Guid scanId);
-  #endregion
-
-  #region HTTP PUT /rest/v1/invoices/{id}/scans/{scanId}
-  /// <summary>
-  /// Updates a specific invoice scan.
-  /// </summary>
-  /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
-  /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
-  /// <param name="id">The unique identifier of the invoice.</param>
-  /// <param name="scanId">The unique identifier of the scan to update.</param>
-  /// <param name="invoiceScanDto">The new invoice scan data to replace the existing scan.</param>
-  /// <returns>A task representing the asynchronous operation, indicating the result of the update.</returns>
-  [SwaggerOperation(
-    Summary = "Updates a specific invoice scan in the system.",
-    Description = "This endpoint updates an existing invoice scan by replacing it with the provided payload. " +
-    "It validates the new scan data and ensures the scan belongs to the specified invoice. " +
-    "If successful, the invoice scan is updated.",
-    OperationId = nameof(UpdateInvoiceScanAsync),
-    Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice scan was successfully updated.", typeof(InvoiceScan))]
-  [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice scan data is invalid.", typeof(ValidationProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status404NotFound, "The invoice scan with the specified identifier was not found.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
-  [SwaggerResponse(StatusCodes.Status500InternalServerError, "An internal server error occurred while processing the request.", typeof(ProblemDetails))]
-  [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "General exception types represent unexpected errors.")]
-  [Authorize]
-  internal static partial Task<IResult> UpdateInvoiceScanAsync(
-    [FromServices] IInvoiceProcessingService invoiceProcessingService,
-    [FromServices] IHttpContextAccessor httpContext,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice scan.", Required = true)] Guid scanId,
-    [FromBody, SwaggerRequestBody("The invoice scan payload that will replace the existing scan.", Required = true)] InvoiceScan invoiceScanDto);
-  #endregion
-
-  #region HTTP DELETE /rest/v1/invoices/{id}/scans/{scanId}
+  #region HTTP DELETE /rest/v1/invoices/{id}/scans/{scanLocationField}
   /// <summary>
   /// Deletes a specific invoice scan.
   /// </summary>
   /// <param name="invoiceProcessingService">The invoice processing service responsible for handling invoice logic.</param>
   /// <param name="httpContext">The HTTP context accessor for accessing request information.</param>
   /// <param name="id">The unique identifier of the invoice.</param>
-  /// <param name="scanId">The unique identifier of the scan to delete.</param>
+  /// <param name="scanLocationField">The unique identifier of the scan to delete.</param>
   /// <returns>A task representing the asynchronous operation, indicating the result of the deletion.</returns>
   [SwaggerOperation(
     Summary = "Deletes a specific invoice scan from the system.",
@@ -621,7 +555,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromRoute, SwaggerParameter("The unique identifier of the invoice scan.", Required = true)] Guid scanId);
+    [FromRoute, SwaggerParameter("The unique identifier of the invoice scan.", Required = true)] string scanLocationField);
   #endregion
 
   #region HTTP GET /rest/v1/invoices/{id}/metadata
@@ -808,7 +742,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
-    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = true)] Guid parentCompanyId);
+    [FromQuery, SwaggerParameter("The parent company identifier used as a filter.", Required = false)] Guid? parentCompanyId);
   #endregion
 
   #region HTTP PUT /rest/v1/merchants/{id}

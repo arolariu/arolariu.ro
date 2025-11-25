@@ -55,45 +55,23 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
     ValidateIdentifierIsSet(identifier);
 
-    if (userIdentifier is null)
-    {
-      logger.LogUserIdentifierNotSetWarning();
-      var invoice = await invoiceNoSqlBroker
-        .ReadInvoiceAsync(identifier)
-        .ConfigureAwait(false);
-      return invoice!;
-    }
-    else
-    {
-      var invoice = await invoiceNoSqlBroker
-        .ReadInvoiceAsync(identifier, (Guid)userIdentifier)
-        .ConfigureAwait(false);
-      return invoice!;
-    }
+    var invoice = await invoiceNoSqlBroker
+      .ReadInvoiceAsync(identifier, userIdentifier)
+      .ConfigureAwait(false);
+    return invoice!;
   }).ConfigureAwait(false);
   #endregion
 
   #region Read Invoice Objects API
   /// <inheritdoc/>
-  public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid? userIdentifier = null) =>
+  public async Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier) =>
   await TryCatchAsync(async () =>
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(ReadAllInvoiceObjects));
-    if (userIdentifier is null)
-    {
-      logger.LogUserIdentifierNotSetWarning();
-      var invoices = await invoiceNoSqlBroker
-        .ReadInvoicesAsync()
-        .ConfigureAwait(false);
-      return invoices;
-    }
-    else
-    {
-      var invoices = await invoiceNoSqlBroker
-        .ReadInvoicesAsync((Guid)userIdentifier)
-        .ConfigureAwait(false);
-      return invoices;
-    }
+    var invoices = await invoiceNoSqlBroker
+      .ReadInvoicesAsync(userIdentifier)
+      .ConfigureAwait(false);
+    return invoices;
   }).ConfigureAwait(false);
   #endregion
 
@@ -121,19 +99,9 @@ public partial class InvoiceStorageFoundationService : IInvoiceStorageFoundation
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteInvoiceObject));
     ValidateIdentifierIsSet(identifier);
 
-    if (userIdentifier is null)
-    {
-      logger.LogUserIdentifierNotSetWarning();
-      await invoiceNoSqlBroker
-        .DeleteInvoiceAsync(identifier)
-        .ConfigureAwait(false);
-    }
-    else
-    {
-      await invoiceNoSqlBroker
-        .DeleteInvoiceAsync(identifier, (Guid)userIdentifier)
-        .ConfigureAwait(false);
-    }
+    await invoiceNoSqlBroker
+      .DeleteInvoiceAsync(identifier, userIdentifier)
+      .ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion
 }

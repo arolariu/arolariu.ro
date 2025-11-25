@@ -84,9 +84,9 @@ public interface IInvoiceOrchestrationService
   /// <remarks>
   /// <para><b>Pagination:</b> Not supported yet (backlog). Implementations SHOULD avoid unbounded materialization where possible.</para>
   /// </remarks>
-  /// <param name="userIdentifier">Optional tenant / partition scope.</param>
+  /// <param name="userIdentifier">Tenant / partition scope.</param>
   /// <returns>Sequence of invoices (empty if none).</returns>
-  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid? userIdentifier = null);
+  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier);
   #endregion
 
   #region Update Invoice API

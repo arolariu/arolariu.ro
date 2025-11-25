@@ -186,37 +186,6 @@ It.IsAny<System.Threading.CancellationToken>()
 
   #region ReadMerchantsAsync Tests
 
-  /// <summary>Reads all merchants when present.</summary>
-  [Fact]
-  public async Task ShouldReadAllMerchants_WhenMerchantsExist()
-  {
-    // Given
-    var expectedMerchants = MerchantTestDataBuilder.CreateMultipleRandomMerchants(3);
-    var feedResponseMock = new Mock<FeedResponse<Merchant>>();
-    feedResponseMock.Setup(response => response.GetEnumerator())
-      .Returns(expectedMerchants.GetEnumerator());
-
-    var mockFeedIterator = new Mock<FeedIterator<Merchant>>();
-    mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(true);
-    mockFeedIterator.Setup(iterator => iterator.ReadNextAsync(It.IsAny<System.Threading.CancellationToken>()))
-   .ReturnsAsync(feedResponseMock.Object)
-      .Callback(() => mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(false));
-
-    mockMerchantsContainer.Setup(container => container.GetItemQueryIterator<Merchant>(
-      It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c"),
-      It.IsAny<string>(),
-        It.IsAny<QueryRequestOptions>()
-      ))
-      .Returns(mockFeedIterator.Object);
-
-    // When
-    var actualMerchants = await merchantNoSqlBroker.ReadMerchantsAsync();
-
-    // Then
-    Assert.NotNull(actualMerchants);
-    Assert.Equal(expectedMerchants.Count, actualMerchants.Count());
-  }
-
   /// <summary>Reads merchants filtered by parent company id.</summary>
   [Fact]
   public async Task ShouldReadMerchantsByParentCompanyId_WhenMerchantsExist()

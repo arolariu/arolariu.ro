@@ -32,6 +32,8 @@ public partial class InvoiceProcessingService
   private delegate Task<IDictionary<string, object>> CallbackFunctionForTasksWithMetadataReturn();
 
   private delegate Task<InvoiceScan> CallbackFunctionForTasksWithInvoiceScanReturn();
+
+  private delegate Task<IEnumerable<InvoiceScan>> CallbackFunctionForTasksWithInvoiceScanListReturn();
   #endregion
 
   #region TryCatchAync method
@@ -260,6 +262,34 @@ public partial class InvoiceProcessingService
   }
 
   private async Task<InvoiceScan> TryCatchAsync(CallbackFunctionForTasksWithInvoiceScanReturn callbackFunction)
+  {
+    try
+    {
+      return await callbackFunction().ConfigureAwait(false);
+    }
+    catch (InvoiceOrchestrationValidationException exception)
+    {
+      throw CreateAndLogValidationException(exception.InnerException!);
+    }
+    catch (InvoiceOrchestrationDependencyException exception)
+    {
+      throw CreateAndLogDependencyException(exception.InnerException!);
+    }
+    catch (InvoiceOrchestrationDependencyValidationException exception)
+    {
+      throw CreateAndLogDependencyValidationException(exception.InnerException!);
+    }
+    catch (InvoiceOrchestrationServiceException exception)
+    {
+      throw CreateAndLogServiceException(exception.InnerException!);
+    }
+    catch (Exception exception)
+    {
+      throw CreateAndLogServiceException(exception);
+    }
+  }
+
+  private async Task<IEnumerable<InvoiceScan>> TryCatchAsync(CallbackFunctionForTasksWithInvoiceScanListReturn callbackFunction)
   {
     try
     {

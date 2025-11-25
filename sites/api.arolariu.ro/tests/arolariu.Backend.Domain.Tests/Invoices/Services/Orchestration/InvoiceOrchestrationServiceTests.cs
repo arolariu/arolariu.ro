@@ -483,28 +483,6 @@ public sealed class InvoiceOrchestrationServiceTests
   }
 
   /// <summary>
-  /// Ensures retrieval of all invoices succeeds without user identifier (global query).
-  /// </summary>
-  [Fact]
-  public async Task ReadAllInvoiceObjects_NoUserIdentifier_ReturnsAllInvoices()
-  {
-    // Arrange
-    var expectedInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(3);
-
-    mockStorageService
-        .Setup(s => s.ReadAllInvoiceObjects(null))
-        .ReturnsAsync(expectedInvoices);
-
-    // Act
-    var result = await orchestrationService.ReadAllInvoiceObjects(null);
-
-    // Assert
-    Assert.NotNull(result);
-    Assert.Equal(3, result.Count());
-    mockStorageService.Verify(s => s.ReadAllInvoiceObjects(null), Times.Once);
-  }
-
-  /// <summary>
   /// Validates empty collection is returned when no invoices exist.
   /// </summary>
   [Fact]
