@@ -1,7 +1,7 @@
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import {getCookie} from "@/lib/actions/cookies";
-import {fetchUser} from "@/lib/actions/user/fetchUser";
+import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import {headers} from "next/headers";
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 export default async function NotFound(): Promise<React.JSX.Element> {
   const headersList = await headers();
   const locale = await getLocale();
-  const {user} = await fetchUser();
+  const {user} = await fetchAaaSUserFromAuthService();
   const t = await getTranslations("errors.404");
   const eulaCookie = await getCookie("eula-accepted");
 
