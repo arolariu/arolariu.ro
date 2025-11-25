@@ -1,4 +1,4 @@
-import {fetchUser} from "@/lib/actions/user/fetchUser";
+import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import type {Metadata} from "next";
 import RenderInvoiceDomainScreen from "./island";
 
@@ -13,6 +13,6 @@ export const metadata: Metadata = {
  * @returns The invoice management system homepage.
  */
 export default async function InvoicePage(): Promise<React.JSX.Element> {
-  const {isAuthenticated} = await fetchUser();
+  const {isAuthenticated} = await fetchAaaSUserFromAuthService();
   return <RenderInvoiceDomainScreen isAuthenticated={isAuthenticated} />;
 }
