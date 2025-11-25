@@ -1,4 +1,4 @@
-import {fetchUser} from "@/lib/actions/user/fetchUser";
+import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function CreateInvoicePage() {
   const t = await getTranslations("Domains.services.invoices.service.create-page");
-  const {isAuthenticated} = await fetchUser();
+  const {isAuthenticated} = await fetchAaaSUserFromAuthService();
 
   return (
     <main className='flex flex-col flex-wrap items-center justify-center justify-items-center px-5 py-24 text-center'>
