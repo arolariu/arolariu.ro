@@ -16,15 +16,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       // Goal: Attach to user public medata his UUIDv4 identifier.
       const userId = evt.data.id;
       const primaryEmail = evt.data.email_addresses[0]?.email_address;
+      const uniqueIdentifier = userId + (primaryEmail ?? "");
 
-      // Create hash from user email
-      const uniqueIdentifierBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(primaryEmail ?? userId));
-
-      const uuidV4 = generateGuid(uniqueIdentifierBuffer);
+      const userIdentifier = generateGuid(uniqueIdentifier);
       const client = await clerkClient();
 
       await client.users.updateUserMetadata(userId, {
-        publicMetadata: {uuidV4},
+        publicMetadata: {userIdentifier},
       });
     }
 
