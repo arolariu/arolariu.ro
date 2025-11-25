@@ -1,12 +1,22 @@
 "use client";
 
+import {toast} from "@arolariu/components";
 import {createContext, use, useCallback, useMemo, useState} from "react";
 import {PendingInvoiceSubmission} from "../_types/InvoiceSubmission";
+import {
+  clearSubmissionsList,
+  processFiles,
+  processPendingSubmissions,
+  removeSubmissionsFromList,
+  renameSubmissionInList,
+  rotateSubmissionInList,
+  updateSubmissionStatusInList,
+} from "../_utils/fileActions";
 
 interface InvoiceCreatorContextType {
   submissions: Array<PendingInvoiceSubmission>;
-  addSubmission: (files: FileList) => void;
-  removeSubmission: (id: string) => void;
+  addSubmissions: (files: FileList) => Promise<void>;
+  removeSubmissions: (ids: string[]) => void;
   clearAllSubmissions: () => void;
   rotateSubmissionPhoto: (id: string, degrees: number) => Promise<void>;
   renameSubmission: (id: string, newName: string) => void;
@@ -18,24 +28,46 @@ const InvoiceCreatorContext = createContext<InvoiceCreatorContextType | undefine
 export function InvoiceCreatorProvider({children}: Readonly<{children: React.ReactNode}>) {
   const [submissions, setSubmissions] = useState<PendingInvoiceSubmission[]>([]);
 
-  const addSubmission = useCallback((files: FileList) => {}, []);
-  const removeSubmission = useCallback((id: string) => {}, []);
-  const clearAllSubmissions = useCallback(() => {}, []);
-  const rotateSubmissionPhoto = useCallback((id: string, degrees: number): Promise<void> => {}, []);
-  const renameSubmission = useCallback(() => {}, []);
-  const processSubmission = useCallback((): Promise<void> => {}, []);
+  const addSubmissions = useCallback(async (files: FileList) => {
+    const newSubmissions = await processFiles(files);
+    setSubmissions((prev) => [...prev, ...newSubmissions]);
+  }, []);
+
+  const removeSubmissions = useCallback((ids: string[]) => {
+    setSubmissions((prev) => removeSubmissionsFromList(prev, ids));
+    toast.error(`${ids.length} submissions have been removed!`);
+  }, []);
+
+  const clearAllSubmissions = useCallback(() => {
+    setSubmissions((prev) => clearSubmissionsList(prev));
+    toast.info("All submissions have been cleared!");
+  }, []);
+
+  const rotateSubmissionPhoto = useCallback(async (id: string, degrees: number): Promise<void> => {
+    setSubmissions((prev) => rotateSubmissionInList(prev, id, degrees));
+  }, []);
+
+  const renameSubmission = useCallback((id: string, newName: string) => {
+    setSubmissions((prev) => renameSubmissionInList(prev, id, newName));
+  }, []);
+
+  const processSubmission = useCallback(async (): Promise<void> => {
+    await processPendingSubmissions(submissions, (id, status, extra) => {
+      setSubmissions((prev) => updateSubmissionStatusInList(prev, id, status, extra));
+    });
+  }, [submissions]);
 
   const value = useMemo<InvoiceCreatorContextType>(
     () => ({
       submissions,
-      addSubmission,
-      removeSubmission,
+      addSubmissions,
+      removeSubmissions,
       clearAllSubmissions,
       rotateSubmissionPhoto,
       renameSubmission,
       processSubmission,
     }),
-    [submissions, addSubmission, removeSubmission, clearAllSubmissions, rotateSubmissionPhoto, renameSubmission, processSubmission],
+    [submissions, addSubmissions, removeSubmissions, clearAllSubmissions, rotateSubmissionPhoto, renameSubmission, processSubmission],
   );
 
   return <InvoiceCreatorContext value={value}>{children}</InvoiceCreatorContext>;
