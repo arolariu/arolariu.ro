@@ -10,9 +10,9 @@ import RenderGenerativeView from "./_components/views/GenerativeView";
 import RenderInvoicesView from "./_components/views/InvoicesView";
 import RenderStatisticsView from "./_components/views/StatisticsView";
 
-type Props = {
-  invoices: Invoice[];
-};
+type Props = Readonly<{
+  readonly invoices: ReadonlyArray<Invoice>;
+}>;
 
 /**
  * This function renders the view invoices page.
