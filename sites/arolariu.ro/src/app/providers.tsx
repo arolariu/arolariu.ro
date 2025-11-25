@@ -20,6 +20,7 @@ type Props = {
  * @returns The context providers for the app.
  */
 export default function ContextProviders({locale, children}: Readonly<Props>): React.JSX.Element {
+  const messages = locale === "ro" ? require("../../messages/ro.json") : require("../../messages/en.json");
   return (
     <AuthProvider localization={locale === "ro" ? roRO : enUS}>
       <FontProvider>
@@ -29,7 +30,9 @@ export default function ContextProviders({locale, children}: Readonly<Props>): R
           defaultTheme='system'
           attribute='class'
           themes={["light", "dark"]}>
-          <TranslationProvider>
+          <TranslationProvider
+            locale={locale}
+            messages={messages}>
             {children}
             <ToastProvider />
             <Commander />
