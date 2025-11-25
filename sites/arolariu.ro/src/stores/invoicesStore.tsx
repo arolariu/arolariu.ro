@@ -13,9 +13,9 @@ import {createIndexedDBStorage} from "./storage/indexedDBStorage";
  */
 interface InvoicesState {
   /** All invoices in the store */
-  invoices: Invoice[];
+  invoices: ReadonlyArray<Invoice>;
   /** Currently selected invoices */
-  selectedInvoices: Invoice[];
+  selectedInvoices: ReadonlyArray<Invoice>;
 }
 
 /**
