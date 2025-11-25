@@ -1,6 +1,7 @@
 import {usePaginationWithSearch} from "@/hooks";
 import {
   Button,
+  Checkbox,
   Input,
   Pagination,
   PaginationContent,
@@ -28,7 +29,7 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import {useCallback, useState} from "react";
-import {TbEdit, TbTrash} from "react-icons/tb";
+import {TbDeselect, TbEdit, TbTrash} from "react-icons/tb";
 import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
 
 /**
@@ -37,8 +38,9 @@ import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
  * @returns JSX.Element that displays a table of invoice scans.
  */
 export default function TableDisplay(): React.JSX.Element | null {
-  const {submissions, renameSubmission, removeSubmission} = useInvoiceCreator();
-  const [query, setQuery] = useState("");
+  const {submissions, renameSubmission, removeSubmissions} = useInvoiceCreator();
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(() => new Set<string>());
+  const [query, setQuery] = useState<string>("");
 
   const {paginatedItems, currentPage, totalPages, pageSize, setPageSize, setCurrentPage} = usePaginationWithSearch({
     items: submissions,
@@ -46,8 +48,48 @@ export default function TableDisplay(): React.JSX.Element | null {
     searchQuery: query,
   });
 
-  const handleQueryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
+  const isAllPageSelected = paginatedItems.length > 0 && paginatedItems.every((item) => selectedRows.has(item.id));
+  const isSomePageSelected = paginatedItems.some((item) => selectedRows.has(item.id));
+
+  const handleSelectAll = useCallback(() => {
+    const newSelected = new Set(selectedRows);
+    if (isAllPageSelected) {
+      for (const item of paginatedItems) {
+        newSelected.delete(item.id);
+      }
+    } else {
+      for (const item of paginatedItems) {
+        newSelected.add(item.id);
+      }
+    }
+    setSelectedRows(newSelected);
+  }, [isAllPageSelected, paginatedItems, selectedRows]);
+
+  const handleSelectRow = useCallback(
+    (id: string) => {
+      const newSelected = new Set(selectedRows);
+      if (newSelected.has(id)) {
+        newSelected.delete(id);
+      } else {
+        newSelected.add(id);
+      }
+      setSelectedRows(newSelected);
+    },
+    [selectedRows],
+  );
+
+  const handleBulkDelete = useCallback(() => {
+    removeSubmissions(Array.from(selectedRows));
+    setSelectedRows(new Set());
+  }, [removeSubmissions, selectedRows]);
+
+  const handleDeselectAll = useCallback(() => {
+    setSelectedRows(new Set());
+  }, [selectedRows]);
+
+  const handleQueryChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    setQuery(event.target.value);
   }, []);
 
   const handleRename = useCallback(
@@ -65,9 +107,9 @@ export default function TableDisplay(): React.JSX.Element | null {
   const handleDelete = useCallback(
     (id: string) => (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      removeSubmission(id);
+      removeSubmissions([id]);
     },
-    [removeSubmission],
+    [removeSubmissions],
   );
 
   const handlePageSizeChange = useCallback(
@@ -168,7 +210,14 @@ export default function TableDisplay(): React.JSX.Element | null {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className='w-12'>#</TableHead>
+              <TableHead className='w-12 text-center'>
+                <Checkbox
+                  checked={isAllPageSelected || (isSomePageSelected && "indeterminate")}
+                  onCheckedChange={handleSelectAll}
+                  aria-label='Select all'
+                />
+              </TableHead>
+              <TableHead className='w-12 text-center'>#</TableHead>
               <TableHead>File Name</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Size</TableHead>
@@ -177,32 +226,40 @@ export default function TableDisplay(): React.JSX.Element | null {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedItems.map((scan, index) => (
+            {paginatedItems.map((item, index) => (
               <TableRow
-                key={scan.id}
-                className={scan.isProcessing ? "bg-purple-50/50 opacity-50 dark:bg-purple-950/20" : ""}>
+                key={item.id}
+                className={item.isProcessing ? "bg-purple-50/50 opacity-50 dark:bg-purple-950/20" : ""}
+                data-state={selectedRows.has(item.id) ? "selected" : undefined}>
+                <TableCell className='text-center'>
+                  <Checkbox
+                    checked={selectedRows.has(item.id)}
+                    onCheckedChange={() => handleSelectRow(item.id)}
+                    aria-label={`Select ${item.name}`}
+                  />
+                </TableCell>
                 <TableCell className='font-medium'>{(currentPage - 1) * pageSize + index + 1}</TableCell>
                 <TableCell className='max-w-xs truncate font-medium'>
                   <div className='flex items-center gap-2'>
-                    {scan.isProcessing ? (
+                    {item.isProcessing ? (
                       <div className='h-4 w-4 animate-spin rounded-full border-2 border-purple-600 border-t-transparent' />
                     ) : null}
-                    <span>{scan.name}</span>
+                    <span>{item.name}</span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <span
                     className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                      scan.type === "pdf"
+                      item.type === "pdf"
                         ? "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300"
                         : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
                     }`}>
-                    {scan.type.toUpperCase()}
+                    {item.type.toUpperCase()}
                   </span>
                 </TableCell>
-                <TableCell>{(scan.size / 1024 / 1024).toFixed(2)} MB</TableCell>
+                <TableCell>{(item.size / 1024 / 1024).toFixed(2)} MB</TableCell>
                 <TableCell>
-                  {scan.uploadedAt.toLocaleTimeString(undefined, {
+                  {item.uploadedAt.toLocaleTimeString(undefined, {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
@@ -216,8 +273,8 @@ export default function TableDisplay(): React.JSX.Element | null {
                             size='sm'
                             variant='ghost'
                             className='h-8 w-8 cursor-pointer p-0'
-                            onClick={handleRename(scan)}
-                            disabled={scan.isProcessing}>
+                            onClick={handleRename(item)}
+                            disabled={item.isProcessing}>
                             <TbEdit className='h-4 w-4' />
                           </Button>
                         </TooltipTrigger>
@@ -230,8 +287,8 @@ export default function TableDisplay(): React.JSX.Element | null {
                             size='sm'
                             variant='ghost'
                             className='h-8 w-8 cursor-pointer p-0 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950 dark:hover:text-red-300'
-                            onClick={handleDelete(scan.id)}
-                            disabled={scan.isProcessing}>
+                            onClick={handleDelete(item.id)}
+                            disabled={item.isProcessing}>
                             <TbTrash className='h-4 w-4' />
                           </Button>
                         </TooltipTrigger>
@@ -309,6 +366,34 @@ export default function TableDisplay(): React.JSX.Element | null {
           </Pagination>
         )}
       </div>
+
+      {/* Bulk Actions Footer */}
+      {selectedRows.size > 1 && (
+        <motion.div
+          initial={{opacity: 0, y: 20}}
+          animate={{opacity: 1, y: 0}}
+          exit={{opacity: 0, y: 20}}
+          className='fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-lg dark:border-gray-700 dark:bg-gray-900'>
+          <span className='text-sm font-medium text-gray-900 dark:text-white'>{selectedRows.size} items selected</span>
+          <div className='h-4 w-px bg-gray-200 dark:bg-gray-700' />
+          <Button
+            variant='destructive'
+            size='sm'
+            onClick={handleBulkDelete}
+            className='flex items-center gap-2'>
+            <TbTrash className='h-4 w-4' />
+            Delete Selected
+          </Button>
+          <Button
+            variant='ghost'
+            size='sm'
+            onClick={handleDeselectAll}
+            className='flex items-center gap-2'>
+            <TbDeselect className='h-4 w-4' />
+            Deselect All
+          </Button>
+        </motion.div>
+      )}
     </>
   );
 }
