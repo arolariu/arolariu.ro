@@ -8,10 +8,17 @@ export type PendingInvoiceStatus = "idle" | "uploading" | "creating" | "attachin
 /** Supported media types for pending invoice submissions. */
 export type PendingInvoiceFileType = "image" | "pdf";
 
+/** Represents an error encountered during the processing of a pending invoice submission. */
 export type PendingInvoiceSubmissionError = {
   id: string;
   message: string;
   code: "INVALID_TYPE" | "FILE_TOO_LARGE" | "PROCESSING_ERROR";
+};
+
+/** Represents a successful creation of an invoice from a pending submission. */
+export type PendingInvoiceSubmissionSuccess = {
+  id: string;
+  invoiceId: string;
 };
 
 /**
@@ -23,9 +30,7 @@ export type PendingInvoiceSubmissionBase = {
   /** Human readable name (can be edited by the user). */
   name: string;
   /** Original file reference kept in memory for conversions. */
-  file?: File;
-  /** Latest blob representation used for previews. */
-  blob?: Blob;
+  file: File;
   /** MIME type declared by the file. */
   mimeType: string;
   /** Raw file size in bytes. */
@@ -76,6 +81,9 @@ export type PendingPdfSubmission = PendingInvoiceSubmissionBase & {
 /** Runtime representation of a pending invoice submission. */
 export type PendingInvoiceSubmission = PendingImageSubmission | PendingPdfSubmission;
 
+/** Union type representing the result of a pending invoice submission, either success or error. */
+export type PendingInvoiceSubmissionResult = PendingInvoiceSubmissionSuccess | PendingInvoiceSubmissionError;
+
 /** Immutable set of defaults for image adjustments. */
 export const DEFAULT_IMAGE_ADJUSTMENTS: PendingInvoiceImageAdjustments = Object.freeze({
   rotation: 0,
@@ -84,6 +92,10 @@ export const DEFAULT_IMAGE_ADJUSTMENTS: PendingInvoiceImageAdjustments = Object.
   saturation: 100,
 }) satisfies PendingInvoiceImageAdjustments;
 
-/** Type guard to quickly access image-only properties. */
+/**
+ * Type guard to quickly access image-only properties.
+ * @param submission The submission to check.
+ * @returns True if the submission is an image submission, false otherwise.
+ */
 export const isImageSubmission = (submission: PendingInvoiceSubmission): submission is PendingImageSubmission =>
   submission.type === "image";
