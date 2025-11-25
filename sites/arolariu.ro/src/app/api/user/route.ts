@@ -1,3 +1,4 @@
+import {generateGuid} from "@/lib/utils.generic";
 import {API_JWT, createJwtToken} from "@/lib/utils.server";
 import {
   addSpanEvent,
@@ -28,7 +29,8 @@ const requestDurationHistogram = createHistogram("api.user.duration", "Request d
  *
  * For authenticated users, returns Clerk user object with valid JWT.
  * For guest users, returns null user with guest JWT containing identifier and limited permissions.
- * @returns The user information including user object, identifier, and JWT token
+ * @returns The user information including user object, identifier, and JWT token.
+ * @remarks This HTTP GET request *SHOULD* be called by the client-side to obtain user information.
  */
 export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
   const startTime = Date.now();
@@ -52,37 +54,59 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
 
         // Check authentication
         addSpanEvent("auth.check.start");
-        const {getToken, userId} = await auth();
-        addSpanEvent("auth.check.complete", {authenticated: Boolean(userId)});
+        const {isAuthenticated, userId} = await auth();
+        addSpanEvent("auth.check.complete", {authenticated: Boolean(isAuthenticated)});
 
         // Authenticated user with Clerk
-        if (userId) {
-          return withSpan("api.user.authenticated", async (authSpan) => {
+        if (isAuthenticated) {
+          return withSpan("api.user.authenticated", async (userSpan) => {
+            // Record request metric with type-safe attributes
             authenticatedUserCounter.add(1, {
               ...createAuthAttributes(true, {method: "clerk", provider: "clerk"}),
             });
 
-            authSpan.setAttributes({
+            userSpan.setAttributes({
               ...createAuthAttributes(true, {method: "clerk", provider: "clerk"}),
             });
 
-            logWithTrace("info", "Fetching authenticated user information", {userId}, "api");
+            logWithTrace("info", "Fetching authenticated user clerk information", {userId}, "api");
 
-            addSpanEvent("user.fetch.start");
             const user = await currentUser();
-            addSpanEvent("user.fetch.complete");
+            const userIdentifier = generateGuid(userId);
+            const currentTimestamp = Math.floor(Date.now() / 1000);
+            // todo: we don't store the generated token, so we fallback to 5 minutes expiration time.
+            const expirationTime = currentTimestamp + 300; // 5 minute expiration
 
-            addSpanEvent("token.generate.start");
-            const token = await getToken({template: "jwt-for-api"});
-            addSpanEvent("token.generate.complete");
+            const jwtPayload = {
+              iss: "https://auth.arolariu.ro",
+              aud: "https://api.arolariu.ro",
+              iat: currentTimestamp,
+              nbf: currentTimestamp,
+              exp: expirationTime,
+              sub:
+                user?.primaryEmailAddress?.emailAddress
+                ?? user?.emailAddresses[0]?.emailAddress
+                ?? user?.primaryPhoneNumber?.phoneNumber
+                ?? user?.phoneNumbers[0]?.phoneNumber
+                ?? user?.id
+                ?? "N/A",
+              userIdentifier,
+              role: "user",
+            };
+
+            addSpanEvent("jwt.create.start");
+            const token = await createJwtToken(jwtPayload, API_JWT);
+            addSpanEvent("jwt.create.complete", {
+              token_expiration: expirationTime,
+            });
 
             const userInformation: UserInformation = {
               user,
-              userIdentifier: userId,
-              userJwt: token ?? "",
+              userIdentifier,
+              userJwt: token,
             };
 
-            authSpan.setAttributes({
+            userSpan.setAttributes({
               "user.has_token": Boolean(token),
               "response.status": 200,
             });
@@ -106,71 +130,72 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
 
             return NextResponse.json(userInformation, {status: 200});
           });
-        }
-
-        // Guest user - generate JWT token for unauthenticated access
-        return withSpan("api.user.guest", async (guestSpan) => {
-          guestUserCounter.add(1, {
-            ...createAuthAttributes(false, {method: "jwt"}),
-          });
-
-          guestSpan.setAttributes({
-            ...createAuthAttributes(false, {method: "jwt", provider: "jwt"}),
-          });
-
-          logWithTrace("info", "Generating guest user JWT token", undefined, "api");
-
-          const guestIdentifier = "00000000-0000-0000-0000-000000000000";
-          const currentTimestamp = Math.floor(Date.now() / 1000);
-          const expirationTime = currentTimestamp + 3600; // 1 hour expiration
-
-          const jwtPayload = {
-            iss: "https://auth.arolariu.ro",
-            aud: "https://api.arolariu.ro",
-            iat: currentTimestamp,
-            nbf: currentTimestamp,
-            exp: expirationTime,
-            sub: "guest",
-            role: "guest",
-            userIdentifier: guestIdentifier,
-          };
-
-          addSpanEvent("jwt.create.start");
-          const guestToken = await createJwtToken(jwtPayload, API_JWT);
-          addSpanEvent("jwt.create.complete", {
-            token_expiration: expirationTime,
-          });
-
-          const guestUserInformation: UserInformation = {
-            user: null,
-            userIdentifier: guestIdentifier,
-            userJwt: guestToken,
-          };
-
-          guestSpan.setAttributes({
-            "jwt.expiration": expirationTime,
-            "response.status": 200,
-          });
-
-          const duration = Date.now() - startTime;
-          requestDurationHistogram.record(duration, {
-            ...createHttpServerAttributes("GET", 200, {route: "/api/user"}),
-            ...createAuthAttributes(false, {method: "jwt"}),
-          });
-
-          logWithTrace(
-            "info",
-            "Successfully generated guest user information",
-            {
-              duration,
-              expiresIn: 3600,
+        } else {
+          return withSpan("api.user.guest", async (guestSpan) => {
+            // Record request metric with type-safe attributes
+            guestUserCounter.add(1, {
               ...createAuthAttributes(false, {method: "jwt"}),
-            },
-            "api",
-          );
+            });
 
-          return NextResponse.json(guestUserInformation, {status: 200});
-        });
+            guestSpan.setAttributes({
+              ...createAuthAttributes(false, {method: "jwt", provider: "jwt"}),
+            });
+
+            logWithTrace("info", "Generating guest user JWT token", undefined, "api");
+
+            const guestIdentifier = "00000000-0000-0000-0000-000000000000";
+            const currentTimestamp = Math.floor(Date.now() / 1000);
+            // todo: we don't store the generated token, so we fallback to 5 minutes expiration time.
+            const expirationTime = currentTimestamp + 300; // 5 minute expiration
+
+            const jwtPayload = {
+              iss: "https://auth.arolariu.ro",
+              aud: "https://api.arolariu.ro",
+              iat: currentTimestamp,
+              nbf: currentTimestamp,
+              exp: expirationTime,
+              sub: "guest",
+              userIdentifier: guestIdentifier,
+              role: "guest",
+            };
+
+            addSpanEvent("jwt.create.start");
+            const guestToken = await createJwtToken(jwtPayload, API_JWT);
+            addSpanEvent("jwt.create.complete", {
+              token_expiration: expirationTime,
+            });
+
+            const guestUserInformation: UserInformation = {
+              user: null,
+              userIdentifier: guestIdentifier,
+              userJwt: guestToken,
+            };
+
+            guestSpan.setAttributes({
+              "jwt.expiration": expirationTime,
+              "response.status": 200,
+            });
+
+            const duration = Date.now() - startTime;
+            requestDurationHistogram.record(duration, {
+              ...createHttpServerAttributes("GET", 200, {route: "/api/user"}),
+              ...createAuthAttributes(false, {method: "jwt"}),
+            });
+
+            logWithTrace(
+              "info",
+              "Successfully generated guest user information",
+              {
+                duration,
+                expiresIn: 3600,
+                ...createAuthAttributes(false, {method: "jwt"}),
+              },
+              "api",
+            );
+
+            return NextResponse.json(guestUserInformation, {status: 200});
+          });
+        }
       } catch (error) {
         recordSpanError(error, "Failed to process /api/user request");
 
