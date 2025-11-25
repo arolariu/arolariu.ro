@@ -2,14 +2,14 @@
 
 import {useCallback, useMemo, useState} from "react";
 
-type PaginationWithSearchInputType<T> = {
+type PaginationWithSearchInputType<T> = Readonly<{
   items: T[];
   initialPageSize?: number;
   initialPage?: number;
   searchQuery?: string;
-};
+}>;
 
-type PaginationWithSearchOutputType<T> = {
+type PaginationWithSearchOutputType<T> = Readonly<{
   currentPage: number; // derived, clamped, and reset to 1 when searching
   setCurrentPage: (page: number) => void; // sets the requested page
   pageSize: number;
@@ -18,7 +18,7 @@ type PaginationWithSearchOutputType<T> = {
   paginatedItems: T[];
   paginate: <U = T>(items: U[]) => U[];
   resetPagination: () => void;
-};
+}>;
 
 /**
  * Custom React hook for pagination of items with optional search functionality.
