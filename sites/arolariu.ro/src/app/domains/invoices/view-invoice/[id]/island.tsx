@@ -1,6 +1,6 @@
 "use client";
 
-import {FakeInvoice, FakeMerchant} from "@/data/mocks/invoices";
+import type {Invoice, Merchant} from "@/types/invoices";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {AnimatePresence, motion, type Variants} from "motion/react";
 import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
@@ -12,6 +12,11 @@ import InvoiceHeader from "./_components/InvoiceHeader";
 import SidebarSection from "./_components/sidebar/SidebarSection";
 import MetadataTab from "./_components/tabs/MetadataTab";
 import RecipesTab from "./_components/tabs/RecipesTab";
+
+type Props = Readonly<{
+  invoice: Invoice;
+  merchant: Merchant;
+}>;
 
 const containerVariants: Variants = {
   hidden: {opacity: 0},
@@ -36,15 +41,7 @@ const itemVariants: Variants = {
  * This function renders the view invoice page.
  * @returns The JSX for the view invoice page.
  */
-export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
-  console.log(">>> invoiceIdentifier", invoiceIdentifier);
-
-  // Invoice data (mocked for this example)
-  const invoice = FakeInvoice;
-
-  // Merchant data (mocked for this example)
-  const merchant = FakeMerchant;
-
+export default function RenderViewInvoiceScreen({invoice, merchant}: Readonly<Props>): React.JSX.Element {
   return (
     <DialogProvider>
       <section className='container mx-auto py-12'>
