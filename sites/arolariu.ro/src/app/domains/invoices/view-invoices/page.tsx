@@ -1,5 +1,5 @@
-import {FakeInvoiceBigList} from "@/data/mocks/invoices";
-import {fetchUser} from "@/lib/actions/user/fetchUser";
+import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
+import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
 import {RichText} from "@/presentation/Text";
 import type {Metadata} from "next";
@@ -26,10 +26,9 @@ export async function generateMetadata(): Promise<Metadata> {
  */
 export default async function ViewInvoicesPage() {
   const t = await getTranslations("Domains.services.invoices.service.view-invoices");
-  const {user} = await fetchUser();
+  const {user} = await fetchAaaSUserFromAuthService();
   const username = user?.fullName ?? "dear guest";
-
-  const invoices = FakeInvoiceBigList;
+  const invoices = await fetchInvoices();
 
   return (
     <main className='container mx-auto px-5 py-24'>
