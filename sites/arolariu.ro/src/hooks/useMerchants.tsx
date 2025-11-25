@@ -4,8 +4,8 @@ import fetchMerchants from "@/lib/actions/invoices/fetchMerchants";
 import {useMerchantsStore} from "@/stores";
 import type {Merchant} from "@/types/invoices";
 import {useEffect, useState} from "react";
-import {useUserInformation} from "./index";
 
+type HookInputType = Readonly<{}>;
 type HookOutputType = Readonly<{
   merchant: Merchant[];
   isLoading: boolean;
@@ -16,8 +16,7 @@ type HookOutputType = Readonly<{
  * This hook fetches all merchants information.
  * @returns The merchants and loading state.
  */
-export function useMerchants(): HookOutputType {
-  const {userInformation} = useUserInformation();
+export function useMerchants(_void?: HookInputType): HookOutputType {
   const [isError, setIsError] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const possiblyStaleMerchants = useMerchantsStore((state) => state.merchants);
@@ -28,9 +27,8 @@ export function useMerchants(): HookOutputType {
       setIsLoading(true);
 
       try {
-        const authToken = userInformation.userJwt;
-        const merchant = await fetchMerchants(authToken);
-        setPossiblyStaleMerchants(merchant);
+        const merchants = await fetchMerchants();
+        setPossiblyStaleMerchants(merchants);
       } catch (error: unknown) {
         console.error(">>> Error fetching merchants in useMerchants hook:", error as Error);
         setIsError(true);
@@ -42,7 +40,7 @@ export function useMerchants(): HookOutputType {
     fetchMerchantsForUser();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setPossiblyStaleMerchants is a stable function.
-  }, [userInformation]);
+  }, []);
 
   return {merchant: possiblyStaleMerchants, isLoading, isError} as const;
 }

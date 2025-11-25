@@ -4,8 +4,8 @@ import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
-import {useUserInformation} from "./index";
 
+type HookInputType = Readonly<{}>;
 type HookOutputType = Readonly<{
   invoices: Invoice[];
   isLoading: boolean;
@@ -16,8 +16,7 @@ type HookOutputType = Readonly<{
  * This hook fetches the invoices for the user.
  * @returns The invoices and loading state.
  */
-export function useInvoices(): HookOutputType {
-  const {userInformation} = useUserInformation();
+export function useInvoices(_void?: HookInputType): HookOutputType {
   const [isError, setIsError] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const possiblyStaleInvoices = useInvoicesStore((state) => state.invoices);
@@ -28,8 +27,7 @@ export function useInvoices(): HookOutputType {
       setIsLoading(true);
 
       try {
-        const authToken = userInformation.userJwt;
-        const invoices = await fetchInvoices(authToken);
+        const invoices = await fetchInvoices();
         setPossiblyStaleInvoices(invoices);
       } catch (error: unknown) {
         console.error(">>> Error fetching invoices in useInvoices hook:", error as Error);
@@ -39,12 +37,9 @@ export function useInvoices(): HookOutputType {
       }
     };
 
-    if (userInformation) {
-      fetchInvoicesForUser();
-    }
-
+    fetchInvoicesForUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setPossiblyStaleInvoices is a stable function.
-  }, [userInformation]);
+  }, []);
 
   return {invoices: possiblyStaleInvoices, isLoading, isError} as const;
 }

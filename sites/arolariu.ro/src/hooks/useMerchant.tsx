@@ -3,7 +3,6 @@
 import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
 import type {Merchant} from "@/types/invoices";
 import {useEffect, useState} from "react";
-import {useUserInformation} from "./index";
 
 type HookInputType = Readonly<{
   merchantIdentifier: string;
@@ -20,7 +19,6 @@ type HookOutputType = Readonly<{
  * @returns The merchant information and loading state.
  */
 export function useMerchant({merchantIdentifier}: HookInputType): HookOutputType {
-  const {userInformation} = useUserInformation();
   const [isError, setIsError] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
@@ -30,8 +28,7 @@ export function useMerchant({merchantIdentifier}: HookInputType): HookOutputType
       setIsLoading(true);
 
       try {
-        const authToken = userInformation.userJwt;
-        const merchant = await fetchMerchant(merchantIdentifier, authToken);
+        const merchant = await fetchMerchant({merchantId: merchantIdentifier});
         setMerchant(merchant);
       } catch (error: unknown) {
         console.error(">>> Error fetching merchant in useMerchant hook:", error as Error);
@@ -42,7 +39,7 @@ export function useMerchant({merchantIdentifier}: HookInputType): HookOutputType
     };
 
     fetchMerchantForUser(merchantIdentifier);
-  }, [userInformation, merchantIdentifier]);
+  }, [merchantIdentifier]);
 
   return {merchant, isLoading, isError} as const;
 }
