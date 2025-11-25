@@ -5,13 +5,22 @@ import {DefaultAzureCredential} from "@azure/identity";
 import {BlobServiceClient} from "@azure/storage-blob";
 import fetchConfigurationValue from "./fetchConfig";
 
-export type BlobStorageResponse = {
-  status: number;
-  blobIdentifier: string;
-  blobName: string;
-  blobUrl: string;
-  blobMetadata?: {[propertyName: string]: string};
+type ServerActionInputType = {
+  containerName: string;
+  base64Data: string;
+  metadata?: {[propertyName: string]: string};
+  blobName?: string;
 };
+
+type ServerActionOutputType = Promise<
+  Readonly<{
+    status: number;
+    blobIdentifier: string;
+    blobName: string;
+    blobUrl: string;
+    blobMetadata?: {[propertyName: string]: string};
+  }>
+>;
 
 /**
  * This server action will upload a blob to Azure Storage.
@@ -23,13 +32,9 @@ export type BlobStorageResponse = {
  * @param blobName The name of the blob to upload.
  * @returns The response from the Azure Storage service.
  */
-export default async function uploadBlob(
-  containerName: string,
-  base64Data: string,
-  metadata?: {[propertyName: string]: string},
-  blobName?: string,
-): Promise<BlobStorageResponse> {
+export default async function uploadBlob(payload: ServerActionInputType): ServerActionOutputType {
   try {
+    const {containerName, base64Data, metadata = {}, blobName} = payload;
     const originalFile = await convertBase64ToBlob(base64Data);
 
     const storageCredentials = new DefaultAzureCredential();
