@@ -13,7 +13,7 @@ type MediaPreviewProps = {file: PendingInvoiceSubmission};
  * @returns JSX.Element that displays a preview of the invoice scan.
  */
 export default function MediaPreview({file}: Readonly<MediaPreviewProps>): React.JSX.Element {
-  const {rotateSubmissionPhoto, renameSubmission, removeSubmission} = useInvoiceCreator();
+  const {rotateSubmissionPhoto, renameSubmission, removeSubmissions} = useInvoiceCreator();
   const showProcessing = Boolean(file.isProcessing);
   const imageAdjustments = file.type === "image" ? file.adjustments : undefined;
 
@@ -39,9 +39,9 @@ export default function MediaPreview({file}: Readonly<MediaPreviewProps>): React
   const handleDelete = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      removeSubmission(file.id);
+      removeSubmissions([file.id]);
     },
-    [removeSubmission, file.id],
+    [removeSubmissions, file.id],
   );
 
   return (
