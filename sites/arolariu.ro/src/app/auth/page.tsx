@@ -1,4 +1,4 @@
-import {fetchUser} from "@/lib/actions/user/fetchUser";
+import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * @returns The main authentication page.
  */
 export default async function AuthPage(): Promise<React.JSX.Element> {
-  const {isAuthenticated} = await fetchUser();
+  const {isAuthenticated} = await fetchAaaSUserFromAuthService();
   if (isAuthenticated) {
     return redirect("/");
   }
