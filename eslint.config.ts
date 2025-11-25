@@ -90,6 +90,7 @@ const websiteEslintConfig: Config = defineConfig({
     ...eslintPluginNext.configs.recommended.rules,
     ...eslintPluginPromise.configs["flat/recommended"].rules,
 
+    curly: "off", // we allow no curly braces for 1 instruction lines.
     "one-var": "off", // we allow multiple variable declarations.
     "no-undef": "off", // Next.JS automatically injects React into the namespace.
     camelcase: "off", // we allow camelCase for variable names.
