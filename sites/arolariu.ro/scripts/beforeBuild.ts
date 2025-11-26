@@ -1,14 +1,54 @@
 /**
- * Executes a series of scripts to prepare for the build process.
+ * @fileoverview Pre-build script orchestrator for arolariu.ro Next.js application.
+ * @module scripts/beforeBuild
  *
- * This function performs the following operations sequentially:
- * 1. Cleans the build directory using the clean script
- * 2. Formats the code using the format script
- * 3. Generates new licenses and acknowledgements
- *
- * Each step is logged to the console with appropriate start and completion messages.
+ * @remarks
+ * This module coordinates all pre-build preparation tasks that must execute before
+ * Next.js compilation begins. Ensures clean build state by removing stale artifacts
+ * and prepares the environment for a fresh production build.
  */
-export default async function main() {
+
+/**
+ * Orchestrates pre-build preparation tasks before Next.js compilation.
+ *
+ * @remarks
+ * **Execution Context**: Node.js build-time script invoked before Next.js build.
+ *
+ * **Build Pipeline Integration**: Automatically executed by Next.js build process
+ * via configuration in `next.config.ts` or npm scripts. Runs before TypeScript
+ * compilation and asset bundling.
+ *
+ * **Operations Performed**:
+ * 1. **Clean Build Artifacts**: Removes `.next` and `storybook-static` directories
+ *    to prevent stale cached data from affecting the new build
+ * 2. **Prepare Fresh State**: Ensures build starts from known clean state
+ *
+ * **Error Handling**: Errors in cleanup are logged but don't fail the build pipeline.
+ * The clean script handles individual operation failures gracefully.
+ *
+ * **Performance**: Typically completes in <1 second for small projects. Larger
+ * codebases with extensive build artifacts may take several seconds.
+ *
+ * **Side Effects**:
+ * - Deletes `.next` directory (Next.js build cache and output)
+ * - Deletes `storybook-static` directory (Storybook build output)
+ * - Logs progress to stdout
+ *
+ * @returns Promise that resolves when all pre-build tasks complete successfully
+ *
+ * @example
+ * ```typescript
+ * // Automatically invoked during build:
+ * // npm run build → beforeBuild → Next.js build → afterBuild
+ *
+ * // Can also be run manually for cleanup:
+ * import main from './beforeBuild';
+ * await main();
+ * ```
+ *
+ * @see {@link clean.main} for cleanup implementation details
+ */
+export default async function main(): Promise<void> {
   console.info("[arolariu.ro::beforeBuild] Running before build scripts...");
 
   // 1. Clean the build directory using the clean script
@@ -20,4 +60,4 @@ export default async function main() {
   console.info("[arolariu.ro::beforeBuild] Finished running before build scripts.");
 }
 
-main();
+await main();

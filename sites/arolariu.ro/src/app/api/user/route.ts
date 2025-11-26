@@ -25,12 +25,95 @@ const authenticatedUserCounter = createCounter("user.authenticated.requests", "T
 const requestDurationHistogram = createHistogram("api.user.duration", "Request duration in milliseconds", "ms");
 
 /**
- * Retrieves user information for authenticated or guest users.
+ * Retrieves user information and generates JWT tokens for authentication.
  *
- * For authenticated users, returns Clerk user object with valid JWT.
- * For guest users, returns null user with guest JWT containing identifier and limited permissions.
- * @returns The user information including user object, identifier, and JWT token.
- * @remarks This HTTP GET request *SHOULD* be called by the client-side to obtain user information.
+ * @remarks
+ * **Execution Context**: Next.js API Route Handler (App Router).
+ *
+ * **Purpose**: Central authentication endpoint that:
+ * - Identifies authenticated users via Clerk session cookies
+ * - Generates JWT tokens for authenticated users with 5-minute expiration
+ * - Provides guest JWT tokens for unauthenticated visitors
+ * - Enables frontend to call backend API with proper authorization
+ *
+ * **Authentication Flow**:
+ * 1. **Clerk Check**: Uses `@clerk/nextjs/server` to verify session cookies
+ * 2. **Authenticated Path**: Fetches full Clerk user object, generates JWT with user claims
+ * 3. **Guest Path**: Generates guest JWT with sentinel GUID (all zeros) and limited permissions
+ * 4. **Error Fallback**: Returns guest credentials on any error (graceful degradation)
+ *
+ * **JWT Token Structure**:
+ * - **Issuer (iss)**: `https://auth.arolariu.ro` (authentication authority)
+ * - **Audience (aud)**: `https://api.arolariu.ro` (intended recipient)
+ * - **Subject (sub)**: User email, phone, or Clerk ID (authenticated) / "guest" (unauthenticated)
+ * - **Expiration (exp)**: Current timestamp + 300 seconds (5 minutes)
+ * - **Custom Claims**: `userIdentifier` (GUID), `role` ("user" or "guest")
+ *
+ * **Security Considerations**:
+ * - Tokens signed with `API_JWT` secret key (HS256 algorithm)
+ * - Short expiration (5 min) limits exposure window if token is compromised
+ * - Guest tokens have sentinel GUID (`00000000-0000-0000-0000-000000000000`)
+ * - Backend validates JWT signature and expiration before processing requests
+ *
+ * **Observability & Telemetry** (see Frontend RFC 1001):
+ * - **Distributed Tracing**: Parent span `api.user.get` with child spans for auth/guest paths
+ * - **Metrics**: Counters for total requests, authenticated/guest breakdowns
+ * - **Histogram**: Request duration tracking with auth method labels
+ * - **Span Events**: JWT creation lifecycle (start/complete with expiration metadata)
+ * - **Structured Logging**: Correlated logs with trace IDs for debugging
+ *
+ * **Error Handling**:
+ * - Catches all exceptions and returns graceful fallback (guest credentials)
+ * - Records errors as span exceptions with full context
+ * - Logs errors with trace correlation for debugging
+ * - Always returns 200 status (no 4xx/5xx to prevent client errors)
+ *
+ * **Performance**:
+ * - Request duration tracked via histogram metrics
+ * - Clerk user fetch only for authenticated users (avoids unnecessary API calls)
+ * - JWT generation is async but typically completes in <10ms
+ * - Target p99 latency: <200ms for authenticated, <50ms for guest
+ *
+ * **Client Integration**:
+ * ```typescript
+ * // Typical usage in client components
+ * const response = await fetch('/api/user');
+ * const { user, userIdentifier, userJwt } = await response.json();
+ *
+ * // Use JWT for backend API calls
+ * const apiResponse = await fetch('https://api.arolariu.ro/invoices', {
+ *   headers: { 'Authorization': `Bearer ${userJwt}` }
+ * });
+ * ```
+ *
+ * **Known Limitations**:
+ * - Tokens are not stored/tracked (stateless), so cannot be revoked before expiration
+ * - 5-minute expiration requires frequent token refresh for long-lived sessions
+ * - Guest tokens allow limited API access but cannot be distinguished individually
+ *
+ * @returns Promise resolving to NextResponse with UserInformation (user object, GUID, JWT)
+ *
+ * @example
+ * ```typescript
+ * // Authenticated user response
+ * {
+ *   user: { id: "clerk_user_123", emailAddresses: [...], ... },
+ *   userIdentifier: "a1b2c3d4-...",
+ *   userJwt: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ * }
+ *
+ * // Guest user response
+ * {
+ *   user: null,
+ *   userIdentifier: "00000000-0000-0000-0000-000000000000",
+ *   userJwt: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ * }
+ * ```
+ *
+ * @see {@link UserInformation} - TypeScript interface for return type structure
+ * @see {@link createJwtToken} - JWT generation utility with HS256 signing
+ * @see {@link https://clerk.com/docs/references/nextjs/overview | Clerk Next.js SDK}
+ * @see Frontend RFC 1001 - OpenTelemetry observability implementation patterns
  */
 export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
   const startTime = Date.now();

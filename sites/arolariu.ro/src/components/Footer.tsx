@@ -2,19 +2,86 @@ import logo from "@/app/logo.svg";
 import {COMMIT_SHA, SITE_NAME, TIMESTAMP} from "@/lib/utils.generic";
 import {RichText} from "@/presentation/Text";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
-import {useTranslations} from "next-intl";
+import {getTranslations} from "next-intl/server";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import {TbBrandGithub, TbBrandLinkedin} from "react-icons/tb";
 
 /**
- * The footer component.
- * This component is used to display the footer of the website.
- * @returns The footer component.
+ * Renders the site-wide footer with navigation, metadata, and social links.
+ *
+ * @remarks
+ * **Rendering Context**: Async Server Component (default in Next.js App Router).
+ *
+ * **Async Component**: Uses `await` for server-side translation loading via `getTranslations`.
+ *
+ * **Key Features**:
+ * - **Multi-subdomain Navigation**: Dynamically switches between production (`arolariu.ro`)
+ *   and development (`dev.arolariu.ro`) environments based on `SITE_NAME`
+ * - **Internationalization**: Uses `next-intl/server` for server-side multilingual support
+ *   (translations via `Footer` namespace)
+ * - **Build Metadata**: Displays commit SHA and build timestamp with interactive tooltips
+ * - **Responsive Design**: Adapts layout for mobile (2xsm), tablet (sm/md), and desktop (lg/xl)
+ * - **SVG Wave Decoration**: Custom SVG path creates visual transition from content to footer
+ *
+ * **Subdomain Logic**:
+ * - If `SITE_NAME === "arolariu.ro"`: Shows link to `dev.arolariu.ro` (development environment)
+ * - Otherwise: Shows link to `arolariu.ro` (production environment)
+ * - Always includes: `cv.arolariu.ro`, `api.arolariu.ro`, `docs.arolariu.ro`
+ *
+ * **Navigation Sections**:
+ * 1. **Subdomains**: Cross-links to other arolariu.ro services
+ * 2. **About Pages**: Links to `/about`, `/acknowledgements`, `/terms-of-service`, `/privacy-policy`
+ * 3. **Social Media**: GitHub and LinkedIn profiles
+ * 4. **Metadata**: Copyright notice, source code link, build info, commit SHA
+ *
+ * **Styling Architecture**:
+ * - Base: Indigo 700 background with white text
+ * - Hover Effects: Yellow 500 accent color on interactive elements
+ * - Responsive Classes: Uses Tailwind's `2xsm:` (custom), `sm:`, `md:`, `lg:` breakpoints
+ *
+ * **Dependencies**:
+ * - `@arolariu/components`: Tooltip components from shared library
+ * - `next-intl/server`: Server-side translation function (`getTranslations`)
+ * - `react-icons/tb`: Tabler icons for social media (GitHub, LinkedIn)
+ * - Environment constants: `COMMIT_SHA`, `SITE_NAME`, `TIMESTAMP` from `utils.generic`
+ *
+ * **Performance Considerations**:
+ * - Next.js Image component for optimized logo rendering with automatic format selection
+ * - Server-side rendering eliminates client-side hydration cost
+ * - Static links enable automatic prefetching for faster navigation
+ * - Translations loaded on server reduce client bundle size
+ *
+ * **Why Async?**:
+ * - `getTranslations` is async in next-intl/server for server-side i18n
+ * - Allows direct access to translation messages during SSR
+ * - Eliminates need for client-side translation hydration
+ *
+ * @returns Promise resolving to server-rendered footer JSX with navigation, metadata, and social links
+ *
+ * @example
+ * ```tsx
+ * // Usage in root layout (app/layout.tsx)
+ * export default function RootLayout({ children }) {
+ *   return (
+ *     <html>
+ *       <body>
+ *         <Header />
+ *         <main>{children}</main>
+ *         <Footer />
+ *       </body>
+ *     </html>
+ *   );
+ * }
+ * ```
+ *
+ * @see {@link RichText} - Component for rendering internationalized rich text content
+ * @see {@link SITE_NAME} - Environment constant determining subdomain link behavior
+ * @see {@link https://next-intl.com/docs/environments/server-client-components | next-intl Server Components}
  */
-export default function Footer(): React.JSX.Element {
-  const t = useTranslations("Footer");
+export default async function Footer(): Promise<React.JSX.Element> {
+  const t = await getTranslations("Footer");
   const siteName = SITE_NAME.toUpperCase();
 
   return (
@@ -169,7 +236,7 @@ export default function Footer(): React.JSX.Element {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span>{`${t("builtOn")} ${TIMESTAMP.split("T")[0]}`}</span>
+                <span className='cursor-help'>{`${t("builtOn")} ${TIMESTAMP.split("T")[0]}`}</span>
               </TooltipTrigger>
               <TooltipContent>
                 <code className='cursor-help'>{new Date(TIMESTAMP).toUTCString()}</code>
