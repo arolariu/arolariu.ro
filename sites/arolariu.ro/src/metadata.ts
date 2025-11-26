@@ -1,3 +1,23 @@
+/**
+ * @fileoverview Next.js metadata configuration for arolariu.ro website.
+ * @module metadata
+ *
+ * @remarks
+ * This module provides comprehensive SEO and social media metadata for the Next.js application,
+ * including OpenGraph, Twitter Cards, Apple Web App configuration, and favicons.
+ *
+ * **Architecture Alignment**: Implements RFC 1004 (Metadata & SEO System).
+ *
+ * **Key Features**:
+ * - Type-safe metadata generation with Next.js 16 Metadata API
+ * - Multi-platform favicon support (16x16 to 180x180)
+ * - OpenGraph and Twitter Card configurations
+ * - Apple Web App capabilities
+ * - SEO-optimized robots configuration
+ *
+ * @see {@link https://nextjs.org/docs/app/api-reference/functions/generate-metadata}
+ */
+
 import type {Metadata} from "next";
 import type {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
 import type {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";
@@ -6,6 +26,13 @@ import type {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
 import type {Twitter} from "next/dist/lib/metadata/types/twitter-types";
 import {SITE_URL} from "./lib/utils.generic";
 
+/**
+ * Base configuration options for site metadata.
+ *
+ * @remarks
+ * Centralized configuration object used across all metadata generation functions.
+ * Marked as `const` to ensure immutability and enable literal type inference.
+ */
 const options = {
   siteName: "arolariu.ro",
   siteUrl: new URL(SITE_URL),
@@ -14,6 +41,15 @@ const options = {
     "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania.",
 } as const;
 
+/**
+ * Standard favicon definitions for browsers.
+ *
+ * @remarks
+ * Provides 16x16 and 32x32 PNG favicons for browser tab/bookmark display.
+ * These icons are displayed in browser tabs, bookmarks, and history.
+ *
+ * **Browser Support**: All modern browsers support PNG favicons.
+ */
 const normalIcons: Icon[] = [
   {
     rel: "icon",
@@ -29,6 +65,23 @@ const normalIcons: Icon[] = [
   },
 ] as const;
 
+/**
+ * Apple touch icon definitions for iOS/iPadOS devices.
+ *
+ * @remarks
+ * Comprehensive set of touch icons for Apple devices, supporting various screen densities
+ * and device types (iPhone, iPad, iPod Touch).
+ *
+ * **Icon Sizes**:
+ * - 57x57, 60x60: iPhone (non-Retina, Retina)
+ * - 72x72, 76x76: iPad (non-Retina, Retina)
+ * - 114x114, 120x120: iPhone 4/5/6/7/8 (Retina)
+ * - 144x144, 152x152: iPad (Retina)
+ * - 180x180: iPhone X/11/12/13/14/15 (Super Retina)
+ *
+ * **Usage**: When users add the website to their iOS home screen, these icons are used
+ * based on the device's screen density.
+ */
 const appleTouchIcons: Icon[] = [
   {
     rel: "apple-touch-icon",
@@ -86,6 +139,32 @@ const appleTouchIcons: Icon[] = [
   },
 ] as const;
 
+/**
+ * Base metadata configuration for the arolariu.ro website.
+ *
+ * @remarks
+ * **Rendering Context**: Used in root layout (Server Component).
+ *
+ * **SEO Configuration**:
+ * - Title templates for dynamic page titles
+ * - Comprehensive robot directives for search engine optimization
+ * - OpenGraph metadata for rich social media previews
+ * - Twitter Card metadata for Twitter/X sharing
+ * - Apple Web App configuration for iOS home screen installation
+ *
+ * **Icons**:
+ * - Standard favicons (16x16, 32x32)
+ * - Apple touch icons (57x57 to 180x180)
+ *
+ * **Robots Directives**:
+ * - `index: true` - Allow search engine indexing
+ * - `follow: true` - Allow crawling of linked pages
+ * - `max-snippet: -1` - No limit on text snippet length
+ * - `max-image-preview: large` - Allow large image previews
+ *
+ * @see {@link https://nextjs.org/docs/app/api-reference/functions/generate-metadata}
+ * @see {@link createMetadata} For page-specific metadata generation
+ */
 export const metadata: Metadata = {
   metadataBase: options.siteUrl,
   title: {
@@ -139,6 +218,27 @@ export const metadata: Metadata = {
   icons: [...normalIcons, ...appleTouchIcons] satisfies Icon[],
 };
 
+/**
+ * Type-safe partial metadata configuration for page-specific overrides.
+ *
+ * @remarks
+ * This type extends Next.js Metadata but:
+ * - Makes all properties optional (for merging with base metadata)
+ * - Excludes `title` and `description` from OpenGraph/Twitter (automatically inherited)
+ * - Adds `locale` property for internationalization support
+ *
+ * **Design Rationale**: Prevents accidental duplication of title/description between
+ * base metadata and social media metadata, ensuring consistency.
+ *
+ * @example
+ * ```typescript
+ * const pageMetadata: PartialMetadata = {
+ *   title: "About",
+ *   description: "Learn more about arolariu.ro",
+ *   locale: "ro",
+ * };
+ * ```
+ */
 type PartialMetadata = Readonly<
   Partial<
     Omit<Metadata, "openGraph" | "twitter"> & {
@@ -149,6 +249,57 @@ type PartialMetadata = Readonly<
   >
 >;
 
+/**
+ * Creates page-specific metadata by merging with base configuration.
+ *
+ * @remarks
+ * **Usage Pattern**: Call this function in page-level `generateMetadata` or static `metadata` exports
+ * to create page-specific SEO metadata that inherits from the base configuration.
+ *
+ * **Merge Behavior**:
+ * - Base metadata properties are inherited
+ * - Partial metadata properties override base properties
+ * - `title` and `description` automatically populate OpenGraph and Twitter metadata
+ * - `locale` determines OpenGraph locale and alternate locale mapping
+ *
+ * **Locale Mapping**:
+ * - `en` → `en_US` (OpenGraph locale)
+ * - `ro` → `ro_RO` (OpenGraph locale)
+ * - Unknown locales default to `en_US`
+ *
+ * **Type Safety**: Returns readonly metadata to prevent accidental mutations.
+ *
+ * @param partialMetadata - Optional page-specific metadata overrides
+ * @returns Complete metadata object with base configuration merged with overrides
+ *
+ * @example
+ * ```typescript
+ * // In a page component
+ * export const metadata = createMetadata({
+ *   title: "Invoice Dashboard",
+ *   description: "View and manage your invoices",
+ *   locale: "en",
+ *   openGraph: {
+ *     images: [{ url: "/og-invoice.png" }],
+ *   },
+ * });
+ * ```
+ *
+ * @example
+ * ```typescript
+ * // Dynamic metadata generation
+ * export async function generateMetadata({ params }): Promise<Metadata> {
+ *   const invoice = await fetchInvoice(params.id);
+ *   return createMetadata({
+ *     title: `Invoice ${invoice.name}`,
+ *     description: `Invoice details for ${invoice.merchantName}`,
+ *   });
+ * }
+ * ```
+ *
+ * @see {@link metadata} Base metadata configuration
+ * @see {@link PartialMetadata} Type definition for partial metadata
+ */
 export const createMetadata = (partialMetadata: PartialMetadata = {}): Readonly<Metadata> => {
   const {title, description, openGraph, twitter, locale, ...rest} = partialMetadata;
 
