@@ -1,6 +1,6 @@
 "use client";
 
-import {SignedIn, SignedOut, SignInButton, UserButton, useUser} from "@clerk/nextjs";
+import {SignedIn, SignedOut, SignInButton, useAuth, UserButton} from "@clerk/nextjs";
 import {memo} from "react";
 
 /**
@@ -52,15 +52,15 @@ import {memo} from "react";
  * @see {@link https://clerk.com/docs/components/authentication/sign-in-button | Clerk SignInButton Documentation}
  */
 function AuthButton(): React.JSX.Element {
-  const {isSignedIn, isLoaded} = useUser();
-  if (!isLoaded) {
+  const {isSignedIn, isLoaded} = useAuth();
+  if (!isLoaded || isSignedIn === undefined) {
     return <div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />;
   }
 
   if (isSignedIn) {
     return (
       <SignedIn>
-        <UserButton />
+        <UserButton fallback={<div className='h-8 w-8 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700' />} />
       </SignedIn>
     );
   }
