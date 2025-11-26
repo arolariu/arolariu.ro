@@ -1,6 +1,5 @@
 import eslintPlugin from "@eslint/js";
 import eslintPluginNext from "@next/eslint-plugin-next";
-import eslintPluginJsDoc from "eslint-plugin-jsdoc";
 import eslintPluginJsxA11y from "eslint-plugin-jsx-a11y";
 import eslintPluginNode from "eslint-plugin-n";
 import {type Config, defineConfig} from "eslint/config";
@@ -53,7 +52,6 @@ const websiteEslintConfig: Config = defineConfig({
     "react-hooks-extra": eslintPluginReactHooksExtra,
     "react-web-api": eslintPluginReactWebAPI,
     "react-naming-convention": eslintPluginReactNamingConvention,
-    jsdoc: eslintPluginJsDoc,
     "jsx-a11y": eslintPluginJsxA11y,
     promise: eslintPluginPromise,
     sonarjs: eslintPluginSonarJs,
@@ -80,10 +78,6 @@ const websiteEslintConfig: Config = defineConfig({
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
-    ...eslintPluginJsDoc.configs["flat/recommended-typescript-error"].rules,
-    ...eslintPluginJsDoc.configs["flat/stylistic-typescript-error"].rules,
-    ...eslintPluginJsDoc.configs["flat/contents-typescript-error"].rules,
-    ...eslintPluginJsDoc.configs["flat/logical-typescript-error"].rules,
     ...eslintPluginJsxA11y.configs.recommended.rules,
     ...eslintPluginJsxA11y.configs.strict.rules,
     ...eslintPluginNode.configs["flat/recommended"].rules,
@@ -145,10 +139,6 @@ const websiteEslintConfig: Config = defineConfig({
 
     "n/no-missing-import": "off", // Barrel and index files are blindly caught by this rule.
     "n/no-unsupported-features/node-builtins": "off", // We use Node.js v24+ built-ins.
-
-    "jsdoc/require-param": "off", // We allow missing JSDoc @param tags.
-    "jsdoc/check-param-names": "off", // We allow missing JSDoc @param names.
-    "jsdoc/check-tag-names": "off", // Prettier's @format tag conflicts with this rule.
 
     "sonarjs/todo-tag": "off", // We allow todos tags.
 
@@ -293,7 +283,6 @@ const packagesEslintConfig: Config = defineConfig({
     "react-hooks-extra": eslintPluginReactHooksExtra,
     "react-web-api": eslintPluginReactWebAPI,
     "react-naming-convention": eslintPluginReactNamingConvention,
-    jsdoc: eslintPluginJsDoc,
     "jsx-a11y": eslintPluginJsxA11y,
     promise: eslintPluginPromise,
     sonarjs: eslintPluginSonarJs,
@@ -317,10 +306,6 @@ const packagesEslintConfig: Config = defineConfig({
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
-    ...eslintPluginJsDoc.configs["flat/recommended-typescript-error"].rules,
-    ...eslintPluginJsDoc.configs["flat/stylistic-typescript-error"].rules,
-    ...eslintPluginJsDoc.configs["flat/contents-typescript-error"].rules,
-    ...eslintPluginJsDoc.configs["flat/logical-typescript-error"].rules,
     ...eslintPluginJsxA11y.configs.recommended.rules,
     ...eslintPluginJsxA11y.configs.strict.rules,
     ...eslintPluginNode.configs["flat/recommended"].rules,
