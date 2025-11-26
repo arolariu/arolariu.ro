@@ -114,19 +114,11 @@ public sealed class Invoice : NamedEntity<Guid>
   /// </summary>
   /// <param name="invoice"></param>
   /// <returns></returns>
-  internal static bool NotDefault(Invoice invoice) =>
-    invoice.id != Guid.Empty && invoice.UserIdentifier != Guid.Empty
-    &&
-    (invoice.Category != InvoiceCategory.NOT_DEFINED ||
-    !string.IsNullOrWhiteSpace(invoice.Name) ||
-    !string.IsNullOrWhiteSpace(invoice.Description) ||
-    invoice.IsImportant != false ||
-    (invoice.Scans is not null && invoice.Scans.Count > 0) ||
-    invoice.PaymentInformation is not null ||
-    invoice.MerchantReference != Guid.Empty ||
-    (invoice.Items is not null && invoice.Items.Count > 0) ||
-    (invoice.PossibleRecipes is not null && invoice.PossibleRecipes.Count > 0) ||
-    (invoice.SharedWith is not null && invoice.SharedWith.Count > 0));
+  internal static bool NotDefault(Invoice invoice)
+  {
+    bool idAndUserAreSet = invoice.id != Guid.Empty && invoice.UserIdentifier != Guid.Empty;
+    return idAndUserAreSet;
+  }
 
   /// <summary>
   /// Produces a new invoice aggregate representing a non-destructive merge of an original invoice and a set of partial updates.
