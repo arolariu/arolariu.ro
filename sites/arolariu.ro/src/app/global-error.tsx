@@ -69,9 +69,9 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
         errorId: error.digest ?? "NO_DIGEST",
         errorMessage: error.message,
         timestamp: new Date().toISOString(),
-        userAgent: typeof window !== "undefined" ? window.navigator.userAgent : "SSR",
-        url: typeof window !== "undefined" ? window.location.href : "unknown",
-        locale: typeof window !== "undefined" ? window.navigator.language : "en",
+        userAgent: globalThis.window.navigator.userAgent,
+        url: globalThis.window.location.href,
+        locale: globalThis.window.navigator.language,
       },
       null,
       2,
@@ -88,7 +88,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
     const errorId = error.digest ?? "NO_ERROR_ID";
 
     try {
-      await navigator.clipboard.writeText(errorId);
+      await globalThis.navigator.clipboard.writeText(errorId);
       setIsCopied(true);
 
       // Reset icon after 2 seconds
