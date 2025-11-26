@@ -370,8 +370,6 @@ const packagesEslintConfig: Config = defineConfig({
     "react-x/no-context-provider": "off", // We use React Context API from React 18.
     "react-x/no-unstable-context-value": "off", // Another ShadCN limitation...
 
-    "jsdoc/require-jsdoc": "off", // We don't require JSDoc comments for every function.
-
     "n/no-unpublished-import": "off", // Packages are published; false positive.
     "n/no-missing-import": "off", // Barrel and index files are blindly caught by this rule.
 
