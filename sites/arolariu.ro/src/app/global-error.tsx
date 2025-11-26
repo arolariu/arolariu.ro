@@ -21,7 +21,7 @@ import {
   CardTitle,
 } from "@arolariu/components";
 import Link from "next/link";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {TbAlertTriangle, TbClipboard, TbClipboardCheck, TbHome, TbRefresh} from "react-icons/tb";
 import QRCode from "react-qr-code";
 import ContextProviders from "./providers";
@@ -59,26 +59,18 @@ interface GlobalErrorProps {
  */
 export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>): React.JSX.Element {
   const [isCopied, setIsCopied] = useState<boolean>(false);
-  const [errorContext, setErrorContext] = useState<string>("");
-
-  // Track error with telemetry on mount
-  useEffect(() => {
-    // Build diagnostic context for QR code
-    const diagnosticData = JSON.stringify(
-      {
-        errorId: error.digest ?? "NO_DIGEST",
-        errorMessage: error.message,
-        timestamp: new Date().toISOString(),
-        userAgent: globalThis.window.navigator.userAgent,
-        url: globalThis.window.location.href,
-        locale: globalThis.window.navigator.language,
-      },
-      null,
-      2,
-    );
-
-    setErrorContext(diagnosticData);
-  }, [error]);
+  const errorContext = JSON.stringify(
+    {
+      errorId: error.digest ?? "NO_DIGEST",
+      errorMessage: error.message,
+      timestamp: new Date().toISOString(),
+      userAgent: globalThis.window.navigator.userAgent,
+      url: globalThis.window.location.href,
+      locale: globalThis.window.navigator.language,
+    },
+    null,
+    2,
+  );
 
   /**
    * Handles copying the error digest to clipboard for support purposes.

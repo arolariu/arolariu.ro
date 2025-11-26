@@ -2,12 +2,11 @@
 
 import {attachInvoiceScan} from "@/lib/actions/invoices/attachInvoiceScan";
 import {createInvoice as createInvoiceEntity} from "@/lib/actions/invoices/createInvoice";
-import uploadBlob from "@/lib/actions/storage/uploadBlob";
+import {createInvoiceScan} from "@/lib/actions/invoices/createInvoiceScan";
 import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {addSpanEvent, createCounter, createNextJsAttributes, logWithTrace, setSpanAttributes, withSpan} from "@/telemetry";
 import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, InvoiceScanType} from "@/types/invoices";
 import type {PendingInvoiceSubmission, PendingInvoiceSubmissionResult} from "../_types/InvoiceSubmission";
-import { createInvoiceScan } from "@/lib/actions/invoices/createInvoiceScan";
 
 const createInvoiceRequestCounter = createCounter(
   "api.actions.invoices.create.requests",
@@ -56,7 +55,7 @@ export async function createInvoiceAction(submission: PendingInvoiceSubmission):
       addSpanEvent("bff.payload.creation.start");
       const {userIdentifier} = await fetchBFFUserFromAuthService();
       const invoiceInitialPayload: CreateInvoiceDtoPayload = {
-        userIdentifier: userIdentifier,
+        userIdentifier,
         metadata: {
           requiresAnalysis: "true",
           isImportant: "false",

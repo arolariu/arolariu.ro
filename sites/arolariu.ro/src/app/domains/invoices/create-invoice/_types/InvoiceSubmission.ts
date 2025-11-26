@@ -75,7 +75,7 @@ export type PendingImageSubmission = PendingInvoiceSubmissionBase & {
 /** Pending submission built from a PDF file. */
 export type PendingPdfSubmission = PendingInvoiceSubmissionBase & {
   type: "pdf";
-  adjustments?: undefined;
+  adjustments: undefined;
 };
 
 /** Runtime representation of a pending invoice submission. */

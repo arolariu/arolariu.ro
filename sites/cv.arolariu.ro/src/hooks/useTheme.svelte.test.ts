@@ -306,7 +306,7 @@ describe("useTheme", () => {
 
   describe("SSR behavior", () => {
     it("should handle applyTheme when not in browser", async () => {
-      // Mock browser as false temporarily
+      // Temporarily override the browser mock
       vi.doMock("$app/environment", () => ({
         browser: false,
         building: false,
@@ -314,6 +314,8 @@ describe("useTheme", () => {
         version: "test",
       }));
 
+      // Re-import to get the SSR version
+      vi.resetModules();
       const {useTheme: freshUseTheme} = await import("./useTheme.svelte");
       const theme = freshUseTheme();
 
@@ -321,8 +323,13 @@ describe("useTheme", () => {
       expect(() => theme.set("light")).not.toThrow();
       expect(theme.current).toBe("light");
 
-      // Reset mock
-      vi.doUnmock("$app/environment");
+      // Restore the browser mock
+      vi.doMock("$app/environment", () => ({
+        browser: true,
+        building: false,
+        dev: true,
+        version: "test",
+      }));
     });
   });
 });

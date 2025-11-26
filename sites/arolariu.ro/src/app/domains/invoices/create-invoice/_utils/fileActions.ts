@@ -19,6 +19,7 @@ export async function processFiles(files: FileList): Promise<PendingInvoiceSubmi
 
     if (!isImage && !isPdf) {
       console.warn(`>>> Unsupported file type: ${file.type}`);
+      /** eslint-disable-next-line no-continue -- skipping unsupported file types */
       continue;
     }
 
@@ -51,6 +52,7 @@ export async function processFiles(files: FileList): Promise<PendingInvoiceSubmi
       submissions.push({
         ...baseSubmission,
         type: "pdf",
+        adjustments: undefined,
       });
     }
   }
