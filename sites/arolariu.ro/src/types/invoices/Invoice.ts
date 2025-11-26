@@ -39,13 +39,28 @@ export enum InvoiceScanType {
  * Represents the category of an invoice from the invoice domain system.
  */
 export enum InvoiceCategory {
+  /** Not defined category */
   NOT_DEFINED = 0,
+  /** Grocery category */
   GROCERY = 100,
+  /** Fast food category */
   FAST_FOOD = 200,
+  /** Home cleaning category */
   HOME_CLEANING = 300,
+  /** Car and auto category */
   CAR_AUTO = 400,
+  /** Other category */
   OTHER = 9999,
 }
+
+/**
+ * Represents a scan associated with an invoice.
+ */
+export type InvoiceScan = {
+  scanType: InvoiceScanType;
+  location: string;
+  metadata: Record<string, string>;
+};
 
 /**
  * Represents an invoice (the main entity) from the invoice domain system.
@@ -71,15 +86,14 @@ export interface Invoice extends NamedEntity<string> {
   category: InvoiceCategory;
 
   /**
-   * The URL location of the photo of the invoice.
-   * It is a string that represents the URL location of the photo of the invoice.
+   * The invoice scans.
    */
-  photoLocation: string;
+  scans: InvoiceScan[];
 
   /**
    * The payment information of the invoice.
    */
-  paymentInformation: PaymentInformation | null;
+  paymentInformation: PaymentInformation;
 
   /**
    * The reference identifier of the merchant that issued the invoice.

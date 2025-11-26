@@ -10,6 +10,7 @@ export {
   type DeleteInvoiceDtoPayload,
   type DeleteInvoiceScanDtoPayload,
   type Invoice,
+  type InvoiceScan,
   type UpdateInvoiceDtoPayload,
 } from "./Invoice";
 
