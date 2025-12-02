@@ -271,7 +271,6 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
               </p>
             </section>
           </main>
-
           <Footer />
           <Tracking />
         </ContextProviders>
