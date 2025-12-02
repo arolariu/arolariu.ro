@@ -7,12 +7,41 @@
  */
 
 import {describe, expect, it, vi} from "vitest";
-import {createIndexedDBStorage} from "./indexedDBStorage";
+import {ZUSTAND_TABLES, createIndexedDBStorage, createSharedStorage} from "./indexedDBStorage";
+
+/** Test entity type */
+interface TestEntity {
+  id: string;
+  name: string;
+  value: number;
+}
+
+/** Test state type - must extend Record<string, unknown> */
+interface TestState extends Record<string, unknown> {
+  entities: TestEntity[];
+}
+
+/**
+ * Creates a test storage adapter with default options
+ */
+function createTestStorage() {
+  return createIndexedDBStorage<TestState, TestEntity>({
+    table: "invoices",
+    entityKey: "entities",
+  });
+}
+
+/**
+ * Creates a test entity
+ */
+function createTestEntity(id: string, name = "Test", value = 0): TestEntity {
+  return {id, name, value};
+}
 
 describe("createIndexedDBStorage", () => {
   describe("Storage Interface", () => {
     it("should create a storage object with required methods", () => {
-      const storage = createIndexedDBStorage();
+      const storage = createTestStorage();
 
       expect(storage).toHaveProperty("getItem");
       expect(storage).toHaveProperty("setItem");
@@ -20,6 +49,38 @@ describe("createIndexedDBStorage", () => {
       expect(typeof storage.getItem).toBe("function");
       expect(typeof storage.setItem).toBe("function");
       expect(typeof storage.removeItem).toBe("function");
+    });
+
+    it("should allow selecting dedicated tables for persistence", async () => {
+      for (const table of ZUSTAND_TABLES) {
+        if (table === "shared") continue; // Skip shared table - uses different API
+
+        const storage = createIndexedDBStorage<TestState, TestEntity>({
+          table,
+          entityKey: "entities",
+        });
+
+        const storageValue = {
+          state: {entities: [createTestEntity("test-1")]},
+          version: 1,
+        };
+
+        await expect(storage.setItem(`table-${table}`, storageValue)).resolves.toBeUndefined();
+        await expect(storage.getItem(`table-${table}`)).resolves.toBeDefined();
+        await expect(storage.removeItem(`table-${table}`)).resolves.toBeUndefined();
+      }
+    });
+
+    it("should accept entityKey configuration option", () => {
+      const storage = createIndexedDBStorage<TestState, TestEntity>({
+        table: "invoices",
+        entityKey: "entities",
+      });
+
+      // Verify the storage was created with the options
+      expect(storage).toHaveProperty("getItem");
+      expect(storage).toHaveProperty("setItem");
+      expect(storage).toHaveProperty("removeItem");
     });
   });
 
@@ -34,7 +95,7 @@ describe("createIndexedDBStorage", () => {
 
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      const storage = createIndexedDBStorage();
+      const storage = createTestStorage();
       const result = await storage.getItem("test-key");
 
       expect(result).toBeNull();
@@ -55,8 +116,12 @@ describe("createIndexedDBStorage", () => {
 
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      const storage = createIndexedDBStorage();
-      await storage.setItem("test-key", "value" as any);
+      const storage = createTestStorage();
+      const storageValue = {
+        state: {entities: [createTestEntity("test")]},
+        version: 1,
+      };
+      await storage.setItem("test-key", storageValue);
 
       expect(consoleWarnSpy).toHaveBeenCalledWith("IndexedDB is not available in this environment!");
 
@@ -75,7 +140,7 @@ describe("createIndexedDBStorage", () => {
 
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      const storage = createIndexedDBStorage();
+      const storage = createTestStorage();
       await storage.removeItem("test-key");
 
       expect(consoleWarnSpy).toHaveBeenCalledWith("IndexedDB is not available in this environment!");
@@ -85,17 +150,21 @@ describe("createIndexedDBStorage", () => {
       consoleWarnSpy.mockRestore();
     });
 
-    it("should warn only once when getDatabase is called multiple times without indexedDB", async () => {
+    it("should warn multiple times when getDatabase is called without indexedDB", async () => {
       const originalIndexedDB = globalThis.indexedDB;
       // @ts-expect-error - Intentionally setting to undefined for testing
       delete globalThis.indexedDB;
 
       const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-      const storage = createIndexedDBStorage();
+      const storage = createTestStorage();
+      const storageValue = {
+        state: {entities: [createTestEntity("test")]},
+        version: 1,
+      };
       await storage.getItem("test-1");
       await storage.getItem("test-2");
-      await storage.setItem("test-3", "value" as any);
+      await storage.setItem("test-3", storageValue);
 
       // Should warn multiple times (once per getDatabase call)
       expect(consoleWarnSpy.mock.calls.length).toBeGreaterThan(0);
@@ -106,37 +175,49 @@ describe("createIndexedDBStorage", () => {
   });
 
   describe("Storage Operations", () => {
-    it("should handle different value types", async () => {
-      const storage = createIndexedDBStorage();
+    it("should handle different storage values", async () => {
+      const storage = createTestStorage();
 
-      // Test with different storage values
-      const stringValue = "test-string" as any;
-      const objectValue = JSON.stringify({test: "value"}) as any;
-      const arrayValue = JSON.stringify([1, 2, 3]) as any;
+      // Test with different entity sets
+      const storageValue1 = {
+        state: {entities: [createTestEntity("1", "Test 1", 100)]},
+        version: 1,
+      };
+      const storageValue2 = {
+        state: {entities: [createTestEntity("2", "Test 2", 200), createTestEntity("3", "Test 3", 300)]},
+        version: 1,
+      };
+      const storageValue3 = {
+        state: {entities: []},
+        version: 1,
+      };
 
       // These operations test the storage interface
-      await storage.setItem("string-key", stringValue);
-      await storage.setItem("object-key", objectValue);
-      await storage.setItem("array-key", arrayValue);
+      await storage.setItem("single-entity-key", storageValue1);
+      await storage.setItem("multiple-entities-key", storageValue2);
+      await storage.setItem("empty-entities-key", storageValue3);
 
       // The actual results depend on IndexedDB being available
-      // In test environment, these will just exercise the code paths
-      const result1 = await storage.getItem("string-key");
-      const result2 = await storage.getItem("object-key");
-      const result3 = await storage.getItem("array-key");
+      const result1 = await storage.getItem("single-entity-key");
+      const result2 = await storage.getItem("multiple-entities-key");
+      const result3 = await storage.getItem("empty-entities-key");
 
       // In test environment without IndexedDB, these will be null
-      // But the code paths are exercised
-      expect([result1, result2, result3].every((r) => r === null || typeof r === "string")).toBe(true);
+      expect([result1, result2, result3].every((r) => r === null || typeof r === "object")).toBe(true);
     });
 
     it("should handle rapid sequential operations", async () => {
-      const storage = createIndexedDBStorage();
+      const storage = createTestStorage();
+
+      const storageValue = {
+        state: {entities: [createTestEntity("1"), createTestEntity("2")]},
+        version: 1,
+      };
 
       // Execute operations in rapid succession
       const operations = [
-        storage.setItem("key-1", "value-1" as any),
-        storage.setItem("key-2", "value-2" as any),
+        storage.setItem("key-1", storageValue),
+        storage.setItem("key-2", storageValue),
         storage.getItem("key-1"),
         storage.removeItem("key-1"),
         storage.getItem("key-2"),
@@ -147,7 +228,12 @@ describe("createIndexedDBStorage", () => {
     });
 
     it("should handle special characters in keys", async () => {
-      const storage = createIndexedDBStorage();
+      const storage = createTestStorage();
+
+      const storageValue = {
+        state: {entities: [createTestEntity("test")]},
+        version: 1,
+      };
 
       const specialKeys = [
         "key-with-dashes",
@@ -161,80 +247,100 @@ describe("createIndexedDBStorage", () => {
 
       // Should handle all special characters without errors
       for (const key of specialKeys) {
-        await expect(storage.setItem(key, "value" as any)).resolves.toBeUndefined();
+        await expect(storage.setItem(key, storageValue)).resolves.toBeUndefined();
         await expect(storage.getItem(key)).resolves.toBeDefined();
         await expect(storage.removeItem(key)).resolves.toBeUndefined();
       }
     });
 
     it("should handle empty string keys", async () => {
-      const storage = createIndexedDBStorage();
+      const storage = createTestStorage();
+      const storageValue = {
+        state: {entities: [createTestEntity("test")]},
+        version: 1,
+      };
 
-      await expect(storage.setItem("", "value" as any)).resolves.toBeUndefined();
+      await expect(storage.setItem("", storageValue)).resolves.toBeUndefined();
       await expect(storage.getItem("")).resolves.toBeDefined();
       await expect(storage.removeItem("")).resolves.toBeUndefined();
     });
 
     it("should handle very long keys", async () => {
-      const storage = createIndexedDBStorage();
+      const storage = createTestStorage();
       const longKey = "k".repeat(1000);
+      const storageValue = {
+        state: {entities: [createTestEntity("test")]},
+        version: 1,
+      };
 
-      await expect(storage.setItem(longKey, "value" as any)).resolves.toBeUndefined();
+      await expect(storage.setItem(longKey, storageValue)).resolves.toBeUndefined();
       await expect(storage.getItem(longKey)).resolves.toBeDefined();
       await expect(storage.removeItem(longKey)).resolves.toBeUndefined();
     });
 
-    it("should handle very long values", async () => {
-      const storage = createIndexedDBStorage();
-      const longValue = "v".repeat(10000) as any;
+    it("should handle many entities", async () => {
+      const storage = createTestStorage();
 
-      await expect(storage.setItem("long-value-key", longValue)).resolves.toBeUndefined();
+      const entities = Array.from({length: 100}, (_, i) => createTestEntity(`entity-${i}`, `Name ${i}`, i));
+      const storageValue = {
+        state: {entities},
+        version: 1,
+      };
+
+      await expect(storage.setItem("many-entities-key", storageValue)).resolves.toBeUndefined();
     });
   });
 
   describe("Error Handling", () => {
-    it("should return null from getItem when item does not exist", async () => {
-      const storage = createIndexedDBStorage();
+    it("should return null from getItem when table is empty", async () => {
+      // Create a storage for a table that hasn't had data written to it
+      // Note: In entity-level storage, getItem ignores the key parameter
+      // and returns all entities from the table
+      const storage = createIndexedDBStorage<TestState, TestEntity>({
+        table: "merchants", // Use merchants table which we haven't populated in most tests
+        entityKey: "entities",
+      });
 
-      const result = await storage.getItem("non-existent-key");
+      // First clear the table by removing all items
+      await storage.removeItem("unused-key");
 
+      const result = await storage.getItem("any-key");
+
+      // Should return null since table is empty after clear
       expect(result).toBeNull();
     });
 
-    it("should return null from getItem when item value is null", async () => {
-      const storage = createIndexedDBStorage();
+    it("should handle setItem gracefully when value state is null", async () => {
+      const storage = createTestStorage();
 
-      // Set an item with null value explicitly
-      await storage.setItem("null-value-key", null as any);
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-      const result = await storage.getItem("null-value-key");
+      // Attempt to set an item with null state - should not throw, but logs an error
+      await expect(
+        storage.setItem("null-value-key", {state: null, version: 1} as unknown as {state: TestState; version: number}),
+      ).resolves.toBeUndefined();
 
-      // Should return null since value is null
-      expect(result).toBeNull();
-    });
+      // Should have logged an error
+      expect(consoleErrorSpy).toHaveBeenCalled();
 
-    it("should return null from getItem when item value is undefined", async () => {
-      const storage = createIndexedDBStorage();
-
-      // Set an item with undefined value explicitly
-      await storage.setItem("undefined-value-key", undefined as any);
-
-      const result = await storage.getItem("undefined-value-key");
-
-      // Should return null since value is undefined
-      expect(result).toBeNull();
+      consoleErrorSpy.mockRestore();
     });
 
     it("should handle concurrent operations gracefully", async () => {
-      const storage = createIndexedDBStorage();
+      const storage = createTestStorage();
 
-      const concurrentOps = Array.from({length: 50}, (_, i) => storage.setItem(`concurrent-${i}`, `value-${i}` as any));
+      const storageValue = {
+        state: {entities: [createTestEntity("test")]},
+        version: 1,
+      };
+
+      const concurrentOps = Array.from({length: 50}, (_, i) => storage.setItem(`concurrent-${i}`, storageValue));
 
       await expect(Promise.all(concurrentOps)).resolves.toBeDefined();
     });
 
     it("should complete removeItem even if key does not exist", async () => {
-      const storage = createIndexedDBStorage();
+      const storage = createTestStorage();
 
       await expect(storage.removeItem("non-existent-key")).resolves.toBeUndefined();
     });
@@ -242,21 +348,30 @@ describe("createIndexedDBStorage", () => {
 
   describe("Integration Scenarios", () => {
     it("should handle a complete CRUD cycle", async () => {
-      const storage = createIndexedDBStorage();
+      const storage = createTestStorage();
+
+      const initialValue = {
+        state: {entities: [createTestEntity("initial", "Initial", 0)]},
+        version: 1,
+      };
 
       // Create
-      await storage.setItem("crud-key", "initial-value" as any);
+      await storage.setItem("crud-key", initialValue);
 
       // Read
       let result = await storage.getItem("crud-key");
-      expect(result === null || typeof result === "string").toBe(true);
+      expect(result === null || typeof result === "object").toBe(true);
 
       // Update
-      await storage.setItem("crud-key", "updated-value" as any);
+      const updatedValue = {
+        state: {entities: [createTestEntity("updated", "Updated", 100)]},
+        version: 2,
+      };
+      await storage.setItem("crud-key", updatedValue);
 
       // Read again
       result = await storage.getItem("crud-key");
-      expect(result === null || typeof result === "string").toBe(true);
+      expect(result === null || typeof result === "object").toBe(true);
 
       // Delete
       await storage.removeItem("crud-key");
@@ -267,11 +382,15 @@ describe("createIndexedDBStorage", () => {
     });
 
     it("should handle multiple keys independently", async () => {
-      const storage = createIndexedDBStorage();
+      const storage = createTestStorage();
 
-      await storage.setItem("key-a", "value-a" as any);
-      await storage.setItem("key-b", "value-b" as any);
-      await storage.setItem("key-c", "value-c" as any);
+      const valueA = {state: {entities: [createTestEntity("a")]}, version: 1};
+      const valueB = {state: {entities: [createTestEntity("b")]}, version: 1};
+      const valueC = {state: {entities: [createTestEntity("c")]}, version: 1};
+
+      await storage.setItem("key-a", valueA);
+      await storage.setItem("key-b", valueB);
+      await storage.setItem("key-c", valueC);
 
       await storage.removeItem("key-b");
 
@@ -284,5 +403,94 @@ describe("createIndexedDBStorage", () => {
       await expect(storage.getItem("key-a")).resolves.toBeDefined();
       await expect(storage.getItem("key-c")).resolves.toBeDefined();
     });
+  });
+});
+
+describe("createSharedStorage", () => {
+  interface SharedState {
+    theme: string;
+    language: string;
+  }
+
+  it("should create a storage object with required methods", () => {
+    const storage = createSharedStorage<SharedState>();
+
+    expect(storage).toHaveProperty("getItem");
+    expect(storage).toHaveProperty("setItem");
+    expect(storage).toHaveProperty("removeItem");
+    expect(typeof storage.getItem).toBe("function");
+    expect(typeof storage.setItem).toBe("function");
+    expect(typeof storage.removeItem).toBe("function");
+  });
+
+  it("should handle getItem with missing indexedDB", async () => {
+    const originalIndexedDB = globalThis.indexedDB;
+    // @ts-expect-error - Intentionally setting to undefined for testing
+    delete globalThis.indexedDB;
+
+    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const storage = createSharedStorage<SharedState>();
+    const result = await storage.getItem("shared-key");
+
+    expect(result).toBeNull();
+    expect(consoleWarnSpy).toHaveBeenCalledWith("IndexedDB is not available in this environment!");
+
+    globalThis.indexedDB = originalIndexedDB;
+    consoleWarnSpy.mockRestore();
+  });
+
+  it("should handle setItem with missing indexedDB", async () => {
+    const originalIndexedDB = globalThis.indexedDB;
+    // @ts-expect-error - Intentionally setting to undefined for testing
+    delete globalThis.indexedDB;
+
+    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const storage = createSharedStorage<SharedState>();
+    await storage.setItem("shared-key", {state: {theme: "dark", language: "en"}, version: 1});
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith("IndexedDB is not available in this environment!");
+
+    globalThis.indexedDB = originalIndexedDB;
+    consoleWarnSpy.mockRestore();
+  });
+
+  it("should handle removeItem with missing indexedDB", async () => {
+    const originalIndexedDB = globalThis.indexedDB;
+    // @ts-expect-error - Intentionally setting to undefined for testing
+    delete globalThis.indexedDB;
+
+    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const storage = createSharedStorage<SharedState>();
+    await storage.removeItem("shared-key");
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith("IndexedDB is not available in this environment!");
+
+    globalThis.indexedDB = originalIndexedDB;
+    consoleWarnSpy.mockRestore();
+  });
+
+  it("should handle storage operations", async () => {
+    const storage = createSharedStorage<SharedState>();
+
+    const storageValue = {
+      state: {theme: "dark", language: "en"},
+      version: 1,
+    };
+
+    await expect(storage.setItem("test-key", storageValue)).resolves.toBeUndefined();
+    await expect(storage.getItem("test-key")).resolves.toBeDefined();
+    await expect(storage.removeItem("test-key")).resolves.toBeUndefined();
+  });
+});
+
+describe("ZUSTAND_TABLES", () => {
+  it("should contain expected table names", () => {
+    expect(ZUSTAND_TABLES).toContain("shared");
+    expect(ZUSTAND_TABLES).toContain("invoices");
+    expect(ZUSTAND_TABLES).toContain("merchants");
+    expect(ZUSTAND_TABLES).toHaveLength(3);
   });
 });

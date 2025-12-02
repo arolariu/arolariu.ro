@@ -115,12 +115,12 @@ describe("useMerchantsStore", () => {
     });
   });
 
-  describe("addMerchant", () => {
+  describe("upsertMerchant", () => {
     it("should add a new merchant to the store", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().addMerchant(mockMerchant1);
+        result.current.getState().upsertMerchant(mockMerchant1);
       });
 
       expect(result.current.getState().merchants).toHaveLength(1);
@@ -132,7 +132,7 @@ describe("useMerchantsStore", () => {
 
       act(() => {
         result.current.getState().setMerchants([mockMerchant1]);
-        result.current.getState().addMerchant(mockMerchant2);
+        result.current.getState().upsertMerchant(mockMerchant2);
       });
 
       expect(result.current.getState().merchants).toHaveLength(2);
@@ -144,15 +144,62 @@ describe("useMerchantsStore", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().addMerchant(mockMerchant1);
-        result.current.getState().addMerchant(mockMerchant2);
-        result.current.getState().addMerchant(mockMerchant3);
+        result.current.getState().upsertMerchant(mockMerchant1);
+        result.current.getState().upsertMerchant(mockMerchant2);
+        result.current.getState().upsertMerchant(mockMerchant3);
       });
 
       expect(result.current.getState().merchants).toHaveLength(3);
       expect(result.current.getState().merchants).toContainEqual(mockMerchant1);
       expect(result.current.getState().merchants).toContainEqual(mockMerchant2);
       expect(result.current.getState().merchants).toContainEqual(mockMerchant3);
+    });
+
+    it("should update existing merchant when upserting with same ID", () => {
+      const {result} = renderHook(() => useMerchantsStore);
+
+      // Add initial merchant
+      act(() => {
+        result.current.getState().upsertMerchant(mockMerchant1);
+      });
+
+      expect(result.current.getState().merchants).toHaveLength(1);
+      expect(result.current.getState().merchants[0]?.name).toBe("Test Merchant 1");
+
+      // Create updated version with same ID but different data
+      const updatedMerchant = new MerchantBuilder()
+        .withId(mockMerchant1.id)
+        .withName("Updated Merchant Name")
+        .withDescription("Updated description")
+        .withCreatedAt(new Date("2025-01-01"))
+        .withLastUpdatedAt(new Date("2025-06-01"))
+        .withCategory(MerchantCategory.HYPERMARKET)
+        .withAddress("999 New Address")
+        .withPhoneNumber("+1-555-9999")
+        .withParentCompanyId("company-updated")
+        .build();
+
+      // Upsert should update, not duplicate
+      act(() => {
+        result.current.getState().upsertMerchant(updatedMerchant);
+      });
+
+      expect(result.current.getState().merchants).toHaveLength(1);
+      expect(result.current.getState().merchants[0]?.name).toBe("Updated Merchant Name");
+      expect(result.current.getState().merchants[0]?.description).toBe("Updated description");
+      expect(result.current.getState().merchants[0]?.category).toBe(MerchantCategory.HYPERMARKET);
+    });
+
+    it("should not create duplicates when upserting same merchant twice", () => {
+      const {result} = renderHook(() => useMerchantsStore);
+
+      act(() => {
+        result.current.getState().upsertMerchant(mockMerchant1);
+        result.current.getState().upsertMerchant(mockMerchant1);
+        result.current.getState().upsertMerchant(mockMerchant1);
+      });
+
+      expect(result.current.getState().merchants).toHaveLength(1);
     });
   });
 
@@ -332,9 +379,9 @@ describe("useMerchantsStore", () => {
 
       act(() => {
         // Add merchants
-        result.current.getState().addMerchant(mockMerchant1);
-        result.current.getState().addMerchant(mockMerchant2);
-        result.current.getState().addMerchant(mockMerchant3);
+        result.current.getState().upsertMerchant(mockMerchant1);
+        result.current.getState().upsertMerchant(mockMerchant2);
+        result.current.getState().upsertMerchant(mockMerchant3);
       });
 
       expect(result.current.getState().merchants).toHaveLength(3);
@@ -383,7 +430,7 @@ describe("useMerchantsStore", () => {
       act(() => {
         result.current.getState().setMerchants([mockMerchant1, mockMerchant2]);
         result.current.getState().clearMerchants();
-        result.current.getState().addMerchant(mockMerchant3);
+        result.current.getState().upsertMerchant(mockMerchant3);
       });
 
       expect(result.current.getState().merchants).toHaveLength(1);
@@ -405,21 +452,22 @@ describe("useMerchantsStore", () => {
       expect(result.current.getState().getMerchantById("any-id")).toBeUndefined();
     });
 
-    it("should handle duplicate merchant IDs (last one wins)", () => {
+    it("should handle duplicate merchant IDs (upsert updates existing)", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       const duplicateMerchant: Merchant = {
         ...mockMerchant1,
-        name: "Duplicate Merchant",
+        name: "Updated Merchant Name",
       };
 
       act(() => {
-        result.current.getState().addMerchant(mockMerchant1);
-        result.current.getState().addMerchant(duplicateMerchant);
+        result.current.getState().upsertMerchant(mockMerchant1);
+        result.current.getState().upsertMerchant(duplicateMerchant);
       });
 
-      // Both should be in the array (store doesn't prevent duplicates)
-      expect(result.current.getState().merchants).toHaveLength(2);
+      // Upsert prevents duplicates - should update existing entry
+      expect(result.current.getState().merchants).toHaveLength(1);
+      expect(result.current.getState().merchants[0]?.name).toBe("Updated Merchant Name");
     });
 
     it("should handle category changes correctly", () => {
@@ -448,7 +496,7 @@ describe("useMerchantsStore", () => {
       const originalName = mockMerchant1.name;
 
       act(() => {
-        result.current.getState().addMerchant(mockMerchant1);
+        result.current.getState().upsertMerchant(mockMerchant1);
         result.current.getState().updateMerchant(mockMerchant1.id, {name: "New Name"});
       });
 
@@ -529,7 +577,7 @@ describe("useMerchantsStore", () => {
       expect(updatedMerchant?.category).toBe(MerchantCategory.ONLINE_SHOP);
     });
 
-    it("should cover addMerchant with existing merchants", () => {
+    it("should cover upsertMerchant with existing merchants", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
@@ -537,8 +585,8 @@ describe("useMerchantsStore", () => {
       });
 
       act(() => {
-        result.current.getState().addMerchant(mockMerchant2);
-        result.current.getState().addMerchant(mockMerchant3);
+        result.current.getState().upsertMerchant(mockMerchant2);
+        result.current.getState().upsertMerchant(mockMerchant3);
       });
 
       expect(result.current.getState().merchants).toHaveLength(3);
@@ -567,9 +615,9 @@ describe("useMerchantsStore", () => {
       const {result} = renderHook(() => useMerchantsStore);
 
       act(() => {
-        result.current.getState().addMerchant(mockMerchant1);
-        result.current.getState().addMerchant(mockMerchant2);
-        result.current.getState().addMerchant(mockMerchant3);
+        result.current.getState().upsertMerchant(mockMerchant1);
+        result.current.getState().upsertMerchant(mockMerchant2);
+        result.current.getState().upsertMerchant(mockMerchant3);
       });
 
       expect(result.current.getState().merchants).toHaveLength(3);
@@ -616,7 +664,7 @@ describe("useMerchantsStore", () => {
       expect(result.current.merchants).toHaveLength(2);
 
       act(() => {
-        result.current.addMerchant(mockMerchant3);
+        result.current.upsertMerchant(mockMerchant3);
       });
 
       expect(result.current.merchants).toHaveLength(3);

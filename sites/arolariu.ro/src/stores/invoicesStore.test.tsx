@@ -138,12 +138,12 @@ describe("useInvoicesStore", () => {
     });
   });
 
-  describe("addInvoice", () => {
+  describe("upsertInvoice", () => {
     it("should add a new invoice to the store", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().addInvoice(mockInvoice1);
+        result.current.getState().upsertInvoice(mockInvoice1);
       });
 
       expect(result.current.getState().invoices).toHaveLength(1);
@@ -155,7 +155,7 @@ describe("useInvoicesStore", () => {
 
       act(() => {
         result.current.getState().setInvoices([mockInvoice1]);
-        result.current.getState().addInvoice(mockInvoice2);
+        result.current.getState().upsertInvoice(mockInvoice2);
       });
 
       expect(result.current.getState().invoices).toHaveLength(2);
@@ -167,12 +167,60 @@ describe("useInvoicesStore", () => {
       const {result} = renderHook(() => useInvoicesStore);
 
       act(() => {
-        result.current.getState().addInvoice(mockInvoice1);
-        result.current.getState().addInvoice(mockInvoice2);
-        result.current.getState().addInvoice(mockInvoice3);
+        result.current.getState().upsertInvoice(mockInvoice1);
+        result.current.getState().upsertInvoice(mockInvoice2);
+        result.current.getState().upsertInvoice(mockInvoice3);
       });
 
       expect(result.current.getState().invoices).toHaveLength(3);
+    });
+
+    it("should update existing invoice when upserting with same ID", () => {
+      const {result} = renderHook(() => useInvoicesStore);
+
+      // Add initial invoice
+      act(() => {
+        result.current.getState().upsertInvoice(mockInvoice1);
+      });
+
+      expect(result.current.getState().invoices).toHaveLength(1);
+      expect(result.current.getState().invoices[0]?.name).toBe("Test Invoice 1");
+
+      // Create updated version with same ID but different data
+      const updatedInvoice = new InvoiceBuilder()
+        .withId(mockInvoice1.id)
+        .withName("Updated Invoice Name")
+        .withDescription("Updated description")
+        .withCreatedAt(new Date("2025-01-01"))
+        .withLastUpdatedAt(new Date("2025-06-01"))
+        .withUserIdentifier("user-123")
+        .withCategory(InvoiceCategory.CAR_AUTO)
+        .withPhotoLocation("https://example.com/updated.jpg")
+        .withMerchantReference("merchant-updated")
+        .withPaymentInformation(null)
+        .build();
+
+      // Upsert should update, not duplicate
+      act(() => {
+        result.current.getState().upsertInvoice(updatedInvoice);
+      });
+
+      expect(result.current.getState().invoices).toHaveLength(1);
+      expect(result.current.getState().invoices[0]?.name).toBe("Updated Invoice Name");
+      expect(result.current.getState().invoices[0]?.description).toBe("Updated description");
+      expect(result.current.getState().invoices[0]?.category).toBe(InvoiceCategory.CAR_AUTO);
+    });
+
+    it("should not create duplicates when upserting same invoice twice", () => {
+      const {result} = renderHook(() => useInvoicesStore);
+
+      act(() => {
+        result.current.getState().upsertInvoice(mockInvoice1);
+        result.current.getState().upsertInvoice(mockInvoice1);
+        result.current.getState().upsertInvoice(mockInvoice1);
+      });
+
+      expect(result.current.getState().invoices).toHaveLength(1);
     });
   });
 
@@ -353,9 +401,9 @@ describe("useInvoicesStore", () => {
 
       act(() => {
         // Add invoices
-        result.current.getState().addInvoice(mockInvoice1);
-        result.current.getState().addInvoice(mockInvoice2);
-        result.current.getState().addInvoice(mockInvoice3);
+        result.current.getState().upsertInvoice(mockInvoice1);
+        result.current.getState().upsertInvoice(mockInvoice2);
+        result.current.getState().upsertInvoice(mockInvoice3);
       });
 
       expect(result.current.getState().invoices).toHaveLength(3);
@@ -447,7 +495,7 @@ describe("useInvoicesStore", () => {
       const originalInvoices = [...result.current.getState().invoices];
 
       act(() => {
-        result.current.getState().addInvoice(mockInvoice2);
+        result.current.getState().upsertInvoice(mockInvoice2);
       });
 
       expect(originalInvoices).toEqual([mockInvoice1]);
@@ -578,9 +626,9 @@ describe("useInvoicesStore", () => {
 
       expect(result.current.selectedInvoices).toHaveLength(1);
 
-      // Test addInvoice
+      // Test upsertInvoice
       act(() => {
-        result.current.addInvoice(mockInvoice3);
+        result.current.upsertInvoice(mockInvoice3);
       });
 
       expect(result.current.invoices).toHaveLength(3);
