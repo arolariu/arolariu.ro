@@ -57,6 +57,3 @@ export {
   mockMerchant,
   mockMerchantList,
 } from "./merchant";
-
-// Re-export types for convenience
-export type {Invoice, Merchant, Product} from "@/types/invoices";
