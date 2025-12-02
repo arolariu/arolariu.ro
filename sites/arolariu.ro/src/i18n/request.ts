@@ -16,20 +16,22 @@
  * @see RFC 1003 - Internationalization System
  */
 
-import {getCookie} from "@/lib/actions/cookies";
 import {Locale} from "next-intl";
 import {getRequestConfig} from "next-intl/server";
+import {cookies} from "next/headers";
 
 export default getRequestConfig(async () => {
-  const locale = (await getCookie("locale")) ?? "en";
+  const allCookies = await cookies();
+  const localeCookie = allCookies.get("locale");
+  const locale: Locale = (localeCookie?.value ?? "en") as Locale;
 
-  const supportedLocales = ["en", "ro"] as const;
-  if (!supportedLocales.includes(locale as Locale)) {
+  const supportedLocales: Locale[] = ["en", "ro"] as const;
+  if (!supportedLocales.includes(locale)) {
     throw new Error(`[arolariu.ro::i18n] >>> Locale "${locale}" is not supported.`);
   }
 
   return {
-    locale: locale as Locale,
+    locale: locale,
     // eslint-disable-next-line unicorn/no-await-expression-member -- importing messages dynamically
     messages: (await import(`../../messages/${locale}.json`)).default,
   };
