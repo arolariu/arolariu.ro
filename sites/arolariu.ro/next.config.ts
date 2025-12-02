@@ -43,13 +43,11 @@ const nextConfig: NextConfig = {
     qualities: [50, 75, 100],
     remotePatterns: [
       new URL("https://cdn.arolariu.ro"), // CDN assets.
-      new URL("https://clerk.com"), // Clerk - auth-as-a-service assets.
-      new URL("https://accounts.dev"), // Clerk - auth-as-a-service assets.
-      new URL("https://**.clerk.com"), // Clerk - auth-as-a-service assets.
-      new URL("https://**.accounts.dev"), // Clerk - auth-as-a-service assets.
+      {protocol: "https", hostname: "**.clerk.com"}, // Clerk - auth-as-a-service assets.
+      {protocol: "https", hostname: "**.accounts.dev"}, // Clerk - auth-as-a-service assets.
       new URL("https://arolariustorage.blob.core.windows.net"), // External assets.
-      new URL("https://**.googleusercontent.com"), // External assets.
-      new URL("https://**.githubusercontent.com"), // External assets.
+      {protocol: "https", hostname: "**.googleusercontent.com"}, // External assets.
+      {protocol: "https", hostname: "**.githubusercontent.com"}, // External assets.
       ...(isDebugBuild
         ? ([
             {
