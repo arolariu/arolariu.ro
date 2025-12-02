@@ -6,6 +6,7 @@
  */
 
 import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
+import {useMerchantsStore} from "@/stores";
 import type {Merchant} from "@/types/invoices";
 import {useEffect, useState} from "react";
 
@@ -14,7 +15,7 @@ import {useEffect, useState} from "react";
  */
 type HookInputType = Readonly<{
   /** The UUID identifier of the merchant to fetch. Must be a valid UUIDv4 string. */
-  merchantIdentifier: string;
+  readonly merchantIdentifier: string;
 }>;
 
 /**
@@ -22,11 +23,11 @@ type HookInputType = Readonly<{
  */
 type HookOutputType = Readonly<{
   /** The fetched merchant object, or null if not yet loaded or on error. */
-  merchant: Merchant | null;
+  readonly merchant: Merchant | null;
   /** True while the fetch operation is in progress. */
-  isLoading: boolean;
+  readonly isLoading: boolean;
   /** True if the fetch operation failed with an error. */
-  isError: boolean;
+  readonly isError: boolean;
 }>;
 
 /**
@@ -87,16 +88,17 @@ type HookOutputType = Readonly<{
  */
 export function useMerchant({merchantIdentifier}: HookInputType): HookOutputType {
   const [isError, setIsError] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [merchant, setMerchant] = useState<Merchant | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Read cached data from Zustand store (may be null or stale)
+  const cachedMerchant = useMerchantsStore((state) => state.merchants.find((m) => m.id === merchantIdentifier) ?? null);
+  const upsertMerchant = useMerchantsStore((state) => state.upsertMerchant);
 
   useEffect(() => {
-    const fetchMerchantForUser = async (merchantIdentifier: string) => {
-      setIsLoading(true);
-
+    const fetchMerchantForUser = async () => {
       try {
         const merchant = await fetchMerchant({merchantId: merchantIdentifier});
-        setMerchant(merchant);
+        upsertMerchant(merchant);
       } catch (error: unknown) {
         console.error(">>> Error fetching merchant in useMerchant hook:", error as Error);
         setIsError(true);
@@ -105,8 +107,9 @@ export function useMerchant({merchantIdentifier}: HookInputType): HookOutputType
       }
     };
 
-    fetchMerchantForUser(merchantIdentifier);
+    fetchMerchantForUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- upsertMerchant is a stable function
   }, [merchantIdentifier]);
 
-  return {merchant, isLoading, isError} as const;
+  return {merchant: cachedMerchant, isLoading, isError} as const;
 }

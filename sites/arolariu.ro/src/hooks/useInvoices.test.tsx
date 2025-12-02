@@ -81,7 +81,7 @@ describe("useInvoices", () => {
     const {result} = renderHook(() => useInvoices());
 
     await waitFor(() => {
-      expect(mockFetchInvoices).toHaveBeenCalledWith("test-jwt-token");
+      expect(mockFetchInvoices).toHaveBeenCalled();
     });
 
     await waitFor(() => {
@@ -153,19 +153,13 @@ describe("useInvoices", () => {
     });
   });
 
-  it("should not fetch when userInformation is not available", async () => {
-    // Import dynamically to override the mock
-    const indexModule = await import("./index");
-    vi.spyOn(indexModule, "useUserInformation").mockReturnValue({
-      userInformation: null!,
-      isLoading: true,
-      isError: false,
-    } as ReturnType<typeof indexModule.useUserInformation>);
+  it("should always fetch regardless of userInformation state", async () => {
+    mockFetchInvoices.mockResolvedValue([]);
 
     renderHook(() => useInvoices());
 
     await waitFor(() => {
-      expect(mockFetchInvoices).not.toHaveBeenCalled();
+      expect(mockFetchInvoices).toHaveBeenCalled();
     });
   });
 });

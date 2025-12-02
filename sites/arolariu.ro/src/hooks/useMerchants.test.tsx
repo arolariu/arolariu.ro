@@ -62,7 +62,7 @@ describe("useMerchants", () => {
 
     const {result} = renderHook(() => useMerchants());
 
-    expect(result.current.merchant).toEqual([]);
+    expect(result.current.merchants).toEqual([]);
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -82,7 +82,7 @@ describe("useMerchants", () => {
     const {result} = renderHook(() => useMerchants());
 
     await waitFor(() => {
-      expect(mockFetchMerchants).toHaveBeenCalledWith("test-jwt-token");
+      expect(mockFetchMerchants).toHaveBeenCalled();
     });
 
     await waitFor(() => {

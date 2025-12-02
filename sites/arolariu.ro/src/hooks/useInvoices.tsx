@@ -20,11 +20,11 @@ type HookInputType = Readonly<{}>;
  */
 type HookOutputType = Readonly<{
   /** Array of all invoices for the current user. Empty array if none exist or on error. */
-  invoices: Invoice[];
+  readonly invoices: ReadonlyArray<Invoice>;
   /** True while the initial fetch operation is in progress. */
-  isLoading: boolean;
+  readonly isLoading: boolean;
   /** True if the fetch operation failed with an error. */
-  isError: boolean;
+  readonly isError: boolean;
 }>;
 
 /**
@@ -96,17 +96,17 @@ type HookOutputType = Readonly<{
  */
 export function useInvoices(_void?: HookInputType): HookOutputType {
   const [isError, setIsError] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const possiblyStaleInvoices = useInvoicesStore((state) => state.invoices);
-  const setPossiblyStaleInvoices = useInvoicesStore((state) => state.setInvoices);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Read cached data from Zustand store (may be empty or stale)
+  const cachedInvoices = useInvoicesStore((state) => state.invoices);
+  const setInvoices = useInvoicesStore((state) => state.setInvoices);
 
   useEffect(() => {
     const fetchInvoicesForUser = async () => {
-      setIsLoading(true);
-
       try {
-        const invoices = await fetchInvoices();
-        setPossiblyStaleInvoices(invoices);
+        const fetchedInvoices = await fetchInvoices();
+        setInvoices([...fetchedInvoices]);
       } catch (error: unknown) {
         console.error(">>> Error fetching invoices in useInvoices hook:", error as Error);
         setIsError(true);
@@ -116,8 +116,8 @@ export function useInvoices(_void?: HookInputType): HookOutputType {
     };
 
     fetchInvoicesForUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- setPossiblyStaleInvoices is a stable function.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setInvoices is a stable function
   }, []);
 
-  return {invoices: possiblyStaleInvoices, isLoading, isError} as const;
+  return {invoices: cachedInvoices, isLoading, isError} as const;
 }

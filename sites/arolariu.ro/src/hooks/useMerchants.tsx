@@ -20,11 +20,11 @@ type HookInputType = Readonly<{}>;
  */
 type HookOutputType = Readonly<{
   /** Array of all merchants associated with the user's invoices. Empty array if none exist or on error. */
-  merchant: Merchant[];
+  readonly merchants: ReadonlyArray<Merchant>;
   /** True while the initial fetch operation is in progress. */
-  isLoading: boolean;
+  readonly isLoading: boolean;
   /** True if the fetch operation failed with an error. */
-  isError: boolean;
+  readonly isError: boolean;
 }>;
 
 /**
@@ -72,7 +72,7 @@ type HookOutputType = Readonly<{
  * @example
  * ```tsx
  * function MerchantFilter() {
- *   const {merchant, isLoading, isError} = useMerchants();
+ *   const {merchants, isLoading, isError} = useMerchants();
  *
  *   if (isLoading) return <Skeleton />;
  *   if (isError) return <ErrorMessage />;
@@ -93,8 +93,8 @@ type HookOutputType = Readonly<{
  * ```tsx
  * // Multiple components can access the same cached data
  * function MerchantCount() {
- *   const {merchant} = useMerchants(); // Reads from store, no refetch
- *   return <Badge>{merchant.length} merchants</Badge>;
+ *   const {merchants} = useMerchants(); // Reads from store, no refetch
+ *   return <Badge>{merchants.length} merchants</Badge>;
  * }
  * ```
  *
@@ -104,17 +104,17 @@ type HookOutputType = Readonly<{
  */
 export function useMerchants(_void?: HookInputType): HookOutputType {
   const [isError, setIsError] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const possiblyStaleMerchants = useMerchantsStore((state) => state.merchants);
-  const setPossiblyStaleMerchants = useMerchantsStore((state) => state.setMerchants);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Read cached data from Zustand store (may be empty or stale)
+  const cachedMerchants = useMerchantsStore((state) => state.merchants);
+  const setMerchants = useMerchantsStore((state) => state.setMerchants);
 
   useEffect(() => {
     const fetchMerchantsForUser = async () => {
-      setIsLoading(true);
-
       try {
         const merchants = await fetchMerchants();
-        setPossiblyStaleMerchants(merchants);
+        setMerchants([...merchants]);
       } catch (error: unknown) {
         console.error(">>> Error fetching merchants in useMerchants hook:", error as Error);
         setIsError(true);
@@ -124,9 +124,8 @@ export function useMerchants(_void?: HookInputType): HookOutputType {
     };
 
     fetchMerchantsForUser();
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- setPossiblyStaleMerchants is a stable function.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setMerchants is a stable function
   }, []);
 
-  return {merchant: possiblyStaleMerchants, isLoading, isError} as const;
+  return {merchants: cachedMerchants, isLoading, isError} as const;
 }

@@ -6,6 +6,7 @@
  */
 
 import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
+import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
 
@@ -14,7 +15,7 @@ import {useEffect, useState} from "react";
  */
 type HookInputType = Readonly<{
   /** The UUID identifier of the invoice to fetch. Must be a valid UUIDv4 string. */
-  invoiceIdentifier: string;
+  readonly invoiceIdentifier: string;
 }>;
 
 /**
@@ -22,11 +23,11 @@ type HookInputType = Readonly<{
  */
 type HookOutputType = Readonly<{
   /** The fetched invoice object, or null if not yet loaded or on error. */
-  invoice: Invoice | null;
+  readonly invoice: Invoice | null;
   /** True while the fetch operation is in progress. */
-  isLoading: boolean;
+  readonly isLoading: boolean;
   /** True if the fetch operation failed with an error. */
-  isError: boolean;
+  readonly isError: boolean;
 }>;
 
 /**
@@ -77,16 +78,17 @@ type HookOutputType = Readonly<{
  */
 export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {
   const [isError, setIsError] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Read cached data from Zustand store (may be null or stale)
+  const cachedInvoice = useInvoicesStore((state) => state.invoices.find((inv) => inv.id === invoiceIdentifier) ?? null);
+  const upsertInvoice = useInvoicesStore((state) => state.upsertInvoice);
 
   useEffect(() => {
     const fetchInvoiceForUser = async () => {
-      setIsLoading(true);
-
       try {
         const invoice = await fetchInvoice({invoiceId: invoiceIdentifier});
-        setInvoice(invoice);
+        upsertInvoice(invoice);
       } catch (error: unknown) {
         console.error(">>> Error fetching invoice in useInvoice hook:", error as Error);
         setIsError(true);
@@ -96,7 +98,8 @@ export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {
     };
 
     fetchInvoiceForUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- upsertInvoice is a stable function
   }, [invoiceIdentifier]);
 
-  return {invoice, isLoading, isError} as const;
+  return {invoice: cachedInvoice, isLoading, isError} as const;
 }

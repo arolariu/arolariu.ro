@@ -1,11 +1,17 @@
 import {InvoiceBuilder} from "@/data/mocks/invoice";
+import type {Invoice} from "@/types/invoices";
 import {renderHook, waitFor} from "@testing-library/react";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoice} from "./useInvoice";
 
+// Type alias for store selector to improve readability
+type InvoicesStoreSelector = (state: {invoices: Invoice[]; upsertInvoice: (invoice: Invoice) => void}) => unknown;
+
 // Create mock function using vi.hoisted
-const {mockFetchInvoice} = vi.hoisted(() => ({
+const {mockFetchInvoice, mockupsertInvoice, mockUseInvoicesStore} = vi.hoisted(() => ({
   mockFetchInvoice: vi.fn(),
+  mockupsertInvoice: vi.fn(),
+  mockUseInvoicesStore: vi.fn(),
 }));
 
 // Mock the dependencies
@@ -25,12 +31,25 @@ vi.mock("@/lib/actions/invoices/fetchInvoice", () => ({
   default: mockFetchInvoice,
 }));
 
+vi.mock("@/stores", () => ({
+  useInvoicesStore: mockUseInvoicesStore,
+}));
+
 describe("useInvoice", () => {
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     vi.clearAllMocks();
+
+    // Setup default mock implementation for useInvoicesStore - starts with empty cache
+    mockUseInvoicesStore.mockImplementation((selector: InvoicesStoreSelector) => {
+      const state = {
+        invoices: [] as Invoice[],
+        upsertInvoice: mockupsertInvoice,
+      };
+      return selector(state);
+    });
   });
 
   afterEach(() => {
@@ -56,15 +75,31 @@ describe("useInvoice", () => {
 
     mockFetchInvoice.mockResolvedValue(mockInvoice);
 
-    const {result} = renderHook(() => useInvoice({invoiceIdentifier: "invoice-123"}));
+    // Update mock to return the invoice after fetch
+    let storeInvoices: Invoice[] = [];
+    mockUseInvoicesStore.mockImplementation((selector: InvoicesStoreSelector) => {
+      const state = {
+        invoices: storeInvoices,
+        upsertInvoice: (invoice: Invoice) => {
+          storeInvoices = [invoice];
+          mockupsertInvoice(invoice);
+        },
+      };
+      return selector(state);
+    });
+
+    const {result, rerender} = renderHook(() => useInvoice({invoiceIdentifier: "invoice-123"}));
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
 
+    // Rerender to pick up the updated store state
+    rerender();
+
     expect(result.current.invoice).toEqual(mockInvoice);
     expect(result.current.isError).toBe(false);
-    expect(mockFetchInvoice).toHaveBeenCalledWith("invoice-123", "test-jwt-token");
+    expect(mockFetchInvoice).toHaveBeenCalledWith({invoiceId: "invoice-123"});
   });
 
   it("should handle fetch errors", async () => {
@@ -82,8 +117,8 @@ describe("useInvoice", () => {
   });
 
   it("should set loading state during fetch", async () => {
-    let resolvePromise: (value: unknown) => void;
-    const promise = new Promise((resolve) => {
+    let resolvePromise: (value: Invoice) => void;
+    const promise = new Promise<Invoice>((resolve) => {
       resolvePromise = resolve;
     });
 
