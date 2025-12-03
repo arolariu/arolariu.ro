@@ -5,7 +5,6 @@
     "exactOptionalPropertyTypes": false,
     "allowArbitraryExtensions": true,
     "erasableSyntaxOnly": false,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
