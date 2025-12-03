@@ -2,7 +2,7 @@
 
 import type {Invoice, Merchant} from "@/types/invoices";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
-import {AnimatePresence, motion, type Variants} from "motion/react";
+import {motion, type Variants} from "motion/react";
 import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
 import DialogContainer from "../../_contexts/DialogContainer";
 import {DialogProvider} from "../../_contexts/DialogContext";
@@ -14,34 +14,36 @@ import MetadataTab from "./_components/tabs/MetadataTab";
 import RecipesTab from "./_components/tabs/RecipesTab";
 
 type Props = Readonly<{
-  invoice: Invoice;
-  merchant: Merchant;
+  readonly invoice: Invoice;
+  readonly merchant: Merchant;
 }>;
-
-const containerVariants: Variants = {
-  hidden: {opacity: 0},
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants: Variants = {
-  hidden: {y: 20, opacity: 0},
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {type: "spring", stiffness: 300, damping: 24},
-  },
-};
 
 /**
  * This function renders the view invoice page.
  * @returns The JSX for the view invoice page.
  */
-export default function RenderViewInvoiceScreen({invoice, merchant}: Readonly<Props>): React.JSX.Element {
+export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.JSX.Element {
+  const {invoice, merchant} = props;
+
+  const containerVariants: Variants = {
+    hidden: {opacity: 0},
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants: Variants = {
+    hidden: {y: 20, opacity: 0},
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {type: "spring", stiffness: 300, damping: 24},
+    },
+  };
+
   return (
     <DialogProvider>
       <section className='container mx-auto py-12'>
@@ -77,19 +79,17 @@ export default function RenderViewInvoiceScreen({invoice, merchant}: Readonly<Pr
                   </TabsTrigger>
                 </TabsList>
 
-                <AnimatePresence mode='wait'>
-                  <TabsContent
-                    value='recipes'
-                    className='mt-4'>
-                    <RecipesTab recipes={invoice.possibleRecipes} />
-                  </TabsContent>
+                <TabsContent
+                  value='recipes'
+                  className='mt-4'>
+                  <RecipesTab recipes={invoice.possibleRecipes} />
+                </TabsContent>
 
-                  <TabsContent
-                    value='metadata'
-                    className='mt-4'>
-                    <MetadataTab metadata={invoice.additionalMetadata} />
-                  </TabsContent>
-                </AnimatePresence>
+                <TabsContent
+                  value='metadata'
+                  className='mt-4'>
+                  <MetadataTab metadata={invoice.additionalMetadata} />
+                </TabsContent>
               </Tabs>
             </motion.div>
 
