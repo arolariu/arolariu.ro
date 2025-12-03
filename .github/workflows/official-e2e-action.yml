@@ -19,7 +19,7 @@ jobs:
       cache-key: ${{ steps.workspace-setup.outputs.node-cache-hit }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         id: workspace-setup
@@ -40,7 +40,7 @@ jobs:
       duration: ${{ steps.test.outputs.duration }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -82,7 +82,7 @@ jobs:
       duration: ${{ steps.test.outputs.duration }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -131,7 +131,7 @@ jobs:
       TZ: Europe/Bucharest
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -141,7 +141,7 @@ jobs:
           cache-key-prefix: 'e2e'
 
       - name: 📥 Download all test artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           path: logs
 

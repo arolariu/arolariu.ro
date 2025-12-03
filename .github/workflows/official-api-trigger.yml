@@ -49,7 +49,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -80,7 +80,7 @@ jobs:
     environment: ${{ inputs.environment || 'production' }}
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace

@@ -33,7 +33,7 @@ jobs:
       changed-files-count: ${{ steps.detect.outputs.changed-files-count }}
     steps:
       - name: 🛫 Checking out the repository...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Full history for accurate diff analysis
           ref: ${{ env.HEAD_REF }}
@@ -73,7 +73,7 @@ jobs:
       files-needing-format: ${{ steps.check.outputs.files-needing-format }}
     steps:
       - name: 🛫 Checking out the repository...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
           ref: ${{ env.HEAD_REF }}
@@ -99,7 +99,7 @@ jobs:
       lint-output: ${{ steps.lint.outputs.lint-output }}
     steps:
       - name: 🛫 Checking out the repository...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
           ref: ${{ env.HEAD_REF }}
@@ -122,7 +122,7 @@ jobs:
     if: needs.setup.outputs.has-changes == 'true' || github.event_name == 'workflow_dispatch'
     steps:
       - name: 🛫 Checking out the repository...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
           ref: ${{ env.HEAD_REF }}
@@ -161,7 +161,7 @@ jobs:
       net-change: ${{ steps.extra-stats.outputs.net-change }}
     steps:
       - name: 🛫 Checking out the repository...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Full history for bundle comparison
           ref: ${{ env.HEAD_REF }}
@@ -200,7 +200,7 @@ jobs:
     if: always()
     steps:
       - name: 🛫 Checking out the repository...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
 
