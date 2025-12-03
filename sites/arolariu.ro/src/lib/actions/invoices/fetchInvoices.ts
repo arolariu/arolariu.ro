@@ -6,7 +6,7 @@ import {API_URL} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 type ServerActionInputType = Readonly<{}>;
-type ServerActionOutputType = Promise<Readonly<Invoice[]>>;
+type ServerActionOutputType = Promise<ReadonlyArray<Invoice>>;
 
 /**
  * Server action that fetches all invoices for a user.
