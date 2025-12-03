@@ -5,7 +5,7 @@ import {addSpanEvent, logWithTrace, withSpan} from "@/telemetry";
 import type {CreateInvoiceDtoPayload, Invoice} from "@/types/invoices";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
-type ServerActionInputType = Readonly<CreateInvoiceDtoPayload>;
+type ServerActionInputType = Readonly<Partial<CreateInvoiceDtoPayload>>;
 type ServerActionOutputType = Promise<Readonly<Invoice>>;
 
 /**
@@ -22,7 +22,7 @@ export async function createInvoice(payload: ServerActionInputType): ServerActio
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication", {}, "server");
-      const {userJwt: authToken} = await fetchBFFUserFromAuthService();
+      const {userIdentifier, userJwt: authToken} = await fetchBFFUserFromAuthService();
       addSpanEvent("bff.user.jwt.fetch.complete");
 
       // Step 2. Make the API request to create the invoice
@@ -34,7 +34,7 @@ export async function createInvoice(payload: ServerActionInputType): ServerActio
           Authorization: `Bearer ${authToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: payload.userIdentifier ? JSON.stringify(payload) : JSON.stringify({...payload, userIdentifier}),
       });
       addSpanEvent("bff.invoice.create.complete");
 

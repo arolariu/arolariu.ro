@@ -3,7 +3,6 @@
 import {attachInvoiceScan} from "@/lib/actions/invoices/attachInvoiceScan";
 import {createInvoice as createInvoiceEntity} from "@/lib/actions/invoices/createInvoice";
 import {createInvoiceScan} from "@/lib/actions/invoices/createInvoiceScan";
-import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {addSpanEvent, createCounter, createNextJsAttributes, logWithTrace, setSpanAttributes, withSpan} from "@/telemetry";
 import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, InvoiceScanType} from "@/types/invoices";
 import type {PendingInvoiceSubmission, PendingInvoiceSubmissionResult} from "../_types/InvoiceSubmission";
@@ -51,22 +50,17 @@ export async function createInvoiceAction(submission: PendingInvoiceSubmission):
 
       logWithTrace("info", "Processing createInvoice server action", {submissionId: submission.id}, "server");
 
-      // Build payloads for invoice creation
+      // ----------------------------------------------------------------------
+      // 1. Create the invoice entity in the backend
+      // ----------------------------------------------------------------------
       addSpanEvent("bff.payload.creation.start");
-      const {userIdentifier} = await fetchBFFUserFromAuthService();
-      const invoiceInitialPayload: CreateInvoiceDtoPayload = {
-        userIdentifier,
+      const invoiceInitialPayload: Partial<CreateInvoiceDtoPayload> = {
         metadata: {
           requiresAnalysis: "true",
           isImportant: "false",
         },
       };
-
       addSpanEvent("bff.payload.creation.complete");
-
-      // ----------------------------------------------------------------------
-      // 1. Create the invoice entity in the backend
-      // ----------------------------------------------------------------------
       addSpanEvent("bff.request.create-invoice.start");
       const invoice = await createInvoiceEntity(invoiceInitialPayload);
       addSpanEvent("bff.request.create-invoice.complete", {invoiceId: invoice.id});
