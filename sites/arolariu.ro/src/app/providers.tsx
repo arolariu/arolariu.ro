@@ -119,23 +119,26 @@ type Props = {
  * @see RFC 1003 - Internationalization System documentation
  */
 export default function ContextProviders({locale, children}: Readonly<Props>): React.JSX.Element {
+  const messages = locale === "ro" ? require("../../messages/ro.json") : require("../../messages/en.json");
   return (
-    <AuthProvider localization={locale === "ro" ? roRO : enUS}>
-      <FontProvider>
-        <ThemeProvider
-          enableSystem
-          enableColorScheme
-          defaultTheme='system'
-          attribute='class'
-          themes={["light", "dark"]}>
-          <TranslationProvider>
+    <TranslationProvider
+      locale={locale}
+      messages={messages}>
+      <AuthProvider localization={locale === "ro" ? roRO : enUS}>
+        <FontProvider>
+          <ThemeProvider
+            enableSystem
+            enableColorScheme
+            defaultTheme='system'
+            attribute='class'
+            themes={["light", "dark"]}>
             {children}
             <ToastProvider />
             <Commander />
             <WebVitals />
-          </TranslationProvider>
-        </ThemeProvider>
-      </FontProvider>
-    </AuthProvider>
+          </ThemeProvider>
+        </FontProvider>
+      </AuthProvider>
+    </TranslationProvider>
   );
 }
