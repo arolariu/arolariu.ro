@@ -3,11 +3,12 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {GET} from "./route";
 
 // Create hoisted mocks
-const {mockAuth, mockCurrentUser, mockCreateJwtToken, mockWithSpan} = vi.hoisted(() => ({
+const {mockAuth, mockCurrentUser, mockCreateJwtToken, mockWithSpan, mockGenerateGuid} = vi.hoisted(() => ({
   mockAuth: vi.fn(),
   mockCurrentUser: vi.fn(),
   mockCreateJwtToken: vi.fn(),
   mockWithSpan: vi.fn(),
+  mockGenerateGuid: vi.fn(),
 }));
 
 // Mock Clerk functions
@@ -20,6 +21,11 @@ vi.mock("@clerk/nextjs/server", () => ({
 vi.mock("@/lib/utils.server", () => ({
   API_JWT: "mock-api-jwt-secret",
   createJwtToken: mockCreateJwtToken,
+}));
+
+// Mock generateGuid
+vi.mock("@/lib/utils.generic", () => ({
+  generateGuid: mockGenerateGuid,
 }));
 
 // Mock telemetry functions
@@ -69,14 +75,17 @@ describe("GET /api/user", () => {
       emailAddresses: [{emailAddress: "john@example.com"}],
     };
 
-    const mockToken = "mock-clerk-jwt-token";
+    const mockToken = "mock-generated-jwt-token";
+    const mockUserIdentifier = "generated-guid-123";
 
     mockAuth.mockResolvedValue({
+      isAuthenticated: true,
       userId: "user-123",
-      getToken: vi.fn().mockResolvedValue(mockToken),
     });
 
     mockCurrentUser.mockResolvedValue(mockUser);
+    mockGenerateGuid.mockReturnValue(mockUserIdentifier);
+    mockCreateJwtToken.mockResolvedValue(mockToken);
 
     const response = await GET();
 
@@ -85,18 +94,19 @@ describe("GET /api/user", () => {
 
     expect(data).toEqual({
       user: mockUser,
-      userIdentifier: "user-123",
+      userIdentifier: mockUserIdentifier,
       userJwt: mockToken,
     });
 
     expect(mockAuth).toHaveBeenCalled();
     expect(mockCurrentUser).toHaveBeenCalled();
+    expect(mockGenerateGuid).toHaveBeenCalledWith("user-123");
   });
 
   it("should return guest user information when not authenticated", async () => {
     mockAuth.mockResolvedValue({
+      isAuthenticated: false,
       userId: null,
-      getToken: vi.fn(),
     });
 
     const mockGuestToken = "mock-guest-jwt-token";
@@ -129,8 +139,8 @@ describe("GET /api/user", () => {
 
   it("should generate JWT with proper expiration for guest users", async () => {
     mockAuth.mockResolvedValue({
+      isAuthenticated: false,
       userId: null,
-      getToken: vi.fn(),
     });
 
     mockCreateJwtToken.mockResolvedValue("guest-token");
@@ -150,8 +160,8 @@ describe("GET /api/user", () => {
     const exp = callArgs["exp"] as number;
     const iat = callArgs["iat"] as number;
 
-    // Verify expiration is 1 hour (3600 seconds) after issued time
-    expect(exp - iat).toBe(3600);
+    // Verify expiration is 5 minutes (300 seconds) after issued time
+    expect(exp - iat).toBe(300);
   });
 
   it("should handle null token from Clerk auth", async () => {
@@ -159,14 +169,20 @@ describe("GET /api/user", () => {
       id: "user-456",
       firstName: "Jane",
       lastName: "Smith",
+      emailAddresses: [{emailAddress: "jane@example.com"}],
     };
 
+    const mockUserIdentifier = "generated-guid-456";
+
     mockAuth.mockResolvedValue({
+      isAuthenticated: true,
       userId: "user-456",
-      getToken: vi.fn().mockResolvedValue(null),
     });
 
     mockCurrentUser.mockResolvedValue(mockUser);
+    mockGenerateGuid.mockReturnValue(mockUserIdentifier);
+    // Return empty string to simulate token generation returning empty
+    mockCreateJwtToken.mockResolvedValue("");
 
     const response = await GET();
 
@@ -175,7 +191,7 @@ describe("GET /api/user", () => {
 
     expect(data).toEqual({
       user: mockUser,
-      userIdentifier: "user-456",
+      userIdentifier: mockUserIdentifier,
       userJwt: "",
     });
   });
@@ -196,13 +212,18 @@ describe("GET /api/user", () => {
   });
 
   it("should call telemetry functions for authenticated users", async () => {
-    const mockUser = {id: "user-telemetry"};
+    const mockUser = {
+      id: "user-telemetry",
+      emailAddresses: [{emailAddress: "telemetry@example.com"}],
+    };
     mockAuth.mockResolvedValue({
+      isAuthenticated: true,
       userId: "user-telemetry",
-      getToken: vi.fn().mockResolvedValue("token"),
     });
 
     mockCurrentUser.mockResolvedValue(mockUser);
+    mockGenerateGuid.mockReturnValue("generated-guid-telemetry");
+    mockCreateJwtToken.mockResolvedValue("token");
 
     await GET();
 
@@ -219,8 +240,8 @@ describe("GET /api/user", () => {
 
   it("should call telemetry functions for guest users", async () => {
     mockAuth.mockResolvedValue({
+      isAuthenticated: false,
       userId: null,
-      getToken: vi.fn(),
     });
 
     mockCreateJwtToken.mockResolvedValue("guest-token");
@@ -232,8 +253,8 @@ describe("GET /api/user", () => {
 
   it("should handle undefined userId from auth", async () => {
     mockAuth.mockResolvedValue({
+      isAuthenticated: false,
       userId: undefined,
-      getToken: vi.fn(),
     });
 
     mockCreateJwtToken.mockResolvedValue("token");

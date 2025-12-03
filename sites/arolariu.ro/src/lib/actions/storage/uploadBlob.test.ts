@@ -1,13 +1,24 @@
-import {convertBase64ToBlob} from "@/lib/utils.server";
 import {BlobServiceClient} from "@azure/storage-blob";
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import fetchConfigurationValue from "./fetchConfig";
-import uploadBlob from "./uploadBlob";
 
+// Create hoisted mocks - must be before any imports that use the mocked modules
+const {mockConvertBase64ToBlob} = vi.hoisted(() => ({
+  mockConvertBase64ToBlob: vi.fn(),
+}));
+
+// Mock modules before importing the module under test
 vi.mock("@azure/identity");
 vi.mock("@azure/storage-blob");
 vi.mock("./fetchConfig");
-vi.mock("@/lib/utils.server");
+vi.mock("@/lib/utils.server", () => ({
+  convertBase64ToBlob: mockConvertBase64ToBlob,
+  API_URL: "mock-api-url",
+  API_JWT: "mock-api-jwt",
+  resend: {},
+}));
+
+import fetchConfigurationValue from "./fetchConfig";
+import uploadBlob from "./uploadBlob";
 
 describe("uploadBlob", () => {
   const mockUploadData = vi.fn();
@@ -21,7 +32,7 @@ describe("uploadBlob", () => {
     (fetchConfigurationValue as any).mockResolvedValue("https://test.blob.core.windows.net");
 
     mockArrayBuffer.mockResolvedValue(new ArrayBuffer(8));
-    (convertBase64ToBlob as any).mockResolvedValue({
+    mockConvertBase64ToBlob.mockResolvedValue({
       type: "image/png",
       size: 1024,
       arrayBuffer: mockArrayBuffer,
@@ -51,9 +62,14 @@ describe("uploadBlob", () => {
   });
 
   it("should upload a blob successfully with provided name", async () => {
-    const result = await uploadBlob("test-container", "base64data", {meta: "data"}, "custom-name.png");
+    const result = await uploadBlob({
+      containerName: "test-container",
+      base64Data: "base64data",
+      metadata: {meta: "data"},
+      blobName: "custom-name.png",
+    });
 
-    expect(convertBase64ToBlob).toHaveBeenCalledWith("base64data");
+    expect(mockConvertBase64ToBlob).toHaveBeenCalledWith("base64data");
     expect(fetchConfigurationValue).toHaveBeenCalledWith("AzureOptions:StorageAccountEndpoint");
     expect(mockGetContainerClient).toHaveBeenCalledWith("test-container");
     expect(mockGetBlockBlobClient).toHaveBeenCalledWith("custom-name.png");
@@ -80,7 +96,7 @@ describe("uploadBlob", () => {
   });
 
   it("should generate a blob name if not provided", async () => {
-    await uploadBlob("test-container", "base64data");
+    await uploadBlob({containerName: "test-container", base64Data: "base64data"});
 
     expect(mockGetBlockBlobClient).toHaveBeenCalledWith("test-uuid.png");
   });
@@ -91,7 +107,7 @@ describe("uploadBlob", () => {
       _response: {status: 400},
     });
 
-    const result = await uploadBlob("test-container", "base64data");
+    const result = await uploadBlob({containerName: "test-container", base64Data: "base64data"});
 
     expect(consoleSpy).toHaveBeenCalledWith("Error uploading blob to Azure Storage", expect.any(Object));
     expect(result.status).toBe(400);
@@ -101,7 +117,7 @@ describe("uploadBlob", () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     (fetchConfigurationValue as any).mockRejectedValue(new Error("Config error"));
 
-    const result = await uploadBlob("test-container", "base64data");
+    const result = await uploadBlob({containerName: "test-container", base64Data: "base64data"});
 
     expect(consoleSpy).toHaveBeenCalledWith("Error uploading the blob to Azure Storage:", expect.any(Error));
     expect(result).toEqual({

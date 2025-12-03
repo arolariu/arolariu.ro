@@ -4,7 +4,7 @@
  */
 
 import {InvoiceBuilder} from "@/data/mocks";
-import {InvoiceCategory} from "@/types/invoices";
+import {InvoiceCategory, InvoiceScanType} from "@/types/invoices";
 import {act, renderHook} from "@testing-library/react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoicesStore} from "./invoicesStore";
@@ -28,7 +28,7 @@ describe("useInvoicesStore", () => {
     .withLastUpdatedAt(new Date("2025-01-01"))
     .withUserIdentifier("user-123")
     .withCategory(InvoiceCategory.GROCERY)
-    .withPhotoLocation("https://example.com/invoice1.jpg")
+    .withScans([{scanType: InvoiceScanType.JPEG, location: "https://example.com/invoice1.jpg", metadata: {}}])
     .withMerchantReference("merchant-1")
     .withPaymentInformation(null)
     .build();
@@ -41,7 +41,7 @@ describe("useInvoicesStore", () => {
     .withLastUpdatedAt(new Date("2025-01-02"))
     .withUserIdentifier("user-123")
     .withCategory(InvoiceCategory.FAST_FOOD)
-    .withPhotoLocation("https://example.com/invoice2.jpg")
+    .withScans([{scanType: InvoiceScanType.JPEG, location: "https://example.com/invoice2.jpg", metadata: {}}])
     .withMerchantReference("merchant-2")
     .withPaymentInformation(null)
     .build();
@@ -54,7 +54,7 @@ describe("useInvoicesStore", () => {
     .withLastUpdatedAt(new Date("2025-01-03"))
     .withUserIdentifier("user-456")
     .withCategory(InvoiceCategory.HOME_CLEANING)
-    .withPhotoLocation("https://example.com/invoice3.jpg")
+    .withScans([{scanType: InvoiceScanType.JPEG, location: "https://example.com/invoice3.jpg", metadata: {}}])
     .withMerchantReference("merchant-1")
     .withPaymentInformation(null)
     .build();
@@ -195,7 +195,7 @@ describe("useInvoicesStore", () => {
         .withLastUpdatedAt(new Date("2025-06-01"))
         .withUserIdentifier("user-123")
         .withCategory(InvoiceCategory.CAR_AUTO)
-        .withPhotoLocation("https://example.com/updated.jpg")
+        .withScans([{scanType: InvoiceScanType.JPEG, location: "https://example.com/updated.jpg", metadata: {}}])
         .withMerchantReference("merchant-updated")
         .withPaymentInformation(null)
         .build();

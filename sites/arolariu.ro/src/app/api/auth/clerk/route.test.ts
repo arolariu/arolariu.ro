@@ -74,7 +74,7 @@ describe("POST /api/auth/clerk", () => {
     expect(mockVerifyWebhook).toHaveBeenCalledWith(request);
     expect(mockGenerateGuid).toHaveBeenCalled();
     expect(mockUpdateUserMetadata).toHaveBeenCalledWith(mockUserId, {
-      publicMetadata: {uuidV4: mockUuid},
+      publicMetadata: {userIdentifier: mockUuid},
     });
   });
 
@@ -102,7 +102,7 @@ describe("POST /api/auth/clerk", () => {
     expect(response.status).toBe(200);
     expect(mockGenerateGuid).toHaveBeenCalled();
     expect(mockUpdateUserMetadata).toHaveBeenCalledWith(mockUserId, {
-      publicMetadata: {uuidV4: mockUuid},
+      publicMetadata: {userIdentifier: mockUuid},
     });
   });
 
@@ -222,10 +222,10 @@ describe("POST /api/auth/clerk", () => {
 
     expect(mockGenerateGuid).toHaveBeenCalledTimes(2);
     expect(mockUpdateUserMetadata).toHaveBeenNthCalledWith(1, mockUserId, {
-      publicMetadata: {uuidV4: mockUuid1},
+      publicMetadata: {userIdentifier: mockUuid1},
     });
     expect(mockUpdateUserMetadata).toHaveBeenNthCalledWith(2, mockUserId, {
-      publicMetadata: {uuidV4: mockUuid2},
+      publicMetadata: {userIdentifier: mockUuid2},
     });
   });
 
@@ -253,7 +253,7 @@ describe("POST /api/auth/clerk", () => {
     expect(response.status).toBe(200);
     expect(mockGenerateGuid).toHaveBeenCalled();
     expect(mockUpdateUserMetadata).toHaveBeenCalledWith(mockUserId, {
-      publicMetadata: {uuidV4: mockUuid},
+      publicMetadata: {userIdentifier: mockUuid},
     });
   });
 
