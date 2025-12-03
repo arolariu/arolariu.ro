@@ -80,7 +80,7 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>): React
                     <span className='cursor-help'>{formatDate(paymentInformation?.transactionDate)}</span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <span>Exact date: {paymentInformation?.transactionDate.toISOString()}</span>
+                    <span>Exact date: {new Date(paymentInformation?.transactionDate).toISOString()}</span>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
