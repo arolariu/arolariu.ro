@@ -61,7 +61,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.AzureAppConfiguration" Version="8.4.0" />
   </ItemGroup>
   <ItemGroup Label="Azure Cosmos DB Packages">
-    <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.55.0" />
+    <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.56.0" />
   </ItemGroup>
   <ItemGroup Label="Health Checks Packages">
     <PackageVersion Include="AspNetCore.HealthChecks.AzureKeyVault" Version="9.0.0" />

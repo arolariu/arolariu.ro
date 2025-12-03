@@ -761,7 +761,7 @@
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "[10.0.0, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.0, )",
           "Microsoft.Azure.AppConfiguration.AspNetCore": "[8.4.0, )",
-          "Microsoft.Azure.Cosmos": "[3.55.0, )",
+          "Microsoft.Azure.Cosmos": "[3.56.0, )",
           "Microsoft.EntityFrameworkCore": "[10.0.0, )",
           "Microsoft.EntityFrameworkCore.Abstractions": "[10.0.0, )",
           "Microsoft.EntityFrameworkCore.Analyzers": "[10.0.0, )",
@@ -796,7 +796,7 @@
           "Azure.Extensions.AspNetCore.Configuration.Secrets": "[1.4.0, )",
           "Azure.Storage.Blobs": "[12.26.0, )",
           "Microsoft.Azure.CognitiveServices.Vision.ComputerVision": "[7.0.1, )",
-          "Microsoft.Azure.Cosmos": "[3.55.0, )",
+          "Microsoft.Azure.Cosmos": "[3.56.0, )",
           "Microsoft.Extensions.Azure": "[1.13.1, )",
           "Newtonsoft.Json": "[13.0.4, )",
           "arolariu.Backend.Common": "[1.0.0, )"
@@ -988,9 +988,9 @@
       },
       "Microsoft.Azure.Cosmos": {
         "type": "CentralTransitive",
-        "requested": "[3.55.0, )",
-        "resolved": "3.55.0",
-        "contentHash": "s4VxMrLM/6GnbuYWK8iXez4yYSpq5XLxtx2RcqH5o92T7bQBiSleEENpen37niuH6wys4u5o1XlY1PdjBk3u2A==",
+        "requested": "[3.56.0, )",
+        "resolved": "3.56.0",
+        "contentHash": "YGdZL2FOHZ5W9DlPqobS7bwmq4PRnTMGGMkCA1O5aRtSiyklmbxAjAgur5Au0U23A/hh2k/vYkIJVcmmW1XRIw==",
         "dependencies": {
           "Azure.Core": "1.44.1",
           "Microsoft.Bcl.AsyncInterfaces": "6.0.0",
