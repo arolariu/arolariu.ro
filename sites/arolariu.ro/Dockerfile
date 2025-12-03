@@ -15,8 +15,8 @@ RUN addgroup --system --gid 1001 nodejs && \
 # Stage 1: Install dependencies
 # ========================================
 FROM base AS deps
-WORKDIR /app
-COPY package.json ./
+WORKDIR /app/sites/arolariu.ro
+COPY sites/arolariu.ro/package.json ./
 RUN npm install
 
 # ========================================
@@ -25,9 +25,13 @@ RUN npm install
 FROM base AS builder
 WORKDIR /app
 
+# Copy root tsconfig for extends directive
+COPY tsconfig.json ./
+
 # Copy installed dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+WORKDIR /app/sites/arolariu.ro
+COPY --from=deps /app/sites/arolariu.ro/node_modules ./node_modules
+COPY sites/arolariu.ro/ .
 RUN npm run build
 
 # ========================================
@@ -36,9 +40,9 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 RUN mkdir .next && chown nextjs:nodejs .next
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/static ./.next/static
 
 USER nextjs
 EXPOSE 3000

@@ -156,10 +156,11 @@ jobs:
           login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
       - name: 🏗️ Building the docker container...
+        working-directory: '.'
         env:
           CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
           CONTAINER_TAG: ${{inputs.environment == 'production' && github.sha || 'latest'}}
-        run: docker build -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} .
+        run: docker build -f sites/arolariu.ro/Dockerfile -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} .
 
       - name: ⏫ Pushing the docker container...
         env:
