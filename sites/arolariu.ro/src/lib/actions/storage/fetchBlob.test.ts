@@ -39,7 +39,7 @@ describe("fetchBlob", () => {
   });
 
   it("should fetch a blob successfully", async () => {
-    const result = await fetchBlob("test-container", "test-blob.png");
+    const result = await fetchBlob({containerName: "test-container", blobName: "test-blob.png"});
 
     expect(fetchConfigurationValue).toHaveBeenCalledWith("AzureOptions:StorageAccountEndpoint");
     expect(BlobServiceClient).toHaveBeenCalledWith("https://test.blob.core.windows.net", expect.any(Object));
@@ -59,7 +59,7 @@ describe("fetchBlob", () => {
   it("should handle errors and return 500 status", async () => {
     (fetchConfigurationValue as any).mockRejectedValue(new Error("Config error"));
 
-    const result = await fetchBlob("test-container", "test-blob.png");
+    const result = await fetchBlob({containerName: "test-container", blobName: "test-blob.png"});
 
     expect(result).toEqual({
       status: 500,

@@ -205,6 +205,7 @@ export class InvoiceBuilder {
    * @see {@link Invoice.id}
    */
   withId(id: string): this {
+    // @ts-expect-error -- id is readonly in the BaseEntity interface
     this.invoice.id = id;
     return this;
   }
@@ -285,6 +286,7 @@ export class InvoiceBuilder {
    * @see {@link IAuditable.createdAt}
    */
   withCreatedAt(date: Date): this {
+    // @ts-expect-error -- createdAt is readonly in the IAuditable interface
     this.invoice.createdAt = date;
     return this;
   }
@@ -530,7 +532,7 @@ export class InvoiceBuilder {
    * @see {@link PaymentInformation} for structure details
    * @see {@link PaymentType} for payment method options
    */
-  withPaymentInformation(paymentInfo: PaymentInformation | null): this {
+  withPaymentInformation(paymentInfo: PaymentInformation): this {
     this.invoice.paymentInformation = paymentInfo;
     return this;
   }

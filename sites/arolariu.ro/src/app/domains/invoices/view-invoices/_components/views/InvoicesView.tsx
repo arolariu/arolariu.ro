@@ -28,7 +28,7 @@ import InvoicesTable from "../tables/InvoiceTable";
 type FiltersType = {category: string; time: string};
 
 type Props = {
-  invoices: Invoice[];
+  invoices: ReadonlyArray<Invoice>;
 };
 
 /**

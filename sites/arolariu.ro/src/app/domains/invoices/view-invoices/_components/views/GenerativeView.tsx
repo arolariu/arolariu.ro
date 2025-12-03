@@ -25,9 +25,9 @@ type Message = {
   timestamp: string;
 };
 
-type Props = {
-  invoices: Invoice[];
-};
+type Props = Readonly<{
+  invoices: ReadonlyArray<Invoice>;
+}>;
 
 /**
  * This function renders the generative view for invoice analysis.

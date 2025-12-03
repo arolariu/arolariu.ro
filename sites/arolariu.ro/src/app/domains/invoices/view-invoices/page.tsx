@@ -131,7 +131,6 @@ export default async function ViewInvoicesPage() {
   const t = await getTranslations("Domains.services.invoices.service.view-invoices");
   const {user} = await fetchAaaSUserFromAuthService();
   const username = user?.fullName ?? "dear guest";
-  const invoices = await fetchInvoices();
 
   return (
     <main className='container mx-auto px-5 py-24'>
@@ -147,7 +146,7 @@ export default async function ViewInvoicesPage() {
         </article>
       </section>
       <section>
-        <RenderViewInvoicesScreen invoices={invoices} />
+        <RenderViewInvoicesScreen />
       </section>
     </main>
   );

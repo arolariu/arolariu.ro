@@ -72,7 +72,7 @@ export default async function uploadBlob(payload: ServerActionInputType): Server
       blobName: officialBlobName,
       blobUrl: blockBlobClient.url,
       blobMetadata,
-    } satisfies BlobStorageResponse;
+    };
   } catch (error) {
     console.error("Error uploading the blob to Azure Storage:", error);
     return {
@@ -80,6 +80,6 @@ export default async function uploadBlob(payload: ServerActionInputType): Server
       blobIdentifier: "",
       blobName: "",
       blobUrl: "",
-    } satisfies BlobStorageResponse;
+    };
   }
 }

@@ -12,7 +12,7 @@ type Props = {invoice: Invoice};
  * @returns The ImageCard component, CSR'ed.
  */
 export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element {
-  const photoLocation = invoice.photoLocation ?? "https://dummyimage.com/600x900&text=placeholder+image";
+  const photoLocation = invoice.scans[0]?.location ?? "https://dummyimage.com/600x900&text=placeholder+image";
   const {open} = useDialog("INVOICE_IMAGE", "view", photoLocation);
 
   return (

@@ -14,11 +14,11 @@ import {useCallback, useMemo, useState} from "react";
  */
 type PaginationWithSearchInputType<T> = Readonly<{
   /** Array of items to paginate. Can be any type. */
-  items: T[];
+  items: ReadonlyArray<T> | T[];
   /** Number of items per page. Defaults to 5. */
-  initialPageSize?: number;
+  readonly initialPageSize?: number;
   /** Initial page number (1-indexed). Defaults to 1. */
-  initialPage?: number;
+  readonly initialPage?: number;
   /** Optional search query string. When provided, filters items via JSON.stringify matching. */
   searchQuery?: string;
 }>;
@@ -40,9 +40,9 @@ type PaginationWithSearchOutputType<T> = Readonly<{
   /** Total number of pages based on filtered items and page size. Minimum value is 1. */
   totalPages: number;
   /** Array of items for the current page (filtered and paginated). */
-  paginatedItems: T[];
+  paginatedItems: ReadonlyArray<T> | T[];
   /** Generic pagination function that can paginate any array using current pagination state. */
-  paginate: <U = T>(items: U[]) => U[];
+  paginate: <U = T>(items: ReadonlyArray<U> | U[]) => U[];
   /** Resets pagination to initial values (page and page size). */
   resetPagination: () => void;
 }>;
@@ -179,7 +179,7 @@ export function usePaginationWithSearch<T>({
 
   // Generic pagination function using the derived current page
   const paginate = useCallback(
-    <U = T,>(itemsToPage: U[]): U[] => {
+    <U = T,>(itemsToPage: ReadonlyArray<U> | U[]): U[] => {
       const startIndex = (currentPage - 1) * pageSize;
       return itemsToPage.slice(startIndex, startIndex + pageSize);
     },

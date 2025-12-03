@@ -1,6 +1,6 @@
 "use client";
 
-import type {Invoice} from "@/types/invoices";
+import {useInvoices} from "@/hooks";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import DialogContainer from "../_contexts/DialogContainer";
@@ -10,15 +10,13 @@ import RenderGenerativeView from "./_components/views/GenerativeView";
 import RenderInvoicesView from "./_components/views/InvoicesView";
 import RenderStatisticsView from "./_components/views/StatisticsView";
 
-type Props = Readonly<{
-  readonly invoices: ReadonlyArray<Invoice>;
-}>;
-
 /**
  * This function renders the view invoices page.
  * @returns This function renders the view invoices page.
  */
-export default function RenderViewInvoicesScreen({invoices}: Readonly<Props>): React.JSX.Element {
+export default function RenderViewInvoicesScreen(): React.JSX.Element {
+  const {invoices} = useInvoices();
+
   return (
     <DialogProvider>
       <motion.section>

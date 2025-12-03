@@ -1,4 +1,3 @@
-import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory, type Invoice} from "@/types/invoices";
 import {
   Badge,
@@ -17,12 +16,12 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import Link from "next/link";
-import {useCallback} from "react";
+import {useCallback, useState} from "react";
 import {TbArrowsUpDown, TbEye} from "react-icons/tb";
 import InvoiceTableActions from "./InvoiceTableActions";
 
 type TableViewProps = {
-  invoices: Invoice[];
+  invoices: ReadonlyArray<Invoice> | Invoice[];
   pageSize: number;
   currentPage: number;
   totalPages: number;
@@ -33,28 +32,26 @@ type TableViewProps = {
 
 export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element => {
   const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
-  const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
-  const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<ReadonlyArray<string>>([]);
 
   const handleSelectInvoice = useCallback(
     (invoiceId: string) => {
-      const invoice = invoices.find((invoice) => invoice.id === invoiceId);
-      if (invoice && !selectedInvoices.includes(invoice)) {
-        setSelectedInvoices([...selectedInvoices, invoice]);
-      } else if (invoice && selectedInvoices.includes(invoice)) {
-        setSelectedInvoices(selectedInvoices.filter((inv) => inv.id !== invoice.id));
+      if (selectedInvoiceIds.includes(invoiceId)) {
+        setSelectedInvoiceIds(selectedInvoiceIds.filter((id) => id !== invoiceId));
+      } else {
+        setSelectedInvoiceIds([...selectedInvoiceIds, invoiceId]);
       }
     },
-    [invoices, selectedInvoices, setSelectedInvoices],
+    [selectedInvoiceIds],
   );
 
   const handleSelectAllInvoices = useCallback(() => {
-    if (selectedInvoices.length === invoices.length) {
-      setSelectedInvoices([]);
+    if (selectedInvoiceIds.length === invoices.length) {
+      setSelectedInvoiceIds([]);
     } else {
-      setSelectedInvoices(invoices);
+      setSelectedInvoiceIds(invoices.map((invoice) => invoice.id));
     }
-  }, [invoices, selectedInvoices, setSelectedInvoices]);
+  }, [invoices, selectedInvoiceIds]);
 
   if (invoices.length === 0) {
     return (
@@ -72,8 +69,8 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
             <Checkbox
               className='bg-background/80 backdrop-blur-sm'
               checked={
-                selectedInvoices.length === invoices.length
-                || (selectedInvoices.length > 0 && selectedInvoices.length < invoices.length && "indeterminate")
+                selectedInvoiceIds.length === invoices.length
+                || (selectedInvoiceIds.length > 0 && selectedInvoiceIds.length < invoices.length && "indeterminate")
               }
               onCheckedChange={handleSelectAllInvoices}
               aria-label='Select all invoices'
@@ -105,7 +102,7 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
           <TableRow key={invoice.id}>
             <TableCell>
               <Checkbox
-                checked={selectedInvoices.includes(invoice)}
+                checked={selectedInvoiceIds.includes(invoice.id)}
                 // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                 onCheckedChange={() => handleSelectInvoice(invoice.id)}
                 aria-label={`Select invoice ${invoice.id}`}
@@ -149,6 +146,7 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
                 value={pageSize}
                 // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                 onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                aria-label='Rows per page'
                 className='border-muted bg-background h-8 w-16 cursor-pointer rounded-md border p-1 text-sm'>
                 {[5, 10, 20, 50, 100, 500, 1000].map((size) => (
                   <option

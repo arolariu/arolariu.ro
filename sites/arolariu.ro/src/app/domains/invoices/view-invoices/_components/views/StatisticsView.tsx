@@ -1,7 +1,7 @@
 import type {Invoice} from "@/types/invoices";
 
 type Props = {
-  invoices: Invoice[];
+  invoices: ReadonlyArray<Invoice>;
 };
 
 /**

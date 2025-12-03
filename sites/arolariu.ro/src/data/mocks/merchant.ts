@@ -114,6 +114,7 @@ export class MerchantBuilder {
    * ```
    */
   withId(id: string): this {
+    // @ts-expect-error -- id is readonly in the BaseEntity interface
     this.merchant.id = id;
     return this;
   }
@@ -164,6 +165,7 @@ export class MerchantBuilder {
    * Useful for testing temporal queries or filtering by creation date.
    */
   withCreatedAt(date: Date): this {
+    // @ts-expect-error -- createdAt is readonly in the IAuditable interface
     this.merchant.createdAt = date;
     return this;
   }
@@ -175,6 +177,7 @@ export class MerchantBuilder {
    * @returns The MerchantBuilder instance for method chaining
    */
   withCreatedBy(userId: string): this {
+    // @ts-expect-error -- createdBy is readonly in the IAuditable interface
     this.merchant.createdBy = userId;
     return this;
   }
@@ -325,6 +328,7 @@ export class MerchantBuilder {
     return Array.from({length: count}, () => {
       // Generate a new ID for each instance to ensure uniqueness
       const merchant = this.build();
+      // @ts-expect-error -- id is readonly in the BaseEntity interface
       merchant.id = faker.string.uuid();
       return merchant;
     });

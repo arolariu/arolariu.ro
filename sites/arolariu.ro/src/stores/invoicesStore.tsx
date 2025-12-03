@@ -15,7 +15,7 @@ import {createIndexedDBStorage} from "./storage/indexedDBStorage";
  */
 interface InvoicesPersistedState {
   /** All invoices in the store */
-  invoices: Invoice[];
+  invoices: ReadonlyArray<Invoice>;
 }
 
 /**
@@ -35,7 +35,7 @@ interface InvoicesActions {
    * Sets the complete list of invoices
    * @param invoices The new invoices array
    */
-  setInvoices: (invoices: Invoice[]) => void;
+  setInvoices: (invoices: ReadonlyArray<Invoice>) => void;
 
   /**
    * Sets the selected invoices

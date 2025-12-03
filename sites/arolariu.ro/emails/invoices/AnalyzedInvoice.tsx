@@ -1,4 +1,4 @@
-import {FakeInvoice} from "@/data/mocks/invoices";
+import {generateRandomInvoice} from "@/data/mocks";
 import type {Invoice} from "@/types/invoices";
 import {Body, Container, Font, Head, Hr, Html, Img, Link, Preview, Row, Section, Tailwind, Text} from "@react-email/components";
 
@@ -9,7 +9,7 @@ type Props = {
 
 const DEVELOPMENT_PROPS: Readonly<Props> = {
   username: "testuser",
-  invoice: FakeInvoice,
+  invoice: generateRandomInvoice(),
 };
 
 /**
