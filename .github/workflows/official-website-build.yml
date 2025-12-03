@@ -75,21 +75,15 @@ jobs:
           generate: 'true'
           cache-key-prefix: 'website'
 
-      - name: 🧪 Running Vitest Unit tests...
+      - name: 🧪 Running unit tests...
         working-directory: './sites/arolariu.ro'
         run: npm run test:unit
         env: # We will use local assets for the tests
           USE_CDN: "false"
 
-      - name: 🧪 Running Playwright E2E Component tests...
+      - name: 🧪 Running E2E tests...
         working-directory: './sites/arolariu.ro'
         run: npm run test:e2e
-        env: # We will use local assets for the tests
-          USE_CDN: "false"
-
-      - name: 🧪 Preparing UI tests (Building Storybook)...
-        working-directory: './sites/arolariu.ro'
-        run: npm run storybook:build --quiet
         env: # We will use local assets for the tests
           USE_CDN: "false"
 
