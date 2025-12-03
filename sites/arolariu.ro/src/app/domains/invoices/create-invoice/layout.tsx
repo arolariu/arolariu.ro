@@ -58,6 +58,8 @@ import Loading from "./loading";
  * @see {@link CreateInvoicePage} - Main invoice creation page with auth check
  * @see RFC 2001 - Domain-Driven Design Architecture (invoices bounded context)
  */
-export default function CreateInvoiceLayout(props: Readonly<LayoutProps<"/domains/invoices/create-invoice">>): React.JSX.Element {
+export default async function CreateInvoiceLayout(
+  props: Readonly<LayoutProps<"/domains/invoices/create-invoice">>,
+): Promise<React.JSX.Element> {
   return <Suspense fallback={<Loading />}>{props.children}</Suspense>;
 }
