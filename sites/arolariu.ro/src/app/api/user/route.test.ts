@@ -281,4 +281,132 @@ describe("GET /api/user", () => {
     expect(data.user).toBeNull();
     expect(data.userIdentifier).toBe("00000000-0000-0000-0000-000000000000");
   });
+
+  it("should use primary phone number when no email addresses exist", async () => {
+    const mockUser = {
+      id: "user-phone-only",
+      firstName: "Phone",
+      lastName: "User",
+      emailAddresses: [],
+      primaryPhoneNumber: {phoneNumber: "+1-555-0123"},
+      phoneNumbers: [{phoneNumber: "+1-555-0456"}],
+    };
+
+    const mockToken = "mock-jwt-token";
+    const mockUserIdentifier = "phone-guid-123";
+
+    mockAuth.mockResolvedValue({
+      isAuthenticated: true,
+      userId: "user-phone-only",
+    });
+
+    mockCurrentUser.mockResolvedValue(mockUser);
+    mockGenerateGuid.mockReturnValue(mockUserIdentifier);
+    mockCreateJwtToken.mockResolvedValue(mockToken);
+
+    await GET();
+
+    expect(mockCreateJwtToken).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sub: "+1-555-0123",
+      }),
+      expect.any(String),
+    );
+  });
+
+  it("should use first phone number when no primary phone exists", async () => {
+    const mockUser = {
+      id: "user-secondary-phone",
+      firstName: "Secondary",
+      lastName: "Phone",
+      emailAddresses: [],
+      primaryPhoneNumber: null,
+      phoneNumbers: [{phoneNumber: "+1-555-0789"}],
+    };
+
+    const mockToken = "mock-jwt-token";
+    const mockUserIdentifier = "secondary-phone-guid";
+
+    mockAuth.mockResolvedValue({
+      isAuthenticated: true,
+      userId: "user-secondary-phone",
+    });
+
+    mockCurrentUser.mockResolvedValue(mockUser);
+    mockGenerateGuid.mockReturnValue(mockUserIdentifier);
+    mockCreateJwtToken.mockResolvedValue(mockToken);
+
+    await GET();
+
+    expect(mockCreateJwtToken).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sub: "+1-555-0789",
+      }),
+      expect.any(String),
+    );
+  });
+
+  it("should use user id when no email or phone exists", async () => {
+    const mockUser = {
+      id: "user-id-only",
+      firstName: "Id",
+      lastName: "Only",
+      emailAddresses: [],
+      primaryPhoneNumber: null,
+      phoneNumbers: [],
+    };
+
+    const mockToken = "mock-jwt-token";
+    const mockUserIdentifier = "id-only-guid";
+
+    mockAuth.mockResolvedValue({
+      isAuthenticated: true,
+      userId: "user-id-only",
+    });
+
+    mockCurrentUser.mockResolvedValue(mockUser);
+    mockGenerateGuid.mockReturnValue(mockUserIdentifier);
+    mockCreateJwtToken.mockResolvedValue(mockToken);
+
+    await GET();
+
+    expect(mockCreateJwtToken).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sub: "user-id-only",
+      }),
+      expect.any(String),
+    );
+  });
+
+  it("should use N/A when user object has no identifiers", async () => {
+    const mockUser = {
+      id: null,
+      firstName: "Anonymous",
+      lastName: "User",
+      emailAddresses: [],
+      primaryPhoneNumber: null,
+      phoneNumbers: [],
+    };
+
+    const mockToken = "mock-jwt-token";
+    const mockUserIdentifier = "anon-guid";
+
+    mockAuth.mockResolvedValue({
+      isAuthenticated: true,
+      userId: "user-anon",
+    });
+
+    mockCurrentUser.mockResolvedValue(mockUser);
+    mockGenerateGuid.mockReturnValue(mockUserIdentifier);
+    mockCreateJwtToken.mockResolvedValue(mockToken);
+
+    await GET();
+
+    expect(mockCreateJwtToken).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sub: "N/A",
+      }),
+      expect.any(String),
+    );
+  });
 });

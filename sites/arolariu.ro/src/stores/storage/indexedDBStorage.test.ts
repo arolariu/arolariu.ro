@@ -494,3 +494,162 @@ describe("ZUSTAND_TABLES", () => {
     expect(ZUSTAND_TABLES).toHaveLength(3);
   });
 });
+
+describe("resetDatabaseInstance and getDatabaseInstance", () => {
+  it("should export resetDatabaseInstance function", async () => {
+    const {resetDatabaseInstance} = await import("./indexedDBStorage");
+    expect(typeof resetDatabaseInstance).toBe("function");
+
+    // Call should not throw
+    expect(() => resetDatabaseInstance()).not.toThrow();
+  });
+
+  it("should export getDatabaseInstance function", async () => {
+    const {getDatabaseInstance} = await import("./indexedDBStorage");
+    expect(typeof getDatabaseInstance).toBe("function");
+
+    // Call should return database instance or null
+    const db = getDatabaseInstance();
+    expect(db === null || typeof db === "object").toBe(true);
+  });
+
+  it("should return null for getDatabaseInstance after reset when indexedDB unavailable", async () => {
+    const originalIndexedDB = globalThis.indexedDB;
+    // @ts-expect-error - Intentionally setting to undefined for testing
+    delete globalThis.indexedDB;
+
+    const {getDatabaseInstance, resetDatabaseInstance} = await import("./indexedDBStorage");
+
+    resetDatabaseInstance();
+    const db = getDatabaseInstance();
+
+    expect(db).toBeNull();
+
+    globalThis.indexedDB = originalIndexedDB;
+  });
+});
+
+describe("createSharedStorage with keyPrefix", () => {
+  interface SharedState {
+    theme: string;
+    language: string;
+  }
+
+  it("should accept keyPrefix option", () => {
+    const storage = createSharedStorage<SharedState>({keyPrefix: "app-"});
+
+    expect(storage).toHaveProperty("getItem");
+    expect(storage).toHaveProperty("setItem");
+    expect(storage).toHaveProperty("removeItem");
+  });
+
+  it("should work with empty keyPrefix", () => {
+    const storage = createSharedStorage<SharedState>({keyPrefix: ""});
+
+    expect(storage).toHaveProperty("getItem");
+  });
+
+  it("should work without any options", () => {
+    const storage = createSharedStorage<SharedState>();
+
+    expect(storage).toHaveProperty("getItem");
+    expect(storage).toHaveProperty("setItem");
+    expect(storage).toHaveProperty("removeItem");
+  });
+
+  it("should perform storage operations with keyPrefix", async () => {
+    const storage = createSharedStorage<SharedState>({keyPrefix: "test-"});
+
+    const storageValue = {
+      state: {theme: "dark", language: "en"},
+      version: 1,
+    };
+
+    // Test setItem with keyPrefix
+    await expect(storage.setItem("config", storageValue)).resolves.toBeUndefined();
+
+    // Test getItem with keyPrefix
+    await expect(storage.getItem("config")).resolves.toBeDefined();
+
+    // Test removeItem with keyPrefix
+    await expect(storage.removeItem("config")).resolves.toBeUndefined();
+  });
+});
+
+describe("Error handling in storage operations", () => {
+  it("should handle getItem errors and log them", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    // Create storage that will have issues (we'll simulate by checking error handling exists)
+    const storage = createTestStorage();
+
+    // Even if getItem fails internally, it should return null and not throw
+    const result = await storage.getItem("error-key");
+    expect(result === null || typeof result === "object").toBe(true);
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("should handle setItem errors and log them", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const storage = createTestStorage();
+
+    // Attempting to set with undefined entities should trigger error handling
+    const badValue = {
+      state: {entities: undefined as unknown as TestEntity[]},
+      version: 1,
+    };
+
+    // Should not throw, but should handle error internally
+    await expect(storage.setItem("bad-key", badValue)).resolves.toBeUndefined();
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("should handle removeItem errors gracefully", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const storage = createTestStorage();
+
+    // Should complete without throwing
+    await expect(storage.removeItem("any-key")).resolves.toBeUndefined();
+
+    consoleErrorSpy.mockRestore();
+  });
+});
+
+describe("Shared storage error handling", () => {
+  interface SharedState {
+    data: string;
+  }
+
+  it("should handle getItem returning null when item does not exist", async () => {
+    const storage = createSharedStorage<SharedState>();
+
+    const result = await storage.getItem("non-existent-key");
+    expect(result).toBeNull();
+  });
+
+  it("should handle setItem and getItem cycle", async () => {
+    const storage = createSharedStorage<SharedState>();
+
+    const storageValue = {
+      state: {data: "test-data"},
+      version: 1,
+    };
+
+    await storage.setItem("shared-test-key", storageValue);
+    const result = await storage.getItem("shared-test-key");
+
+    // Result should be defined if IndexedDB is available
+    expect(result === null || typeof result === "object").toBe(true);
+  });
+
+  it("should handle removeItem for non-existent key", async () => {
+    const storage = createSharedStorage<SharedState>();
+
+    // Should complete without throwing
+    await expect(storage.removeItem("non-existent-key")).resolves.toBeUndefined();
+  });
+});

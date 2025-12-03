@@ -694,4 +694,56 @@ describe("useMerchantsStore", () => {
       vi.unstubAllEnvs();
     });
   });
+
+  describe("Development Store", () => {
+    it("should use development store when NODE_ENV is development", async () => {
+      // Mock NODE_ENV as development before importing
+      vi.stubEnv("NODE_ENV", "development");
+
+      // Clear the module cache to force re-evaluation
+      vi.resetModules();
+
+      // Dynamically import the store to get the development version
+      const {useMerchantsStore: devStore} = await import("./merchantsStore");
+
+      const {result} = renderHook(() => devStore());
+
+      // Test basic functionality
+      act(() => {
+        result.current.setMerchants([mockMerchant1, mockMerchant2]);
+      });
+
+      expect(result.current.merchants).toHaveLength(2);
+
+      act(() => {
+        result.current.upsertMerchant(mockMerchant3);
+      });
+
+      expect(result.current.merchants).toHaveLength(3);
+
+      act(() => {
+        result.current.removeMerchant(mockMerchant2.id);
+      });
+
+      expect(result.current.merchants).toHaveLength(2);
+
+      act(() => {
+        result.current.updateMerchant(mockMerchant1.id, {name: "Updated in Dev"});
+      });
+
+      expect(result.current.merchants[0]?.name).toBe("Updated in Dev");
+
+      const merchant = result.current.getMerchantById(mockMerchant1.id);
+      expect(merchant?.name).toBe("Updated in Dev");
+
+      act(() => {
+        result.current.clearMerchants();
+      });
+
+      expect(result.current.merchants).toHaveLength(0);
+
+      // Restore environment
+      vi.unstubAllEnvs();
+    });
+  });
 });

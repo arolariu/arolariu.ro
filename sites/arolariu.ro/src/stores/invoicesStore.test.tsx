@@ -672,4 +672,78 @@ describe("useInvoicesStore", () => {
       vi.unstubAllEnvs();
     });
   });
+
+  describe("Development Store", () => {
+    it("should use development store when NODE_ENV is development", async () => {
+      // Mock NODE_ENV as development before importing
+      vi.stubEnv("NODE_ENV", "development");
+
+      // Clear the module cache to force re-evaluation
+      vi.resetModules();
+
+      // Dynamically import the store to get the development version
+      const {useInvoicesStore: devStore} = await import("./invoicesStore");
+
+      const {result} = renderHook(() => devStore());
+
+      // Test setInvoices
+      act(() => {
+        result.current.setInvoices([mockInvoice1, mockInvoice2]);
+      });
+
+      expect(result.current.invoices).toHaveLength(2);
+
+      // Test setSelectedInvoices
+      act(() => {
+        result.current.setSelectedInvoices([mockInvoice1]);
+      });
+
+      expect(result.current.selectedInvoices).toHaveLength(1);
+
+      // Test upsertInvoice
+      act(() => {
+        result.current.upsertInvoice(mockInvoice3);
+      });
+
+      expect(result.current.invoices).toHaveLength(3);
+
+      // Test removeInvoice
+      act(() => {
+        result.current.removeInvoice(mockInvoice2.id);
+      });
+
+      expect(result.current.invoices).toHaveLength(2);
+
+      // Test updateInvoice
+      act(() => {
+        result.current.updateInvoice(mockInvoice1.id, {name: "Updated in Dev"});
+      });
+
+      expect(result.current.invoices[0]?.name).toBe("Updated in Dev");
+
+      // Test toggleInvoiceSelection
+      act(() => {
+        result.current.toggleInvoiceSelection(mockInvoice3);
+      });
+
+      expect(result.current.selectedInvoices).toHaveLength(2);
+
+      // Test clearSelectedInvoices
+      act(() => {
+        result.current.clearSelectedInvoices();
+      });
+
+      expect(result.current.selectedInvoices).toHaveLength(0);
+
+      // Test clearInvoices
+      act(() => {
+        result.current.clearInvoices();
+      });
+
+      expect(result.current.invoices).toHaveLength(0);
+
+      // Restore environment
+      vi.unstubAllEnvs();
+    });
+  });
 });

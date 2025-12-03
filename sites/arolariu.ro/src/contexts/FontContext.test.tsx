@@ -273,6 +273,86 @@ describe("FontContext", () => {
       // Should not contain font-custom anymore
       expect(document.documentElement.className).not.toContain("font-custom");
     });
+
+    it("should remove font class on unmount via cleanup function", () => {
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      const {result, unmount} = renderHook(() => useFontContext(), {wrapper});
+
+      // Get the current font class
+      const fontClass = result.current.fontClassName;
+
+      // Ensure the font class is applied
+      expect(document.documentElement.className).toContain(fontClass);
+
+      // Unmount the hook to trigger cleanup
+      unmount();
+
+      // After unmount, the font class should be removed
+      expect(document.documentElement.classList.contains(fontClass)).toBe(false);
+    });
+
+    it("should cleanup previous font class when font changes", () => {
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      // Get initial font class
+      const initialFontClass = result.current.fontClassName;
+      expect(document.documentElement.className).toContain(initialFontClass);
+
+      // Change to dyslexic font
+      act(() => {
+        result.current.setFont("dyslexic");
+      });
+
+      // New font class should be applied
+      const newFontClass = result.current.fontClassName;
+      expect(document.documentElement.className).toContain(newFontClass);
+
+      // Old font class should be removed
+      expect(document.documentElement.className).not.toContain(initialFontClass);
+    });
+
+    it("should handle cleanup when document className needs updating", () => {
+      // Start with a clean slate
+      document.documentElement.className = "";
+
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      const {result, unmount} = renderHook(() => useFontContext(), {wrapper});
+
+      // Change font to dyslexic to trigger the cleanup path when we unmount
+      act(() => {
+        result.current.setFont("dyslexic");
+      });
+
+      const dyslexicClass = result.current.fontClassName;
+      expect(document.documentElement.className).toContain(dyslexicClass);
+
+      // Unmount to trigger cleanup
+      unmount();
+
+      // Font class should be removed after unmount
+      expect(document.documentElement.classList.contains(dyslexicClass)).toBe(false);
+    });
+
+    it("should handle the scenario when document className differs from newClassName", () => {
+      // Set up initial state with some classes
+      document.documentElement.className = "some-other-class font-test";
+
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      // The font context should update the className
+      expect(result.current.fontType).toBe("normal");
+
+      // The font-test class should be filtered out (it matches font-* pattern)
+      // but font-sans/serif/mono should be preserved
+      expect(document.documentElement.className).not.toContain("font-test");
+      expect(document.documentElement.className).toContain(result.current.fontClassName);
+    });
   });
 
   describe("useFontContext", () => {
