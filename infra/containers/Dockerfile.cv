@@ -1,0 +1,87 @@
+###############################################################################
+# CV Site Container Image for arolariu.ro - see https://cv.arolariu.ro
+# CV Site Container Image based on Node.js 24 Alpine with SvelteKit
+#
+# Key points:
+# - Multi-stage build for optimized image size
+# - Uses SvelteKit with Node adapter for containerized deployment
+# - Non-root user for security
+# - Uses dumb-init for proper signal handling
+#
+# Note: The CV site uses svelte-adapter-azure-swa for Azure Static Web Apps,
+# but this Dockerfile provides a Node.js-based containerized alternative.
+# For Azure SWA deployment, use the native adapter instead.
+#
+# Build context: Repository root (not sites/cv.arolariu.ro)
+# Usage: docker build -f infra/containers/Dockerfile.cv -t arolariu-cv .
+###############################################################################
+
+# Stage 0: Base image with system dependencies
+FROM node:24-alpine AS base
+
+# Install system dependencies and create non-root user
+RUN corepack enable && \
+  apk update && apk upgrade && \
+  apk add --no-cache libc6-compat dumb-init && \
+  rm -rf /var/cache/apk/* && \
+  addgroup --system --gid 1001 nodejs && \
+  adduser --system --uid 1001 sveltekit
+
+# ========================================
+# Stage 1: Install dependencies
+# ========================================
+FROM base AS deps
+WORKDIR /app
+
+# Copy root package files for workspace resolution
+COPY package.json package-lock.json ./
+COPY tsconfig.json ./
+
+# Copy CV site package manifest
+COPY sites/cv.arolariu.ro/package.json ./sites/cv.arolariu.ro/
+
+# Install all dependencies
+RUN npm ci
+
+# ========================================
+# Stage 2: Build the application
+# ========================================
+FROM base AS builder
+WORKDIR /app
+
+# Copy node_modules from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/tsconfig.json ./tsconfig.json
+
+# Copy the CV site source
+COPY sites/cv.arolariu.ro/ ./sites/cv.arolariu.ro/
+
+# Build the site
+WORKDIR /app/sites/cv.arolariu.ro
+RUN npm run build
+
+# ========================================
+# Stage 3: Prepare the production image
+# ========================================
+FROM base AS runner
+WORKDIR /app
+
+# Copy the built application
+# SvelteKit with Azure SWA adapter outputs to build/ directory
+COPY --from=builder --chown=sveltekit:nodejs /app/sites/cv.arolariu.ro/build ./build
+COPY --from=builder --chown=sveltekit:nodejs /app/sites/cv.arolariu.ro/package.json ./
+
+# Install only production dependencies for the handler
+RUN npm install --omit=dev 2>/dev/null || true
+
+USER sveltekit
+EXPOSE 3000
+ENV PORT=3000
+ENV HOST="0.0.0.0"
+ENV NODE_ENV="production"
+
+# Note: The actual entry point depends on the SvelteKit adapter used.
+# For Azure SWA adapter, the output is static files served by Azure.
+# For Node adapter, use: CMD ["dumb-init", "node", "build/index.js"]
+# This serves the static build using a simple HTTP server as fallback.
+CMD ["dumb-init", "node", "-e", "const h=require('http'),f=require('fs'),p=require('path');h.createServer((q,r)=>{let u=q.url==='/'?'/index.html':q.url;let fp=p.join('build',u);f.readFile(fp,(e,d)=>{if(e){r.writeHead(404);r.end('Not Found')}else{r.writeHead(200);r.end(d)}})}).listen(3000)"]

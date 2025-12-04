@@ -30,8 +30,8 @@ npm-debug.log*
 out/
 build/
 dist/
-bin/
-obj/
+**/bin/
+**/obj/
 
 # Testing
 coverage/
