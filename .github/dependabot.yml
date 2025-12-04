@@ -1,0 +1,383 @@
+# =============================================================================
+# Dependabot Configuration for arolariu.ro Monorepo
+# =============================================================================
+# This configuration manages automated dependency updates across the monorepo,
+# including npm packages, NuGet packages, GitHub Actions, and Docker images.
+#
+# Documentation:
+#   https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+# =============================================================================
+
+version: 2
+
+registries:
+  # NPM Registry (public packages)
+  npm-registry:
+    type: npm-registry
+    url: https://registry.npmjs.org
+    replaces-base: true
+
+  # NuGet Registry (public packages)
+  nuget-registry:
+    type: nuget-feed
+    url: https://api.nuget.org/v3/index.json
+
+updates:
+  # ===========================================================================
+  # GITHUB ACTIONS
+  # ===========================================================================
+  # Keep GitHub Actions workflows up to date for security and features
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "06:00"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "ci(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ===========================================================================
+  # ROOT NPM DEPENDENCIES
+  # ===========================================================================
+  # Monorepo root dependencies (nx, eslint, prettier, etc.)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    groups:
+      # ESLint and related plugins
+      eslint:
+        patterns:
+          - "eslint*"
+          - "@eslint/*"
+          - "@typescript-eslint/*"
+          - "eslint-plugin-*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Prettier and formatting
+      prettier:
+        patterns:
+          - "prettier*"
+          - "@trivago/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Nx monorepo tools
+      nx:
+        patterns:
+          - "nx"
+          - "@nx/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # TypeScript and types
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Testing frameworks
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "playwright"
+          - "@playwright/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ===========================================================================
+  # FRONTEND - NEXT.JS WEBSITE
+  # ===========================================================================
+  - package-ecosystem: "npm"
+    directory: "/sites/arolariu.ro"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "06:00"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "chore(frontend-deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "frontend"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    groups:
+      # Next.js and React ecosystem
+      nextjs-react:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@next/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Radix UI components
+      radix:
+        patterns:
+          - "@radix-ui/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Clerk authentication
+      clerk:
+        patterns:
+          - "@clerk/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Tailwind CSS
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "tailwind-*"
+        update-types:
+          - "minor"
+          - "patch"
+      # OpenTelemetry observability
+      opentelemetry:
+        patterns:
+          - "@opentelemetry/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Form and validation
+      forms:
+        patterns:
+          - "react-hook-form"
+          - "zod"
+          - "@hookform/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Internationalization
+      i18n:
+        patterns:
+          - "next-intl"
+          - "@formatjs/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ===========================================================================
+  # SHARED COMPONENTS LIBRARY
+  # ===========================================================================
+  - package-ecosystem: "npm"
+    directory: "/packages/components"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "07:00"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "chore(components-deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "components"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    groups:
+      # Storybook
+      storybook:
+        patterns:
+          - "storybook"
+          - "@storybook/*"
+          - "@chromatic-com/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # RSLib build tools
+      rslib:
+        patterns:
+          - "@rslib/*"
+          - "@rsbuild/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # UI components
+      ui:
+        patterns:
+          - "@radix-ui/*"
+          - "class-variance-authority"
+          - "clsx"
+          - "tailwind-merge"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ===========================================================================
+  # CV SITE - SVELTEKIT
+  # ===========================================================================
+  - package-ecosystem: "npm"
+    directory: "/sites/cv.arolariu.ro"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "06:00"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "chore(cv-deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "cv-site"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+    groups:
+      # SvelteKit ecosystem
+      svelte:
+        patterns:
+          - "svelte"
+          - "@sveltejs/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ===========================================================================
+  # BACKEND - .NET API
+  # ===========================================================================
+  - package-ecosystem: "nuget"
+    directory: "/sites/api.arolariu.ro"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "06:00"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "chore(backend-deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "nuget"
+      - "backend"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 10
+    groups:
+      # Microsoft packages
+      microsoft:
+        patterns:
+          - "Microsoft.*"
+          - "System.*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Azure SDK
+      azure:
+        patterns:
+          - "Azure.*"
+        update-types:
+          - "minor"
+          - "patch"
+      # OpenTelemetry
+      opentelemetry:
+        patterns:
+          - "OpenTelemetry*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Testing packages
+      testing:
+        patterns:
+          - "xunit*"
+          - "Moq*"
+          - "FluentAssertions*"
+          - "coverlet*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # ===========================================================================
+  # DOCKER IMAGES
+  # ===========================================================================
+  - package-ecosystem: "docker"
+    directory: "/infra/containers"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+      time: "06:00"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "infrastructure"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 3
+
+  # ===========================================================================
+  # GITHUB ACTIONS SCRIPTS (if using npm)
+  # ===========================================================================
+  - package-ecosystem: "npm"
+    directory: "/.github/scripts"
+    schedule:
+      interval: "monthly"
+      time: "06:00"
+      timezone: "Europe/Bucharest"
+    commit-message:
+      prefix: "ci(scripts-deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "ci"
+      - "automated"
+    assignees:
+      - "arolariu"
+    open-pull-requests-limit: 3
