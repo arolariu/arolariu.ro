@@ -1,0 +1,110 @@
+name: "arolariu.ro CodeQL Configuration"
+
+# =============================================================================
+# CodeQL Configuration for arolariu.ro Monorepo
+# =============================================================================
+# This configuration file customizes CodeQL analysis for the monorepo,
+# defining query suites, paths to analyze, and security-focused rules.
+#
+# Documentation:
+#   https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning
+# =============================================================================
+
+# Query Suites
+# -----------------------------------------------------------------------------
+# security-extended: Extended security queries (default for security scanning)
+# security-and-quality: Security + code quality queries (more comprehensive)
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+# Query Filters
+# -----------------------------------------------------------------------------
+# Exclude specific queries that may produce false positives or are not
+# relevant to this codebase
+query-filters:
+  # Exclude experimental queries (may produce more false positives)
+  - exclude:
+      tags contain: experimental
+
+# Paths Configuration
+# -----------------------------------------------------------------------------
+# Define which paths to include/exclude from analysis
+
+paths:
+  # Frontend - Next.js website
+  - sites/arolariu.ro/src/**
+  # Frontend - SvelteKit CV site
+  - sites/cv.arolariu.ro/src/**
+  # Backend - .NET API
+  - sites/api.arolariu.ro/src/**
+  # Shared components library
+  - packages/components/src/**
+  # Build/utility scripts
+  - scripts/**
+  # GitHub Actions scripts
+  - .github/scripts/**
+
+paths-ignore:
+  # Build outputs
+  - "**/node_modules/**"
+  - "**/.next/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/out/**"
+  - "**/.svelte-kit/**"
+  - "**/bin/**"
+  - "**/obj/**"
+  # Test files and fixtures (separate analysis if needed)
+  - "**/__tests__/**"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.test.js"
+  - "**/*.test.jsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  - "**/*.spec.js"
+  - "**/*.spec.jsx"
+  - "**/tests/**"
+  - "**/TestResults/**"
+  - "**/coverage/**"
+  - "**/code-cov/**"
+
+  # Generated files
+  - "**/__generated__/**"
+  - "**/generated/**"
+  - "**/*.generated.ts"
+  - "**/*.generated.js"
+
+  # Configuration and metadata
+  - "**/package-lock.json"
+  - "**/pnpm-lock.yaml"
+  - "**/yarn.lock"
+
+  # Documentation
+  - "**/docs/**"
+  - "**/*.md"
+
+  # Infrastructure (Bicep/ARM templates)
+  - "infra/**"
+
+  # Storybook
+  - "**/stories/**"
+  - "**/.storybook/**"
+
+  # Playwright test artifacts
+  - "**/playwright-report/**"
+  - "**/test-results/**"
+
+# Threat Models (JavaScript/TypeScript specific)
+# -----------------------------------------------------------------------------
+# Configure threat models for more precise security analysis
+threat-models:
+  # Enable remote flow sources (HTTP requests, file reads, etc.)
+  - remote
+
+# Registries (for custom query packs if needed in the future)
+# -----------------------------------------------------------------------------
+# registries:
+#   - url: https://ghcr.io/v2/
+#     packages: "codeql/*"
