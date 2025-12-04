@@ -155,6 +155,17 @@ jobs:
           password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
           login-server: ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}
 
+      - name: 📋 Verify generated .env file exists
+        run: |
+          if [ -f "sites/arolariu.ro/.env" ]; then
+            echo "✅ .env file found"
+          else
+            echo "❌ .env file not found - build will likely fail"
+            exit 1
+          fi
+        shell: bash
+        working-directory: '.'
+
       - name: 🏗️ Building the docker container...
         working-directory: '.'
         env:

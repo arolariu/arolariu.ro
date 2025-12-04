@@ -15,9 +15,18 @@ RUN addgroup --system --gid 1001 nodejs && \
 # Stage 1: Install dependencies
 # ========================================
 FROM base AS deps
-WORKDIR /app/sites/arolariu.ro
-COPY sites/arolariu.ro/package.json ./
-RUN npm install
+WORKDIR /app
+
+# Copy root package files for workspace resolution
+COPY package.json package-lock.json ./
+COPY tsconfig.json vitest.config.ts ./
+
+# Copy workspace package manifests
+COPY packages/components/package.json ./packages/components/
+COPY sites/arolariu.ro/package.json ./sites/arolariu.ro/
+
+# Install all dependencies (this resolves workspace links)
+RUN npm ci
 
 # ========================================
 # Stage 2: Build the application
@@ -25,13 +34,21 @@ RUN npm install
 FROM base AS builder
 WORKDIR /app
 
-# Copy root tsconfig for extends directive
-COPY tsconfig.json ./
+# Copy everything from deps (includes node_modules with workspace links)
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package.json ./package.json
+COPY --from=deps /app/package-lock.json ./package-lock.json
+COPY --from=deps /app/tsconfig.json ./tsconfig.json
+COPY --from=deps /app/vitest.config.ts ./vitest.config.ts
 
-# Copy installed dependencies from deps stage
+# Copy the components package source (needed for workspace link)
+COPY packages/components/ ./packages/components/
+
+# Copy the website source
+COPY sites/arolariu.ro/ ./sites/arolariu.ro/
+
+# Build the website
 WORKDIR /app/sites/arolariu.ro
-COPY --from=deps /app/sites/arolariu.ro/node_modules ./node_modules
-COPY sites/arolariu.ro/ .
 RUN npm run build
 
 # ========================================
