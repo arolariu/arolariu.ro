@@ -1,8 +1,25 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Ask a question / Discuss
-    url: https://github.com/arolariu/arolariu.ro/discussions/new
-    about: Please ask and answer questions here.
-  - name: Project Documentation
+  - name: 💬 Ask a Question / Start a Discussion
+    url: https://github.com/arolariu/arolariu.ro/discussions/new/choose
+    about: Have a question or want to discuss something? Start a discussion instead of opening an issue.
+
+  - name: 📚 Project Documentation
     url: https://docs.arolariu.ro
-    about: Check our documentation for more information.
+    about: Check our comprehensive documentation for guides, tutorials, and API references.
+
+  - name: 🔒 Report a Critical Security Vulnerability
+    url: https://github.com/arolariu/arolariu.ro/security/advisories/new
+    about: For critical security issues, please use GitHub's private security advisory feature.
+
+  - name: 🛡️ Security Policy
+    url: https://github.com/arolariu/arolariu.ro/blob/main/SECURITY.md
+    about: Read our security policy before reporting security vulnerabilities.
+
+  - name: 🤝 Contributing Guidelines
+    url: https://github.com/arolariu/arolariu.ro/blob/main/CONTRIBUTING.md
+    about: Want to contribute? Read our contributing guidelines first.
+
+  - name: 📋 Code of Conduct
+    url: https://github.com/arolariu/arolariu.ro/blob/main/CODE_OF_CONDUCT.md
+    about: Please review our code of conduct for community guidelines.

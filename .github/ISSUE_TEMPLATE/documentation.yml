@@ -1,0 +1,147 @@
+name: 📚 Documentation Request
+description: Request new documentation, improvements, or corrections to existing docs
+title: "[DOCS] "
+labels: ["documentation"]
+assignees:
+  - arolariu
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Documentation Request 📚
+
+        Help us improve our documentation! Use this template to request new docs,
+        report issues with existing documentation, or suggest improvements.
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Documentation Type
+      description: What type of documentation is this about?
+      options:
+        - 📖 API Documentation - REST/GraphQL API docs
+        - 🚀 Getting Started Guide - Setup and quickstart
+        - 📝 Tutorial - Step-by-step guides
+        - 📋 Reference - Technical reference documentation
+        - 🏗️ Architecture - System design and architecture docs
+        - 💡 How-To Guide - Task-oriented documentation
+        - ❓ FAQ - Frequently asked questions
+        - 📢 Release Notes - Changelog and release documentation
+        - 🤝 Contributing Guide - Contribution documentation
+        - 📄 Code Comments - Inline code documentation
+        - 📊 README - Project readme files
+        - 🔧 Configuration - Configuration documentation
+    validations:
+      required: true
+
+  - type: dropdown
+    id: request-type
+    attributes:
+      label: Request Type
+      description: What kind of documentation request is this?
+      options:
+        - 🆕 New Documentation - Something that doesn't exist yet
+        - ✏️ Update/Improve - Existing docs need improvement
+        - 🐛 Fix Error - Documentation contains errors or is outdated
+        - 🔍 Clarification - Existing docs are unclear or confusing
+        - 📁 Reorganization - Documentation structure needs improvement
+        - 🌐 Translation - Request translation to another language
+    validations:
+      required: true
+
+  - type: dropdown
+    id: target-audience
+    attributes:
+      label: Target Audience
+      description: Who is the intended audience for this documentation?
+      multiple: true
+      options:
+        - 👤 End Users - People using the application
+        - 👨‍💻 Developers - Engineers working with the codebase
+        - 🔧 Contributors - Open source contributors
+        - 🏢 Administrators - System administrators
+        - 📊 Stakeholders - Business stakeholders
+    validations:
+      required: true
+
+  - type: input
+    id: doc-location
+    attributes:
+      label: Documentation Location
+      description: Where is the existing documentation, or where should new docs be added?
+      placeholder: "e.g., docs.arolariu.ro/api/invoices or sites/docs.arolariu.ro/..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe what documentation is needed or what issue exists.
+      placeholder: |
+        For new documentation: What should be documented and why?
+        For improvements: What's unclear or missing?
+        For fixes: What is incorrect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-state
+    attributes:
+      label: Current State
+      description: If this is about existing documentation, describe the current state.
+      placeholder: |
+        Link to the existing documentation and describe what's there now.
+        Quote the specific text that is incorrect or unclear.
+
+  - type: textarea
+    id: expected-content
+    attributes:
+      label: Expected Content
+      description: What should the documentation contain or say?
+      placeholder: |
+        Describe what the documentation should cover.
+        Include any specific topics, examples, or code samples that should be included.
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples
+      description: Provide examples of what you'd like to see documented.
+      placeholder: |
+        - Code examples that should be included
+        - Use cases that should be covered
+        - Links to similar documentation in other projects
+
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User Story
+      description: Describe the user story for this documentation.
+      placeholder: |
+        As a [type of user], I want to [read/find] documentation about [topic]
+        so that I can [achieve goal].
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, links, or information.
+      placeholder: |
+        - Related issues or discussions
+        - Links to external resources
+        - Screenshots of confusing UI
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Would you like to help with this documentation?
+      options:
+        - label: I am willing to write/update this documentation myself.
+          required: false
+        - label: I can provide more details or examples if needed.
+          required: false

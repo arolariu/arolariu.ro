@@ -1,0 +1,167 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement for the application
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+assignees:
+  - arolariu
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Feature Request 💡
+
+        Thank you for your interest in improving the application!
+        Please provide as much detail as possible to help us understand your request.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight Checklist
+      description: Please ensure you've completed all of the following before submitting.
+      options:
+        - label: I have searched the [existing issues](https://github.com/arolariu/arolariu.ro/issues) and this feature has not been requested yet.
+          required: true
+        - label: I have checked the [documentation](https://docs.arolariu.ro) to confirm this feature doesn't already exist.
+          required: true
+        - label: I have read the [CONTRIBUTING.md](https://github.com/arolariu/arolariu.ro/blob/main/CONTRIBUTING.md) guidelines.
+          required: true
+
+  - type: dropdown
+    id: feature-area
+    attributes:
+      label: Feature Area
+      description: Which area of the application would this feature affect?
+      multiple: true
+      options:
+        - Frontend (arolariu.ro)
+        - Backend API (api.arolariu.ro)
+        - Documentation (docs.arolariu.ro)
+        - CV Site (cv.arolariu.ro)
+        - Component Library (packages/components)
+        - Infrastructure/DevOps
+        - Authentication/Authorization
+        - Invoice Processing
+        - Analytics/Reporting
+        - Accessibility
+        - Internationalization
+        - Performance
+        - Developer Experience
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature-type
+    attributes:
+      label: Feature Type
+      description: What type of feature is this?
+      options:
+        - 🆕 New Feature - Something that doesn't exist yet
+        - 🔧 Enhancement - Improvement to existing functionality
+        - 🎨 UI/UX Improvement - Better design or user experience
+        - ⚡ Performance - Speed or efficiency improvement
+        - ♿ Accessibility - Improve accessibility features
+        - 🌐 Internationalization - Add or improve translations
+        - 📚 Documentation - Improve docs or examples
+        - 🔒 Security - Security-related improvement
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Suggested Priority
+      description: How important do you think this feature is?
+      options:
+        - 🔴 Critical - Essential for basic functionality
+        - 🟠 High - Significantly improves user experience
+        - 🟡 Medium - Nice to have, improves workflow
+        - 🟢 Low - Minor improvement or nice-to-have
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: Is your feature request related to a problem? Please describe.
+      placeholder: |
+        A clear and concise description of what the problem is.
+        Example: "I'm always frustrated when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see.
+      placeholder: |
+        A clear and concise description of what you want to happen.
+        Include any specific implementation details if you have them.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or features you've considered.
+      placeholder: |
+        What other approaches did you consider?
+        Why is your proposed solution better?
+
+  - type: textarea
+    id: user-stories
+    attributes:
+      label: User Stories
+      description: If applicable, describe the user stories or use cases for this feature.
+      placeholder: |
+        As a [type of user], I want [goal] so that [benefit].
+
+        Example:
+        - As a user, I want to export my invoices to PDF so that I can share them easily.
+        - As an admin, I want to view analytics so that I can track usage patterns.
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups / Examples
+      description: If applicable, add mockups, wireframes, or examples from other applications.
+      placeholder: |
+        Drag and drop images here or provide links to similar implementations...
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: If you can, define what "done" looks like for this feature.
+      placeholder: |
+        - [ ] Feature should work on desktop and mobile
+        - [ ] Feature should be accessible (WCAG 2.1 AA)
+        - [ ] Feature should have proper error handling
+        - [ ] Feature should be documented
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context, links, or references about the feature request here.
+      placeholder: |
+        - Related issues or discussions
+        - Links to similar features in other products
+        - Technical considerations or constraints
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Would you like to contribute to implementing this feature?
+      options:
+        - label: I am willing to submit a pull request to implement this feature.
+          required: false
+        - label: I am willing to help with design/UX for this feature.
+          required: false
+        - label: I am willing to help with testing this feature.
+          required: false
