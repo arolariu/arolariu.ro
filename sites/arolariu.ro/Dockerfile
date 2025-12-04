@@ -58,7 +58,8 @@ FROM base AS runner
 WORKDIR /app
 RUN mkdir .next && chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/standalone ./
+# The standalone output preserves the monorepo structure, so server.js is at sites/arolariu.ro/server.js
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/standalone/sites/arolariu.ro/ ./
 COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/static ./.next/static
 
 USER nextjs
