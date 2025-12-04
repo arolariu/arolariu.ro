@@ -62,4 +62,14 @@ public sealed class Merchant : NamedEntity<Guid>
   /// </remarks>
   [JsonPropertyOrder(7)]
   public IDictionary<string, string> AdditionalMetadata { get; init; } = new Dictionary<string, string>();
+
+  /// <summary>
+  /// Create a default instance of <see cref="Merchant"/>.
+  /// </summary>
+  /// <returns></returns>
+  internal static Merchant Default() => new Merchant
+  {
+    id = Guid.Empty,
+    ParentCompanyId = Guid.Empty,
+  };
 }

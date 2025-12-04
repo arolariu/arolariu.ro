@@ -9,6 +9,41 @@ describe("generateGuid", () => {
     expect(guid).toMatch(uuidRegex);
   });
 
+  it("should generate a consistent UUIDv5 when provided with a seed string", () => {
+    const seed = "test-seed-value";
+    const guid1 = generateGuid(seed);
+    const guid2 = generateGuid(seed);
+
+    // UUIDv5 format check
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    expect(guid1).toMatch(uuidRegex);
+    expect(guid2).toMatch(uuidRegex);
+
+    // Same seed should produce same GUID
+    expect(guid1).toBe(guid2);
+  });
+
+  it("should generate different UUIDv5s for different seeds", () => {
+    const guid1 = generateGuid("seed-one");
+    const guid2 = generateGuid("seed-two");
+
+    expect(guid1).not.toBe(guid2);
+  });
+
+  it("should handle Uint8Array as seed", () => {
+    const seed = new Uint8Array([1, 2, 3, 4, 5]);
+    const guid1 = generateGuid(seed);
+    const guid2 = generateGuid(seed);
+
+    // UUIDv5 format check
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    expect(guid1).toMatch(uuidRegex);
+    expect(guid2).toMatch(uuidRegex);
+
+    // Same seed should produce same GUID
+    expect(guid1).toBe(guid2);
+  });
+
   it("should generate different GUIDs on each call", () => {
     const guid1 = generateGuid();
     const guid2 = generateGuid();

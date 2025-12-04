@@ -1,25 +1,83 @@
 "use client";
 
+/**
+ * @fileoverview Animated scroll-to-top button component.
+ * @module hooks/useScrollToTop
+ */
+
 import {AnimatePresence, motion} from "motion/react";
 import {useCallback, useEffect, useState} from "react";
 import {TbChevronUp} from "react-icons/tb";
 
 /**
- * A component that displays a "scroll to top" button when the user scrolls down the page.
- * The button appears when the user scrolls more than 500 pixels down and disappears when they scroll back up.
- * @returns A React component that renders an animated button in the bottom-right corner of the screen.
- * When clicked, it smoothly scrolls the window back to the top.
+ * Displays an animated floating action button that scrolls to top of page.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (requires "use client" directive).
+ *
+ * **Visibility Behavior:**
+ * - Button hidden by default
+ * - Appears when user scrolls more than 500px down the page
+ * - Disappears when user scrolls back above 500px threshold
+ *
+ * **Animation:**
+ * - Uses Framer Motion (`motion/react`) for smooth transitions
+ * - Fade in/out with scale animation (opacity + scale)
+ * - Hover effect: Scales up to 1.1x
+ * - Tap effect: Scales down to 0.9x
+ * - Entry/exit duration: 300ms
+ *
+ * **Scroll Behavior:**
+ * - Smooth scroll animation (`behavior: "smooth"`)
+ * - Scrolls to absolute top (`top: 0`)
+ * - Uses native `window.scrollTo` API
+ *
+ * **Positioning:**
+ * - Fixed position in bottom-right corner
+ * - 32px from right edge (`right-8`)
+ * - 32px from bottom edge (`bottom-8`)
+ * - Z-index 50 (above most content)
+ *
+ * **Accessibility:**
+ * - Interactive button element (keyboard accessible)
+ * - Icon-only button (consider adding aria-label in production)
+ *
+ * **Performance:**
+ * - Uses `useCallback` for stable scroll handler
+ * - Debounced via native scroll event throttling
+ * - Cleanup removes event listener on unmount
+ *
+ * @returns Animated floating action button (FAB) or null when hidden
+ *
  * @example
  * ```tsx
- * function MyPage() {
+ * // Add to layout for site-wide scroll-to-top
+ * export default function RootLayout({children}: {children: React.ReactNode}) {
  *   return (
- *     <div>
- *       <Content />
- *       <ScrollToTop />
- *     </div>
+ *     <html>
+ *       <body>
+ *         {children}
+ *         <ScrollToTop />
+ *       </body>
+ *     </html>
  *   );
  * }
  * ```
+ *
+ * @example
+ * ```tsx
+ * // Add to specific page with long content
+ * export default function BlogPost() {
+ *   return (
+ *     <article>
+ *       <LongContent />
+ *       <ScrollToTop />
+ *     </article>
+ *   );
+ * }
+ * ```
+ *
+ * @see {@link https://www.framer.com/motion/ Framer Motion Documentation}
  */
 export function ScrollToTop() {
   const [isVisible, setIsVisible] = useState<boolean>(false);

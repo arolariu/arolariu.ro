@@ -2,6 +2,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBro
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Common.Options;
@@ -74,14 +75,14 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
   /// Executes OCR + structured field extraction against the invoice's scan URI and merges recognized data into the provided aggregate.
   /// </summary>
   /// <remarks>
-  /// <para><b>Model:</b> Invokes <c>AnalyzeDocumentFromUriAsync("prebuilt-receipt")</c>. Assumes <see cref="Invoice.Scan"/> contains a resolvable, accessible URI.</para>
+  /// <para><b>Model:</b> Invokes <c>AnalyzeDocumentFromUriAsync("prebuilt-receipt")</c>. Assumes <see cref="Invoice.Scans"/> contains a resolvable, accessible URI.</para>
   /// <para><b>Mutation:</b> Populates (or overwrites) <c>MerchantReference</c>, <c>Items</c>, and <c>PaymentInformation</c> via internal transformation helpers.
   /// Existing collection contents are appended (current implementation performs additive population; upstream deduplication MAY be required).</para>
   /// <para><b>Failure Handling:</b> Throws on null invoice argument and propagates Azure SDK exceptions (network/service) without translation.
   /// Partial field absence results in sentinel defaults without exception.</para>
   /// <para><b>Options:</b> Current implementation does not conditionally short‑circuit based on <paramref name="options"/> (backlog: selectively disable OCR stage).</para>
   /// </remarks>
-  /// <param name="invoice">Target invoice aggregate (MUST NOT be null; MUST contain a <c>Scan.Location</c> URI).</param>
+  /// <param name="invoice">Target invoice aggregate (MUST NOT be null; MUST contain a <c>Scans.Location</c> URI).</param>
   /// <param name="options">Analysis directives (currently advisory placeholder).</param>
   /// <returns>Same <paramref name="invoice"/> instance enriched with recognized data.</returns>
   /// <exception cref="ArgumentNullException">Thrown when <paramref name="invoice"/> is null.</exception>
@@ -89,10 +90,12 @@ public sealed partial class AzureFormRecognizerBroker : IFormRecognizerBroker
   {
     ArgumentNullException.ThrowIfNull(invoice);
 
+    var firstScan = invoice.Scans.First();
+
     var operation = await client.AnalyzeDocumentFromUriAsync(
       WaitUntil.Completed,
       "prebuilt-receipt",
-      invoice.Scan.Location)
+      firstScan.Location)
       .ConfigureAwait(false);
 
     var result = operation.Value;

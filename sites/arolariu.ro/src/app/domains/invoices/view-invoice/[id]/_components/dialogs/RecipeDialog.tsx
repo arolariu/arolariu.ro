@@ -44,7 +44,7 @@ const CreateDialog = () => {
     name: "",
     description: "",
     ingredients: [],
-    duration: "-1",
+    duration: -1,
     preparationTime: -1,
     cookingTime: -1,
     complexity: RecipeComplexity.Easy,

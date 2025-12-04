@@ -1,0 +1,84 @@
+###############################################################################
+# Frontend Container Image for arolariu.ro - see https://arolariu.ro
+# Frontend Container Image based on Node.js 24 Alpine
+#
+# Key points:
+# - Multi-stage build for optimized image size
+# - Monorepo-aware: copies root tsconfig, vitest.config, and workspace packages
+# - Uses Next.js standalone output for minimal production image
+# - Non-root user (nextjs) for security
+# - Uses dumb-init for proper signal handling
+#
+# Build context: Repository root (not sites/arolariu.ro)
+# Usage: docker build -f infra/containers/Dockerfile.frontend -t arolariu-frontend .
+###############################################################################
+
+# Stage 0: Base image with system dependencies
+FROM node:24-alpine AS base
+
+# Install system dependencies and create non-root user
+RUN corepack enable && \
+  apk update && apk upgrade && \
+  apk add --no-cache libc6-compat dumb-init && \
+  rm -rf /var/cache/apk/* && \
+  addgroup --system --gid 1001 nodejs && \
+  adduser --system --uid 1001 nextjs
+
+# ========================================
+# Stage 1: Install dependencies
+# ========================================
+FROM base AS deps
+WORKDIR /app
+
+# Copy root package files for workspace resolution
+COPY package.json package-lock.json ./
+COPY tsconfig.json vitest.config.ts ./
+
+# Copy workspace package manifests
+COPY packages/components/package.json ./packages/components/
+COPY sites/arolariu.ro/package.json ./sites/arolariu.ro/
+
+# Install all dependencies (this resolves workspace links)
+RUN npm ci
+
+# ========================================
+# Stage 2: Build the application
+# ========================================
+FROM base AS builder
+WORKDIR /app
+
+# Copy everything from deps (includes node_modules with workspace links)
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package.json ./package.json
+COPY --from=deps /app/package-lock.json ./package-lock.json
+COPY --from=deps /app/tsconfig.json ./tsconfig.json
+COPY --from=deps /app/vitest.config.ts ./vitest.config.ts
+
+# Copy the components package source (needed for workspace link)
+COPY packages/components/ ./packages/components/
+
+# Copy the website source
+COPY sites/arolariu.ro/ ./sites/arolariu.ro/
+
+# Build the website
+WORKDIR /app/sites/arolariu.ro
+RUN npm run build
+
+# ========================================
+# Stage 3: Prepare the production image
+# ========================================
+FROM base AS runner
+WORKDIR /app
+RUN mkdir .next && chown nextjs:nodejs .next
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/public ./public
+# The standalone output preserves the monorepo structure, so server.js is at sites/arolariu.ro/server.js
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/standalone/sites/arolariu.ro/ ./
+# Copy the node_modules from the standalone output (contains only required dependencies)
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/standalone/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/static ./.next/static
+
+USER nextjs
+EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+CMD ["dumb-init","node","server.js"]

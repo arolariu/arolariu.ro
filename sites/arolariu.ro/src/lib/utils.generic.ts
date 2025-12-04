@@ -1,5 +1,5 @@
 import {Currency} from "@/types/DDD";
-import {v4 as uuidv4} from "uuid";
+import {v4, v5} from "uuid";
 
 export const SITE_ENV = process.env["SITE_ENV"] ?? "";
 export const SITE_URL = process.env["SITE_URL"] ?? "";
@@ -10,14 +10,23 @@ export const CONFIG_STORE = process.env["CONFIG_STORE"] ?? "";
 
 /**
  * Function that generates a GUID using the uuid package.
+ * @param seed Optional seed string to generate a consistent GUID.
  * @returns A UUIDv4 compliant GUID, as a string.
  * @example
  * GUID: b23090df-9e68-4c12-ae2a-5368db13b6c1
  * GUID: 8b3f7b7e-6b1b-4b7b-8b1b-4b7b8b1b4b7b
  * GUID: b1624a43-1f96-4d22-b94f-d030cc5df437
  */
-export function generateGuid(): Readonly<string> {
-  return uuidv4();
+export function generateGuid(seed?: string | Uint8Array): Readonly<string> {
+  // If a seed is provided, use it to generate a consistent UUID
+  if (seed) {
+    const guid = v5(seed, v5.DNS);
+    return guid;
+  } else {
+    // Generate a random UUIDv4
+    const guid = v4();
+    return guid;
+  }
 }
 
 /**

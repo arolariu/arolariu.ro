@@ -1,4 +1,4 @@
-import {fetchUser} from "@/lib/actions/user/fetchUser";
+import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import ForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";
 
@@ -19,7 +19,7 @@ export default async function EditInvoicePage(
   const invoiceIdentifier = pageParams.id;
   console.log("Invoice ID:", invoiceIdentifier);
 
-  const {isAuthenticated} = await fetchUser();
+  const {isAuthenticated} = await fetchAaaSUserFromAuthService();
   if (!isAuthenticated) {
     return <ForbiddenScreen />;
   }

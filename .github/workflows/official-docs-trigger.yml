@@ -23,7 +23,7 @@ jobs:
       url: "https://docs.arolariu.ro"
     steps:
       - name: 🛫 Checking out the branch inside the runner environment...
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace

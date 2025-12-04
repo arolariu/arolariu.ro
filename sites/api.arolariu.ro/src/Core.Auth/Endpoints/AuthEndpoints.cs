@@ -26,7 +26,7 @@ using Microsoft.AspNetCore.Routing;
 [ExcludeFromCodeCoverage]
 public static partial class AuthEndpoints
 {
-  private const string SemanticVersioning = "0.1.0-rc1";
+  private const string SemanticVersioning = "0.1.0";
   private const string EndpointNameTag = "Auth Management System v" + SemanticVersioning;
 
   /// <summary>

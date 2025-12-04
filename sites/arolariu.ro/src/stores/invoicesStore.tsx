@@ -1,5 +1,6 @@
 /**
- * @fileoverview Zustand store for managing invoices state with IndexedDB persistence
+ * @fileoverview Zustand store for managing invoices state with IndexedDB persistence.
+ * Each invoice is stored as an individual row in the IndexedDB invoices table.
  * @module stores/invoicesStore
  */
 
@@ -9,12 +10,20 @@ import {devtools, persist} from "zustand/middleware";
 import {createIndexedDBStorage} from "./storage/indexedDBStorage";
 
 /**
- * Invoice store state interface
+ * Invoice store persisted state interface.
+ * Only the invoices array is persisted to IndexedDB.
  */
-interface InvoicesState {
+interface InvoicesPersistedState {
   /** All invoices in the store */
-  invoices: Invoice[];
-  /** Currently selected invoices */
+  invoices: ReadonlyArray<Invoice>;
+}
+
+/**
+ * Invoice store in-memory state interface
+ * These fields are not persisted to IndexedDB.
+ */
+interface InvoicesState extends InvoicesPersistedState {
+  /** Currently selected invoices (in-memory only, not persisted) */
   selectedInvoices: Invoice[];
 }
 
@@ -26,7 +35,7 @@ interface InvoicesActions {
    * Sets the complete list of invoices
    * @param invoices The new invoices array
    */
-  setInvoices: (invoices: Invoice[]) => void;
+  setInvoices: (invoices: ReadonlyArray<Invoice>) => void;
 
   /**
    * Sets the selected invoices
@@ -35,10 +44,11 @@ interface InvoicesActions {
   setSelectedInvoices: (selectedInvoices: Invoice[]) => void;
 
   /**
-   * Adds a single invoice to the store
-   * @param invoice The invoice to add
+   * Upserts a single invoice to the store (updates if exists, adds if not).
+   * This is the preferred method for adding/updating invoices to avoid duplicates.
+   * @param invoice The invoice to upsert
    */
-  addInvoice: (invoice: Invoice) => void;
+  upsertInvoice: (invoice: Invoice) => void;
 
   /**
    * Removes an invoice by ID
@@ -76,155 +86,110 @@ interface InvoicesActions {
 type InvoicesStore = InvoicesState & InvoicesActions;
 
 /**
- * IndexedDB storage configuration for invoices using Dexie
+ * IndexedDB storage configuration for invoices using Dexie.
+ * Each invoice is stored as an individual row with id as primary key.
  */
-const indexedDBStorage = createIndexedDBStorage<InvoicesStore>();
+const indexedDBStorage = createIndexedDBStorage<InvoicesPersistedState, Invoice>({
+  table: "invoices",
+  entityKey: "invoices",
+});
 
 /**
- * Development store with DevTools support
+ * Persist middleware configuration
  */
-const devStore = create<InvoicesStore>()(
-  devtools(
-    persist(
-      (set) => ({
-        // State
-        invoices: [],
-        selectedInvoices: [],
+/**
+ * Persist middleware configuration
+ */
+const persistConfig = {
+  name: "invoices-store",
+  storage: indexedDBStorage,
+  partialize: (state: InvoicesStore): InvoicesPersistedState => ({
+    invoices: [...state.invoices],
+  }),
+} as const;
 
-        // Actions
-        setInvoices: (invoices) => set((state) => ({...state, invoices}), false, "invoices/setInvoices"),
+/**
+ * Create the initial state and actions
+ */
+const createInvoicesSlice = (
+  set: (partial: Partial<InvoicesStore> | ((state: InvoicesStore) => Partial<InvoicesStore>)) => void,
+): InvoicesStore => ({
+  // State
+  invoices: [],
+  selectedInvoices: [],
 
-        setSelectedInvoices: (selectedInvoices) => set((state) => ({...state, selectedInvoices}), false, "invoices/setSelectedInvoices"),
+  // Actions
+  setInvoices: (invoices) => set({invoices}),
 
-        addInvoice: (invoice) =>
-          set(
-            (state) => ({
-              ...state,
-              invoices: [...state.invoices, invoice],
-            }),
-            false,
-            "invoices/addInvoice",
-          ),
+  setSelectedInvoices: (selectedInvoices) => set({selectedInvoices}),
 
-        removeInvoice: (invoiceId) =>
-          set(
-            (state) => ({
-              ...state,
-              invoices: state.invoices.filter((inv) => inv.id !== invoiceId),
-              selectedInvoices: state.selectedInvoices.filter((inv) => inv.id !== invoiceId),
-            }),
-            false,
-            "invoices/removeInvoice",
-          ),
+  upsertInvoice: (invoice) =>
+    set((state) => {
+      const existingIndex = state.invoices.findIndex((inv) => inv.id === invoice.id);
+      if (existingIndex >= 0) {
+        // Update existing invoice
+        const updatedInvoices = [...state.invoices];
+        updatedInvoices[existingIndex] = invoice;
+        return {invoices: updatedInvoices};
+      }
+      // Add new invoice
+      return {invoices: [...state.invoices, invoice]};
+    }),
 
-        updateInvoice: (invoiceId, updates) =>
-          set(
-            (state) => ({
-              ...state,
-              invoices: state.invoices.map((inv) => (inv.id === invoiceId ? {...inv, ...updates} : inv)),
-              selectedInvoices: state.selectedInvoices.map((inv) => (inv.id === invoiceId ? {...inv, ...updates} : inv)),
-            }),
-            false,
-            "invoices/updateInvoice",
-          ),
+  removeInvoice: (invoiceId) =>
+    set((state) => ({
+      invoices: state.invoices.filter((inv) => inv.id !== invoiceId),
+      selectedInvoices: state.selectedInvoices.filter((inv) => inv.id !== invoiceId),
+    })),
 
-        toggleInvoiceSelection: (invoice) =>
-          set(
-            (state) => {
-              const isSelected = state.selectedInvoices.some((inv) => inv.id === invoice.id);
-              return {
-                ...state,
-                selectedInvoices: isSelected
-                  ? state.selectedInvoices.filter((inv) => inv.id !== invoice.id)
-                  : [...state.selectedInvoices, invoice],
-              };
-            },
-            false,
-            "invoices/toggleInvoiceSelection",
-          ),
+  updateInvoice: (invoiceId, updates) =>
+    set((state) => ({
+      invoices: state.invoices.map((inv) => (inv.id === invoiceId ? {...inv, ...updates} : inv)),
+      selectedInvoices: state.selectedInvoices.map((inv) => (inv.id === invoiceId ? {...inv, ...updates} : inv)),
+    })),
 
-        clearSelectedInvoices: () => set((state) => ({...state, selectedInvoices: []}), false, "invoices/clearSelectedInvoices"),
+  toggleInvoiceSelection: (invoice) =>
+    set((state) => {
+      const isSelected = state.selectedInvoices.some((inv) => inv.id === invoice.id);
+      return {
+        selectedInvoices: isSelected ? state.selectedInvoices.filter((inv) => inv.id !== invoice.id) : [...state.selectedInvoices, invoice],
+      };
+    }),
 
-        clearInvoices: () => set((state) => ({...state, invoices: [], selectedInvoices: []}), false, "invoices/clearInvoices"),
-      }),
+  clearSelectedInvoices: () => set({selectedInvoices: []}),
+
+  clearInvoices: () => set({invoices: [], selectedInvoices: []}),
+});
+
+/**
+ * Development store with DevTools integration
+ */
+const createDevStore = () =>
+  create<InvoicesStore>()(
+    devtools(
+      persist((set) => createInvoicesSlice(set), persistConfig),
       {
-        name: "invoices-store",
-        storage: indexedDBStorage,
+        name: "InvoicesStore",
+        enabled: true,
       },
     ),
-    {
-      name: "InvoicesStore",
-      enabled: process.env.NODE_ENV === "development",
-    },
-  ),
-);
+  );
 
 /**
- * Production store without DevTools
+ * Production store without DevTools for better performance
  */
-const prodStore = create<InvoicesStore>()(
-  persist(
-    (set) => ({
-      // State
-      invoices: [],
-      selectedInvoices: [],
-
-      // Actions
-      setInvoices: (invoices) => set((state) => ({...state, invoices})),
-
-      setSelectedInvoices: (selectedInvoices) => set((state) => ({...state, selectedInvoices})),
-
-      addInvoice: (invoice) =>
-        set((state) => ({
-          ...state,
-          invoices: [...state.invoices, invoice],
-        })),
-
-      removeInvoice: (invoiceId) =>
-        set((state) => ({
-          ...state,
-          invoices: state.invoices.filter((inv) => inv.id !== invoiceId),
-          selectedInvoices: state.selectedInvoices.filter((inv) => inv.id !== invoiceId),
-        })),
-
-      updateInvoice: (invoiceId, updates) =>
-        set((state) => ({
-          ...state,
-          invoices: state.invoices.map((inv) => (inv.id === invoiceId ? {...inv, ...updates} : inv)),
-          selectedInvoices: state.selectedInvoices.map((inv) => (inv.id === invoiceId ? {...inv, ...updates} : inv)),
-        })),
-
-      toggleInvoiceSelection: (invoice) =>
-        set((state) => {
-          const isSelected = state.selectedInvoices.some((inv) => inv.id === invoice.id);
-          return {
-            ...state,
-            selectedInvoices: isSelected
-              ? state.selectedInvoices.filter((inv) => inv.id !== invoice.id)
-              : [...state.selectedInvoices, invoice],
-          };
-        }),
-
-      clearSelectedInvoices: () => set((state) => ({...state, selectedInvoices: []})),
-
-      clearInvoices: () => set((state) => ({...state, invoices: [], selectedInvoices: []})),
-    }),
-    {
-      name: "invoices-store",
-      storage: indexedDBStorage,
-    },
-  ),
-);
+const createProdStore = () => create<InvoicesStore>()(persist((set) => createInvoicesSlice(set), persistConfig));
 
 /**
- * Invoices store hook - automatically uses development or production version
- * based on NODE_ENV.
+ * Invoices store with conditional DevTools support based on environment.
+ * Uses entity-level IndexedDB persistence where each invoice is stored as an individual row.
+ * Only the invoices array is persisted; selectedInvoices remains in-memory only.
  * @remarks Persists data in IndexedDB for offline support.
  * @returns The invoices store with state and actions.
  * @example
  * ```tsx
  * function InvoicesList() {
- *   const { invoices, setInvoices, addInvoice } = useInvoicesStore();
+ *   const { invoices, setInvoices, upsertInvoice } = useInvoicesStore();
  *
  *   return (
  *     <div>
@@ -236,4 +201,4 @@ const prodStore = create<InvoicesStore>()(
  * }
  * ```
  */
-export const useInvoicesStore = process.env.NODE_ENV === "production" ? prodStore : devStore;
+export const useInvoicesStore = process.env.NODE_ENV === "development" ? createDevStore() : createProdStore();

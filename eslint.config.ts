@@ -1,10 +1,8 @@
 import eslintPlugin from "@eslint/js";
 import eslintPluginNext from "@next/eslint-plugin-next";
-import eslintPluginFileProgress from "eslint-plugin-file-progress";
-import eslintPluginJsDoc from "eslint-plugin-jsdoc";
 import eslintPluginJsxA11y from "eslint-plugin-jsx-a11y";
 import eslintPluginNode from "eslint-plugin-n";
-import {defineConfig} from "eslint/config";
+import {type Config, defineConfig} from "eslint/config";
 // @ts-ignore -- no types for this.
 import eslintPluginPromise from "eslint-plugin-promise";
 import eslintPluginReact from "eslint-plugin-react";
@@ -21,13 +19,9 @@ import eslintPluginUnicorn from "eslint-plugin-unicorn";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
-const websiteEslintConfig = defineConfig({
+const websiteEslintConfig: Config = defineConfig({
   name: "[@arolariu/website]",
   files: ["sites/arolariu.ro/**/*.{ts,tsx}"],
-  ignores: [
-    "**/{node_modules,.storybook,.next,out,bin,scripts}/**", // dirs
-    "**/*.{test,config,spec,setup,stories}.{js,jsx,ts,tsx}", // files
-  ],
   languageOptions: {
     ecmaVersion: "latest",
     parser: tseslint.parser,
@@ -58,10 +52,8 @@ const websiteEslintConfig = defineConfig({
     "react-hooks-extra": eslintPluginReactHooksExtra,
     "react-web-api": eslintPluginReactWebAPI,
     "react-naming-convention": eslintPluginReactNamingConvention,
-    jsdoc: eslintPluginJsDoc,
     "jsx-a11y": eslintPluginJsxA11y,
     promise: eslintPluginPromise,
-    progress: eslintPluginFileProgress,
     sonarjs: eslintPluginSonarJs,
     security: eslintPluginSecurity,
     unicorn: eslintPluginUnicorn,
@@ -71,7 +63,6 @@ const websiteEslintConfig = defineConfig({
     "@next/next": eslintPluginNext,
   },
   rules: {
-    ...eslintPluginFileProgress.configs["recommended-ci"].rules,
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginReactDOM.configs.recommended.rules,
@@ -87,16 +78,13 @@ const websiteEslintConfig = defineConfig({
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
-    ...eslintPluginJsDoc.configs["flat/recommended-typescript-error"].rules,
-    ...eslintPluginJsDoc.configs["flat/stylistic-typescript-error"].rules,
-    ...eslintPluginJsDoc.configs["flat/contents-typescript-error"].rules,
-    ...eslintPluginJsDoc.configs["flat/logical-typescript-error"].rules,
     ...eslintPluginJsxA11y.configs.recommended.rules,
     ...eslintPluginJsxA11y.configs.strict.rules,
     ...eslintPluginNode.configs["flat/recommended"].rules,
     ...eslintPluginNext.configs.recommended.rules,
     ...eslintPluginPromise.configs["flat/recommended"].rules,
 
+    curly: "off", // we allow no curly braces for 1 instruction lines.
     "one-var": "off", // we allow multiple variable declarations.
     "no-undef": "off", // Next.JS automatically injects React into the namespace.
     camelcase: "off", // we allow camelCase for variable names.
@@ -152,10 +140,6 @@ const websiteEslintConfig = defineConfig({
     "n/no-missing-import": "off", // Barrel and index files are blindly caught by this rule.
     "n/no-unsupported-features/node-builtins": "off", // We use Node.js v24+ built-ins.
 
-    "jsdoc/require-param": "off", // We allow missing JSDoc @param tags.
-    "jsdoc/check-param-names": "off", // We allow missing JSDoc @param names.
-    "jsdoc/check-tag-names": "off", // Prettier's @format tag conflicts with this rule.
-
     "sonarjs/todo-tag": "off", // We allow todos tags.
 
     "unicorn/no-null": "off", // We allow null values.
@@ -180,15 +164,11 @@ const websiteEslintConfig = defineConfig({
   linterOptions: {
     reportUnusedDisableDirectives: false,
   },
-});
+})[0] as Config;
 
-const cvEslintConfig = defineConfig({
+const cvEslintConfig: Config = defineConfig({
   name: "[@arolariu/cv]",
   files: ["sites/cv.arolariu.ro/**/*.ts"],
-  ignores: [
-    "**/{node_modules,.storybook,.svelte-kit,out,bin,scripts,__mocks__}/**", // dirs
-    "**/*.{test,config,spec,setup,stories}.{js,jsx,ts,tsx}", // files
-  ],
   languageOptions: {
     ecmaVersion: "latest",
     parser: tseslint.parser,
@@ -213,7 +193,6 @@ const cvEslintConfig = defineConfig({
   plugins: {
     "@eslint/js": eslintPlugin,
     promise: eslintPluginPromise,
-    progress: eslintPluginFileProgress,
     sonarjs: eslintPluginSonarJs,
     security: eslintPluginSecurity,
     unicorn: eslintPluginUnicorn,
@@ -221,7 +200,6 @@ const cvEslintConfig = defineConfig({
     n: eslintPluginNode,
   },
   rules: {
-    ...eslintPluginFileProgress.configs["recommended-ci"].rules,
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginUnicorn.configs.all.rules,
@@ -270,18 +248,11 @@ const cvEslintConfig = defineConfig({
   linterOptions: {
     reportUnusedDisableDirectives: false,
   },
-});
+})[0] as Config;
 
-const packagesEslintConfig = defineConfig({
+const packagesEslintConfig: Config = defineConfig({
   name: "[@arolariu/packages]",
   files: ["packages/**/*.{ts,tsx}"],
-  ignores: [
-    "**/node_modules/**",
-    "**/.storybook/**",
-    "**/*.config.{js,ts}",
-    "**/*.{test,spec,stories}.{ts,tsx}",
-    "**/{build,dist,scripts}/**",
-  ],
   languageOptions: {
     ecmaVersion: "latest",
     parser: tseslint.parser,
@@ -300,7 +271,7 @@ const packagesEslintConfig = defineConfig({
       errorOnUnknownASTType: true,
       comment: true,
     },
-    globals: {...globals.browser, ...globals.node},
+    globals: {...globals.browser},
   },
   plugins: {
     "@eslint/js": eslintPlugin,
@@ -312,10 +283,8 @@ const packagesEslintConfig = defineConfig({
     "react-hooks-extra": eslintPluginReactHooksExtra,
     "react-web-api": eslintPluginReactWebAPI,
     "react-naming-convention": eslintPluginReactNamingConvention,
-    jsdoc: eslintPluginJsDoc,
     "jsx-a11y": eslintPluginJsxA11y,
     promise: eslintPluginPromise,
-    progress: eslintPluginFileProgress,
     sonarjs: eslintPluginSonarJs,
     security: eslintPluginSecurity,
     unicorn: eslintPluginUnicorn,
@@ -323,7 +292,6 @@ const packagesEslintConfig = defineConfig({
     n: eslintPluginNode,
   },
   rules: {
-    ...eslintPluginFileProgress.configs["recommended-ci"].rules,
     ...eslintPlugin.configs.recommended.rules,
     ...eslintPlugin.configs.all.rules,
     ...eslintPluginReactDOM.configs.recommended.rules,
@@ -338,10 +306,6 @@ const packagesEslintConfig = defineConfig({
     ...eslintPluginSecurity.configs.recommended.rules,
     ...eslintPluginSonarJs.configs.recommended.rules,
     ...eslintPluginSonarJs.configs["recommended-legacy"].rules,
-    ...eslintPluginJsDoc.configs["flat/recommended-typescript-error"].rules,
-    ...eslintPluginJsDoc.configs["flat/stylistic-typescript-error"].rules,
-    ...eslintPluginJsDoc.configs["flat/contents-typescript-error"].rules,
-    ...eslintPluginJsDoc.configs["flat/logical-typescript-error"].rules,
     ...eslintPluginJsxA11y.configs.recommended.rules,
     ...eslintPluginJsxA11y.configs.strict.rules,
     ...eslintPluginNode.configs["flat/recommended"].rules,
@@ -406,8 +370,6 @@ const packagesEslintConfig = defineConfig({
     "react-x/no-context-provider": "off", // We use React Context API from React 18.
     "react-x/no-unstable-context-value": "off", // Another ShadCN limitation...
 
-    "jsdoc/require-jsdoc": "off", // We don't require JSDoc comments for every function.
-
     "n/no-unpublished-import": "off", // Packages are published; false positive.
     "n/no-missing-import": "off", // Barrel and index files are blindly caught by this rule.
 
@@ -438,22 +400,20 @@ const packagesEslintConfig = defineConfig({
   linterOptions: {
     reportUnusedDisableDirectives: false,
   },
-});
+})[0] as Config;
 
 const eslintConfig = defineConfig(websiteEslintConfig, cvEslintConfig, packagesEslintConfig);
 
 // Add the global ignores to the default config.
-eslintConfig.forEach((config) => {
-  const ignoreList = [
-    "**/*.d.ts",
-    "**/**/*.d.ts",
-    "**/*.config.{js,ts}",
-    "**/**/*.config.{js,ts}",
-    "**/node_modules/**",
-    "**/*.{test,spec,stories}.{ts,svelte,tsx}",
-    "**/**/*.{test,spec,stories}.{ts,svelte,tsx}",
+for (const individualEslintConfig of eslintConfig) {
+  const eslintPathsIgnoreList = [
+    "**/{node_modules,.storybook,.svelte-kit,.next,out,bin,build,dist,scripts}/**", // dirs
+    "**/*.{test,config,spec,setup,stories,d}.{js,jsx,ts,tsx}", // files
   ];
-  config.ignores = config.ignores ? [...config.ignores, ...ignoreList] : [...ignoreList];
-});
+
+  individualEslintConfig.ignores = individualEslintConfig.ignores
+    ? [...individualEslintConfig.ignores, ...eslintPathsIgnoreList]
+    : [...eslintPathsIgnoreList];
+}
 
 export default eslintConfig;

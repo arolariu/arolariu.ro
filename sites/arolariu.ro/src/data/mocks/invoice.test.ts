@@ -3,7 +3,7 @@
  * @module data/mocks/invoice.test
  */
 
-import {InvoiceCategory, RecipeComplexity} from "@/types/invoices";
+import {InvoiceCategory, InvoiceScanType, RecipeComplexity} from "@/types/invoices";
 import {describe, expect, it} from "vitest";
 import {InvoiceBuilder, createInvoiceBuilder, generateRandomInvoice, generateRandomInvoices, mockInvoice, mockInvoiceList} from "./invoice";
 
@@ -20,6 +20,7 @@ describe("InvoiceBuilder", () => {
       expect(invoice).toHaveProperty("lastUpdatedAt");
       expect(invoice).toHaveProperty("userIdentifier");
       expect(invoice).toHaveProperty("category");
+      expect(invoice).toHaveProperty("scans");
       expect(invoice.isSoftDeleted).toBe(false);
       expect(invoice.sharedWith).toEqual([]);
       expect(invoice.items).toEqual([]);
@@ -78,10 +79,17 @@ describe("InvoiceBuilder", () => {
       expect(invoice.category).toBe(InvoiceCategory.FAST_FOOD);
     });
 
-    it("should set photoLocation", () => {
+    it("should set scans", () => {
       const builder = new InvoiceBuilder();
-      const invoice = builder.withPhotoLocation("https://example.com/photo.jpg").build();
-      expect(invoice.photoLocation).toBe("https://example.com/photo.jpg");
+      const scans = [
+        {
+          scanType: InvoiceScanType.JPEG,
+          location: "https://example.com/photo.jpg",
+          metadata: {},
+        },
+      ];
+      const invoice = builder.withScans(scans).build();
+      expect(invoice.scans).toEqual(scans);
     });
 
     it("should set merchantReference", () => {
@@ -179,6 +187,24 @@ describe("InvoiceBuilder", () => {
       const builder = new InvoiceBuilder();
       const invoice = builder.withRandomRecipes(2).build();
       expect(invoice.possibleRecipes).toHaveLength(2);
+    });
+
+    it("should generate random scans with default count", () => {
+      const builder = new InvoiceBuilder();
+      const invoice = builder.withRandomScans().build();
+      expect(invoice.scans.length).toBeGreaterThanOrEqual(1);
+      expect(invoice.scans.length).toBeLessThanOrEqual(3);
+    });
+
+    it("should generate random scans with specific count", () => {
+      const builder = new InvoiceBuilder();
+      const invoice = builder.withRandomScans(2).build();
+      expect(invoice.scans).toHaveLength(2);
+      for (const scan of invoice.scans) {
+        expect(scan).toHaveProperty("scanType");
+        expect(scan).toHaveProperty("location");
+        expect(scan).toHaveProperty("metadata");
+      }
     });
   });
 

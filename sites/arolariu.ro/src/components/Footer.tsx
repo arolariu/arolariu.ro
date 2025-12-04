@@ -1,3 +1,19 @@
+/**
+ * @fileoverview Site-wide footer component with navigation, branding, and metadata.
+ * @module components/Footer
+ *
+ * @remarks
+ * Provides the global footer used across all pages in the arolariu.ro website.
+ * Includes cross-subdomain navigation, social links, build info, and legal pages.
+ *
+ * **Why Client Component?**
+ * Uses `useTranslations` hook from next-intl which requires client-side React context.
+ *
+ * @see {@link https://next-intl.com/docs/environments/server-client-components | next-intl docs}
+ */
+
+"use client";
+
 import logo from "@/app/logo.svg";
 import {COMMIT_SHA, SITE_NAME, TIMESTAMP} from "@/lib/utils.generic";
 import {RichText} from "@/presentation/Text";
@@ -9,9 +25,76 @@ import React from "react";
 import {TbBrandGithub, TbBrandLinkedin} from "react-icons/tb";
 
 /**
- * The footer component.
- * This component is used to display the footer of the website.
- * @returns The footer component.
+ * Renders the site-wide footer with navigation, metadata, and social links.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive required).
+ *
+ * **Why Client Component?**
+ * - Uses `useTranslations` hook from next-intl for client-side i18n
+ * - Hook requires React context provided by `NextIntlClientProvider`
+ * - Enables dynamic translation updates without full page reload
+ *
+ * **Key Features:**
+ * - **Multi-subdomain Navigation**: Dynamically switches between production (`arolariu.ro`)
+ *   and development (`dev.arolariu.ro`) environments based on `SITE_NAME`
+ * - **Internationalization**: Uses `next-intl` client hook for multilingual support
+ *   (translations via `Footer` namespace)
+ * - **Build Metadata**: Displays commit SHA and build timestamp with interactive tooltips
+ * - **Responsive Design**: Adapts layout for mobile (2xsm), tablet (sm/md), and desktop (lg/xl)
+ * - **SVG Wave Decoration**: Custom SVG path creates visual transition from content to footer
+ *
+ * **Subdomain Logic:**
+ * - If `SITE_NAME === "arolariu.ro"`: Shows link to `dev.arolariu.ro` (development environment)
+ * - Otherwise: Shows link to `arolariu.ro` (production environment)
+ * - Always includes: `cv.arolariu.ro`, `api.arolariu.ro`, `docs.arolariu.ro`
+ *
+ * **Navigation Sections:**
+ * 1. **Subdomains**: Cross-links to other arolariu.ro services
+ * 2. **About Pages**: Links to `/about`, `/acknowledgements`, `/terms-of-service`, `/privacy-policy`
+ * 3. **Social Media**: GitHub and LinkedIn profiles
+ * 4. **Metadata**: Copyright notice, source code link, build info, commit SHA
+ *
+ * **Styling Architecture:**
+ * - Base: Indigo 700 background with white text
+ * - Hover Effects: Yellow 500 accent color on interactive elements
+ * - Responsive Classes: Uses Tailwind's `2xsm:` (custom), `sm:`, `md:`, `lg:` breakpoints
+ *
+ * **Dependencies:**
+ * - `@arolariu/components`: Tooltip components from shared UI library
+ * - `next-intl`: Client-side translation hook (`useTranslations`)
+ * - `react-icons/tb`: Tabler icons for social media (GitHub, LinkedIn)
+ * - Environment constants: `COMMIT_SHA`, `SITE_NAME`, `TIMESTAMP` from `utils.generic`
+ *
+ * **Performance Considerations:**
+ * - Next.js Image component for optimized logo rendering with automatic format selection
+ * - Static links enable automatic prefetching for faster navigation
+ * - Tooltip lazy-loaded on hover to reduce initial render cost
+ * - Translation bundle loaded via NextIntlClientProvider in parent layout
+ *
+ * @returns Footer JSX element with navigation, branding, and metadata sections
+ *
+ * @example
+ * ```tsx
+ * // Usage in root layout (app/layout.tsx)
+ * export default function RootLayout({ children }) {
+ *   return (
+ *     <html>
+ *       <body>
+ *         <Header />
+ *         <main>{children}</main>
+ *         <Footer />
+ *       </body>
+ *     </html>
+ *   );
+ * }
+ * ```
+ *
+ * @see {@link RichText} - Component for rendering internationalized rich text content
+ * @see {@link SITE_NAME} - Environment constant determining subdomain link behavior
+ * @see {@link COMMIT_SHA} - Git commit SHA for build traceability
+ * @see {@link TIMESTAMP} - Build timestamp for deployment tracking
+ * @see {@link https://next-intl.com/docs/usage/messages | next-intl useTranslations}
  */
 export default function Footer(): React.JSX.Element {
   const t = useTranslations("Footer");
@@ -169,7 +252,7 @@ export default function Footer(): React.JSX.Element {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span>{`${t("builtOn")} ${TIMESTAMP.split("T")[0]}`}</span>
+                <span className='cursor-help'>{`${t("builtOn")} ${TIMESTAMP.split("T")[0]}`}</span>
               </TooltipTrigger>
               <TooltipContent>
                 <code className='cursor-help'>{new Date(TIMESTAMP).toUTCString()}</code>

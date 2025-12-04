@@ -20,11 +20,11 @@ import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
  * @returns JSX.Element that displays a grid of invoice scans.
  */
 export default function GridDisplay(): React.JSX.Element | null {
-  const {scans} = useInvoiceCreator();
+  const {submissions} = useInvoiceCreator();
   const [query, setQuery] = useState("");
 
   const {paginatedItems, currentPage, totalPages, setCurrentPage} = usePaginationWithSearch({
-    items: scans,
+    items: submissions,
     initialPageSize: 9,
     searchQuery: query,
   });
@@ -105,7 +105,7 @@ export default function GridDisplay(): React.JSX.Element | null {
     [setCurrentPage],
   );
 
-  if (scans.length === 0) {
+  if (submissions.length === 0) {
     return null;
   }
 
@@ -122,19 +122,19 @@ export default function GridDisplay(): React.JSX.Element | null {
           />
         </div>
         <div className='shrink-0 text-sm text-gray-600 dark:text-gray-400'>
-          {paginatedItems.length} of {scans.length} shown
+          {paginatedItems.length} of {submissions.length} shown
         </div>
       </div>
 
       <div className={`grid ${gridClasses} mb-8 gap-6 lg:min-h-[800px]`}>
-        {paginatedItems.map((scan, index) => (
+        {paginatedItems.map((submission, index) => (
           <motion.div
-            key={scan.id}
+            key={submission.id}
             initial={{opacity: 0, scale: 0.9, y: 12}}
             animate={{opacity: 1, scale: 1, y: 0}}
             transition={{duration: 0.25, delay: index * 0.05}}>
             <Card className='overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'>
-              <MediaPreview file={scan} />
+              <MediaPreview file={submission} />
             </Card>
           </motion.div>
         ))}

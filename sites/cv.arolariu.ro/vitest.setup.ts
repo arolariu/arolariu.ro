@@ -7,6 +7,14 @@ import "@testing-library/jest-dom/vitest";
 import {cleanup} from "@testing-library/svelte";
 import {afterEach, beforeEach, vi} from "vitest";
 
+// Mock SvelteKit modules that are not available in test environment
+vi.mock("$app/environment", () => ({
+  browser: true,
+  building: false,
+  dev: true,
+  version: "test",
+}));
+
 // Cleanup after each test
 afterEach(() => {
   cleanup();

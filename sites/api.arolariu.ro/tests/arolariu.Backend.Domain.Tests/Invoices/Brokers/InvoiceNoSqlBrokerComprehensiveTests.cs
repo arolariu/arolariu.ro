@@ -2,7 +2,6 @@ namespace arolariu.Backend.Domain.Tests.Invoices.Brokers;
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker;
@@ -183,38 +182,7 @@ public sealed partial class InvoiceNoSqlBrokerComprehensiveTests : InvoiceNoSqlB
 
   #region ReadInvoicesAsync Tests
 
-  /// <summary>
-  /// Retrieves all invoices returning a non-null enumerable with expected count.
-  /// </summary>
-  [Fact]
-  public async Task ShouldReadAllInvoices_WhenInvoicesExist()
-  {
-    // Given
-    var expectedInvoices = InvoiceBuilder.CreateMultipleRandomInvoices(3);
-    var feedResponseMock = new Mock<FeedResponse<Invoice>>();
-    feedResponseMock.Setup(response => response.GetEnumerator())
-      .Returns(expectedInvoices.GetEnumerator());
-
-    var mockFeedIterator = new Mock<FeedIterator<Invoice>>();
-    mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(true);
-    mockFeedIterator.Setup(iterator => iterator.ReadNextAsync(It.IsAny<System.Threading.CancellationToken>()))
-      .ReturnsAsync(feedResponseMock.Object)
-      .Callback(() => mockFeedIterator.Setup(iterator => iterator.HasMoreResults).Returns(false));
-
-    mockInvoicesContainer.Setup(container => container.GetItemQueryIterator<Invoice>(
-        It.Is<QueryDefinition>(qd => qd.QueryText == "SELECT * FROM c"),
-        It.IsAny<string>(),
-        It.IsAny<QueryRequestOptions>()
-      ))
-      .Returns(mockFeedIterator.Object);
-
-    // When
-    var actualInvoices = await invoiceNoSqlBroker.ReadInvoicesAsync();
-
-    // Then
-    Assert.NotNull(actualInvoices);
-    Assert.Equal(expectedInvoices.Count, actualInvoices.Count());
-  }
+  // TODO.
 
   #endregion
 

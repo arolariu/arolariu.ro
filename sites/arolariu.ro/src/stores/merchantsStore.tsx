@@ -1,5 +1,6 @@
 /**
- * @fileoverview Zustand store for managing merchants state with IndexedDB persistence
+ * @fileoverview Zustand store for managing merchants state with IndexedDB persistence.
+ * Each merchant is stored as an individual row in the IndexedDB merchants table.
  * @module stores/merchantsStore
  */
 
@@ -9,12 +10,18 @@ import {devtools, persist} from "zustand/middleware";
 import {createIndexedDBStorage} from "./storage/indexedDBStorage";
 
 /**
- * Merchant store state interface
+ * Merchant store persisted state interface.
+ * The merchants array is persisted to IndexedDB.
  */
-interface MerchantsState {
+interface MerchantsPersistedState {
   /** All merchants in the store */
   merchants: Merchant[];
 }
+
+/**
+ * Merchant store state interface
+ */
+interface MerchantsState extends MerchantsPersistedState {}
 
 /**
  * Merchant store actions interface
@@ -27,10 +34,11 @@ interface MerchantsActions {
   setMerchants: (merchants: Merchant[]) => void;
 
   /**
-   * Adds a single merchant to the store
-   * @param merchant The merchant to add
+   * Upserts a single merchant to the store (updates if exists, adds if not).
+   * This is the preferred method for adding/updating merchants to avoid duplicates.
+   * @param merchant The merchant to upsert
    */
-  addMerchant: (merchant: Merchant) => void;
+  upsertMerchant: (merchant: Merchant) => void;
 
   /**
    * Removes a merchant by ID
@@ -64,125 +72,100 @@ interface MerchantsActions {
 type MerchantsStore = MerchantsState & MerchantsActions;
 
 /**
- * IndexedDB storage configuration for merchants using Dexie
+ * IndexedDB storage configuration for merchants using Dexie.
+ * Each merchant is stored as an individual row with id as primary key.
  */
-const indexedDBStorage = createIndexedDBStorage<MerchantsStore>();
+const indexedDBStorage = createIndexedDBStorage<MerchantsPersistedState, Merchant>({
+  table: "merchants",
+  entityKey: "merchants",
+});
 
 /**
- * Development store with DevTools support
+ * Persist middleware configuration
  */
-const devStore = create<MerchantsStore>()(
-  devtools(
-    persist(
-      (set, get) => ({
-        // State
-        merchants: [],
+/**
+ * Persist middleware configuration
+ */
+const persistConfig = {
+  name: "merchants-store",
+  storage: indexedDBStorage,
+  partialize: (state: MerchantsStore): MerchantsPersistedState => ({
+    merchants: [...state.merchants],
+  }),
+} as const;
 
-        // Actions
-        setMerchants: (merchants) => set((state) => ({...state, merchants}), false, "merchants/setMerchants"),
+/**
+ * Create the initial state and actions
+ */
+const createMerchantsSlice = (
+  set: (partial: Partial<MerchantsStore> | ((state: MerchantsStore) => Partial<MerchantsStore>)) => void,
+  get: () => MerchantsStore,
+): MerchantsStore => ({
+  // State
+  merchants: [],
 
-        addMerchant: (merchant) =>
-          set(
-            (state) => ({
-              ...state,
-              merchants: [...state.merchants, merchant],
-            }),
-            false,
-            "merchants/addMerchant",
-          ),
+  // Actions
+  setMerchants: (merchants) => set({merchants}),
 
-        removeMerchant: (merchantId) =>
-          set(
-            (state) => ({
-              ...state,
-              merchants: state.merchants.filter((m) => m.id !== merchantId),
-            }),
-            false,
-            "merchants/removeMerchant",
-          ),
+  upsertMerchant: (merchant) =>
+    set((state) => {
+      const existingIndex = state.merchants.findIndex((m) => m.id === merchant.id);
+      if (existingIndex >= 0) {
+        // Update existing merchant
+        const updatedMerchants = [...state.merchants];
+        updatedMerchants[existingIndex] = merchant;
+        return {merchants: updatedMerchants};
+      }
+      // Add new merchant
+      return {merchants: [...state.merchants, merchant]};
+    }),
 
-        updateMerchant: (merchantId, updates) =>
-          set(
-            (state) => ({
-              ...state,
-              merchants: state.merchants.map((m) => (m.id === merchantId ? {...m, ...updates} : m)),
-            }),
-            false,
-            "merchants/updateMerchant",
-          ),
+  removeMerchant: (merchantId) =>
+    set((state) => ({
+      merchants: state.merchants.filter((m) => m.id !== merchantId),
+    })),
 
-        getMerchantById: (merchantId) => {
-          const state = get();
-          return state.merchants.find((m) => m.id === merchantId);
-        },
+  updateMerchant: (merchantId, updates) =>
+    set((state) => ({
+      merchants: state.merchants.map((m) => (m.id === merchantId ? {...m, ...updates} : m)),
+    })),
 
-        clearMerchants: () => set((state) => ({...state, merchants: []}), false, "merchants/clearMerchants"),
-      }),
+  getMerchantById: (merchantId) => {
+    const state = get();
+    return state.merchants.find((m) => m.id === merchantId);
+  },
+
+  clearMerchants: () => set({merchants: []}),
+});
+
+/**
+ * Development store with DevTools integration
+ */
+const createDevStore = () =>
+  create<MerchantsStore>()(
+    devtools(
+      persist((set, get) => createMerchantsSlice(set, get), persistConfig),
       {
-        name: "merchants-store",
-        storage: indexedDBStorage,
+        name: "MerchantsStore",
+        enabled: true,
       },
     ),
-    {
-      name: "MerchantsStore",
-      enabled: process.env.NODE_ENV === "development",
-    },
-  ),
-);
+  );
 
 /**
- * Production store without DevTools
+ * Production store without DevTools for better performance
  */
-const prodStore = create<MerchantsStore>()(
-  persist(
-    (set, get) => ({
-      // State
-      merchants: [],
-
-      // Actions
-      setMerchants: (merchants) => set((state) => ({...state, merchants})),
-
-      addMerchant: (merchant) =>
-        set((state) => ({
-          ...state,
-          merchants: [...state.merchants, merchant],
-        })),
-
-      removeMerchant: (merchantId) =>
-        set((state) => ({
-          ...state,
-          merchants: state.merchants.filter((m) => m.id !== merchantId),
-        })),
-
-      updateMerchant: (merchantId, updates) =>
-        set((state) => ({
-          ...state,
-          merchants: state.merchants.map((m) => (m.id === merchantId ? {...m, ...updates} : m)),
-        })),
-
-      getMerchantById: (merchantId) => {
-        const state = get();
-        return state.merchants.find((m) => m.id === merchantId);
-      },
-
-      clearMerchants: () => set((state) => ({...state, merchants: []})),
-    }),
-    {
-      name: "merchants-store",
-      storage: indexedDBStorage,
-    },
-  ),
-);
+const createProdStore = () => create<MerchantsStore>()(persist((set, get) => createMerchantsSlice(set, get), persistConfig));
 
 /**
- * Merchants store hook - automatically uses development or production version
- * based on NODE_ENV.
+ * Merchants store hook with conditional DevTools support based on environment.
+ * Uses entity-level IndexedDB persistence where each merchant is stored as an individual row.
  * @remarks Persists data in IndexedDB for offline support.
  * @returns The merchants store with state and actions.
  * @example
  * ```tsx
  * function MerchantsList() {
- *   const { merchants, setMerchants, addMerchant } = useMerchantsStore();
+ *   const { merchants, setMerchants, upsertMerchant } = useMerchantsStore();
  *
  *   return (
  *     <div>
@@ -194,4 +177,4 @@ const prodStore = create<MerchantsStore>()(
  * }
  * ```
  */
-export const useMerchantsStore = process.env.NODE_ENV === "production" ? prodStore : devStore;
+export const useMerchantsStore = process.env.NODE_ENV === "development" ? createDevStore() : createProdStore();

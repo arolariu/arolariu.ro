@@ -1,8 +1,6 @@
 // We're turning off react/no-unstable-nested-components -- This is a false positive with the i18n lib.
 /* eslint react/no-unstable-nested-components: 0 */
 
-"use client";
-
 import {Messages, NamespaceKeys, useTranslations} from "next-intl";
 import React from "react";
 
@@ -26,7 +24,7 @@ type Props = {
  * <RichText a11ySectionKey="about" a11yTextKey="description" />
  * ```
  */
-export function RichText({className, sectionKey, textKey}: Readonly<Props>) {
+export function RichText({className, sectionKey, textKey}: Readonly<Props>): React.JSX.Element {
   const t = useTranslations<NamespaceKeys<Messages, string>>(sectionKey as any);
   const isTextKeyInNamespace = t.has(textKey as any);
 

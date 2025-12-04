@@ -101,6 +101,7 @@ internal static class WebApplicationExtensions
     ArgumentNullException.ThrowIfNull(app);
 
     app.UseHttpsRedirection();
+    app.UseAuthServices();
 
     #region Middlewares
     app.UseCors("AllowAllOrigins");
@@ -114,7 +115,6 @@ internal static class WebApplicationExtensions
     app.MapOpenApi();
     app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse });
     app.MapGet("/terms", () => app.Configuration["ApplicationOptions:TermsAndConditions"]);
-    app.UseAuthServices();
 
     return app;
   }

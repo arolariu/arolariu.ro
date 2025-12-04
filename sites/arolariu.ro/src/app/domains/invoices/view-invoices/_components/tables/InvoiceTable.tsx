@@ -4,15 +4,15 @@ import {useCallback, useEffect} from "react";
 import {GridView} from "./GridView";
 import {TableView} from "./TableView";
 
-type Props = {
-  mode: "table" | "grid";
-  paginatedInvoices: Invoice[];
+type Props = Readonly<{
+  readonly mode: "table" | "grid";
+  paginatedInvoices: ReadonlyArray<Invoice> | Invoice[];
   currentPage: number;
   totalPages: number;
   setCurrentPage: (page: number) => void;
   setPageSize: (pageSize: number) => void;
   pageSize: number;
-};
+}>;
 
 /**
  * This function renders the invoices table or grid view based on the mode.

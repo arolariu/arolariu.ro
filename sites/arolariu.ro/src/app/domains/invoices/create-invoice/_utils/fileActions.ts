@@ -1,77 +1,203 @@
-import type {InvoiceScan} from "../_types/InvoiceScan";
+import {v4 as uuidv4} from "uuid";
+import {createInvoiceAction} from "../_actions/createInvoiceAction";
+import {isImageSubmission, PendingInvoiceStatus, PendingInvoiceSubmission} from "../_types/InvoiceSubmission";
 
 /**
- * Rotates an image file by a specified angle.
- * This function uses a canvas to perform the rotation and returns a new File object.
- * @param file The InvoiceScan object containing the image to rotate.
- * @param deltaRotation The angle in degrees to rotate the image.
- * @returns A Promise that resolves to a new File object with the rotated image.
+ * Converts a FileList to an array of PendingInvoiceSubmission objects.
+ * @param files The FileList to process.
+ * @returns A promise that resolves to an array of PendingInvoiceSubmission objects.
  */
-export async function rotateImageImpl(file: InvoiceScan, deltaRotation: number): Promise<{file: File; blob: Blob; url: string}> {
-  if (file.type !== "image") {
-    throw new Error("Rotation supported only for images");
+export async function processFiles(files: FileList): Promise<PendingInvoiceSubmission[]> {
+  const submissions: PendingInvoiceSubmission[] = [];
+
+  for (const file of files) {
+    const id = uuidv4();
+    const preview = URL.createObjectURL(file);
+
+    const isImage = file.type.startsWith("image/");
+    const isPdf = file.type === "application/pdf";
+
+    if (!isImage && !isPdf) {
+      console.warn(`>>> Unsupported file type: ${file.type}`);
+      /** eslint-disable-next-line no-continue -- skipping unsupported file types */
+      continue;
+    }
+
+    const baseSubmission = {
+      id,
+      name: file.name,
+      file,
+      mimeType: file.type,
+      size: file.size,
+      preview,
+      uploadedAt: new Date(),
+      createdAt: new Date(),
+      status: "idle" as PendingInvoiceStatus,
+      attempts: 0,
+      lastUpdatedAt: new Date().toISOString(),
+    };
+
+    if (isImage) {
+      submissions.push({
+        ...baseSubmission,
+        type: "image",
+        adjustments: {
+          rotation: 0,
+          brightness: 100,
+          contrast: 100,
+          saturation: 100,
+        },
+      });
+    } else {
+      submissions.push({
+        ...baseSubmission,
+        type: "pdf",
+        adjustments: undefined,
+      });
+    }
   }
 
-  return new Promise((resolve, reject) => {
-    const img = new Image();
+  return submissions;
+}
 
-    // Use event listeners instead of overriding onload/onerror for better composability.
-    img.addEventListener(
-      "load",
-      () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
+/**
+ * Revokes the object URL for a submission to free memory.
+ * @param submission The submission to revoke.
+ */
+export function revokePreview(submission: PendingInvoiceSubmission) {
+  if (submission.preview) {
+    URL.revokeObjectURL(submission.preview);
+  }
+}
 
-        if (!ctx) {
-          return reject(new Error("Could not get 2D context for canvas"));
-        }
-
-        // Calculate the total rotation including any previous CSS rotation
-        // The `file.rotation` here represents the *current CSS rotation* applied to the image.
-        // We need to apply `deltaRotation` on top of that.
-        const currentCssRotation = file.rotation || 0;
-        const totalRotation = (currentCssRotation + deltaRotation + 360) % 360; // Ensure positive modulo
-
-        // Determine canvas dimensions based on the total rotation
-        const {width, height} = img;
-
-        if (totalRotation === 90 || totalRotation === 270) {
-          // Swap width and height for 90 or 270 degree rotations
-          canvas.width = height;
-          canvas.height = width;
-        } else {
-          canvas.width = width;
-          canvas.height = height;
-        }
-
-        // Translate to center of canvas, rotate, then translate back
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate((totalRotation * Math.PI) / 180);
-        ctx.drawImage(img, -width / 2, -height / 2);
-
-        canvas.toBlob((blob) => {
-          if (blob) {
-            // Create a new File object with the rotated image data
-            const newFile = new File([blob], file.file.name, {type: file.file.type});
-            const url = URL.createObjectURL(blob);
-            resolve({file: newFile, blob, url});
-          } else {
-            reject(new Error("Canvas to Blob conversion failed"));
-          }
-        }, file.file.type);
-      },
-      {once: true},
-    );
-
-    img.addEventListener(
-      "error",
-      (error) => {
-        reject(new Error(`Image loading error: ${JSON.stringify(error && (error as any).message ? (error as any).message : error)}`));
-      },
-      {once: true},
-    );
-
-    // Setting src after listeners are attached ensures we don't miss a synchronous cached load event.
-    img.src = file.preview; // This is a blob URL, so CORS is not an issue
+/**
+ * Rotates a submission photo by the specified degrees.
+ * @param submissions The list of submissions.
+ * @param id The ID of the submission to rotate.
+ * @param degrees The degrees to rotate.
+ * @returns The updated list of submissions.
+ */
+export function rotateSubmissionInList(submissions: PendingInvoiceSubmission[], id: string, degrees: number): PendingInvoiceSubmission[] {
+  return submissions.map((submission) => {
+    if (submission.id === id && isImageSubmission(submission)) {
+      const currentRotation = submission.adjustments.rotation;
+      return {
+        ...submission,
+        adjustments: {
+          ...submission.adjustments,
+          rotation: (currentRotation + degrees) % 360,
+        },
+      };
+    }
+    return submission;
   });
+}
+
+/**
+ * Renames a submission.
+ * @param submissions The list of submissions.
+ * @param id The ID of the submission to rename.
+ * @param newName The new name.
+ * @returns The updated list of submissions.
+ */
+export function renameSubmissionInList(submissions: PendingInvoiceSubmission[], id: string, newName: string): PendingInvoiceSubmission[] {
+  return submissions.map((submission) => (submission.id === id ? {...submission, name: newName} : submission));
+}
+
+/**
+ * Removes a submission from the list and revokes its preview URL.
+ * @param submissions The list of submissions.
+ * @param id The ID of the submission to remove.
+ * @returns The updated list of submissions.
+ */
+export function removeSubmissionFromList(submissions: PendingInvoiceSubmission[], id: string): PendingInvoiceSubmission[] {
+  const submissionToRemove = submissions.find((s) => s.id === id);
+  if (submissionToRemove) {
+    revokePreview(submissionToRemove);
+  }
+  return submissions.filter((s) => s.id !== id);
+}
+
+/**
+ * Removes multiple submissions from the list and revokes their preview URLs.
+ * @param submissions The list of submissions.
+ * @param ids The IDs of the submissions to remove.
+ * @returns The updated list of submissions.
+ */
+export function removeSubmissionsFromList(submissions: PendingInvoiceSubmission[], ids: string[]): PendingInvoiceSubmission[] {
+  const idsSet = new Set(ids);
+  const submissionsToRemove = submissions.filter((s) => idsSet.has(s.id));
+
+  for (const submission of submissionsToRemove) {
+    revokePreview(submission);
+  }
+
+  return submissions.filter((s) => !idsSet.has(s.id));
+}
+
+/**
+ * Clears all submissions and revokes their preview URLs.
+ * @param submissions The list of submissions.
+ * @returns An empty list of submissions.
+ */
+export function clearSubmissionsList(submissions: PendingInvoiceSubmission[]): PendingInvoiceSubmission[] {
+  for (const submission of submissions) {
+    revokePreview(submission);
+  }
+  return [];
+}
+
+/**
+ * Updates the status of a submission.
+ * @param submissions The list of submissions.
+ * @param id The ID of the submission to update.
+ * @param status The new status.
+ * @param extra Extra properties to merge into the submission.
+ * @returns The updated list of submissions.
+ */
+export function updateSubmissionStatusInList(
+  submissions: PendingInvoiceSubmission[],
+  id: string,
+  status: PendingInvoiceStatus,
+  extra?: Partial<PendingInvoiceSubmission>,
+): PendingInvoiceSubmission[] {
+  return submissions.map((s) => (s.id === id ? ({...s, status, ...extra} as PendingInvoiceSubmission) : s));
+}
+
+/**
+ * Processes pending submissions by calling the createInvoice server action.
+ * @param submissions The list of submissions.
+ * @param onStatusUpdate Callback to update the status of a submission.
+ */
+export async function processPendingSubmissions(
+  submissions: PendingInvoiceSubmission[],
+  onStatusUpdate: (id: string, status: PendingInvoiceStatus, extra?: Partial<PendingInvoiceSubmission>) => void,
+): Promise<void> {
+  const submissionsToProcess = submissions.filter((s) => s.status === "idle" || s.status === "failed");
+
+  if (submissionsToProcess.length === 0) {
+    return;
+  }
+
+  // Mark as creating
+  for (const s of submissionsToProcess) {
+    onStatusUpdate(s.id, "creating");
+  }
+
+  await Promise.all(
+    submissionsToProcess.map(async (submission) => {
+      try {
+        const result = await createInvoiceAction(submission);
+
+        if ("invoiceId" in result) {
+          onStatusUpdate(submission.id, "completed", {invoiceId: result.invoiceId});
+        } else {
+          onStatusUpdate(submission.id, "failed", {error: result.message});
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        onStatusUpdate(submission.id, "failed", {error: errorMessage});
+      }
+    }),
+  );
 }

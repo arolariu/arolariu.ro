@@ -20,7 +20,11 @@ import {useCallback} from "react";
 import {TbCalendar, TbEye} from "react-icons/tb";
 import InvoiceTableActions from "./InvoiceTableActions";
 
-export const GridView = ({invoices}: Readonly<{invoices: Invoice[]}>): React.JSX.Element => {
+type Props = Readonly<{
+  invoices: ReadonlyArray<Invoice> | Invoice[];
+}>;
+
+export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
   const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
 
@@ -66,7 +70,7 @@ export const GridView = ({invoices}: Readonly<{invoices: Invoice[]}>): React.JSX
           </div>
           <Card className='overflow-hidden'>
             <Image
-              src={invoice.photoLocation || "/placeholder.svg"}
+              src={invoice.scans[0]?.location || "/placeholder.svg"}
               alt={invoice.name}
               className='h-full w-full object-fill transition-transform duration-500'
               width={400}

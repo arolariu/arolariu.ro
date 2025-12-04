@@ -14,7 +14,14 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 [TestClass]
 public sealed class ContactInformationTests
 {
-  private static ContactInformation CreateSample() => new("Alice Doe", "123 Main St", "+1-555-0000", "alice@example.test", "https://example.test");
+  private static ContactInformation CreateSample() => new ContactInformation()
+  {
+    FullName = "Alice Doe",
+    Address = "123 Main St",
+    PhoneNumber = "+1-555-0000",
+    EmailAddress = "alice@example.test",
+    Website = "https://example.test"
+  };
 
   /// <summary>Validates that constructor sets all provided properties.</summary>
   [TestMethod]
@@ -44,12 +51,14 @@ public sealed class ContactInformationTests
   public void Inequality_Detected_When_Changing_Any_Field()
   {
     var baseline = CreateSample();
-    var modified = new ContactInformation(
-      baseline.FullName,
-      baseline.Address,
-      baseline.PhoneNumber,
-      "different@example.test",
-      baseline.Website);
+    var modified = new ContactInformation()
+    {
+      FullName = "Alice Doe",
+      Address = "123 Main St",
+      PhoneNumber = "+1-555-0000",
+      EmailAddress = "different@example.test",
+      Website = "https://example.test"
+    };
     Assert.AreNotEqual(baseline, modified);
     Assert.IsTrue(baseline != modified);
   }

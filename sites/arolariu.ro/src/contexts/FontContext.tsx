@@ -1,3 +1,22 @@
+/**
+ * @fileoverview Font management context for accessibility and user preferences.
+ * @module contexts/FontContext
+ *
+ * @remarks
+ * Provides application-wide font selection with:
+ * - Normal font (Caudex) and dyslexic-friendly font (Atkinson Hyperlegible)
+ * - localStorage persistence for user preferences
+ * - Multi-tab synchronization via storage events
+ * - Safe font class application with conflict prevention
+ * - React Context API for global font state
+ *
+ * **Rendering Context**: Client Component (requires browser APIs).
+ *
+ * **Accessibility**: Supports users with dyslexia through specialized typography.
+ *
+ * @see {@link https://brailleinstitute.org/freefont|Atkinson Hyperlegible Font}
+ */
+
 "use client";
 
 import {isBrowserStorageAvailable} from "@/lib/utils.client";
@@ -8,8 +27,18 @@ import React, {createContext, use, useCallback, useEffect, useMemo, useState} fr
 const STORAGE_KEY = "selectedFont";
 
 /**
- * Default font for the application.
- * This font is used when no other font is selected.
+ * Default application font optimized for readability.
+ *
+ * @remarks
+ * **Font:** Caudex (serif typeface) with 700 weight for headers/emphasis.
+ *
+ * **Characteristics:**
+ * - Preloaded for optimal performance (critical rendering path)
+ * - Latin subset only
+ * - CSS variable: `--font-default`
+ * - Used when fontType is "normal" or as fallback
+ *
+ * **Performance:** Preloaded to avoid FOUT (Flash of Unstyled Text).
  */
 const defaultFont: NextFontWithVariable = Caudex({
   weight: "700",
@@ -20,9 +49,23 @@ const defaultFont: NextFontWithVariable = Caudex({
 });
 
 /**
- * Dyslexic font for the application.
- * This font is used when the user selects the dyslexic font option.
- * It is designed to improve readability for individuals with dyslexia.
+ * Accessibility-focused font designed for dyslexic readers.
+ *
+ * @remarks
+ * **Font:** Atkinson Hyperlegible by Braille Institute.
+ *
+ * **Design Features:**
+ * - Greater distinction between similar characters (b/d, p/q)
+ * - Increased character spacing for clarity
+ * - Improved letter differentiation (I/l/1)
+ *
+ * **Performance:**
+ * - Not preloaded (lazy-loaded when selected by user)
+ * - CSS variable: `--font-dyslexic`
+ *
+ * **Accessibility:** Specifically designed for low-vision and dyslexic users.
+ *
+ * @see {@link https://brailleinstitute.org/freefont|Atkinson Hyperlegible}
  */
 const dyslexicFont: NextFontWithVariable = Atkinson_Hyperlegible({
   weight: "400",
@@ -35,9 +78,21 @@ const dyslexicFont: NextFontWithVariable = Atkinson_Hyperlegible({
 type FontType = "normal" | "dyslexic";
 
 /**
- * FontContextValueType is an interface that defines the shape of the context value
- * provided by the FontContext. It includes the current font and a function to set the font.
- * This interface is used to ensure type safety when consuming the context in components.
+ * Context value shape for font management state and actions.
+ *
+ * @remarks
+ * **Properties:**
+ * - `font`: Next.js font object with className and CSS variables
+ * - `fontType`: Current selected font type ("normal" or "dyslexic")
+ * - `fontClassName`: Ready-to-use className string for components
+ * - `setFont`: Function to change font preference (persists to localStorage)
+ *
+ * **Type Safety:** Ensures consistent font API across all consuming components.
+ *
+ * @example
+ * ```typescript
+ * const { font, fontType, fontClassName, setFont } = useFontContext();
+ * ```
  */
 interface FontContextValueType {
   font: NextFontWithVariable;
@@ -49,14 +104,47 @@ interface FontContextValueType {
 const FontContext = createContext<FontContextValueType | undefined>(undefined);
 
 /**
- * FontContextProvider component provides a context for managing font selection.
- * @returns A provider component that supplies the font context to its children.
+ * Client Component providing application-wide font management with persistence.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component ("use client" directive required).
+ *
+ * **Why Client Component?**
+ * - Uses localStorage for preference persistence
+ * - Listens to storage events for multi-tab synchronization
+ * - Manipulates document.documentElement className
+ * - Uses React hooks (useState, useEffect, useMemo)
+ *
+ * **State Management:**
+ * - Initializes from localStorage on mount
+ * - Persists changes to localStorage on font switch
+ * - Syncs across tabs via storage events
+ *
+ * **Performance:**
+ * - Memoized context value prevents unnecessary re-renders
+ * - Safe font class application with deduplication
+ * - Cleanup handlers prevent memory leaks
+ *
+ * **Font Application Safety:**
+ * 1. Checks if font class already applied (no-op)
+ * 2. Removes only conflicting font classes
+ * 3. Applies new font class only if different
+ *
+ * @param props - Component props
+ * @param props.children - Child components to receive font context
+ * @returns Provider component wrapping children with font context
+ *
  * @example
  * ```tsx
- * <FontContextProvider currentFont={someFont}>
- *   <YourComponent />
+ * // In root layout.tsx
+ * <FontContextProvider>
+ *   <Header />
+ *   <main>{children}</main>
+ *   <Footer />
  * </FontContextProvider>
  * ```
+ *
+ * @see {@link useFontContext} for consuming the context
  */
 export function FontContextProvider({children}: Readonly<{children: React.ReactNode}>): React.JSX.Element {
   const [fontType, setFontType] = useState<FontType>((): FontType => {
@@ -70,10 +158,22 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
   });
 
   /**
-   * Function to handle font change.
-   * This function takes a font type as an argument and updates the selectedFont state
-   * accordingly. It will also trigger the useEffect call, since the selectedFont state is a dependency.
-   * @param fontType The type of font to set (normal or dyslexic).
+   * Memoized callback to change font preference with persistence.
+   *
+   * @param fontType - Font type to activate ("normal" or "dyslexic")
+   *
+   * @remarks
+   * **Side Effects:**
+   * - Persists preference to localStorage (if available)
+   * - Triggers state update (fontType setState)
+   * - Causes useEffect to re-run and apply font class to document
+   *
+   * **Stability:** useCallback ensures function identity remains stable.
+   *
+   * @example
+   * ```typescript
+   * <Button onClick={() => handleFontChange("dyslexic")}>Dyslexic Font</Button>
+   * ```
    */
   const handleFontChange = useCallback((fontType: "normal" | "dyslexic") => {
     if (isBrowserStorageAvailable("localStorage")) {
@@ -83,7 +183,19 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
   }, []);
 
   /**
-   * Sync with localStorage changes (useful for multi-tab scenarios).
+   * Effect: Synchronizes font preference across browser tabs.
+   *
+   * @remarks
+   * **Multi-Tab Sync:** Listens to storage events fired when localStorage changes in other tabs.
+   *
+   * **Event Handling:**
+   * - Filters for STORAGE_KEY ("selectedFont") changes only
+   * - Validates new value is valid FontType
+   * - Updates local state to match other tab
+   *
+   * **Cleanup:** Removes event listener on unmount to prevent memory leaks.
+   *
+   * **Browser Behavior:** Storage events only fire in OTHER tabs, not the one making the change.
    */
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
@@ -100,7 +212,25 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
     return () => globalThis.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // 🛡️ Enhanced font application with safety checks
+  /**
+   * Effect: Applies selected font to document root with safety checks.
+   *
+   * @remarks
+   * **Font Application Strategy:**
+   * 1. Safety Check 1: Skip if font class already applied (idempotent)
+   * 2. Safety Check 2: Remove only conflicting font classes (preserve other classes)
+   * 3. Safety Check 3: Apply new font class only if className actually differs
+   *
+   * **Class Filtering:**
+   * - Removes classes matching `font-*` pattern (except font-sans/serif/mono)
+   * - Preserves all non-font classes (layout, theme, etc.)
+   *
+   * **SSR Safety:** Checks for `document` availability before DOM manipulation.
+   *
+   * **Cleanup:** Removes specific font class on unmount or font change.
+   *
+   * **Dependencies:** Re-runs when fontType changes.
+   */
   useEffect(() => {
     if (typeof globalThis.document === "undefined") {
       return;
@@ -141,11 +271,21 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
   }, [fontType]);
 
   /**
-   * Memoized value for the FontContext.
-   * This value is created using useMemo to avoid unnecessary re-renders.
-   * It includes the current font and a function to set the font.
-   * The value is updated whenever the selectedFont state changes.
-   * This ensures that the context consumers always receive the latest font value.
+   * Memoized context value to prevent unnecessary consumer re-renders.
+   *
+   * @remarks
+   * **Performance:** Only recomputes when fontType changes, not on every render.
+   *
+   * **Contents:**
+   * - `font`: Current NextFontWithVariable object (defaultFont or dyslexicFont)
+   * - `fontType`: Current font type string ("normal" or "dyslexic")
+   * - `fontClassName`: Pre-computed className for direct use in components
+   * - `setFont`: Stable reference to handleFontChange callback
+   *
+   * **Dependencies:** Only fontType (handleFontChange is stable via useCallback).
+   *
+   * **ESLint Disable:** handleFontChange is intentionally excluded from deps array
+   * because it's stable and doesn't change between renders.
    */
   const value = useMemo(
     () => {
@@ -165,14 +305,48 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
 }
 
 /**
- * Custom hook to access the FontContext.
- * This hook provides the current value of the FontContext. It must be used
- * within a FontContextProvider; otherwise, it will throw an error.
- * @returns The current context value of FontContext.
- * @throws {Error} If used outside of a FontContextProvider.
+ * Custom hook to consume font context with type-safe access.
+ *
+ * @remarks
+ * **Usage Requirements:** Must be called within a FontContextProvider tree.
+ *
+ * **Why Client Component?** This hook uses React 19's `use()` API which requires
+ * client-side execution.
+ *
+ * **Error Handling:** Throws descriptive error if provider is missing, aiding debugging.
+ *
+ * **Return Value:**
+ * - `font`: Next.js font object with className and CSS variables
+ * - `fontType`: Current selected font ("normal" or "dyslexic")
+ * - `fontClassName`: Pre-computed className string
+ * - `setFont`: Function to change font preference
+ *
+ * @returns Current font context value with font object and setter function
+ *
+ * @throws {Error} When used outside FontContextProvider (context is undefined)
+ *
  * @example
  * ```tsx
- * const { font, setFont } = useFontContext();
+ * "use client";
+ *
+ * function FontSwitcher() {
+ *   const { fontType, setFont } = useFontContext();
+ *
+ *   return (
+ *     <button onClick={() => setFont(fontType === "normal" ? "dyslexic" : "normal")}>
+ *       Switch to {fontType === "normal" ? "Dyslexic" : "Normal"} Font
+ *     </button>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Apply font class to component
+ * function StyledText() {
+ *   const { fontClassName } = useFontContext();
+ *   return <p className={fontClassName}>Styled with current font</p>;
+ * }
  * ```
  */
 export const useFontContext = (): FontContextValueType => {

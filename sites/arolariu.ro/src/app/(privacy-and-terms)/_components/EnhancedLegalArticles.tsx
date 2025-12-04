@@ -1,4 +1,5 @@
 "use client";
+
 import {RichText} from "@/presentation/Text";
 
 type TranslatedPage = Readonly<"privacyPolicy" | "termsOfService">;

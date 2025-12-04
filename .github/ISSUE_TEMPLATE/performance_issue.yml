@@ -1,0 +1,217 @@
+name: ⚡ Performance Issue
+description: Report a performance problem such as slow load times, memory issues, or lag
+title: "[PERF] "
+labels: ["performance", "needs-triage"]
+assignees:
+  - arolariu
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Performance Issue Report ⚡
+
+        Help us identify and fix performance problems. Please provide as much detail
+        as possible, including metrics and measurements when available.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight Checklist
+      description: Please confirm the following before submitting.
+      options:
+        - label: I have searched existing issues for similar performance reports.
+          required: true
+        - label: I have confirmed this is not a network issue on my end.
+          required: true
+        - label: I have tested with browser extensions disabled.
+          required: false
+
+  - type: dropdown
+    id: perf-type
+    attributes:
+      label: Performance Issue Type
+      description: What type of performance issue are you experiencing?
+      options:
+        - ⏱️ Slow Page Load - Pages take too long to load
+        - 🔄 Slow API Response - API requests are slow
+        - 🖱️ UI Lag - Interface feels sluggish or unresponsive
+        - 💾 High Memory Usage - Application uses too much memory
+        - 🔋 High CPU Usage - Application uses too much CPU
+        - 🌐 Network Issues - Too many requests or large payloads
+        - 📱 Mobile Performance - Slow on mobile devices
+        - ⬇️ Slow Download - Large file downloads are slow
+        - 🏃 Runtime Performance - Slow processing or calculations
+        - 🔌 Resource Leaks - Memory leaks or connection leaks
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Affected Area
+      description: Which part of the application is affected?
+      multiple: true
+      options:
+        - Frontend (arolariu.ro)
+        - Backend API (api.arolariu.ro)
+        - Documentation (docs.arolariu.ro)
+        - CV Site (cv.arolariu.ro)
+        - Specific Page/Feature (describe below)
+    validations:
+      required: true
+
+  - type: input
+    id: affected-url
+    attributes:
+      label: Affected URL/Endpoint
+      description: Which specific URL or API endpoint is affected?
+      placeholder: "e.g., https://arolariu.ro/invoices or /api/v1/invoices"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Impact Severity
+      description: How severe is the performance impact?
+      options:
+        - 🔴 Critical - Application is unusable
+        - 🟠 High - Major degradation, affects core functionality
+        - 🟡 Medium - Noticeable delay, but usable
+        - 🟢 Low - Minor delay, mostly cosmetic
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Performance Issue Description
+      description: Describe the performance issue you're experiencing.
+      placeholder: |
+        What operation is slow?
+        When did you first notice this?
+        Has it gotten worse over time?
+    validations:
+      required: true
+
+  - type: textarea
+    id: measurements
+    attributes:
+      label: Performance Measurements
+      description: |
+        Provide any performance measurements you have.
+        Use browser DevTools, Lighthouse, or other tools.
+      placeholder: |
+        - Page Load Time: X seconds
+        - Time to First Byte (TTFB): X ms
+        - Largest Contentful Paint (LCP): X seconds
+        - First Input Delay (FID): X ms
+        - Cumulative Layout Shift (CLS): X
+        - API Response Time: X ms
+        - Memory Usage: X MB
+      render: markdown
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the performance issue.
+      placeholder: |
+        1. Navigate to '...'
+        2. Click on '...'
+        3. Observe the slow performance
+    validations:
+      required: true
+
+  - type: dropdown
+    id: reproducibility
+    attributes:
+      label: Reproducibility
+      description: How consistently can you reproduce this issue?
+      options:
+        - Always (100%)
+        - Often (75%)
+        - Sometimes (50%)
+        - Rarely (25%)
+        - Intermittent/Random
+    validations:
+      required: true
+
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Is this a regression?
+      description: Did this work better before?
+      options:
+        - "Yes - This used to be faster"
+        - "No - Always been slow"
+        - "Unknown - First time using this feature"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Please provide your environment details.
+      value: |
+        - **Browser**: [e.g., Chrome 120, Firefox 121]
+        - **Operating System**: [e.g., Windows 11, macOS Sonoma]
+        - **Device**: [e.g., Desktop, MacBook Pro M2, iPhone 15]
+        - **Network Speed**: [e.g., 100 Mbps, 4G, WiFi]
+        - **RAM**: [e.g., 16 GB]
+        - **Browser Extensions**: [e.g., AdBlock, DevTools open]
+    validations:
+      required: true
+
+  - type: textarea
+    id: network-info
+    attributes:
+      label: Network Information
+      description: If relevant, provide network-related information.
+      placeholder: |
+        - Number of requests: X
+        - Total transfer size: X MB
+        - Largest request: X (file/endpoint)
+        - Blocking requests: X
+
+  - type: textarea
+    id: profile-data
+    attributes:
+      label: Performance Profile / Trace
+      description: If you have a performance profile or trace, please share it.
+      placeholder: |
+        Attach Chrome DevTools performance recording,
+        Lighthouse report, or other profiling data.
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Recordings
+      description: If applicable, add screenshots of DevTools, Lighthouse scores, or screen recordings.
+      placeholder: Drag and drop images here...
+
+  - type: textarea
+    id: comparison
+    attributes:
+      label: Expected vs Actual Performance
+      description: What performance do you expect vs what you're experiencing?
+      placeholder: |
+        **Expected:**
+        - Page should load in < 2 seconds
+        - API should respond in < 200ms
+
+        **Actual:**
+        - Page takes 10+ seconds to load
+        - API responds in 3+ seconds
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context about the performance issue.
+      placeholder: |
+        - Does this happen at specific times of day?
+        - Does this correlate with data volume?
+        - Any patterns you've noticed?

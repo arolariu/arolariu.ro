@@ -26,6 +26,17 @@ console.log(">>> NODE_ENV", process.env["NODE_ENV"]);
 const nextConfig: NextConfig = {
   basePath: "",
 
+  // Inline environment variables at build time for client-side access.
+  // These values are embedded into the JavaScript bundle during build,
+  // making them available to client components without NEXT_PUBLIC_ prefix.
+  env: {
+    SITE_ENV: process.env["SITE_ENV"] ?? "",
+    SITE_URL: process.env["SITE_URL"] ?? "",
+    SITE_NAME: process.env["SITE_NAME"] ?? "",
+    COMMIT_SHA: process.env["COMMIT_SHA"] ?? "",
+    TIMESTAMP: process.env["TIMESTAMP"] ?? "",
+  },
+
   logging: {
     fetches: {
       fullUrl: isDebugBuild,
@@ -43,13 +54,11 @@ const nextConfig: NextConfig = {
     qualities: [50, 75, 100],
     remotePatterns: [
       new URL("https://cdn.arolariu.ro"), // CDN assets.
-      new URL("https://clerk.com"), // Clerk - auth-as-a-service assets.
-      new URL("https://accounts.dev"), // Clerk - auth-as-a-service assets.
-      new URL("https://**.clerk.com"), // Clerk - auth-as-a-service assets.
-      new URL("https://**.accounts.dev"), // Clerk - auth-as-a-service assets.
+      {protocol: "https", hostname: "**.clerk.com"}, // Clerk - auth-as-a-service assets.
+      {protocol: "https", hostname: "**.accounts.dev"}, // Clerk - auth-as-a-service assets.
       new URL("https://arolariustorage.blob.core.windows.net"), // External assets.
-      new URL("https://**.googleusercontent.com"), // External assets.
-      new URL("https://**.githubusercontent.com"), // External assets.
+      {protocol: "https", hostname: "**.googleusercontent.com"}, // External assets.
+      {protocol: "https", hostname: "**.githubusercontent.com"}, // External assets.
       ...(isDebugBuild
         ? ([
             {

@@ -1,0 +1,172 @@
+name: 🔬 Analysis / Research Request
+description: Request technical analysis, research, or investigation of a topic
+title: "[ANALYSIS] "
+labels: ["analysis", "research"]
+assignees:
+  - arolariu
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Analysis / Research Request 🔬
+
+        Use this template to request technical analysis, research spikes,
+        architectural investigations, or technology evaluations.
+
+  - type: dropdown
+    id: analysis-type
+    attributes:
+      label: Analysis Type
+      description: What type of analysis or research is needed?
+      options:
+        - 🏗️ Architecture Analysis - Evaluate architectural decisions
+        - 🔧 Technology Evaluation - Assess new tools or frameworks
+        - ⚡ Performance Analysis - Investigate performance issues or improvements
+        - 🔒 Security Analysis - Evaluate security concerns
+        - 📊 Data Analysis - Analyze data patterns or metrics
+        - 🧪 Feasibility Study - Determine if something is technically possible
+        - 📈 Scalability Analysis - Assess scaling capabilities
+        - 🔄 Migration Analysis - Plan migration strategies
+        - 📚 Best Practices Research - Research industry standards
+        - 🐛 Root Cause Analysis - Investigate recurring issues
+        - 🔍 Code Analysis - Review code quality or patterns
+        - 💡 Proof of Concept - Create POC for new idea
+    validations:
+      required: true
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      description: How urgent is this analysis?
+      options:
+        - 🔴 Blocking - Blocks other work
+        - 🟠 Time-Sensitive - Needed for upcoming decision
+        - 🟡 Standard - Regular priority
+        - 🟢 Background - Can be done when time permits
+    validations:
+      required: true
+
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What is the goal of this analysis?
+      placeholder: |
+        Clearly state what you want to learn or achieve from this analysis.
+        Example: "Determine the best caching strategy for our API endpoints"
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: Background / Context
+      description: Provide context for why this analysis is needed.
+      placeholder: |
+        What led to this request?
+        What decisions depend on the outcome?
+        What is the current situation?
+    validations:
+      required: true
+
+  - type: textarea
+    id: questions
+    attributes:
+      label: Key Questions to Answer
+      description: List the specific questions this analysis should answer.
+      placeholder: |
+        1. What are the pros and cons of Option A vs Option B?
+        2. What are the performance implications?
+        3. What are the cost considerations?
+        4. What are the maintenance requirements?
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Define what should be included and excluded from this analysis.
+      placeholder: |
+        **In Scope:**
+        - Evaluate technology X, Y, Z
+        - Consider constraints A, B, C
+
+        **Out of Scope:**
+        - Full implementation
+        - Performance benchmarks (separate task)
+
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints / Requirements
+      description: Are there any constraints or requirements to consider?
+      placeholder: |
+        - Must work with existing Azure infrastructure
+        - Budget limit of $X per month
+        - Must support >10,000 concurrent users
+        - Must be compatible with .NET 10
+
+  - type: textarea
+    id: options
+    attributes:
+      label: Options to Consider
+      description: If there are specific options or approaches to evaluate, list them here.
+      placeholder: |
+        - Option 1: Use Redis for caching
+        - Option 2: Use Azure Cache
+        - Option 3: Use in-memory caching
+        - Option 4: Hybrid approach
+
+  - type: textarea
+    id: resources
+    attributes:
+      label: Resources / References
+      description: Any existing documentation, articles, or resources that might help.
+      placeholder: |
+        - [Link to documentation]
+        - [Similar implementation in other project]
+        - [Relevant RFC or design doc]
+
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: Expected Deliverables
+      description: What should be produced as a result of this analysis?
+      placeholder: |
+        - [ ] Written analysis document/RFC
+        - [ ] Comparison matrix
+        - [ ] Recommendation with justification
+        - [ ] POC implementation
+        - [ ] Cost estimate
+        - [ ] Timeline estimate
+    validations:
+      required: true
+
+  - type: textarea
+    id: stakeholders
+    attributes:
+      label: Stakeholders
+      description: Who needs to be involved or informed about the results?
+      placeholder: |
+        - @username - Architect review
+        - @username - Security review
+
+  - type: textarea
+    id: timeline
+    attributes:
+      label: Desired Timeline
+      description: When is this analysis needed by?
+      placeholder: |
+        Needed by: [date]
+        Reason: [e.g., decision deadline, sprint planning, etc.]
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other information that might be helpful.
+      placeholder: |
+        Related issues, previous discussions, or other notes...

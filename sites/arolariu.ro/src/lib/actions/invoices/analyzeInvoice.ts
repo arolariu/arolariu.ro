@@ -10,7 +10,7 @@ import type {Invoice} from "@/types/invoices";
  * @returns A promise that resolves to the analyzed Invoice object or null if the analysis fails.
  */
 export default async function analyzeInvoice(id: string, authToken: string): Promise<Invoice | null> {
-  console.info(">>> Executing server action::analyzeInvoice, with:", {id, authToken});
+  console.info(">>> Executing server action {{analyzeInvoice}}, with:", {id, authToken});
 
   try {
     const response = await fetch(`${API_URL}/rest/v1/invoices/${id}/analyze`, {

@@ -1,0 +1,91 @@
+---
+title: Azure Bicep Infrastructure - Resource Architecture
+---
+flowchart TB
+    subgraph Network["🌐 Networking Layer"]
+        AFD[Azure Front Door<br/>CDN + WAF]
+        DNS[DNS Zone<br/>arolariu.ro]
+        AFD <--> DNS
+    end
+
+    subgraph Websites["🌍 Web Applications"]
+        subgraph ProdPlan["Production App Service Plan"]
+            FE[arolariu.ro<br/>Next.js Frontend]
+            BE[api.arolariu.ro<br/>.NET 10 API]
+        end
+
+        subgraph DevPlan["Development App Service Plan"]
+            DEV[dev.arolariu.ro<br/>Next.js Dev]
+        end
+
+        subgraph Static["Static Web Apps"]
+            DOCS[docs.arolariu.ro<br/>DocFX]
+            CV[cv.arolariu.ro<br/>SvelteKit]
+        end
+    end
+
+    subgraph Identity["🔐 Identity & Security"]
+        UAMI_FE[UAMI: Frontend]
+        UAMI_BE[UAMI: Backend]
+        UAMI_INFRA[UAMI: Infrastructure]
+        FED[Federated Credentials<br/>GitHub OIDC]
+    end
+
+    subgraph Config["⚙️ Configuration"]
+        KV[Azure Key Vault<br/>Secrets]
+        AC[App Configuration<br/>Feature Flags]
+        KV <--> AC
+    end
+
+    subgraph Storage["📦 Storage Layer"]
+        SA[Storage Account<br/>Blobs/CDN]
+        ACR[Container Registry<br/>Docker Images]
+        SQL[Azure SQL Server<br/>Relational DB]
+        COSMOS[Cosmos DB<br/>NoSQL Documents]
+    end
+
+    subgraph Observability["📊 Observability"]
+        LAW[Log Analytics<br/>Workspace]
+        AI[Application Insights<br/>APM]
+        GRAF[Managed Grafana<br/>Dashboards]
+        LAW --> AI --> GRAF
+    end
+
+    subgraph AIServices["🤖 AI Services"]
+        OAI[Azure OpenAI<br/>GPT Models]
+        AIF[AI Foundry<br/>ML Hub]
+        OAI <--> AIF
+    end
+
+    %% Connections
+    AFD --> FE
+    AFD --> BE
+    AFD --> DEV
+    AFD --> DOCS
+    AFD --> CV
+
+    UAMI_FE --> FE
+    UAMI_FE --> DEV
+    UAMI_BE --> BE
+    UAMI_BE --> OAI
+    UAMI_INFRA --> FED
+
+    FE --> KV
+    BE --> KV
+    BE --> SQL
+    BE --> COSMOS
+    FE --> SA
+    BE --> SA
+
+    AI --> FE
+    AI --> BE
+
+    ACR --> FE
+    ACR --> BE
+
+    style AFD fill:#0078d4,color:#fff
+    style FE fill:#38bdf8,color:#000
+    style BE fill:#22c55e,color:#000
+    style KV fill:#f59e0b,color:#000
+    style SQL fill:#6366f1,color:#fff
+    style OAI fill:#10b981,color:#fff

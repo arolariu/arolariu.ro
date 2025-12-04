@@ -37,7 +37,7 @@ public interface IMerchantOrchestrationService
   /// </summary>
   /// <param name="parentCompanyId"></param>
   /// <returns></returns>
-  Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid? parentCompanyId = null);
+  Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId);
   #endregion
 
   #region Update Merchant API

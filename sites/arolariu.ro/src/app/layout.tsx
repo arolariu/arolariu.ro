@@ -6,6 +6,7 @@ import {Suspense} from "react";
 import Eula from "./EULA";
 import Loading from "./loading";
 import ContextProviders from "./providers";
+
 import Tracking from "./tracking";
 
 // @ts-ignore -- css file has no typings.
@@ -13,14 +14,6 @@ import "@arolariu/components/styles.css";
 
 // @ts-ignore -- css file has no typings.
 import "./globals.css";
-
-// /**
-//  * Generates metadata for the Terms of Service page.
-//  * @returns The metadata for the Terms of Service page.
-//  */
-// export async function generateMetadata(): Promise<Metadata> {
-//   return createMetadata();
-// }
 
 /**
  * The root layout of the website that wraps the entire app.

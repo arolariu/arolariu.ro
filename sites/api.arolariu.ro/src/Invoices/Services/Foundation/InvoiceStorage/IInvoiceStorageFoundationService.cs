@@ -57,15 +57,15 @@ public interface IInvoiceStorageFoundationService
 
   #region Read Invoice Objects API
   /// <summary>
-  /// Enumerates all invoices for a given partition (or across partitions if none supplied).
+  /// Enumerates all invoices for a given partition.
   /// </summary>
   /// <remarks>
   /// <para><b>Pagination:</b> Not yet implemented; large result sets may incur high RU / memory usage (backlog item).</para>
   /// <para><b>Soft Delete:</b> Implementations SHOULD filter out soft-deleted invoices unless a diagnostic flag is added in future.</para>
   /// </remarks>
-  /// <param name="userIdentifier">Optional partition / tenant context.</param>
+  /// <param name="userIdentifier">Partition / tenant context.</param>
   /// <returns>Enumerable collection (empty if none).</returns>
-  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid? userIdentifier = null);
+  Task<IEnumerable<Invoice>> ReadAllInvoiceObjects(Guid userIdentifier);
   #endregion
 
   #region Update Invoice Object API

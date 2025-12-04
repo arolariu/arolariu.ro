@@ -67,6 +67,7 @@ internal sealed class SwaggerFilterService : IDocumentFilter
   {
     ArgumentNullException.ThrowIfNull(swaggerDoc);
     FilterEndpointsFromDiscovery(swaggerDoc);
+    FilterTagsFromDiscovery(swaggerDoc);
     AddExternalDocumentation(swaggerDoc);
   }
 
@@ -113,6 +114,31 @@ internal sealed class SwaggerFilterService : IDocumentFilter
     foreach (var endpoint in ignoredEndpoints)
     {
       swaggerDoc.Paths.Remove(endpoint);
+    }
+  }
+
+  /// <summary>
+  /// Removes specified tags from the OpenAPI document.
+  /// This ensures that internal or unwanted tags do not clutter the documentation.
+  /// </summary>
+  /// <param name="swaggerDoc">The OpenAPI document.</param>
+  private static void FilterTagsFromDiscovery(OpenApiDocument swaggerDoc)
+  {
+    ArgumentNullException.ThrowIfNull(swaggerDoc);
+
+    var ignoredTags = new[]
+    {
+      "InvoiceEndpoints",
+      "arolariu.Backend.Core",
+    };
+
+    if (swaggerDoc.Tags is not null)
+    {
+      foreach (var tag in ignoredTags)
+      {
+        var openApiTag = new OpenApiTag { Name = tag };
+        swaggerDoc.Tags.Remove(openApiTag);
+      }
     }
   }
 

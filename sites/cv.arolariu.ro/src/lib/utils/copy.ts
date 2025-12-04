@@ -1,8 +1,39 @@
 import {error, ok, type Result} from "./result";
 
 /**
- * Copy arbitrary text to the clipboard (Phase 0 utility consolidation).
- * Falls back to a temporary textarea if navigator.clipboard is unavailable or errors.
+ * Copies arbitrary text to the system clipboard with graceful fallback.
+ *
+ * @remarks
+ * **Execution Context**: Browser-only. Returns error Result in SSR environments.
+ *
+ * **Clipboard Strategy**:
+ * 1. Attempts modern `navigator.clipboard.writeText()` API first (async, secure context)
+ * 2. Falls back to hidden textarea + `execCommand('copy')` for legacy browsers
+ *
+ * **Why Result Pattern?**
+ * - Avoids throwing exceptions for expected failure cases (SSR, permissions)
+ * - Caller can handle clipboard unavailability gracefully without try/catch
+ *
+ * **Security Considerations**:
+ * - Modern clipboard API requires secure context (HTTPS) in some browsers
+ * - User gesture may be required depending on browser security policies
+ *
+ * @param text - The string content to copy. Empty string is a no-op returning `ok()`.
+ * @returns `Result<void>` - `ok()` on success, `error(Error)` on failure or SSR context.
+ *
+ * @example
+ * ```typescript
+ * import { copyText } from "@/lib/utils/copy";
+ *
+ * const result = await copyText("Hello, clipboard!");
+ * if (result.ok) {
+ *   console.log("Copied successfully");
+ * } else {
+ *   console.error("Copy failed:", result.error);
+ * }
+ * ```
+ *
+ * @see {@link Result} for the Result type pattern used
  */
 export async function copyText(text: string): Promise<Result<void>> {
   // SSR / non-browser guard

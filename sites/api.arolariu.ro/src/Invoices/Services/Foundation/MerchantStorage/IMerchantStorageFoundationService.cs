@@ -61,9 +61,9 @@ public interface IMerchantStorageFoundationService
   /// <para><b>Pagination:</b> Not implemented; large sets could be expensive (backlog: add paging and continuation tokens).</para>
   /// <para><b>Filtering:</b> Soft-deleted entities SHOULD be excluded if soft delete introduced.</para>
   /// </remarks>
-  /// <param name="parentCompanyId">Partition discriminator; null may imply cross-partition enumeration.</param>
+  /// <param name="parentCompanyId">Partition discriminator.</param>
   /// <returns>Enumerable (empty if none).</returns>
-  Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid? parentCompanyId = null);
+  Task<IEnumerable<Merchant>> ReadAllMerchantObjects(Guid parentCompanyId);
   #endregion
 
   #region Update Merchant Object API

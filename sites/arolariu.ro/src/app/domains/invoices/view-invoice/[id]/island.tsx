@@ -1,8 +1,8 @@
 "use client";
 
-import {FakeInvoice, FakeMerchant} from "@/data/mocks/invoices";
+import type {Invoice, Merchant} from "@/types/invoices";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
-import {AnimatePresence, motion, type Variants} from "motion/react";
+import {motion, type Variants} from "motion/react";
 import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
 import DialogContainer from "../../_contexts/DialogContainer";
 import {DialogProvider} from "../../_contexts/DialogContext";
@@ -13,37 +13,36 @@ import SidebarSection from "./_components/sidebar/SidebarSection";
 import MetadataTab from "./_components/tabs/MetadataTab";
 import RecipesTab from "./_components/tabs/RecipesTab";
 
-const containerVariants: Variants = {
-  hidden: {opacity: 0},
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants: Variants = {
-  hidden: {y: 20, opacity: 0},
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {type: "spring", stiffness: 300, damping: 24},
-  },
-};
+type Props = Readonly<{
+  readonly invoice: Invoice;
+  readonly merchant: Merchant;
+}>;
 
 /**
  * This function renders the view invoice page.
  * @returns The JSX for the view invoice page.
  */
-export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{invoiceIdentifier: string}>) {
-  console.log(">>> invoiceIdentifier", invoiceIdentifier);
+export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.JSX.Element {
+  const {invoice, merchant} = props;
 
-  // Invoice data (mocked for this example)
-  const invoice = FakeInvoice;
+  const containerVariants: Variants = {
+    hidden: {opacity: 0},
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
 
-  // Merchant data (mocked for this example)
-  const merchant = FakeMerchant;
+  const itemVariants: Variants = {
+    hidden: {y: 20, opacity: 0},
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {type: "spring", stiffness: 300, damping: 24},
+    },
+  };
 
   return (
     <DialogProvider>
@@ -80,19 +79,17 @@ export default function RenderViewInvoiceScreen({invoiceIdentifier}: Readonly<{i
                   </TabsTrigger>
                 </TabsList>
 
-                <AnimatePresence mode='wait'>
-                  <TabsContent
-                    value='recipes'
-                    className='mt-4'>
-                    <RecipesTab recipes={invoice.possibleRecipes} />
-                  </TabsContent>
+                <TabsContent
+                  value='recipes'
+                  className='mt-4'>
+                  <RecipesTab recipes={invoice.possibleRecipes} />
+                </TabsContent>
 
-                  <TabsContent
-                    value='metadata'
-                    className='mt-4'>
-                    <MetadataTab metadata={invoice.additionalMetadata} />
-                  </TabsContent>
-                </AnimatePresence>
+                <TabsContent
+                  value='metadata'
+                  className='mt-4'>
+                  <MetadataTab metadata={invoice.additionalMetadata} />
+                </TabsContent>
               </Tabs>
             </motion.div>
 

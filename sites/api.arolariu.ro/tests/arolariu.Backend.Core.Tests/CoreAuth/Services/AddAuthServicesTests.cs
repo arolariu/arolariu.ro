@@ -62,6 +62,7 @@ public sealed class AddAuthServicesTests
     // Identity managers
     Assert.IsNotNull(provider.GetService<UserManager<AuthenticatedUser>>());
     Assert.IsNotNull(provider.GetService<SignInManager<AuthenticatedUser>>());
+    Assert.IsNotNull(provider.GetService<RoleManager<AuthenticatedUserRole>>());
 
     // Authorization services
     Assert.IsNotNull(provider.GetService<IAuthorizationService>());

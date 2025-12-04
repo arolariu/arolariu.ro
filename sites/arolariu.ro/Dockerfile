@@ -16,8 +16,17 @@ RUN addgroup --system --gid 1001 nodejs && \
 # ========================================
 FROM base AS deps
 WORKDIR /app
-COPY package.json ./
-RUN npm install
+
+# Copy root package files for workspace resolution
+COPY package.json package-lock.json ./
+COPY tsconfig.json vitest.config.ts ./
+
+# Copy workspace package manifests
+COPY packages/components/package.json ./packages/components/
+COPY sites/arolariu.ro/package.json ./sites/arolariu.ro/
+
+# Install all dependencies (this resolves workspace links)
+RUN npm ci
 
 # ========================================
 # Stage 2: Build the application
@@ -25,9 +34,21 @@ RUN npm install
 FROM base AS builder
 WORKDIR /app
 
-# Copy installed dependencies from deps stage
+# Copy everything from deps (includes node_modules with workspace links)
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --from=deps /app/package.json ./package.json
+COPY --from=deps /app/package-lock.json ./package-lock.json
+COPY --from=deps /app/tsconfig.json ./tsconfig.json
+COPY --from=deps /app/vitest.config.ts ./vitest.config.ts
+
+# Copy the components package source (needed for workspace link)
+COPY packages/components/ ./packages/components/
+
+# Copy the website source
+COPY sites/arolariu.ro/ ./sites/arolariu.ro/
+
+# Build the website
+WORKDIR /app/sites/arolariu.ro
 RUN npm run build
 
 # ========================================
@@ -36,9 +57,12 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 RUN mkdir .next && chown nextjs:nodejs .next
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/public ./public
+# The standalone output preserves the monorepo structure, so server.js is at sites/arolariu.ro/server.js
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/standalone/sites/arolariu.ro/ ./
+# Copy the node_modules from the standalone output (contains only required dependencies)
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/standalone/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/static ./.next/static
 
 USER nextjs
 EXPOSE 3000

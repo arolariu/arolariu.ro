@@ -81,9 +81,7 @@
     "build:before": "node scripts/beforeBuild.ts",
     "build:after": "node scripts/afterBuild.ts",
     "build:clean": "rimraf dist",
-    "build:exports": "node scripts/generate-exports.ts",
-    "build:storybook": "storybook build",
-    "storybook": "storybook dev -p 6006"
+    "build:exports": "node scripts/generate-exports.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "*",
@@ -143,13 +141,6 @@
     "@rsbuild/core": "*",
     "@rsbuild/plugin-react": "*",
     "@rslib/core": "*",
-    "@storybook/addon-a11y": "*",
-    "@storybook/addon-docs": "*",
-    "@storybook/addon-essentials": "*",
-    "@storybook/addon-interactions": "*",
-    "@storybook/addon-links": "*",
-    "@storybook/addon-storysource": "*",
-    "@storybook/addon-themes": "*",
     "@tailwindcss/postcss": "*",
     "@types/node": "*",
     "@types/react": "*",
@@ -160,10 +151,6 @@
     "react": "*",
     "react-dom": "*",
     "rimraf": "*",
-    "storybook": "*",
-    "storybook-addon-rslib": "*",
-    "storybook-builder-rsbuild": "*",
-    "storybook-react-rsbuild": "*",
     "tailwindcss": "*",
     "typescript": "*"
   },

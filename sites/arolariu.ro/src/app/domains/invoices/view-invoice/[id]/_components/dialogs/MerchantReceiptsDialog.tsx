@@ -3,7 +3,6 @@
 // TODO: refactor.
 /* eslint-disable */
 
-import {FakeInvoiceBigList} from "@/data/mocks/invoices";
 import {usePaginationWithSearch} from "@/hooks";
 import {formatDate} from "@/lib/utils.generic";
 import type {Invoice, Merchant} from "@/types/invoices";
@@ -59,7 +58,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
     // Fetch receipts from the server or API
     // For now, we'll use a timeout of 3 sec and do mock invoices
     setTimeout(() => {
-      setReceipts(FakeInvoiceBigList);
+      setReceipts([]);
     }, 3000);
   }, [payload]);
 

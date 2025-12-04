@@ -1,0 +1,168 @@
+name: 📋 Work Item
+description: Create a standard work item for planned tasks, chores, or technical debt
+title: "[TASK] "
+labels: ["task"]
+assignees:
+  - arolariu
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Work Item 📋
+
+        Use this template for planned tasks, technical improvements, chores, or internal work items.
+        This is for work that is already planned or identified, not for bugs or feature requests.
+
+  - type: dropdown
+    id: work-type
+    attributes:
+      label: Work Item Type
+      description: What type of work is this?
+      options:
+        - 🔧 Refactoring - Code quality improvements
+        - 🧹 Chore - Maintenance or housekeeping
+        - 📦 Dependency Update - Update libraries or frameworks
+        - 🏗️ Technical Debt - Address accumulated technical debt
+        - 🔄 Migration - Migrate code, data, or infrastructure
+        - 📝 Configuration - Update configuration or settings
+        - 🧪 Testing - Add or improve tests
+        - 📚 Documentation - Update or create documentation
+        - 🚀 CI/CD - Pipeline or deployment improvements
+        - 🔍 Investigation - Research or spike work
+        - 🏷️ Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Affected Area
+      description: Which area(s) of the codebase will this work affect?
+      multiple: true
+      options:
+        - Frontend (sites/arolariu.ro)
+        - Backend API (sites/api.arolariu.ro)
+        - CV Site (sites/cv.arolariu.ro)
+        - Documentation (sites/docs.arolariu.ro)
+        - Component Library (packages/components)
+        - Infrastructure (infra/)
+        - Build/Scripts (scripts/)
+        - CI/CD (.github/workflows)
+        - Configuration (root config files)
+        - Multiple Areas
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: What is the priority of this work item?
+      options:
+        - 🔴 P0 - Critical - Must be done immediately
+        - 🟠 P1 - High - Should be done this sprint
+        - 🟡 P2 - Medium - Should be done this month
+        - 🟢 P3 - Low - Can be done when time permits
+        - ⚪ P4 - Backlog - Nice to have, no timeline
+    validations:
+      required: true
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: Estimated Size
+      description: Roughly how much effort is required?
+      options:
+        - 🔹 XS - Less than 1 hour
+        - 🔹 S - 1-4 hours
+        - 🔹 M - 1-2 days
+        - 🔹 L - 3-5 days
+        - 🔹 XL - 1-2 weeks
+        - 🔹 XXL - More than 2 weeks (consider breaking down)
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A brief summary of what needs to be done.
+      placeholder: |
+        Clear, concise description of the work to be completed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: Background / Context
+      description: Why is this work needed? What's the context?
+      placeholder: |
+        Provide background information that helps understand why this work is important.
+        Include any relevant history, decisions, or constraints.
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope of Work
+      description: Define what is in scope and out of scope for this work item.
+      placeholder: |
+        **In Scope:**
+        - Item 1
+        - Item 2
+
+        **Out of Scope:**
+        - Item A
+        - Item B
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Task Breakdown
+      description: Break down the work into specific tasks if possible.
+      placeholder: |
+        - [ ] Task 1
+        - [ ] Task 2
+        - [ ] Task 3
+        - [ ] Update tests
+        - [ ] Update documentation
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What conditions must be met for this work to be considered complete?
+      placeholder: |
+        - [ ] All tests pass
+        - [ ] Code review approved
+        - [ ] Documentation updated
+        - [ ] No regressions introduced
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies / Blockers
+      description: Are there any dependencies or blockers for this work?
+      placeholder: |
+        - Depends on: #123
+        - Blocked by: Waiting for API spec
+        - Requires: Access to production logs
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks / Considerations
+      description: Are there any risks or special considerations?
+      placeholder: |
+        - Risk: May affect performance in production
+        - Consideration: Needs to be backwards compatible
+        - Note: Requires database migration
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Notes
+      description: Any other relevant information.
+      placeholder: |
+        Related issues, documentation links, or other notes...
