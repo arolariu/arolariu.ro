@@ -1,0 +1,42 @@
+---
+title: Azure Bicep Infrastructure - Deployment Flow
+---
+flowchart TB
+    subgraph Subscription["Azure Subscription"]
+        main[("main.bicep<br/>Subscription Scope")]
+
+        main --> RG["Resource Group<br/>(arolariu-rg)"]
+        RG --> facade[("facade.bicep<br/>Orchestrator")]
+    end
+
+    subgraph Deployment["Deployment Modules"]
+        facade --> identity["🔐 Identity<br/>Deployment"]
+        facade --> rbac["🛡️ RBAC<br/>Deployment"]
+        facade --> config["⚙️ Configuration<br/>Deployment"]
+        facade --> observe["📊 Observability<br/>Deployment"]
+        facade --> storage["📦 Storage<br/>Deployment"]
+        facade --> compute["💻 Compute<br/>Deployment"]
+        facade --> sites["🌍 Sites<br/>Deployment"]
+        facade --> network["🌐 Network<br/>Deployment"]
+        facade --> ai["🤖 AI<br/>Deployment"]
+        facade --> bindings["🔗 Bindings<br/>Deployment"]
+    end
+
+    %% Dependencies
+    identity --> rbac
+    identity --> observe
+    identity --> storage
+    identity --> compute
+    config --> sites
+    observe --> sites
+    storage --> sites
+    compute --> sites
+    sites --> network
+    identity --> ai
+    network --> bindings
+    sites --> bindings
+    compute --> bindings
+
+    style main fill:#1e3a5f,color:#fff
+    style facade fill:#2d5a87,color:#fff
+    style RG fill:#0f2d44,color:#fff

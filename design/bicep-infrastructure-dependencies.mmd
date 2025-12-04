@@ -1,0 +1,54 @@
+---
+title: Azure Bicep Infrastructure - Module Dependencies
+---
+graph LR
+    subgraph Level1["Level 1 - Foundation"]
+        ID[identitiesDeployment]
+        CFG[configurationDeployment]
+    end
+
+    subgraph Level2["Level 2 - Core Services"]
+        RBAC[rbacDeployment]
+        OBS[observabilityDeployment]
+        STR[storageDeployment]
+        CMP[computeDeployment]
+    end
+
+    subgraph Level3["Level 3 - Applications"]
+        SITES[websiteDeployment]
+        AI[aiDeployment]
+    end
+
+    subgraph Level4["Level 4 - Edge"]
+        NET[networkDeployment]
+        BIND[bindingsDeployment]
+    end
+
+    %% Dependencies
+    ID --> RBAC
+    ID --> OBS
+    ID --> STR
+    ID --> CMP
+    ID --> AI
+    CFG --> OBS
+    CFG --> SITES
+
+    OBS --> SITES
+    STR --> SITES
+    CMP --> SITES
+    CMP --> BIND
+
+    SITES --> NET
+    SITES --> BIND
+    NET --> BIND
+
+    style ID fill:#ef4444,color:#fff
+    style CFG fill:#f97316,color:#fff
+    style RBAC fill:#eab308,color:#000
+    style OBS fill:#84cc16,color:#000
+    style STR fill:#22c55e,color:#000
+    style CMP fill:#14b8a6,color:#fff
+    style SITES fill:#06b6d4,color:#fff
+    style AI fill:#8b5cf6,color:#fff
+    style NET fill:#ec4899,color:#fff
+    style BIND fill:#f43f5e,color:#fff
