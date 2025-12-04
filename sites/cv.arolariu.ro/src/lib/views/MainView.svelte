@@ -1,3 +1,45 @@
+<!--
+@component MainView
+
+Landing page presenting CV format options as an interactive panel grid.
+
+@remarks
+**Rendering Context**: SvelteKit page component (SSR + hydration).
+
+**Purpose**: Serves as the entry point for the CV site, allowing visitors
+to choose their preferred CV format (Human-readable, PDF, or JSON).
+
+**Layout**:
+- Centered content with maximum width constraint (6xl)
+- 2-column responsive grid on medium+ screens
+- Full-width panels on mobile
+
+**Panels**:
+1. **Human** - Interactive web-based CV with animations
+2. **PDF** - Traditional printable format (ATS-optimized)
+3. **JSON** - Structured data for developers/APIs
+4. **Help** - Opens help dialog modal
+
+**Theming**: Supports light/dark mode with smooth color transitions.
+Theme toggle fixed in top-right corner.
+
+**Navigation**: Uses SvelteKit's `goto()` for client-side navigation
+to respective format routes.
+
+**Accessibility**:
+- All panels are `<button>` elements with proper `aria-label`
+- Focus rings visible on keyboard navigation
+- Gradient overlays are decorative (don't affect readability)
+
+@example
+```svelte
+<MainView />
+```
+
+@see {@link HumanView} for the human-readable CV
+@see {@link PdfView} for the PDF viewer
+@see {@link JsonView} for the JSON data view
+-->
 <script lang="ts">
   import {landing} from "@/data";
   import ThemeToggle from "@/components/ThemeToggle.svelte";
@@ -5,8 +47,22 @@
   import {goto} from "$app/navigation";
   import Icon from "@/presentation/Icon.svelte";
   import Footer from "@/presentation/Footer.svelte";
+
+  /** Controls visibility of the help dialog modal. */
   let showHelpDialog = $state<boolean>(false);
 
+  /**
+   * Panel configuration for the landing page grid.
+   *
+   * @remarks
+   * Each panel represents a CV format option with:
+   * - `id` - Unique identifier for tracking/styling
+   * - `title` - Display title shown on the panel
+   * - `description` - Explanatory text below the title
+   * - `gradient` - Tailwind gradient classes for visual distinction
+   * - `icon` - Icon name for the panel's visual indicator
+   * - `action` - Click handler (navigation or modal trigger)
+   */
   const panels = [
     {
       id: "human",

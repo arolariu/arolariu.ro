@@ -1,15 +1,68 @@
+<!--
+@component JsonView
+
+Displays CV data in JSON format with copy/download functionality.
+
+@remarks
+**Rendering Context**: SvelteKit page component (SSR + hydration).
+
+**Purpose**: Presents the CV as structured JSON data following the
+JSON Resume schema v1.0.0, enabling interoperability with resume parsers,
+ATS systems, and developer tooling.
+
+**Features**:
+- Toggle between formatted (pretty-printed) and raw (minified) JSON
+- Copy to clipboard with visual feedback
+- Download as `.json` file
+- Character count display
+- API endpoint documentation
+
+**JSON Resume Schema**: Output conforms to https://jsonresume.org/schema/
+for maximum compatibility with resume processing tools.
+
+**State Management**:
+- `copySuccess` - Tracks clipboard copy feedback (2s timeout)
+- `activeTab` - Toggles between "formatted" and "raw" views
+
+**Accessibility**:
+- Tab panel uses proper ARIA roles (`tablist`, `tab`, `tabpanel`)
+- Focus-visible rings for keyboard navigation
+- Semantic code block presentation
+
+@example
+```svelte
+<JsonView />
+```
+
+@see {@link jsonCVData} for the underlying data structure
+@see {@link copyText} for clipboard utility
+@see {@link downloadText} for download utility
+-->
 <script lang="ts">
   import {ui} from "@/data";
   import Header, {type ActionConfig} from "@/presentation/Header.svelte";
   import {copyText, downloadText} from "@/lib/utils";
   import {jsonCVData} from "@/data/json";
 
+  /** Tracks whether the copy action succeeded (resets after 2 seconds). */
   let copySuccess = $state(false);
+
+  /** Active tab controlling JSON format display: "formatted" or "raw". */
   let activeTab = $state<"formatted" | "raw">("formatted");
 
+  /** Pre-computed pretty-printed JSON with 2-space indentation. */
   const formattedJSON = JSON.stringify(jsonCVData, null, 2);
+
+  /** Pre-computed minified JSON (no whitespace). */
   const rawJSON = JSON.stringify(jsonCVData);
 
+  /**
+   * Copies the currently visible JSON to the system clipboard.
+   *
+   * @remarks
+   * Uses the active tab to determine whether to copy formatted or raw JSON.
+   * Shows visual feedback for 2 seconds via `copySuccess` state.
+   */
   async function copyToClipboard() {
     const textToCopy = activeTab === "raw" ? rawJSON : formattedJSON;
     await copyText(textToCopy);
@@ -17,15 +70,31 @@
     setTimeout(() => (copySuccess = false), 2000);
   }
 
+  /**
+   * Downloads the currently visible JSON as a file.
+   *
+   * @remarks
+   * Uses the active tab to determine whether to download formatted or raw JSON.
+   * File is named "alexandru-olariu-cv.json" with MIME type "application/json".
+   */
   function downloadJSONFile() {
     const textToDownload = activeTab === "raw" ? rawJSON : formattedJSON;
     downloadText(textToDownload, "alexandru-olariu-cv.json", "application/json");
   }
 
+  /**
+   * Switches between formatted and raw JSON display modes.
+   *
+   * @param tab - The tab to activate: "formatted" for pretty-printed,
+   *   "raw" for minified JSON.
+   */
   function setTab(tab: "formatted" | "raw") {
     activeTab = tab;
   }
 
+  /**
+   * Configuration for the tab switcher component.
+   */
   interface TabsConfig {
     options: {id: string; label: string}[];
     active: string;
