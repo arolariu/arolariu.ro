@@ -2,7 +2,7 @@
 # NPM Package Publishing Workflow for @arolariu/components
 # =============================================================================
 # This workflow publishes the @arolariu/components package to npm registry
-# using Trusted Publishing (OIDC) for secure, token-less authentication.
+# using Trusted Publishing (OIDC) for secure, tokenless authentication.
 #
 # Features:
 #   - Trusted Publishing via OIDC (no long-lived npm tokens required)
