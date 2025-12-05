@@ -10,17 +10,9 @@
 
 version: 2
 
-registries:
-  # NPM Registry (public packages)
-  npm-registry:
-    type: npm-registry
-    url: https://registry.npmjs.org
-    replaces-base: true
-
-  # NuGet Registry (public packages)
-  nuget-registry:
-    type: nuget-feed
-    url: https://api.nuget.org/v3/index.json
+# Note: Registry definitions are only needed for private packages or when
+# authentication is required. Public npm and NuGet packages work without
+# explicit registry configuration.
 
 updates:
   # ===========================================================================
