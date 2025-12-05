@@ -75,7 +75,7 @@ jobs:
       name: ${{ steps.package-info.outputs.name }}
     steps:
       - name: 🛫 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 📦 Setup workspace
         uses: ./.github/actions/setup-workspace
@@ -128,7 +128,7 @@ jobs:
       url: https://www.npmjs.com/package/${{ needs.validate.outputs.name }}
     steps:
       - name: 🛫 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 📦 Setup Node.js with npm registry
         uses: actions/setup-node@v4
