@@ -167,9 +167,9 @@ jobs:
 
       - name: 🚀 Publish to npm
         if: inputs.dry-run != true
-        run: npm publish --tag ${{ inputs.tag || 'latest' }} --access public
+        run: npm publish --provenance --tag ${{ inputs.tag || 'latest' }} --access public
         # Note: No NODE_AUTH_TOKEN needed - using Trusted Publishing (OIDC)
-        # Provenance is automatically generated when using trusted publishing
+        # Provenance is now explicitly generated via --provenance flag
 
       - name: ✅ Publish confirmation
         if: inputs.dry-run != true
