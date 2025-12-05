@@ -1,19 +1,68 @@
+# =============================================================================
+# Main Website Build Workflow (Development/Preview)
+# =============================================================================
+# This workflow handles the CI/CD pipeline for the main Next.js website
+# (arolariu.ro) in development/preview environments, including testing,
+# containerization, and deployment to development Azure App Service.
+#
+# Architecture:
+#   - Phase 1: Test - Unit tests (Vitest) and E2E tests (Playwright)
+#   - Phase 2: Build - Containerizes Next.js app and pushes to ACR
+#
+# Technology Stack:
+#   - Next.js 16.0.0-beta.0 (App Router, React Server Components)
+#   - React 19.2.0 with TypeScript 5.9.3 (strict mode)
+#   - Playwright for E2E testing
+#   - Vitest for unit testing
+#   - Docker for containerization
+#
+# Triggers:
+#   - Automatic: Push to 'preview' branch with changes in sites/arolariu.ro/
+#   - Manual: workflow_dispatch with environment/infrastructure selection
+#
+# Test Coverage:
+#   - Unit tests with code coverage (uploaded to CodeCov)
+#   - E2E tests with Playwright
+#   - Test reports uploaded as artifacts
+#   - PR comments with test results (on preview branch)
+#
+# Security:
+#   - Uses OIDC for Azure authentication (no long-lived secrets)
+#   - Azure Container Registry credentials in GitHub Secrets
+#   - Environment-specific configurations
+#
+# Prerequisites:
+#   1. Azure Managed Identity configured with Federated Credentials
+#   2. Azure Container Registry with push/pull access
+#   3. GitHub Secrets configured:
+#      - AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+#      - AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID
+#      - AZURE_CONTAINER_REGISTRY_USERNAME/PASSWORD/ADDRESS
+#      - CODECOV_TOKEN (for coverage reporting)
+#
+# Related Workflows:
+#   - official-website-release.yml: Deploys built container to Azure
+# =============================================================================
+
 name: "official-website-build"
 
 permissions:
-  id-token: write
-  contents: read
-  issues: write
-  pull-requests: write
+  id-token: write # Required for OIDC authentication with Azure
+  contents: read # Required to checkout repository
+  issues: write # Required for PR comments on test results
+  pull-requests: write # Required for PR comments on test results
 
 defaults:
   run:
     working-directory: ./sites/arolariu.ro
 
 on:
+  # Automatic trigger on preview branch changes to main website
   push:
     branches: ["preview"]
     paths: ["sites/arolariu.ro/**"]
+
+  # Manual trigger for controlled builds
   workflow_dispatch:
     inputs:
       environment:

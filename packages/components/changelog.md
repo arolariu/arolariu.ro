@@ -8,6 +8,11 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 ## 🎉 Latest Releases
 
+### [0.4.0](https://www.npmjs.com/package/@arolariu/components/v/0.4.0) - 2025-12-05
+**✨ New Features & Improvements**
+- 🔒 Switched to Trusted Publishing workflow for attestation of package.
+- Removed storybook stories for now, will re-introduce at a later date.
+
 ### [0.3.1](https://www.npmjs.com/package/@arolariu/components/v/0.3.1) - 2025-11-11
 **🔧 Bug Fixes & Maintenance**
 - 🐛 **Linting** Migrated from deprecated ElementRef to ComponentRef.

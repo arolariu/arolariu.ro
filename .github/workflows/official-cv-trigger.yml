@@ -1,17 +1,53 @@
+# =============================================================================
+# CV/Resume Website Build and Deployment Workflow
+# =============================================================================
+# This workflow handles the CI/CD pipeline for the CV/Resume website
+# (cv.arolariu.ro), built with SvelteKit and deployed to Azure Static Web Apps.
+#
+# Architecture:
+#   - Single Job: Build and deploy in one step for simplicity
+#   - Static Generation: SvelteKit builds static files for optimal performance
+#   - Serverless: Deployed to Azure Static Web Apps (global CDN included)
+#
+# Triggers:
+#   - Automatic: Push to 'main' branch with changes in sites/cv.arolariu.ro/
+#   - Manual: workflow_dispatch for on-demand deployments
+#
+# Technology Stack:
+#   - SvelteKit v2.46.2 with Azure Static Web Apps adapter
+#   - Node.js 24 for build environment
+#   - Azure Static Web Apps for hosting
+#
+# Security:
+#   - Uses OIDC for Azure authentication
+#   - Static Web Apps deployment token stored in GitHub Secrets
+#
+# Prerequisites:
+#   1. Azure Static Web Apps resource provisioned
+#   2. GitHub Secrets configured:
+#      - AZURE_STATIC_WEB_APPS_CV_TOKEN
+#
+# Output:
+#   - URL: https://cv.arolariu.ro
+# =============================================================================
+
 name: "official-cv-trigger"
 
 permissions:
-  id-token: write
-  contents: read
+  id-token: write # Required for OIDC authentication with Azure
+  contents: read # Required to checkout repository
 
 defaults:
   run:
     working-directory: ./sites/cv.arolariu.ro
 
 on:
+  # Automatic trigger on main branch changes to CV site
   push:
     branches: ["main"]
     paths: ["sites/cv.arolariu.ro/**"]
+
+  # Manual trigger for on-demand deployments
   workflow_dispatch:
 
 env:

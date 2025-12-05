@@ -1,14 +1,65 @@
+# =============================================================================
+# Code Hygiene Check Workflow
+# =============================================================================
+# This workflow performs comprehensive code quality checks on pull requests,
+# including formatting validation, linting, unit testing, and code statistics.
+#
+# Architecture:
+#   - Phase 1: Setup & Change Detection - Identifies modified files
+#   - Phase 2: Parallel Quality Checks:
+#     - Format Check: Prettier formatting validation
+#     - Lint Check: ESLint with 20+ plugins (strict mode)
+#     - Unit Tests: Jest/Vitest test execution
+#   - Phase 3: Code Statistics & Bundle Analysis
+#   - Phase 4: Summary & PR Comment - Consolidated feedback
+#
+# Quality Gates:
+#   - Formatting: Must pass Prettier check (auto-fixable locally)
+#   - Linting: Must pass ESLint with strict TypeScript rules
+#   - Testing: All unit tests must pass
+#   - Bundle Size: Tracked for regression detection
+#
+# Triggers:
+#   - Automatic: Pull request opened, synchronized, or reopened
+#   - Manual: workflow_dispatch for on-demand hygiene checks
+#
+# Concurrency:
+#   - Groups by PR number to avoid redundant runs
+#   - Cancels in-progress runs when new commits are pushed
+#
+# PR Comment Features:
+#   - Code statistics (files changed, lines added/deleted)
+#   - Bundle size analysis with comparison to main
+#   - Format/lint issues with actionable guidance
+#   - Test results summary
+#
+# Prerequisites:
+#   1. ESLint configuration (eslint.config.ts)
+#   2. Prettier configuration (prettier.config.ts)
+#   3. Vitest/Jest test configuration
+#   4. Custom hygiene scripts in .github/scripts/hygiene/
+#
+# Local Resolution:
+#   - Format: npm run format
+#   - Lint: npm run lint -- --fix
+#   - Tests: npm run test:unit
+# =============================================================================
+
 name: "Code Hygiene Check"
 
 permissions:
-  contents: read
-  pull-requests: write
+  contents: read # Required to checkout repository and read files
+  pull-requests: write # Required to post PR comments with results
 
 on:
+  # Automatic trigger on pull request activity
   pull_request:
     types: [opened, synchronize, reopened]
+
+  # Manual trigger for on-demand hygiene checks
   workflow_dispatch:
 
+# Prevent redundant runs - cancel in-progress when new commits arrive
 concurrency:
   group: hygiene-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true

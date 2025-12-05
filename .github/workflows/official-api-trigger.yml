@@ -1,17 +1,55 @@
+# =============================================================================
+# Backend API Build and Deployment Workflow
+# =============================================================================
+# This workflow handles the complete CI/CD pipeline for the .NET backend API
+# (api.arolariu.ro), including testing, containerization, and Azure deployment.
+#
+# Architecture:
+#   - Phase 1: Test - Runs unit tests to validate code quality
+#   - Phase 2: Build - Containerizes the .NET API using Docker
+#   - Phase 3: Deploy - Pushes container to ACR and deploys to Azure App Service
+#
+# Triggers:
+#   - Automatic: Push to 'main' branch with changes in sites/api.arolariu.ro/
+#   - Manual: workflow_dispatch with environment and infrastructure selection
+#
+# Security:
+#   - Uses OIDC (OpenID Connect) for Azure authentication (no long-lived secrets)
+#   - Azure Container Registry credentials stored in GitHub Secrets
+#   - Federated identity via Azure Managed Identity
+#
+# Prerequisites:
+#   1. Azure Managed Identity configured with Federated Credentials
+#   2. Azure Container Registry with push/pull access
+#   3. Azure App Service configured for container deployment
+#   4. GitHub Secrets configured:
+#      - AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+#      - AZURE_BACKEND_MANAGED_IDENTITY_CLIENT_ID
+#      - AZURE_CONTAINER_REGISTRY_USERNAME/PASSWORD/ADDRESS
+#
+# Documentation:
+#   - RFC 2001: Domain-Driven Design Architecture
+#   - RFC 2002: OpenTelemetry Backend Observability
+#   - RFC 2003: The Standard Implementation
+# =============================================================================
+
 name: "official-api-trigger"
 
 permissions:
-  id-token: write
-  contents: read
+  id-token: write # Required for OIDC authentication with Azure
+  contents: read # Required to checkout repository
 
 defaults:
   run:
     working-directory: ./sites/api.arolariu.ro
 
 on:
+  # Automatic trigger on main branch changes to backend API
   push:
     branches: ["main"]
     paths: ["sites/api.arolariu.ro/**"]
+
+  # Manual trigger for controlled deployments
   workflow_dispatch:
     inputs:
       environment:

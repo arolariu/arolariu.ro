@@ -1,13 +1,51 @@
+# =============================================================================
+# Documentation Website Build and Deployment Workflow
+# =============================================================================
+# This workflow generates and deploys the API documentation website
+# (docs.arolariu.ro) using DocFX for .NET API reference documentation.
+#
+# Architecture:
+#   - DocFX Metadata: Extracts XML documentation from .NET assemblies
+#   - DocFX Build: Generates static HTML documentation
+#   - Azure Static Web Apps: Hosts the generated documentation
+#
+# Triggers:
+#   - Automatic: Push to 'main' branch (excluding .github/ changes)
+#   - Manual: workflow_dispatch for on-demand documentation regeneration
+#
+# Technology Stack:
+#   - DocFX: .NET API documentation generator
+#   - .NET 10.0: Required for building and analyzing assemblies
+#   - Azure Static Web Apps: Global CDN hosting
+#
+# Security:
+#   - Uses OIDC for Azure authentication
+#   - Static Web Apps deployment token stored in GitHub Secrets
+#
+# Prerequisites:
+#   1. DocFX configuration in sites/docs.arolariu.ro/docfx.json
+#   2. .NET solution with XML documentation enabled
+#   3. GitHub Secrets configured:
+#      - AZURE_STATIC_WEB_APPS_DOCS_TOKEN
+#
+# Output:
+#   - URL: https://docs.arolariu.ro
+#   - Content: Auto-generated API reference from C# XML comments
+# =============================================================================
+
 name: "official-docs-trigger"
 
 permissions:
-  id-token: write
-  contents: read
+  id-token: write # Required for OIDC authentication with Azure
+  contents: read # Required to checkout repository
 
 on:
+  # Automatic trigger on main branch changes (except .github/)
   push:
     branches: ["main"]
     paths-ignore: [".github/*"]
+
+  # Manual trigger for on-demand documentation regeneration
   workflow_dispatch:
 
 env:
