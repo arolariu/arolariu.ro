@@ -1,5 +1,26 @@
-Contact: admin@arolariu.ro
+# Security Policy for arolariu.ro
+# This file follows RFC 9116 (https://www.rfc-editor.org/rfc/rfc9116)
+# Last updated: 2025-12-05
+
+# Contact information for reporting security vulnerabilities
+Contact: mailto:admin@arolariu.ro
+Contact: https://github.com/arolariu/arolariu.ro/security/advisories/new
+
+# Preferred languages for communication
 Preferred-Languages: en, ro
-Expires: 2025-12-31T22:00:00.000Z
+
+# Expiration date for this security.txt file (must be updated annually)
+Expires: 2026-12-31T23:59:59.000Z
+
+# Canonical URL for this security.txt file
 Canonical: https://arolariu.ro/security.txt
-Acknowledgments: https://arolariu.ro/acknowledgements
+
+# Security policy documentation
+Policy: https://github.com/arolariu/arolariu.ro/security/policy
+
+# Acknowledgments page for security researchers
+Acknowledgments: https://arolariu.ro/acknowledgements/
+Acknowledgments: https://github.com/arolariu/arolariu.ro/blob/main/SECURITY.md
+
+# Hiring information (if security positions are available)
+Hiring: https://arolariu.ro/careers/

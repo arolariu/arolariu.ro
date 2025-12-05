@@ -2,66 +2,166 @@
   "$schema": "https://json.schemastore.org/web-manifest",
   "background_color": "#000000",
   "categories": [
-    "education",
+    "business",
+    "finance",
     "productivity",
-    "utilities"
+    "utilities",
+    "education"
   ],
-  "description": "The `arolariu.ro` platform consists of a complex website, made by Alexandru-Razvan Olariu, a software engineer that is based in Romania.",
+  "description": "The arolariu.ro platform is a comprehensive personal website and invoice management system, created by Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania.",
   "dir": "ltr",
   "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "file_handlers": [
+    {
+      "action": "/domains/invoices/create-invoice/",
+      "accept": {
+        "application/pdf": [
+          ".pdf"
+        ],
+        "image/*": [
+          ".png",
+          ".jpg",
+          ".jpeg",
+          ".gif",
+          ".webp",
+          ".heic",
+          ".heif"
+        ]
+      }
+    }
+  ],
+  "handle_links": "preferred",
+  "iarc_rating_id": "",
   "icons": [
     {
+      "purpose": "any",
       "sizes": "72x72",
       "src": "manifest/android-chrome-72x72.png",
       "type": "image/png"
     },
     {
+      "purpose": "any",
       "sizes": "96x96",
       "src": "manifest/android-chrome-96x96.png",
       "type": "image/png"
     },
     {
+      "purpose": "any",
       "sizes": "128x128",
       "src": "manifest/android-chrome-128x128.png",
       "type": "image/png"
     },
     {
+      "purpose": "any",
       "sizes": "144x144",
       "src": "manifest/android-chrome-144x144.png",
       "type": "image/png"
     },
     {
+      "purpose": "any",
       "sizes": "192x192",
       "src": "manifest/android-chrome-192x192.png",
       "type": "image/png"
     },
     {
+      "purpose": "any",
       "sizes": "384x384",
       "src": "manifest/android-chrome-384x384.png",
       "type": "image/png"
     },
     {
+      "purpose": "any",
       "sizes": "512x512",
       "src": "manifest/android-chrome-512x512.png",
       "type": "image/png"
-    }
-  ],
-  "shortcuts": [
+    },
     {
-      "name": "Invoices Management System (IMS)",
-      "short_name": "IMS",
-      "description": "The Invoices Management System (IMS) is a platform that allows you to manage your invoices, in a secure and efficient way.",
-      "url": "/domains/invoices"
+      "purpose": "maskable",
+      "sizes": "72x72",
+      "src": "manifest/maskable-icon-72x72.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "96x96",
+      "src": "manifest/maskable-icon-96x96.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "128x128",
+      "src": "manifest/maskable-icon-128x128.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "144x144",
+      "src": "manifest/maskable-icon-144x144.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "192x192",
+      "src": "manifest/maskable-icon-192x192.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "384x384",
+      "src": "manifest/maskable-icon-384x384.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "512x512",
+      "src": "manifest/maskable-icon-512x512.png",
+      "type": "image/png"
     }
   ],
   "id": "pwa.arolariu.ro",
   "lang": "en",
-  "name": "arolariu.ro",
-  "orientation": "portrait",
-  "scope": "/",
-  "short_name": "arolariu",
-  "start_url": "https://arolariu.ro/?launcher=pwa",
-  "theme_color": "#9013fe",
+  "launch_handler": {
+    "client_mode": [
+      "navigate-existing",
+      "auto"
+    ]
+  },
+  "name": "arolariu.ro - Personal Platform",
+  "orientation": "any",
   "prefer_related_applications": false,
-  "related_applications": []
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://arolariu.ro/manifest.json"
+    }
+  ],
+  "scope": "/",
+  "screenshots": [
+    {
+      "form_factor": "wide",
+      "label": "Homepage on desktop",
+      "sizes": "1920x1080",
+      "src": "images/screenshots/desktop-home.png",
+      "type": "image/png"
+    },
+    {
+      "form_factor": "narrow",
+      "label": "Homepage on mobile",
+      "sizes": "390x844",
+      "src": "images/screenshots/mobile-home.png",
+      "type": "image/png"
+    }
+  ],
+  "short_name": "arolariu",
+  "start_url": "/?source=pwa",
+  "theme_color": "#9013fe"
 }
