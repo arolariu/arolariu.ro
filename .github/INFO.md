@@ -47,7 +47,8 @@ This directory contains all GitHub Actions workflows and their supporting TypeSc
     ├── official-api-trigger.yml      # Backend API deployment
     ├── official-cv-trigger.yml       # CV site deployment
     ├── official-docs-trigger.yml     # Documentation deployment
-    └── official-e2e-action.yml       # E2E testing
+    ├── official-e2e-action.yml       # E2E testing
+    └── official-components-publish.yml # NPM package publishing with OIDC
 ```
 
 ## 🚀 Quick Start

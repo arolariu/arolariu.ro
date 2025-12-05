@@ -1,14 +1,58 @@
+# =============================================================================
+# Main Website Release Workflow
+# =============================================================================
+# This workflow deploys the containerized Next.js website to Azure App Service
+# after a successful build workflow completion.
+#
+# Architecture:
+#   - Single Phase: Release - Deploys container from ACR to Azure App Service
+#   - Chained Workflow: Triggered automatically after official-website-build
+#
+# Deployment Strategy:
+#   - Blue/Green: Azure App Service handles deployment slots
+#   - Container: Pulls pre-built image from Azure Container Registry
+#   - Environment URL: Automatically updated in GitHub Environments
+#
+# Triggers:
+#   - Automatic: Triggered on successful completion of official-website-build
+#   - Manual: workflow_dispatch for on-demand deployments
+#
+# Environment Targets:
+#   - Development: dev-arolariu-ro (frontend/dev.arolariu container)
+#   - Production: www-arolariu-ro (frontend/arolariu container)
+#
+# Security:
+#   - Uses OIDC for Azure authentication (no long-lived secrets)
+#   - Azure Container Registry credentials in GitHub Secrets
+#   - Environment-specific secret management
+#
+# Prerequisites:
+#   1. Successful official-website-build workflow run
+#   2. Container image present in Azure Container Registry
+#   3. Azure App Service configured for container deployment
+#   4. GitHub Secrets configured:
+#      - AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+#      - AZURE_FRONTEND_MANAGED_IDENTITY_CLIENT_ID
+#      - AZURE_CONTAINER_REGISTRY_USERNAME/PASSWORD/ADDRESS
+#
+# Related Workflows:
+#   - official-website-build.yml: Builds and pushes container to ACR
+# =============================================================================
+
 name: "official-website-release"
 
 permissions:
-  id-token: write
-  contents: read
+  id-token: write # Required for OIDC authentication with Azure
+  contents: read # Required to checkout repository (if needed)
 
 on:
+  # Automatic trigger after successful build workflow
   workflow_run:
     workflows: ["official-website-build"]
     types: ["completed"]
     branches: ["preview"]
+
+  # Manual trigger for controlled releases
   workflow_dispatch:
     inputs:
       environment:

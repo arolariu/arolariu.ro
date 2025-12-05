@@ -1,13 +1,55 @@
+# =============================================================================
+# End-to-End (E2E) Testing Workflow
+# =============================================================================
+# This workflow executes comprehensive end-to-end tests against the live
+# production environment using Newman (Postman CLI) for API testing.
+#
+# Architecture:
+#   - Phase 1: Setup - Install dependencies and Newman CLI
+#   - Phase 2: Frontend Tests - E2E tests for arolariu.ro website
+#   - Phase 3: Backend Tests - API endpoint validation for api.arolariu.ro
+#   - Phase 4: Issue Creation - Automatic GitHub issue on test failure
+#
+# Test Strategy:
+#   - Newman: Postman collection runner for API testing
+#   - Health Checks: Validates backend service availability
+#   - Parallel Execution: Frontend and backend tests run concurrently
+#   - Artifact Upload: Test logs uploaded on failure for debugging
+#
+# Triggers:
+#   - Scheduled: (Disabled) Hourly cron job for continuous monitoring
+#   - Manual: workflow_dispatch for on-demand test execution
+#
+# Failure Handling:
+#   - Automatic GitHub issue creation with detailed failure context
+#   - Test duration tracking for performance monitoring
+#   - Log aggregation from all test jobs
+#
+# Prerequisites:
+#   1. Newman Postman collections in the repository
+#   2. Production services running and accessible
+#   3. GitHub Secrets configured:
+#      - E2E_TEST_AUTH_TOKEN (for authenticated endpoint testing)
+#
+# Security:
+#   - Uses OIDC for Azure authentication
+#   - Test auth token stored securely in GitHub Secrets
+#   - Issues created with detailed context for triaging
+# =============================================================================
+
 name: "official-e2e-action"
 
 permissions:
-  id-token: write
-  contents: read
-  issues: write
+  id-token: write # Required for OIDC authentication with Azure
+  contents: read # Required to checkout repository
+  issues: write # Required to create issues on test failure
 
 on:
-#  schedule:
-#   - cron: "0 * * * *" # Every hour UTC
+  # Scheduled trigger (currently disabled)
+  # schedule:
+  #   - cron: "0 * * * *" # Every hour UTC
+
+  # Manual trigger for on-demand E2E testing
   workflow_dispatch:
 
 jobs:
