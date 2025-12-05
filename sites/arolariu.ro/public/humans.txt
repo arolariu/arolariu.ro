@@ -1,12 +1,73 @@
 /* TEAM */
-    Lead Developer: Alexandru-Razvan Olariu
+    Lead Developer & Architect: Alexandru-Razvan Olariu
+    Role: Full-Stack Software Engineer
     Contact: admin@arolariu.ro
     GitHub: @arolariu
+    LinkedIn: /in/olariu-alexandru
     Website: https://arolariu.ro
+    Location: Bucharest, Romania
+    Timezone: Europe/Bucharest (EET/EEST)
+
+/* THANKS */
+    Open Source Community
+    Microsoft Azure Team
+    Vercel & Next.js Team
+    React Team
+    TypeScript Team
+    Tailwind CSS Team
+    Clerk Authentication Team
 
 /* SITE */
-    Last update: 2025-05-16
-    Standards: Next.js, React, Tailwind CSS, TypeScript
-    Components: @arolariu/components
-    Software: Visual Studio Code, Docker, GitHub Actions
-    Hosting: Azure App Services
+    Name: arolariu.ro
+    Version: 2.0.0
+    Last update: 2025-12-05
+    Language: English (en), Romanian (ro)
+    Doctype: HTML5
+    IDE: Visual Studio Code
+
+/* TECHNOLOGY STACK */
+    Frontend Framework: Next.js 16 (App Router)
+    UI Library: React 19
+    Language: TypeScript 5.9
+    Styling: Tailwind CSS 4.x
+    Components: shadcn/ui, Radix UI
+    State Management: Zustand
+    Authentication: Clerk
+    Internationalization: next-intl
+    Forms: react-hook-form, Zod
+    Testing: Vitest, Playwright
+
+/* BACKEND */
+    Framework: .NET 10.0
+    Architecture: Modular Monolith (DDD)
+    API: REST, ASP.NET Core
+    Database: Azure SQL, Cosmos DB
+    Caching: Azure Cache for Redis
+    Messaging: Azure Service Bus
+
+/* INFRASTRUCTURE */
+    Cloud Provider: Microsoft Azure
+    Hosting: Azure App Service (Containerized)
+    CDN: Azure Front Door
+    Storage: Azure Blob Storage
+    Secrets: Azure Key Vault
+    Configuration: Azure App Configuration
+    Monitoring: Application Insights, OpenTelemetry
+    CI/CD: GitHub Actions
+    Container Runtime: Docker
+    IaC: Bicep
+
+/* BUILD TOOLS */
+    Package Manager: npm
+    Monorepo: Nx
+    Bundler: Turbopack, RSLib
+    Linting: ESLint (strict)
+    Formatting: Prettier
+    Documentation: Storybook, DocFX
+
+/* STANDARDS */
+    Accessibility: WCAG 2.1 AA
+    Performance: Core Web Vitals optimized
+    Security: OWASP Top 10 compliant
+    SEO: Enterprise-grade metadata
+    PWA: Full Progressive Web App support

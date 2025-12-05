@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Browser configuration for Windows tiles and pinned sites.
+  This file provides Windows-specific customization for:
+  - Start menu tiles (Windows 8/10/11)
+  - Taskbar pinned sites
+  - Internet Explorer/Edge legacy tile integration
+
+  @see https://docs.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/platform-apis/dn320426(v=vs.85)
+-->
+<browserconfig>
+  <msapplication>
+    <tile>
+      <!-- Square 70x70 tile (small) -->
+      <square70x70logo src="/manifest/android-chrome-72x72.png"/>
+      <!-- Square 150x150 tile (medium) -->
+      <square150x150logo src="/manifest/android-chrome-144x144.png"/>
+      <!-- Wide 310x150 tile -->
+      <wide310x150logo src="/manifest/android-chrome-384x384.png"/>
+      <!-- Square 310x310 tile (large) -->
+      <square310x310logo src="/manifest/android-chrome-384x384.png"/>
+      <!-- Tile background color (matches theme) -->
+      <TileColor>#9013fe</TileColor>
+    </tile>
+    <notification>
+      <!-- Polling URI for live tile updates (optional) -->
+      <!-- <polling-uri src="https://arolariu.ro/api/tile-notifications"/> -->
+      <!-- Polling frequency in minutes (30, 60, 360, 720, 1440) -->
+      <frequency>1440</frequency>
+      <!-- Enable tile queue for multiple notifications -->
+      <cycle>1</cycle>
+    </notification>
+    <badge>
+      <!-- Badge polling URI for notification counts -->
+      <!-- <polling-uri src="https://arolariu.ro/api/badge-count"/> -->
+      <frequency>60</frequency>
+    </badge>
+  </msapplication>
+</browserconfig>

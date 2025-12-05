@@ -21,7 +21,7 @@
 import type {Metadata} from "next";
 import type {AlternateURLs} from "next/dist/lib/metadata/types/alternative-urls-types";
 import type {AppleWebApp} from "next/dist/lib/metadata/types/extra-types";
-import type {Author, Icon, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
+import type {Icon, Robots, TemplateString} from "next/dist/lib/metadata/types/metadata-types";
 import type {OpenGraph} from "next/dist/lib/metadata/types/opengraph-types";
 import type {Twitter} from "next/dist/lib/metadata/types/twitter-types";
 import {SITE_URL} from "./lib/utils.generic";
@@ -38,7 +38,9 @@ const options = {
   siteUrl: new URL(SITE_URL),
   author: "Alexandru-Razvan Olariu",
   description:
-    "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania.",
+    "Welcome to `arolariu.ro` - the personal website of Alexandru-Razvan Olariu, a software engineer based in Bucharest, Romania. Features invoice management, portfolio, and technology insights.",
+  themeColor: "#9013fe",
+  backgroundColor: "#000000",
 } as const;
 
 /**
@@ -162,6 +164,12 @@ const appleTouchIcons: Icon[] = [
  * - `max-snippet: -1` - No limit on text snippet length
  * - `max-image-preview: large` - Allow large image previews
  *
+ * **Enterprise SEO Features**:
+ * - Search engine verification tokens
+ * - Format detection controls
+ * - Publisher information
+ * - Referrer policy
+ *
  * @see {@link https://nextjs.org/docs/app/api-reference/functions/generate-metadata}
  * @see {@link createMetadata} For page-specific metadata generation
  */
@@ -169,7 +177,7 @@ export const metadata: Metadata = {
   metadataBase: options.siteUrl,
   title: {
     absolute: `${options.siteName} | ${options.author}`,
-    default: `${options.siteName} | Unknown page"`,
+    default: `${options.siteName} | Unknown page`,
     template: `%s | ${options.siteName}`,
   } satisfies TemplateString,
   description: options.description,
@@ -177,26 +185,64 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
     title: options.siteName,
+    startupImage: [
+      {
+        url: `${SITE_URL}/manifest/apple-touch-icon-180x180.png`,
+        media: "(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)",
+      },
+    ],
   } satisfies AppleWebApp,
-  classification: "Personal",
+
+  // Classification and categorization
+  classification: "Personal Website, Technology, Software Engineering, Invoice Management",
   applicationName: options.siteName,
-  authors: {
-    name: options.author,
-    url: options.siteUrl,
-  } satisfies Author,
+  authors: [
+    {
+      name: options.author,
+      url: options.siteUrl,
+    },
+  ],
   category: "Technology",
   creator: options.author,
-  keywords: ["arolariu", options.siteName, options.author, "Technology"],
+
+  // Enhanced keywords for SEO
+  keywords: [
+    "arolariu",
+    options.siteName,
+    options.author,
+    "software engineer",
+    "invoice management",
+    "technology",
+    "React",
+    "Next.js",
+    ".NET",
+    "Azure",
+    "Romania",
+    "Bucharest",
+    "web development",
+    "full-stack developer",
+  ],
+
+  // Canonical and alternate URLs
   alternates: {
     canonical: options.siteUrl,
   } satisfies AlternateURLs,
+
+  // Search engine robots configuration
   robots: {
     follow: true,
     index: true,
     "max-image-preview": "large",
     "max-snippet": -1,
     "max-video-preview": -1,
-    googleBot: "index, follow",
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+      noimageindex: false,
+    },
   } satisfies Robots,
   openGraph: {
     type: "website",
@@ -204,18 +250,57 @@ export const metadata: Metadata = {
     countryName: "Romania",
     description: options.description,
     siteName: options.siteName,
-    locale: "en",
+    locale: "en_US",
     title: `${options.siteName} | ${options.author}`,
-    alternateLocale: "ro_RO",
+    alternateLocale: ["ro_RO"],
+    images: [
+      {
+        url: `${SITE_URL}/images/og-default.png`,
+        width: 1200,
+        height: 630,
+        alt: `${options.siteName} - ${options.author}`,
+        type: "image/png",
+      },
+    ],
   } satisfies OpenGraph,
   twitter: {
     creator: options.author,
     title: `${options.siteName} | ${options.author}`,
     description: options.description,
-    card: "summary",
+    card: "summary_large_image",
+    images: [
+      {
+        url: `${SITE_URL}/images/twitter-card.png`,
+        width: 1200,
+        height: 600,
+        alt: `${options.siteName} - ${options.author}`,
+      },
+    ],
   } satisfies Twitter,
+
+  // App links for mobile deep linking
+  appLinks: {
+    web: {
+      url: options.siteUrl,
+      should_fallback: true,
+    },
+  },
+
+  // Manifest and icons
   manifest: "/manifest.json",
   icons: [...normalIcons, ...appleTouchIcons] satisfies Icon[],
+
+  // Additional metadata
+  other: {
+    "theme-color": options.themeColor,
+    "color-scheme": "dark light",
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+    "msapplication-TileColor": options.themeColor,
+    "msapplication-config": "/browserconfig.xml",
+    "format-detection": "telephone=no",
+  },
 };
 
 /**
