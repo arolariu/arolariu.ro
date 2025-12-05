@@ -235,7 +235,7 @@
     "svelte": "5.45.4",
     "svelte-adapter-azure-swa": "0.22.1",
     "svelte-check": "4.3.4",
-    "svelte-eslint-parser": "1.4.0",
+    "svelte-eslint-parser": "1.4.1",
     "svelte-pdf": "2.0.2",
     "tailwind-merge": "3.4.0",
     "tailwindcss": "4.1.17",
