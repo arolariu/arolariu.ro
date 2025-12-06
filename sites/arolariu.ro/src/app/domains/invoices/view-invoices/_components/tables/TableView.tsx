@@ -108,11 +108,11 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
                 aria-label={`Select invoice ${invoice.id}`}
               />
             </TableCell>
-            <TableCell>{invoice.name}</TableCell>
+            <TableCell>{invoice.name.length > 0 ? invoice.name : invoice.id}</TableCell>
             <TableCell>
               <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{InvoiceCategory[invoice.category]}</Badge>
             </TableCell>
-            <TableCell>{invoice.createdAt.toUTCString()}</TableCell>
+            <TableCell>{new Date(invoice.createdAt).toUTCString()}</TableCell>
             <TableCell>{invoice.paymentInformation?.totalCostAmount}</TableCell>
             <TableCell className='relative text-right'>
               <div className='flex justify-end gap-2'>

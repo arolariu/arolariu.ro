@@ -2,6 +2,7 @@
 
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
+import {useCallback} from "react";
 import {TbDownload, TbPlus, TbPrinter, TbUpload} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
@@ -13,6 +14,10 @@ import {useDialog} from "../../_contexts/DialogContext";
 export default function InvoicesHeader(): React.JSX.Element {
   const {open: openImportDialog} = useDialog("INVOICES_IMPORT");
   const {open: openExportDialog} = useDialog("INVOICES_EXPORT");
+
+  const handlePrintAction = useCallback(() => {
+    globalThis.window.print();
+  }, []);
 
   return (
     <motion.article
@@ -64,8 +69,7 @@ export default function InvoicesHeader(): React.JSX.Element {
                 variant='outline'
                 size='sm'
                 className='cursor-pointer gap-1'
-                // eslint-disable-next-line react/jsx-handler-names -- not applicable.
-                onClick={globalThis.window.print}>
+                onClick={handlePrintAction}>
                 <TbPrinter className='h-4 w-4' />
                 <span className='hidden sm:inline'>Print</span>
               </Button>
