@@ -7,9 +7,11 @@ import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
 import DialogContainer from "../../_contexts/DialogContainer";
 import {DialogProvider} from "../../_contexts/DialogContext";
 import {AnalyticsCard} from "./_components/cards/AnalyticsCard";
+import ImageCard from "./_components/cards/ImageCard";
 import InvoiceCard from "./_components/cards/InvoiceCard";
+import MerchantCard from "./_components/cards/MerchantCard";
+import SharingCard from "./_components/cards/SharingCard";
 import InvoiceHeader from "./_components/InvoiceHeader";
-import SidebarSection from "./_components/sidebar/SidebarSection";
 import MetadataTab from "./_components/tabs/MetadataTab";
 import RecipesTab from "./_components/tabs/RecipesTab";
 
@@ -104,10 +106,32 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
 
           {/* Right column - Sidebar */}
           <motion.div variants={itemVariants}>
-            <SidebarSection
-              invoice={invoice}
-              merchant={merchant}
-            />
+            <motion.div
+              variants={containerVariants}
+              initial='hidden'
+              animate='visible'
+              className='space-y-6'>
+              <motion.div variants={itemVariants}>
+                <ImageCard invoice={invoice} />
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <MerchantCard merchant={merchant} />
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <SharingCard invoice={invoice} />
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                {/* <SavingsTipsCard
+                      merchantName={merchantName}
+                      totalSpent={totalSpent}
+                      currency={currency}
+                      isLoadingCurrency={isLoadingCurrency}
+                    /> */}
+              </motion.div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
