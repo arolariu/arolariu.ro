@@ -4,22 +4,45 @@ This document provides comprehensive guidelines for GitHub Copilot when working 
 
 ---
 
+## TL;DR - Quick Reference
+
+| What | Command/Pattern |
+|------|-----------------|
+| **Dev server** | `npm run dev:website` or `npm run dev:api` |
+| **Build** | `npm run build:website` or `npm run build:api` |
+| **Test** | `npm run test:website` or `npm run test:unit` |
+| **Format** | `npm run format` (Prettier) |
+| **Lint** | `npm run lint` (ESLint with 20+ plugins) |
+| **Generate** | `npm run generate` (env, i18n, GraphQL) |
+| **Setup** | `npm run setup` (first-time workspace setup) |
+
+**Key Patterns:**
+- Server Components by default; add `"use client"` only when needed
+- Use `@arolariu/components` for shared UI components
+- Check `docs/rfc/` before architectural changes
+- Follow DDD in backend (`sites/api.arolariu.ro/src/Domain/`)
+- TypeScript strict mode everywhere - no `any` types
+
+---
+
 ## Table of Contents
 
-1. [Monorepo Architecture](#monorepo-architecture)
-2. [Documentation & Architecture RFCs](#documentation--architecture-rfcs)
-3. [Technology Stack](#technology-stack)
-4. [Code Quality Standards](#code-quality-standards)
-5. [Frontend Development (Next.js)](#frontend-development-nextjs)
-6. [Backend Development (.NET)](#backend-development-net)
-7. [Shared Components Library](#shared-components-library)
-8. [Type Safety & TypeScript](#type-safety--typescript)
-9. [State Management](#state-management)
-10. [Testing Practices](#testing-practices)
-11. [Infrastructure & Deployment](#infrastructure--deployment)
-12. [Naming Conventions](#naming-conventions)
-13. [Performance Considerations](#performance-considerations)
-14. [Security Guidelines](#security-guidelines)
+1. [TL;DR - Quick Reference](#tldr---quick-reference)
+2. [Monorepo Architecture](#monorepo-architecture)
+3. [Context-Aware Instructions](#context-aware-instructions)
+4. [Documentation & Architecture RFCs](#documentation--architecture-rfcs)
+5. [Technology Stack](#technology-stack)
+6. [Code Quality Standards](#code-quality-standards)
+7. [Frontend Development (Next.js)](#frontend-development-nextjs)
+8. [Backend Development (.NET)](#backend-development-net)
+9. [Shared Components Library](#shared-components-library)
+10. [Type Safety & TypeScript](#type-safety--typescript)
+11. [State Management](#state-management)
+12. [Testing Practices](#testing-practices)
+13. [Infrastructure & Deployment](#infrastructure--deployment)
+14. [Naming Conventions](#naming-conventions)
+15. [Performance Considerations](#performance-considerations)
+16. [Security Guidelines](#security-guidelines)
 
 ---
 
@@ -57,6 +80,24 @@ arolariu.ro/
 
 ---
 
+## Context-Aware Instructions
+
+Copilot automatically loads specialized instructions based on the file you're editing. These are located in `.github/instructions/`:
+
+| Instruction File | Applies To | Purpose |
+|-----------------|-----------|---------|
+| `frontend.instructions.md` | `sites/arolariu.ro/**` | Next.js App Router, RSC, observability |
+| `backend.instructions.md` | `**/*.cs, **/*.csproj` | DDD, .NET architecture, XML docs |
+| `react.instructions.md` | `**/*.tsx, **/*.jsx` | React component patterns |
+| `typescript.instructions.md` | `**/*.ts` | TypeScript 5.x best practices |
+| `bicep.instructions.md` | `**/*.bicep` | Azure IaC patterns |
+| `workflows.instructions.md` | `.github/workflows/*.yml` | GitHub Actions CI/CD |
+| `code-review.instructions.md` | `**` | Code review guidelines |
+
+**Prompts** are available in `.github/prompts/` for common tasks like documentation generation.
+
+---
+
 ## Documentation & Architecture RFCs
 
 ### Documentation Structure
@@ -71,43 +112,39 @@ docs/
 ├── frontend/              # Frontend-specific documentation
 │   └── README.md
 └── rfc/                   # Request for Comments (architectural decisions)
+    ├── 0001-github-actions-workflows.md
     ├── 1001-opentelemetry-observability-system.md
-    └── 2001-domain-driven-design-architecture.md
+    ├── 1002-comprehensive-jsdoc-documentation-standard.md
+    ├── 1003-internationalization-system.md
+    ├── 1004-metadata-seo-system.md
+    ├── 2001-domain-driven-design-architecture.md
+    ├── 2002-opentelemetry-backend-observability.md
+    ├── 2003-the-standard-implementation.md
+    └── 2004-comprehensive-xml-documentation-standard.md
 ```
 
 ### Understanding the System Through RFCs
 
-**Always consult the RFC documents** when working on significant features or architectural changes. These documents provide:
+**Always consult the RFC documents** when working on significant features or architectural changes. RFCs are numbered by domain:
+- **0xxx**: Infrastructure & DevOps (workflows, deployment)
+- **1xxx**: Frontend architecture (observability, i18n, SEO, JSDoc)
+- **2xxx**: Backend architecture (DDD, observability, XML docs)
 
-#### RFC 1001: OpenTelemetry Observability System
-- **Topic**: Distributed tracing, metrics, and logging infrastructure
-- **Components**: `sites/arolariu.ro/src/lib/telemetry.ts`, `src/instrumentation.ts`
-- **Key Concepts**:
-  - Type-safe OpenTelemetry SDK implementation
-  - Strongly-typed span attributes and semantic conventions
-  - SSR/CSR context differentiation
-  - Performance monitoring patterns
-  - Structured logging with trace correlation
-- **When to Reference**:
-  - Adding new telemetry/observability features
-  - Debugging performance issues
-  - Understanding trace context flow through the application
+#### Key Frontend RFCs (1xxx series)
+| RFC | Topic | Key Files |
+|-----|-------|-----------|
+| 1001 | OpenTelemetry Observability | `src/lib/telemetry.ts`, `src/instrumentation.ts` |
+| 1002 | JSDoc/TSDoc Documentation Standard | All `*.ts`/`*.tsx` files |
+| 1003 | Internationalization (i18n) | `src/i18n/`, `messages/*.json` |
+| 1004 | Metadata & SEO System | `src/metadata.ts`, `app/**/page.tsx` |
 
-#### RFC 2001: Domain-Driven Design Architecture
-- **Topic**: Backend modular monolith architecture
-- **Components**: `sites/api.arolariu.ro/src/Domain/`
-- **Key Concepts**:
-  - Bounded contexts (General, Invoices, Auth domains)
-  - Rich domain models with encapsulated business logic
-  - Aggregate roots, value objects, and domain events
-  - Repository pattern and data access
-  - SOLID principles application
-  - 85%+ test coverage standards
-- **When to Reference**:
-  - Adding new backend domains or features
-  - Understanding domain boundaries and interactions
-  - Implementing new business logic
-  - Refactoring backend code
+#### Key Backend RFCs (2xxx series)
+| RFC | Topic | Key Files |
+|-----|-------|-----------|
+| 2001 | Domain-Driven Design Architecture | `src/Domain/` bounded contexts |
+| 2002 | Backend OpenTelemetry | Telemetry middleware, spans |
+| 2003 | The Standard Implementation | SOLID principles, clean architecture |
+| 2004 | XML Documentation Standard | All `*.cs` public APIs |
 
 ### RFC Process
 
@@ -120,17 +157,20 @@ When making architectural changes:
 
 ### Key Architectural Principles from RFCs
 
-#### From RFC 1001 (Observability)
-- **Type Safety First**: Use strongly-typed telemetry APIs
-- **Context Awareness**: Distinguish between server/client/edge execution contexts
-- **Semantic Conventions**: Follow OpenTelemetry standards strictly
-- **Performance Conscious**: Zero runtime overhead through efficient exporters
+#### From Frontend RFCs (1xxx)
+- **Type Safety First**: Use strongly-typed telemetry APIs (RFC 1001)
+- **Context Awareness**: Distinguish between server/client/edge execution contexts (RFC 1001)
+- **Documentation as Code**: JSDoc comments are mandatory for public APIs (RFC 1002)
+- **i18n by Default**: All user-facing strings use `next-intl` (RFC 1003)
+- **SEO Optimized**: Every page has proper metadata via `createMetadata()` (RFC 1004)
 
-#### From RFC 2001 (DDD)
-- **Ubiquitous Language**: Code terminology matches business domain
-- **Rich Domain Models**: Business logic belongs in domain entities
-- **Bounded Contexts**: Clear separation between domains
-- **Testability**: Comprehensive test coverage with clear boundaries
+#### From Backend RFCs (2xxx)
+- **Ubiquitous Language**: Code terminology matches business domain (RFC 2001)
+- **Rich Domain Models**: Business logic belongs in domain entities (RFC 2001)
+- **Bounded Contexts**: Clear separation between domains (RFC 2001)
+- **Observable by Default**: All operations emit telemetry spans (RFC 2002)
+- **SOLID Principles**: Follow The Standard architecture patterns (RFC 2003)
+- **Testability**: 85%+ test coverage with clear boundaries (RFC 2001)
 
 ### When to Consult Documentation
 
