@@ -15,6 +15,8 @@ import "@arolariu/components/styles.css";
 // @ts-ignore -- css file has no typings.
 import "./globals.css";
 
+export {metadata} from "@/metadata";
+
 /**
  * The root layout of the website that wraps the entire app.
  * @returns The root layout of the website.

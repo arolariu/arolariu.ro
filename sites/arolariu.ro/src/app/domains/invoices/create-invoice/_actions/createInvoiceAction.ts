@@ -1,10 +1,9 @@
 "use server";
 
-import {attachInvoiceScan} from "@/lib/actions/invoices/attachInvoiceScan";
-import {createInvoice as createInvoiceEntity} from "@/lib/actions/invoices/createInvoice";
+import {createInvoice} from "@/lib/actions/invoices/createInvoice";
 import {createInvoiceScan} from "@/lib/actions/invoices/createInvoiceScan";
 import {addSpanEvent, createCounter, createNextJsAttributes, logWithTrace, setSpanAttributes, withSpan} from "@/telemetry";
-import {type CreateInvoiceDtoPayload, type CreateInvoiceScanDtoPayload, InvoiceScanType} from "@/types/invoices";
+import {CreateInvoiceDtoPayload, InvoiceScanType} from "@/types/invoices";
 import type {PendingInvoiceSubmission, PendingInvoiceSubmissionResult} from "../_types/InvoiceSubmission";
 
 const createInvoiceRequestCounter = createCounter(
@@ -51,46 +50,37 @@ export async function createInvoiceAction(submission: PendingInvoiceSubmission):
       logWithTrace("info", "Processing createInvoice server action", {submissionId: submission.id}, "server");
 
       // ----------------------------------------------------------------------
-      // 1. Create the invoice entity in the backend
+      // 1. Upload the file to Azure Blob Storage
       // ----------------------------------------------------------------------
-      addSpanEvent("bff.payload.creation.start");
+      const blobExtension = submission.file.name.split(".").pop();
+      const blobName = `${submission.id}#${Date.now().toFixed(0)}.${blobExtension}`;
+      addSpanEvent("blob.upload.start", {blobName, mimeType: submission.mimeType, size: submission.size});
+      const base64Data = Buffer.from(await submission.file.arrayBuffer()).toString("base64");
+      const {status, blobUrl} = await createInvoiceScan({base64Data, blobName});
+      if (status !== 201) throw new Error(`Blob upload failed with status ${status}`);
+      addSpanEvent("blob.upload.complete", {blobUrl});
+
+      // ----------------------------------------------------------------------
+      // 2. Prepare the invoice creation payload with initial scan
+      // ----------------------------------------------------------------------
+      addSpanEvent("bff.request.attach-scan.start", {blobUrl});
       const invoiceInitialPayload: Partial<CreateInvoiceDtoPayload> = {
+        userIdentifier: undefined, // Will be populated in createInvoice action
+        initialScan: {
+          scanType: mapMimeTypeToScanType(submission.mimeType),
+          location: blobUrl,
+          metadata: {},
+        },
         metadata: {
           requiresAnalysis: "true",
           isImportant: "false",
         },
       };
-      addSpanEvent("bff.payload.creation.complete");
+      addSpanEvent("bff.request.attach-scan.complete");
+
       addSpanEvent("bff.request.create-invoice.start");
-      const invoice = await createInvoiceEntity(invoiceInitialPayload);
+      const invoice = await createInvoice(invoiceInitialPayload);
       addSpanEvent("bff.request.create-invoice.complete", {invoiceId: invoice.id});
-
-      // ----------------------------------------------------------------------
-      // 2. Upload the file to Azure Blob Storage
-      // ----------------------------------------------------------------------
-      if (submission.file) {
-        const blobExtension = submission.file.name.split(".").pop();
-        const blobName = `${invoice.id}.${blobExtension}`;
-        addSpanEvent("blob.upload.start", {blobName, mimeType: submission.mimeType, size: submission.size});
-        const base64Data = Buffer.from(await submission.file.arrayBuffer()).toString("base64");
-        const {status, blobUrl} = await createInvoiceScan({base64Data, blobName});
-        if (status !== 201) throw new Error(`Blob upload failed with status ${status}`);
-        addSpanEvent("blob.upload.complete", {blobUrl});
-
-        // ----------------------------------------------------------------------
-        // 3. Attach the scan metadata to the invoice
-        // ----------------------------------------------------------------------
-        addSpanEvent("bff.request.attach-scan.start", {blobUrl});
-        const invoiceScanPayload: CreateInvoiceScanDtoPayload = {
-          type: mapMimeTypeToScanType(submission.mimeType),
-          location: blobUrl,
-          additionalMetadata: {},
-        };
-        await attachInvoiceScan({invoiceId: invoice.id, payload: invoiceScanPayload});
-        addSpanEvent("bff.request.attach-scan.complete");
-      } else {
-        logWithTrace("warn", "No file present in submission, skipping upload", {submissionId: submission.id}, "server");
-      }
 
       return {
         id: submission.id,

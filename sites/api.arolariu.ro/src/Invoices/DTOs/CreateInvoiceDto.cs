@@ -16,6 +16,7 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 [ExcludeFromCodeCoverage] // DTOs are not tested - they are used to transfer data between the client and the server.
 public readonly record struct CreateInvoiceDto(
   [Required] Guid UserIdentifier,
+  [Required] InvoiceScan InitialScan,
   IDictionary<string, object>? Metadata)
 {
   /// <summary>
@@ -26,6 +27,7 @@ public readonly record struct CreateInvoiceDto(
   {
     Invoice invoice = Invoice.Default();
     invoice.UserIdentifier = UserIdentifier;
+    invoice.Scans.Add(InitialScan);
 
     if (Metadata is not null)
     {
