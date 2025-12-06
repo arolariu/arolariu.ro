@@ -102,7 +102,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
               <div className='flex items-center justify-between'>
                 <div className='text-muted-foreground flex items-center gap-1 text-sm'>
                   <TbCalendar className='h-3.5 w-3.5' />
-                  <span>{invoice.createdAt.toUTCString()}</span>
+                  <span>{new Date(invoice.createdAt).toUTCString()}</span>
                 </div>
                 <div className='text-lg font-medium'>TODO EURO</div>
               </div>

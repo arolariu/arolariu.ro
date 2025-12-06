@@ -25,7 +25,7 @@ export default function InvoiceTableActions({invoice}: Readonly<Props>): React.J
   const {open: openDeleteDialog} = useDialog("INVOICES_DELETE", "delete", {invoice});
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         asChild
         className='cursor-pointer hover:text-blue-500'>
