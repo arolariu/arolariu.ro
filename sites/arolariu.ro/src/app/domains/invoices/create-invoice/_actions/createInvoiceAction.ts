@@ -61,7 +61,7 @@ export async function createInvoiceAction(submission: PendingInvoiceSubmission):
       addSpanEvent("blob.upload.complete", {blobUrl});
 
       // ----------------------------------------------------------------------
-      // 2. Attach the scan metadata to the invoice
+      // 2. Prepare the invoice creation payload with initial scan
       // ----------------------------------------------------------------------
       addSpanEvent("bff.request.attach-scan.start", {blobUrl});
       const invoiceInitialPayload: Partial<CreateInvoiceDtoPayload> = {
