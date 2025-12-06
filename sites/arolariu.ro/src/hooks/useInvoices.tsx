@@ -9,6 +9,7 @@ import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
+import {useShallow} from "zustand/react/shallow";
 
 /**
  * Input parameters for the useInvoices hook (currently unused).
@@ -34,21 +35,27 @@ type HookOutputType = Readonly<{
  * **Rendering Context**: Client Component hook (requires "use client" directive).
  *
  * **Data Fetching Strategy:**
- * - Fetches on initial mount only (empty dependency array)
+ * - Waits for IndexedDB hydration before rendering content
+ * - Fetches fresh data on initial mount (empty dependency array)
  * - Calls server action {@link fetchInvoices} via authenticated API
  * - Stores results in Zustand store for cross-component access
- * - Returns possibly stale data from store immediately
+ *
+ * **Hydration Behavior:**
+ * - `isLoading` remains true only until IndexedDB hydration completes
+ * - After hydration, cached/stale data is shown immediately
+ * - Fresh data fetch happens in background and updates the UI when complete
+ * - Eliminates flash of empty content on initial render
  *
  * **Caching Behavior:**
  * - Integrates with {@link useInvoicesStore} Zustand store
  * - Subsequent components mounting will see cached data
  * - No automatic revalidation (manual refetch required)
- * - Store persists to localStorage (prod) or sessionStorage (dev)
+ * - Store persists to IndexedDB for offline support
  *
  * **State Management:**
- * - `isLoading`: True only during initial fetch, not on cached reads
+ * - `isLoading`: True only until hydration completes (stale data shown while fetching)
  * - `isError`: True if fetch fails (network error, auth failure, etc.)
- * - `invoices`: Empty array until successfully fetched
+ * - `invoices`: Cached data shown immediately after hydration, updated when fetch completes
  *
  * **Error Handling:**
  * - Logs errors to console
@@ -58,7 +65,7 @@ type HookOutputType = Readonly<{
  * **Performance:**
  * - Single fetch per session (in dev) or across sessions (in prod)
  * - No refetch on component remount (reads from store)
- * - setPossiblyStaleInvoices is stable (excluded from deps)
+ * - setInvoices is stable (excluded from deps)
  *
  * @param _void - Unused parameter (for potential future expansion)
  * @returns Object containing invoices array, loading state, and error state
@@ -96,11 +103,19 @@ type HookOutputType = Readonly<{
  */
 export function useInvoices(_void?: HookInputType): HookOutputType {
   const [isError, setIsError] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Read cached data from Zustand store (may be empty or stale)
-  const cachedInvoices = useInvoicesStore((state) => state.invoices);
-  const setInvoices = useInvoicesStore((state) => state.setInvoices);
+  // Read cached data and hydration state from Zustand store (single subscription)
+  const {
+    invoices: cachedInvoices,
+    setInvoices,
+    hasHydrated,
+  } = useInvoicesStore(
+    useShallow((state) => ({
+      invoices: state.invoices,
+      setInvoices: state.setInvoices,
+      hasHydrated: state.hasHydrated,
+    })),
+  );
 
   useEffect(() => {
     const fetchInvoicesForUser = async () => {
@@ -110,14 +125,15 @@ export function useInvoices(_void?: HookInputType): HookOutputType {
       } catch (error: unknown) {
         console.error(">>> Error fetching invoices in useInvoices hook:", error as Error);
         setIsError(true);
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchInvoicesForUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- setInvoices is a stable function
   }, []);
+
+  // Loading is true only until hydration completes (shows stale data while fetching fresh)
+  const isLoading = !hasHydrated;
 
   return {invoices: cachedInvoices, isLoading, isError} as const;
 }

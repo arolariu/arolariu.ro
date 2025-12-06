@@ -9,6 +9,7 @@ import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
 import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {useEffect, useState} from "react";
+import {useShallow} from "zustand/react/shallow";
 
 /**
  * Input parameters for the useInvoice hook.
@@ -39,12 +40,17 @@ type HookOutputType = Readonly<{
  * **Data Fetching:**
  * - Calls server action {@link fetchInvoice} via authenticated API
  * - Automatically refetches when `invoiceIdentifier` changes
- * - Does not cache results (refetches on every mount)
+ * - Cached data shown immediately after hydration while fresh data loads
+ *
+ * **Hydration Behavior:**
+ * - `isLoading` remains true only until IndexedDB hydration completes
+ * - After hydration, cached/stale data is shown immediately
+ * - Fresh data fetch happens in background and updates the UI when complete
  *
  * **State Management:**
- * - `isLoading`: True during fetch, false after completion
+ * - `isLoading`: True only until hydration completes (stale data shown while fetching)
  * - `isError`: True if fetch fails (network error, 404, etc.)
- * - `invoice`: Null until successfully fetched
+ * - `invoice`: Cached data shown immediately after hydration, updated when fetch completes
  *
  * **Error Handling:**
  * - Logs errors to console
@@ -53,7 +59,7 @@ type HookOutputType = Readonly<{
  *
  * **Performance Considerations:**
  * - No debouncing: Changes to identifier trigger immediate refetch
- * - No caching: Each mount results in new API call
+ * - Stale-while-revalidate pattern: shows cached data while fetching fresh
  * - Consider using {@link useInvoices} with client-side filtering for better performance
  *
  * @param params - Hook configuration
@@ -78,11 +84,15 @@ type HookOutputType = Readonly<{
  */
 export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {
   const [isError, setIsError] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Read cached data from Zustand store (may be null or stale)
-  const cachedInvoice = useInvoicesStore((state) => state.invoices.find((inv) => inv.id === invoiceIdentifier) ?? null);
-  const upsertInvoice = useInvoicesStore((state) => state.upsertInvoice);
+  // Read cached data and hydration state from Zustand store (single subscription)
+  const {cachedInvoice, upsertInvoice, hasHydrated} = useInvoicesStore(
+    useShallow((state) => ({
+      cachedInvoice: state.invoices.find((inv) => inv.id === invoiceIdentifier) ?? null,
+      upsertInvoice: state.upsertInvoice,
+      hasHydrated: state.hasHydrated,
+    })),
+  );
 
   useEffect(() => {
     const fetchInvoiceForUser = async () => {
@@ -92,14 +102,15 @@ export function useInvoice({invoiceIdentifier}: HookInputType): HookOutputType {
       } catch (error: unknown) {
         console.error(">>> Error fetching invoice in useInvoice hook:", error as Error);
         setIsError(true);
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchInvoiceForUser();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- upsertInvoice is a stable function
   }, [invoiceIdentifier]);
+
+  // Loading is true only until hydration completes (shows stale data while fetching fresh)
+  const isLoading = !hasHydrated;
 
   return {invoice: cachedInvoice, isLoading, isError} as const;
 }
