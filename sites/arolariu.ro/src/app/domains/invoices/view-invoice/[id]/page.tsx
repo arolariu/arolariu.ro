@@ -1,5 +1,5 @@
-import {generateRandomMerchant} from "@/data/mocks/merchant";
 import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
+import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
 import type {Metadata} from "next";
 import React from "react";
 import RenderViewInvoiceScreen from "./island";
@@ -20,8 +20,8 @@ export default async function ViewInvoicePage(
   const resolvedParams = await props.params;
   const invoiceIdentifier = resolvedParams.id;
   const invoice = await fetchInvoice({invoiceId: invoiceIdentifier});
-  // const merchant = await fetchMerchant({merchantId: invoice.merchantReference});
-  const merchant = generateRandomMerchant();
+  const merchant = await fetchMerchant({merchantId: invoice.merchantReference});
+
   return (
     <main className='overflow-hidden py-24'>
       <RenderViewInvoiceScreen
