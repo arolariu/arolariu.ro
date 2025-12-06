@@ -62,6 +62,37 @@ export enum MerchantCategory {
 }
 
 /**
+ * Contact information value object matching backend's ContactInformation.
+ *
+ * @remarks
+ * Contains various ways to contact or identify a merchant location.
+ * All fields are optional strings that may be empty.
+ *
+ * @example
+ * ```typescript
+ * const contact: ContactInformation = {
+ *   fullName: "Lidl Romania SRL",
+ *   address: "Str. Iuliu Maniu 220, Bucharest",
+ *   phoneNumber: "+40 21 123 4567",
+ *   emailAddress: "contact@lidl.ro",
+ *   website: "https://www.lidl.ro"
+ * };
+ * ```
+ */
+export interface ContactInformation {
+  /** Full legal name or display name */
+  fullName: string;
+  /** Physical street address */
+  address: string;
+  /** Contact phone number */
+  phoneNumber: string;
+  /** Contact email address */
+  emailAddress: string;
+  /** Website URL */
+  website: string;
+}
+
+/**
  * Represents a merchant (vendor/retailer) in the invoice system.
  *
  * @remarks
@@ -111,11 +142,8 @@ export interface Merchant extends NamedEntity<string> {
   /** The category of the merchant. */
   category: MerchantCategory;
 
-  /** The address of the merchant. */
-  address: string;
-
-  /** The phone number of the merchant. */
-  phoneNumber: string;
+  /** The contact information and address of the merchant. */
+  address: ContactInformation;
 
   /** The unique identifier of the parent company. */
   parentCompanyId: string;

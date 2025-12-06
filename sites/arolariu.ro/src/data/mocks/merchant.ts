@@ -94,8 +94,13 @@ export class MerchantBuilder {
       isImportant: faker.datatype.boolean(),
       isSoftDeleted: false,
       category: MerchantCategory.LOCAL_SHOP,
-      address: faker.location.streetAddress(true),
-      phoneNumber: faker.phone.number(),
+      address: {
+        fullName: faker.company.name(),
+        address: faker.location.streetAddress(true),
+        phoneNumber: faker.phone.number(),
+        emailAddress: faker.internet.email(),
+        website: faker.internet.url(),
+      },
       parentCompanyId: faker.string.uuid(),
     };
   }
@@ -262,7 +267,7 @@ export class MerchantBuilder {
    * ```
    */
   withAddress(address: string): this {
-    this.merchant.address = address;
+    this.merchant.address.address = address;
     return this;
   }
 
@@ -280,7 +285,7 @@ export class MerchantBuilder {
    * ```
    */
   withPhoneNumber(phoneNumber: string): this {
-    this.merchant.phoneNumber = phoneNumber;
+    this.merchant.address.phoneNumber = phoneNumber;
     return this;
   }
 

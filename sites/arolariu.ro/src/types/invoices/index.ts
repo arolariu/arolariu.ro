@@ -64,6 +64,7 @@ export {
  */
 export {
   MerchantCategory,
+  type ContactInformation,
   type CreateMerchantDtoPayload,
   type DeleteMerchantDtoPayload,
   type Merchant,
