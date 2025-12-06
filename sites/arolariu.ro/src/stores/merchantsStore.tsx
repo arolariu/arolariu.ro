@@ -21,7 +21,10 @@ interface MerchantsPersistedState {
 /**
  * Merchant store state interface
  */
-interface MerchantsState extends MerchantsPersistedState {}
+interface MerchantsState extends MerchantsPersistedState {
+  /** Indicates whether the store has been hydrated from IndexedDB */
+  hasHydrated: boolean;
+}
 
 /**
  * Merchant store actions interface
@@ -64,6 +67,12 @@ interface MerchantsActions {
    * Clears all merchants from the store
    */
   clearMerchants: () => void;
+
+  /**
+   * Sets the hydration status
+   * @param hasHydrated Whether the store has been hydrated
+   */
+  setHasHydrated: (hasHydrated: boolean) => void;
 }
 
 /**
@@ -92,6 +101,9 @@ const persistConfig = {
   partialize: (state: MerchantsStore): MerchantsPersistedState => ({
     merchants: [...state.merchants],
   }),
+  onRehydrateStorage: () => (state: MerchantsStore | undefined) => {
+    state?.setHasHydrated(true);
+  },
 } as const;
 
 /**
@@ -103,6 +115,7 @@ const createMerchantsSlice = (
 ): MerchantsStore => ({
   // State
   merchants: [],
+  hasHydrated: false,
 
   // Actions
   setMerchants: (merchants) => set({merchants}),
@@ -136,6 +149,8 @@ const createMerchantsSlice = (
   },
 
   clearMerchants: () => set({merchants: []}),
+
+  setHasHydrated: (hasHydrated) => set({hasHydrated}),
 });
 
 /**
