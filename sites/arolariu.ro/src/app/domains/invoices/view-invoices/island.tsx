@@ -1,7 +1,7 @@
 "use client";
 
 import {useInvoices} from "@/hooks";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
+import {Skeleton, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import DialogContainer from "../_contexts/DialogContainer";
 import {DialogProvider} from "../_contexts/DialogContext";
@@ -15,7 +15,25 @@ import RenderStatisticsView from "./_components/views/StatisticsView";
  * @returns This function renders the view invoices page.
  */
 export default function RenderViewInvoicesScreen(): React.JSX.Element {
-  const {invoices} = useInvoices();
+  const {invoices, isLoading} = useInvoices();
+
+  if (isLoading) {
+    return (
+      <section className='flex flex-col gap-6'>
+        <Skeleton className='h-24 w-full' />
+        <div className='flex gap-4'>
+          <Skeleton className='h-10 w-24' />
+          <Skeleton className='h-10 w-24' />
+          <Skeleton className='h-10 w-24' />
+        </div>
+        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+          <Skeleton className='h-48 w-full' />
+          <Skeleton className='h-48 w-full' />
+          <Skeleton className='h-48 w-full' />
+        </div>
+      </section>
+    );
+  }
 
   return (
     <DialogProvider>
