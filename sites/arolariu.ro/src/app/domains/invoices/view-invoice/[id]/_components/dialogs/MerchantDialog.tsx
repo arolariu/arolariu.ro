@@ -68,7 +68,7 @@ export default function MerchantDialog(): React.JSX.Element {
                     <span className='font-medium'>Address</span>
                   </div>
                 </TableCell>
-                <TableCell className='py-2'>{merchant.address}</TableCell>
+                <TableCell className='py-2'>{merchant.address.address}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className='py-2 pl-0'>
@@ -77,7 +77,7 @@ export default function MerchantDialog(): React.JSX.Element {
                     <span className='font-medium'>Phone</span>
                   </div>
                 </TableCell>
-                <TableCell className='py-2'>{merchant.phoneNumber}</TableCell>
+                <TableCell className='py-2'>{merchant.address.phoneNumber}</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className='py-2 pl-0'>

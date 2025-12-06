@@ -38,7 +38,7 @@ export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Ele
           </div>
           <div>
             <p className='font-medium'>{merchant.name}</p>
-            <p className='text-muted-foreground text-sm'>Address: {merchant.address}</p>
+            <p className='text-muted-foreground text-sm'>Address: {merchant.address.address}</p>
           </div>
         </div>
         <div className='space-y-2'>
