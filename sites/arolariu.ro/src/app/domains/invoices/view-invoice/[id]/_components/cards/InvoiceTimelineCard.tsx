@@ -138,4 +138,3 @@ export function InvoiceTimelineCard({invoice}: Props) {
     </Card>
   );
 }
-

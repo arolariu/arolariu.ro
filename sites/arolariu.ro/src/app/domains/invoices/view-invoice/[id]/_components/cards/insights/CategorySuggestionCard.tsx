@@ -160,4 +160,3 @@ export function CategorySuggestionCard({onCategorySelect}: Props) {
     </Card>
   );
 }
-

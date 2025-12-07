@@ -34,4 +34,3 @@ export function QuickActionsCard(): React.JSX.Element {
     </Card>
   );
 }
-
