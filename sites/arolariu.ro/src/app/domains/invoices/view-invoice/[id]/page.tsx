@@ -1,33 +1,32 @@
-import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
-import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
+import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import ForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";
-import React from "react";
-import RenderViewInvoiceScreen from "./island";
 
 export const metadata: Metadata = {
-  title: "View Invoice",
-  description: "View your uploaded invoice on `arolariu.ro`.",
+  title: "Invoice Management System - Edit Invoice",
+  description: "Edit an invoice from the invoice management system.",
 };
 
 /**
- * The view invoice page, which allows the user to view a specific invoice.
+ * The edit invoice page, for editing a specific invoice.
  * This page uses a dynamic route to display a specific invoice.
- * @returns Render the view invoice page, SSR'ed.
+ * @returns The edit invoice page, SSR'ed.
  */
-export default async function ViewInvoicePage(
-  props: Readonly<PageProps<"/domains/invoices/view-invoice/[id]">>,
+export default async function EditInvoicePage(
+  props: Readonly<PageProps<"/domains/invoices/edit-invoice/[id]">>,
 ): Promise<React.JSX.Element> {
-  const resolvedParams = await props.params;
-  const invoiceIdentifier = resolvedParams.id;
-  const invoice = await fetchInvoice({invoiceId: invoiceIdentifier});
-  const merchant = await fetchMerchant({merchantId: invoice.merchantReference});
+  const pageParams = await props.params;
+  const invoiceIdentifier = pageParams.id;
+  console.log("Invoice ID:", invoiceIdentifier);
+
+  const {isAuthenticated} = await fetchAaaSUserFromAuthService();
+  if (!isAuthenticated) {
+    return <ForbiddenScreen />;
+  }
 
   return (
-    <main className='overflow-hidden py-24'>
-      <RenderViewInvoiceScreen
-        invoice={invoice}
-        merchant={merchant}
-      />
+    <main className='px-5 py-24'>
+      <h1> WIP !!!!</h1>
     </main>
   );
 }

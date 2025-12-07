@@ -1,14 +1,14 @@
 "use client";
 
-import InvoiceFeedbackDialog from "../view-invoice/[id]/_components/dialogs/FeedbackDialog";
-import InvoiceImageDialog from "../view-invoice/[id]/_components/dialogs/ImageDialog";
-import InvoiceItemsDialog from "../view-invoice/[id]/_components/dialogs/ItemsDialog";
-import InvoiceMerchantDialog from "../view-invoice/[id]/_components/dialogs/MerchantDialog";
-import InvoiceMerchantReceiptsDialog from "../view-invoice/[id]/_components/dialogs/MerchantReceiptsDialog";
-import InvoiceMetadataDialog from "../view-invoice/[id]/_components/dialogs/MetadataDialog";
-import InvoiceRecipeDialog from "../view-invoice/[id]/_components/dialogs/RecipeDialog";
-import InvoiceShareAnalyticsDialog from "../view-invoice/[id]/_components/dialogs/ShareAnalytics";
-import InvoiceSharingDialog from "../view-invoice/[id]/_components/dialogs/SharingDialog";
+import InvoiceFeedbackDialog from "../edit-invoice/[id]/_components/dialogs/FeedbackDialog";
+import InvoiceImageDialog from "../edit-invoice/[id]/_components/dialogs/ImageDialog";
+import InvoiceItemsDialog from "../edit-invoice/[id]/_components/dialogs/ItemsDialog";
+import InvoiceMerchantDialog from "../edit-invoice/[id]/_components/dialogs/MerchantDialog";
+import InvoiceMerchantReceiptsDialog from "../edit-invoice/[id]/_components/dialogs/MerchantReceiptsDialog";
+import InvoiceMetadataDialog from "../edit-invoice/[id]/_components/dialogs/MetadataDialog";
+import InvoiceRecipeDialog from "../edit-invoice/[id]/_components/dialogs/RecipeDialog";
+import InvoiceShareAnalyticsDialog from "../edit-invoice/[id]/_components/dialogs/ShareAnalytics";
+import InvoiceSharingDialog from "../edit-invoice/[id]/_components/dialogs/SharingDialog";
 import InvoicesExportDialog from "../view-invoices/_components/dialogs/ExportDialog";
 import InvoicesImportDialog from "../view-invoices/_components/dialogs/ImportDialog";
 import InvoicesInvoiceShareDialog from "../view-invoices/_components/dialogs/ShareDialog";
