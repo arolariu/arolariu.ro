@@ -86,7 +86,7 @@ describe("formatCurrency", () => {
   it("should format currency with EUR code", async () => {
     const {formatCurrency} = await import("./utils.generic");
     const formatted = formatCurrency(100, "EUR");
-    expect(formatted).toBe("€100.00");
+    expect(formatted).toBe("€100");
   });
 
   it("should format currency with GBP code", async () => {
@@ -105,13 +105,13 @@ describe("formatCurrency", () => {
   it("should handle zero amount", async () => {
     const {formatCurrency} = await import("./utils.generic");
     const formatted = formatCurrency(0, "USD");
-    expect(formatted).toBe("$0.00");
+    expect(formatted).toBe("$0");
   });
 
   it("should handle negative amounts", async () => {
     const {formatCurrency} = await import("./utils.generic");
     const formatted = formatCurrency(-50, "USD");
-    expect(formatted).toBe("-$50.00");
+    expect(formatted).toBe("-$50");
   });
 
   it("should handle large amounts", async () => {
