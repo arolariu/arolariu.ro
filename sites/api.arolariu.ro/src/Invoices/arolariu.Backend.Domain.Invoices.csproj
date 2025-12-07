@@ -5,11 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup Label="Azure AI Packages">
+    <PackageReference Include="Azure.AI.DocumentIntelligence" />
     <PackageReference Include="Azure.AI.FormRecognizer" />
     <PackageReference Include="Azure.AI.OpenAI" />
     <PackageReference Include="Azure.AI.OpenAI.Assistants" />
     <PackageReference Include="Azure.AI.Translation.Text" />
-    <PackageReference Include="Microsoft.Azure.CognitiveServices.Vision.ComputerVision" />
   </ItemGroup>
 
   <ItemGroup Label="Azure SDK Packages">
