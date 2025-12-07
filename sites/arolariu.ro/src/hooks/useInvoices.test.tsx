@@ -40,10 +40,11 @@ describe("useInvoices", () => {
 
     // Setup default mock implementation for useInvoicesStore
     mockUseInvoicesStore.mockImplementation(
-      (selector: (state: {invoices: Invoice[]; setInvoices: (invoices: Invoice[]) => void}) => unknown) => {
+      (selector: (state: {invoices: Invoice[]; setInvoices: (invoices: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
         const state = {
           invoices: [],
           setInvoices: mockSetInvoices,
+          hasHydrated: false,
         };
         return selector(state);
       },
@@ -58,6 +59,18 @@ describe("useInvoices", () => {
 
   it("should return empty invoices array initially", async () => {
     mockFetchInvoices.mockResolvedValue([]);
+
+    // Set hasHydrated to true so isLoading becomes false
+    mockUseInvoicesStore.mockImplementation(
+      (selector: (state: {invoices: Invoice[]; setInvoices: (invoices: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
+        const state = {
+          invoices: [],
+          setInvoices: mockSetInvoices,
+          hasHydrated: true,
+        };
+        return selector(state);
+      },
+    );
 
     const {result} = renderHook(() => useInvoices());
 
@@ -77,6 +90,18 @@ describe("useInvoices", () => {
     ];
 
     mockFetchInvoices.mockResolvedValue(mockInvoices);
+
+    // Set hasHydrated to true so isLoading becomes false
+    mockUseInvoicesStore.mockImplementation(
+      (selector: (state: {invoices: Invoice[]; setInvoices: (invoices: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
+        const state = {
+          invoices: [],
+          setInvoices: mockSetInvoices,
+          hasHydrated: true,
+        };
+        return selector(state);
+      },
+    );
 
     const {result} = renderHook(() => useInvoices());
 
@@ -102,19 +127,31 @@ describe("useInvoices", () => {
 
     mockFetchInvoices.mockReturnValue(promise);
 
-    const {result, unmount} = renderHook(() => useInvoices());
+    // Start with hasHydrated false (loading state)
+    let hasHydrated = false;
+    mockUseInvoicesStore.mockImplementation(
+      (selector: (state: {invoices: Invoice[]; setInvoices: (invoices: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
+        const state = {
+          invoices: [],
+          setInvoices: mockSetInvoices,
+          hasHydrated,
+        };
+        return selector(state);
+      },
+    );
+
+    const {result, rerender, unmount} = renderHook(() => useInvoices());
 
     try {
-      // Wait for loading to start
-      await waitFor(
-        () => {
-          expect(result.current.isLoading).toBe(true);
-        },
-        {timeout: 2000},
-      );
+      // Should be loading initially (hasHydrated is false)
+      expect(result.current.isLoading).toBe(true);
 
       // Resolve the promise
       resolveFunc!([]);
+
+      // Simulate hydration completing
+      hasHydrated = true;
+      rerender();
 
       // Wait for loading to finish
       await waitFor(
@@ -144,6 +181,18 @@ describe("useInvoices", () => {
 
   it("should handle network error gracefully", async () => {
     mockFetchInvoices.mockRejectedValue(new Error("Network error"));
+
+    // Set hasHydrated to true so isLoading becomes false
+    mockUseInvoicesStore.mockImplementation(
+      (selector: (state: {invoices: Invoice[]; setInvoices: (invoices: Invoice[]) => void; hasHydrated: boolean}) => unknown) => {
+        const state = {
+          invoices: [],
+          setInvoices: mockSetInvoices,
+          hasHydrated: true,
+        };
+        return selector(state);
+      },
+    );
 
     const {result} = renderHook(() => useInvoices());
 

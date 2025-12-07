@@ -32,7 +32,7 @@ describe("MerchantBuilder", () => {
       expect(merchant).toHaveProperty("isSoftDeleted");
       expect(merchant).toHaveProperty("category");
       expect(merchant).toHaveProperty("address");
-      expect(merchant).toHaveProperty("phoneNumber");
+      expect(merchant.address).toHaveProperty("phoneNumber");
       expect(merchant).toHaveProperty("parentCompanyId");
     });
   });

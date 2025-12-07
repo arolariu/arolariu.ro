@@ -5,7 +5,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoice} from "./useInvoice";
 
 // Type alias for store selector to improve readability
-type InvoicesStoreSelector = (state: {invoices: Invoice[]; upsertInvoice: (invoice: Invoice) => void}) => unknown;
+type InvoicesStoreSelector = (state: {invoices: Invoice[]; upsertInvoice: (invoice: Invoice) => void; hasHydrated: boolean}) => unknown;
 
 // Create mock function using vi.hoisted
 const {mockFetchInvoice, mockupsertInvoice, mockUseInvoicesStore} = vi.hoisted(() => ({
@@ -47,6 +47,7 @@ describe("useInvoice", () => {
       const state = {
         invoices: [] as Invoice[],
         upsertInvoice: mockupsertInvoice,
+        hasHydrated: false,
       };
       return selector(state);
     });
@@ -75,35 +76,55 @@ describe("useInvoice", () => {
 
     mockFetchInvoice.mockResolvedValue(mockInvoice);
 
-    // Update mock to return the invoice after fetch
+    // Update mock to return the invoice after fetch and set hasHydrated to true
     let storeInvoices: Invoice[] = [];
+    let hasHydrated = false;
     mockUseInvoicesStore.mockImplementation((selector: InvoicesStoreSelector) => {
       const state = {
         invoices: storeInvoices,
         upsertInvoice: (invoice: Invoice) => {
           storeInvoices = [invoice];
+          hasHydrated = true;
           mockupsertInvoice(invoice);
         },
+        hasHydrated,
       };
       return selector(state);
     });
 
     const {result, rerender} = renderHook(() => useInvoice({invoiceIdentifier: "invoice-123"}));
 
+    // Wait for fetch to complete
     await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
+      expect(mockFetchInvoice).toHaveBeenCalledWith({invoiceId: "invoice-123"});
     });
+
+    // Simulate hydration completing
+    hasHydrated = true;
 
     // Rerender to pick up the updated store state
     rerender();
 
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
     expect(result.current.invoice).toEqual(mockInvoice);
     expect(result.current.isError).toBe(false);
-    expect(mockFetchInvoice).toHaveBeenCalledWith({invoiceId: "invoice-123"});
   });
 
   it("should handle fetch errors", async () => {
     mockFetchInvoice.mockRejectedValue(new Error("Failed to fetch"));
+
+    // Set hasHydrated to true so isLoading becomes false
+    mockUseInvoicesStore.mockImplementation((selector: InvoicesStoreSelector) => {
+      const state = {
+        invoices: [] as Invoice[],
+        upsertInvoice: mockupsertInvoice,
+        hasHydrated: true,
+      };
+      return selector(state);
+    });
 
     const {result} = renderHook(() => useInvoice({invoiceIdentifier: "invoice-123"}));
 
@@ -111,8 +132,11 @@ describe("useInvoice", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
     expect(result.current.invoice).toBeNull();
-    expect(result.current.isError).toBe(true);
     expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
@@ -124,15 +148,30 @@ describe("useInvoice", () => {
 
     mockFetchInvoice.mockReturnValue(promise);
 
-    const {result} = renderHook(() => useInvoice({invoiceIdentifier: "invoice-123"}));
+    // Start with hasHydrated false (loading state)
+    let hasHydrated = false;
+    mockUseInvoicesStore.mockImplementation((selector: InvoicesStoreSelector) => {
+      const state = {
+        invoices: [] as Invoice[],
+        upsertInvoice: mockupsertInvoice,
+        hasHydrated,
+      };
+      return selector(state);
+    });
 
-    // Should be loading initially
+    const {result, rerender} = renderHook(() => useInvoice({invoiceIdentifier: "invoice-123"}));
+
+    // Should be loading initially (hasHydrated is false)
     expect(result.current.isLoading).toBe(true);
     expect(result.current.invoice).toBeNull();
 
     // Resolve the promise
     const mockInvoice = new InvoiceBuilder().withId("invoice-123").withName("Test").build();
     resolvePromise!(mockInvoice);
+
+    // Simulate hydration completing
+    hasHydrated = true;
+    rerender();
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -142,13 +181,26 @@ describe("useInvoice", () => {
   it("should maintain invoice state on error", async () => {
     mockFetchInvoice.mockRejectedValue(new Error("Network error"));
 
+    // Set hasHydrated to true so isLoading becomes false
+    mockUseInvoicesStore.mockImplementation((selector: InvoicesStoreSelector) => {
+      const state = {
+        invoices: [] as Invoice[],
+        upsertInvoice: mockupsertInvoice,
+        hasHydrated: true,
+      };
+      return selector(state);
+    });
+
     const {result} = renderHook(() => useInvoice({invoiceIdentifier: "invoice-123"}));
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
 
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
     expect(result.current.invoice).toBeNull();
-    expect(result.current.isError).toBe(true);
   });
 });

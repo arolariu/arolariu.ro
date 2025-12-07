@@ -4,7 +4,11 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {useMerchants} from "./useMerchants";
 
 // Type alias for store selector to improve readability
-type MerchantsStoreSelector = (state: {merchants: Merchant[]; setMerchants: (merchants: Merchant[]) => void}) => unknown;
+type MerchantsStoreSelector = (state: {
+  merchants: Merchant[];
+  setMerchants: (merchants: Merchant[]) => void;
+  hasHydrated: boolean;
+}) => unknown;
 
 // Create mock functions using vi.hoisted
 const {mockFetchMerchants, mockSetMerchants, mockUseMerchantsStore} = vi.hoisted(() => ({
@@ -46,6 +50,7 @@ describe("useMerchants", () => {
       const state = {
         merchants: [],
         setMerchants: mockSetMerchants,
+        hasHydrated: false,
       };
       return selector(state);
     });
@@ -59,6 +64,16 @@ describe("useMerchants", () => {
 
   it("should return empty merchants array initially", async () => {
     mockFetchMerchants.mockResolvedValue([]);
+
+    // Set hasHydrated to true so isLoading becomes false
+    mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
+      const state = {
+        merchants: [],
+        setMerchants: mockSetMerchants,
+        hasHydrated: true,
+      };
+      return selector(state);
+    });
 
     const {result} = renderHook(() => useMerchants());
 
@@ -78,6 +93,16 @@ describe("useMerchants", () => {
     ];
 
     mockFetchMerchants.mockResolvedValue(mockMerchants);
+
+    // Set hasHydrated to true so isLoading becomes false
+    mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
+      const state = {
+        merchants: [],
+        setMerchants: mockSetMerchants,
+        hasHydrated: true,
+      };
+      return selector(state);
+    });
 
     const {result} = renderHook(() => useMerchants());
 
@@ -102,24 +127,34 @@ describe("useMerchants", () => {
         }),
     );
 
-    const {result} = renderHook(() => useMerchants());
+    // Start with hasHydrated false (loading state)
+    let hasHydrated = false;
+    mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
+      const state = {
+        merchants: [],
+        setMerchants: mockSetMerchants,
+        hasHydrated,
+      };
+      return selector(state);
+    });
 
-    // Initially should be loading
-    await waitFor(
-      () => {
-        expect(result.current.isLoading).toBe(true);
-      },
-      {timeout: 15000},
-    );
+    const {result, rerender} = renderHook(() => useMerchants());
+
+    // Initially should be loading (hasHydrated is false)
+    expect(result.current.isLoading).toBe(true);
+
+    // Simulate hydration completing
+    hasHydrated = true;
+    rerender();
 
     // Eventually should finish loading
     await waitFor(
       () => {
         expect(result.current.isLoading).toBe(false);
       },
-      {timeout: 15000},
+      {timeout: 2000},
     );
-  }, 30000); // Increase test timeout to 30 seconds
+  });
 
   it("should handle fetch error", async () => {
     const mockError = new Error("Fetch failed");
@@ -136,6 +171,16 @@ describe("useMerchants", () => {
 
   it("should handle network error gracefully", async () => {
     mockFetchMerchants.mockRejectedValue(new Error("Network error"));
+
+    // Set hasHydrated to true so isLoading becomes false
+    mockUseMerchantsStore.mockImplementation((selector: MerchantsStoreSelector) => {
+      const state = {
+        merchants: [],
+        setMerchants: mockSetMerchants,
+        hasHydrated: true,
+      };
+      return selector(state);
+    });
 
     const {result} = renderHook(() => useMerchants());
 
