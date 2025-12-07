@@ -107,7 +107,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
           transition={{type: "spring", stiffness: 400, damping: 10}}>
           <div className='flex items-center justify-between'>
             <p className='text-sm font-medium'>Potential Savings</p>
-            <p className='text-lg font-bold'>{formatCurrency(totalPotentialSavings)}</p>
+            <p className='text-lg font-bold'>{formatCurrency(totalPotentialSavings, invoice.paymentInformation.currency.code)}</p>
           </div>
           <p className='text-muted-foreground mt-1 text-xs'>Apply these tips to save on your next visit to {merchant.name}</p>
         </motion.div>
@@ -139,7 +139,7 @@ export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className='text-success flex items-center text-sm font-medium'>
-                            <span>{formatCurrency(tip.potentialSavings)}</span>
+                            <span>{formatCurrency(tip.potentialSavings, invoice.paymentInformation.currency.code)}</span>
                             <TbThumbUp className='ml-1 h-3.5 w-3.5' />
                           </div>
                         </TooltipTrigger>

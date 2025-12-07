@@ -188,11 +188,11 @@ export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Re
             <div className='mt-4 grid grid-cols-2 gap-4'>
               <div className='space-y-1'>
                 <div className='text-muted-foreground text-sm'>Average Spend</div>
-                <div className='text-xl font-bold'>{formatCurrency(2 * 0.85)}</div>
+                <div className='text-xl font-bold'>{formatCurrency(2 * 0.85, invoice.paymentInformation.currency.code)}</div>
               </div>
               <div className='space-y-1'>
                 <div className='text-muted-foreground text-sm'>Year to Date</div>
-                <div className='text-xl font-bold'>{formatCurrency(3 * 5.2)}</div>
+                <div className='text-xl font-bold'>{formatCurrency(3 * 5.2, invoice.paymentInformation.currency.code)}</div>
               </div>
             </div>
           </TabsContent>

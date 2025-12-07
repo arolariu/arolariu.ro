@@ -135,7 +135,9 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>): React
               whileHover={{scale: 1.02}}
               transition={{type: "spring", stiffness: 400, damping: 10}}>
               <h3 className='text-muted-foreground mb-1 text-sm font-medium'>Total Amount</h3>
-              <p className='text-lg font-semibold'>{formatCurrency(paymentInformation?.totalCostAmount!, paymentInformation?.currency)}</p>
+              <p className='text-lg font-semibold'>
+                {formatCurrency(paymentInformation.totalCostAmount, paymentInformation.currency.code)}
+              </p>
             </motion.div>
           </div>
 

@@ -136,8 +136,12 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 <td className='px-4 py-3 text-right text-sm whitespace-nowrap'>
                   {item.quantity} {item.quantityUnit}
                 </td>
-                <td className='px-4 py-3 text-right text-sm whitespace-nowrap'>{formatCurrency(item.price)}</td>
-                <td className='px-4 py-3 text-right text-sm font-medium whitespace-nowrap'>{formatCurrency(item.price * item.quantity)}</td>
+                <td className='px-4 py-3 text-right text-sm whitespace-nowrap'>
+                  {formatCurrency(item.price, invoice.paymentInformation.currency.code)}
+                </td>
+                <td className='px-4 py-3 text-right text-sm font-medium whitespace-nowrap'>
+                  {formatCurrency(item.price * item.quantity, invoice.paymentInformation.currency.code)}
+                </td>
               </motion.tr>
             ))}
             {EMPTY_ITEM_ROW_KEYS.slice(0, Math.max(0, 5 - paginatedItems.length)).map((key, index) => (
@@ -161,7 +165,9 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 className='px-4 py-3 text-right text-sm font-medium'>
                 Total
               </TableHead>
-              <TableHead className='px-4 py-3 text-right text-sm font-medium'>{formatCurrency(totalAmount)}</TableHead>
+              <TableHead className='px-4 py-3 text-right text-sm font-medium'>
+                {formatCurrency(totalAmount, invoice.paymentInformation.currency.code)}
+              </TableHead>
             </TableRow>
           </TableFooter>
         </Table>
