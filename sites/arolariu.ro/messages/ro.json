@@ -323,6 +323,18 @@
             "title__after": "SUNT ACESTE FOTOGRAFII CORECTE...?!",
             "title__before": "ÎNCĂRCĂ O POZĂ CU CHITANȚA DE HÂRTIE!"
           },
+          "edit-page": {
+            "__metadata__": {
+              "description": "Vizualizați și editați detaliile facturii, articolele, rețetele și setările de partajare.",
+              "title": "Editare factură"
+            }
+          },
+          "view-page": {
+            "__metadata__": {
+              "description": "Vizualizați detaliile facturii, articolele și informațiile despre comerciant.",
+              "title": "Vizualizare factură"
+            }
+          },
           "main-page": {
             "callToAction": "Încărcați chitanța",
             "description": "Chitanțele sunt grozave pentru a vă ține propria contabilitate. \nTotuși, cum ar fi dacă ai putea încărca aceste chitanțe undeva și ai obține informații puternice despre obiceiurile tale? \nCum ar fi să poți obține automat o listă cu toate produsele pe care le-ai cumpărat în ultimul an? \n<br></br> <br></br> Dezlănțuiți puterea platformei noastre! \n<br></br> Aruncă tabelele Excel și urcă acum în trenul digital!",
