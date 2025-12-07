@@ -1,4 +1,3 @@
-import {Currency} from "@/types/DDD";
 import {v4, v5} from "uuid";
 
 export const SITE_ENV = process.env["SITE_ENV"] ?? "";
@@ -32,7 +31,7 @@ export function generateGuid(seed?: string | Uint8Array): Readonly<string> {
 /**
  * Formats a number as a currency string based on the specified currency code.
  * @param amount The numeric value to be formatted as currency.
- * @param currency The ISO 4217 currency code (e.g., 'USD', 'EUR', 'GBP') or Currency object.
+ * @param currencyCode The ISO 4217 currency code (e.g., 'USD', 'EUR', 'GBP') or Currency object.
  * @returns string A formatted currency string with the appropriate symbol and formatting.
  * @example
  * // Returns "$123.45"
@@ -44,16 +43,13 @@ export function generateGuid(seed?: string | Uint8Array): Readonly<string> {
  * // Returns "£50.00"
  * formatCurrency(50, "GBP");
  */
-export function formatCurrency(amount: number, currency?: string | Currency): string {
-  return currency
-    ? new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: typeof currency === "string" ? currency : currency.code,
-      }).format(amount)
-    : new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
+export function formatCurrency(amount: number, currencyCode: string): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currencyCode,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
 }
 
 /**
