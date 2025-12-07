@@ -34,10 +34,44 @@ type Props = {
 };
 
 /**
- * The RecipeCard component displays information about a recipe.
- * It includes the recipe's name, complexity, description, ingredients, preparation time, and cooking time.
- * The card also provides options to edit, delete, or share the recipe.
- * @returns The RecipeCard component, CSR'ed.
+ * Displays a recipe card with full CRUD operations via dialog-based editing.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Recipe Details Displayed**:
+ * - **Name**: Recipe title with complexity badge (Easy/Normal/Hard)
+ * - **Description**: Brief recipe overview
+ * - **Ingredients**: First 3 shown with expandable tooltip for remaining
+ * - **Timing**: Preparation and cooking time with clock icons
+ *
+ * **CRUD Operations** (via dropdown menu):
+ * - **Edit**: Opens `RecipeDialog` in edit mode for modifying recipe details
+ * - **Delete**: Opens `RecipeDialog` in delete mode for confirmation
+ * - **Share**: Opens `RecipeDialog` in share mode for sharing options
+ * - **View**: Opens `RecipeDialog` in view mode via "View Recipe" button
+ * - **Mark as Favorite**: Placeholder for future implementation
+ *
+ * **Visual Design**:
+ * - Complexity badge color varies by difficulty (default/secondary/destructive)
+ * - Hover shadow effect for card interactivity
+ * - External link button for recipe reference URL
+ *
+ * **Domain Context**: Part of the recipes tab in edit-invoice, allowing users
+ * to manage recipes that can be made with invoice items.
+ *
+ * @param props - Component properties containing the recipe to display
+ * @returns Client-rendered card with recipe details and action menu
+ *
+ * @example
+ * ```tsx
+ * <RecipeCard recipe={recipe} />
+ * // Displays: Recipe name, complexity, ingredients, timing, action menu
+ * ```
+ *
+ * @see {@link RecipeDialog} - Multi-mode dialog for recipe CRUD operations
+ * @see {@link Recipe} - Recipe type definition
+ * @see {@link RecipeComplexity} - Complexity enum for badge styling
  */
 export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element {
   const {name, complexity, description, ingredients, preparationTime, cookingTime} = recipe;

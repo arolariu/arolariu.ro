@@ -11,9 +11,40 @@ type Props = {
 };
 
 /**
- * The InvoiceHeader component displays the header of an invoice.
- * It includes the invoice ID, name, a badge for important invoices, and a print button.
- * @returns The InvoiceHeader component, CSR'ed.
+ * Renders the editable invoice header with inline name editing and print functionality.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Why Client Component?**
+ * - Uses `useState` for controlled input of invoice name
+ * - Requires `useCallback` for memoized event handlers
+ * - Needs access to `window.print()` browser API
+ *
+ * **Editing Capabilities**:
+ * - **Invoice Name**: Inline editable via styled `<Input>` component with transparent
+ *   borders. Changes are managed locally; persistence requires explicit save action.
+ * - **Print**: Triggers browser print dialog for the entire invoice page.
+ *
+ * **Layout**: Responsive flexbox layout that stacks vertically on mobile and
+ * horizontally on desktop (`md:flex-row`). Invoice ID is displayed as muted
+ * subtext below the editable name.
+ *
+ * **Animation**: Uses Framer Motion for entrance animation with vertical slide
+ * and fade effect.
+ *
+ * **Accessibility**: Print button wrapped in `Tooltip` for additional context.
+ *
+ * @param props - Component properties containing the invoice to display/edit
+ * @returns Client-rendered JSX element containing editable invoice header
+ *
+ * @example
+ * ```tsx
+ * <InvoiceHeader invoice={invoice} />
+ * // Renders: [Editable Invoice Name Input] [Invoice ID] [Print Button]
+ * ```
+ *
+ * @see {@link Invoice} - Invoice type definition
  */
 export default function InvoiceHeader({invoice}: Readonly<Props>): React.JSX.Element {
   const [invoiceName, setInvoiceName] = useState<string>(invoice.name);

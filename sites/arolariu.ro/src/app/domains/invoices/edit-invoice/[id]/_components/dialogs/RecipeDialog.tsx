@@ -600,9 +600,49 @@ const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 };
 
 /**
- * Dialog component for managing recipes.
- * It handles adding, editing, deleting, and viewing recipes.
- * @returns The rendered dialog component for recipes.
+ * Multi-mode dialog for managing recipes with full CRUD operations.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Mode-Based Rendering**: Switches between dialog variants based on `mode`:
+ * - **add**: `CreateDialog` - Form for creating new recipes with ingredients
+ * - **edit**: `UpdateDialog` - Form for modifying existing recipe details
+ * - **delete**: `DeleteDialog` - Confirmation alert for removing recipes
+ * - **view**: `ReadDialog` - Read-only display of full recipe details
+ *
+ * **Recipe Fields**:
+ * - `name`: Recipe title
+ * - `description`: Brief overview
+ * - `ingredients`: Array of Product items from invoice
+ * - `preparationTime` / `cookingTime`: Duration in minutes
+ * - `complexity`: Easy, Normal, or Hard (via `RecipeComplexity` enum)
+ * - `instructions`: Step-by-step cooking instructions
+ * - `referenceForMoreDetails`: External URL for full recipe
+ *
+ * **AI Features** (placeholder implementations):
+ * - Generate recipe name based on ingredients
+ * - Auto-fill instructions from AI suggestions
+ *
+ * **Dialog Integration**: Uses `useDialog` hook with `INVOICE_RECIPE` type.
+ * Payload contains `Recipe` object for edit/delete/view operations.
+ *
+ * **Domain Context**: Part of the edit-invoice recipes tab, enabling users
+ * to create and manage recipes based on purchased grocery items.
+ *
+ * @returns Client-rendered dialog variant based on current mode, or false if no valid mode
+ *
+ * @example
+ * ```tsx
+ * // Opened via RecipesTab or RecipeCard:
+ * const {open: openAdd} = useDialog("INVOICE_RECIPE", "add");
+ * const {open: openView} = useDialog("INVOICE_RECIPE", "view", recipe);
+ * ```
+ *
+ * @see {@link RecipesTab} - Tab component with add/generate buttons
+ * @see {@link RecipeCard} - Card component with edit/delete/share actions
+ * @see {@link Recipe} - Recipe type definition
+ * @see {@link RecipeComplexity} - Complexity enum
  */
 export default function RecipeDialog(): React.JSX.Element {
   const {

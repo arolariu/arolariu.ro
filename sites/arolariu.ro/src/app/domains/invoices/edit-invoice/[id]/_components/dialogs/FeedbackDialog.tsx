@@ -18,9 +18,44 @@ import {TbStar} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
- * The FeedbackDialog component allows users to provide feedback on the analytics.
- * It includes a star rating, feature selection, and a textarea for additional comments.
- * @returns The FeedbackDialog component, CSR'ed.
+ * Dialog for collecting user feedback on invoice analytics features.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Feedback Collection**:
+ * - **Star Rating**: 1-5 star visual rating with hover preview
+ * - **Feature Selection**: Multi-select badges for specific analytics features
+ * - **Comments**: Freeform textarea for detailed feedback
+ *
+ * **Features Available for Feedback**:
+ * Spending Trends, Price Comparisons, Savings Tips, Merchant Analysis,
+ * Visual Charts, Category Breakdown
+ *
+ * **Submission Flow**:
+ * 1. User rates analytics (required)
+ * 2. Optionally selects helpful features and adds comments
+ * 3. Submits via POST to `/api/mail/invoices/feedback/{invoiceId}`
+ * 4. Toast notifications indicate success or failure
+ * 5. Form resets and dialog closes on success
+ *
+ * **Error Handling**: Validates rating is provided before submission.
+ * Network errors are caught and displayed via toast.
+ *
+ * **Dialog Integration**: Uses `useDialog` hook with `INVOICE_FEEDBACK` type.
+ * Payload contains `{invoice, merchant}` for context.
+ *
+ * @returns Client-rendered dialog with feedback form and submission handling
+ *
+ * @example
+ * ```tsx
+ * // Opened via AnalyticsCard "Feedback" button:
+ * const {open} = useDialog("INVOICE_FEEDBACK", "add", {invoice, merchant});
+ * <Button onClick={open}>Feedback</Button>
+ * ```
+ *
+ * @see {@link useDialog} - Dialog state management hook
+ * @see {@link AnalyticsCard} - Parent component that opens this dialog
  */
 export default function FeedbackDialog(): React.JSX.Element {
   const [rating, setRating] = useState<number>(0);

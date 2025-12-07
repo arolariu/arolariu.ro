@@ -26,10 +26,40 @@ type Props = {
 };
 
 /**
- * The recipes tab from the view-invoice page.
- * This tab displays a list of recipes that can be made with the items in the invoice.
- * It also provides a button to add a new recipe and a button to generate a recipe using AI.
- * @returns The recipes tab component, CSR'ed.
+ * Displays recipes that can be made with invoice items, with add and generate capabilities.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Recipe Display**:
+ * - Paginated grid of `RecipeCard` components (4 per page)
+ * - Each recipe card shows name, complexity, ingredients, and timing
+ * - Empty state prompts user to create first recipe
+ *
+ * **Recipe Actions**:
+ * - **Add Recipe**: Opens `RecipeDialog` in add mode for manual recipe creation
+ * - **Generate**: Placeholder for AI-based recipe generation from invoice items
+ * - Individual recipe CRUD via `RecipeCard` dropdown menus
+ *
+ * **Pagination**: Uses `usePaginationWithSearch` hook for client-side pagination
+ * with Previous/Next navigation and page indicator.
+ *
+ * **Domain Context**: Part of the edit-invoice tabbed interface, providing
+ * recipe suggestions and management based on purchased food items. Helps users
+ * discover cooking ideas from their grocery receipts.
+ *
+ * @param props - Component properties containing recipes array from invoice
+ * @returns Client-rendered card with paginated recipe grid and action buttons
+ *
+ * @example
+ * ```tsx
+ * <RecipesTab recipes={invoice.possibleRecipes} />
+ * // Displays: Recipe grid with add/generate buttons and pagination
+ * ```
+ *
+ * @see {@link RecipeCard} - Individual recipe display component
+ * @see {@link RecipeDialog} - Dialog for recipe CRUD operations
+ * @see {@link usePaginationWithSearch} - Pagination hook
  */
 export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Element {
   const {open: openAddDialog} = useDialog("INVOICE_RECIPE", "add");

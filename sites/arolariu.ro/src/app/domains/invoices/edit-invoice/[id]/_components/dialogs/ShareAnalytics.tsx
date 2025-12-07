@@ -22,9 +22,43 @@ import {TbCopy, TbDownload, TbMail} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
- * The ShareAnalyticsDialog component allows users to share their spending analytics.
- * It includes options to download an image, copy it to the clipboard, or send it via email.
- * @returns The ShareAnalyticsDialog component, CSR'ed.
+ * Dialog for sharing spending analytics via image download, clipboard, or email.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Sharing Methods** (tabbed interface):
+ * - **Image Tab**:
+ *   - Download analytics as PNG image
+ *   - Copy image to clipboard for pasting elsewhere
+ * - **Email Tab**:
+ *   - Send analytics report to specified email address
+ *   - Form with email input and send button
+ *
+ * **Clipboard Integration**: Uses `navigator.clipboard.write()` with
+ * `ClipboardItem` for image blob copying. Fetches placeholder image
+ * and converts to blob for clipboard API.
+ *
+ * **Toast Notifications**: Provides feedback for all sharing actions
+ * (copy success, email sent, image downloaded).
+ *
+ * **Dialog Integration**: Uses `useDialog` hook with `shareAnalytics` type.
+ * Payload contains `{invoice, merchant}` for generating analytics context.
+ *
+ * **Placeholder Implementation**: Current image/download functions use
+ * placeholder URLs. TODO: Implement actual chart-to-image rendering.
+ *
+ * @returns Client-rendered dialog with tabbed sharing options
+ *
+ * @example
+ * ```tsx
+ * // Opened via AnalyticsCard "Share" button:
+ * const {open} = useDialog("shareAnalytics", "add", {invoice, merchant});
+ * <Button onClick={open}>Share</Button>
+ * ```
+ *
+ * @see {@link AnalyticsCard} - Parent component that opens this dialog
+ * @see {@link useDialog} - Dialog state management hook
  */
 export default function ShareAnalyticsDialog(): React.JSX.Element {
   const [email, setEmail] = useState<string>("");

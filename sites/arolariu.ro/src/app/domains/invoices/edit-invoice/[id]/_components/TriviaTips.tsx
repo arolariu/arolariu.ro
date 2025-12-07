@@ -24,9 +24,41 @@ type Props = {
 };
 
 /**
- * The TriviaTipsCard component displays savings tips for a specific merchant.
- * It includes potential savings, difficulty level, and a button to view more tips.
- * @returns The TriviaTipsCard component, CSR'ed.
+ * Displays personalized savings tips based on merchant and invoice data.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Why Client Component?**
+ * - Uses Framer Motion for hover interactions and staggered animations
+ * - Displays dynamic savings calculations based on invoice totals
+ *
+ * **Feature Overview**:
+ * - **Potential Savings Summary**: Aggregates estimated savings from all tips
+ * - **Savings Tips**: Actionable recommendations with difficulty badges (EASY/MEDIUM)
+ * - **Merchant-Specific**: Tips reference the specific merchant name for personalization
+ *
+ * **Savings Calculations**: Currently uses mock data with percentage-based estimates
+ * (5%, 10%, 8% of total) derived from `invoice.paymentInformation.totalCostAmount`.
+ * Future implementation should fetch real savings data from backend analytics.
+ *
+ * **Animation**: Each tip animates in with staggered delay and scales on hover
+ * for tactile feedback.
+ *
+ * **Domain Context**: Part of the invoices bounded context analytics features.
+ * Provides value-add insights to encourage user engagement with invoice tracking.
+ *
+ * @param props - Component properties with merchant and invoice for context
+ * @returns Client-rendered card with savings tips and potential savings summary
+ *
+ * @example
+ * ```tsx
+ * <TriviaTipsCard merchant={merchant} invoice={invoice} />
+ * // Displays: Potential Savings: $X.XX, followed by tip cards
+ * ```
+ *
+ * @see {@link Merchant} - Merchant type for personalization
+ * @see {@link Invoice} - Invoice type for savings calculations
  */
 export default function TriviaTipsCard({merchant, invoice}: Readonly<Props>) {
   // Mock savings tips

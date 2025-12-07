@@ -25,9 +25,42 @@ type Props = {
 };
 
 /**
- * The SharingCard component displays information about the sharing status of an invoice.
- * It includes the owner's information and a list of users with whom the invoice is shared.
- * @returns The SharingCard component, CSR'ed.
+ * Displays invoice sharing status and provides controls for managing shared access.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (uses hooks for user info and dialog state).
+ *
+ * **Sharing Information Displayed**:
+ * - **Owner**: Current user's profile image and username
+ * - **Shared With**: List of users who have access to this invoice
+ *
+ * **Sharing Actions**:
+ * - **Manage Sharing**: Opens `SharingDialog` for configuring access settings
+ * - **Share Invoice**: Opens `SharingDialog` for adding new shared users
+ * - **Remove Access**: Removes specific user's access (placeholder implementation)
+ * - **Mark as Private**: Revokes all shared access (placeholder implementation)
+ *
+ * **User Context**: Uses `useUserInformation` hook to display owner profile.
+ * Falls back to generic user icon if no profile image available.
+ *
+ * **Animation**: Shared user list items animate in with staggered horizontal
+ * slide effect via Framer Motion.
+ *
+ * **Domain Context**: Part of the edit-invoice sidebar, enabling collaborative
+ * invoice management through controlled sharing.
+ *
+ * @param props - Component properties containing the invoice with sharing data
+ * @returns Client-rendered card with sharing status and management controls
+ *
+ * @example
+ * ```tsx
+ * <SharingCard invoice={invoice} />
+ * // Displays: Owner info, shared users list, sharing action buttons
+ * ```
+ *
+ * @see {@link SharingDialog} - Dialog for managing invoice sharing
+ * @see {@link useUserInformation} - Hook for current user context
+ * @see {@link Invoice} - Invoice type with sharedWith array
  */
 export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Element {
   const {open} = useDialog("INVOICE_SHARE", "edit", invoice);

@@ -24,9 +24,47 @@ import {TbDisc, TbPlus, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
- * This function renders a dialog that allows users to edit invoice items.
- * It includes a table for displaying items, pagination, and controls for adding new items.
- * @returns The JSX for the items dialog.
+ * Dialog for bulk editing invoice line items with add, modify, and delete operations.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Editing Capabilities**:
+ * - **Add New Item**: Creates empty product row for manual entry
+ * - **Edit Existing**: Inline editing of name, quantity, and price per item
+ * - **Delete Item**: Remove items from the invoice
+ * - **Pagination**: Navigate large item lists with page controls
+ *
+ * **Item Fields**:
+ * - `rawName`: Product name as scanned/entered
+ * - `quantity`: Number of units purchased
+ * - `quantityUnit`: Unit of measurement (e.g., "kg", "pcs")
+ * - `price`: Unit price
+ * - `totalPrice`: Calculated line total
+ *
+ * **State Management**: Uses local `editableItems` state initialized from
+ * invoice payload. Changes are staged locally until "Save Changes" is clicked.
+ *
+ * **Dialog Integration**: Uses `useDialog` hook with `INVOICE_ITEMS` type.
+ * Payload contains the full invoice object.
+ *
+ * **Validation**: New items are created with sensible defaults:
+ * - `category`: `ProductCategory.NOT_DEFINED`
+ * - `quantity`: 1
+ * - `price`: 0
+ *
+ * @returns Client-rendered dialog with editable items table and controls
+ *
+ * @example
+ * ```tsx
+ * // Opened via ItemsTable "Edit Items" button:
+ * const {open} = useDialog("INVOICE_ITEMS", "edit", invoice);
+ * <Button onClick={open}>Edit Items</Button>
+ * ```
+ *
+ * @see {@link ItemsTable} - Component that opens this dialog
+ * @see {@link Product} - Product type definition for line items
+ * @see {@link useDialog} - Dialog state management hook
  */
 export default function ItemsDialog(): React.JSX.Element {
   const {

@@ -25,7 +25,48 @@ type Props = {
   merchant: Merchant;
 };
 
-// Create a memoized version of the component to prevent unnecessary re-renders
+/**
+ * Displays comprehensive spending analytics with interactive charts and sharing options.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component with `memo` wrapper for render optimization.
+ *
+ * **Analytics Views** (tabbed interface):
+ * - **Trends**: Line chart showing monthly spending at merchant over the past year
+ * - **Comparison**: Bar chart comparing spending at current merchant vs. similar merchants
+ * - **Breakdown**: Pie chart showing spending distribution by category
+ *
+ * **Chart Data**: Currently uses mock data generated via `useMemo` hooks.
+ * TODO: Replace with real analytics data from backend aggregation service.
+ *
+ * **Summary Statistics**:
+ * - Average spend at merchant
+ * - Year-to-date total spending
+ * - Comparative analysis text (e.g., "25% lower than average")
+ *
+ * **Actions**:
+ * - **Share**: Opens `ShareAnalyticsDialog` for exporting analytics as image/email
+ * - **Feedback**: Opens `FeedbackDialog` for rating analytics features
+ *
+ * **Performance**: Wrapped in `memo` to prevent re-renders when parent updates
+ * but props remain unchanged. Chart data memoized with `useMemo`.
+ *
+ * **Domain Context**: Part of the edit-invoice main content area, providing
+ * value-add insights to encourage continued invoice tracking.
+ *
+ * @param props - Component properties with invoice and merchant for analytics context
+ * @returns Memoized client-rendered card with tabbed analytics charts
+ *
+ * @example
+ * ```tsx
+ * <AnalyticsCard invoice={invoice} merchant={merchant} />
+ * // Displays: Tabbed card with Trends/Comparison/Breakdown charts
+ * ```
+ *
+ * @see {@link ShareAnalyticsDialog} - Dialog for sharing analytics
+ * @see {@link FeedbackDialog} - Dialog for analytics feedback
+ * @see {@link ChartContainer} - Chart wrapper component from @arolariu/components
+ */
 export const AnalyticsCard = memo(function AnalyticsCard({invoice, merchant}: Readonly<Props>) {
   const {open: openFeedback} = useDialog("INVOICE_FEEDBACK", "add", {invoice, merchant});
   const {open: openShare} = useDialog("shareAnalytics", "add", {invoice, merchant});

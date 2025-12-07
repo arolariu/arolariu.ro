@@ -22,9 +22,45 @@ import QRCode from "react-qr-code";
 import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
- * The ExportDialog component allows users to share an invoice via link, email, or QR code.
- * It includes options to copy the link and QR code to the clipboard.
- * @returns The ExportDialog component, CSR'ed.
+ * Dialog for sharing invoice access via link, email, or QR code.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Sharing Methods** (tabbed interface):
+ * - **Link Tab**: Copy shareable URL to clipboard
+ * - **Email Tab**: Send invoice link to specified email address
+ * - **QR Code Tab**: Display scannable QR code with copy option
+ *
+ * **Link Generation**: Constructs share URL from current origin and invoice ID:
+ * `${location.origin}/invoices/${invoice.id}`
+ *
+ * **QR Code Features**:
+ * - Rendered via `react-qr-code` library
+ * - Copy QR code as PNG image to clipboard
+ * - Uses canvas conversion for clipboard blob creation
+ *
+ * **Clipboard Integration**:
+ * - Link copy: Uses `navigator.clipboard.writeText()`
+ * - QR copy: Uses `navigator.clipboard.write()` with image blob
+ *
+ * **Toast Notifications**: Provides feedback for all actions with
+ * temporary "copied" state indicator.
+ *
+ * **Dialog Integration**: Uses `useDialog` hook with `INVOICE_SHARE` type.
+ * Payload contains the `Invoice` object.
+ *
+ * @returns Client-rendered dialog with tabbed sharing options and QR code
+ *
+ * @example
+ * ```tsx
+ * // Opened via SharingCard buttons:
+ * const {open} = useDialog("INVOICE_SHARE", "edit", invoice);
+ * <Button onClick={open}>Share Invoice</Button>
+ * ```
+ *
+ * @see {@link SharingCard} - Parent component that opens this dialog
+ * @see {@link useDialog} - Dialog state management hook
  */
 export default function SharingDialog(): React.JSX.Element {
   const [copied, setCopied] = useState<boolean>(false);

@@ -26,10 +26,39 @@ type Props = {
 };
 
 /**
- * The MetadataTab component displays additional information about the invoice.
- * It shows metadata fields associated with the invoice and allows users to add new fields.
- * @param metadata The metadata associated with the invoice.
- * @returns The MetadataTab component, CSR'ed.
+ * Displays invoice metadata fields with add, edit, and delete capabilities.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Metadata Display**:
+ * - Key-value pairs displayed as styled cards in a responsive grid
+ * - Each field shows a "Readonly" badge (indicates system-managed fields)
+ * - Empty state prompts user to add first metadata field
+ *
+ * **CRUD Operations** (via dropdown menu per field):
+ * - **Add**: Opens `MetadataDialog` in add mode for new key-value pairs
+ * - **Edit**: Opens `MetadataDialog` in edit mode (currently disabled)
+ * - **Delete**: Opens `MetadataDialog` in delete mode (currently disabled)
+ *
+ * **Animation**: Field cards animate with staggered scale-in effect and
+ * scale on hover for tactile feedback via Framer Motion.
+ *
+ * **Domain Context**: Part of the edit-invoice tabbed interface, allowing
+ * users to manage custom metadata (loyalty points, store location, notes, etc.)
+ * associated with their invoices.
+ *
+ * @param props - Component properties containing metadata key-value pairs
+ * @returns Client-rendered card with metadata fields and management controls
+ *
+ * @example
+ * ```tsx
+ * <MetadataTab metadata={{"loyaltyPoints": "150", "storeLocation": "NYC"}} />
+ * // Displays: Grid of metadata cards with edit dropdown menus
+ * ```
+ *
+ * @see {@link MetadataDialog} - Dialog for add/edit/delete metadata operations
+ * @see {@link VALID_METADATA_KEYS} - Predefined metadata key definitions
  */
 export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Element {
   const {open: openAddDialog} = useDialog("INVOICE_METADATA", "add");

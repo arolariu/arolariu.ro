@@ -7,9 +7,34 @@ import {useDialog} from "../../../../_contexts/DialogContext";
 type Props = {invoice: Invoice};
 
 /**
- * The ImageCard component displays an image of a receipt.
- * It includes buttons for expanding the image and reuploading it.
- * @returns The ImageCard component, CSR'ed.
+ * Displays the receipt image with zoom/expand capabilities for the edit-invoice page.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (uses `useDialog` hook for image expansion).
+ *
+ * **Features**:
+ * - **Image Preview**: Displays first scanned receipt image with hover zoom effect
+ * - **Expand Dialog**: Click image or button to open full-size view in `ImageDialog`
+ * - **Fallback**: Uses placeholder image if no scans are available
+ *
+ * **Interaction Pattern**: The image is clickable and triggers the `INVOICE_IMAGE`
+ * dialog in "view" mode, passing the photo URL as payload. Uses Framer Motion
+ * for scale-on-hover feedback.
+ *
+ * **Accessibility**: Image has `aria-hidden` since it's decorative with an
+ * explicit "Expand Image" button for keyboard users.
+ *
+ * @param props - Component properties containing the invoice with scan data
+ * @returns Client-rendered card with receipt image preview and expand controls
+ *
+ * @example
+ * ```tsx
+ * <ImageCard invoice={invoice} />
+ * // Displays receipt thumbnail with expand button
+ * ```
+ *
+ * @see {@link ImageDialog} - Full-screen image viewer dialog
+ * @see {@link useDialog} - Dialog management hook
  */
 export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element {
   const photoLocation = invoice.scans[0]?.location ?? "https://dummyimage.com/600x900&text=placeholder+image";

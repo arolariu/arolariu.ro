@@ -29,10 +29,42 @@ type Props = {
 const EMPTY_ITEM_ROW_KEYS = ["empty-item-row-1", "empty-item-row-2", "empty-item-row-3", "empty-item-row-4", "empty-item-row-5"] as const;
 
 /**
- * The ItemsTable component displays a paginated table of invoice items.
- * It allows users to edit items and view their details.
- * @param items The list of invoice items to display.
- * @returns The ItemsTable component, CSR'ed.
+ * Displays a paginated table of invoice items with editing capabilities.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Table Display**:
+ * - **Columns**: Item name, Quantity (with unit), Unit Price, Line Total
+ * - **Footer**: Aggregated total amount for all items
+ * - **Pagination**: Client-side with 5 items per page, Previous/Next controls
+ * - **Empty Rows**: Placeholder rows maintain consistent table height
+ *
+ * **Editing Capabilities**:
+ * - **Edit Items Button**: Opens `ItemsDialog` for bulk item editing
+ * - Dialog allows add, modify, and delete operations on line items
+ *
+ * **Animation**: Each row animates in with staggered vertical slide via
+ * Framer Motion for smooth table population.
+ *
+ * **Performance**: Uses `useCallback` for memoized pagination handlers.
+ * Stable keys (`EMPTY_ITEM_ROW_KEYS`) prevent React reconciliation issues.
+ *
+ * **Domain Context**: Core component of the `InvoiceCard`, providing the
+ * primary interface for viewing and editing invoice line items.
+ *
+ * @param props - Component properties containing the invoice with items array
+ * @returns Client-rendered table with paginated items and edit controls
+ *
+ * @example
+ * ```tsx
+ * <ItemsTable invoice={invoice} />
+ * // Displays: Paginated table with item rows and Edit Items button
+ * ```
+ *
+ * @see {@link ItemsDialog} - Dialog for editing invoice items
+ * @see {@link usePaginationWithSearch} - Pagination hook
+ * @see {@link Invoice} - Invoice type with items array
  */
 export default function ItemsTable({invoice}: Readonly<Props>) {
   const {open} = useDialog("INVOICE_ITEMS", "edit", invoice);

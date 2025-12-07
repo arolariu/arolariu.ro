@@ -32,10 +32,46 @@ import {TbArrowsUpDown, TbCalendar, TbDownload, TbSearch} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
- * This function renders a dialog that displays all receipts from a specific merchant.
- * It allows the user to filter and sort the receipts based on various criteria.
- * The dialog is opened and closed using a custom hook.
- * @returns The JSX for the merchant receipts dialog.
+ * Dialog displaying all receipts/invoices from a specific merchant with filtering.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Features**:
+ * - **Search**: Filter receipts by text search
+ * - **Date Filter**: Filter by time period (dropdown selector)
+ * - **Sort**: Order receipts by various criteria
+ * - **Pagination**: Navigate large receipt lists
+ * - **Export**: Download option for filtered results (placeholder)
+ *
+ * **Table Columns**:
+ * Displays receipt date, amount, and other relevant details in a
+ * paginated table format.
+ *
+ * **Data Fetching**: Currently uses mock data with 3-second simulated delay.
+ * TODO: Implement real API call to fetch receipts by merchant ID.
+ *
+ * **Dialog Integration**: Uses `useDialog` hook with `INVOICE_MERCHANT_INVOICES`
+ * type. Payload contains the `Merchant` object for context.
+ *
+ * **Layout**: Extra-wide dialog (`sm:max-w-4xl lg:max-w-7xl`) to accommodate
+ * table with multiple columns and filtering controls.
+ *
+ * **Domain Context**: Enables cross-invoice navigation within the edit-invoice
+ * flow, helping users analyze spending patterns at specific merchants.
+ *
+ * @returns Client-rendered dialog with filterable receipts table
+ *
+ * @example
+ * ```tsx
+ * // Opened via MerchantCard "View All Receipts" button:
+ * const {open} = useDialog("INVOICE_MERCHANT_INVOICES", "view", merchant);
+ * <Button onClick={open}>View All Receipts</Button>
+ * ```
+ *
+ * @see {@link MerchantCard} - Parent component that opens this dialog
+ * @see {@link usePaginationWithSearch} - Pagination and search hook
+ * @see {@link Merchant} - Merchant type definition
  */
 export default function MerchantReceiptsDialog(): React.JSX.Element {
   const {

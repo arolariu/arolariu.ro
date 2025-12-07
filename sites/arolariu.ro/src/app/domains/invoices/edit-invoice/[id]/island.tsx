@@ -21,10 +21,51 @@ type Props = Readonly<{
 }>;
 
 /**
- * This function renders the view invoice page.
- * @returns The JSX for the view invoice page.
+ * Renders the interactive invoice editing screen with tabbed navigation and dialog-based editing.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive at file top).
+ *
+ * **Why Client Component?**
+ * - Uses Framer Motion for staggered animations and micro-interactions
+ * - Manages dialog state via `DialogProvider` context
+ * - Requires interactive tab switching and hover effects
+ *
+ * **Layout Structure**:
+ * - **Header**: Editable invoice name, print button (via `InvoiceHeader`)
+ * - **Main Content** (2/3 width on desktop):
+ *   - Invoice details card with items table
+ *   - Tabbed interface for recipes and metadata
+ *   - Spending analytics with charts
+ * - **Sidebar** (1/3 width on desktop):
+ *   - Receipt image preview with zoom
+ *   - Merchant information and navigation
+ *   - Sharing controls and user access management
+ *
+ * **Dialog System**: Wraps content in `DialogProvider` and renders `DialogContainer`
+ * at the bottom. All editing operations (items, merchant, sharing, metadata) use
+ * dialog-based UX for focused editing without page navigation.
+ *
+ * **Animation**: Uses Framer Motion `containerVariants` and `itemVariants` for
+ * coordinated staggered entrance animations with spring physics.
+ *
+ * **Domain Context**: Part of the invoices bounded context (RFC 2001). Provides
+ * the primary interface for invoice modification after initial creation.
+ *
+ * @param props - Component properties containing pre-fetched invoice and merchant data
+ * @returns Client-rendered JSX element containing the full invoice editing interface
+ *
+ * @example
+ * ```tsx
+ * // Used in page.tsx after server-side data fetching:
+ * <RenderEditInvoiceScreen invoice={invoice} merchant={merchant} />
+ * ```
+ *
+ * @see {@link DialogProvider} - Context provider for dialog state management
+ * @see {@link DialogContainer} - Renders active dialog based on context state
+ * @see RFC 2001 - Domain-Driven Design Architecture (invoices bounded context)
  */
-export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.JSX.Element {
+export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.JSX.Element {
   const {invoice, merchant} = props;
 
   const containerVariants: Variants = {

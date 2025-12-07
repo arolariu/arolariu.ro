@@ -208,9 +208,38 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
 };
 
 /**
- * Dialog component for managing metadata.
- * It handles adding, editing, and deleting metadata.
- * @returns The rendered dialog component for metadata.
+ * Multi-mode dialog for managing invoice metadata with add, edit, and delete operations.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Mode-Based Rendering**: Switches between dialog variants based on `mode`:
+ * - **add**: `AddDialog` - Form for creating new key-value metadata pairs
+ * - **edit**: `UpdateDialog` - Form for modifying existing metadata values
+ * - **delete**: `DeleteDialog` - Confirmation dialog for removing metadata
+ *
+ * **Valid Metadata Keys**: Predefined keys in `VALID_METADATA_KEYS` constant:
+ * - Editable: loyaltyPoints, storeLocation, cashier, paymentMethod, discountCode, customerNotes
+ * - Read-only: receiptNumber, transactionId, taxAmount
+ *
+ * **Dialog Integration**: Uses `useDialog` hook with `INVOICE_METADATA` type.
+ * Payload contains `Record<string, string>` for edit/delete operations.
+ *
+ * **Domain Context**: Part of the edit-invoice metadata management flow,
+ * enabling users to add custom annotations and track additional receipt details.
+ *
+ * @returns Client-rendered dialog variant based on current mode, or false if no valid mode
+ *
+ * @example
+ * ```tsx
+ * // Opened via MetadataTab buttons:
+ * const {open: openAdd} = useDialog("INVOICE_METADATA", "add");
+ * const {open: openEdit} = useDialog("INVOICE_METADATA", "edit", metadata);
+ * ```
+ *
+ * @see {@link MetadataTab} - Parent component that opens this dialog
+ * @see {@link VALID_METADATA_KEYS} - Predefined metadata key definitions
+ * @see {@link useDialog} - Dialog state management hook
  */
 export default function MetadataDialog(): React.JSX.Element {
   const {

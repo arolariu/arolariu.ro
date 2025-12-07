@@ -16,10 +16,43 @@ import {TbBuilding, TbBuildingStore, TbMapPin, TbPhone} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
- * This function renders a dialog that displays information about a specific merchant.
- * It includes details such as the merchant's name, address, phone number, and parent company.
- * The dialog is opened and closed using a custom hook.
- * @returns The JSX for the merchant dialog, CSR'ed.
+ * Dialog displaying detailed merchant information for the current invoice.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (uses `useDialog` hook).
+ *
+ * **Merchant Details Displayed**:
+ * - **Name**: Business name with category badge
+ * - **Address**: Physical location with map pin icon
+ * - **Phone**: Contact number with phone icon
+ * - **Parent Company**: Corporate parent identifier
+ *
+ * **Actions**:
+ * - **Open in Maps**: Placeholder for map integration (not yet implemented)
+ *
+ * **Visual Design**:
+ * - Profile-style header with merchant icon in primary-tinted circle
+ * - Table layout for structured detail presentation
+ * - Category badge derived from `MerchantCategory` enum
+ *
+ * **Dialog Integration**: Uses `useDialog` hook with `INVOICE_MERCHANT` type.
+ * Payload contains the full `Merchant` object.
+ *
+ * **Domain Context**: Provides merchant context for invoice editing,
+ * helping users verify merchant details and navigate to related data.
+ *
+ * @returns Client-rendered dialog with merchant details table
+ *
+ * @example
+ * ```tsx
+ * // Opened via MerchantCard "View Merchant Details" button:
+ * const {open} = useDialog("INVOICE_MERCHANT", "view", merchant);
+ * <Button onClick={open}>View Merchant Details</Button>
+ * ```
+ *
+ * @see {@link MerchantCard} - Parent component that opens this dialog
+ * @see {@link Merchant} - Merchant type definition
+ * @see {@link MerchantCategory} - Category enum for badge display
  */
 export default function MerchantDialog(): React.JSX.Element {
   const {

@@ -18,9 +18,39 @@ type Props = {
 };
 
 /**
- * The MerchantCard component displays information about a merchant.
- * It includes the merchant's name and address, and buttons to view more details or all receipts from this merchant.
- * @returns The MerchantCard component, CSR'ed.
+ * Displays merchant information with navigation to detailed views and receipt history.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (uses `useDialog` hook for dialog navigation).
+ *
+ * **Merchant Details**:
+ * - **Name**: Merchant business name with shopping cart icon
+ * - **Address**: Physical location of the merchant
+ *
+ * **Navigation Actions**:
+ * - **View Merchant Details**: Opens `MerchantDialog` with full merchant info
+ *   (address, phone, parent company, category)
+ * - **View All Receipts**: Opens `MerchantReceiptsDialog` showing all invoices
+ *   from this merchant with filtering and sorting
+ *
+ * **Dialog Integration**: Uses `useDialog` hook to open `INVOICE_MERCHANT` and
+ * `INVOICE_MERCHANT_INVOICES` dialogs in "view" mode with merchant as payload.
+ *
+ * **Domain Context**: Part of the edit-invoice sidebar, providing quick access
+ * to merchant context and cross-invoice navigation.
+ *
+ * @param props - Component properties containing merchant data
+ * @returns Client-rendered card with merchant info and navigation buttons
+ *
+ * @example
+ * ```tsx
+ * <MerchantCard merchant={merchant} />
+ * // Displays: Merchant name, address, and two action buttons
+ * ```
+ *
+ * @see {@link MerchantDialog} - Detailed merchant information dialog
+ * @see {@link MerchantReceiptsDialog} - All receipts from merchant dialog
+ * @see {@link Merchant} - Merchant type definition
  */
 export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Element {
   const {open: openMerchantInfoDialog} = useDialog("INVOICE_MERCHANT", "view", merchant);

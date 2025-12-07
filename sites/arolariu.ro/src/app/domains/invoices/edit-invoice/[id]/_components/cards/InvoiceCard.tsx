@@ -26,10 +26,41 @@ type Props = {
 };
 
 /**
- * The InvoiceCard component displays the details of an invoice.
- * It includes information such as the date, category, payment method, and total amount.
- * The card also allows the user to mark the invoice as important.
- * @returns The InvoiceCard component, CSR'ed.
+ * Displays comprehensive invoice details with inline editing capabilities.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Invoice Details Displayed**:
+ * - **Date**: Transaction date with ISO timestamp tooltip
+ * - **Category**: Invoice category badge (e.g., GROCERIES, DINING)
+ * - **Payment Method**: Payment type with credit card icon
+ * - **Total Amount**: Formatted currency with locale-aware formatting
+ * - **Description**: Merchant description text
+ * - **Items Table**: Paginated list of invoice line items (via `ItemsTable`)
+ *
+ * **Editing Capabilities**:
+ * - **Mark as Important**: Toggle badge to favorite/unfavorite invoice
+ * - **Edit Items**: Via `ItemsTable` which opens `ItemsDialog` for modifications
+ *
+ * **Animation**: Uses Framer Motion for card entrance and hover scale effects
+ * on individual detail sections.
+ *
+ * **Domain Context**: Central component of the edit-invoice page, providing
+ * the primary invoice summary view with editing access points.
+ *
+ * @param props - Component properties with invoice and merchant data
+ * @returns Client-rendered card with invoice details and edit controls
+ *
+ * @example
+ * ```tsx
+ * <InvoiceCard invoice={invoice} merchant={merchant} />
+ * // Displays: Invoice Details card with date, category, payment, total, items
+ * ```
+ *
+ * @see {@link ItemsTable} - Nested component for displaying/editing items
+ * @see {@link Invoice} - Invoice type definition
+ * @see {@link Merchant} - Merchant type definition
  */
 export default function InvoiceCard({invoice, merchant}: Readonly<Props>): React.JSX.Element {
   const {paymentInformation, category, isImportant, description} = invoice;
