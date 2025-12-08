@@ -1,5 +1,6 @@
-import {type Invoice, type Product, ProductCategory} from "@/types/invoices";
-import {getCategoryName} from "./invoice";
+import {generateRandomInvoice, generateRandomInvoices} from "@/data/mocks";
+import {formatEnum} from "@/lib/utils.generic";
+import {type Invoice, type PaymentInformation, type Product, ProductCategory} from "@/types/invoices";
 
 // Spending by category data
 export type CategorySpending = {
@@ -36,7 +37,7 @@ export function getCategorySpending(items: Product[]): CategorySpending[] {
 
   return Array.from(categoryMap.entries())
     .map(([category, data]) => ({
-      category: getCategoryName(category),
+      category: formatEnum(category),
       amount: Math.round(data.amount * 100) / 100,
       count: data.count,
       fill: CATEGORY_COLORS[category] || "var(--chart-1)",
@@ -134,11 +135,12 @@ export type SpendingTrendData = {
 };
 
 export function getSpendingTrend(): SpendingTrendData[] {
-  const allInvoices = [...historicalInvoices, currentInvoiceSummary].sort((a, b) => a.date.getTime() - b.date.getTime());
-
+  const historicalInvoices = generateRandomInvoices(20); // This would be fetched from user data
+  const currentInvoiceSummary = generateRandomInvoice(); // This would be the current invoice
+  const allInvoices = [...historicalInvoices, currentInvoiceSummary];
   return allInvoices.map((inv) => ({
-    date: inv.date.toLocaleDateString("en-US", {month: "short", day: "numeric"}),
-    amount: inv.totalAmount,
+    date: inv.createdAt.toLocaleDateString("en-US", {month: "short", day: "numeric"}),
+    amount: inv.paymentInformation.totalCostAmount,
     isCurrent: inv.id === currentInvoiceSummary.id,
     name: inv.name,
   }));
@@ -160,32 +162,34 @@ export type ComparisonStats = {
 };
 
 export function getComparisonStats(): ComparisonStats {
-  const current = currentInvoiceSummary;
-  const historical = historicalInvoices;
+  const current = generateRandomInvoice(); // This would be the current invoice
+  const historical = generateRandomInvoices(20); // This would be fetched from user data
 
-  const totalAmount = historical.reduce((sum, inv) => sum + inv.totalAmount, 0);
+  const totalAmount = historical.reduce((sum, inv) => sum + inv.paymentInformation.totalCostAmount, 0);
   const averageAmount = totalAmount / historical.length;
-  const percentageDiff = ((current.totalAmount - averageAmount) / averageAmount) * 100;
+  const percentageDiff = ((current.paymentInformation.totalCostAmount - averageAmount) / averageAmount) * 100;
 
-  const totalItems = historical.reduce((sum, inv) => sum + inv.itemCount, 0);
+  const totalItems = historical.reduce((sum, inv) => sum + inv.items.length, 0);
   const averageItemCount = totalItems / historical.length;
-  const itemCountDiff = ((current.itemCount - averageItemCount) / averageItemCount) * 100;
+  const itemCountDiff = ((current.items.length - averageItemCount) / averageItemCount) * 100;
 
   // Same merchant comparison
   const sameMerchant = historical.filter((inv) => inv.merchantName === current.merchantName);
   const sameMerchantAvg =
-    sameMerchant.length > 0 ? sameMerchant.reduce((sum, inv) => sum + inv.totalAmount, 0) / sameMerchant.length : averageAmount;
-  const sameMerchantDiff = ((current.totalAmount - sameMerchantAvg) / sameMerchantAvg) * 100;
+    sameMerchant.length > 0
+      ? sameMerchant.reduce((sum, inv) => sum + inv.paymentInformation.totalCostAmount, 0) / sameMerchant.length
+      : averageAmount;
+  const sameMerchantDiff = ((current.paymentInformation.totalCostAmount - sameMerchantAvg) / sameMerchantAvg) * 100;
 
   return {
-    currentAmount: current.totalAmount,
+    currentAmount: current.paymentInformation.totalCostAmount,
     averageAmount: Math.round(averageAmount * 100) / 100,
     percentageDiff: Math.round(percentageDiff * 10) / 10,
     isAboveAverage: percentageDiff > 0,
-    minAmount: Math.min(...historical.map((inv) => inv.totalAmount)),
-    maxAmount: Math.max(...historical.map((inv) => inv.totalAmount)),
+    minAmount: Math.min(...historical.map((inv) => inv.paymentInformation.totalCostAmount)),
+    maxAmount: Math.max(...historical.map((inv) => inv.paymentInformation.totalCostAmount)),
     totalInvoices: historical.length,
-    currentItemCount: current.itemCount,
+    currentItemCount: current.items.length,
     averageItemCount: Math.round(averageItemCount * 10) / 10,
     itemCountDiff: Math.round(itemCountDiff * 10) / 10,
     sameMerchantAvg: Math.round(sameMerchantAvg * 100) / 100,
@@ -203,13 +207,15 @@ export type MerchantBreakdown = {
 export function getMerchantBreakdown(): MerchantBreakdown[] {
   const merchantMap = new Map<string, {count: number; total: number}>();
 
+  const historicalInvoices = generateRandomInvoices(30); // This would be fetched from user data
+  const currentInvoiceSummary = generateRandomInvoice(); // This would be the current invoice
   const allInvoices = [...historicalInvoices, currentInvoiceSummary];
 
   allInvoices.forEach((inv) => {
     const existing = merchantMap.get(inv.merchantName) || {count: 0, total: 0};
     merchantMap.set(inv.merchantName, {
       count: existing.count + 1,
-      total: existing.total + inv.totalAmount,
+      total: existing.total + inv.paymentInformation.totalCostAmount,
     });
   });
 
@@ -230,8 +236,8 @@ export type CategoryTrendData = {
 };
 
 export function getCategoryComparison(): CategoryTrendData[] {
-  const current = currentInvoiceSummary.categoryBreakdown;
-  const historical = historicalInvoices;
+  const current = generateRandomInvoice().category; // This would be the current invoice
+  const historical = generateRandomInvoices(30); // This would be fetched from user data
 
   // Calculate average for each category
   const categoryAverages = new Map<ProductCategory, number>();
@@ -239,14 +245,14 @@ export function getCategoryComparison(): CategoryTrendData[] {
   Object.values(ProductCategory)
     .filter((v) => typeof v === "number")
     .forEach((cat) => {
-      const categoryTotal = historical.reduce((sum, inv) => sum + (inv.categoryBreakdown[cat as ProductCategory] || 0), 0);
+      const categoryTotal = historical.reduce((sum, inv) => sum + (inv.category[cat as ProductCategory] || 0), 0);
       categoryAverages.set(cat as ProductCategory, categoryTotal / historical.length);
     });
 
   return Object.entries(current)
     .filter(([_, amount]) => amount > 0 || (categoryAverages.get(Number(_) as ProductCategory) || 0) > 0)
     .map(([cat, amount]) => ({
-      category: getCategoryName(Number(cat) as ProductCategory),
+      category: formatEnum(Number(cat) as ProductCategory),
       current: Math.round(amount * 100) / 100,
       average: Math.round((categoryAverages.get(Number(cat) as ProductCategory) || 0) * 100) / 100,
     }))
@@ -271,4 +277,55 @@ export function getUnitPriceAnalysis(items: Product[]): UnitPriceData[] {
       unit: item.quantityUnit,
     }))
     .sort((a, b) => b.unitPrice - a.unitPrice);
+}
+
+export type BudgetImpact = {
+  monthName: string;
+  monthlyBudget: number;
+  spentBeforeThis: number;
+  totalSpent: number;
+  remaining: number;
+  percentUsed: number;
+  thisInvoicePercent: number;
+  daysRemaining: number;
+  dailyAllowance: number;
+  isOverBudget: boolean;
+  isNearLimit: boolean;
+};
+
+export function computeBudgetImpact(paymentInformation: PaymentInformation): BudgetImpact {
+  const {totalCostAmount, transactionDate} = paymentInformation;
+
+  // Simulated budget data
+  const monthlyBudget = 2000;
+  const spentBeforeThis = 1057.55;
+  const totalSpent = spentBeforeThis + totalCostAmount;
+  const remaining = monthlyBudget - totalSpent;
+  const percentUsed = (totalSpent / monthlyBudget) * 100;
+  const thisInvoicePercent = (totalCostAmount / monthlyBudget) * 100;
+
+  // Calculate days remaining in month
+  const today = new Date(transactionDate);
+  const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const daysRemaining = lastDayOfMonth.getDate() - today.getDate();
+  const dailyAllowance = remaining / Math.max(daysRemaining, 1);
+
+  // Determine status
+  const isOverBudget = remaining < 0;
+  const isNearLimit = percentUsed > 80 && !isOverBudget;
+  const monthName = new Intl.DateTimeFormat("en-US", {month: "long"}).format(today);
+
+  return {
+    monthName,
+    monthlyBudget,
+    spentBeforeThis,
+    totalSpent,
+    remaining,
+    percentUsed,
+    thisInvoicePercent,
+    daysRemaining,
+    dailyAllowance,
+    isOverBudget,
+    isNearLimit,
+  };
 }
