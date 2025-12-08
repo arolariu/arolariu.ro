@@ -2,7 +2,7 @@
 
 import type {Invoice, Merchant} from "@/types/invoices";
 import {BudgetImpactCard} from "./_components/cards/BudgetImpactCard";
-import {CategoryInsightsCard} from "./_components/cards/insights/CategoryInsightsCard";
+import {CategoryInsightsCardContainer} from "./_components/cards/insights/CategoryInsightsCardContainer";
 import {InvoiceDetailsCard} from "./_components/cards/InvoiceDetailsCard";
 import {MerchantInfoCard} from "./_components/cards/MerchantInfoCard";
 import {QuickActionsCard} from "./_components/cards/QuickActionsCard";
@@ -48,7 +48,7 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
             </div>
 
             <div className='animate-in slide-in-from-bottom-4 delay-150 duration-500'>
-              <CategoryInsightsCard />
+              <CategoryInsightsCardContainer />
             </div>
 
             <div className='animate-in slide-in-from-bottom-4 delay-200 duration-500'>
@@ -67,10 +67,10 @@ export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.J
               <ReceiptImageCard />
             </div>
             <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-150 duration-500'>
-              <BudgetImpactCard />
+              <ShoppingCalendarCard />
             </div>
             <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-200 duration-500'>
-              <ShoppingCalendarCard />
+              <BudgetImpactCard />
             </div>
             <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-250 duration-500'>
               <SeasonalInsightsCard />
