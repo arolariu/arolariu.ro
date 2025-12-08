@@ -1,7 +1,10 @@
 "use client";
 
+import {generateRandomInvoices} from "@/data/mocks/invoice";
+import {formatCurrency, formatEnum} from "@/lib/utils.generic";
 import {ProductCategory, type Invoice} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle, Progress} from "@arolariu/components";
+import {useLocale} from "next-intl";
 import {TbBulb, TbShoppingBag, TbSparkles, TbTrendingUp} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 
@@ -27,15 +30,16 @@ function detectSeasonalInsights(invoice: Invoice): Insight[] {
     {} as Record<ProductCategory, number>,
   );
 
+  const historicalInvoices: Invoice[] = generateRandomInvoices(50); // This would be fetched from user data
   // Calculate historical average for the same categories
   const historicalAvg = historicalInvoices.reduce(
     (acc, inv) => {
-      Object.entries(inv.categoryBreakdown).forEach(([cat, amount]) => {
+      Object.entries(inv.items).forEach(([cat, amount]) => {
         const category = Number.parseInt(cat) as ProductCategory;
         if (!acc[category]) {
           acc[category] = {total: 0, count: 0};
         }
-        acc[category].total += amount;
+        acc[category].total += amount.totalPrice;
         acc[category].count += 1;
       });
       return acc;
@@ -54,7 +58,7 @@ function detectSeasonalInsights(invoice: Invoice): Insight[] {
       if (percentChange > 100) {
         insights.push({
           icon: <TbTrendingUp className='h-4 w-4' />,
-          title: `${getProductCategoryName(category)} Spike`,
+          title: `${formatEnum(category)} Spike`,
           description: `+${percentChange.toFixed(0)}% vs your average`,
           type: "warning",
         });
@@ -96,6 +100,7 @@ function detectSeasonalInsights(invoice: Invoice): Insight[] {
 }
 
 export function SeasonalInsightsCard(): React.JSX.Element {
+  const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const insights = detectSeasonalInsights(invoice);
   const date = new Date(invoice.paymentInformation.transactionDate);
@@ -120,7 +125,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
         <div className='space-y-2'>
           <div className='flex items-center justify-between text-sm'>
             <span className='text-muted-foreground'>{monthName} so far</span>
-            <span className='font-medium'>{formatCurrency(currentDecemberSpending, currency)}</span>
+            <span className='font-medium'>{formatCurrency(currentDecemberSpending, {currencyCode: currency.code, locale})}</span>
           </div>
           <Progress
             value={percentOfAverage}
@@ -128,7 +133,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
           />
           <div className='text-muted-foreground flex items-center justify-between text-xs'>
             <span>
-              vs {monthName} avg: {formatCurrency(decemberAverage, currency)}
+              vs {monthName} avg: {formatCurrency(decemberAverage, {currencyCode: currency.code, locale})}
             </span>
             <span>{percentOfAverage.toFixed(0)}%</span>
           </div>

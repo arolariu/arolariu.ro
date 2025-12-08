@@ -3,6 +3,7 @@
 import {formatCurrency} from "@/lib/utils.generic";
 import {ProductCategory} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
+import {useLocale} from "next-intl";
 import {TbDroplets, TbHome, TbLeaf, TbPackage, TbSparkles, TbSpray, TbStar, TbToiletPaper} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 
@@ -14,6 +15,7 @@ type SupplyItem = {
 };
 
 export function HomeInventoryCard(): React.JSX.Element {
+  const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const {items, paymentInformation} = invoice;
   const currency = paymentInformation.currency;
@@ -187,7 +189,7 @@ export function HomeInventoryCard(): React.JSX.Element {
           <div>
             <p className='text-sm font-medium'>Bulk Buying Savings</p>
             <p className='text-muted-foreground text-sm'>
-              5L detergent vs 2L saves 18% ({formatCurrency(potentialSavings, currency.code)}/year)
+              5L detergent vs 2L saves 18% ({formatCurrency(potentialSavings, {currencyCode: currency.code, locale})}/year)
             </p>
           </div>
         </div>

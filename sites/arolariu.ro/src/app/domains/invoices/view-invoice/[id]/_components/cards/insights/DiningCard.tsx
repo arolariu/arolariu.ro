@@ -2,6 +2,7 @@
 
 import {formatCurrency} from "@/lib/utils.generic";
 import {Card, CardContent, CardHeader, CardTitle} from "@arolariu/components";
+import {useLocale} from "next-intl";
 import {
   TbAlertTriangle,
   TbBulb,
@@ -17,6 +18,7 @@ import {
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 
 export function DiningCard(): React.JSX.Element {
+  const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const {paymentInformation, items} = invoice;
   const currency = paymentInformation.currency;
@@ -107,7 +109,7 @@ export function DiningCard(): React.JSX.Element {
             <div className='bg-card rounded-lg border p-3 text-center'>
               <TbUserDollar className='mx-auto mb-1 h-4 w-4 text-green-500' />
               <p className='text-muted-foreground text-xs'>Avg Spend</p>
-              <p className='text-sm font-semibold'>{formatCurrency(avgSpend, currency.code)}</p>
+              <p className='text-sm font-semibold'>{formatCurrency(avgSpend, {currencyCode: currency.code, locale})}</p>
               <p className={`text-xs ${spendDiff > 0 ? "text-red-500" : "text-green-500"}`}>
                 {spendDiff > 0 ? "+" : ""}
                 {spendDiff.toFixed(0)}%
@@ -137,7 +139,9 @@ export function DiningCard(): React.JSX.Element {
                 <span>
                   {s.swap}: <span className='font-medium text-green-600'>-{s.calSaved} cal</span>
                   {s.moneySaved && (
-                    <span className='font-medium text-green-600'>, saves {formatCurrency(s.moneySaved, currency.code)}</span>
+                    <span className='font-medium text-green-600'>
+                      , saves {formatCurrency(s.moneySaved, {currencyCode: currency.code, locale})}
+                    </span>
                   )}
                 </span>
               </li>
@@ -152,7 +156,9 @@ export function DiningCard(): React.JSX.Element {
             <p className='text-sm font-medium'>Weekly Challenge</p>
             <p className='text-muted-foreground text-sm'>
               Skip fast food for 7 days and save{" "}
-              <span className='font-semibold text-purple-600'>{formatCurrency(challengeSavings, currency.code)}</span>
+              <span className='font-semibold text-purple-600'>
+                {formatCurrency(challengeSavings, {currencyCode: currency.code, locale})}
+              </span>
             </p>
           </div>
         </div>

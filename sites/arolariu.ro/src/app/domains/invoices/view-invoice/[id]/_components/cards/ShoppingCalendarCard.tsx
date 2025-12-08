@@ -1,8 +1,10 @@
 "use client";
 
+import {generateRandomInvoices} from "@/data/mocks";
 import {formatCurrency} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {Card, CardContent, CardHeader, CardTitle, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {useLocale} from "next-intl";
 import {TbCalendar, TbTrendingUp} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
 
@@ -30,22 +32,22 @@ function getMonthCalendarData(invoice: Invoice): {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   // Combine all invoices including current
-  const allInvoices = [...historicalInvoices, currentInvoiceSummary];
+  const allInvoices = generateRandomInvoices(50);
 
   // Filter invoices for this month
   const monthInvoices = allInvoices.filter((inv) => {
-    const invDate = new Date(inv.date);
+    const invDate = new Date(inv.createdAt);
     return invDate.getMonth() === month && invDate.getFullYear() === year;
   });
 
   // Create spending map by day
   const spendingByDay = monthInvoices.reduce(
     (acc, inv) => {
-      const day = new Date(inv.date).getDate();
+      const day = new Date(inv.createdAt).getDate();
       if (!acc[day]) {
         acc[day] = {amount: 0, count: 0};
       }
-      acc[day].amount += inv.totalAmount;
+      acc[day].amount += inv.paymentInformation.totalCostAmount;
       acc[day].count += 1;
       return acc;
     },
@@ -94,6 +96,7 @@ function getIntensityClass(amount: number): string {
 }
 
 export function ShoppingCalendarCard(): React.JSX.Element {
+  const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const {monthName, year, days, avgDaysBetween} = getMonthCalendarData(invoice);
   const currency = invoice.paymentInformation.currency;
@@ -146,7 +149,7 @@ export function ShoppingCalendarCard(): React.JSX.Element {
                       <TooltipContent
                         side='top'
                         className='text-xs'>
-                        <p className='font-medium'>{formatCurrency(day.amount, currency.code)}</p>
+                        <p className='font-medium'>{formatCurrency(day.amount, {currencyCode: currency.code, locale})}</p>
                         <p className='text-muted-foreground'>
                           {day.invoiceCount} {day.invoiceCount === 1 ? "invoice" : "invoices"}
                         </p>

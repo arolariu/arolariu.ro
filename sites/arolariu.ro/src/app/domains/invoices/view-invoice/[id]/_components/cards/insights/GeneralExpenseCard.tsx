@@ -1,13 +1,14 @@
 "use client";
 
-import {formatCurrency} from "@/lib/utils.generic";
+import {formatCurrency, formatDate} from "@/lib/utils.generic";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Checkbox, Progress} from "@arolariu/components";
+import {useLocale} from "next-intl";
 import {useState} from "react";
 import {TbBriefcase, TbChartBar, TbCheck, TbDownload, TbFileText, TbFolderOpen, TbHistory, TbRefresh, TbTag} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
-import {formatShortDate} from "../../../_utils/invoice";
 
 export function GeneralExpenseCard(): React.JSX.Element {
+  const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const {paymentInformation} = invoice;
   const currency = paymentInformation.currency;
@@ -92,7 +93,8 @@ export function GeneralExpenseCard(): React.JSX.Element {
                   <div className='flex items-center justify-between text-sm'>
                     <span>{budget.name}</span>
                     <span className={isNearLimit ? "font-medium text-red-500" : "text-muted-foreground"}>
-                      {formatCurrency(budget.spent, currency.code)} / {formatCurrency(budget.limit, currency.code)}
+                      {formatCurrency(budget.spent, {currencyCode: currency.code, locale})} /{" "}
+                      {formatCurrency(budget.limit, {currencyCode: currency.code, locale})}
                     </span>
                   </div>
                   <Progress
@@ -158,7 +160,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
           {businessExpense && (
             <p className='flex items-center gap-1 text-sm text-green-600'>
               <TbBriefcase className='h-3 w-3' />
-              VAT Reclaimable: {formatCurrency(vatReclaimable, currency.code)}
+              VAT Reclaimable: {formatCurrency(vatReclaimable, {currencyCode: currency.code, locale})}
             </p>
           )}
         </div>
@@ -175,7 +177,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
                 key={i}
                 className='flex items-center gap-2'>
                 <span className='text-muted-foreground'>•</span>
-                {p.store} - {formatShortDate(p.date)}: {formatCurrency(p.amount, currency.code)} ({p.item})
+                {p.store} - {formatDate(p.date, {locale})}: {formatCurrency(p.amount, {currencyCode: currency.code, locale})} ({p.item})
               </li>
             ))}
           </ul>

@@ -14,6 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
+import {useLocale} from "next-intl";
 import {TbAlertTriangle, TbApple, TbBulb, TbLeaf, TbMeat, TbMilk, TbWheat} from "react-icons/tb";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 
@@ -26,6 +27,7 @@ type FoodGroup = {
 };
 
 export function NutritionCard(): React.JSX.Element {
+  const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const {items, paymentInformation} = invoice;
   const currency = paymentInformation.currency;
@@ -202,7 +204,7 @@ export function NutritionCard(): React.JSX.Element {
               <p className='text-sm font-semibold'>
                 {group.items} item{group.items !== 1 ? "s" : ""}
               </p>
-              <p className='text-muted-foreground text-xs'>{formatCurrency(group.amount, currency.code)}</p>
+              <p className='text-muted-foreground text-xs'>{formatCurrency(group.amount, {currencyCode: currency.code, locale})}</p>
             </div>
           ))}
         </div>
