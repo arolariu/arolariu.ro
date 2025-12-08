@@ -52,6 +52,7 @@
     "@azure/app-configuration": "*",
     "@azure/identity": "*",
     "@azure/keyvault-secrets": "*",
+    "@azure/monitor-opentelemetry-exporter": "*",
     "@azure/storage-blob": "*",
     "@clerk/localizations": "*",
     "@clerk/nextjs": "*",

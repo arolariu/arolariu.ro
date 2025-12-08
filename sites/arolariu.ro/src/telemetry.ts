@@ -35,6 +35,8 @@
 
 // #region Imports
 
+import {DefaultAzureCredential} from "@azure/identity";
+import {AzureMonitorMetricExporter, AzureMonitorTraceExporter} from "@azure/monitor-opentelemetry-exporter";
 import {context, Meter, metrics, Span, SpanStatusCode, trace, Tracer} from "@opentelemetry/api";
 import {getNodeAutoInstrumentations} from "@opentelemetry/auto-instrumentations-node";
 import {OTLPMetricExporter} from "@opentelemetry/exporter-metrics-otlp-http";
@@ -430,28 +432,41 @@ export interface LogEntry {
 const otlpEndpoint = process.env["OTEL_EXPORTER_OTLP_ENDPOINT"] ?? "http://localhost:4318";
 
 /**
- * OTLP trace exporter configuration.
+ * Azure Application Insights Connection String.
  *
- * Exports trace spans to the configured OTLP endpoint using HTTP protocol.
- * Traces provide distributed request flow visibility across services.
- * @see {@link https://opentelemetry.io/docs/specs/otel/trace/}
+ * Used to configure Azure Monitor exporters.
+ * @remarks
+ * Set via `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable.
  */
-const traceExporter = new OTLPTraceExporter({
-  url: `${otlpEndpoint}/v1/traces`,
-  headers: {},
-});
+const connectionString = process.env["APPLICATIONINSIGHTS_CONNECTION_STRING"];
 
-/**
- * OTLP metric exporter configuration.
- *
- * Exports metrics to the configured OTLP endpoint using HTTP protocol.
- * Metrics provide quantitative measurements of application behavior.
- * @see {@link https://opentelemetry.io/docs/specs/otel/metrics/}
- */
-const metricExporter = new OTLPMetricExporter({
-  url: `${otlpEndpoint}/v1/metrics`,
-  headers: {},
-});
+let traceExporter: OTLPTraceExporter | AzureMonitorTraceExporter;
+let metricExporter: OTLPMetricExporter | AzureMonitorMetricExporter;
+
+if (connectionString) {
+  console.log(">>> 📡 Using Azure Monitor exporters for OpenTelemetry");
+  const credential = new DefaultAzureCredential({
+    managedIdentityClientId: process.env["AZURE_CLIENT_ID"],
+  });
+  traceExporter = new AzureMonitorTraceExporter({
+    connectionString,
+    credential,
+  });
+  metricExporter = new AzureMonitorMetricExporter({
+    connectionString,
+    credential,
+  });
+} else {
+  console.log(">>> 📡 Using OTLP HTTP exporters for OpenTelemetry at", otlpEndpoint);
+  traceExporter = new OTLPTraceExporter({
+    url: `${otlpEndpoint}/v1/traces`,
+    headers: {},
+  });
+  metricExporter = new OTLPMetricExporter({
+    url: `${otlpEndpoint}/v1/metrics`,
+    headers: {},
+  });
+}
 
 /**
  * OpenTelemetry SDK instance.
