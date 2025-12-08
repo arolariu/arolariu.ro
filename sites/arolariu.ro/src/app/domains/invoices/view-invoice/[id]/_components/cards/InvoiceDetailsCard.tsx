@@ -22,14 +22,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
+import {useLocale} from "next-intl";
 import {useState} from "react";
 import {TbCalendar, TbChevronLeft, TbChevronRight, TbCreditCard, TbHeart} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
-import {getCategoryName, getPaymentTypeName} from "../../_utils/invoice";
 
 const ITEMS_PER_PAGE = 5;
 
 export function InvoiceDetailsCard(): React.JSX.Element {
+  const locale = useLocale();
   const {invoice, merchant} = useInvoiceContext();
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -60,23 +61,23 @@ export function InvoiceDetailsCard(): React.JSX.Element {
               <TbCalendar className='h-4 w-4' />
               <span>Date</span>
             </div>
-            <p className='font-medium'>{formatDate(invoice.paymentInformation.transactionDate)}</p>
+            <p className='font-medium'>{formatDate(invoice.paymentInformation.transactionDate, {locale})}</p>
           </div>
           <div className='space-y-1'>
             <p className='text-muted-foreground text-sm'>Category</p>
-            <Badge variant='outline'>{getCategoryName(invoice.category)}</Badge>
+            <Badge variant='outline'>{formatEnum(invoice.category)}</Badge>
           </div>
           <div className='space-y-1'>
             <div className='text-muted-foreground flex items-center gap-2 text-sm'>
               <TbCreditCard className='h-4 w-4' />
               <span>Payment</span>
             </div>
-            <p className='font-medium'>{getPaymentTypeName(invoice.paymentInformation.paymentType)}</p>
+            <p className='font-medium'>{formatEnum(invoice.paymentInformation.paymentType)}</p>
           </div>
           <div className='space-y-1'>
             <p className='text-muted-foreground text-sm'>Total Amount</p>
             <p className='text-lg font-semibold'>
-              {formatCurrency(invoice.paymentInformation.totalCostAmount, invoice.paymentInformation.currency.code)}
+              {formatCurrency(invoice.paymentInformation.totalCostAmount, {currencyCode: invoice.paymentInformation.currency.code, locale})}
             </p>
           </div>
         </div>
@@ -127,9 +128,11 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                     </TableCell>
                     <TableCell className='text-right'>{item.quantity}</TableCell>
                     <TableCell className='text-right'>{item.quantityUnit}</TableCell>
-                    <TableCell className='text-right'>{formatCurrency(item.price, invoice.paymentInformation.currency.code)}</TableCell>
+                    <TableCell className='text-right'>
+                      {formatCurrency(item.price, {currencyCode: invoice.paymentInformation.currency.code, locale})}
+                    </TableCell>
                     <TableCell className='text-right font-medium'>
-                      {formatCurrency(item.totalPrice, invoice.paymentInformation.currency.code)}
+                      {formatCurrency(item.totalPrice, {currencyCode: invoice.paymentInformation.currency.code, locale})}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -138,7 +141,10 @@ export function InvoiceDetailsCard(): React.JSX.Element {
                 <TableRow>
                   <TableCell colSpan={4}>Grand Total</TableCell>
                   <TableCell className='text-right font-semibold'>
-                    {formatCurrency(invoice.paymentInformation.totalCostAmount, invoice.paymentInformation.currency.code)}
+                    {formatCurrency(invoice.paymentInformation.totalCostAmount, {
+                      currencyCode: invoice.paymentInformation.currency.code,
+                      locale,
+                    })}
                   </TableCell>
                 </TableRow>
               </TableFooter>

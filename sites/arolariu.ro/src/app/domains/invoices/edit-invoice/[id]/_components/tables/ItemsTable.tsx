@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
+import {useLocale} from "next-intl";
 import {useCallback} from "react";
 import {TbEdit} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -67,6 +68,7 @@ const EMPTY_ITEM_ROW_KEYS = ["empty-item-row-1", "empty-item-row-2", "empty-item
  * @see {@link Invoice} - Invoice type with items array
  */
 export default function ItemsTable({invoice}: Readonly<Props>) {
+  const locale = useLocale();
   const {open} = useDialog("INVOICE_ITEMS", "edit", invoice);
 
   const totalAmount = invoice.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -137,10 +139,10 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                   {item.quantity} {item.quantityUnit}
                 </td>
                 <td className='px-4 py-3 text-right text-sm whitespace-nowrap'>
-                  {formatCurrency(item.price, invoice.paymentInformation.currency.code)}
+                  {formatCurrency(item.price, {currencyCode: invoice.paymentInformation.currency.code, locale})}
                 </td>
                 <td className='px-4 py-3 text-right text-sm font-medium whitespace-nowrap'>
-                  {formatCurrency(item.price * item.quantity, invoice.paymentInformation.currency.code)}
+                  {formatCurrency(item.price * item.quantity, {currencyCode: invoice.paymentInformation.currency.code, locale})}
                 </td>
               </motion.tr>
             ))}
@@ -166,7 +168,7 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
                 Total
               </TableHead>
               <TableHead className='px-4 py-3 text-right text-sm font-medium'>
-                {formatCurrency(totalAmount, invoice.paymentInformation.currency.code)}
+                {formatCurrency(totalAmount, {currencyCode: invoice.paymentInformation.currency.code, locale})}
               </TableHead>
             </TableRow>
           </TableFooter>

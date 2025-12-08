@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
+import {useLocale} from "next-intl";
 import {TbCreditCard, TbHeart} from "react-icons/tb";
 import ItemsTable from "../tables/ItemsTable";
 
@@ -63,6 +64,7 @@ type Props = {
  * @see {@link Merchant} - Merchant type definition
  */
 export default function InvoiceCard({invoice, merchant}: Readonly<Props>): React.JSX.Element {
+  const locale = useLocale();
   const {paymentInformation, category, isImportant, description} = invoice;
 
   const categoryKey = Object.keys(InvoiceCategory).at(category);
@@ -108,7 +110,7 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>): React
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className='cursor-help'>{formatDate(paymentInformation?.transactionDate)}</span>
+                    <span className='cursor-help'>{formatDate(paymentInformation?.transactionDate, {locale})}</span>
                   </TooltipTrigger>
                   <TooltipContent>
                     <span>Exact date: {new Date(paymentInformation?.transactionDate).toISOString()}</span>
@@ -136,7 +138,7 @@ export default function InvoiceCard({invoice, merchant}: Readonly<Props>): React
               transition={{type: "spring", stiffness: 400, damping: 10}}>
               <h3 className='text-muted-foreground mb-1 text-sm font-medium'>Total Amount</h3>
               <p className='text-lg font-semibold'>
-                {formatCurrency(paymentInformation.totalCostAmount, paymentInformation.currency.code)}
+                {formatCurrency(paymentInformation.totalCostAmount, {currencyCode: paymentInformation.currency.code, locale})}
               </p>
             </motion.div>
           </div>
