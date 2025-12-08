@@ -24,7 +24,6 @@ export type DialogType =
   | "INVOICES_EXPORT"
   | "INVOICES_DELETE"
   | "analysisOptions"
-  | "shareAnalytics"
   | null; // null is used to indicate no dialog is open
 
 export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> | null;
