@@ -43,7 +43,6 @@ describe("download utilities", () => {
         const createObjectURLSpy = vi.spyOn(URL, "createObjectURL");
         const revokeObjectURLSpy = vi.spyOn(URL, "revokeObjectURL");
         const appendChildSpy = vi.spyOn(document.body, "appendChild");
-        const removeChildSpy = vi.spyOn(document.body, "removeChild");
 
         const result = downloadText("Hello, World!", "test.txt");
 
@@ -51,7 +50,10 @@ describe("download utilities", () => {
         expect(createObjectURLSpy).toHaveBeenCalled();
         expect(revokeObjectURLSpy).toHaveBeenCalled();
         expect(appendChildSpy).toHaveBeenCalled();
-        expect(removeChildSpy).toHaveBeenCalled();
+
+        const appendedElement = appendChildSpy.mock.calls[0]?.[0] as HTMLElement;
+        expect(appendedElement).toBeDefined();
+        expect(document.body.contains(appendedElement)).toBe(false);
       });
 
       it("should use custom mime type when provided", () => {
@@ -306,7 +308,6 @@ describe("download utilities", () => {
         const createObjectURLSpy = vi.spyOn(URL, "createObjectURL");
         const revokeObjectURLSpy = vi.spyOn(URL, "revokeObjectURL");
         const appendChildSpy = vi.spyOn(document.body, "appendChild");
-        const removeChildSpy = vi.spyOn(document.body, "removeChild");
 
         const result = downloadBlob(blob, "test.txt");
 
@@ -314,7 +315,10 @@ describe("download utilities", () => {
         expect(createObjectURLSpy).toHaveBeenCalledWith(blob);
         expect(revokeObjectURLSpy).toHaveBeenCalled();
         expect(appendChildSpy).toHaveBeenCalled();
-        expect(removeChildSpy).toHaveBeenCalled();
+
+        const appendedElement = appendChildSpy.mock.calls[0]?.[0] as HTMLElement;
+        expect(appendedElement).toBeDefined();
+        expect(document.body.contains(appendedElement)).toBe(false);
       });
 
       it("should handle blob with different mime types", () => {

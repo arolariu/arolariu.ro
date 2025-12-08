@@ -15,19 +15,20 @@ describe("useTheme", () => {
 
     // Clear any theme classes from document
     document.documentElement.classList.remove("dark", "light");
-    document.documentElement.removeAttribute("data-theme");
-
-    // Reset the module to get a fresh instance
-    vi.resetModules();
+    delete document.documentElement.dataset.theme;
   });
 
   afterEach(() => {
     localStorage.clear();
     document.documentElement.classList.remove("dark", "light");
-    document.documentElement.removeAttribute("data-theme");
+    delete document.documentElement.dataset.theme;
   });
 
   describe("initialization", () => {
+    beforeEach(() => {
+      vi.resetModules();
+    });
+
     it("should initialize with dark theme by default", async () => {
       const {useTheme: freshUseTheme} = await import("./useTheme.svelte");
       theme = freshUseTheme();
@@ -60,14 +61,14 @@ describe("useTheme", () => {
       const {useTheme: freshUseTheme} = await import("./useTheme.svelte");
       freshUseTheme();
 
-      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(document.documentElement.dataset.theme).toBe("light");
     });
   });
 
   describe("current property", () => {
-    beforeEach(async () => {
-      const {useTheme: freshUseTheme} = await import("./useTheme.svelte");
-      theme = freshUseTheme();
+    beforeEach(() => {
+      theme = useTheme();
+      theme.set("dark");
     });
 
     it("should return current theme via current property", () => {
@@ -84,9 +85,9 @@ describe("useTheme", () => {
   });
 
   describe("set method", () => {
-    beforeEach(async () => {
-      const {useTheme: freshUseTheme} = await import("./useTheme.svelte");
-      theme = freshUseTheme();
+    beforeEach(() => {
+      theme = useTheme();
+      theme.set("dark");
     });
 
     it("should update theme to light", () => {
@@ -118,7 +119,7 @@ describe("useTheme", () => {
     it("should set data-theme attribute", () => {
       theme.set("light");
 
-      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(document.documentElement.dataset.theme).toBe("light");
     });
 
     it("should remove previous theme class when setting new theme", () => {
@@ -143,9 +144,9 @@ describe("useTheme", () => {
   });
 
   describe("toggle method", () => {
-    beforeEach(async () => {
-      const {useTheme: freshUseTheme} = await import("./useTheme.svelte");
-      theme = freshUseTheme();
+    beforeEach(() => {
+      theme = useTheme();
+      theme.set("dark");
     });
 
     it("should toggle from dark to light", () => {
@@ -194,14 +195,14 @@ describe("useTheme", () => {
       theme.set("dark");
       theme.toggle();
 
-      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(document.documentElement.dataset.theme).toBe("light");
     });
   });
 
   describe("DOM manipulation", () => {
-    beforeEach(async () => {
-      const {useTheme: freshUseTheme} = await import("./useTheme.svelte");
-      theme = freshUseTheme();
+    beforeEach(() => {
+      theme = useTheme();
+      theme.set("dark");
     });
 
     it("should only have one theme class at a time", () => {
@@ -215,18 +216,18 @@ describe("useTheme", () => {
     it("should maintain data-theme attribute consistency with class", () => {
       theme.set("light");
       expect(document.documentElement.classList.contains("light")).toBe(true);
-      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(document.documentElement.dataset.theme).toBe("light");
 
       theme.set("dark");
       expect(document.documentElement.classList.contains("dark")).toBe(true);
-      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+      expect(document.documentElement.dataset.theme).toBe("dark");
     });
   });
 
   describe("edge cases", () => {
-    beforeEach(async () => {
-      const {useTheme: freshUseTheme} = await import("./useTheme.svelte");
-      theme = freshUseTheme();
+    beforeEach(() => {
+      theme = useTheme();
+      theme.set("dark");
     });
 
     it("should handle setting same theme multiple times", () => {
@@ -258,20 +259,18 @@ describe("useTheme", () => {
   });
 
   describe("singleton behavior", () => {
-    it("should return same state across multiple useTheme calls", async () => {
-      const {useTheme: freshUseTheme} = await import("./useTheme.svelte");
-      const theme1 = freshUseTheme();
-      const theme2 = freshUseTheme();
+    it("should return same state across multiple useTheme calls", () => {
+      const theme1 = useTheme();
+      const theme2 = useTheme();
 
       theme1.set("light");
 
       expect(theme2.current).toBe("light");
     });
 
-    it("should maintain state after toggle from one instance", async () => {
-      const {useTheme: freshUseTheme} = await import("./useTheme.svelte");
-      const theme1 = freshUseTheme();
-      const theme2 = freshUseTheme();
+    it("should maintain state after toggle from one instance", () => {
+      const theme1 = useTheme();
+      const theme2 = useTheme();
 
       theme1.toggle();
 
@@ -280,19 +279,18 @@ describe("useTheme", () => {
   });
 
   describe("DOM updates", () => {
-    it("should add theme class to html element", async () => {
-      const {useTheme: freshUseTheme} = await import("./useTheme.svelte");
-      const theme = freshUseTheme();
+    it("should add theme class to html element", () => {
+      const theme = useTheme();
 
       theme.set("light");
 
       expect(document.documentElement.classList.contains("light")).toBe(true);
-      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(document.documentElement.dataset.theme).toBe("light");
     });
 
-    it("should handle theme changes without explicit set", async () => {
-      const {useTheme: freshUseTheme} = await import("./useTheme.svelte");
-      const theme = freshUseTheme();
+    it("should handle theme changes without explicit set", () => {
+      const theme = useTheme();
+      theme.set("dark"); // Ensure starting state
 
       // Toggle from default dark to light
       theme.toggle();

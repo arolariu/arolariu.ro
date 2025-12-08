@@ -79,6 +79,7 @@ export default mergeConfig(
           // App files
           "**/src/app.html",
           "**/src/app.css",
+          "**/src/service-worker.ts",
         ],
       },
     },
