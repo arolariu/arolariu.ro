@@ -6,7 +6,6 @@ import {motion, type Variants} from "motion/react";
 import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
 import DialogContainer from "../../_contexts/DialogContainer";
 import {DialogProvider} from "../../_contexts/DialogContext";
-import {AnalyticsCard} from "./_components/cards/AnalyticsCard";
 import ImageCard from "./_components/cards/ImageCard";
 import InvoiceCard from "./_components/cards/InvoiceCard";
 import MerchantCard from "./_components/cards/MerchantCard";
@@ -134,14 +133,6 @@ export default function RenderEditInvoiceScreen(props: Readonly<Props>): React.J
                   <MetadataTab metadata={invoice.additionalMetadata} />
                 </TabsContent>
               </Tabs>
-            </motion.div>
-
-            {/* Expanded Statistics Card */}
-            <motion.div variants={itemVariants}>
-              <AnalyticsCard
-                invoice={invoice}
-                merchant={merchant}
-              />
             </motion.div>
           </motion.div>
 
