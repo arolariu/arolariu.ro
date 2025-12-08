@@ -2,11 +2,13 @@
 
 import {formatCurrency} from "@/lib/utils.generic";
 import {Button, Card, CardContent, CardHeader, CardTitle, ChartContainer, ChartTooltip} from "@arolariu/components";
+import {useLocale} from "next-intl";
 import {TbBarrel, TbBulb, TbCalendar, TbCar, TbCurrencyDollar, TbGasStation, TbGauge, TbMapPin, TbTrendingUp} from "react-icons/tb";
 import {Area, AreaChart, ResponsiveContainer, XAxis, YAxis} from "recharts";
 import {useInvoiceContext} from "../../../_context/InvoiceContext";
 
 export function VehicleCard(): React.JSX.Element {
+  const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const {paymentInformation} = invoice;
   const currency = paymentInformation.currency;
@@ -68,7 +70,7 @@ export function VehicleCard(): React.JSX.Element {
             <TbCurrencyDollar className='h-4 w-4 text-green-500' />
             <div>
               <p className='text-muted-foreground text-xs'>Price/L</p>
-              <p className='text-sm font-semibold'>{formatCurrency(pricePerLiter, currency.code)}</p>
+              <p className='text-sm font-semibold'>{formatCurrency(pricePerLiter, {currencyCode: currency.code, locale})}</p>
             </div>
           </div>
           <div className='flex items-center gap-2 rounded-lg border p-2.5'>
@@ -138,7 +140,7 @@ export function VehicleCard(): React.JSX.Element {
                     return (
                       <div className='bg-background rounded-lg border p-2 shadow-sm'>
                         <p className='text-xs font-medium'>{data.month}</p>
-                        <p className='text-sm font-semibold'>{formatCurrency(data.amount, currency.code)}</p>
+                        <p className='text-sm font-semibold'>{formatCurrency(data.amount, {currencyCode: currency.code, locale})}</p>
                       </div>
                     );
                   }}
@@ -160,13 +162,13 @@ export function VehicleCard(): React.JSX.Element {
           <div className='bg-card rounded-lg border p-2.5 text-center'>
             <TbCalendar className='mx-auto mb-1 h-4 w-4 text-blue-500' />
             <p className='text-muted-foreground text-xs'>This Month</p>
-            <p className='text-sm font-semibold'>{formatCurrency(monthlyTotal, currency.code)}</p>
+            <p className='text-sm font-semibold'>{formatCurrency(monthlyTotal, {currencyCode: currency.code, locale})}</p>
             <p className='text-muted-foreground text-xs'>{fillUps} fill-ups</p>
           </div>
           <div className='bg-card rounded-lg border p-2.5 text-center'>
             <TbGauge className='mx-auto mb-1 h-4 w-4 text-green-500' />
             <p className='text-muted-foreground text-xs'>Cost/km</p>
-            <p className='text-sm font-semibold'>{formatCurrency(costPerKm, currency.code)}</p>
+            <p className='text-sm font-semibold'>{formatCurrency(costPerKm, {currencyCode: currency.code, locale})}</p>
             <p className='text-muted-foreground text-xs'>estimated</p>
           </div>
           <div className='bg-card rounded-lg border p-2.5 text-center'>
@@ -201,7 +203,7 @@ export function VehicleCard(): React.JSX.Element {
           <div>
             <p className='text-sm font-medium'>Cheapest Nearby</p>
             <p className='text-muted-foreground text-sm'>
-              {cheapestStation} - {formatCurrency(cheapestPrice, currency.code)}/L
+              {cheapestStation} - {formatCurrency(cheapestPrice, {currencyCode: currency.code, locale})}/L
             </p>
           </div>
         </div>

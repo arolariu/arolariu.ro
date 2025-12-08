@@ -1,9 +1,10 @@
 "use client";
 
+import {formatEnum} from "@/lib/utils.generic";
+import {MerchantCategory} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardFooter, CardHeader, CardTitle} from "@arolariu/components";
 import {TbGlobe, TbMapPin, TbPhone} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
-import {getMerchantCategoryName} from "../../_utils/invoice";
 
 export function MerchantInfoCard(): React.JSX.Element {
   const {merchant} = useInvoiceContext();
@@ -22,7 +23,7 @@ export function MerchantInfoCard(): React.JSX.Element {
           <span className='text-sm'>{merchant.address.phoneNumber}</span>
         </div>
         <div className='flex items-center gap-2'>
-          <Badge variant='outline'>{getMerchantCategoryName(merchant.category)}</Badge>
+          <Badge variant='outline'>{formatEnum(MerchantCategory, merchant.category)}</Badge>
         </div>
         {merchant.address.website && (
           <div className='flex items-center gap-2'>
