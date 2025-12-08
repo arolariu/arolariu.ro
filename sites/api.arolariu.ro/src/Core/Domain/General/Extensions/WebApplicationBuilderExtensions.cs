@@ -6,7 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Common.Options;
 using arolariu.Backend.Common.Services.KeyVault;
-using arolariu.Backend.Common.Telemetry;
 using arolariu.Backend.Common.Telemetry.Logging;
 using arolariu.Backend.Common.Telemetry.Metering;
 using arolariu.Backend.Common.Telemetry.Tracing;
@@ -289,7 +288,6 @@ internal static class WebApplicationBuilderExtensions
     services.AddSwaggerGen(SwaggerConfigurationService.GetSwaggerGenOptions());
     services.AddHealthChecks();
 
-    builder.AddTelemetry();
     builder.AddOTelLogging();
     builder.AddOTelMetering();
     builder.AddOTelTracing();
