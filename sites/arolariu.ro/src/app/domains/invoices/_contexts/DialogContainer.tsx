@@ -7,7 +7,6 @@ import InvoiceMerchantDialog from "../edit-invoice/[id]/_components/dialogs/Merc
 import InvoiceMerchantReceiptsDialog from "../edit-invoice/[id]/_components/dialogs/MerchantReceiptsDialog";
 import InvoiceMetadataDialog from "../edit-invoice/[id]/_components/dialogs/MetadataDialog";
 import InvoiceRecipeDialog from "../edit-invoice/[id]/_components/dialogs/RecipeDialog";
-import InvoiceShareAnalyticsDialog from "../edit-invoice/[id]/_components/dialogs/ShareAnalytics";
 import InvoiceSharingDialog from "../edit-invoice/[id]/_components/dialogs/SharingDialog";
 import InvoicesExportDialog from "../view-invoices/_components/dialogs/ExportDialog";
 import InvoicesImportDialog from "../view-invoices/_components/dialogs/ImportDialog";
@@ -27,8 +26,6 @@ export default function DialogContainer(): React.JSX.Element | null {
   switch (type) {
     case "INVOICE_ITEMS":
       return <InvoiceItemsDialog />;
-    case "shareAnalytics":
-      return <InvoiceShareAnalyticsDialog />;
     case "INVOICE_FEEDBACK":
       return <InvoiceFeedbackDialog />;
     case "INVOICE_MERCHANT":
