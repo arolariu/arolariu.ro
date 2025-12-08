@@ -16,18 +16,8 @@ export async function register() {
     // Dynamic import to avoid bundling telemetry code in client bundles
     const {startTelemetry} = await import("@/telemetry");
     startTelemetry();
-    console.log(">>> OpenTelemetry initialized for Node.js runtime");
+    console.log(">>> 🔭 OpenTelemetry has been initialized for the Node.js runtime!");
   }
 
-  if (process.env["NODE_ENV"] !== "development") {
-    if (process.env["NEXT_RUNTIME"] === "nodejs") {
-      // Register the instrumentation for the Node.js runtime
-      console.log(">>> Node.js runtime detected");
-    } else {
-      // Register the instrumentation for the Edge runtime
-      console.log(">>> Edge runtime detected");
-    }
-  }
-
-  console.log(">>> Instrumentation registered");
+  console.log(">>> Instrumentation has been registered!");
 }
