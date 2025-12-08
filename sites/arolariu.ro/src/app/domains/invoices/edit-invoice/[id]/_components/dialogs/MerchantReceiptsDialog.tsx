@@ -27,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@arolariu/components";
+import {useLocale} from "next-intl";
 import {useEffect, useState} from "react";
 import {TbArrowsUpDown, TbCalendar, TbDownload, TbSearch} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
@@ -74,6 +75,7 @@ import {useDialog} from "../../../../_contexts/DialogContext";
  * @see {@link Merchant} - Merchant type definition
  */
 export default function MerchantReceiptsDialog(): React.JSX.Element {
+  const locale = useLocale();
   const {
     currentDialog: {payload},
     isOpen,
@@ -178,7 +180,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
                 </TableHeader>
                 <TableBody className='divide-border bg-popover divide-y'>
                   {paginatedItems.map((item) => {
-                    const invoiceDate = formatDate(item.paymentInformation?.transactionDate || item.createdAt);
+                    const invoiceDate = formatDate(item.paymentInformation?.transactionDate || item.createdAt, {locale});
                     return (
                       <TableRow
                         key={item.id}
