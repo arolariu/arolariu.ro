@@ -79,44 +79,44 @@ describe("generateGuid", () => {
 describe("formatCurrency", () => {
   it("should format currency with string currency code", async () => {
     const {formatCurrency} = await import("./utils.generic");
-    const formatted = formatCurrency(123.45, "USD");
+    const formatted = formatCurrency(123.45, {currencyCode: "USD", locale: "en-US"});
     expect(formatted).toBe("$123.45");
   });
 
   it("should format currency with EUR code", async () => {
     const {formatCurrency} = await import("./utils.generic");
-    const formatted = formatCurrency(100, "EUR");
+    const formatted = formatCurrency(100, {currencyCode: "EUR", locale: "en-US"});
     expect(formatted).toBe("€100");
   });
 
   it("should format currency with GBP code", async () => {
     const {formatCurrency} = await import("./utils.generic");
-    const formatted = formatCurrency(50.99, "GBP");
+    const formatted = formatCurrency(50.99, {currencyCode: "GBP", locale: "en-US"});
     expect(formatted).toBe("£50.99");
   });
 
   it("should format currency with Currency object", async () => {
     const {formatCurrency} = await import("./utils.generic");
     const currencyObj = {code: "JPY", name: "Japanese Yen", symbol: "¥"};
-    const formatted = formatCurrency(1000, currencyObj.code);
+    const formatted = formatCurrency(1000, {currencyCode: currencyObj.code, locale: "en-US"});
     expect(formatted).toBe("¥1,000");
   });
 
   it("should handle zero amount", async () => {
     const {formatCurrency} = await import("./utils.generic");
-    const formatted = formatCurrency(0, "USD");
+    const formatted = formatCurrency(0, {currencyCode: "USD", locale: "en-US"});
     expect(formatted).toBe("$0");
   });
 
   it("should handle negative amounts", async () => {
     const {formatCurrency} = await import("./utils.generic");
-    const formatted = formatCurrency(-50, "USD");
+    const formatted = formatCurrency(-50, {currencyCode: "USD", locale: "en-US"});
     expect(formatted).toBe("-$50");
   });
 
   it("should handle large amounts", async () => {
     const {formatCurrency} = await import("./utils.generic");
-    const formatted = formatCurrency(1234567.89, "USD");
+    const formatted = formatCurrency(1234567.89, {currencyCode: "USD", locale: "en-US"});
     expect(formatted).toBe("$1,234,567.89");
   });
 });
@@ -124,33 +124,21 @@ describe("formatCurrency", () => {
 describe("formatDate", () => {
   it("should format string date correctly", async () => {
     const {formatDate} = await import("./utils.generic");
-    const formatted = formatDate("2023-03-15");
+    const formatted = formatDate("2023-03-15", {locale: "en-US", dateStyle: "medium"});
     expect(formatted).toBe("Mar 15, 2023");
   });
 
   it("should format ISO string date correctly", async () => {
     const {formatDate} = await import("./utils.generic");
-    const formatted = formatDate("2023-01-01T00:00:00Z");
-    expect(formatted).toBe("Jan 01, 2023");
+    const formatted = formatDate("2023-01-01T00:00:00Z", {locale: "en-US", dateStyle: "medium"});
+    expect(formatted).toBe("Jan 1, 2023");
   });
 
   it("should format Date object correctly", async () => {
     const {formatDate} = await import("./utils.generic");
     const date = new Date("2023-12-25");
-    const formatted = formatDate(date);
+    const formatted = formatDate(date, {locale: "en-US", dateStyle: "medium"});
     expect(formatted).toBe("Dec 25, 2023");
-  });
-
-  it("should return empty string when no date is provided", async () => {
-    const {formatDate} = await import("./utils.generic");
-    const formatted = formatDate();
-    expect(formatted).toBe("");
-  });
-
-  it("should return empty string for undefined", async () => {
-    const {formatDate} = await import("./utils.generic");
-    const formatted = formatDate(undefined);
-    expect(formatted).toBe("");
   });
 
   it("should handle different months", async () => {
@@ -161,14 +149,14 @@ describe("formatDate", () => {
       {input: "2023-12-31", expected: "Dec 31, 2023"},
     ];
 
-    dates.forEach(({input, expected}) => {
-      expect(formatDate(input)).toBe(expected);
-    });
+    for (const {input, expected} of dates) {
+      expect(formatDate(input, {locale: "en-US", dateStyle: "medium"})).toBe(expected);
+    }
   });
 
   it("should handle leap year dates", async () => {
     const {formatDate} = await import("./utils.generic");
-    const formatted = formatDate("2024-02-29");
+    const formatted = formatDate("2024-02-29", {locale: "en-US", dateStyle: "medium"});
     expect(formatted).toBe("Feb 29, 2024");
   });
 });
