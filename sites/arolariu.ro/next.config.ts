@@ -180,7 +180,7 @@ const withTranslation = createNextIntlPlugin({
   },
 });
 
-console.log(">>> ⚙️ Image patterns: \n\t", nextConfig.images?.remotePatterns?.map((pattern) => pattern?.hostname).join(", \n\t"));
+console.log(">>> ⚙️ Image patterns:\n\t", nextConfig.images?.remotePatterns?.map((pattern) => pattern?.hostname).join(",\n\t"));
 
 const finalConfig = withBundleAnalyzer(withTranslation(nextConfig));
 export default finalConfig;
