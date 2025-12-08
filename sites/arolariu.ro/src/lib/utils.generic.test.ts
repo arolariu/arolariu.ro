@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {COMMIT_SHA, CONFIG_STORE, generateGuid, SITE_ENV, SITE_NAME, SITE_URL, TIMESTAMP} from "./utils.generic";
+import {COMMIT_SHA, generateGuid, SITE_ENV, SITE_NAME, SITE_URL, TIMESTAMP} from "./utils.generic";
 
 describe("generateGuid", () => {
   it("should generate a valid UUIDv4 string", () => {
@@ -180,9 +180,5 @@ describe("Environment Variables", () => {
 
   it("should have TIMESTAMP defined", () => {
     expect(TIMESTAMP).toBeDefined();
-  });
-
-  it("should have CONFIG_STORE defined", () => {
-    expect(CONFIG_STORE).toBeDefined();
   });
 });

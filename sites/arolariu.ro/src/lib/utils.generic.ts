@@ -61,16 +61,6 @@ export const COMMIT_SHA = process.env["COMMIT_SHA"] ?? "";
 export const TIMESTAMP = process.env["TIMESTAMP"] ?? "";
 
 /**
- * The configuration store identifier.
- *
- * @remarks
- * **Source**: `process.env.CONFIG_STORE`
- *
- * **Usage**: Identifies the Azure App Configuration store or local config source.
- */
-export const CONFIG_STORE = process.env["CONFIG_STORE"] ?? "";
-
-/**
  * Generates a UUID v4 (random) or v5 (namespaced) string.
  *
  * @remarks

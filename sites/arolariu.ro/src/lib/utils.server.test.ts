@@ -1,5 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {convertBase64ToBlob, getMimeTypeFromBase64} from "./utils.server";
+import {COMMIT_SHA, TIMESTAMP} from "./utils.generic";
+import {API_JWT, API_URL, CONFIG_STORE, convertBase64ToBlob, getMimeTypeFromBase64} from "./utils.server";
 
 // Mock the telemetry module
 vi.mock("@/telemetry", () => ({
@@ -58,6 +59,28 @@ vi.mock("jose", () => {
       });
     }),
   };
+});
+
+describe("Environment Variables", () => {
+  it("should have API_URL defined", () => {
+    expect(API_URL).toBeDefined();
+  });
+
+  it("should have API_JWT defined", () => {
+    expect(API_JWT).toBeDefined();
+  });
+
+  it("should have CONFIG_STORE defined", () => {
+    expect(CONFIG_STORE).toBeDefined();
+  });
+
+  it("should have COMMIT_SHA defined", () => {
+    expect(COMMIT_SHA).toBeDefined();
+  });
+
+  it("should have TIMESTAMP defined", () => {
+    expect(TIMESTAMP).toBeDefined();
+  });
 });
 
 describe("getMimeTypeFromBase64", () => {
