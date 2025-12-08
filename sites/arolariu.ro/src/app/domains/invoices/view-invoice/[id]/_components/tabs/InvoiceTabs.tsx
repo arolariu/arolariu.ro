@@ -57,7 +57,7 @@ export function InvoiceTabs(): React.JSX.Element {
                     <CardHeader className='pb-2'>
                       <div className='flex items-start justify-between gap-2'>
                         <CardTitle className='text-base'>{recipe.name}</CardTitle>
-                        <Badge variant={getComplexityVariant(recipe.complexity)}>{formatEnum(recipe.complexity)}</Badge>
+                        <Badge variant={getComplexityVariant(recipe.complexity)}>{formatEnum(RecipeComplexity, recipe.complexity)}</Badge>
                       </div>
                     </CardHeader>
                     <CardContent className='space-y-3'>

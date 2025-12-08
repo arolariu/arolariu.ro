@@ -37,7 +37,7 @@ export function getCategorySpending(items: Product[]): CategorySpending[] {
 
   return Array.from(categoryMap.entries())
     .map(([category, data]) => ({
-      category: formatEnum(category),
+      category: formatEnum(ProductCategory, category),
       amount: Math.round(data.amount * 100) / 100,
       count: data.count,
       fill: CATEGORY_COLORS[category] || "var(--chart-1)",
@@ -252,7 +252,7 @@ export function getCategoryComparison(): CategoryTrendData[] {
   return Object.entries(current)
     .filter(([_, amount]) => amount > 0 || (categoryAverages.get(Number(_) as ProductCategory) || 0) > 0)
     .map(([cat, amount]) => ({
-      category: formatEnum(Number(cat) as ProductCategory),
+      category: formatEnum(ProductCategory, Number(cat) as ProductCategory),
       current: Math.round(amount * 100) / 100,
       average: Math.round((categoryAverages.get(Number(cat) as ProductCategory) || 0) * 100) / 100,
     }))

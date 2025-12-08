@@ -58,7 +58,7 @@ function detectSeasonalInsights(invoice: Invoice): Insight[] {
       if (percentChange > 100) {
         insights.push({
           icon: <TbTrendingUp className='h-4 w-4' />,
-          title: `${formatEnum(category)} Spike`,
+          title: `${formatEnum(ProductCategory, category)} Spike`,
           description: `+${percentChange.toFixed(0)}% vs your average`,
           type: "warning",
         });

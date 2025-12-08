@@ -1,6 +1,7 @@
 "use client";
 
-import {formatCurrency, formatDate} from "@/lib/utils.generic";
+import {formatCurrency, formatDate, formatEnum} from "@/lib/utils.generic";
+import {PaymentType, ProductCategory} from "@/types/invoices";
 import {
   Badge,
   Button,
@@ -65,14 +66,14 @@ export function InvoiceDetailsCard(): React.JSX.Element {
           </div>
           <div className='space-y-1'>
             <p className='text-muted-foreground text-sm'>Category</p>
-            <Badge variant='outline'>{formatEnum(invoice.category)}</Badge>
+            <Badge variant='outline'>{formatEnum(ProductCategory, invoice.category)}</Badge>
           </div>
           <div className='space-y-1'>
             <div className='text-muted-foreground flex items-center gap-2 text-sm'>
               <TbCreditCard className='h-4 w-4' />
               <span>Payment</span>
             </div>
-            <p className='font-medium'>{formatEnum(invoice.paymentInformation.paymentType)}</p>
+            <p className='font-medium'>{formatEnum(PaymentType, invoice.paymentInformation.paymentType)}</p>
           </div>
           <div className='space-y-1'>
             <p className='text-muted-foreground text-sm'>Total Amount</p>

@@ -234,10 +234,24 @@ export function formatDate(possibleDate: string | Date, options: FormatDateOptio
  * @example
  * ```typescript
  * enum Status { Active = 1, Inactive = 0 }
+ * // Direct usage
  * formatEnum(Status, 1); // "Active"
+ *
+ * // Curried usage (factory pattern)
+ * const formatStatus = formatEnum(Status);
+ * formatStatus(1); // "Active"
  * ```
  */
-export function formatEnum<T extends Record<string, string | number>>(enumObj: T, value: number): string {
-  const key = Object.keys(enumObj).find((k) => enumObj[k] === value);
-  return key ?? "";
+export function formatEnum<T extends Record<string, string | number>>(enumObj: T, value: number): string;
+export function formatEnum<T extends Record<string, string | number>>(enumObj: T): (value: number) => string;
+export function formatEnum<T extends Record<string, string | number>>(enumObj: T, value?: number): string | ((value: number) => string) {
+  if (value !== undefined) {
+    const key = Object.keys(enumObj).find((k) => enumObj[k] === value);
+    return key ?? "";
+  }
+
+  return (val: number) => {
+    const key = Object.keys(enumObj).find((k) => enumObj[k] === val);
+    return key ?? "";
+  };
 }
