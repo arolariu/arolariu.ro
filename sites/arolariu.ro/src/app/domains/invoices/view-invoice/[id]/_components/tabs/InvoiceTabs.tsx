@@ -1,9 +1,24 @@
 "use client";
 
+import {formatEnum} from "@/lib/utils.generic";
+import {RecipeComplexity} from "@/types/invoices";
 import {Badge, Button, Card, CardContent, CardHeader, CardTitle, Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {TbChefHat, TbClock, TbExternalLink, TbInfoCircle} from "react-icons/tb";
 import {useInvoiceContext} from "../../_context/InvoiceContext";
-import {getComplexityName, getComplexityVariant} from "../../_utils/invoice";
+
+// Get complexity badge variant
+function getComplexityVariant(complexity: RecipeComplexity): "default" | "secondary" | "destructive" | "outline" {
+  switch (complexity) {
+    case RecipeComplexity.Easy:
+      return "secondary";
+    case RecipeComplexity.Normal:
+      return "default";
+    case RecipeComplexity.Hard:
+      return "destructive";
+    default:
+      return "outline";
+  }
+}
 
 export function InvoiceTabs(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
@@ -42,7 +57,7 @@ export function InvoiceTabs(): React.JSX.Element {
                     <CardHeader className='pb-2'>
                       <div className='flex items-start justify-between gap-2'>
                         <CardTitle className='text-base'>{recipe.name}</CardTitle>
-                        <Badge variant={getComplexityVariant(recipe.complexity)}>{getComplexityName(recipe.complexity)}</Badge>
+                        <Badge variant={getComplexityVariant(recipe.complexity)}>{formatEnum(recipe.complexity)}</Badge>
                       </div>
                     </CardHeader>
                     <CardContent className='space-y-3'>
