@@ -56,7 +56,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
   const [understoodCheckbox, setUnderstoodCheckbox] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  const invoiceName = invoice.name || `Invoice ${invoice.id.slice(0, 8)}`;
+  const invoiceName = invoice.name || `${invoice.id.slice(0, 8)}`;
   const isConfirmValid = confirmText === invoiceName && understoodCheckbox;
 
   const handleConfirmTextChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
