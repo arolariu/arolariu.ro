@@ -4,7 +4,8 @@ import type {Invoice} from "@/types/invoices";
 import {Button, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useCallback, useState} from "react";
-import {TbPrinter} from "react-icons/tb";
+import {TbPrinter, TbTrash} from "react-icons/tb";
+import {useDialog} from "../../../_contexts/DialogContext";
 
 type Props = {
   invoice: Invoice;
@@ -48,6 +49,7 @@ type Props = {
  */
 export default function InvoiceHeader({invoice}: Readonly<Props>): React.JSX.Element {
   const [invoiceName, setInvoiceName] = useState<string>(invoice.name);
+  const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__DELETE", "view", {invoice});
 
   const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setInvoiceName(event.target.value);
@@ -79,7 +81,6 @@ export default function InvoiceHeader({invoice}: Readonly<Props>): React.JSX.Ele
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                className='cursor-pointer'
                 variant='outline'
                 size='sm'
                 onClick={handleInvoicePrint}>
@@ -89,6 +90,20 @@ export default function InvoiceHeader({invoice}: Readonly<Props>): React.JSX.Ele
             </TooltipTrigger>
             <TooltipContent>
               <p>Print this invoice with all details</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={openDeleteDialog}
+                variant='destructive'
+                size='sm'>
+                <TbTrash className='mr-2 h-4 w-4' />
+                Delete
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Delete this invoice permanently</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
