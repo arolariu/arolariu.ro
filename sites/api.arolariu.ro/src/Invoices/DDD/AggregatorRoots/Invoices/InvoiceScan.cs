@@ -1,4 +1,4 @@
-namespace arolariu.Backend.Domain.Invoices.DTOs;
+namespace arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 
 using System;
 using System.Collections.Generic;

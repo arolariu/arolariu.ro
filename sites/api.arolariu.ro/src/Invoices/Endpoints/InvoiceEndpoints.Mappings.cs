@@ -217,7 +217,7 @@ public static partial class InvoiceEndpoints
 
     router // Create the invoice scan for a given invoice.
       .MapPost("/invoices/{id}/scans", CreateInvoiceScanAsync)
-      .Accepts<InvoiceScan>("application/json")
+      .Accepts<CreateInvoiceScanDto>("application/json")
       .Produces<InvoiceScan>(StatusCodes.Status201Created)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)

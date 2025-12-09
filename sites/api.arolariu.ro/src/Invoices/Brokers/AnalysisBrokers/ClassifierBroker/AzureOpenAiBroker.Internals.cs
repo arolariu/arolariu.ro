@@ -175,7 +175,9 @@ public sealed partial class AzureOpenAiBroker
 
       var recipesList = new List<Recipe>();
       foreach (var recipeName in invoiceRecipesAsList)
+      {
         recipesList.Add(new Recipe() { Name = recipeName });
+      }
 
       return recipesList;
     }
@@ -268,7 +270,9 @@ public sealed partial class AzureOpenAiBroker
 
       var allergensList = new List<Allergen>();
       foreach (var allergenName in productAllergensAsList)
+      {
         allergensList.Add(new Allergen() { Name = allergenName });
+      }
 
       return allergensList;
     }

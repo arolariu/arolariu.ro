@@ -10,7 +10,6 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.O
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs;
 
 public partial class InvoiceProcessingService
 {

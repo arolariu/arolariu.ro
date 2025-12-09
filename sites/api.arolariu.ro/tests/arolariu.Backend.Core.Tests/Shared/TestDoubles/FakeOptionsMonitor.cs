@@ -10,10 +10,7 @@ using Microsoft.Extensions.Options;
 /// </summary>
 internal sealed class FakeOptionsMonitor<T> : IOptionsMonitor<T>
 {
-  public FakeOptionsMonitor(T value)
-  {
-    CurrentValue = value;
-  }
+  public FakeOptionsMonitor(T value) => CurrentValue = value;
 
   public T CurrentValue { get; private set; }
 

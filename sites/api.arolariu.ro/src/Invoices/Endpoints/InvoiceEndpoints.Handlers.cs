@@ -911,7 +911,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    InvoiceScan invoiceScanDto)
+    CreateInvoiceScanDto invoiceScanDto)
   {
     try
     {
@@ -926,7 +926,8 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      possibleInvoice.Scans.Add(invoiceScanDto);
+      InvoiceScan convertedScan = invoiceScanDto.ToInvoiceScan();
+      possibleInvoice.Scans.Add(convertedScan);
 
       await invoiceProcessingService
           .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
