@@ -3,7 +3,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 import fetchConfigurationValue from "./fetchConfig";
 
 vi.mock("@azure/app-configuration");
-vi.mock("@/lib/utils.generic", () => ({
+vi.mock("@/lib/utils.server", () => ({
   CONFIG_STORE: "test-connection-string",
 }));
 
