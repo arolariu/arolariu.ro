@@ -7,6 +7,8 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 using arolariu.Backend.Domain.Invoices.DTOs;
+using arolariu.Backend.Domain.Invoices.DTOs.Requests;
+using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -38,8 +40,8 @@ public static partial class InvoiceEndpoints
   {
     router // Create a new invoice for the authenticated user (claims read via IHttpContextAccessor).
       .MapPost("/invoices", CreateNewInvoiceAsync)
-      .Accepts<CreateInvoiceDto>("application/json")
-      .Produces<Invoice>(StatusCodes.Status201Created)
+      .Accepts<CreateInvoiceRequestDto>("application/json")
+      .Produces<InvoiceDetailDto>(StatusCodes.Status201Created)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -53,7 +55,7 @@ public static partial class InvoiceEndpoints
 
     router // Retrieve all invoices for the authenticated user (claims read via IHttpContextAccessor).
       .MapGet("/invoices", RetrieveAllInvoicesAsync)
-      .Produces<IEnumerable<Invoice>>(StatusCodes.Status200OK)
+      .Produces<IEnumerable<InvoiceSummaryDto>>(StatusCodes.Status200OK)
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
       .ProducesProblem(StatusCodes.Status404NotFound)
@@ -75,7 +77,7 @@ public static partial class InvoiceEndpoints
 
     router // Retrieve a specific invoice, given its identifier.
       .MapGet("/invoices/{id}", RetrieveSpecificInvoiceAsync)
-      .Produces<Invoice>(StatusCodes.Status200OK)
+      .Produces<InvoiceDetailDto>(StatusCodes.Status200OK)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -87,8 +89,8 @@ public static partial class InvoiceEndpoints
 
     router // Update a specific invoice, given its identifier.
       .MapPut("/invoices/{id}", UpdateSpecificInvoiceAsync)
-      .Accepts<Invoice>("application/json")
-      .Produces<Invoice>(StatusCodes.Status202Accepted)
+      .Accepts<UpdateInvoiceDto>("application/json")
+      .Produces<InvoiceDetailDto>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -100,8 +102,8 @@ public static partial class InvoiceEndpoints
 
     router // Partially update a specific invoice, given its identifier.
       .MapPatch("/invoices/{id}", PatchSpecificInvoiceAsync)
-      .Accepts<Invoice>("application/json")
-      .Produces<Invoice>(StatusCodes.Status202Accepted)
+      .Accepts<PatchInvoiceDto>("application/json")
+      .Produces<InvoiceDetailDto>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -125,7 +127,7 @@ public static partial class InvoiceEndpoints
 
     router // Retrieve all products for a given invoice.
       .MapGet("/invoices/{id}/products", RetrieveProductsFromInvoiceAsync)
-      .Produces<IEnumerable<Product>>(StatusCodes.Status200OK)
+      .Produces<IEnumerable<ProductDto>>(StatusCodes.Status200OK)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -137,8 +139,8 @@ public static partial class InvoiceEndpoints
 
     router // Add a new product to a given invoice.
       .MapPost("/invoices/{id}/products", AddProductToInvoiceAsync)
-      .Accepts<Product>("application/json")
-      .Produces<Product>(StatusCodes.Status201Created)
+      .Accepts<CreateProductRequestDto>("application/json")
+      .Produces<ProductDto>(StatusCodes.Status201Created)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -152,7 +154,7 @@ public static partial class InvoiceEndpoints
 
     router // Remove a product from a given invoice.
       .MapDelete("/invoices/{id}/products", RemoveProductFromInvoiceAsync)
-      .Accepts<string>("application/json")
+      .Accepts<DeleteProductDto>("application/json")
       .Produces(StatusCodes.Status204NoContent)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -165,8 +167,8 @@ public static partial class InvoiceEndpoints
 
     router // Update a product in a given invoice.
       .MapPut("/invoices/{id}/products", UpdateProductInInvoiceAsync)
-      .Accepts<Product>("application/json")
-      .Produces<Product>(StatusCodes.Status202Accepted)
+      .Accepts<UpdateProductDto>("application/json")
+      .Produces<ProductDto>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -178,7 +180,7 @@ public static partial class InvoiceEndpoints
 
     router // Retrieve the merchant associated with a given invoice.
       .MapGet("/invoices/{id}/merchant", RetrieveMerchantFromInvoiceAsync)
-      .Produces<Merchant>(StatusCodes.Status200OK)
+      .Produces<MerchantDto>(StatusCodes.Status200OK)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -190,8 +192,8 @@ public static partial class InvoiceEndpoints
 
     router // Add a merchant to a given invoice.
       .MapPost("/invoices/{id}/merchant", AddMerchantToInvoiceAsync)
-      .Accepts<Merchant>("application/json")
-      .Produces<Merchant>(StatusCodes.Status201Created)
+      .Accepts<AddMerchantToInvoiceDto>("application/json")
+      .Produces<MerchantDto>(StatusCodes.Status201Created)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -217,8 +219,8 @@ public static partial class InvoiceEndpoints
 
     router // Create the invoice scan for a given invoice.
       .MapPost("/invoices/{id}/scans", CreateInvoiceScanAsync)
-      .Accepts<CreateInvoiceScanDto>("application/json")
-      .Produces<InvoiceScan>(StatusCodes.Status201Created)
+      .Accepts<CreateInvoiceScanRequestDto>("application/json")
+      .Produces<InvoiceScanDto>(StatusCodes.Status201Created)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -232,7 +234,7 @@ public static partial class InvoiceEndpoints
 
     router // Retrieve the invoice scans for a given invoice.
       .MapGet("/invoices/{id}/scans", RetrieveInvoiceScansAsync)
-      .Produces<IEnumerable<InvoiceScan>>(StatusCodes.Status200OK)
+      .Produces<IEnumerable<InvoiceScanDto>>(StatusCodes.Status200OK)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -270,7 +272,7 @@ public static partial class InvoiceEndpoints
 
     router // Update the invoice metadata for a given invoice.
       .MapPatch("/invoices/{id}/metadata", PatchInvoiceMetadataAsync)
-      .Accepts<Dictionary<string, string>>("application/json")
+      .Accepts<PatchMetadataDto>("application/json")
       .Produces<Dictionary<string, string>>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -283,7 +285,7 @@ public static partial class InvoiceEndpoints
 
     router // Delete the invoice metadata for a given invoice.
       .MapDelete("/invoices/{id}/metadata", DeleteInvoiceMetadataAsync)
-      .Accepts<IEnumerable<string>>("application/json")
+      .Accepts<DeleteMetadataDto>("application/json")
       .Produces(StatusCodes.Status204NoContent)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -311,7 +313,7 @@ public static partial class InvoiceEndpoints
   {
     router // Retrieve all merchants.
       .MapGet("/merchants", RetrieveAllMerchantsAsync)
-      .Produces<IEnumerable<Merchant>>(StatusCodes.Status200OK)
+      .Produces<IEnumerable<MerchantDto>>(StatusCodes.Status200OK)
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
       .ProducesProblem(StatusCodes.Status404NotFound)
@@ -322,7 +324,8 @@ public static partial class InvoiceEndpoints
 
     router // Create a new merchant.
       .MapPost("/merchants", CreateNewMerchantAsync)
-      .Produces<Merchant>(StatusCodes.Status201Created)
+      .Accepts<CreateMerchantRequestDto>("application/json")
+      .Produces<MerchantDto>(StatusCodes.Status201Created)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -336,7 +339,7 @@ public static partial class InvoiceEndpoints
 
     router // Retrieve a specific merchant, given its identifier.
       .MapGet("/merchants/{id}", RetrieveSpecificMerchantAsync)
-      .Produces<Merchant>(StatusCodes.Status200OK)
+      .Produces<MerchantDto>(StatusCodes.Status200OK)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -348,8 +351,8 @@ public static partial class InvoiceEndpoints
 
     router // Update a specific merchant, given its identifier.
       .MapPut("/merchants/{id}", UpdateSpecificMerchantAsync)
-      .Accepts<Merchant>("application/json")
-      .Produces<Merchant>(StatusCodes.Status202Accepted)
+      .Accepts<UpdateMerchantDto>("application/json")
+      .Produces<MerchantDto>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -373,7 +376,7 @@ public static partial class InvoiceEndpoints
 
     router // Retrieve all invoices associated with a given merchant.
       .MapGet("/merchants/{id}/invoices", RetrieveInvoicesFromMerchantAsync)
-      .Produces<IEnumerable<Invoice>>(StatusCodes.Status200OK)
+      .Produces<IEnumerable<InvoiceSummaryDto>>(StatusCodes.Status200OK)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -385,8 +388,8 @@ public static partial class InvoiceEndpoints
 
     router // Add invoices to a given merchant.
       .MapPatch("/merchants/{id}/invoices", AddInvoiceToMerchantAsync)
-      .Accepts<IEnumerable<Guid>>("application/json")
-      .Produces(StatusCodes.Status202Accepted)
+      .Accepts<MerchantInvoicesDto>("application/json")
+      .Produces<MerchantDto>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -400,7 +403,7 @@ public static partial class InvoiceEndpoints
 
     router // Remove invoices from a given merchant.
       .MapDelete("/merchants/{id}/invoices", RemoveInvoiceFromMerchantAsync)
-      .Accepts<IEnumerable<Guid>>("application/json")
+      .Accepts<MerchantInvoicesDto>("application/json")
       .Produces(StatusCodes.Status204NoContent)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -413,7 +416,7 @@ public static partial class InvoiceEndpoints
 
     router // Retrieve all products associated with a given merchant.
       .MapGet("/merchants/{id}/products", RetrieveProductsFromMerchantAsync)
-      .Produces<IEnumerable<Product>>(StatusCodes.Status200OK)
+      .Produces<IEnumerable<ProductDto>>(StatusCodes.Status200OK)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status403Forbidden)
@@ -436,8 +439,8 @@ public static partial class InvoiceEndpoints
   /// <param name="router">Route builder instance.</param>
   private static void MapInvoiceAnalysisEndpoints(this IEndpointRouteBuilder router) => router // Analyze a specific invoice, given its identifier.
       .MapPost("/invoices/{id}/analyze", AnalyzeInvoiceAsync)
-      .Accepts<AnalysisOptions>("application/json")
-      .Produces<Invoice>(StatusCodes.Status202Accepted)
+      .Accepts<AnalyzeInvoiceDto>("application/json")
+      .Produces<InvoiceDetailDto>(StatusCodes.Status202Accepted)
       .ProducesValidationProblem()
       .ProducesProblem(StatusCodes.Status401Unauthorized)
       .ProducesProblem(StatusCodes.Status402PaymentRequired)
