@@ -1,6 +1,7 @@
 "use client";
 
 import DeleteInvoiceDialog from "../_dialogs/DeleteInvoiceDialog";
+import AnalyzeDialog from "../edit-invoice/[id]/_components/dialogs/AnalyzeDialog";
 import InvoiceFeedbackDialog from "../edit-invoice/[id]/_components/dialogs/FeedbackDialog";
 import InvoiceImageDialog from "../edit-invoice/[id]/_components/dialogs/ImageDialog";
 import InvoiceItemsDialog from "../edit-invoice/[id]/_components/dialogs/ItemsDialog";
@@ -27,6 +28,8 @@ export default function DialogContainer(): React.JSX.Element {
 
   switch (type) {
     // edit-invoice/[id] Dialogs
+    case "EDIT_INVOICE__ANALYSIS":
+      return <AnalyzeDialog />;
     case "EDIT_INVOICE__ITEMS":
       return <InvoiceItemsDialog />;
     case "EDIT_INVOICE__FEEDBACK":

@@ -4,7 +4,7 @@ import type {Invoice} from "@/types/invoices";
 import {Button, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
 import {useCallback, useState} from "react";
-import {TbPrinter, TbTrash} from "react-icons/tb";
+import {TbPrinter, TbScanEye, TbTrash} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 
 type Props = {
@@ -50,6 +50,7 @@ type Props = {
 export default function InvoiceHeader({invoice}: Readonly<Props>): React.JSX.Element {
   const [invoiceName, setInvoiceName] = useState<string>(invoice.name);
   const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__DELETE", "view", {invoice});
+  const {open: openAnalysisDialog} = useDialog("EDIT_INVOICE__ANALYSIS", "view", {invoice});
 
   const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setInvoiceName(event.target.value);
@@ -90,6 +91,20 @@ export default function InvoiceHeader({invoice}: Readonly<Props>): React.JSX.Ele
             </TooltipTrigger>
             <TooltipContent>
               <p>Print this invoice with all details</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={openAnalysisDialog}
+                variant='outline'
+                size='sm'>
+                <TbScanEye className='mr-2 h-4 w-4' />
+                Analyze with AI
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Analyze spending patterns for this invoice</p>
             </TooltipContent>
           </Tooltip>
           <Tooltip>

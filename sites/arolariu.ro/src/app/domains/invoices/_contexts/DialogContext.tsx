@@ -9,13 +9,13 @@ import {createContext, use, useCallback, useMemo, useRef, useState, type ReactNo
  * This is useful for managing the state of the dialog in the application.
  */
 export type DialogType =
+  | "EDIT_INVOICE__ANALYSIS"
   | "EDIT_INVOICE__SHARE"
   | "EDIT_INVOICE__IMAGE"
   | "EDIT_INVOICE__MERCHANT"
   | "EDIT_INVOICE__MERCHANT_INVOICES"
   | "EDIT_INVOICE__RECIPE"
   | "EDIT_INVOICE__METADATA"
-  | "EDIT_INVOICE__ANALYSIS"
   | "EDIT_INVOICE__ITEMS"
   | "EDIT_INVOICE__DELETE"
   | "EDIT_INVOICE__FEEDBACK"
