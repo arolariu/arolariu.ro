@@ -14,7 +14,7 @@ using System.Diagnostics.CodeAnalysis;
 /// <param name="Options">The type of analysis to perform on the invoice.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct AnalyzeInvoiceDto(
+public readonly record struct AnalyzeInvoiceRequestDto(
   [Required] AnalysisOptions Options)
 {
   /// <summary>

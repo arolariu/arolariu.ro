@@ -15,5 +15,5 @@ using System.Diagnostics.CodeAnalysis;
 /// <param name="Keys">Collection of metadata keys to remove.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct DeleteMetadataDto(
+public readonly record struct DeleteMetadataRequestDto(
   [Required] IEnumerable<string> Keys);

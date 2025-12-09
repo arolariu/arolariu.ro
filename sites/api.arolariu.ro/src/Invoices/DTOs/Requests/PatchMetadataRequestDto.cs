@@ -16,7 +16,7 @@ using System.Diagnostics.CodeAnalysis;
 /// <param name="Entries">Dictionary of metadata entries to add or update.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct PatchMetadataDto(
+public readonly record struct PatchMetadataRequestDto(
   [Required] IDictionary<string, object> Entries)
 {
   /// <summary>

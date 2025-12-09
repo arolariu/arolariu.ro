@@ -24,7 +24,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// <param name="AdditionalMetadata">Extensible key-value metadata for the merchant.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct UpdateMerchantDto(
+public readonly record struct UpdateMerchantRequestDto(
   [Required] string Name,
   [Required] string Description,
   MerchantCategory Category,

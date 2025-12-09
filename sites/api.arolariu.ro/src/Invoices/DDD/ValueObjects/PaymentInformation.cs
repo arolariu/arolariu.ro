@@ -16,6 +16,7 @@ using arolariu.Backend.Common.DDD.ValueObjects;
 /// to prevent cross-time zone skew.</para>
 /// <para><b>Thread-safety:</b> Not thread-safe; confine to aggregate mutation scope.</para>
 /// </remarks>
+[Serializable]
 [ExcludeFromCodeCoverage]
 public sealed record PaymentInformation
 {

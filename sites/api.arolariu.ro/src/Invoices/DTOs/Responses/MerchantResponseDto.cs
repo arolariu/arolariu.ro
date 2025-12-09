@@ -25,11 +25,16 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// <param name="ReferencedInvoiceCount">Number of invoices referencing this merchant.</param>
 /// <param name="ReferencedInvoiceIds">Collection of invoice identifiers referencing this merchant.</param>
 /// <param name="AdditionalMetadata">Extensible key-value metadata.</param>
+/// <param name="IsImportant">Flag indicating if the merchant is marked as important.</param>
+/// <param name="IsSoftDeleted">Flag indicating soft deletion status.</param>
 /// <param name="CreatedAt">Creation timestamp.</param>
+/// <param name="CreatedBy">The identifier of the user who created this merchant.</param>
 /// <param name="LastUpdatedAt">Last update timestamp.</param>
+/// <param name="LastUpdatedBy">The identifier of the user who last updated this merchant.</param>
+/// <param name="NumberOfUpdates">Count of updates performed.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct MerchantDto(
+public readonly record struct MerchantResponseDto(
   Guid Id,
   string Name,
   string Description,
@@ -39,15 +44,20 @@ public readonly record struct MerchantDto(
   int ReferencedInvoiceCount,
   IReadOnlyCollection<Guid> ReferencedInvoiceIds,
   IReadOnlyDictionary<string, string> AdditionalMetadata,
+  bool IsImportant,
+  bool IsSoftDeleted,
   DateTimeOffset CreatedAt,
-  DateTimeOffset LastUpdatedAt)
+  Guid CreatedBy,
+  DateTimeOffset LastUpdatedAt,
+  Guid LastUpdatedBy,
+  int NumberOfUpdates)
 {
   /// <summary>
-  /// Creates a <see cref="MerchantDto"/> from a domain <see cref="Merchant"/>.
+  /// Creates a <see cref="MerchantResponseDto"/> from a domain <see cref="Merchant"/>.
   /// </summary>
   /// <param name="merchant">The domain merchant to convert.</param>
   /// <returns>A DTO representing the merchant.</returns>
-  public static MerchantDto FromMerchant(Merchant merchant)
+  public static MerchantResponseDto FromMerchant(Merchant merchant)
   {
     ArgumentNullException.ThrowIfNull(merchant);
     return new(
@@ -60,7 +70,12 @@ public readonly record struct MerchantDto(
       ReferencedInvoiceCount: merchant.ReferencedInvoices.Count,
       ReferencedInvoiceIds: merchant.ReferencedInvoices.ToList().AsReadOnly(),
       AdditionalMetadata: new Dictionary<string, string>(merchant.AdditionalMetadata),
+      IsImportant: merchant.IsImportant,
+      IsSoftDeleted: merchant.IsSoftDeleted,
       CreatedAt: merchant.CreatedAt,
-      LastUpdatedAt: merchant.LastUpdatedAt);
+      CreatedBy: merchant.CreatedBy,
+      LastUpdatedAt: merchant.LastUpdatedAt,
+      LastUpdatedBy: merchant.LastUpdatedBy,
+      NumberOfUpdates: merchant.NumberOfUpdates);
   }
 }

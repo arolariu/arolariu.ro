@@ -24,11 +24,12 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <param name="Price">Unit price of the product.</param>
 /// <param name="TotalPrice">Computed extended line total.</param>
 /// <param name="DetectedAllergens">Collection of detected allergens.</param>
+/// <param name="IsEdited">Whether the product has been modified post-ingestion.</param>
 /// <param name="IsComplete">Whether the product data is complete.</param>
 /// <param name="IsDeleted">Whether the product is soft-deleted.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct ProductDto(
+public readonly record struct ProductResponseDto(
   string RawName,
   string GenericName,
   ProductCategory Category,
@@ -38,15 +39,16 @@ public readonly record struct ProductDto(
   decimal Price,
   decimal TotalPrice,
   IReadOnlyCollection<Allergen> DetectedAllergens,
+  bool IsEdited,
   bool IsComplete,
   bool IsDeleted)
 {
   /// <summary>
-  /// Creates a <see cref="ProductDto"/> from a domain <see cref="Product"/>.
+  /// Creates a <see cref="ProductResponseDto"/> from a domain <see cref="Product"/>.
   /// </summary>
   /// <param name="product">The domain product to convert.</param>
   /// <returns>A DTO representing the product.</returns>
-  public static ProductDto FromProduct(Product product)
+  public static ProductResponseDto FromProduct(Product product)
   {
     ArgumentNullException.ThrowIfNull(product);
     return new(
@@ -61,6 +63,7 @@ public readonly record struct ProductDto(
       DetectedAllergens: product.DetectedAllergens is IReadOnlyCollection<Allergen> readOnly
         ? readOnly
         : new List<Allergen>(product.DetectedAllergens).AsReadOnly(),
+      IsEdited: product.Metadata.IsEdited,
       IsComplete: product.Metadata.IsComplete,
       IsDeleted: product.Metadata.IsSoftDeleted);
   }

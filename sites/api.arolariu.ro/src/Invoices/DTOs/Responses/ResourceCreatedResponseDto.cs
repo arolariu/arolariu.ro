@@ -15,7 +15,7 @@ using System.Diagnostics.CodeAnalysis;
 /// <param name="CreatedAt">The timestamp when the resource was created.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct ResourceCreatedDto(
+public readonly record struct ResourceCreatedResponseDto(
   Guid Id,
   string Location,
   DateTimeOffset CreatedAt);

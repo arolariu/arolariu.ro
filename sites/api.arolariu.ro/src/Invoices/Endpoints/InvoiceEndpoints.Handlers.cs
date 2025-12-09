@@ -36,7 +36,7 @@ public static partial class InvoiceEndpoints
         .CreateInvoice(invoice)
         .ConfigureAwait(false);
 
-      var responseDto = InvoiceDetailDto.FromInvoice(invoice);
+      var responseDto = InvoiceDetailResponseDto.FromInvoice(invoice);
       return TypedResults.Created($"/rest/v1/invoices/{invoice.id}", responseDto);
     }
     catch (InvoiceProcessingServiceValidationException exception)
@@ -90,7 +90,7 @@ public static partial class InvoiceEndpoints
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
 
-      return possibleInvoice is null ? TypedResults.NotFound() : TypedResults.Ok(InvoiceDetailDto.FromInvoice(possibleInvoice));
+      return possibleInvoice is null ? TypedResults.NotFound() : TypedResults.Ok(InvoiceDetailResponseDto.FromInvoice(possibleInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -143,7 +143,7 @@ public static partial class InvoiceEndpoints
         .ReadInvoices(potentialUserIdentifier)
         .ConfigureAwait(false);
 
-      return possibleInvoices is null ? TypedResults.NotFound() : TypedResults.Ok(possibleInvoices.Select(InvoiceSummaryDto.FromInvoice));
+      return possibleInvoices is null ? TypedResults.NotFound() : TypedResults.Ok(possibleInvoices.Select(InvoiceSummaryResponseDto.FromInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -238,7 +238,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    UpdateInvoiceDto invoicePayload)
+    UpdateInvoiceRequestDto invoicePayload)
   {
     try
     {
@@ -257,7 +257,7 @@ public static partial class InvoiceEndpoints
       var updatedInvoice = await invoiceProcessingService
         .UpdateInvoice(updatedInvoiceEntity, id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: InvoiceDetailDto.FromInvoice(updatedInvoice));
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: InvoiceDetailResponseDto.FromInvoice(updatedInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -300,7 +300,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    PatchInvoiceDto invoicePayload)
+    PatchInvoiceRequestDto invoicePayload)
   {
     try
     {
@@ -341,7 +341,7 @@ public static partial class InvoiceEndpoints
         .UpdateInvoice(newInvoice, id, potentialUserIdentifier)
         .ConfigureAwait(false);
 
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: InvoiceDetailDto.FromInvoice(updatedInvoice));
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: InvoiceDetailResponseDto.FromInvoice(updatedInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -463,7 +463,7 @@ public static partial class InvoiceEndpoints
       await invoiceProcessingService
         .AddProduct(productEntity, id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      return TypedResults.Accepted(uri: $"/rest/v1/invoices/{id}/products", value: ProductDto.FromProduct(productEntity));
+      return TypedResults.Accepted(uri: $"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(productEntity));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -515,7 +515,7 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      return possibleInvoice is null ? TypedResults.NotFound() : TypedResults.Ok(possibleInvoice.Items.Select(ProductDto.FromProduct));
+      return possibleInvoice is null ? TypedResults.NotFound() : TypedResults.Ok(possibleInvoice.Items.Select(ProductResponseDto.FromProduct));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -558,7 +558,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    DeleteProductDto productDto)
+    DeleteProductRequestDto productDto)
   {
     try
     {
@@ -619,7 +619,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    UpdateProductDto productInformation)
+    UpdateProductRequestDto productInformation)
   {
     try
     {
@@ -651,7 +651,7 @@ public static partial class InvoiceEndpoints
         .AddProduct(updatedProduct, id, potentialUserIdentifier)
         .ConfigureAwait(false);
 
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}/products", value: ProductDto.FromProduct(updatedProduct));
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}/products", value: ProductResponseDto.FromProduct(updatedProduct));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -716,7 +716,7 @@ public static partial class InvoiceEndpoints
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(possibleInvoice.MerchantReference)
         .ConfigureAwait(false);
-      return possibleMerchant is null ? TypedResults.NotFound() : TypedResults.Ok(MerchantDto.FromMerchant(possibleMerchant));
+      return possibleMerchant is null ? TypedResults.NotFound() : TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -759,7 +759,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    AddMerchantToInvoiceDto merchantDto)
+    AddMerchantToInvoiceRequestDto merchantDto)
   {
     try
     {
@@ -792,7 +792,7 @@ public static partial class InvoiceEndpoints
         .CreateMerchant(merchant)
         .ConfigureAwait(false);
 
-      return TypedResults.Created(uri: $"/rest/v1/merchants/{merchant.id}", InvoiceDetailDto.FromInvoice(possibleInvoice));
+      return TypedResults.Created(uri: $"/rest/v1/merchants/{merchant.id}", InvoiceDetailResponseDto.FromInvoice(possibleInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -939,7 +939,7 @@ public static partial class InvoiceEndpoints
           .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
           .ConfigureAwait(false);
 
-      return TypedResults.Created($"/rest/v1/invoices/{id}/scans", InvoiceScanDto.FromInvoiceScan(convertedScan));
+      return TypedResults.Created($"/rest/v1/invoices/{id}/scans", InvoiceScanResponseDto.FromInvoiceScan(convertedScan));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -991,7 +991,7 @@ public static partial class InvoiceEndpoints
       var possibleInvoice = await invoiceProcessingService
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      return possibleInvoice is null ? TypedResults.NotFound() : TypedResults.Ok(possibleInvoice.Scans.Select(InvoiceScanDto.FromInvoiceScan));
+      return possibleInvoice is null ? TypedResults.NotFound() : TypedResults.Ok(possibleInvoice.Scans.Select(InvoiceScanResponseDto.FromInvoiceScan));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1154,7 +1154,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    PatchMetadataDto invoiceMetadataPatch)
+    PatchMetadataRequestDto invoiceMetadataPatch)
   {
     try
     {
@@ -1217,7 +1217,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    DeleteMetadataDto metadataKeys)
+    DeleteMetadataRequestDto metadataKeys)
   {
     try
     {
@@ -1296,7 +1296,7 @@ public static partial class InvoiceEndpoints
       await invoiceProcessingService
           .CreateMerchant(merchant)
           .ConfigureAwait(false);
-      return TypedResults.Created($"/rest/v1/merchants/{merchant.id}", MerchantDto.FromMerchant(merchant));
+      return TypedResults.Created($"/rest/v1/merchants/{merchant.id}", MerchantResponseDto.FromMerchant(merchant));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1445,7 +1445,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    UpdateMerchantDto merchantPayload)
+    UpdateMerchantRequestDto merchantPayload)
   {
     try
     {
@@ -1464,7 +1464,7 @@ public static partial class InvoiceEndpoints
       await invoiceProcessingService
         .UpdateMerchant(updatedMerchant, id)
         .ConfigureAwait(false);
-      return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantDto.FromMerchant(updatedMerchant));
+      return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(updatedMerchant));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1651,7 +1651,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    MerchantInvoicesDto invoiceIdentifiers)
+    MerchantInvoicesRequestDto invoiceIdentifiers)
   {
     try
     {
@@ -1688,7 +1688,7 @@ public static partial class InvoiceEndpoints
         .UpdateMerchant(possibleMerchant, possibleMerchant.id)
         .ConfigureAwait(false);
 
-      return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantDto.FromMerchant(possibleMerchant));
+      return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(possibleMerchant));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1731,7 +1731,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    MerchantInvoicesDto invoiceIdentifiers)
+    MerchantInvoicesRequestDto invoiceIdentifiers)
   {
     try
     {
@@ -1889,7 +1889,7 @@ public static partial class InvoiceEndpoints
     IInvoiceProcessingService invoiceProcessingService,
     IHttpContextAccessor httpContext,
     Guid id,
-    AnalyzeInvoiceDto options)
+    AnalyzeInvoiceRequestDto options)
   {
     try
     {
@@ -1913,7 +1913,7 @@ public static partial class InvoiceEndpoints
         .ConfigureAwait(false);
       return analyzedInvoice is null
         ? TypedResults.NotFound()
-        : TypedResults.Accepted($"/rest/v1/invoices/{id}", InvoiceDetailDto.FromInvoice(analyzedInvoice));
+        : TypedResults.Accepted($"/rest/v1/invoices/{id}", InvoiceDetailResponseDto.FromInvoice(analyzedInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {

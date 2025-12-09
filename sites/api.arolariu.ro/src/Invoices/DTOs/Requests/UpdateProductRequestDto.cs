@@ -27,7 +27,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
 /// <param name="DetectedAllergens">Collection of detected allergens.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct UpdateProductDto(
+public readonly record struct UpdateProductRequestDto(
   [Required] string OriginalProductName,
   [Required] string RawName,
   string? GenericName,

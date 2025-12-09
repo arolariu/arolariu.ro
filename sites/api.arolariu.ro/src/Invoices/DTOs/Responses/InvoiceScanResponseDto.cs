@@ -1,6 +1,7 @@
 namespace arolariu.Backend.Domain.Invoices.DTOs.Responses;
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
@@ -14,21 +15,21 @@ using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 /// </remarks>
 /// <param name="Type">The scan format type (JPG, PNG, PDF, etc.).</param>
 /// <param name="Location">The URI location where the scan is stored.</param>
-/// <param name="HasMetadata">Indicates whether the scan has associated metadata.</param>
+/// <param name="Metadata">Associated scan metadata (nullable).</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct InvoiceScanDto(
+public readonly record struct InvoiceScanResponseDto(
   ScanType Type,
   Uri Location,
-  bool HasMetadata)
+  IReadOnlyDictionary<string, object>? Metadata)
 {
   /// <summary>
-  /// Creates an <see cref="InvoiceScanDto"/> from a domain <see cref="InvoiceScan"/>.
+  /// Creates an <see cref="InvoiceScanResponseDto"/> from a domain <see cref="InvoiceScan"/>.
   /// </summary>
   /// <param name="scan">The domain scan to convert.</param>
   /// <returns>A DTO representing the invoice scan.</returns>
-  public static InvoiceScanDto FromInvoiceScan(InvoiceScan scan) => new(
+  public static InvoiceScanResponseDto FromInvoiceScan(InvoiceScan scan) => new(
     Type: scan.Type,
     Location: scan.Location,
-    HasMetadata: scan.Metadata is not null && scan.Metadata.Count > 0);
+    Metadata: scan.Metadata is not null ? new Dictionary<string, object>(scan.Metadata) : null);
 }

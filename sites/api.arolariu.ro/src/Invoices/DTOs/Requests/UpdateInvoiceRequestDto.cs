@@ -25,7 +25,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// <param name="AdditionalMetadata">Extensible key-value metadata for the invoice.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct UpdateInvoiceDto(
+public readonly record struct UpdateInvoiceRequestDto(
   [Required] string Name,
   [Required] string Description,
   InvoiceCategory Category,

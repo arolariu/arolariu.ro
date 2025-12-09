@@ -22,7 +22,7 @@ using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 /// <param name="ParentCompanyId">Optional reference to a parent company.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct AddMerchantToInvoiceDto(
+public readonly record struct AddMerchantToInvoiceRequestDto(
   [Required] string Name,
   [Required] string Description,
   MerchantCategory Category,

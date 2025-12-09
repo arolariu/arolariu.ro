@@ -29,7 +29,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// <param name="LastUpdatedAt">The timestamp of the last update.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct InvoiceSummaryDto(
+public readonly record struct InvoiceSummaryResponseDto(
   Guid Id,
   Guid UserIdentifier,
   string Name,
@@ -44,11 +44,11 @@ public readonly record struct InvoiceSummaryDto(
   DateTimeOffset LastUpdatedAt)
 {
   /// <summary>
-  /// Creates an <see cref="InvoiceSummaryDto"/> from a domain <see cref="Invoice"/>.
+  /// Creates an <see cref="InvoiceSummaryResponseDto"/> from a domain <see cref="Invoice"/>.
   /// </summary>
   /// <param name="invoice">The domain invoice to convert.</param>
   /// <returns>A summary DTO representing the invoice.</returns>
-  public static InvoiceSummaryDto FromInvoice(Invoice invoice)
+  public static InvoiceSummaryResponseDto FromInvoice(Invoice invoice)
   {
     ArgumentNullException.ThrowIfNull(invoice);
     return new(

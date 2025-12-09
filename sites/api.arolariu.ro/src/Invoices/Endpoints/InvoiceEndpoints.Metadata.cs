@@ -38,7 +38,7 @@ public static partial class InvoiceEndpoints
     "This operation requires the user to be authenticated and authorized.",
     OperationId = nameof(CreateNewInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status201Created, "The invoice was successfully created in the system.", typeof(InvoiceDetailDto))]
+  [SwaggerResponse(StatusCodes.Status201Created, "The invoice was successfully created in the system.", typeof(InvoiceDetailResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice DTO is invalid. Please check the request body for errors.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -69,7 +69,7 @@ public static partial class InvoiceEndpoints
     "If successful, the invoice details are returned.",
     OperationId = nameof(RetrieveSpecificInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The invoice was successfully retrieved.", typeof(InvoiceDetailDto))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The invoice was successfully retrieved.", typeof(InvoiceDetailResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access this invoice.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -98,7 +98,7 @@ public static partial class InvoiceEndpoints
     "It returns all invoices that the authenticated user is authorized to view.",
     OperationId = nameof(RetrieveAllInvoicesAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The invoices were successfully retrieved.", typeof(InvoiceSummaryDto[]))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The invoices were successfully retrieved.", typeof(InvoiceSummaryResponseDto[]))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "No invoices were found in the system.", typeof(ProblemDetails))]
@@ -128,7 +128,7 @@ public static partial class InvoiceEndpoints
     "If the invoice exists and the user has permission, the update is performed.",
     OperationId = nameof(UpdateSpecificInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was successfully updated.", typeof(InvoiceDetailDto))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was successfully updated.", typeof(InvoiceDetailResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice data is invalid. Please check the request body for errors.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -141,7 +141,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice to update.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The invoice payload that will replace the existing invoice.", Required = true)] UpdateInvoiceDto invoicePayload);
+    [FromBody, SwaggerRequestBody("The invoice payload that will replace the existing invoice.", Required = true)] UpdateInvoiceRequestDto invoicePayload);
   #endregion
 
   #region HTTP PATCH /rest/v1/invoices/{id}
@@ -160,7 +160,7 @@ public static partial class InvoiceEndpoints
     "The operation validates the partial data and applies the changes if the invoice exists and the user is authorized.",
     OperationId = nameof(PatchSpecificInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was successfully patched.", typeof(InvoiceDetailDto))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was successfully patched.", typeof(InvoiceDetailResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided partial invoice data is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -173,7 +173,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice to patch.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The partial invoice payload to apply as a patch.", Required = true)] PatchInvoiceDto invoicePayload);
+    [FromBody, SwaggerRequestBody("The partial invoice payload to apply as a patch.", Required = true)] PatchInvoiceRequestDto invoicePayload);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}
@@ -251,7 +251,7 @@ public static partial class InvoiceEndpoints
     "If successful, the product is appended to the invoice's product list.",
     OperationId = nameof(AddProductToInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The product was successfully added to the invoice.", typeof(ProductDto))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The product was successfully added to the invoice.", typeof(ProductResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided product data is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -284,7 +284,7 @@ public static partial class InvoiceEndpoints
     "If successful, an array of products is returned.",
     OperationId = nameof(RetrieveProductsFromInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The products were successfully retrieved.", typeof(ProductDto[]))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The products were successfully retrieved.", typeof(ProductResponseDto[]))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the products of this invoice.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -330,7 +330,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The product identifier to remove.", Required = true)] DeleteProductDto productDto);
+    [FromBody, SwaggerRequestBody("The product identifier to remove.", Required = true)] DeleteProductRequestDto productDto);
   #endregion
 
   #region HTTP PUT /rest/v1/invoices/{id}/products
@@ -349,7 +349,7 @@ public static partial class InvoiceEndpoints
     "The operation validates the new product data and ensures the product exists in the invoice.",
     OperationId = nameof(UpdateProductInInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The product was successfully updated in the invoice.", typeof(ProductDto))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The product was successfully updated in the invoice.", typeof(ProductResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided product data is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -364,7 +364,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The updated product payload.", Required = true)] UpdateProductDto productInformation);
+    [FromBody, SwaggerRequestBody("The updated product payload.", Required = true)] UpdateProductRequestDto productInformation);
   #endregion
 
   #region HTTP GET /rest/v1/invoices/{id}/merchant
@@ -382,7 +382,7 @@ public static partial class InvoiceEndpoints
     "If successful, the merchant object is returned.",
     OperationId = nameof(RetrieveMerchantFromInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The merchant was successfully retrieved from the invoice.", typeof(MerchantDto))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The merchant was successfully retrieved from the invoice.", typeof(MerchantResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the merchant of this invoice.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -413,7 +413,7 @@ public static partial class InvoiceEndpoints
     "If successful, the merchant is linked to the invoice.",
     OperationId = nameof(AddMerchantToInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status201Created, "The merchant was successfully added to the invoice.", typeof(InvoiceDetailDto))]
+  [SwaggerResponse(StatusCodes.Status201Created, "The merchant was successfully added to the invoice.", typeof(InvoiceDetailResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant data is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -428,7 +428,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The merchant payload to be associated with the invoice.", Required = true)] AddMerchantToInvoiceDto merchantDto);
+    [FromBody, SwaggerRequestBody("The merchant payload to be associated with the invoice.", Required = true)] AddMerchantToInvoiceRequestDto merchantDto);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}/merchant
@@ -479,7 +479,7 @@ public static partial class InvoiceEndpoints
     "The operation ensures the invoice exists and the user is authorized to add scans.",
     OperationId = nameof(CreateInvoiceScanAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status201Created, "The invoice scan was successfully created.", typeof(InvoiceScanDto))]
+  [SwaggerResponse(StatusCodes.Status201Created, "The invoice scan was successfully created.", typeof(InvoiceScanResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice scan data is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -511,7 +511,7 @@ public static partial class InvoiceEndpoints
     "If successful, a list of invoice scans is returned.",
     OperationId = nameof(RetrieveInvoiceScansAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The invoice scans were successfully retrieved.", typeof(InvoiceScanDto[]))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The invoice scans were successfully retrieved.", typeof(InvoiceScanResponseDto[]))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the scans of this invoice.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -617,7 +617,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The metadata key-value pairs to apply as a patch.", Required = true)] PatchMetadataDto invoiceMetadataPatch);
+    [FromBody, SwaggerRequestBody("The metadata key-value pairs to apply as a patch.", Required = true)] PatchMetadataRequestDto invoiceMetadataPatch);
   #endregion
 
   #region HTTP DELETE /rest/v1/invoices/{id}/metadata
@@ -649,7 +649,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The list of metadata keys to delete.", Required = true)] DeleteMetadataDto metadataKeys);
+    [FromBody, SwaggerRequestBody("The list of metadata keys to delete.", Required = true)] DeleteMetadataRequestDto metadataKeys);
   #endregion
   #endregion
 
@@ -669,7 +669,7 @@ public static partial class InvoiceEndpoints
     "If successful, the identifier of the newly created merchant is returned.",
     OperationId = nameof(CreateNewMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status201Created, "The merchant was successfully created.", typeof(MerchantDto))]
+  [SwaggerResponse(StatusCodes.Status201Created, "The merchant was successfully created.", typeof(MerchantResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant data is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to create a merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -700,7 +700,7 @@ public static partial class InvoiceEndpoints
     "If successful, a list of merchants matching the criteria is returned.",
     OperationId = nameof(RetrieveAllMerchantsAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The merchants were successfully retrieved.", typeof(IEnumerable<MerchantDto>))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The merchants were successfully retrieved.", typeof(IEnumerable<MerchantResponseDto>))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the list of merchants.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status429TooManyRequests, "The user has exceeded the rate limit. Please try again later.", typeof(ProblemDetails))]
@@ -729,7 +729,7 @@ public static partial class InvoiceEndpoints
     "If successful, the merchant details are returned.",
     OperationId = nameof(RetrieveSpecificMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The merchant was successfully retrieved.", typeof(MerchantDto))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The merchant was successfully retrieved.", typeof(MerchantResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -761,7 +761,7 @@ public static partial class InvoiceEndpoints
     "If successful, the merchant is updated.",
     OperationId = nameof(UpdateSpecificMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The merchant was successfully updated.", typeof(MerchantDto))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The merchant was successfully updated.", typeof(MerchantResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant data is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to update this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -774,7 +774,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The updated merchant object.", Required = true)] UpdateMerchantDto merchantPayload);
+    [FromBody, SwaggerRequestBody("The updated merchant object.", Required = true)] UpdateMerchantRequestDto merchantPayload);
   #endregion
 
   #region HTTP DELETE /rest/v1/merchants/{id}
@@ -824,7 +824,7 @@ public static partial class InvoiceEndpoints
     "If successful, a list of invoices is returned.",
     OperationId = nameof(RetrieveInvoicesFromMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The invoices were successfully retrieved.", typeof(IEnumerable<InvoiceSummaryDto>))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The invoices were successfully retrieved.", typeof(IEnumerable<InvoiceSummaryResponseDto>))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the invoices from this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -855,7 +855,7 @@ public static partial class InvoiceEndpoints
     "If successful, the invoices are added to the merchant.",
     OperationId = nameof(AddInvoiceToMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice(s) were successfully added to the merchant.", typeof(MerchantDto))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice(s) were successfully added to the merchant.", typeof(MerchantResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier or invoice identifiers are invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to add invoices to this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -870,7 +870,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The list of invoice identifiers to associate with the merchant.", Required = true)] MerchantInvoicesDto invoiceIdentifiers);
+    [FromBody, SwaggerRequestBody("The list of invoice identifiers to associate with the merchant.", Required = true)] MerchantInvoicesRequestDto invoiceIdentifiers);
   #endregion
 
   #region HTTP DELETE /rest/v1/merchants/{id}/invoices
@@ -904,7 +904,7 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the merchant.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The list of invoice identifiers to detach from the merchant.", Required = true)] MerchantInvoicesDto invoiceIdentifiers);
+    [FromBody, SwaggerRequestBody("The list of invoice identifiers to detach from the merchant.", Required = true)] MerchantInvoicesRequestDto invoiceIdentifiers);
   #endregion
 
   #region HTTP GET /rest/v1/merchants/{id}/products
@@ -922,7 +922,7 @@ public static partial class InvoiceEndpoints
     "If successful, a list of products is returned.",
     OperationId = nameof(RetrieveProductsFromMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The products were successfully retrieved.", typeof(IEnumerable<ProductDto>))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The products were successfully retrieved.", typeof(IEnumerable<ProductResponseDto>))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the products from this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -953,7 +953,7 @@ public static partial class InvoiceEndpoints
     "If successful, the analysis result is returned.",
     OperationId = nameof(AnalyzeInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice analysis has been accepted and is processing.", typeof(InvoiceDetailDto))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice analysis has been accepted and is processing.", typeof(InvoiceDetailResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier or analysis options are invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to analyze this invoice.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status402PaymentRequired, "The user does not have enough credits to perform this analysis.", typeof(ProblemDetails))]
@@ -967,6 +967,6 @@ public static partial class InvoiceEndpoints
     [FromServices] IInvoiceProcessingService invoiceProcessingService,
     [FromServices] IHttpContextAccessor httpContext,
     [FromRoute, SwaggerParameter("The unique identifier of the invoice.", Required = true)] Guid id,
-    [FromBody, SwaggerRequestBody("The analysis options to configure the pipeline.", Required = true)] AnalyzeInvoiceDto options);
+    [FromBody, SwaggerRequestBody("The analysis options to configure the pipeline.", Required = true)] AnalyzeInvoiceRequestDto options);
 }
 

@@ -20,5 +20,5 @@ using System.Diagnostics.CodeAnalysis;
 /// <param name="InvoiceIdentifiers">Collection of invoice GUIDs to add or remove.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct MerchantInvoicesDto(
+public readonly record struct MerchantInvoicesRequestDto(
   [Required] IEnumerable<Guid> InvoiceIdentifiers);

@@ -14,5 +14,5 @@ using System.Diagnostics.CodeAnalysis;
 /// <param name="ProductName">The raw name of the product to delete.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct DeleteProductDto(
+public readonly record struct DeleteProductRequestDto(
   [Required] string ProductName);

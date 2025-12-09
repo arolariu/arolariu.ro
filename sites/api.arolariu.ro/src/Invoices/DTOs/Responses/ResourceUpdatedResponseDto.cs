@@ -15,7 +15,7 @@ using System.Diagnostics.CodeAnalysis;
 /// <param name="UpdatedAt">The timestamp when the resource was updated.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct ResourceUpdatedDto(
+public readonly record struct ResourceUpdatedResponseDto(
   Guid Id,
   string Location,
   DateTimeOffset UpdatedAt);

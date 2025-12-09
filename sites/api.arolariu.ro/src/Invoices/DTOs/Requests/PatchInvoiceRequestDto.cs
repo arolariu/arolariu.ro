@@ -30,7 +30,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// <param name="AdditionalMetadata">Optional metadata entries to merge.</param>
 [Serializable]
 [ExcludeFromCodeCoverage]
-public readonly record struct PatchInvoiceDto(
+public readonly record struct PatchInvoiceRequestDto(
   string? Name,
   string? Description,
   InvoiceCategory? Category,
