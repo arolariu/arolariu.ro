@@ -1,6 +1,6 @@
 "use server";
 
-import {CONFIG_STORE} from "@/lib/utils.generic";
+import {CONFIG_STORE} from "@/lib/utils.server";
 import {AppConfigurationClient} from "@azure/app-configuration";
 
 /**

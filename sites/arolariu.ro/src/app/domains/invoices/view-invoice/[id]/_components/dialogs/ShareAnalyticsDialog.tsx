@@ -1,5 +1,6 @@
 "use client";
 
+import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import type {Invoice, Merchant} from "@/types/invoices";
 import {
   Button,
@@ -19,7 +20,6 @@ import {
 } from "@arolariu/components";
 import {useCallback, useState} from "react";
 import {TbCopy, TbDownload, TbMail} from "react-icons/tb";
-import {useDialog} from "../../../../_contexts/DialogContext";
 
 /**
  * Dialog for sharing spending analytics via image download, clipboard, or email.
@@ -67,7 +67,7 @@ export default function ShareAnalyticsDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("shareAnalytics");
+  } = useDialog("VIEW_INVOICE__SHARE_ANALYTICS");
 
   const {invoice, merchant} = payload as {invoice: Invoice; merchant: Merchant};
 

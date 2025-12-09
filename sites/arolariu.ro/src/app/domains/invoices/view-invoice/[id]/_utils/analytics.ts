@@ -114,8 +114,8 @@ export function getInvoiceSummary(invoice: Invoice): InvoiceSummary {
     highestItem: sortedByPrice[0] ? {name: sortedByPrice[0].genericName, price: sortedByPrice[0].totalPrice} : {name: "N/A", price: 0},
     lowestItem: sortedByPrice[sortedByPrice.length - 1]
       ? {
-          name: sortedByPrice[sortedByPrice.length - 1].genericName,
-          price: sortedByPrice[sortedByPrice.length - 1].totalPrice,
+          name: sortedByPrice[sortedByPrice.length - 1]!.genericName,
+          price: sortedByPrice[sortedByPrice.length - 1]!.totalPrice,
         }
       : {name: "N/A", price: 0},
     taxPercentage:
@@ -174,7 +174,7 @@ export function getComparisonStats(): ComparisonStats {
   const itemCountDiff = ((current.items.length - averageItemCount) / averageItemCount) * 100;
 
   // Same merchant comparison
-  const sameMerchant = historical.filter((inv) => inv.merchantName === current.merchantName);
+  const sameMerchant = historical.filter((inv) => inv.merchantReference === current.merchantReference);
   const sameMerchantAvg =
     sameMerchant.length > 0
       ? sameMerchant.reduce((sum, inv) => sum + inv.paymentInformation.totalCostAmount, 0) / sameMerchant.length
@@ -212,8 +212,8 @@ export function getMerchantBreakdown(): MerchantBreakdown[] {
   const allInvoices = [...historicalInvoices, currentInvoiceSummary];
 
   allInvoices.forEach((inv) => {
-    const existing = merchantMap.get(inv.merchantName) || {count: 0, total: 0};
-    merchantMap.set(inv.merchantName, {
+    const existing = merchantMap.get(inv.merchantReference) || {count: 0, total: 0};
+    merchantMap.set(inv.merchantReference, {
       count: existing.count + 1,
       total: existing.total + inv.paymentInformation.totalCostAmount,
     });
@@ -237,17 +237,9 @@ export type CategoryTrendData = {
 
 export function getCategoryComparison(): CategoryTrendData[] {
   const current = generateRandomInvoice().category; // This would be the current invoice
-  const historical = generateRandomInvoices(30); // This would be fetched from user data
 
   // Calculate average for each category
   const categoryAverages = new Map<ProductCategory, number>();
-
-  Object.values(ProductCategory)
-    .filter((v) => typeof v === "number")
-    .forEach((cat) => {
-      const categoryTotal = historical.reduce((sum, inv) => sum + (inv.category[cat as ProductCategory] || 0), 0);
-      categoryAverages.set(cat as ProductCategory, categoryTotal / historical.length);
-    });
 
   return Object.entries(current)
     .filter(([_, amount]) => amount > 0 || (categoryAverages.get(Number(_) as ProductCategory) || 0) > 0)

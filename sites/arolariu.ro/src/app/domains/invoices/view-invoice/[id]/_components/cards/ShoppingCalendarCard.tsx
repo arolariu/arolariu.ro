@@ -80,7 +80,7 @@ function getMonthCalendarData(invoice: Invoice): {
     .sort((a, b) => a - b);
   let totalGap = 0;
   for (let i = 1; i < shoppingDays.length; i++) {
-    totalGap += shoppingDays[i] - shoppingDays[i - 1];
+    totalGap += shoppingDays[i]! - shoppingDays[i - 1]!;
   }
   const avgDaysBetween = shoppingDays.length > 1 ? totalGap / (shoppingDays.length - 1) : 0;
 

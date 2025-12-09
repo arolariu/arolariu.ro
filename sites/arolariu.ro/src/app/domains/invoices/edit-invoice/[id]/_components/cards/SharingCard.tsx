@@ -63,7 +63,7 @@ type Props = {
  * @see {@link Invoice} - Invoice type with sharedWith array
  */
 export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Element {
-  const {open} = useDialog("INVOICE_SHARE", "edit", invoice);
+  const {open} = useDialog("EDIT_INVOICE__SHARE", "edit", invoice);
   const {userInformation} = useUserInformation();
 
   // Placeholder handlers for features not yet implemented

@@ -41,7 +41,7 @@ export default function ImageDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("INVOICE_IMAGE");
+  } = useDialog("EDIT_INVOICE__IMAGE");
 
   const image = payload as string;
 

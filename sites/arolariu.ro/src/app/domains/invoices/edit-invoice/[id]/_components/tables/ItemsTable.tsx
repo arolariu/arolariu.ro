@@ -69,7 +69,7 @@ const EMPTY_ITEM_ROW_KEYS = ["empty-item-row-1", "empty-item-row-2", "empty-item
  */
 export default function ItemsTable({invoice}: Readonly<Props>) {
   const locale = useLocale();
-  const {open} = useDialog("INVOICE_ITEMS", "edit", invoice);
+  const {open} = useDialog("EDIT_INVOICE__ITEMS", "edit", invoice);
 
   const totalAmount = invoice.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: invoice.items, initialPageSize: 5});

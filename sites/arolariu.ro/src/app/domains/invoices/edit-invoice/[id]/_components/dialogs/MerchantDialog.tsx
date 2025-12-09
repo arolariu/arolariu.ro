@@ -60,7 +60,7 @@ export default function MerchantDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("INVOICE_MERCHANT");
+  } = useDialog("EDIT_INVOICE__MERCHANT");
 
   const merchant = payload as Merchant;
 

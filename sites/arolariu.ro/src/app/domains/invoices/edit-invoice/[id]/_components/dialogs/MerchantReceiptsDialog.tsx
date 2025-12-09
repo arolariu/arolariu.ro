@@ -81,7 +81,7 @@ export default function MerchantReceiptsDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("INVOICE_MERCHANT_INVOICES");
+  } = useDialog("EDIT_INVOICE__MERCHANT_INVOICES");
   const merchant = payload as Merchant;
 
   const [searchQuery, setSearchQuery] = useState<string>("");

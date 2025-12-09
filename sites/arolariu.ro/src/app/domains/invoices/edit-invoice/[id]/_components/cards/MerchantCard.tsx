@@ -53,8 +53,8 @@ type Props = {
  * @see {@link Merchant} - Merchant type definition
  */
 export default function MerchantCard({merchant}: Readonly<Props>): React.JSX.Element {
-  const {open: openMerchantInfoDialog} = useDialog("INVOICE_MERCHANT", "view", merchant);
-  const {open: openMerchantReceiptsDialog} = useDialog("INVOICE_MERCHANT_INVOICES", "view", merchant);
+  const {open: openMerchantInfoDialog} = useDialog("EDIT_INVOICE__MERCHANT", "view", merchant);
+  const {open: openMerchantReceiptsDialog} = useDialog("EDIT_INVOICE__MERCHANT_INVOICES", "view", merchant);
 
   return (
     <Card className='group transition-shadow duration-300 hover:shadow-md'>

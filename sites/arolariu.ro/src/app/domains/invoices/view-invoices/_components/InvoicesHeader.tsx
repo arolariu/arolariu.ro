@@ -12,8 +12,8 @@ import {useDialog} from "../../_contexts/DialogContext";
  * @returns The rendered invoices header.
  */
 export default function InvoicesHeader(): React.JSX.Element {
-  const {open: openImportDialog} = useDialog("INVOICES_IMPORT");
-  const {open: openExportDialog} = useDialog("INVOICES_EXPORT");
+  const {open: openImportDialog} = useDialog("VIEW_INVOICES__IMPORT");
+  const {open: openExportDialog} = useDialog("VIEW_INVOICES__EXPORT");
 
   const handlePrintAction = useCallback(() => {
     globalThis.window.print();

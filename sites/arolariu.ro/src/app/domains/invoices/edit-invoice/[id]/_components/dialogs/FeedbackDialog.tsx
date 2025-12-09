@@ -67,7 +67,7 @@ export default function FeedbackDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("INVOICE_FEEDBACK");
+  } = useDialog("EDIT_INVOICE__FEEDBACK");
 
   const {invoice, merchant} = payload as {invoice: Invoice; merchant: Merchant};
   console.log(">>> FeedbackDialog", {invoice, merchant});
@@ -180,7 +180,7 @@ export default function FeedbackDialog(): React.JSX.Element {
             <h4 className='text-sm font-medium'>How would you rate the analytics?</h4>
             <div className='flex justify-center'>
               {[1, 2, 3, 4, 5].map((star) => (
-                <button
+                <Button
                   key={star}
                   type='button'
                   className='p-1'
@@ -191,7 +191,7 @@ export default function FeedbackDialog(): React.JSX.Element {
                   <TbStar
                     className={`h-8 w-8 ${star <= (hoveredRating || rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`}
                   />
-                </button>
+                </Button>
               ))}
             </div>
           </div>

@@ -8,6 +8,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Input,
   Tabs,
   TabsList,
   TabsTrigger,
@@ -25,7 +26,7 @@ import {useDialog} from "../../../_contexts/DialogContext";
 export default function ImportDialog(): React.JSX.Element {
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const {isOpen, open, close} = useDialog("INVOICES_IMPORT");
+  const {isOpen, open, close} = useDialog("VIEW_INVOICES__IMPORT");
   const [activeTab, setActiveTab] = useState<"csv" | "pdf" | "xlsx">("csv");
   const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle");
 
@@ -129,7 +130,7 @@ export default function ImportDialog(): React.JSX.Element {
           </TabsList>
 
           <div className='mt-4'>
-            <input
+            <Input
               type='file'
               ref={fileInputRef}
               onChange={handleFileInputChange}

@@ -260,7 +260,7 @@ export function generateTimelineFromInvoice(invoice: Invoice): TimelineEvent[] {
 export function getInitials(identifier: string): string {
   if (identifier.includes("@")) {
     const localPart = identifier.split("@")[0];
-    return localPart.substring(0, 2).toUpperCase();
+    return localPart!.substring(0, 2).toUpperCase();
   }
   return identifier.substring(0, 2).toUpperCase();
 }
@@ -273,7 +273,7 @@ export function getInitials(identifier: string): string {
 export function getDisplayName(identifier: string): string {
   if (identifier.includes("@")) {
     const localPart = identifier.split("@")[0];
-    return localPart.charAt(0).toUpperCase() + localPart.slice(1);
+    return localPart!.charAt(0).toUpperCase() + localPart!.slice(1);
   }
   return identifier;
 }

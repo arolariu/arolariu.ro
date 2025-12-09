@@ -29,7 +29,7 @@ export const VALID_METADATA_KEYS = [
 ];
 
 const AddDialog = () => {
-  const {isOpen, open, close} = useDialog("INVOICE_METADATA");
+  const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
   const [addedMetadata, setAddedMetadata] = useState<{key: string; value: string}>({
     key: "",
     value: "",
@@ -104,7 +104,7 @@ const AddDialog = () => {
 };
 
 const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
-  const {isOpen, open, close} = useDialog("INVOICE_METADATA");
+  const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
   const [editedMetadata, setEditedMetadata] = useState<Record<string, string>>(metadata);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,7 +169,7 @@ const UpdateDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
 };
 
 const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) => {
-  const {isOpen, open, close} = useDialog("INVOICE_METADATA");
+  const {isOpen, open, close} = useDialog("EDIT_INVOICE__METADATA");
 
   const handleDelete = useCallback(() => {
     // Delete the metadata
@@ -244,7 +244,7 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
 export default function MetadataDialog(): React.JSX.Element {
   const {
     currentDialog: {mode, payload},
-  } = useDialog("INVOICE_METADATA");
+  } = useDialog("EDIT_INVOICE__METADATA");
 
   const metadata = payload as Record<string, string>;
 
@@ -256,6 +256,6 @@ export default function MetadataDialog(): React.JSX.Element {
     case "edit":
       return <UpdateDialog metadata={metadata} />;
     default:
-      return false as unknown as React.JSX.Element;
+      return <></>;
   }
 }

@@ -61,9 +61,9 @@ type Props = {
  * @see {@link VALID_METADATA_KEYS} - Predefined metadata key definitions
  */
 export default function MetadataTab({metadata}: Readonly<Props>): React.JSX.Element {
-  const {open: openAddDialog} = useDialog("INVOICE_METADATA", "add");
-  const {open: openEditDialog} = useDialog("INVOICE_METADATA", "edit", metadata);
-  const {open: openDeleteDialog} = useDialog("INVOICE_METADATA", "delete", metadata);
+  const {open: openAddDialog} = useDialog("EDIT_INVOICE__METADATA", "add");
+  const {open: openEditDialog} = useDialog("EDIT_INVOICE__METADATA", "edit", metadata);
+  const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__METADATA", "delete", metadata);
 
   return (
     <motion.div

@@ -72,7 +72,7 @@ export default function ItemsDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("INVOICE_ITEMS");
+  } = useDialog("EDIT_INVOICE__ITEMS");
 
   const {items} = payload as Invoice;
 

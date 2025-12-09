@@ -70,7 +70,7 @@ export default function SharingDialog(): React.JSX.Element {
     isOpen,
     open,
     close,
-  } = useDialog("INVOICE_SHARE");
+  } = useDialog("EDIT_INVOICE__SHARE");
 
   const invoice = payload as Invoice;
   const shareUrl = `${globalThis.location.origin}/invoices/${invoice.id}`;

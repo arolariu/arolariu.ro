@@ -19,7 +19,6 @@ function detectSeasonalInsights(invoice: Invoice): Insight[] {
   const insights: Insight[] = [];
   const date = new Date(invoice.paymentInformation.transactionDate);
   const month = date.getMonth();
-  const currency = invoice.paymentInformation.currency;
 
   // Calculate category spending
   const categorySpending = invoice.items.reduce(

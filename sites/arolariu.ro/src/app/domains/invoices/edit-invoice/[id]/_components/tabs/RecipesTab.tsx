@@ -62,7 +62,7 @@ type Props = {
  * @see {@link usePaginationWithSearch} - Pagination hook
  */
 export default function RecipesTab({recipes}: Readonly<Props>): React.JSX.Element {
-  const {open: openAddDialog} = useDialog("INVOICE_RECIPE", "add");
+  const {open: openAddDialog} = useDialog("EDIT_INVOICE__RECIPE", "add");
 
   const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: recipes, initialPageSize: 4});
 

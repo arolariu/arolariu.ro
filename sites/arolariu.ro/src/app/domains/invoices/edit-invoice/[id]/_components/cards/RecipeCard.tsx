@@ -90,10 +90,10 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
     }
   };
 
-  const {open: openEditDialog} = useDialog("INVOICE_RECIPE", "edit", recipe);
-  const {open: openViewDialog} = useDialog("INVOICE_RECIPE", "view", recipe);
-  const {open: openDeleteDialog} = useDialog("INVOICE_RECIPE", "delete", recipe);
-  const {open: openShareDialog} = useDialog("INVOICE_RECIPE", "share", recipe);
+  const {open: openEditDialog} = useDialog("EDIT_INVOICE__RECIPE", "edit", recipe);
+  const {open: openViewDialog} = useDialog("EDIT_INVOICE__RECIPE", "view", recipe);
+  const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__RECIPE", "delete", recipe);
+  const {open: openShareDialog} = useDialog("EDIT_INVOICE__RECIPE", "share", recipe);
 
   return (
     <Card className='overflow-hidden transition-shadow duration-300 hover:shadow-md'>

@@ -39,7 +39,7 @@ import {TbClock, TbDisc, TbPlus, TbSparkles, TbToolsKitchen, TbToolsKitchen3, Tb
 import {useDialog} from "../../../../_contexts/DialogContext";
 
 const CreateDialog = () => {
-  const {isOpen, open, close} = useDialog("INVOICE_RECIPE");
+  const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
   const [recipe, setRecipe] = useState<Recipe>({
     name: "",
     description: "",
@@ -270,7 +270,7 @@ const CreateDialog = () => {
 };
 
 const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
-  const {isOpen, open, close} = useDialog("INVOICE_RECIPE");
+  const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   return (
     <Dialog
@@ -347,7 +347,7 @@ const ReadDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 };
 
 const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
-  const {isOpen, open, close} = useDialog("INVOICE_RECIPE");
+  const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   const [recipeDetails, setRecipeDetails] = useState<Recipe>(recipe);
 
@@ -569,7 +569,7 @@ const UpdateDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 };
 
 const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
-  const {isOpen, open, close} = useDialog("INVOICE_RECIPE");
+  const {isOpen, open, close} = useDialog("EDIT_INVOICE__RECIPE");
 
   const handleDelete = useCallback(() => {}, []);
 
@@ -647,7 +647,7 @@ const DeleteDialog = ({recipe}: Readonly<{recipe: Recipe}>) => {
 export default function RecipeDialog(): React.JSX.Element {
   const {
     currentDialog: {mode, payload},
-  } = useDialog("INVOICE_RECIPE");
+  } = useDialog("EDIT_INVOICE__RECIPE");
 
   const recipe = payload as Recipe;
 
@@ -661,6 +661,6 @@ export default function RecipeDialog(): React.JSX.Element {
     case "view":
       return <ReadDialog recipe={recipe} />;
     default:
-      return false as unknown as React.JSX.Element;
+      return <></>;
   }
 }

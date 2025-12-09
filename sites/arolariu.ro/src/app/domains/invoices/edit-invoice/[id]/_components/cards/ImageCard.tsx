@@ -38,7 +38,7 @@ type Props = {invoice: Invoice};
  */
 export default function ImageCard({invoice}: Readonly<Props>): React.JSX.Element {
   const photoLocation = invoice.scans[0]?.location ?? "https://dummyimage.com/600x900&text=placeholder+image";
-  const {open} = useDialog("INVOICE_IMAGE", "view", photoLocation);
+  const {open} = useDialog("EDIT_INVOICE__IMAGE", "view", photoLocation);
 
   return (
     <Card className='group overflow-hidden transition-shadow duration-300 hover:shadow-md'>

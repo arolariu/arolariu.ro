@@ -21,8 +21,8 @@ type Props = {invoice: Invoice};
  * @returns The rendered invoice table actions.
  */
 export default function InvoiceTableActions({invoice}: Readonly<Props>): React.JSX.Element {
-  const {open: openShareDialog} = useDialog("INVOICES_SHARE", "view", {invoice});
-  const {open: openDeleteDialog} = useDialog("INVOICES_DELETE", "delete", {invoice});
+  const {open: openShareDialog} = useDialog("VIEW_INVOICES__SHARE", "view", {invoice});
+  const {open: openDeleteDialog} = useDialog("VIEW_INVOICES__DELETE", "delete", {invoice});
 
   return (
     <DropdownMenu modal={false}>

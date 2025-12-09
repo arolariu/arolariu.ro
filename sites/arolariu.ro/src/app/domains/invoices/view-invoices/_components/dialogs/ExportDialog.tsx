@@ -34,7 +34,7 @@ export default function ExportDialog(): React.JSX.Element {
     includeProducts: false,
   });
 
-  const {isOpen, open, close} = useDialog("INVOICES_EXPORT");
+  const {isOpen, open, close} = useDialog("VIEW_INVOICES__EXPORT");
   const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
 
   const handleExport = useCallback(
