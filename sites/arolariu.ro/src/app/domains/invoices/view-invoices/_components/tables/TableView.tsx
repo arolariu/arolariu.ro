@@ -18,7 +18,7 @@ import {
 import Link from "next/link";
 import {useCallback, useState} from "react";
 import {TbArrowsUpDown, TbEye} from "react-icons/tb";
-import InvoiceTableActions from "./InvoiceTableActions";
+import TableViewActions from "./TableViewActions";
 
 type TableViewProps = {
   invoices: ReadonlyArray<Invoice> | Invoice[];
@@ -98,93 +98,97 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {invoices.map((invoice) => (
-          <TableRow key={invoice.id}>
-            <TableCell>
-              <Checkbox
-                checked={selectedInvoiceIds.includes(invoice.id)}
-                // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
-                onCheckedChange={() => handleSelectInvoice(invoice.id)}
-                aria-label={`Select invoice ${invoice.id}`}
-              />
-            </TableCell>
-            <TableCell>{invoice.name.length > 0 ? invoice.name : invoice.id}</TableCell>
-            <TableCell>
-              <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{InvoiceCategory[invoice.category]}</Badge>
-            </TableCell>
-            <TableCell>{new Date(invoice.createdAt).toUTCString()}</TableCell>
-            <TableCell>{invoice.paymentInformation?.totalCostAmount}</TableCell>
-            <TableCell className='relative text-right'>
-              <div className='flex justify-end gap-2'>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger
-                      asChild
-                      className='cursor-pointer hover:text-blue-500'>
-                      <Link
-                        target='_blank'
-                        href={`/domains/invoices/view-invoice/${invoice.id}`}
-                        className='h-8 w-8'>
-                        <TbEye className='mt-1.5 ml-1.5 h-5 w-5' />
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent>View Invoice</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <InvoiceTableActions invoice={invoice} />
+        {invoices
+          .toSorted((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .map((invoice) => (
+            <TableRow key={invoice.id}>
+              <TableCell>
+                <Checkbox
+                  checked={selectedInvoiceIds.includes(invoice.id)}
+                  // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
+                  onCheckedChange={() => handleSelectInvoice(invoice.id)}
+                  aria-label={`Select invoice ${invoice.id}`}
+                />
+              </TableCell>
+              <TableCell>{invoice.name.length > 0 ? invoice.name : invoice.id}</TableCell>
+              <TableCell>
+                <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{InvoiceCategory[invoice.category]}</Badge>
+              </TableCell>
+              <TableCell>{new Date(invoice.createdAt).toUTCString()}</TableCell>
+              <TableCell>{invoice.paymentInformation?.totalCostAmount}</TableCell>
+              <TableCell className='relative text-right'>
+                <div className='flex justify-end gap-2'>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger
+                        asChild
+                        className='cursor-pointer hover:text-blue-500'>
+                        <Link
+                          target='_blank'
+                          href={`/domains/invoices/view-invoice/${invoice.id}`}
+                          className='h-8 w-8'>
+                          <TbEye className='mt-1.5 ml-1.5 h-5 w-5' />
+                        </Link>
+                      </TooltipTrigger>
+                      <TooltipContent>View Invoice</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <TableViewActions invoice={invoice} />
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+      </TableBody>
+      {invoices.length >= 6 && (
+        <TableFooter>
+          <TableRow>
+            <TableCell colSpan={4}>
+              <div className='flex items-center gap-2'>
+                <span className='text-muted-foreground text-sm'>Rows per page:</span>
+                <select
+                  value={pageSize}
+                  // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                  aria-label='Rows per page'
+                  className='border-muted bg-background h-8 w-16 cursor-pointer rounded-md border p-1 text-sm'>
+                  {[5, 10, 20, 50, 100, 500, 1000].map((size) => (
+                    <option
+                      key={size}
+                      value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+                <span className='text-muted-foreground text-sm'>
+                  Page {currentPage} of {totalPages}
+                </span>
               </div>
             </TableCell>
+            <TableCell
+              colSpan={1}
+              className='justify-end'>
+              <Button
+                variant='outline'
+                className='h-full w-full cursor-pointer'
+                size='sm'
+                onClick={handlePrevPage}
+                disabled={invoices.length === 0}>
+                Previous Page
+              </Button>
+            </TableCell>
+            <TableCell>
+              <Button
+                variant='outline'
+                className='h-full w-full cursor-pointer'
+                size='sm'
+                onClick={handleNextPage}
+                disabled={invoices.length === 0}>
+                Next Page
+              </Button>
+            </TableCell>
           </TableRow>
-        ))}
-      </TableBody>
-      <TableFooter>
-        <TableRow>
-          <TableCell colSpan={4}>
-            <div className='flex items-center gap-2'>
-              <span className='text-muted-foreground text-sm'>Rows per page:</span>
-              <select
-                value={pageSize}
-                // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
-                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                aria-label='Rows per page'
-                className='border-muted bg-background h-8 w-16 cursor-pointer rounded-md border p-1 text-sm'>
-                {[5, 10, 20, 50, 100, 500, 1000].map((size) => (
-                  <option
-                    key={size}
-                    value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-              <span className='text-muted-foreground text-sm'>
-                Page {currentPage} of {totalPages}
-              </span>
-            </div>
-          </TableCell>
-          <TableCell
-            colSpan={1}
-            className='justify-end'>
-            <Button
-              variant='outline'
-              className='h-full w-full cursor-pointer'
-              size='sm'
-              onClick={handlePrevPage}
-              disabled={invoices.length === 0}>
-              Previous Page
-            </Button>
-          </TableCell>
-          <TableCell>
-            <Button
-              variant='outline'
-              className='h-full w-full cursor-pointer'
-              size='sm'
-              onClick={handleNextPage}
-              disabled={invoices.length === 0}>
-              Next Page
-            </Button>
-          </TableCell>
-        </TableRow>
-      </TableFooter>
+        </TableFooter>
+      )}
     </Table>
   );
 };

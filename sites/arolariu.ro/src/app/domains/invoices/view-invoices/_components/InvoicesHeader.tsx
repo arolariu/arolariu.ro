@@ -2,6 +2,7 @@
 
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
+import Link from "next/link";
 import {useCallback} from "react";
 import {TbDownload, TbPlus, TbPrinter, TbUpload} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
@@ -81,12 +82,14 @@ export default function InvoicesHeader(): React.JSX.Element {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                size='sm'
-                className='cursor-pointer gap-1'>
-                <TbPlus className='h-4 w-4' />
-                <span>New Invoice</span>
-              </Button>
+              <Link href={`/domains/invoices/create-invoice`}>
+                <Button
+                  size='sm'
+                  className='cursor-pointer gap-1'>
+                  <TbPlus className='h-4 w-4' />
+                  <span>New Invoice</span>
+                </Button>
+              </Link>
             </TooltipTrigger>
             <TooltipContent>Create a new invoice</TooltipContent>
           </Tooltip>

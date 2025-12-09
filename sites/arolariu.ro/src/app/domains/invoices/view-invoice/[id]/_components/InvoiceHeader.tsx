@@ -1,11 +1,18 @@
 "use client";
 
+import {useUserInformation} from "@/hooks";
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
-import {TbHeart, TbPencil, TbPrinter, TbShare2} from "react-icons/tb";
+import Link from "next/link";
+import * as React from "react";
+import {TbHeart, TbPencil, TbPrinter, TbTrash} from "react-icons/tb";
 import {useInvoiceContext} from "../_context/InvoiceContext";
 
 export function InvoiceHeader(): React.JSX.Element {
   const {invoice} = useInvoiceContext();
+  const {
+    userInformation: {userIdentifier},
+  } = useUserInformation();
+  const isOwner = invoice.userIdentifier === userIdentifier;
 
   return (
     <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
@@ -28,19 +35,25 @@ export function InvoiceHeader(): React.JSX.Element {
         <p className='text-muted-foreground font-mono text-sm'>ID: {invoice.id}</p>
       </div>
       <div className='flex flex-wrap gap-2'>
-        <Button asChild>
-          <a href='#'>
-            <TbPencil className='mr-2 h-4 w-4' />
-            Edit
-          </a>
-        </Button>
+        {Boolean(isOwner) && (
+          <React.Fragment>
+            <Link
+              href={`/domains/invoices/edit-invoice/${invoice.id}`}
+              className='flex'>
+              <Button>
+                <TbPencil className='mr-2 h-4 w-4' />
+                Edit
+              </Button>
+            </Link>
+            <Button variant='destructive'>
+              <TbTrash className='mr-2 h-4 w-4' />
+              Delete
+            </Button>
+          </React.Fragment>
+        )}
         <Button variant='outline'>
           <TbPrinter className='mr-2 h-4 w-4' />
           Print
-        </Button>
-        <Button variant='outline'>
-          <TbShare2 className='mr-2 h-4 w-4' />
-          Share
         </Button>
       </div>
     </div>
