@@ -1,348 +1,717 @@
 ---
-description: "DDD and .NET architecture guidelines"
+description: "DDD and .NET architecture guidelines following The Standard pattern"
 applyTo: '**/*.cs,**/*.csproj,**/Program.cs,**/appsettings.json'
 ---
 
-# DDD Systems & .NET Guidelines
+# Backend Architecture Guidelines
 
-You are an AI assistant specialized in Domain-Driven Design (DDD), SOLID principles, and .NET good practices for software Development. Follow these guidelines for building robust, maintainable systems.
+You are an AI assistant specialized in Domain-Driven Design (DDD), The Standard architecture pattern, SOLID principles, and .NET 10.0 development for the arolariu.ro backend API. Follow these guidelines for building robust, maintainable systems.
+
+---
 
 ## 📚 Essential Context
 
 **Before implementing any backend code, consult these resources:**
 
-1. **Backend RFCs**: Check `docs/rfc/` for backend-specific architectural decisions
-   - Backend RFCs are numbered **2000-2999**
-   - Review relevant RFCs for DDD patterns, architecture decisions, and best practices
-   - Examples: modular monolith architecture, bounded contexts, domain events
+| Resource | Location | Purpose |
+|----------|----------|---------|
+| RFC 2001 | `docs/rfc/2001-domain-driven-design-architecture.md` | DDD patterns, bounded contexts, aggregates |
+| RFC 2002 | `docs/rfc/2002-opentelemetry-backend-observability.md` | OpenTelemetry implementation |
+| RFC 2003 | `docs/rfc/2003-the-standard-implementation.md` | The Standard layered architecture |
+| RFC 2004 | `docs/rfc/2004-comprehensive-xml-documentation-standard.md` | XML documentation standards |
+| Backend Docs | `docs/backend/README.md` | Domain-specific implementation details |
 
-2. **Backend Documentation**: `docs/backend/README.md`
-   - Domain-specific implementation details
-   - Architecture decision records
-   - Integration patterns
+---
 
-3. **Main Copilot Instructions**: `.github/copilot-instructions.md`
-   - Monorepo structure and conventions
-   - Testing standards and quality requirements
-   - Overall project architecture
+## 🏗️ Technology Stack
 
-**Technology Stack:**
-- .NET 10.0 (LTS) - Use latest C# 13 features
-- Architecture: Modular Monolith with DDD
-- Testing: xUnit with 85%+ coverage requirement
-- Observability: OpenTelemetry integration
+| Category | Technology | Version |
+|----------|------------|---------|
+| **Framework** | .NET | 10.0 (net10.0) |
+| **Language** | C# | Latest (13+) |
+| **Architecture** | Modular Monolith | The Standard + DDD |
+| **Primary Database** | Azure Cosmos DB | EF Core Cosmos Provider |
+| **Auth Database** | Azure SQL Server | EF Core SQL Provider |
+| **Authentication** | ASP.NET Identity + JWT Bearer | - |
+| **Observability** | OpenTelemetry | 1.14.0+ |
+| **AI Services** | Azure OpenAI, Document Intelligence | - |
+| **Testing** | xUnit, MSTest, Moq | - |
 
-## MANDATORY THINKING PROCESS
+---
 
-**BEFORE any implementation, you MUST:**
+## 📁 Project Structure
 
-1.  **Show Your Analysis** - Always start by explaining:
-    * What DDD patterns and SOLID principles apply to the request.
-    * Which layer(s) will be affected (Domain/Application/Infrastructure).
-    * How the solution aligns with ubiquitous language.
-    * Security and compliance considerations.
-2.  **Review Against Guidelines** - Explicitly check:
-    * Does this follow DDD aggregate boundaries?
-    * Does the design adhere to the Single Responsibility Principle?
-    * Are domain rules encapsulated correctly?
-    * Will tests follow the `MethodName_Condition_ExpectedResult()` pattern?
-    * Are Coding domain considerations addressed?
-    * Is the ubiquitous language consistent?
-3.  **Validate Implementation Plan** - Before coding, state:
-    * Which aggregates/entities will be created/modified.
-    * What domain events will be published.
-    * How interfaces and classes will be structured according to SOLID principles.
-    * What tests will be needed and their naming.
+```
+sites/api.arolariu.ro/
+├── Directory.Build.props          # Central build configuration
+├── Directory.Packages.props       # Central package version management
+├── src/
+│   ├── Core/                      # Entry point & General Domain
+│   │   ├── Program.cs             # Application bootstrapper
+│   │   ├── appsettings.*.json     # Environment configuration
+│   │   └── Domain/General/
+│   │       ├── Extensions/        # WebApplicationBuilder/WebApplication extensions
+│   │       ├── Middlewares/       # SecurityHeadersMiddleware
+│   │       └── Services/          # SwaggerConfigurationService
+│   │
+│   ├── Common/                    # Shared Library
+│   │   ├── DDD/
+│   │   │   ├── Contracts/         # BaseEntity, NamedEntity, IAuditable
+│   │   │   └── ValueObjects/      # Shared value objects
+│   │   ├── Options/               # Configuration management
+│   │   ├── Services/              # KeyVaultService
+│   │   ├── Telemetry/             # OTel Logging, Metering, Tracing
+│   │   └── Validators/            # Shared validation logic
+│   │
+│   ├── Core.Auth/                 # Auth Bounded Context
+│   │   ├── Brokers/               # AuthDbContext
+│   │   ├── Endpoints/             # Auth API endpoints
+│   │   ├── Models/                # AuthenticatedUser
+│   │   └── Modules/               # DI extensions
+│   │
+│   └── Invoices/                  # Invoices Bounded Context
+│       ├── DDD/
+│       │   ├── AggregatorRoots/   # Invoice aggregate
+│       │   ├── Entities/          # Merchant entity
+│       │   └── ValueObjects/      # Product, Recipe, PaymentInfo, Allergen
+│       ├── Brokers/
+│       │   ├── DatabaseBroker/    # InvoiceNoSqlBroker (Cosmos)
+│       │   └── AnalysisBrokers/   # OpenAI, FormRecognizer, Translator
+│       ├── Services/
+│       │   ├── Foundation/        # CRUD + validation
+│       │   ├── Orchestration/     # Service coordination
+│       │   └── Processing/        # Complex transformations
+│       ├── Endpoints/             # REST API endpoints
+│       ├── DTOs/
+│       │   ├── Requests/          # Input DTOs
+│       │   └── Responses/         # Output DTOs
+│       ├── Modules/               # DI extensions
+│       └── Telemetry/             # Domain-specific tracing
+│
+└── tests/
+    ├── arolariu.Backend.Core.Tests/
+    │   ├── Common/                # Common library tests
+    │   ├── CoreAuth/              # Auth tests
+    │   └── Shared/                # Test utilities
+    └── arolariu.Backend.Domain.Tests/
+        ├── Builders/              # Test data builders
+        └── Invoices/              # Invoice domain tests
+```
 
-**If you cannot clearly explain these points, STOP and ask for clarification.**
+---
 
-## Core Principles
+## 🔄 The Standard Architecture
 
-### 1. **Domain-Driven Design (DDD)**
+The backend follows **The Standard** layered architecture (see RFC 2003):
 
-* **Ubiquitous Language**: Use consistent business terminology across code and documentation.
-* **Bounded Contexts**: Clear service boundaries with well-defined responsibilities.
-* **Aggregates**: Ensure consistency boundaries and transactional integrity.
-* **Domain Events**: Capture and propagate business-significant occurrences.
-* **Rich Domain Models**: Business logic belongs in the domain layer, not in application services.
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Endpoints (Exposers)                  │  ← REST API / Protocol Mapping
+└─────────────────────────────────────────────────────────┘
+                           ↓
+┌─────────────────────────────────────────────────────────┐
+│               Processing Services                        │  ← Complex transformations, batch ops
+└─────────────────────────────────────────────────────────┘
+                           ↓
+┌─────────────────────────────────────────────────────────┐
+│              Orchestration Services                      │  ← Service coordination
+└─────────────────────────────────────────────────────────┘
+                           ↓
+┌─────────────────────────────────────────────────────────┐
+│               Foundation Services                        │  ← CRUD + validation
+└─────────────────────────────────────────────────────────┘
+                           ↓
+┌─────────────────────────────────────────────────────────┐
+│                      Brokers                             │  ← External dependency abstraction
+└─────────────────────────────────────────────────────────┘
+```
 
-### 2. **SOLID Principles**
+### Layer Responsibilities
 
-* **Single Responsibility Principle (SRP)**: A class should have only one reason to change.
-* **Open/Closed Principle (OCP)**: Software entities should be open for extension but closed for modification.
-* **Liskov Substitution Principle (LSP)**: Subtypes must be substitutable for their base types.
-* **Interface Segregation Principle (ISP)**: No client should be forced to depend on methods it does not use.
-* **Dependency Inversion Principle (DIP)**: Depend on abstractions, not on concretions.
+| Layer | Purpose | Dependencies | Example |
+|-------|---------|--------------|---------|
+| **Brokers** | Thin abstractions over external dependencies (DB, APIs) | None | `IInvoiceNoSqlBroker` |
+| **Foundation** | CRUD operations + domain validation | 1-2 Brokers | `IInvoiceStorageFoundationService` |
+| **Orchestration** | Coordinate multiple foundation services | 2-3 Foundation services | `IInvoiceOrchestrationService` |
+| **Processing** | Heavy computation, batch operations, enrichment | 1-2 Orchestration services | `IInvoiceProcessingService` |
+| **Endpoints** | HTTP protocol mapping, request/response handling | 1 Processing service | Minimal API endpoints |
 
-### 3. **.NET Good Practices**
+### Florance Pattern
 
-* **Asynchronous Programming**: Use `async` and `await` for I/O-bound operations to ensure scalability.
-* **Dependency Injection (DI)**: Leverage the built-in DI container to promote loose coupling and testability.
-* **LINQ**: Use Language-Integrated Query for expressive and readable data manipulation.
-* **Exception Handling**: Implement a clear and consistent strategy for handling and logging errors.
-* **Modern C# Features**: Utilize modern language features (e.g., records, pattern matching) to write concise and robust code.
-
-### 4. **Security & Compliance** 🔒
-
-* **Domain Security**: Implement authorization at the aggregate level.
-* **Financial Regulations**: PCI-DSS, SOX compliance in domain rules.
-* **Audit Trails**: Domain events provide a complete audit history.
-* **Data Protection**: LGPD compliance in aggregate design.
-
-### 5. **Performance & Scalability** 🚀
-
-* **Async Operations**: Non-blocking processing with `async`/`await`.
-* **Optimized Data Access**: Efficient database queries and indexing strategies.
-* **Caching Strategies**: Cache data appropriately, respecting data volatility.
-* **Memory Efficiency**: Properly sized aggregates and value objects.
-
-## DDD & .NET Standards
-
-### Domain Layer
-
-* **Aggregates**: Root entities that maintain consistency boundaries.
-* **Value Objects**: Immutable objects representing domain concepts.
-* **Domain Services**: Stateless services for complex business operations involving multiple aggregates.
-* **Domain Events**: Capture business-significant state changes.
-* **Specifications**: Encapsulate complex business rules and queries.
-
-### Application Layer
-
-* **Application Services**: Orchestrate domain operations and coordinate with infrastructure.
-* **Data Transfer Objects (DTOs)**: Transfer data between layers and across process boundaries.
-* **Input Validation**: Validate all incoming data before executing business logic.
-* **Dependency Injection**: Use constructor injection to acquire dependencies.
-
-### Infrastructure Layer
-
-* **Repositories**: Aggregate persistence and retrieval using interfaces defined in the domain layer.
-* **Event Bus**: Publish and subscribe to domain events.
-* **Data Mappers / ORMs**: Map domain objects to database schemas.
-* **External Service Adapters**: Integrate with external systems.
-
-### Testing Standards
-
-* **Test Naming Convention**: Use `MethodName_Condition_ExpectedResult()` pattern.
-* **Unit Tests**: Focus on domain logic and business rules in isolation.
-* **Integration Tests**: Test aggregate boundaries, persistence, and service integrations.
-* **Acceptance Tests**: Validate complete user scenarios.
-* **Test Coverage**: Minimum 85% for domain and application layers.
-
-### Development Practices
-
-* **Event-First Design**: Model business processes as sequences of events.
-* **Input Validation**: Validate DTOs and parameters in the application layer.
-* **Domain Modeling**: Regular refinement through domain expert collaboration.
-* **Continuous Integration**: Automated testing of all layers.
-
-## Implementation Guidelines
-
-When implementing solutions, **ALWAYS follow this process**:
-
-### Step 1: Domain Analysis (REQUIRED)
-
-**You MUST explicitly state:**
-
-* Domain concepts involved and their relationships.
-* Aggregate boundaries and consistency requirements.
-* Ubiquitous language terms being used.
-* Business rules and invariants to enforce.
-
-### Step 2: Architecture Review (REQUIRED)
-
-**You MUST validate:**
-
-* How responsibilities are assigned to each layer.
-* Adherence to SOLID principles, especially SRP and DIP.
-* How domain events will be used for decoupling.
-* Security implications at the aggregate level.
-
-### Step 3: Implementation Planning (REQUIRED)
-
-**You MUST outline:**
-
-* Files to be created/modified with justification.
-* Test cases using `MethodName_Condition_ExpectedResult()` pattern.
-* Error handling and validation strategy.
-* Performance and scalability considerations.
-
-### Step 4: Implementation Execution
-
-1.  **Start with domain modeling and ubiquitous language.**
-2.  **Define aggregate boundaries and consistency rules.**
-3.  **Implement application services with proper input validation.**
-4.  **Adhere to .NET good practices like async programming and DI.**
-5.  **Add comprehensive tests following naming conventions.**
-6.  **Implement domain events for loose coupling where appropriate.**
-7.  **Document domain decisions and trade-offs.**
-
-### Step 5: Post-Implementation Review (REQUIRED)
-
-**You MUST verify:**
-
-* All quality checklist items are met.
-* Tests follow naming conventions and cover edge cases.
-* Domain rules are properly encapsulated.
-* Financial calculations maintain precision.
-* Security and compliance requirements are satisfied.
-
-## Testing Guidelines
-
-### Test Structure
+**Maximum 2-3 dependencies per service.** If more are needed, create an intermediate orchestration layer.
 
 ```csharp
-[Fact(DisplayName = "Descriptive test scenario")]
-public void MethodName_Condition_ExpectedResult()
+// ✅ Correct: 2 dependencies
+public class InvoiceStorageFoundationService(
+    IInvoiceNoSqlBroker invoiceNoSqlBroker,
+    ILoggingBroker loggingBroker)
+
+// ❌ Wrong: Too many dependencies
+public class InvoiceService(
+    IInvoiceNoSqlBroker broker1,
+    IMerchantBroker broker2,
+    IAnalysisBroker broker3,
+    ITranslatorBroker broker4,
+    ILoggingBroker broker5) // Violates Florance Pattern
+```
+
+---
+
+## 📐 DDD Patterns Implementation
+
+### Bounded Contexts
+
+| Context | Project | Responsibility |
+|---------|---------|---------------|
+| **General** | `arolariu.Backend.Core` | Infrastructure, middleware, cross-cutting concerns |
+| **Invoices** | `arolariu.Backend.Domain.Invoices` | Invoice lifecycle, merchants, AI analysis |
+| **Auth** | `arolariu.Backend.Core.Auth` | Authentication, authorization, identity |
+
+### Base Entity Contracts
+
+```csharp
+// From Common/DDD/Contracts/
+public abstract class BaseEntity<T> : IAuditable
 {
-    // Setup for the test
-    var aggregate = CreateTestAggregate();
-    var parameters = new TestParameters();
+    public abstract required T id { get; init; }
+    
+    // Audit properties
+    public DateTime CreatedAt { get; set; }
+    public string CreatedBy { get; set; }
+    public DateTime LastUpdatedAt { get; set; }
+    public string LastUpdatedBy { get; set; }
+    
+    // Lifecycle
+    public bool IsSoftDeleted { get; set; }
+    public bool IsImportant { get; set; }
+    public int NumberOfUpdates { get; set; }
+}
 
-    // Execution of the method under test
-    var result = aggregate.PerformAction(parameters);
-
-    // Verification of the outcome
-    Assert.NotNull(result);
-    Assert.Equal(expectedValue, result.Value);
+public abstract class NamedEntity<T> : BaseEntity<T>
+{
+    public string Name { get; set; }
+    public string Description { get; set; }
 }
 ```
 
-### Domain Test Categories
+### Aggregate Example
 
-* **Aggregate Tests**: Business rule validation and state changes.
-* **Value Object Tests**: Immutability and equality.
-* **Domain Service Tests**: Complex business operations.
-* **Event Tests**: Event publishing and handling.
-* **Application Service Tests**: Orchestration and input validation.
-
-### Test Validation Process (MANDATORY)
-
-**Before writing any test, you MUST:**
-
-1.  **Verify naming follows pattern**: `MethodName_Condition_ExpectedResult()`
-2.  **Confirm test category**: Which type of test (Unit/Integration/Acceptance).
-3.  **Check domain alignment**: Test validates actual business rules.
-4.  **Review edge cases**: Includes error scenarios and boundary conditions.
-
-## Quality Checklist
-
-**MANDATORY VERIFICATION PROCESS**: Before delivering any code, you MUST explicitly confirm each item:
-
-### Domain Design Validation
-
-* **Domain Model**: "I have verified that aggregates properly model business concepts."
-* **Ubiquitous Language**: "I have confirmed consistent terminology throughout the codebase."
-* **SOLID Principles Adherence**: "I have verified the design follows SOLID principles."
-* **Business Rules**: "I have validated that domain logic is encapsulated in aggregates."
-* **Event Handling**: "I have confirmed domain events are properly published and handled."
-
-### Implementation Quality Validation
-
-* **Test Coverage**: "I have written comprehensive tests following `MethodName_Condition_ExpectedResult()` naming."
-* **Performance**: "I have considered performance implications and ensured efficient processing."
-* **Security**: "I have implemented authorization at aggregate boundaries."
-* **Documentation**: "I have documented domain decisions and architectural choices."
-* **.NET Best Practices**: "I have followed .NET best practices for async, DI, and error handling."
-
-### Financial Domain Validation
-
-* **Monetary Precision**: "I have used `decimal` types and proper rounding for financial calculations."
-* **Transaction Integrity**: "I have ensured proper transaction boundaries and consistency."
-* **Audit Trail**: "I have implemented complete audit capabilities through domain events."
-* **Compliance**: "I have addressed PCI-DSS, SOX, and LGPD requirements."
-
-**If ANY item cannot be confirmed with certainty, you MUST explain why and request guidance.**
-
-### Monetary Values
-
-* Use `decimal` type for all monetary calculations.
-* Implement currency-aware value objects.
-* Handle rounding according to financial standards.
-* Maintain precision throughout calculation chains.
-
-### Transaction Processing
-
-* Implement proper saga patterns for distributed transactions.
-* Use domain events for eventual consistency.
-* Maintain strong consistency within aggregate boundaries.
-* Implement compensation patterns for rollback scenarios.
-
-### Audit and Compliance
-
-* Capture all financial operations as domain events.
-* Implement immutable audit trails.
-* Design aggregates to support regulatory reporting.
-* Maintain data lineage for compliance audits.
-
-### Financial Calculations
-
-* Encapsulate calculation logic in domain services.
-* Implement proper validation for financial rules.
-* Use specifications for complex business criteria.
-* Maintain calculation history for audit purposes.
-
-### Platform Integration
-
-* Use system standard DDD libraries and frameworks.
-* Implement proper bounded context integration.
-* Maintain backward compatibility in public contracts.
-* Use domain events for cross-context communication.
-
-### OpenTelemetry & Observability
-
-* Implement distributed tracing for cross-domain operations.
-* Use structured logging with proper context propagation.
-* Emit domain-specific metrics for business operations.
-* Follow semantic conventions for spans and attributes.
-* Reference RFC 2002 for observability patterns.
-
-### .NET 10 Modern Features
-
-* Use `required` keyword for required properties (C# 11+).
-* Leverage `file`-scoped types for internal implementations.
-* Use collection expressions `[item1, item2]` for readability (C# 12+).
-* Implement primary constructors for simple classes (C# 12+).
-* Use `nameof` for parameter validation and reflection.
-* Leverage pattern matching for complex conditionals.
-
-**Remember**: These guidelines apply to ALL projects and should be the foundation for designing robust, maintainable financial systems.
-
-## Quick Reference
-
-### Project Structure
-```
-sites/api.arolariu.ro/
-├── src/
-│   ├── Core/                    # Application entry point
-│   │   ├── Program.cs          # Bootstrap configuration
-│   │   └── Domain/General/     # Infrastructure domain
-│   ├── Core.Auth/              # Authentication bounded context
-│   └── Invoices/               # Business domain
-└── tests/                      # Test projects
+```csharp
+// Invoice Aggregate Root
+public sealed class Invoice : NamedEntity<Guid>
+{
+    public required override Guid id { get; init; }
+    public Guid UserIdentifier { get; set; }
+    public Merchant Merchant { get; set; }
+    public ICollection<Product> Items { get; set; }
+    public PaymentInformation PaymentInformation { get; set; }
+    
+    // Merge semantics for partial updates
+    public Invoice MergeWith(Invoice other) { ... }
+}
 ```
 
-### Common Commands
-- Build: `dotnet build`
-- Test: `dotnet test`
-- Run: `dotnet run --project sites/api.arolariu.ro/src/Core`
+### Value Objects
 
-### Key DDD Patterns (See Backend RFCs 2000-2999)
-- **Aggregate Pattern**: Transactional consistency boundaries
-- **Value Objects**: Immutable domain concepts
-- **Domain Events**: Business state change notifications
-- **Repository Pattern**: Data access abstraction
-- **CQRS**: Command-Query Responsibility Segregation (where applicable)
-- **Check `docs/rfc/` for detailed implementation guidance**
+Located in `{Domain}/DDD/ValueObjects/`:
 
-## CRITICAL REMINDERS
+- `Product` - Line item with quantity, price, category
+- `PaymentInformation` - Payment method, currency, totals
+- `Recipe` - Cooking instructions (AI-generated)
+- `Allergen` - Allergy information
+- `Merchant` - Store/vendor information
 
-**YOU MUST ALWAYS:**
+---
 
-* Show your thinking process before implementing.
-* Explicitly validate against these guidelines.
-* Use the mandatory verification statements.
-* Follow the `MethodName_Condition_ExpectedResult()` test naming pattern.
-* Confirm financial domain considerations are addressed.
-* Stop and ask for clarification if any guideline is unclear.
+## 🔧 Service Implementation Patterns
 
-**FAILURE TO FOLLOW THIS PROCESS IS UNACCEPTABLE** - The user expects rigorous adherence to these guidelines and code standards.
+### Service Interface Pattern
+
+```csharp
+// Foundation Service Interface
+public interface IInvoiceStorageFoundationService
+{
+    Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null);
+    Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null);
+    Task<Invoice> UpdateInvoiceObject(Invoice updatedInvoice, Guid invoiceIdentifier, Guid? userIdentifier = null);
+    Task DeleteInvoiceObject(Guid identifier, Guid? userIdentifier = null);
+}
+
+// Orchestration Service Interface
+public interface IInvoiceOrchestrationService
+{
+    Task AnalyzeInvoiceWithOptions(AnalysisOptions options, Guid invoiceIdentifier, Guid? userIdentifier = null);
+    Task<Invoice> CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null);
+}
+
+// Processing Service Interface
+public interface IInvoiceProcessingService
+{
+    Task AnalyzeInvoice(AnalysisOptions options, Guid identifier, Guid? userIdentifier = null);
+    Task CreateInvoice(Invoice invoice, Guid? userIdentifier = null);
+    Task<IEnumerable<Invoice>> ReadInvoices(Guid userIdentifier);
+    Task DeleteInvoices(Guid userIdentifier); // Batch operation
+}
+```
+
+### Partial Classes for Separation of Concerns
+
+```csharp
+// Main implementation
+InvoiceStorageFoundationService.cs
+
+// Exception handling
+InvoiceStorageFoundationService.Exceptions.cs
+
+// Validation logic
+InvoiceStorageFoundationService.Validations.cs
+```
+
+### TryCatch Pattern with Activity Tracing
+
+```csharp
+public async Task CreateInvoiceObject(Invoice invoice, Guid? userIdentifier = null) =>
+    await TryCatchAsync(async () =>
+    {
+        using var activity = InvoicePackageTracing.StartActivity(nameof(CreateInvoiceObject));
+        ValidateInvoiceInformationIsValid(invoice);
+        await invoiceNoSqlBroker.CreateInvoiceAsync(invoice).ConfigureAwait(false);
+    }).ConfigureAwait(false);
+```
+
+---
+
+## 🚀 Program.cs Bootstrap Pattern
+
+```csharp
+[ExcludeFromCodeCoverage]
+internal static class Program
+{
+    public static void Main(string[] args)
+    {
+        WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+        
+        // Phase 1: Builder configuration (services)
+        builder.AddGeneralDomainConfiguration();    // Cross-cutting concerns
+        builder.AddInvoicesDomainConfiguration();   // Invoices domain services
+        
+        WebApplication app = builder.Build();
+        
+        // Phase 2: Application configuration (middleware)
+        app.AddGeneralApplicationConfiguration();   // Pipeline setup
+        app.AddInvoiceDomainConfiguration();        // Endpoint mapping
+        
+        app.Run();
+    }
+}
+```
+
+### Extension Methods Pattern
+
+**Builder Extensions** (in `{Domain}/Extensions/` or `{Domain}/Modules/`):
+
+```csharp
+public static class InvoicesDomainExtensions
+{
+    public static WebApplicationBuilder AddInvoicesDomainConfiguration(
+        this WebApplicationBuilder builder)
+    {
+        // Register brokers
+        builder.Services.AddScoped<IInvoiceNoSqlBroker, InvoiceNoSqlBroker>();
+        
+        // Register foundation services
+        builder.Services.AddScoped<IInvoiceStorageFoundationService, InvoiceStorageFoundationService>();
+        
+        // Register orchestration services
+        builder.Services.AddScoped<IInvoiceOrchestrationService, InvoiceOrchestrationService>();
+        
+        // Register processing services
+        builder.Services.AddScoped<IInvoiceProcessingService, InvoiceProcessingService>();
+        
+        return builder;
+    }
+    
+    public static WebApplication AddInvoiceDomainConfiguration(this WebApplication app)
+    {
+        // Map endpoints
+        app.MapInvoiceEndpoints();
+        app.MapMerchantEndpoints();
+        
+        return app;
+    }
+}
+```
+
+---
+
+## 📝 Naming Conventions
+
+| Element | Convention | Example |
+|---------|------------|---------|
+| **Projects** | `arolariu.Backend.{Domain}` | `arolariu.Backend.Domain.Invoices` |
+| **Namespaces** | Match folder structure | `arolariu.Backend.Domain.Invoices.Services.Foundation` |
+| **Interfaces** | `I` prefix | `IInvoiceStorageFoundationService` |
+| **Services** | `{Entity}{Layer}Service` | `InvoiceOrchestrationService` |
+| **Brokers** | `{Provider}{Type}Broker` | `InvoiceNoSqlBroker`, `OpenAiAnalysisBroker` |
+| **Extensions** | `{Domain}Extensions` | `GeneralDomainExtensions` |
+| **DTOs** | `{Action}{Entity}Request/Response` | `CreateInvoiceRequest` |
+| **Exceptions** | `{Type}Exception` | `InvoiceValidationException` |
+
+### Business Language Mapping (The Standard)
+
+| Technical Term | Business Term |
+|----------------|---------------|
+| Insert | Add / Create |
+| Select | Retrieve / Read |
+| Update | Modify |
+| Delete | Remove |
+
+---
+
+## 🔒 Security Implementation
+
+### Authentication (JWT Bearer)
+
+```csharp
+services.AddAuthentication(authOptions =>
+{
+    authOptions.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    authOptions.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(jwtOptions =>
+{
+    jwtOptions.TokenValidationParameters = new()
+    {
+        ValidIssuer = authOptions["Issuer"],
+        ValidAudience = authOptions["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(...),
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+    };
+});
+```
+
+### Password Policy
+
+- Minimum **16 characters**
+- Requires: uppercase, lowercase, digit, non-alphanumeric
+- Lockout after **5 failed attempts** (5-minute window)
+
+### Security Headers Middleware
+
+All responses include:
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `X-XSS-Protection: 1; mode=block`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Content-Security-Policy` (production)
+- `Strict-Transport-Security` (production)
+
+---
+
+## 📊 Observability (OpenTelemetry)
+
+### Activity Sources
+
+```csharp
+public static class ActivityGenerators
+{
+    public static readonly ActivitySource CommonPackageTracing = new("arolariu.Backend.Common");
+    public static readonly ActivitySource CorePackageTracing = new("arolariu.Backend.Core");
+    public static readonly ActivitySource AuthPackageTracing = new("arolariu.Backend.Auth");
+    public static readonly ActivitySource InvoicePackageTracing = new("arolariu.Backend.Domain.Invoices");
+}
+```
+
+### Span Creation Pattern
+
+```csharp
+public async Task<Invoice> ReadInvoiceObject(Guid identifier, Guid? userIdentifier = null)
+{
+    using var activity = InvoicePackageTracing.StartActivity(nameof(ReadInvoiceObject));
+    activity?.SetTag("invoice.id", identifier.ToString());
+    activity?.SetTag("user.id", userIdentifier?.ToString() ?? "anonymous");
+    
+    // Implementation
+}
+```
+
+### Three Pillars
+
+| Pillar | Extension | Exporter |
+|--------|-----------|----------|
+| Logging | `LoggingExtensions.cs` | Azure Monitor + Console |
+| Tracing | `TracingExtensions.cs` | Azure Monitor |
+| Metrics | `MeteringExtensions.cs` | Azure Monitor |
+
+### Health Checks
+
+Endpoint: `/health`
+
+- Azure Key Vault connectivity
+- Azure Cosmos DB connectivity
+- Azure SQL Server connectivity
+- Azure Blob Storage connectivity
+
+---
+
+## 📖 XML Documentation Standard
+
+**All public APIs must have comprehensive XML documentation** (see RFC 2004):
+
+```csharp
+/// <summary>
+/// Represents the invoice aggregate root controlling line items, merchant linkage,
+/// and analysis metadata within the Invoices bounded context.
+/// </summary>
+/// <remarks>
+/// <para>
+/// This aggregate encapsulates the canonical mutable state of an invoice from
+/// initial photo upload through OCR analysis and item categorization.
+/// </para>
+/// <para><b>Soft Delete Lifecycle:</b> When soft-deleted at the storage layer,
+/// <c>IsSoftDeleted</c> is set to <c>true</c> rather than physically removing the row.</para>
+/// <para><b>Thread-safety:</b> Not thread-safe. Do not share instances across threads.</para>
+/// </remarks>
+/// <seealso cref="NamedEntity{T}"/>
+/// <seealso cref="Merchant"/>
+public sealed class Invoice : NamedEntity<Guid> { }
+```
+
+**Required Elements:**
+- `<summary>` - Brief description
+- `<remarks>` with `<para>` sections - Detailed explanation
+- `<param>` - Parameter descriptions
+- `<returns>` - Return value description
+- `<exception>` - Thrown exceptions
+- `<example>` - Usage examples (where applicable)
+- `<seealso>` - Related references
+
+---
+
+## 🧪 Testing Standards
+
+### Test Project Structure
+
+```
+tests/
+├── arolariu.Backend.Core.Tests/
+│   ├── Common/           # Common library tests
+│   ├── CoreAuth/         # Auth tests
+│   └── Shared/           # MocksContainer, test utilities
+└── arolariu.Backend.Domain.Tests/
+    ├── Builders/         # Test data builders
+    └── Invoices/
+        ├── Brokers/      # Broker tests
+        └── Services/
+            └── Orchestration/  # Service tests
+```
+
+### Test Naming Convention
+
+Pattern: `MethodName_Condition_ExpectedResult`
+
+```csharp
+[Fact]
+public void Constructor_NullAnalysisService_ThrowsArgumentNullException()
+{
+    // Arrange
+    IInvoiceAnalysisOrchestrationService? nullService = null;
+    
+    // Act & Assert
+    Assert.Throws<ArgumentNullException>(() => 
+        new InvoiceProcessingService(nullService!));
+}
+
+[Fact]
+public async Task AnalyzeInvoiceWithOptions_ValidInput_ExecutesCompleteWorkflow()
+{
+    // Arrange
+    var invoice = InvoiceBuilder.CreateRandomInvoice();
+    var options = new AnalysisOptions { PerformOcr = true };
+    
+    // Act
+    await _service.AnalyzeInvoiceWithOptions(options, invoice.id);
+    
+    // Assert
+    _mockBroker.Verify(b => b.AnalyzeAsync(It.IsAny<Invoice>()), Times.Once);
+}
+```
+
+### Test Data Builders
+
+```csharp
+// Builders/InvoiceBuilder.cs
+public static class InvoiceBuilder
+{
+    public static Invoice CreateRandomInvoice() => new()
+    {
+        id = Guid.CreateVersion7(),
+        UserIdentifier = Guid.NewGuid(),
+        Name = $"INV-{Random.Shared.Next(1000, 9999)}",
+        // ... additional properties
+    };
+}
+```
+
+### Frameworks Used
+
+| Package | Purpose |
+|---------|---------|
+| `xunit` | Primary test framework |
+| `MSTest` | Alternative framework |
+| `Moq` | Mocking |
+| `coverlet.collector` | Code coverage |
+| `Microsoft.EntityFrameworkCore.InMemory` | In-memory database testing |
+| `Microsoft.AspNetCore.Mvc.Testing` | Integration tests |
+
+---
+
+## ⚙️ Build Configuration
+
+### Central Package Management
+
+All package versions managed in `Directory.Packages.props`:
+
+```xml
+<!-- Individual .csproj files reference without version -->
+<PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" />
+```
+
+### Build Settings (`Directory.Build.props`)
+
+```xml
+<PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <WarningLevel>9999</WarningLevel>
+</PropertyGroup>
+```
+
+### AOT/Trimming Support
+
+| Project Type | IsTrimmable | IsAotCompatible |
+|--------------|-------------|-----------------|
+| Libraries | `True` | `True` |
+| Web Projects | `False` | `False` |
+| Test Projects | `False` | `False` |
+
+---
+
+## 🔑 Configuration & Secrets
+
+### Azure Key Vault Integration
+
+```csharp
+builder.Configuration.AddAzureKeyVault(
+    new Uri(keyVaultEndpoint),
+    new DefaultAzureCredential(),
+    new AzureKeyVaultConfigurationOptions
+    {
+        ReloadInterval = TimeSpan.FromMinutes(30)
+    });
+```
+
+### Environment Variables
+
+| Variable | Purpose |
+|----------|---------|
+| `AROLARIU_INFRASTRUCTURE` | Infrastructure mode (`azure`/`local`) |
+| `AZURE_CLIENT_ID` | Managed Identity client ID |
+| `ASPNETCORE_ENVIRONMENT` | Environment name |
+
+---
+
+## 💡 Modern C# Features to Use
+
+```csharp
+// required keyword for required properties
+public required Guid id { get; init; }
+
+// Primary constructors (C# 12+)
+public class InvoiceService(IInvoiceNoSqlBroker broker) : IInvoiceService
+{
+    public async Task<Invoice> Get(Guid id) => await broker.ReadAsync(id);
+}
+
+// Collection expressions (C# 12+)
+List<string> items = [item1, item2, item3];
+
+// Pattern matching
+var result = invoice.Status switch
+{
+    InvoiceStatus.Draft => ProcessDraft(invoice),
+    InvoiceStatus.Submitted => ProcessSubmitted(invoice),
+    _ => throw new InvalidOperationException()
+};
+
+// File-scoped types
+file class InternalHelper { }
+
+// ConfigureAwait(false) for library code
+await broker.ReadAsync(id).ConfigureAwait(false);
+```
+
+---
+
+## ✅ Implementation Checklist
+
+Before delivering any code, verify:
+
+### Architecture
+- [ ] Service follows The Standard layer hierarchy
+- [ ] Maximum 2-3 dependencies (Florance Pattern)
+- [ ] Interface-driven design (DIP)
+- [ ] Proper separation of concerns
+
+### DDD
+- [ ] Aggregates encapsulate business rules
+- [ ] Value objects are immutable
+- [ ] Ubiquitous language used consistently
+- [ ] Bounded context boundaries respected
+
+### Quality
+- [ ] XML documentation on all public APIs
+- [ ] Tests follow `MethodName_Condition_ExpectedResult` pattern
+- [ ] `ConfigureAwait(false)` used in library code
+- [ ] Activity tracing added for observability
+- [ ] No warnings (TreatWarningsAsErrors enabled)
+
+### Security
+- [ ] Input validation at service boundaries
+- [ ] Authorization checks implemented
+- [ ] Sensitive data not logged
+- [ ] Security headers configured
+
+---
+
+## 📋 Quick Reference Commands
+
+```powershell
+# Build
+dotnet build sites/api.arolariu.ro/src/Core
+
+# Test
+dotnet test sites/api.arolariu.ro/tests
+
+# Run
+dotnet run --project sites/api.arolariu.ro/src/Core
+
+# Watch
+dotnet watch --project sites/api.arolariu.ro/src/Core
+```
+
+---
+
+## 🔗 Related Resources
+
+- **RFC 2001**: Domain-Driven Design Architecture
+- **RFC 2002**: OpenTelemetry Backend Observability
+- **RFC 2003**: The Standard Implementation
+- **RFC 2004**: XML Documentation Standard
+- **The Standard**: https://github.com/hassanhabib/The-Standard

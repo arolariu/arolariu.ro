@@ -13,6 +13,12 @@ This prompt analyzes source code files for documentation comments, validates the
 - **TypeScript/React**: RFC 1002 (Comprehensive JSDoc/TSDoc Documentation Standard)
 - **C#/.NET**: RFC 2004 (Comprehensive XML Documentation Standard)
 
+**Reference Files:**
+- **Frontend Guide**: `/docs/frontend/jsdoc-guide.md`
+- **Backend Guide**: `/docs/backend/README.md`
+- **RFC 1002**: `/docs/rfc/1002-comprehensive-jsdoc-documentation-standard.md`
+- **RFC 2004**: `/docs/rfc/2004-comprehensive-xml-documentation-standard.md`
+
 ---
 
 ## Core Instructions
@@ -39,11 +45,28 @@ When invoked with source code files:
 
 ## Optional but Recommended
 
-- **@fileoverview** / **@module** - For complex module-level documentation
+- **@fileoverview** / **@module** - For file-level documentation (always include for new files)
 - **@see** - Cross-references to related code
 - **@throws** - For error conditions
 - **@template** - For generic type parameters
 - **@deprecated** - For deprecated code
+
+## File-Level Documentation (Required for New Files)
+
+```typescript
+/**
+ * @fileoverview Brief description of the file's purpose
+ * @module module/path
+ *
+ * @remarks
+ * Detailed explanation of:
+ * - What this module provides
+ * - Key exports and their purposes
+ * - Usage patterns
+ *
+ * @see {@link RelatedModule}
+ */
+```
 
 ## JSDoc Structure Template
 
@@ -182,6 +205,68 @@ export async function fetchInvoice(id: string, authToken: string): Promise<Invoi
 export function useInvoiceSelection(invoiceIds: string[]): SelectionState {
   // Implementation
 }
+```
+
+## Zustand Stores
+
+```typescript
+/**
+ * @fileoverview Zustand store for invoice state management with IndexedDB persistence.
+ * @module stores/invoicesStore
+ *
+ * @remarks
+ * **State Management Pattern**: Zustand with persist middleware.
+ *
+ * **Persistence**: Uses IndexedDB for client-side storage via custom storage adapter.
+ *
+ * **Key Features:**
+ * - CRUD operations for invoices
+ * - Selection state management
+ * - Filtering and sorting utilities
+ * - Hydration handling for SSR compatibility
+ *
+ * @see {@link useInvoice} - Hook for single invoice operations
+ * @see {@link useInvoices} - Hook for list operations
+ */
+
+import {create} from "zustand";
+import {persist} from "zustand/middleware";
+
+/**
+ * Invoice store state and actions interface.
+ *
+ * @remarks
+ * **Immutability**: All state updates create new references.
+ *
+ * **Selectors**: Use `useInvoicesStore.getState()` for non-reactive access.
+ */
+interface InvoicesStoreState {
+  /** All loaded invoices */
+  invoices: Invoice[];
+  /** Currently selected invoices for batch operations */
+  selectedInvoices: Invoice[];
+  /** Sets all invoices, replacing existing state */
+  setInvoices: (invoices: Invoice[]) => void;
+  /** Upserts a single invoice by ID */
+  upsertInvoice: (invoice: Invoice) => void;
+}
+
+export const useInvoicesStore = create<InvoicesStoreState>()(
+  persist(
+    (set) => ({
+      invoices: [],
+      selectedInvoices: [],
+      setInvoices: (invoices) => set({invoices}),
+      upsertInvoice: (invoice) =>
+        set((state) => ({
+          invoices: state.invoices.some((i) => i.id === invoice.id)
+            ? state.invoices.map((i) => (i.id === invoice.id ? invoice : i))
+            : [...state.invoices, invoice],
+        })),
+    }),
+    {name: "invoices-storage"}
+  )
+);
 ```
 
 ## Type Definitions
