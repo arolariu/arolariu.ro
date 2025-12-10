@@ -104,7 +104,7 @@ public sealed class Invoice : NamedEntity<Guid>
   /// <returns>A new <see cref="Invoice"/> instance with immutable identity and sentinel defaults.</returns>
   internal static Invoice Default() => new Invoice
   {
-    id = Guid.Empty,
+    id = Guid.NewGuid(),
     UserIdentifier = Guid.Empty,
   };
 

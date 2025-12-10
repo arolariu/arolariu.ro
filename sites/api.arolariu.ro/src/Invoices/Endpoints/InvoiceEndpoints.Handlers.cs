@@ -254,6 +254,13 @@ public static partial class InvoiceEndpoints
       }
 
       var updatedInvoiceEntity = invoicePayload.ToInvoice(id, potentialUserIdentifier);
+
+      // Preserve scans from the original invoice (scans are managed through dedicated endpoints)
+      foreach (var scan in possibleInvoice.Scans)
+      {
+        updatedInvoiceEntity.Scans.Add(scan);
+      }
+
       var updatedInvoice = await invoiceProcessingService
         .UpdateInvoice(updatedInvoiceEntity, id, potentialUserIdentifier)
         .ConfigureAwait(false);
@@ -792,7 +799,8 @@ public static partial class InvoiceEndpoints
         .CreateMerchant(merchant)
         .ConfigureAwait(false);
 
-      return TypedResults.Created(uri: $"/rest/v1/merchants/{merchant.id}", InvoiceDetailResponseDto.FromInvoice(possibleInvoice));
+      // Return MerchantResponseDto so the client can extract the merchant ID
+      return TypedResults.Created(uri: $"/rest/v1/merchants/{merchant.id}", MerchantResponseDto.FromMerchant(merchant));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1049,12 +1057,17 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
+      // URL-decode the scan location field to handle URL-encoded characters
+      var decodedScanLocation = Uri.UnescapeDataString(scanLocationField);
       var possibleScan = possibleInvoice.Scans
-         .FirstOrDefault(scan => scan.Location.ToString() == scanLocationField, InvoiceScan.Default());
+         .FirstOrDefault(scan => scan.Location.ToString() == decodedScanLocation, InvoiceScan.Default());
 
       if (InvoiceScan.NotDefault(possibleScan))
       {
         possibleInvoice.Scans.Remove(possibleScan);
+        await invoiceProcessingService
+          .UpdateInvoice(possibleInvoice, id, potentialUserIdentifier)
+          .ConfigureAwait(false);
         return TypedResults.NoContent();
       }
 
@@ -1349,9 +1362,9 @@ public static partial class InvoiceEndpoints
           .ReadMerchants(parentCompanyId)
           .ConfigureAwait(false);
 
-      return possibleMerchants is null || !possibleMerchants.Any()
-        ? TypedResults.NotFound()
-        : TypedResults.Ok(possibleMerchants.Select(MerchantResponseDto.FromMerchant));
+      // RESTful convention: return 200 with empty array for collection endpoints, not 404
+      var merchantDtos = possibleMerchants?.Select(MerchantResponseDto.FromMerchant) ?? [];
+      return TypedResults.Ok(merchantDtos);
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1466,7 +1479,7 @@ public static partial class InvoiceEndpoints
 
       var updatedMerchant = merchantPayload.ToMerchant(id);
       await invoiceProcessingService
-        .UpdateMerchant(updatedMerchant, id)
+        .UpdateMerchant(updatedMerchant, id, updatedMerchant.ParentCompanyId)
         .ConfigureAwait(false);
       return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(updatedMerchant));
     }
@@ -1615,9 +1628,8 @@ public static partial class InvoiceEndpoints
         }
       }
 
-      return listOfConcreteInvoices.Count == 0
-        ? TypedResults.NotFound()
-        : TypedResults.Ok(listOfConcreteInvoices.Select(InvoiceSummaryResponseDto.FromInvoice));
+      // RESTful convention: return 200 with empty array for collection endpoints, not 404
+      return TypedResults.Ok(listOfConcreteInvoices.Select(InvoiceSummaryResponseDto.FromInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1694,7 +1706,7 @@ public static partial class InvoiceEndpoints
       }
 
       await invoiceProcessingService
-        .UpdateMerchant(possibleMerchant, possibleMerchant.id)
+        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId)
         .ConfigureAwait(false);
 
       return TypedResults.Accepted($"/rest/v1/merchants/{id}", MerchantResponseDto.FromMerchant(possibleMerchant));
@@ -1776,7 +1788,7 @@ public static partial class InvoiceEndpoints
       }
 
       await invoiceProcessingService
-        .UpdateMerchant(possibleMerchant, possibleMerchant.id)
+        .UpdateMerchant(possibleMerchant, possibleMerchant.id, possibleMerchant.ParentCompanyId)
         .ConfigureAwait(false);
       return TypedResults.NoContent();
     }

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 
 /// <summary>
 /// Data transfer object for patching metadata on an invoice.
@@ -29,7 +30,29 @@ public readonly record struct PatchMetadataRequestDto(
     ArgumentNullException.ThrowIfNull(existingMetadata);
     foreach (var (key, value) in Entries)
     {
-      existingMetadata[key] = value;
+      // Convert JsonElement to native types for proper serialization
+      existingMetadata[key] = ConvertJsonElement(value);
     }
+  }
+
+  /// <summary>
+  /// Converts a JsonElement to its native .NET type.
+  /// </summary>
+  private static object ConvertJsonElement(object value)
+  {
+    if (value is not JsonElement jsonElement)
+    {
+      return value;
+    }
+
+    return jsonElement.ValueKind switch
+    {
+      JsonValueKind.String => jsonElement.GetString() ?? string.Empty,
+      JsonValueKind.Number => jsonElement.TryGetInt64(out var longValue) ? longValue : jsonElement.GetDouble(),
+      JsonValueKind.True => true,
+      JsonValueKind.False => false,
+      JsonValueKind.Null => null!,
+      _ => jsonElement.GetRawText()
+    };
   }
 }
