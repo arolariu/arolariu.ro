@@ -270,6 +270,7 @@ export function createSharedStorage<S>(options?: CreateSharedStorageOptions): Pe
     getItem: async (name: string): Promise<StorageValue<S> | null> => {
       try {
         const db = getDatabase();
+        /* v8 ignore next - Defensive guard for IndexedDB unavailability */
         if (!db) return null;
 
         const item = await db.transaction("r", db.shared, async () => {
@@ -287,6 +288,7 @@ export function createSharedStorage<S>(options?: CreateSharedStorageOptions): Pe
     setItem: async (name: string, value: StorageValue<S>): Promise<void> => {
       try {
         const db = getDatabase();
+        /* v8 ignore next - Defensive guard for IndexedDB unavailability */
         if (!db) return;
 
         await db.transaction("rw", db.shared, async () => {
@@ -303,6 +305,7 @@ export function createSharedStorage<S>(options?: CreateSharedStorageOptions): Pe
     removeItem: async (name: string): Promise<void> => {
       try {
         const db = getDatabase();
+        /* v8 ignore next - Defensive guard for IndexedDB unavailability */
         if (!db) return;
 
         await db.transaction("rw", db.shared, async () => {

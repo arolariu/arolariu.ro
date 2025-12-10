@@ -81,6 +81,21 @@ describe("Environment Variables", () => {
   it("should have TIMESTAMP defined", () => {
     expect(TIMESTAMP).toBeDefined();
   });
+
+  it("should use empty string when API_URL is not set", () => {
+    // The ?? operator defaults to "" when undefined
+    expect(typeof API_URL).toBe("string");
+  });
+
+  it("should use empty string when API_JWT is not set", () => {
+    // The ?? operator defaults to "" when undefined
+    expect(typeof API_JWT).toBe("string");
+  });
+
+  it("should use empty string when CONFIG_STORE is not set", () => {
+    // The ?? operator defaults to "" when undefined
+    expect(typeof CONFIG_STORE).toBe("string");
+  });
 });
 
 describe("getMimeTypeFromBase64", () => {

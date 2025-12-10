@@ -1,5 +1,7 @@
 import {v4, v5} from "uuid";
 
+/* v8 ignore start - Environment variables evaluated at module load time cannot be unit tested */
+
 /**
  * The environment in which the site is running.
  *
@@ -59,6 +61,8 @@ export const COMMIT_SHA = process.env["COMMIT_SHA"] ?? "";
  * **Format**: ISO 8601 date string.
  */
 export const TIMESTAMP = process.env["TIMESTAMP"] ?? "";
+
+/* v8 ignore stop */
 
 /**
  * Generates a UUID v4 (random) or v5 (namespaced) string.

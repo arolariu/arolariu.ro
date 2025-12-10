@@ -88,6 +88,11 @@ export default defineConfig({
         // Configuration files
         "**/*.config.{js,ts,mjs,mts}",
         "**/*.setup.{js,ts,mjs,mts}",
+
+        // Infrastructure files with module-level side effects
+        "**/telemetry.ts",
+        "**/instrumentation.ts",
+        "**/proxy.ts",
       ],
     },
   },

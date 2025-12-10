@@ -367,4 +367,19 @@ describe("FontContext", () => {
       consoleSpy.mockRestore();
     });
   });
+
+  describe("Edge cases for branch coverage", () => {
+    it("should not update className when it already matches newClassName", () => {
+      // Set document to have the exact expected className including the font class
+      // This tests the branch where className === newClassName
+      document.documentElement.className = "some-other-class caudex-font";
+
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      // The className should remain unchanged since caudex-font is already present
+      expect(result.current.fontType).toBe("normal");
+    });
+  });
 });

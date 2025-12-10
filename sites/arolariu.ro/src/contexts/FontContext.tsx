@@ -232,6 +232,7 @@ export function FontContextProvider({children}: Readonly<{children: React.ReactN
    * **Dependencies:** Re-runs when fontType changes.
    */
   useEffect(() => {
+    /* v8 ignore next 3 - SSR guard that cannot be tested in jsdom */
     if (typeof globalThis.document === "undefined") {
       return;
     }

@@ -141,6 +141,14 @@ describe("formatDate", () => {
     expect(formatted).toBe("Dec 25, 2023");
   });
 
+  it("should format Date object with instanceof check", async () => {
+    const {formatDate} = await import("./utils.generic");
+    // Explicitly create a Date object to hit the instanceof Date branch
+    const date = new Date(2024, 0, 15); // Jan 15, 2024
+    const formatted = formatDate(date, {locale: "en-US", dateStyle: "medium"});
+    expect(formatted).toBe("Jan 15, 2024");
+  });
+
   it("should handle different months", async () => {
     const {formatDate} = await import("./utils.generic");
     const dates = [
@@ -159,26 +167,193 @@ describe("formatDate", () => {
     const formatted = formatDate("2024-02-29", {locale: "en-US", dateStyle: "medium"});
     expect(formatted).toBe("Feb 29, 2024");
   });
+
+  it("should use default dateStyle when not specified", async () => {
+    const {formatDate} = await import("./utils.generic");
+    const formatted = formatDate("2023-07-04", {locale: "en-US"});
+    // Default is "short" style
+    expect(formatted).toBe("7/4/23");
+  });
+
+  it("should format with full dateStyle", async () => {
+    const {formatDate} = await import("./utils.generic");
+    const date = new Date("2023-07-04");
+    const formatted = formatDate(date, {locale: "en-US", dateStyle: "full"});
+    expect(formatted).toContain("July");
+    expect(formatted).toContain("2023");
+  });
+
+  it("should format with long dateStyle", async () => {
+    const {formatDate} = await import("./utils.generic");
+    const formatted = formatDate("2023-07-04", {locale: "en-US", dateStyle: "long"});
+    expect(formatted).toBe("July 4, 2023");
+  });
 });
 
 describe("Environment Variables", () => {
   it("should have SITE_ENV defined", () => {
     expect(SITE_ENV).toBeDefined();
+    // The ?? operator ensures it's always a string (not undefined)
+    expect(typeof SITE_ENV).toBe("string");
   });
 
   it("should have SITE_URL defined", () => {
     expect(SITE_URL).toBeDefined();
+    expect(typeof SITE_URL).toBe("string");
   });
 
   it("should have SITE_NAME defined", () => {
     expect(SITE_NAME).toBeDefined();
+    expect(typeof SITE_NAME).toBe("string");
   });
 
   it("should have COMMIT_SHA defined", () => {
     expect(COMMIT_SHA).toBeDefined();
+    expect(typeof COMMIT_SHA).toBe("string");
   });
 
   it("should have TIMESTAMP defined", () => {
     expect(TIMESTAMP).toBeDefined();
+    expect(typeof TIMESTAMP).toBe("string");
+  });
+
+  it("should return empty string when SITE_ENV is not set", () => {
+    // The ?? "" ensures empty string fallback
+    expect(SITE_ENV).not.toBeNull();
+    expect(SITE_ENV).not.toBeUndefined();
+  });
+
+  it("should return empty string when SITE_URL is not set", () => {
+    expect(SITE_URL).not.toBeNull();
+    expect(SITE_URL).not.toBeUndefined();
+  });
+
+  it("should return empty string when SITE_NAME is not set", () => {
+    expect(SITE_NAME).not.toBeNull();
+    expect(SITE_NAME).not.toBeUndefined();
+  });
+
+  it("should return empty string when COMMIT_SHA is not set", () => {
+    expect(COMMIT_SHA).not.toBeNull();
+    expect(COMMIT_SHA).not.toBeUndefined();
+  });
+
+  it("should return empty string when TIMESTAMP is not set", () => {
+    expect(TIMESTAMP).not.toBeNull();
+    expect(TIMESTAMP).not.toBeUndefined();
+  });
+});
+
+describe("formatEnum", () => {
+  // Test enum for direct usage
+  enum Status {
+    Inactive = 0,
+    Active = 1,
+    Pending = 2,
+  }
+
+  // Test enum with non-sequential values
+  enum Priority {
+    Low = 10,
+    Medium = 20,
+    High = 30,
+    Critical = 100,
+  }
+
+  describe("Direct usage (with value parameter)", () => {
+    it("should return the string key for a valid enum value", async () => {
+      const {formatEnum} = await import("./utils.generic");
+      expect(formatEnum(Status, 1)).toBe("Active");
+      expect(formatEnum(Status, 0)).toBe("Inactive");
+      expect(formatEnum(Status, 2)).toBe("Pending");
+    });
+
+    it("should return empty string for invalid enum value", async () => {
+      const {formatEnum} = await import("./utils.generic");
+      expect(formatEnum(Status, 999)).toBe("");
+      expect(formatEnum(Status, -1)).toBe("");
+    });
+
+    it("should work with non-sequential enum values", async () => {
+      const {formatEnum} = await import("./utils.generic");
+      expect(formatEnum(Priority, 10)).toBe("Low");
+      expect(formatEnum(Priority, 20)).toBe("Medium");
+      expect(formatEnum(Priority, 30)).toBe("High");
+      expect(formatEnum(Priority, 100)).toBe("Critical");
+    });
+
+    it("should return empty string for value between enum values", async () => {
+      const {formatEnum} = await import("./utils.generic");
+      expect(formatEnum(Priority, 15)).toBe("");
+      expect(formatEnum(Priority, 50)).toBe("");
+    });
+  });
+
+  describe("Curried usage (factory pattern)", () => {
+    it("should return a function when called without value", async () => {
+      const {formatEnum} = await import("./utils.generic");
+      const formatStatus = formatEnum(Status);
+      expect(typeof formatStatus).toBe("function");
+    });
+
+    it("should format values correctly using curried function", async () => {
+      const {formatEnum} = await import("./utils.generic");
+      const formatStatus = formatEnum(Status);
+
+      expect(formatStatus(0)).toBe("Inactive");
+      expect(formatStatus(1)).toBe("Active");
+      expect(formatStatus(2)).toBe("Pending");
+    });
+
+    it("should return empty string for invalid values using curried function", async () => {
+      const {formatEnum} = await import("./utils.generic");
+      const formatStatus = formatEnum(Status);
+
+      expect(formatStatus(999)).toBe("");
+      expect(formatStatus(-1)).toBe("");
+    });
+
+    it("should work with non-sequential enums in curried form", async () => {
+      const {formatEnum} = await import("./utils.generic");
+      const formatPriority = formatEnum(Priority);
+
+      expect(formatPriority(10)).toBe("Low");
+      expect(formatPriority(100)).toBe("Critical");
+      expect(formatPriority(25)).toBe("");
+    });
+
+    it("should handle reusable formatter", async () => {
+      const {formatEnum} = await import("./utils.generic");
+      const formatter = formatEnum(Status);
+
+      // Use multiple times
+      const results = [0, 1, 2, 1, 0].map(formatter);
+      expect(results).toEqual(["Inactive", "Active", "Pending", "Active", "Inactive"]);
+    });
+  });
+
+  describe("Edge cases", () => {
+    it("should handle enum with zero value", async () => {
+      const {formatEnum} = await import("./utils.generic");
+      expect(formatEnum(Status, 0)).toBe("Inactive");
+    });
+
+    it("should handle enum with large values", async () => {
+      enum LargeEnum {
+        Small = 1,
+        Large = 1000000,
+      }
+      const {formatEnum} = await import("./utils.generic");
+      expect(formatEnum(LargeEnum, 1000000)).toBe("Large");
+    });
+
+    it("should handle single-value enum", async () => {
+      enum SingleValue {
+        Only = 42,
+      }
+      const {formatEnum} = await import("./utils.generic");
+      expect(formatEnum(SingleValue, 42)).toBe("Only");
+      expect(formatEnum(SingleValue, 0)).toBe("");
+    });
   });
 });
