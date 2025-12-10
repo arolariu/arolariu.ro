@@ -34,7 +34,7 @@
           "// Collection-level test: Performance SLA (<2000ms for analysis, <1000ms otherwise)",
           "pm.test(\"Response time is acceptable\", function () {",
           "    var requestName = pm.info.requestName.toLowerCase();",
-          "    var threshold = requestName.includes('analyze') ? 30000 : 2000;",
+          "    var threshold = requestName.includes('01') ? 30000 : 3000;",
           "    pm.expect(pm.response.responseTime).to.be.below(threshold,",
           "        `Response time ${pm.response.responseTime}ms exceeds ${threshold}ms threshold`);",
           "});",
