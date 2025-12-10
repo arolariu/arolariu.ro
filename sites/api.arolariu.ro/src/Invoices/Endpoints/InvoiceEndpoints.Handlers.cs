@@ -1349,7 +1349,9 @@ public static partial class InvoiceEndpoints
           .ReadMerchants(parentCompanyId)
           .ConfigureAwait(false);
 
-      return possibleMerchants is null || !possibleMerchants.Any() ? TypedResults.NotFound() : TypedResults.Ok(possibleMerchants);
+      return possibleMerchants is null || !possibleMerchants.Any()
+        ? TypedResults.NotFound()
+        : TypedResults.Ok(possibleMerchants.Select(MerchantResponseDto.FromMerchant));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1402,7 +1404,9 @@ public static partial class InvoiceEndpoints
       var possibleMerchant = await invoiceProcessingService
         .ReadMerchant(id, parentCompanyId)
         .ConfigureAwait(false);
-      return possibleMerchant is null ? TypedResults.NotFound() : TypedResults.Ok(possibleMerchant);
+      return possibleMerchant is null
+        ? TypedResults.NotFound()
+        : TypedResults.Ok(MerchantResponseDto.FromMerchant(possibleMerchant));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1605,10 +1609,15 @@ public static partial class InvoiceEndpoints
         var possibleInvoice = await invoiceProcessingService
           .ReadInvoice(identifier)
           .ConfigureAwait(false);
-        listOfConcreteInvoices.Add(possibleInvoice);
+        if (possibleInvoice is not null)
+        {
+          listOfConcreteInvoices.Add(possibleInvoice);
+        }
       }
 
-      return listOfConcreteInvoices.Count == 0 ? TypedResults.NotFound() : TypedResults.Ok(listOfConcreteInvoices);
+      return listOfConcreteInvoices.Count == 0
+        ? TypedResults.NotFound()
+        : TypedResults.Ok(listOfConcreteInvoices.Select(InvoiceSummaryResponseDto.FromInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1827,7 +1836,7 @@ public static partial class InvoiceEndpoints
       }
 
       var listOfInvoices = possibleMerchant.ReferencedInvoices;
-      var listOfProducts = new List<Product>();
+      var listOfProducts = new List<ProductResponseDto>();
 
       foreach (var identifier in listOfInvoices)
       {
@@ -1839,7 +1848,7 @@ public static partial class InvoiceEndpoints
         {
           foreach (var product in potentialInvoice.Items)
           {
-            listOfProducts.Add(product);
+            listOfProducts.Add(ProductResponseDto.FromProduct(product));
           }
         }
       }
