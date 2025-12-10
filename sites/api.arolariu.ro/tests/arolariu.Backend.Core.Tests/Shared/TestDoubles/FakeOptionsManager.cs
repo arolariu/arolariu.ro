@@ -10,10 +10,7 @@ internal sealed class FakeOptionsManager : IOptionsManager
 {
   private readonly ApplicationOptions _options;
 
-  public FakeOptionsManager(ApplicationOptions options)
-  {
-    _options = options;
-  }
+  public FakeOptionsManager(ApplicationOptions options) => _options = options;
 
   public ApplicationOptions GetApplicationOptions() => _options;
 }

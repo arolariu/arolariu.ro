@@ -71,7 +71,7 @@ public partial class InvoiceNoSqlBroker
     var merchantList = new List<Merchant>();
 
     // We have the partition key for the merchant, so we can perform a targeted query.
-    var query = new QueryDefinition($"SELECT * FROM c WHERE c.parentCompanyId = @parentCompanyId")
+    var query = new QueryDefinition($"SELECT * FROM c WHERE c.ParentCompanyId = @parentCompanyId")
       .WithParameter("@parentCompanyId", parentCompanyId);
 
     var iterator = container.GetItemQueryIterator<Merchant>(query);

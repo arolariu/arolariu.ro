@@ -18,7 +18,7 @@ import type {InvoiceExportRequest} from "../_types/InvoiceExport";
  * // Exports the invoices to a JSON file.
  * ```
  */
-function exportToJson(invoices: Invoice[], options: InvoiceExportRequest): void {
+function exportToJson(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRequest): void {
   console.log(">>> jsonOptions:", options);
   const {includeMerchant, includeMetadata, includeProducts, jsonOptions} = options;
   const {prettyPrint} = jsonOptions ?? {};
@@ -62,7 +62,7 @@ function exportToJson(invoices: Invoice[], options: InvoiceExportRequest): void 
  * @param invoices The items to export to CSV format.
  * @param options The options for export such as delimiter symbol, column headers.
  */
-function exportToCsv(invoices: Invoice[], options: InvoiceExportRequest): void {
+function exportToCsv(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRequest): void {
   // TODO: impl of feature.
   console.log(">>> Exporting to CSV...", {invoices, options});
 }
@@ -72,7 +72,7 @@ function exportToCsv(invoices: Invoice[], options: InvoiceExportRequest): void {
  * @param invoices The items to export to PDF format.
  * @param options The options for export such as page size, orientation.
  */
-function exportToPdf(invoices: Invoice[], options: InvoiceExportRequest): void {
+function exportToPdf(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRequest): void {
   // TODO: impl of feature.
   console.log(">>> Exporting to PDF...", {invoices, options});
 }
@@ -82,7 +82,7 @@ function exportToPdf(invoices: Invoice[], options: InvoiceExportRequest): void {
  * @param invoices The items to export.
  * @param options The options for export.
  */
-export function exportInvoices(invoices: Invoice[], options: InvoiceExportRequest): void {
+export function exportInvoices(invoices: ReadonlyArray<Invoice>, options: InvoiceExportRequest): void {
   const {format} = options;
   switch (format) {
     case "json":

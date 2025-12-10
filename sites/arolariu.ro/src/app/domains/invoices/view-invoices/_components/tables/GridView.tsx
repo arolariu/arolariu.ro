@@ -18,7 +18,7 @@ import {motion} from "motion/react";
 import Image from "next/image";
 import {useCallback} from "react";
 import {TbCalendar, TbEye} from "react-icons/tb";
-import InvoiceTableActions from "./InvoiceTableActions";
+import TableViewActions from "./TableViewActions";
 
 type Props = Readonly<{
   invoices: ReadonlyArray<Invoice> | Invoice[];
@@ -94,7 +94,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
                     <TooltipContent>View Details</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <InvoiceTableActions invoice={invoice} />
+                <TableViewActions invoice={invoice} />
               </div>
               <CardDescription>{invoice.description}</CardDescription>
             </CardHeader>
@@ -102,7 +102,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
               <div className='flex items-center justify-between'>
                 <div className='text-muted-foreground flex items-center gap-1 text-sm'>
                   <TbCalendar className='h-3.5 w-3.5' />
-                  <span>{invoice.createdAt.toUTCString()}</span>
+                  <span>{new Date(invoice.createdAt).toUTCString()}</span>
                 </div>
                 <div className='text-lg font-medium'>TODO EURO</div>
               </div>

@@ -34,16 +34,18 @@ export default function ExportDialog(): React.JSX.Element {
     includeProducts: false,
   });
 
-  const {isOpen, open, close} = useDialog("INVOICES_EXPORT");
+  const {isOpen, open, close} = useDialog("VIEW_INVOICES__EXPORT");
   const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
+  const allInvoices = useInvoicesStore((state) => state.invoices);
+  const invoicesToExport = selectedInvoices.length > 0 ? selectedInvoices : allInvoices;
 
   const handleExport = useCallback(
     async (e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLButtonElement>) => {
       e.preventDefault();
       e.stopPropagation();
-      exportInvoices(selectedInvoices, exportOptions);
+      exportInvoices(invoicesToExport, exportOptions);
     },
-    [selectedInvoices, exportOptions],
+    [invoicesToExport, exportOptions],
   );
 
   const handleOptionsChange = useCallback((key: keyof InvoiceExportRequest, value: any) => {
@@ -58,7 +60,7 @@ export default function ExportDialog(): React.JSX.Element {
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
           <DialogTitle>Export Invoices</DialogTitle>
-          <DialogDescription>Export {selectedInvoices.length} invoices in your preferred format.</DialogDescription>
+          <DialogDescription>Export {invoicesToExport.length} invoices in your preferred format.</DialogDescription>
         </DialogHeader>
 
         <div className='space-y-4 py-4'>

@@ -8,7 +8,6 @@ using System.Text.Json.Serialization;
 using arolariu.Backend.Common.DDD.Contracts;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs;
 
 /// <summary>
 /// Represents the invoice aggregate root controlling line items, merchant linkage, payment details, scan data, AI enrichment artifacts (recipes, categorization)
@@ -105,7 +104,7 @@ public sealed class Invoice : NamedEntity<Guid>
   /// <returns>A new <see cref="Invoice"/> instance with immutable identity and sentinel defaults.</returns>
   internal static Invoice Default() => new Invoice
   {
-    id = Guid.Empty,
+    id = Guid.NewGuid(),
     UserIdentifier = Guid.Empty,
   };
 

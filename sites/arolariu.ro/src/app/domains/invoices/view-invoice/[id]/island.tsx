@@ -1,117 +1,99 @@
 "use client";
 
 import type {Invoice, Merchant} from "@/types/invoices";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
-import {motion, type Variants} from "motion/react";
-import {TbShoppingCart, TbToolsKitchen} from "react-icons/tb";
 import DialogContainer from "../../_contexts/DialogContainer";
 import {DialogProvider} from "../../_contexts/DialogContext";
-import {AnalyticsCard} from "./_components/cards/AnalyticsCard";
-import InvoiceCard from "./_components/cards/InvoiceCard";
-import InvoiceHeader from "./_components/InvoiceHeader";
-import SidebarSection from "./_components/sidebar/SidebarSection";
-import MetadataTab from "./_components/tabs/MetadataTab";
-import RecipesTab from "./_components/tabs/RecipesTab";
+import {BudgetImpactCard} from "./_components/cards/BudgetImpactCard";
+import {CategoryInsightsCardContainer} from "./_components/cards/insights/CategoryInsightsCardContainer";
+import {InvoiceDetailsCard} from "./_components/cards/InvoiceDetailsCard";
+import {MerchantInfoCard} from "./_components/cards/MerchantInfoCard";
+import {QuickActionsCard} from "./_components/cards/QuickActionsCard";
+import {ReceiptImageCard} from "./_components/cards/ReceiptImageCard";
+import {SeasonalInsightsCard} from "./_components/cards/SeasonalInsightsCard";
+import {ShoppingCalendarCard} from "./_components/cards/ShoppingCalendarCard";
+import {InvoiceAnalytics} from "./_components/InvoiceAnalytics";
+import {InvoiceHeader} from "./_components/InvoiceHeader";
+import {InvoiceTabs} from "./_components/tabs/InvoiceTabs";
+import {InvoiceTimeline} from "./_components/timeline/InvoiceTimeline";
+import {InvoiceContextProvider} from "./_context/InvoiceContext";
 
 type Props = Readonly<{
   readonly invoice: Invoice;
   readonly merchant: Merchant;
 }>;
 
-/**
- * This function renders the view invoice page.
- * @returns The JSX for the view invoice page.
- */
 export default function RenderViewInvoiceScreen(props: Readonly<Props>): React.JSX.Element {
   const {invoice, merchant} = props;
 
-  const containerVariants: Variants = {
-    hidden: {opacity: 0},
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants: Variants = {
-    hidden: {y: 20, opacity: 0},
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {type: "spring", stiffness: 300, damping: 24},
-    },
-  };
-
   return (
-    <DialogProvider>
-      <section className='container mx-auto py-12'>
-        {/* Header */}
-        <InvoiceHeader invoice={invoice} />
+    <InvoiceContextProvider
+      invoice={invoice}
+      merchant={merchant}>
+      <DialogProvider>
+        <div className='animate-in fade-in container mx-auto px-4 py-8 duration-500 sm:py-12'>
+          {/* Header */}
+          <div className='animate-in slide-in-from-bottom-4 mb-8 duration-500'>
+            <InvoiceHeader />
+          </div>
 
-        <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
-          <motion.div
-            variants={containerVariants}
-            initial='hidden'
-            animate='visible'
-            className='space-y-6 md:col-span-2'>
-            <InvoiceCard
-              invoice={invoice}
-              merchant={merchant}
-            />
+          <div className='grid grid-cols-1 gap-6 lg:grid-cols-12'>
+            {/* Left Column - Timeline (hidden on mobile, shown on lg+) */}
+            <div className='hidden space-y-6 lg:col-span-3 lg:block'>
+              <div className='animate-in slide-in-from-left-4 sticky top-6 delay-100 duration-500'>
+                <InvoiceTimeline />
+              </div>
+            </div>
 
-            {/* Tabs for Recipes and Metadata */}
-            <motion.div variants={itemVariants}>
-              <Tabs defaultValue='recipes'>
-                <TabsList className='grid w-full grid-cols-2'>
-                  <TabsTrigger
-                    value='recipes'
-                    className='cursor-pointer'>
-                    <TbToolsKitchen className='mr-2 h-4 w-4' />
-                    Possible Recipes
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value='metadata'
-                    className='cursor-pointer'>
-                    <TbShoppingCart className='mr-2 h-4 w-4' />
-                    Additional Info
-                  </TabsTrigger>
-                </TabsList>
+            {/* Main Content - Center Column */}
+            <div className='space-y-6 lg:col-span-6'>
+              <div className='animate-in slide-in-from-bottom-4 delay-100 duration-500'>
+                <InvoiceDetailsCard />
+              </div>
 
-                <TabsContent
-                  value='recipes'
-                  className='mt-4'>
-                  <RecipesTab recipes={invoice.possibleRecipes} />
-                </TabsContent>
+              <div className='animate-in slide-in-from-bottom-4 delay-150 duration-500'>
+                <CategoryInsightsCardContainer />
+              </div>
 
-                <TabsContent
-                  value='metadata'
-                  className='mt-4'>
-                  <MetadataTab metadata={invoice.additionalMetadata} />
-                </TabsContent>
-              </Tabs>
-            </motion.div>
+              <div className='animate-in slide-in-from-bottom-4 delay-200 duration-500'>
+                <InvoiceTabs />
+              </div>
 
-            {/* Expanded Statistics Card */}
-            <motion.div variants={itemVariants}>
-              <AnalyticsCard
-                invoice={invoice}
-                merchant={merchant}
-              />
-            </motion.div>
-          </motion.div>
+              {/* Timeline on mobile/tablet (shown below main content) */}
+              <div className='animate-in slide-in-from-bottom-4 delay-250 duration-500 lg:hidden'>
+                <InvoiceTimeline />
+              </div>
+            </div>
 
-          {/* Right column - Sidebar */}
-          <motion.div variants={itemVariants}>
-            <SidebarSection
-              invoice={invoice}
-              merchant={merchant}
-            />
-          </motion.div>
+            {/* Sidebar - Right Column */}
+            <div className='space-y-6 lg:col-span-3'>
+              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-100 duration-500'>
+                <ReceiptImageCard />
+              </div>
+              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-150 duration-500'>
+                <ShoppingCalendarCard />
+              </div>
+              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-200 duration-500'>
+                <BudgetImpactCard />
+              </div>
+              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-250 duration-500'>
+                <SeasonalInsightsCard />
+              </div>
+              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-300 duration-500'>
+                <MerchantInfoCard />
+              </div>
+              <div className='animate-in slide-in-from-right-4 lg:animate-in lg:slide-in-from-bottom-4 delay-350 duration-500'>
+                <QuickActionsCard />
+              </div>
+            </div>
+          </div>
+
+          {/* Analytics Section */}
+          <div className='border-border mt-8 border-t pt-8 sm:mt-12 sm:pt-12'>
+            <InvoiceAnalytics />
+          </div>
         </div>
-      </section>
-      <DialogContainer />
-    </DialogProvider>
+        <DialogContainer />
+      </DialogProvider>
+    </InvoiceContextProvider>
   );
 }

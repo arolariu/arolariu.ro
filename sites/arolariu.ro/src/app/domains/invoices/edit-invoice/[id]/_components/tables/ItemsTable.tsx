@@ -1,0 +1,205 @@
+"use client";
+
+import {usePaginationWithSearch} from "@/hooks";
+import {formatCurrency} from "@/lib/utils.generic";
+import {Invoice} from "@/types/invoices";
+import {
+  Button,
+  Table,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@arolariu/components";
+import {motion} from "motion/react";
+import {useLocale} from "next-intl";
+import {useCallback} from "react";
+import {TbEdit} from "react-icons/tb";
+import {useDialog} from "../../../../_contexts/DialogContext";
+
+type Props = {
+  invoice: Invoice;
+};
+
+// Stable keys for rendering placeholder rows (avoid using array index as key)
+const EMPTY_ITEM_ROW_KEYS = ["empty-item-row-1", "empty-item-row-2", "empty-item-row-3", "empty-item-row-4", "empty-item-row-5"] as const;
+
+/**
+ * Displays a paginated table of invoice items with editing capabilities.
+ *
+ * @remarks
+ * **Rendering Context**: Client Component (`"use client"` directive).
+ *
+ * **Table Display**:
+ * - **Columns**: Item name, Quantity (with unit), Unit Price, Line Total
+ * - **Footer**: Aggregated total amount for all items
+ * - **Pagination**: Client-side with 5 items per page, Previous/Next controls
+ * - **Empty Rows**: Placeholder rows maintain consistent table height
+ *
+ * **Editing Capabilities**:
+ * - **Edit Items Button**: Opens `ItemsDialog` for bulk item editing
+ * - Dialog allows add, modify, and delete operations on line items
+ *
+ * **Animation**: Each row animates in with staggered vertical slide via
+ * Framer Motion for smooth table population.
+ *
+ * **Performance**: Uses `useCallback` for memoized pagination handlers.
+ * Stable keys (`EMPTY_ITEM_ROW_KEYS`) prevent React reconciliation issues.
+ *
+ * **Domain Context**: Core component of the `InvoiceCard`, providing the
+ * primary interface for viewing and editing invoice line items.
+ *
+ * @param props - Component properties containing the invoice with items array
+ * @returns Client-rendered table with paginated items and edit controls
+ *
+ * @example
+ * ```tsx
+ * <ItemsTable invoice={invoice} />
+ * // Displays: Paginated table with item rows and Edit Items button
+ * ```
+ *
+ * @see {@link ItemsDialog} - Dialog for editing invoice items
+ * @see {@link usePaginationWithSearch} - Pagination hook
+ * @see {@link Invoice} - Invoice type with items array
+ */
+export default function ItemsTable({invoice}: Readonly<Props>) {
+  const locale = useLocale();
+  const {open} = useDialog("EDIT_INVOICE__ITEMS", "edit", invoice);
+
+  const totalAmount = invoice.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const {paginatedItems, currentPage, setCurrentPage, totalPages} = usePaginationWithSearch({items: invoice.items, initialPageSize: 5});
+
+  const handleNextPage = useCallback(() => {
+    const nextPage = currentPage + 1;
+    if (nextPage <= totalPages) {
+      setCurrentPage(nextPage);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, totalPages]);
+
+  const handlePreviousPage = useCallback(() => {
+    const previousPage = currentPage - 1;
+    if (previousPage >= 1) {
+      setCurrentPage(previousPage);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
+
+  return (
+    <div>
+      <div className='mb-2 flex items-center justify-between'>
+        <h3 className='text-sm font-medium'>Items</h3>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={open}
+                className='h-8 cursor-pointer'>
+                <TbEdit className='mr-1 h-3.5 w-3.5' />
+                Edit Items
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Edit invoice items and quantities</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+      <div className='overflow-hidden rounded-md border'>
+        <Table className='divide-border min-w-full divide-y'>
+          <TableHeader>
+            <TableRow className='bg-muted/50'>
+              <TableHead className='text-muted-foreground px-4 py-3 text-left text-xs font-medium tracking-wider uppercase'>Item</TableHead>
+              <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>Qty</TableHead>
+              <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
+                Price
+              </TableHead>
+              <TableHead className='text-muted-foreground px-4 py-3 text-right text-xs font-medium tracking-wider uppercase'>
+                Total
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className='divide-border bg-popover divide-y'>
+            {paginatedItems.map((item, index) => (
+              <motion.tr
+                key={item.rawName}
+                initial={{opacity: 0, y: -20}}
+                animate={{opacity: 1, y: 0}}
+                transition={{delay: index * 0.05}}
+                className='hover:bg-muted/50'>
+                <td className='px-4 py-3 text-sm whitespace-nowrap'>{item.rawName}</td>
+                <td className='px-4 py-3 text-right text-sm whitespace-nowrap'>
+                  {item.quantity} {item.quantityUnit}
+                </td>
+                <td className='px-4 py-3 text-right text-sm whitespace-nowrap'>
+                  {formatCurrency(item.price, {currencyCode: invoice.paymentInformation.currency.code, locale})}
+                </td>
+                <td className='px-4 py-3 text-right text-sm font-medium whitespace-nowrap'>
+                  {formatCurrency(item.price * item.quantity, {currencyCode: invoice.paymentInformation.currency.code, locale})}
+                </td>
+              </motion.tr>
+            ))}
+            {EMPTY_ITEM_ROW_KEYS.slice(0, Math.max(0, 5 - paginatedItems.length)).map((key, index) => (
+              <motion.tr
+                key={key}
+                initial={{opacity: 0, x: 0}}
+                animate={{opacity: 1, x: 0}}
+                transition={{delay: index * 0.05}}
+                className='h-12'>
+                <td className='px-4 py-3 text-sm whitespace-nowrap' />
+                <td className='px-4 py-3 text-right text-sm whitespace-nowrap' />
+                <td className='px-4 py-3 text-right text-sm whitespace-nowrap' />
+                <td className='px-4 py-3 text-right text-sm whitespace-nowrap' />
+              </motion.tr>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow className='bg-muted/50'>
+              <TableHead
+                colSpan={3}
+                className='px-4 py-3 text-right text-sm font-medium'>
+                Total
+              </TableHead>
+              <TableHead className='px-4 py-3 text-right text-sm font-medium'>
+                {formatCurrency(totalAmount, {currencyCode: invoice.paymentInformation.currency.code, locale})}
+              </TableHead>
+            </TableRow>
+          </TableFooter>
+        </Table>
+
+        {/* Pagination controls*/}
+        <div className='bg-popover flex items-center justify-between border-t p-4'>
+          <div className='text-muted-foreground text-sm'>
+            {invoice.items.length} {invoice.items.length === 1 ? "item" : "items"} in total
+          </div>
+          <div className='flex items-center gap-2'>
+            <Button
+              variant='outline'
+              className='cursor-pointer'
+              size='sm'
+              onClick={handlePreviousPage}>
+              Previous
+            </Button>
+            <span className='text-sm font-medium'>
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant='outline'
+              className='cursor-pointer'
+              size='sm'
+              onClick={handleNextPage}>
+              Next
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

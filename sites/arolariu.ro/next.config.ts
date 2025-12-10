@@ -53,10 +53,10 @@ const nextConfig: NextConfig = {
   images: {
     qualities: [50, 75, 100],
     remotePatterns: [
-      new URL("https://cdn.arolariu.ro"), // CDN assets.
+      {protocol: "https", hostname: "qtcy47sacc.blob.core.windows.net"}, // Azure Blob Storage for user uploads.
+      {protocol: "https", hostname: "cdn.arolariu.ro"}, // CDN assets.
       {protocol: "https", hostname: "**.clerk.com"}, // Clerk - auth-as-a-service assets.
       {protocol: "https", hostname: "**.accounts.dev"}, // Clerk - auth-as-a-service assets.
-      new URL("https://arolariustorage.blob.core.windows.net"), // External assets.
       {protocol: "https", hostname: "**.googleusercontent.com"}, // External assets.
       {protocol: "https", hostname: "**.githubusercontent.com"}, // External assets.
       ...(isDebugBuild
@@ -180,7 +180,7 @@ const withTranslation = createNextIntlPlugin({
   },
 });
 
-console.log(">>> ⚙️ Image patterns: \n\t", nextConfig.images?.remotePatterns?.map((pattern) => pattern?.hostname).join(", \n\t"));
+console.log(">>> ⚙️ Image patterns:\n\t", nextConfig.images?.remotePatterns?.map((pattern) => pattern?.hostname).join(",\n\t"));
 
 const finalConfig = withBundleAnalyzer(withTranslation(nextConfig));
 export default finalConfig;

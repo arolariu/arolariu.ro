@@ -25,6 +25,8 @@ interface InvoicesPersistedState {
 interface InvoicesState extends InvoicesPersistedState {
   /** Currently selected invoices (in-memory only, not persisted) */
   selectedInvoices: Invoice[];
+  /** Indicates whether the store has been hydrated from IndexedDB */
+  hasHydrated: boolean;
 }
 
 /**
@@ -78,6 +80,12 @@ interface InvoicesActions {
    * Clears all invoices from the store
    */
   clearInvoices: () => void;
+
+  /**
+   * Sets the hydration status
+   * @param hasHydrated Whether the store has been hydrated
+   */
+  setHasHydrated: (hasHydrated: boolean) => void;
 }
 
 /**
@@ -106,6 +114,9 @@ const persistConfig = {
   partialize: (state: InvoicesStore): InvoicesPersistedState => ({
     invoices: [...state.invoices],
   }),
+  onRehydrateStorage: () => (state: InvoicesStore | undefined) => {
+    state?.setHasHydrated(true);
+  },
 } as const;
 
 /**
@@ -117,6 +128,7 @@ const createInvoicesSlice = (
   // State
   invoices: [],
   selectedInvoices: [],
+  hasHydrated: false,
 
   // Actions
   setInvoices: (invoices) => set({invoices}),
@@ -159,6 +171,8 @@ const createInvoicesSlice = (
   clearSelectedInvoices: () => set({selectedInvoices: []}),
 
   clearInvoices: () => set({invoices: [], selectedInvoices: []}),
+
+  setHasHydrated: (hasHydrated) => set({hasHydrated}),
 });
 
 /**

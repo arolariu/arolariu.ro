@@ -32,7 +32,7 @@ describe("MerchantBuilder", () => {
       expect(merchant).toHaveProperty("isSoftDeleted");
       expect(merchant).toHaveProperty("category");
       expect(merchant).toHaveProperty("address");
-      expect(merchant).toHaveProperty("phoneNumber");
+      expect(merchant.address).toHaveProperty("phoneNumber");
       expect(merchant).toHaveProperty("parentCompanyId");
     });
   });
@@ -53,7 +53,7 @@ describe("MerchantBuilder", () => {
     it("should set address", () => {
       const builder = new MerchantBuilder();
       const merchant = builder.withAddress("123 Custom Street").build();
-      expect(merchant.address).toBe("123 Custom Street");
+      expect(merchant.address.address).toBe("123 Custom Street");
     });
 
     it("should set category", () => {
@@ -65,7 +65,7 @@ describe("MerchantBuilder", () => {
     it("should set phoneNumber", () => {
       const builder = new MerchantBuilder();
       const merchant = builder.withPhoneNumber("+40123456789").build();
-      expect(merchant.phoneNumber).toBe("+40123456789");
+      expect(merchant.address.phoneNumber).toBe("+40123456789");
     });
 
     it("should set parentCompanyId", () => {
@@ -187,9 +187,9 @@ describe("MerchantBuilder", () => {
       expect(merchant.id).toBe("chain-id");
       expect(merchant.name).toBe("Chain Merchant");
       expect(merchant.description).toBe("Chain merchant description");
-      expect(merchant.address).toBe("Chain Address");
+      expect(merchant.address.address).toBe("Chain Address");
       expect(merchant.category).toBe(MerchantCategory.ONLINE_SHOP);
-      expect(merchant.phoneNumber).toBe("+40123456789");
+      expect(merchant.address.phoneNumber).toBe("+40123456789");
       expect(merchant.parentCompanyId).toBe("parent-chain-123");
       expect(merchant.isImportant).toBe(true);
       expect(merchant.isSoftDeleted).toBe(false);
@@ -278,14 +278,14 @@ describe("MerchantBuilder", () => {
       const merchant = new MerchantBuilder().withName("").withAddress("").withDescription("").build();
 
       expect(merchant.name).toBe("");
-      expect(merchant.address).toBe("");
+      expect(merchant.address.address).toBe("");
       expect(merchant.description).toBe("");
     });
 
     it("should handle empty phone number", () => {
       const merchant = new MerchantBuilder().withPhoneNumber("").build();
 
-      expect(merchant.phoneNumber).toBe("");
+      expect(merchant.address.phoneNumber).toBe("");
     });
 
     it("should handle very old dates", () => {

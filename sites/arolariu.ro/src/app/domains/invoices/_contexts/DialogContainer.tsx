@@ -1,14 +1,16 @@
 "use client";
 
-import InvoiceFeedbackDialog from "../view-invoice/[id]/_components/dialogs/FeedbackDialog";
-import InvoiceImageDialog from "../view-invoice/[id]/_components/dialogs/ImageDialog";
-import InvoiceItemsDialog from "../view-invoice/[id]/_components/dialogs/ItemsDialog";
-import InvoiceMerchantDialog from "../view-invoice/[id]/_components/dialogs/MerchantDialog";
-import InvoiceMerchantReceiptsDialog from "../view-invoice/[id]/_components/dialogs/MerchantReceiptsDialog";
-import InvoiceMetadataDialog from "../view-invoice/[id]/_components/dialogs/MetadataDialog";
-import InvoiceRecipeDialog from "../view-invoice/[id]/_components/dialogs/RecipeDialog";
-import InvoiceShareAnalyticsDialog from "../view-invoice/[id]/_components/dialogs/ShareAnalytics";
-import InvoiceSharingDialog from "../view-invoice/[id]/_components/dialogs/SharingDialog";
+import DeleteInvoiceDialog from "../_dialogs/DeleteInvoiceDialog";
+import AnalyzeDialog from "../edit-invoice/[id]/_components/dialogs/AnalyzeDialog";
+import InvoiceFeedbackDialog from "../edit-invoice/[id]/_components/dialogs/FeedbackDialog";
+import InvoiceImageDialog from "../edit-invoice/[id]/_components/dialogs/ImageDialog";
+import InvoiceItemsDialog from "../edit-invoice/[id]/_components/dialogs/ItemsDialog";
+import InvoiceMerchantDialog from "../edit-invoice/[id]/_components/dialogs/MerchantDialog";
+import InvoiceMerchantReceiptsDialog from "../edit-invoice/[id]/_components/dialogs/MerchantReceiptsDialog";
+import InvoiceMetadataDialog from "../edit-invoice/[id]/_components/dialogs/MetadataDialog";
+import InvoiceRecipeDialog from "../edit-invoice/[id]/_components/dialogs/RecipeDialog";
+import InvoiceSharingDialog from "../edit-invoice/[id]/_components/dialogs/SharingDialog";
+import ShareAnalyticsDialog from "../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog";
 import InvoicesExportDialog from "../view-invoices/_components/dialogs/ExportDialog";
 import InvoicesImportDialog from "../view-invoices/_components/dialogs/ImportDialog";
 import InvoicesInvoiceShareDialog from "../view-invoices/_components/dialogs/ShareDialog";
@@ -19,37 +21,44 @@ import {useDialogs} from "./DialogContext";
  * related to invoices, merchants, recipes, and metadata.
  * @returns The DialogContainer component, CSR'ed.
  */
-export default function DialogContainer(): React.JSX.Element | null {
+export default function DialogContainer(): React.JSX.Element {
   const {
     currentDialog: {type},
   } = useDialogs();
 
   switch (type) {
-    case "INVOICE_ITEMS":
+    // edit-invoice/[id] Dialogs
+    case "EDIT_INVOICE__ANALYSIS":
+      return <AnalyzeDialog />;
+    case "EDIT_INVOICE__ITEMS":
       return <InvoiceItemsDialog />;
-    case "shareAnalytics":
-      return <InvoiceShareAnalyticsDialog />;
-    case "INVOICE_FEEDBACK":
+    case "EDIT_INVOICE__FEEDBACK":
       return <InvoiceFeedbackDialog />;
-    case "INVOICE_MERCHANT":
+    case "EDIT_INVOICE__MERCHANT":
       return <InvoiceMerchantDialog />;
-    case "INVOICE_MERCHANT_INVOICES":
+    case "EDIT_INVOICE__MERCHANT_INVOICES":
       return <InvoiceMerchantReceiptsDialog />;
-    case "INVOICE_METADATA":
+    case "EDIT_INVOICE__METADATA":
       return <InvoiceMetadataDialog />;
-    case "INVOICE_IMAGE":
+    case "EDIT_INVOICE__IMAGE":
       return <InvoiceImageDialog />;
-    case "INVOICE_RECIPE":
+    case "EDIT_INVOICE__RECIPE":
       return <InvoiceRecipeDialog />;
-    case "INVOICE_SHARE":
+    case "EDIT_INVOICE__SHARE":
       return <InvoiceSharingDialog />;
-    case "INVOICES_SHARE":
+    case "EDIT_INVOICE__DELETE":
+      return <DeleteInvoiceDialog />;
+    // view-invoice/[id] Dialogs
+    case "VIEW_INVOICE__SHARE_ANALYTICS":
+      return <ShareAnalyticsDialog />;
+    // view-invoices Dialogs
+    case "VIEW_INVOICES__SHARE":
       return <InvoicesInvoiceShareDialog />;
-    case "INVOICES_IMPORT":
+    case "VIEW_INVOICES__IMPORT":
       return <InvoicesImportDialog />;
-    case "INVOICES_EXPORT":
+    case "VIEW_INVOICES__EXPORT":
       return <InvoicesExportDialog />;
     default:
-      return null as never;
+      return <></>;
   }
 }

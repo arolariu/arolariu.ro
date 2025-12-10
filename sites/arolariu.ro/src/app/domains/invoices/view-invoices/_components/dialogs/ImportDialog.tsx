@@ -13,50 +13,47 @@ import {
   TabsTrigger,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
-import {useCallback, useRef, useState} from "react";
+import {useCallback, useMemo, useState} from "react";
+import {useDropzone, type Accept} from "react-dropzone";
 import {TbAlertCircle, TbCheck, TbFile, TbFileSpreadsheet, TbFileText, TbFileTypePdf, TbUpload} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
 
+/** Supported file format types for invoice import. */
+type ImportFileFormat = "csv" | "pdf" | "xlsx";
+
+/** Accepted file types configuration for each tab. */
+const ACCEPT_TYPES: Record<ImportFileFormat, Accept> = {
+  csv: {"text/csv": [".csv"]},
+  pdf: {"application/pdf": [".pdf"]},
+  xlsx: {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"], "application/vnd.ms-excel": [".xls"]},
+};
+
 /**
  * The ImportDialog component allows users to import invoice files in various formats.
- * It includes drag-and-drop functionality and displays the status of the import process.
+ * It includes drag-and-drop functionality using react-dropzone and displays the status of the import process.
  * @returns The ImportDialog component, CSR'ed.
  */
 export default function ImportDialog(): React.JSX.Element {
   const [files, setFiles] = useState<File[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const {isOpen, open, close} = useDialog("INVOICES_IMPORT");
-  const [activeTab, setActiveTab] = useState<"csv" | "pdf" | "xlsx">("csv");
+  const {isOpen, open, close} = useDialog("VIEW_INVOICES__IMPORT");
+  const [activeTab, setActiveTab] = useState<ImportFileFormat>("csv");
   const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle");
 
-  const handleFileInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files.length > 0) {
-        const selectedFiles = [...e.target.files];
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) {
+      setFiles((prev) => [...prev, ...acceptedFiles]);
+      setUploadStatus("idle");
+    }
+  }, []);
 
-        // Filter files based on active tab
-        const filteredFiles = selectedFiles.filter((file) => {
-          const extension = file.name.split(".").pop()?.toLowerCase();
-          switch (activeTab) {
-            case "csv":
-              return extension === "csv";
-            case "pdf":
-              return extension === "pdf";
-            case "xlsx":
-              return extension === "xlsx" || extension === "xls";
-            default:
-              return false;
-          }
-        });
+  const acceptConfig = useMemo(() => ACCEPT_TYPES[activeTab], [activeTab]);
 
-        if (filteredFiles.length > 0) {
-          setFiles((prev) => [...prev, ...filteredFiles]);
-          setUploadStatus("idle");
-        }
-      }
-    },
-    [activeTab],
-  );
+  const {getRootProps, getInputProps, isDragActive} = useDropzone({
+    onDrop,
+    accept: acceptConfig,
+    multiple: true,
+    maxSize: 10 * 1024 * 1024, // 10MB
+  });
 
   const removeFile = useCallback((index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
@@ -92,7 +89,12 @@ export default function ImportDialog(): React.JSX.Element {
     }
   };
 
-  const handleTabChange = useCallback((value: string) => setActiveTab(value as "csv" | "pdf" | "xlsx"), []);
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTab(value as ImportFileFormat);
+    // Clear files when switching tabs since file types differ
+    setFiles([]);
+    setUploadStatus("idle");
+  }, []);
 
   const handleRemoveClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -128,25 +130,29 @@ export default function ImportDialog(): React.JSX.Element {
             <TabsTrigger value='xlsx'>Excel</TabsTrigger>
           </TabsList>
 
-          <div className='mt-4'>
+          <div
+            className={`mt-4 cursor-pointer rounded-lg border-2 border-dashed p-6 transition-all duration-200 ${
+              isDragActive ? "border-primary bg-primary/10" : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50"
+            }`}
+            // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading props for accessibility
+            {...getRootProps()}>
             <input
-              type='file'
-              ref={fileInputRef}
-              onChange={handleFileInputChange}
-              className='hidden'
-              accept='.pdf,.csv,.xlsx,.xls'
-              multiple
+              // eslint-disable-next-line react/jsx-props-no-spreading -- react-dropzone requires spreading input props for proper file upload functionality
+              {...getInputProps()}
             />
             <div className='flex flex-col items-center justify-center space-y-2 text-center'>
-              <div className='bg-primary/10 rounded-full p-3'>
+              <motion.div
+                className='bg-primary/10 rounded-full p-3'
+                animate={isDragActive ? {scale: 1.1} : {scale: 1}}
+                transition={{duration: 0.2}}>
                 <TbUpload className='text-primary h-6 w-6' />
-              </div>
-              <h3 className='font-medium'>Drag & drop files here</h3>
+              </motion.div>
+              <h3 className='font-medium'>{isDragActive ? "Drop files here..." : "Drag & drop files here"}</h3>
               <p className='text-muted-foreground text-sm'>or click to browse files</p>
               <p className='text-muted-foreground text-xs'>
-                {activeTab === "csv" && "Accepts .csv files"}
-                {activeTab === "pdf" && "Accepts .pdf files"}
-                {activeTab === "xlsx" && "Accepts .xlsx and .xls files"}
+                {activeTab === "csv" && "Accepts .csv files (max 10MB)"}
+                {activeTab === "pdf" && "Accepts .pdf files (max 10MB)"}
+                {activeTab === "xlsx" && "Accepts .xlsx and .xls files (max 10MB)"}
               </p>
             </div>
           </div>

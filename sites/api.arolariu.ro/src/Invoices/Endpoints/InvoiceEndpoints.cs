@@ -27,12 +27,15 @@ using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 [ExcludeFromCodeCoverage]
 public static partial class InvoiceEndpoints
 {
-#pragma warning disable CA1823 // Avoid unused private fields
-#pragma warning disable IDE0051 // Remove unused private members
-  private const string SemanticVersioning = "3.0.0";
-  private const string EndpointNameTag = "Invoices Management System v" + SemanticVersioning;
-#pragma warning restore IDE0051 // Remove unused private members
-#pragma warning restore CA1823 // Avoid unused private fields
+  /// <summary>
+  /// The semantic version of the Invoice Management API surface.
+  /// </summary>
+  private const string SemanticVersioning = "1.0.0";
+
+  /// <summary>
+  /// The OpenAPI tag name for Invoice Management endpoints.
+  /// </summary>
+  private const string EndpointNameTag = "Invoice Management System v" + SemanticVersioning;
 
   /// <summary>
   /// Registers all invoice, invoice analysis and merchant endpoint groups into the application's routing pipeline.

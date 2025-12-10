@@ -2,6 +2,8 @@
 
 import {Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
+import Link from "next/link";
+import {useCallback} from "react";
 import {TbDownload, TbPlus, TbPrinter, TbUpload} from "react-icons/tb";
 import {useDialog} from "../../_contexts/DialogContext";
 
@@ -11,8 +13,12 @@ import {useDialog} from "../../_contexts/DialogContext";
  * @returns The rendered invoices header.
  */
 export default function InvoicesHeader(): React.JSX.Element {
-  const {open: openImportDialog} = useDialog("INVOICES_IMPORT");
-  const {open: openExportDialog} = useDialog("INVOICES_EXPORT");
+  const {open: openImportDialog} = useDialog("VIEW_INVOICES__IMPORT");
+  const {open: openExportDialog} = useDialog("VIEW_INVOICES__EXPORT");
+
+  const handlePrintAction = useCallback(() => {
+    globalThis.window.print();
+  }, []);
 
   return (
     <motion.article
@@ -64,8 +70,7 @@ export default function InvoicesHeader(): React.JSX.Element {
                 variant='outline'
                 size='sm'
                 className='cursor-pointer gap-1'
-                // eslint-disable-next-line react/jsx-handler-names -- not applicable.
-                onClick={globalThis.window.print}>
+                onClick={handlePrintAction}>
                 <TbPrinter className='h-4 w-4' />
                 <span className='hidden sm:inline'>Print</span>
               </Button>
@@ -77,12 +82,14 @@ export default function InvoicesHeader(): React.JSX.Element {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                size='sm'
-                className='cursor-pointer gap-1'>
-                <TbPlus className='h-4 w-4' />
-                <span>New Invoice</span>
-              </Button>
+              <Link href={`/domains/invoices/create-invoice`}>
+                <Button
+                  size='sm'
+                  className='cursor-pointer gap-1'>
+                  <TbPlus className='h-4 w-4' />
+                  <span>New Invoice</span>
+                </Button>
+              </Link>
             </TooltipTrigger>
             <TooltipContent>Create a new invoice</TooltipContent>
           </Tooltip>

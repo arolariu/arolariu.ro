@@ -177,7 +177,7 @@ public partial class InvoiceProcessingService : IInvoiceProcessingService
   {
     using var activity = InvoicePackageTracing.StartActivity(nameof(DeleteMerchant));
     await merchantOrchestrationService
-      .DeleteMerchantObject(identifier)
+      .DeleteMerchantObject(identifier, parentCompanyId)
       .ConfigureAwait(false);
   }).ConfigureAwait(false);
   #endregion

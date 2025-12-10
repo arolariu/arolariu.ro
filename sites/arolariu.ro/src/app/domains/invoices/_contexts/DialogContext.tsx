@@ -9,22 +9,21 @@ import {createContext, use, useCallback, useMemo, useRef, useState, type ReactNo
  * This is useful for managing the state of the dialog in the application.
  */
 export type DialogType =
-  | "INVOICE_SHARE"
-  | "INVOICE_IMAGE"
-  | "INVOICE_MERCHANT"
-  | "INVOICE_MERCHANT_INVOICES"
-  | "INVOICE_RECIPE"
-  | "INVOICE_METADATA"
-  | "INVOICE_ANALYSIS"
-  | "INVOICE_ITEMS"
-  | "INVOICE_DELETE"
-  | "INVOICE_FEEDBACK"
-  | "INVOICES_SHARE"
-  | "INVOICES_IMPORT"
-  | "INVOICES_EXPORT"
-  | "INVOICES_DELETE"
-  | "analysisOptions"
-  | "shareAnalytics"
+  | "EDIT_INVOICE__ANALYSIS"
+  | "EDIT_INVOICE__SHARE"
+  | "EDIT_INVOICE__IMAGE"
+  | "EDIT_INVOICE__MERCHANT"
+  | "EDIT_INVOICE__MERCHANT_INVOICES"
+  | "EDIT_INVOICE__RECIPE"
+  | "EDIT_INVOICE__METADATA"
+  | "EDIT_INVOICE__ITEMS"
+  | "EDIT_INVOICE__DELETE"
+  | "EDIT_INVOICE__FEEDBACK"
+  | "VIEW_INVOICE__SHARE_ANALYTICS"
+  | "VIEW_INVOICES__SHARE"
+  | "VIEW_INVOICES__IMPORT"
+  | "VIEW_INVOICES__EXPORT"
+  | "VIEW_INVOICES__DELETE"
   | null; // null is used to indicate no dialog is open
 
 export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> | null;

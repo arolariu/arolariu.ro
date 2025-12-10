@@ -323,6 +323,18 @@
             "title__after": "ARE THESE THE CORRECT PHOTOS...?!",
             "title__before": "UPLOAD A PICTURE OF THE PAPER RECEIPT!"
           },
+          "edit-page": {
+            "__metadata__": {
+              "description": "View and edit your invoice details, items, recipes, and sharing settings.",
+              "title": "Invoice Management System - Edit Invoice"
+            }
+          },
+          "view-page": {
+            "__metadata__": {
+              "description": "View your invoice details, items, and associated merchant information.",
+              "title": "Invoice Management System - View Invoice"
+            }
+          },
           "main-page": {
             "callToAction": "Upload receipt",
             "description": "Receipts are great for keeping your own accounting. However, what if you could upload these receipts somewhere, and get powerful insights into your habits? What if you could automatically get a list of all the products you bought in the last year? <br></br> <br></br> Unleash the power of our platform! <br></br> Throw away the Excel tables and hop on the digital train now!",

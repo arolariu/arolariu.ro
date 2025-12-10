@@ -23,7 +23,8 @@ import {
 } from "@arolariu/components";
 import {useCallback, useState} from "react";
 import {TbCards, TbCategory, TbClock, TbFilter, TbMoon, TbSearch, TbSun, TbTable} from "react-icons/tb";
-import InvoicesTable from "../tables/InvoiceTable";
+import {GridView} from "../tables/GridView";
+import {TableView} from "../tables/TableView";
 
 type FiltersType = {category: string; time: string};
 
@@ -77,6 +78,55 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
     },
     [resetPagination],
   );
+
+  const handleNextPage = useCallback(
+    () => {
+      if (currentPage < totalPages) {
+        setCurrentPage(currentPage + 1);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- set is a stable function.
+    [currentPage, totalPages],
+  );
+
+  const handlePrevPage = useCallback(
+    () => {
+      if (currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- set is a stable function.
+    [currentPage],
+  );
+
+  const handlePageSizeChange = useCallback(
+    (size: number) => {
+      setPageSize(size);
+      setCurrentPage(1);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- set is a stable function.
+    [],
+  );
+
+  const ViewMode = () => {
+    switch (view) {
+      case "table":
+        return (
+          <TableView
+            invoices={paginatedItems}
+            pageSize={pageSize}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            handlePrevPage={handlePrevPage}
+            handleNextPage={handleNextPage}
+            handlePageSizeChange={handlePageSizeChange}
+          />
+        );
+      case "grid":
+      default:
+        return <GridView invoices={paginatedItems} />;
+    }
+  };
 
   return (
     <div className='space-y-4'>
@@ -235,16 +285,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
           </div>
         </div>
       </div>
-
-      <InvoicesTable
-        mode={view}
-        paginatedInvoices={paginatedItems}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        pageSize={pageSize}
-        setPageSize={setPageSize}
-        setCurrentPage={setCurrentPage}
-      />
+      {ViewMode()}
     </div>
   );
 }

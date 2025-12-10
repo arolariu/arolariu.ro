@@ -3,8 +3,20 @@ import {type JWTPayload, SignJWT, jwtVerify} from "jose";
 import {Blob} from "node:buffer";
 import {Resend} from "resend";
 
+/* v8 ignore start - Environment variables evaluated at module load time cannot be unit tested */
 export const API_URL = process.env["API_URL"] ?? "";
 export const API_JWT = process.env["API_JWT"] ?? "";
+
+/**
+ * The configuration store identifier.
+ *
+ * @remarks
+ * **Source**: `process.env.CONFIG_STORE`
+ *
+ * **Usage**: Identifies the Azure App Configuration store or local config source.
+ */
+export const CONFIG_STORE = process.env["CONFIG_STORE"] ?? "";
+/* v8 ignore stop */
 
 /**
  * Singleton pattern class object that handles the interaction with the Resend API (mail).
