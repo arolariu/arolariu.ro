@@ -36,7 +36,7 @@ public static partial class InvoiceEndpoints
         .CreateInvoice(invoice)
         .ConfigureAwait(false);
 
-      var responseDto = InvoiceDetailResponseDto.FromInvoice(invoice);
+      var responseDto = InvoiceResponseDto.FromInvoice(invoice);
       return TypedResults.Created($"/rest/v1/invoices/{invoice.id}", responseDto);
     }
     catch (InvoiceProcessingServiceValidationException exception)
@@ -90,7 +90,7 @@ public static partial class InvoiceEndpoints
         .ReadInvoice(id, potentialUserIdentifier)
         .ConfigureAwait(false);
 
-      return possibleInvoice is null ? TypedResults.NotFound() : TypedResults.Ok(InvoiceDetailResponseDto.FromInvoice(possibleInvoice));
+      return possibleInvoice is null ? TypedResults.NotFound() : TypedResults.Ok(InvoiceResponseDto.FromInvoice(possibleInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -143,7 +143,7 @@ public static partial class InvoiceEndpoints
         .ReadInvoices(potentialUserIdentifier)
         .ConfigureAwait(false);
 
-      return possibleInvoices is null ? TypedResults.NotFound() : TypedResults.Ok(possibleInvoices.Select(InvoiceSummaryResponseDto.FromInvoice));
+      return possibleInvoices is null ? TypedResults.NotFound() : TypedResults.Ok(possibleInvoices.Select(InvoiceResponseDto.FromInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -264,7 +264,7 @@ public static partial class InvoiceEndpoints
       var updatedInvoice = await invoiceProcessingService
         .UpdateInvoice(updatedInvoiceEntity, id, potentialUserIdentifier)
         .ConfigureAwait(false);
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: InvoiceDetailResponseDto.FromInvoice(updatedInvoice));
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: InvoiceResponseDto.FromInvoice(updatedInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -348,7 +348,7 @@ public static partial class InvoiceEndpoints
         .UpdateInvoice(newInvoice, id, potentialUserIdentifier)
         .ConfigureAwait(false);
 
-      return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: InvoiceDetailResponseDto.FromInvoice(updatedInvoice));
+      return TypedResults.Accepted($"/rest/v1/invoices/{id}", value: InvoiceResponseDto.FromInvoice(updatedInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1629,7 +1629,7 @@ public static partial class InvoiceEndpoints
       }
 
       // RESTful convention: return 200 with empty array for collection endpoints, not 404
-      return TypedResults.Ok(listOfConcreteInvoices.Select(InvoiceSummaryResponseDto.FromInvoice));
+      return TypedResults.Ok(listOfConcreteInvoices.Select(InvoiceResponseDto.FromInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -1934,7 +1934,7 @@ public static partial class InvoiceEndpoints
         .ConfigureAwait(false);
       return analyzedInvoice is null
         ? TypedResults.NotFound()
-        : TypedResults.Accepted($"/rest/v1/invoices/{id}", InvoiceDetailResponseDto.FromInvoice(analyzedInvoice));
+        : TypedResults.Accepted($"/rest/v1/invoices/{id}", InvoiceResponseDto.FromInvoice(analyzedInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
