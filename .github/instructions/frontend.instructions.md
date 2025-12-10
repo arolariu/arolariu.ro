@@ -3,86 +3,220 @@ description: 'Next.js and React development standards with App Router, RSC, and 
 applyTo: 'sites/arolariu.ro/**/*.tsx, sites/arolariu.ro/**/*.ts, sites/arolariu.ro/**/*.jsx, sites/arolariu.ro/**/*.js, sites/arolariu.ro/**/*.css'
 ---
 
-# Copilot Instructions for React/Next.js Codebase
+# Frontend Development Guidelines
+
+Comprehensive guidelines for the arolariu.ro Next.js frontend application.
+
+---
+
+## 🎯 Quick Reference
+
+| Aspect | Value |
+|--------|-------|
+| **Framework** | Next.js 16.0.0 (App Router) |
+| **React** | 19.2.0 (with RSC) |
+| **TypeScript** | 5.9.3 (strict mode) |
+| **Styling** | Tailwind CSS 4.x |
+| **State** | Zustand 5.x + Context API |
+| **Auth** | Clerk |
+| **i18n** | next-intl 4.x |
+| **Components** | @arolariu/components (shadcn/ui based) |
+| **Node** | ≥24.x |
+
+---
 
 ## 📚 Essential Context
 
-**Before implementing any frontend code, consult these resources:**
+| Resource | Location | Purpose |
+|----------|----------|---------|
+| RFC 1001 | `docs/rfc/1001-opentelemetry-observability-system.md` | Frontend telemetry |
+| RFC 1002 | `docs/rfc/1002-comprehensive-jsdoc-documentation-standard.md` | JSDoc standards |
+| RFC 1003 | `docs/rfc/1003-internationalization-system.md` | i18n patterns |
+| RFC 1004 | `docs/rfc/1004-metadata-seo-system.md` | SEO & metadata |
+| Frontend Docs | `docs/frontend/README.md` | Implementation details |
 
-1. **Frontend RFCs**: Check `docs/rfc/` for frontend-specific architectural decisions
-   - Frontend RFCs are numbered **1000-1999**
-   - Review relevant RFCs for observability, architecture patterns, and best practices
-   - Examples: OpenTelemetry implementation, type-safe telemetry, SSR/CSR patterns
+---
 
-2. **Frontend Documentation**: `docs/frontend/README.md`
-   - Component patterns and guidelines
-   - State management strategies
-   - Performance optimization techniques
-
-3. **Main Copilot Instructions**: `.github/copilot-instructions.md`
-   - Complete monorepo architecture
-   - Component library usage (@arolariu/components)
-   - Testing and quality standards
-
-**Technology Stack:**
-- Next.js 16.0.0-beta.0 (App Router with React Server Components)
-- React 19.2.0 (with RSC support)
-- TypeScript 5.9.3 (strict mode)
-- Tailwind CSS 4.1.14
-- Zustand 5.0.8 for state management
-- Clerk for authentication
-- next-intl 4.3.11 for internationalization
-
-## Project Overview
-
-This is a Next.js 16 application with TypeScript, using the App Router pattern with React Server Components as default.
-The project follows domain-driven design principles with a focus on type safety, performance, observability, and maintainability.
-
-## Architecture & Structure
-
-### Directory Structure
+## 📁 Project Structure
 
 ```
-src/
-├── app/                        # Next.js App Router
-│   ├── domains/                # Domain-specific features
-│   │   └── [domain]/
-│   │       ├── _components/    # Domain components
-│   │       ├── _hooks/         # Domain-specific hooks
-│   │       ├── _context/       # React Context providers
-│   │       ├── _types/         # TypeScript interfaces
-│   │       ├── _utils/         # Utility functions
-│   │       ├── page.tsx        # React Server Component route page
-│   │       └── island.tsx      # React Client Component page wrapper
-├── components/                 # Shared components that hold business logic
-├── presentation/               # Shared components for UI presentation, no business logic
-├── hooks/                      # Global custom hooks
-├── lib/                        # Utilities and configurations
-│   ├── utils.generic.ts        # Generic utility functions that are available for both client and server contexts
-│   ├── utils.client.ts         # Client-specific utilities, that are only accessible via the client context
-│   └── utils.server.ts         # Server-specific utilities, that are only accessible via the server context
-└── types/                      # Global TypeScript types
+sites/arolariu.ro/
+├── src/
+│   ├── app/                        # Next.js App Router
+│   │   ├── layout.tsx              # Root layout (RSC)
+│   │   ├── page.tsx                # Home page (RSC)
+│   │   ├── providers.tsx           # Context providers
+│   │   ├── island.tsx              # Client Component wrapper
+│   │   ├── globals.css             # Global styles
+│   │   ├── (privacy-and-terms)/    # Route groups
+│   │   ├── about/                  # Static pages
+│   │   ├── api/                    # API routes
+│   │   ├── auth/                   # Auth pages
+│   │   ├── domains/                # Business domains
+│   │   │   ├── invoices/           # Invoice domain
+│   │   │   │   ├── page.tsx        # RSC route page
+│   │   │   │   ├── island.tsx      # Client wrapper
+│   │   │   │   ├── layout.tsx      # Domain layout
+│   │   │   │   ├── _components/    # Domain components
+│   │   │   │   ├── _contexts/      # Domain contexts
+│   │   │   │   └── _dialogs/       # Domain dialogs
+│   │   │   └── layout.tsx          # Domains layout
+│   │   └── _components/            # App-level components
+│   │
+│   ├── components/                 # Shared components (with logic)
+│   │   ├── Header.tsx
+│   │   ├── Footer.tsx
+│   │   └── Commander.tsx
+│   │
+│   ├── presentation/               # UI components (no logic)
+│   │
+│   ├── contexts/                   # Global React contexts
+│   │   └── FontContext.tsx         # Font selection context
+│   │
+│   ├── hooks/                      # Custom React hooks
+│   │   ├── index.ts                # Barrel export
+│   │   ├── useInvoice.tsx
+│   │   ├── useInvoices.tsx
+│   │   ├── useMerchant.tsx
+│   │   ├── useMerchants.tsx
+│   │   ├── usePagination.tsx
+│   │   └── useUserInformation.tsx
+│   │
+│   ├── stores/                     # Zustand stores
+│   │   ├── index.ts
+│   │   ├── invoicesStore.tsx       # Invoice state + IndexedDB
+│   │   ├── merchantsStore.tsx      # Merchant state + IndexedDB
+│   │   └── storage/                # Storage adapters
+│   │       └── indexedDBStorage.ts
+│   │
+│   ├── lib/                        # Utilities & actions
+│   │   ├── utils.generic.ts        # Shared utilities
+│   │   ├── utils.client.ts         # Client-only utilities
+│   │   ├── utils.server.ts         # Server-only utilities
+│   │   └── actions/                # Server Actions
+│   │       ├── cookies.ts
+│   │       └── invoices/
+│   │           ├── fetchInvoice.ts
+│   │           └── fetchInvoices.ts
+│   │
+│   ├── types/                      # TypeScript definitions
+│   │   ├── index.ts                # Global types
+│   │   ├── typedEnv.ts             # Environment types
+│   │   ├── DDD/                    # Domain types
+│   │   └── invoices/               # Invoice domain types
+│   │
+│   ├── i18n/                       # Internationalization
+│   │   └── request.ts
+│   │
+│   ├── metadata.ts                 # SEO metadata config
+│   ├── telemetry.ts                # OpenTelemetry config
+│   └── instrumentation.ts          # OTel initialization
+│
+├── messages/                       # Translation files
+│   ├── en.json
+│   └── ro.json
+│
+├── public/                         # Static assets
+│   └── manifest/                   # PWA manifest & icons
+│
+├── next.config.ts                  # Next.js config
+├── tailwind.config.ts              # Tailwind config
+├── tsconfig.json                   # TypeScript config
+├── vitest.config.ts                # Unit test config
+└── playwright.config.ts            # E2E test config
 ```
 
-### Naming Conventions
+---
 
-- **Files**: `camelCase.tsx` for components, `camelCase.ts` for utilities
-- **Components**: `PascalCase` (e.g., `InvoicePreview`)
-- **Hooks**: `camelCase` starting with `use` (e.g., `useInvoiceActions`)
-- **Types**: `PascalCase` (e.g., `InvoiceScan`)
-- **Constants**: `UPPER_SNAKE_CASE`
-- **Private domain files**: Prefix with `_` (e.g., `_components/`, `_hooks/`)
+## ⚛️ React Server Components (RSC)
 
-## React Development Standards
-
-### Component Patterns
-
-#### 1. Functional Components with TypeScript
+### Default: Server Components
 
 ```tsx
+// app/domains/invoices/page.tsx - Server Component (NO "use client")
+import {createMetadata} from "@/metadata";
+import {getTranslations} from "next-intl/server";
+import RenderInvoicesScreen from "./island";
 
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Invoices.__metadata__");
+  return createMetadata({title: t("title"), description: t("description")});
+}
 
-import type { ReactNode } from "react";
+export default async function InvoicesPage(): Promise<React.JSX.Element> {
+  // Direct async data fetching
+  const data = await fetchData();
+  
+  // Delegate interactivity to Client Component
+  return <RenderInvoicesScreen initialData={data} />;
+}
+```
+
+### Client Components (Island Pattern)
+
+Only use `"use client"` when you need:
+- Browser APIs (window, localStorage)
+- Event handlers (onClick, onChange)
+- React hooks (useState, useEffect)
+- Browser-only libraries
+
+```tsx
+// app/domains/invoices/island.tsx
+"use client";
+
+import {useInvoices} from "@/hooks";
+import {useState} from "react";
+
+interface Props {
+  initialData: Invoice[];
+}
+
+export default function RenderInvoicesScreen({initialData}: Readonly<Props>): React.JSX.Element {
+  const {invoices, isLoading} = useInvoices();
+  const [filter, setFilter] = useState("");
+  
+  return (
+    <div>
+      <input onChange={(e) => setFilter(e.target.value)} />
+      {/* Interactive content */}
+    </div>
+  );
+}
+```
+
+### Server Actions
+
+```tsx
+// lib/actions/invoices/createInvoice.ts
+"use server";
+
+import {revalidatePath} from "next/cache";
+
+export async function createInvoice(formData: FormData) {
+  const data = Object.fromEntries(formData);
+  const result = await saveToDatabase(data);
+  
+  revalidatePath("/domains/invoices");
+  return {success: true, data: result};
+}
+
+// Usage in Client Component
+import {createInvoice} from "@/lib/actions/invoices/createInvoice";
+
+<form action={createInvoice}>
+  <input name="name" required />
+  <button type="submit">Create</button>
+</form>
+```
+
+---
+
+## 🏗️ Component Patterns
+
+### Functional Components with Props
+
+```tsx
+import type {ReactNode} from "react";
 
 interface Props {
   children: ReactNode;
@@ -94,209 +228,516 @@ export default function MyComponent({
   children,
   title,
   isVisible = true,
-}: Readonly<Props>) {
-  // Component logic
+}: Readonly<Props>): React.JSX.Element {
+  if (!isVisible) return <></>;
+  
   return (
-    <div>
-      <h1>{title}</h1>
-      {isVisible && children}
-    </div>
+    <section aria-labelledby="section-title">
+      <h2 id="section-title">{title}</h2>
+      {children}
+    </section>
   );
 }
 ```
 
-#### 2. Memoized Components for Performance
+### Memoized Components
 
 ```tsx
-import { memo, useCallback } from "react";
+import {memo, useCallback} from "react";
+
+interface Props {
+  data: DataType;
+  onUpdate: (id: string) => void;
+}
 
 export const ExpensiveComponent = memo(function ExpensiveComponent({
   data,
   onUpdate,
-}) {
-  const handleUpdate = useCallback(
-    (newValue) => {
-      onUpdate(newValue);
-    },
-    [onUpdate]
-  );
+}: Readonly<Props>): React.JSX.Element {
+  const handleClick = useCallback(() => {
+    onUpdate(data.id);
+  }, [data.id, onUpdate]);
 
-  return <div>{/* Component content */}</div>;
+  return <button onClick={handleClick}>{data.name}</button>;
 });
 ```
 
-### State Management Pattern
-
-#### Context + Custom Hooks Pattern
+### Context + Custom Hooks Pattern
 
 ```tsx
-// 1. Define types
-interface ContextType {
-  data: DataType[];
-  setData: Dispatch<SetStateAction<DataType[]>>;
-  status: StatusType;
-  setStatus: Dispatch<SetStateAction<StatusType>>;
+// contexts/FontContext.tsx
+"use client";
+
+import {createContext, use, useCallback, useMemo, useState} from "react";
+
+type FontType = "normal" | "dyslexic";
+
+interface FontContextValue {
+  fontType: FontType;
+  setFont: (type: FontType) => void;
 }
 
-// 2. Create context with provider
-export function DataProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<DataType[]>([]);
-  const [status, setStatus] = useState<StatusType>("UNKNOWN");
+const FontContext = createContext<FontContextValue | undefined>(undefined);
 
-  const value = useMemo(
-    () => ({ data, setData, status, setStatus }),
-    [data, status]
+export function FontContextProvider({children}: {children: React.ReactNode}): React.JSX.Element {
+  const [fontType, setFontType] = useState<FontType>("normal");
+  
+  const setFont = useCallback((type: FontType) => {
+    setFontType(type);
+    localStorage.setItem("selectedFont", type);
+  }, []);
+  
+  const value = useMemo(() => ({fontType, setFont}), [fontType, setFont]);
+  
+  return (
+    <FontContext.Provider value={value}>
+      {children}
+    </FontContext.Provider>
   );
-
-  return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
 
-// 3. Custom hook for context access
-export function useData() {
-  const context = useContext(DataContext);
-  if (context === undefined) {
-    throw new Error("useData must be used within a DataProvider");
+export function useFontContext(): FontContextValue {
+  const context = use(FontContext);
+  if (!context) {
+    throw new Error("useFontContext must be used within FontContextProvider");
   }
-
   return context;
-}
-
-// 4. Custom hook for actions
-export function useDataActions() {
-  const { data, setData, setStatus } = useData();
-
-  const addItem = useCallback(
-    (item: DataType) => {
-      setData((prev) => [...prev, item]);
-    },
-    [setData]
-  );
-
-  return { addItem /* other actions */ };
 }
 ```
 
-## Component Library Integration
+---
+
+## 🗃️ State Management
+
+### Zustand Store with IndexedDB Persistence
+
+```tsx
+// stores/invoicesStore.tsx
+import type {Invoice} from "@/types/invoices";
+import {create} from "zustand";
+import {devtools, persist} from "zustand/middleware";
+import {createIndexedDBStorage} from "./storage/indexedDBStorage";
+
+interface InvoicesState {
+  invoices: ReadonlyArray<Invoice>;
+  selectedInvoices: Invoice[];
+  hasHydrated: boolean;
+}
+
+interface InvoicesActions {
+  setInvoices: (invoices: ReadonlyArray<Invoice>) => void;
+  upsertInvoice: (invoice: Invoice) => void;
+  removeInvoice: (invoiceId: string) => void;
+  setHasHydrated: (hasHydrated: boolean) => void;
+}
+
+type InvoicesStore = InvoicesState & InvoicesActions;
+
+const indexedDBStorage = createIndexedDBStorage<InvoicesPersistedState, Invoice>({
+  table: "invoices",
+  entityKey: "invoices",
+});
+
+export const useInvoicesStore = create<InvoicesStore>()(
+  devtools(
+    persist(
+      (set) => ({
+        invoices: [],
+        selectedInvoices: [],
+        hasHydrated: false,
+        
+        setInvoices: (invoices) => set({invoices}),
+        upsertInvoice: (invoice) => set((state) => ({
+          invoices: state.invoices.some((i) => i.id === invoice.id)
+            ? state.invoices.map((i) => i.id === invoice.id ? invoice : i)
+            : [...state.invoices, invoice],
+        })),
+        removeInvoice: (invoiceId) => set((state) => ({
+          invoices: state.invoices.filter((i) => i.id !== invoiceId),
+        })),
+        setHasHydrated: (hasHydrated) => set({hasHydrated}),
+      }),
+      {
+        name: "invoices-store",
+        storage: indexedDBStorage,
+        onRehydrateStorage: () => (state) => state?.setHasHydrated(true),
+      }
+    )
+  )
+);
+```
+
+### Custom Data Fetching Hook
+
+```tsx
+// hooks/useInvoice.tsx
+"use client";
+
+import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
+import {useInvoicesStore} from "@/stores";
+import type {Invoice} from "@/types/invoices";
+import {useEffect, useState} from "react";
+import {useShallow} from "zustand/react/shallow";
+
+type HookInput = Readonly<{invoiceIdentifier: string}>;
+type HookOutput = Readonly<{
+  invoice: Invoice | null;
+  isLoading: boolean;
+  isError: boolean;
+}>;
+
+export function useInvoice({invoiceIdentifier}: HookInput): HookOutput {
+  const [isError, setIsError] = useState(false);
+
+  const {cachedInvoice, upsertInvoice, hasHydrated} = useInvoicesStore(
+    useShallow((state) => ({
+      cachedInvoice: state.invoices.find((inv) => inv.id === invoiceIdentifier) ?? null,
+      upsertInvoice: state.upsertInvoice,
+      hasHydrated: state.hasHydrated,
+    })),
+  );
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const invoice = await fetchInvoice({invoiceId: invoiceIdentifier});
+        upsertInvoice(invoice);
+      } catch (error) {
+        console.error("Error fetching invoice:", error);
+        setIsError(true);
+      }
+    };
+    fetchData();
+  }, [invoiceIdentifier]);
+
+  return {invoice: cachedInvoice, isLoading: !hasHydrated, isError};
+}
+```
+
+---
+
+## 🎨 Styling with Tailwind CSS
 
 ### Using @arolariu/components
 
 ```tsx
-import { Button, Dialog, DialogContent, toast } from "@arolariu/components";
+import {Button, Dialog, DialogContent, DialogHeader, toast} from "@arolariu/components";
 
-// Always use the component library for UI elements
-// Maintain consistency across the application
+export function MyComponent() {
+  return (
+    <Dialog>
+      <DialogContent>
+        <DialogHeader>Title</DialogHeader>
+        <Button onClick={() => toast("Success!")}>
+          Click Me
+        </Button>
+      </DialogContent>
+    </Dialog>
+  );
+}
 ```
 
-### Custom Components
-
-- Extend library components when needed
-- Follow the same API patterns as library components
-- Use Tailwind CSS for styling
-- Implement proper accessibility attributes
-
-## Performance Optimization
-
-### 1. Memory Management
+### Tailwind Class Patterns
 
 ```tsx
-// Always clean up blob URLs
-useEffect(() => {
-  return () => {
-    if (blobUrl) {
-      URL.revokeObjectURL(blobUrl);
+// Use cn() for conditional classes
+import {cn} from "@arolariu/components";
+
+<div className={cn(
+  "flex items-center gap-4 p-4",
+  "bg-white dark:bg-black",
+  isActive && "border-2 border-primary",
+  className
+)} />
+
+// Responsive design
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" />
+
+// Dark mode
+<div className="bg-white text-black dark:bg-black dark:text-white" />
+```
+
+---
+
+## 🌐 Internationalization (i18n)
+
+### Server-Side Translation
+
+```tsx
+// In Server Components
+import {getTranslations, getLocale} from "next-intl/server";
+
+export default async function Page() {
+  const t = await getTranslations("Namespace");
+  const locale = await getLocale();
+  
+  return <h1>{t("title")}</h1>;
+}
+```
+
+### Client-Side Translation
+
+```tsx
+// In Client Components
+"use client";
+
+import {useTranslations} from "next-intl";
+
+export function Component() {
+  const t = useTranslations("Namespace");
+  
+  return <p>{t("message")}</p>;
+}
+```
+
+### Translation Files
+
+```json
+// messages/en.json
+{
+  "Namespace": {
+    "title": "Page Title",
+    "message": "Welcome, {name}!"
+  },
+  "Invoices": {
+    "__metadata__": {
+      "title": "Invoices",
+      "description": "Manage your invoices"
     }
+  }
+}
+```
+
+---
+
+## 📊 SEO & Metadata (RFC 1004)
+
+### Using createMetadata
+
+```tsx
+// app/domains/invoices/page.tsx
+import {createMetadata} from "@/metadata";
+import type {Metadata} from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Invoices.__metadata__");
+  const locale = await getLocale();
+  
+  return createMetadata({
+    locale,
+    title: t("title"),
+    description: t("description"),
+    openGraph: {
+      images: ["/og/invoices.png"],
+    },
+  });
+}
+```
+
+---
+
+## 📡 Observability (RFC 1001)
+
+### Telemetry Types
+
+```typescript
+// From telemetry.ts
+export type LogLevel = "debug" | "info" | "warn" | "error";
+export type RenderContext = "server" | "client" | "edge" | "api";
+export type SpanOperationType =
+  | `http.server.${string}`
+  | `http.client.${string}`
+  | `db.${string}`
+  | `api.${string}`
+  | `page.${string}`
+  | `component.${string}`;
+```
+
+### Using Telemetry
+
+```tsx
+import {withSpan, createCounter, logWithTrace} from "@/telemetry";
+
+// Server Component with tracing
+export default async function Page() {
+  return withSpan("page.invoices.render", async (span) => {
+    span.setAttribute("page.route", "/domains/invoices");
+    const data = await fetchData();
+    return <InvoicesScreen data={data} />;
+  });
+}
+
+// Client Component with metrics
+"use client";
+const pageViewCounter = createCounter("page.views", "Total page views");
+
+export function TrackedComponent() {
+  useEffect(() => {
+    pageViewCounter.add(1, {route: "/invoices"});
+  }, []);
+}
+```
+
+---
+
+## 🔐 Authentication (Clerk)
+
+### Protected Routes
+
+```tsx
+// In Server Components
+import {auth, currentUser} from "@clerk/nextjs/server";
+import {redirect} from "next/navigation";
+
+export default async function ProtectedPage() {
+  const {userId} = await auth();
+  if (!userId) redirect("/auth/sign-in");
+  
+  const user = await currentUser();
+  return <div>Welcome, {user?.firstName}</div>;
+}
+```
+
+### User Information Hook
+
+```tsx
+// hooks/useUserInformation.tsx
+"use client";
+
+import {useUser} from "@clerk/nextjs";
+
+export function useUserInformation() {
+  const {user, isLoaded, isSignedIn} = useUser();
+  
+  return {
+    user,
+    isLoading: !isLoaded,
+    isSignedIn: Boolean(isSignedIn),
   };
-}, [blobUrl]);
-
-// Use utility functions for cleanup
-export function cleanupBlobUrl(item: DataItem): void {
-  if (item.url) {
-    URL.revokeObjectURL(item.url);
-    item.url = undefined;
-  }
 }
 ```
 
-### 2. Efficient Re-renders
+---
+
+## 🧪 Testing
+
+### Unit Tests (Vitest)
 
 ```tsx
-// Use useMemo for expensive calculations
-const expensiveValue = useMemo(() => {
-  return computeExpensiveValue(data);
-}, [data]);
+// hooks/useInvoice.test.tsx
+import {renderHook, waitFor} from "@testing-library/react";
+import {describe, expect, it, vi} from "vitest";
+import {useInvoice} from "./useInvoice";
 
-// Use useCallback for event handlers
-const handleClick = useCallback(
-  (id: string) => {
-    onItemClick(id);
-  },
-  [onItemClick]
-);
-```
-
-## Error Handling & Validation
-
-### 1. Input Validation
-
-```tsx
-export function validateFile(file: File): ValidationError | null {
-  if (!SUPPORTED_TYPES.includes(file.type)) {
-    return {
-      id: generateId(),
-      message: `Unsupported file type: ${file.type}`,
-      code: "INVALID_TYPE",
-    };
-  }
-  return null;
-}
-```
-
-### 2. User Feedback
-
-```tsx
-// Use toast notifications for user feedback
-toast("Operation successful", {
-  description: "Your file has been uploaded.",
-  duration: 5000,
-  style: { backgroundColor: "green", color: "white" },
-  icon: <span className="text-white">✔️</span>,
-});
-
-// Provide undo functionality where appropriate
-toast("Item deleted", {
-  action: {
-    label: "Undo",
-    onClick: () => restoreItem(deletedItem),
-  },
+describe("useInvoice", () => {
+  it("returns loading state initially", () => {
+    const {result} = renderHook(() => 
+      useInvoice({invoiceIdentifier: "test-id"})
+    );
+    
+    expect(result.current.isLoading).toBe(true);
+  });
 });
 ```
 
-## File Organization Best Practices
+### E2E Tests (Playwright)
 
-### 1. Import Order
+```typescript
+// playwright/invoices.spec.ts
+import {expect, test} from "@playwright/test";
 
-```tsx
-// 1. React imports
-import { useCallback, useEffect, useState } from "react";
-
-// 2. Third-party libraries
-import { toast } from "@arolariu/components";
-
-// 3. Internal imports (absolute paths)
-import { useGlobalHook } from "@/hooks";
-
-// 4. Relative imports
-import type { LocalType } from "../_types/LocalType";
-import { localUtility } from "../_utils/localUtility";
-import { ComponentName } from "./ComponentName";
+test("user can view invoices", async ({page}) => {
+  await page.goto("/domains/invoices");
+  await expect(page.getByRole("heading", {name: "Invoices"})).toBeVisible();
+});
 ```
 
-### 2. Component Structure
+---
 
-```tsx
+## 📝 Naming Conventions
 
+| Element | Convention | Example |
+|---------|------------|---------|
+| **Files** | camelCase.tsx | `useInvoice.tsx` |
+| **Components** | PascalCase | `InvoiceCard` |
+| **Hooks** | use + PascalCase | `useInvoices` |
+| **Stores** | camelCase + Store | `invoicesStore` |
+| **Actions** | verb + Noun | `fetchInvoice` |
+| **Types** | PascalCase | `InvoiceStatus` |
+| **Constants** | UPPER_SNAKE_CASE | `MAX_FILE_SIZE` |
+| **Private folders** | _prefix | `_components/` |
+| **Route groups** | (parentheses) | `(auth)/` |
 
-// Imports (ordered as above)
+---
+
+## ✅ Quality Checklist
+
+### Before Committing
+
+- [ ] Server Component by default (no unnecessary `"use client"`)
+- [ ] Props marked as `Readonly<Props>`
+- [ ] Explicit return types on functions
+- [ ] JSDoc on public APIs
+- [ ] Loading and error states handled
+- [ ] Accessibility attributes (aria-*, role)
+- [ ] Dark mode styles included
+- [ ] Translation keys added (i18n)
+- [ ] Tests written/updated
+
+### Performance
+
+- [ ] `useMemo` for expensive calculations
+- [ ] `useCallback` for stable references
+- [ ] `memo()` for pure components
+- [ ] Blob URLs cleaned up
+- [ ] Images optimized with next/image
+
+---
+
+## 🚫 Anti-Patterns to Avoid
+
+| Anti-Pattern | Instead Do |
+|--------------|------------|
+| `"use client"` everywhere | Server Components by default |
+| Prop drilling | Context API or Zustand |
+| Inline styles | Tailwind CSS classes |
+| Direct DOM manipulation | React refs and state |
+| Missing cleanup | useEffect cleanup function |
+| Missing error boundaries | Implement error.tsx |
+| Raw `any` types | Proper TypeScript types |
+| Large monolithic components | Smaller focused components |
+| Missing loading states | Suspense + loading.tsx |
+
+---
+
+## 📋 Common Commands
+
+```bash
+# Development
+npm run dev:website
+
+# Build
+npm run build:website
+
+# Testing
+npm run test:website       # All tests
+npm run test:vitest        # Unit tests
+npm run test:playwright    # E2E tests
+
+# Quality
+npm run lint
+npm run format
+```
+
+---
+
+## 🔗 Related Resources
+
+- **RFC 1001**: OpenTelemetry Observability System
+- **RFC 1002**: JSDoc Documentation Standard  
+- **RFC 1003**: Internationalization System
+- **RFC 1004**: Metadata & SEO System
+- **Component Library**: `packages/components/`
 
 // Types and interfaces
 interface Props {

@@ -1,245 +1,623 @@
 ---
-description: 'ReactJS development standards and best practices'
-applyTo: '**/*.jsx, **/*.tsx, **/*.js, **/*.ts, **/*.css, **/*.scss'
+applyTo: '**/*.jsx, **/*.tsx'
+description: 'Core React patterns for the arolariu.ro monorepo. Applies to component library, websites, and all React code. For Next.js-specific patterns, see frontend.instructions.md.'
 ---
 
-# ReactJS Development Instructions
+# React Development Guidelines
 
-Instructions for building high-quality ReactJS applications with modern patterns, hooks, and best practices following the official React documentation at https://react.dev.
+Core React patterns for the arolariu.ro monorepo. These guidelines apply to **all React code** across the repository.
 
-## 📚 Essential Context
+**Scope:** Component library, all websites, shared code
+**For Next.js specifics:** See `frontend.instructions.md`
+**For TypeScript specifics:** See `typescript.instructions.md`
 
-**This project uses React 19.2.0 within a Next.js 16 environment. Key differences:**
+---
 
-1. **React Server Components (RSC)**: Default component type in Next.js App Router
-2. **Server Actions**: Built-in form handling and mutations
-3. **Component Library**: `@arolariu/components` based on shadcn/ui + Radix UI
-4. **Strict TypeScript**: All components must be properly typed
-5. **Observability**: Telemetry integration (see Frontend RFCs)
+## 🎯 Quick Reference
 
-**Reference these for context:**
-- Main Instructions: `.github/copilot-instructions.md`
-- Frontend Instructions: `.github/instructions/frontend.instructions.md`
-- **Frontend RFCs**: Check `docs/rfc/` for RFCs numbered **1000-1999** (observability, architecture, patterns)
-- Component Library: `packages/components/`
+| Aspect | Standard |
+|--------|----------|
+| **React Version** | 19.2.0 |
+| **Component Style** | Functional only (no classes) |
+| **Props** | Always `Readonly<Props>` |
+| **Return Type** | Explicit `React.JSX.Element` |
+| **State** | Zustand (global), Context (scoped), useState (local) |
+| **Memoization** | `memo`, `useMemo`, `useCallback` when needed |
+| **Effects** | Always include cleanup |
+| **Documentation** | JSDoc on public APIs |
 
-## Project Context
-- React 19.2.0 (with React Server Components support)
-- Next.js 16.0.0-beta.0 (App Router)
-- TypeScript 5.9.3 for strict type safety
-- Functional components with hooks as default
-- Server Components as default, Client Components when needed
-- Follow React's official style guide and best practices
-- RSLib + Rsbuild for component library builds
-- Implement proper component composition and reusability patterns
+---
 
-## Development Standards
+## ⚛️ Component Patterns
 
-### Architecture
-- Use functional components with hooks as the primary pattern
-- Implement component composition over inheritance
-- Organize components by feature or domain for scalability
-- Separate presentational and container components clearly
-- Use custom hooks for reusable stateful logic
-- Implement proper component hierarchies with clear data flow
-
-### TypeScript Integration
-- Use TypeScript interfaces for props, state, and component definitions
-- Define proper types for event handlers and refs
-- Implement generic components where appropriate
-- Use strict mode in `tsconfig.json` for type safety
-- Leverage React's built-in types (`React.FC`, `React.ComponentProps`, etc.)
-- Create union types for component variants and states
-
-### Component Design
-- Follow the single responsibility principle for components
-- Use descriptive and consistent naming conventions
-- Implement proper prop validation with TypeScript or PropTypes
-- Design components to be testable and reusable
-- Keep components small and focused on a single concern
-- Use composition patterns (render props, children as functions)
-
-### State Management
-- Use `useState` for local component state
-- Implement `useReducer` for complex state logic
-- Leverage `useContext` for sharing state across component trees
-- Consider external state management (Redux Toolkit, Zustand) for complex applications
-- Implement proper state normalization and data structures
-- Use React Query or SWR for server state management
-
-### Hooks and Effects
-- Use `useEffect` with proper dependency arrays to avoid infinite loops
-- Implement cleanup functions in effects to prevent memory leaks
-- Use `useMemo` and `useCallback` for performance optimization when needed
-- Create custom hooks for reusable stateful logic
-- Follow the rules of hooks (only call at the top level)
-- Use `useRef` for accessing DOM elements and storing mutable values
-
-### Styling
-- Use CSS Modules, Styled Components, or modern CSS-in-JS solutions
-- Implement responsive design with mobile-first approach
-- Follow BEM methodology or similar naming conventions for CSS classes
-- Use CSS custom properties (variables) for theming
-- Implement consistent spacing, typography, and color systems
-- Ensure accessibility with proper ARIA attributes and semantic HTML
-
-### Performance Optimization
-- Use `React.memo` for component memoization when appropriate
-- Implement code splitting with `React.lazy` and `Suspense`
-- Optimize bundle size with tree shaking and dynamic imports
-- Use `useMemo` and `useCallback` judiciously to prevent unnecessary re-renders
-- Implement virtual scrolling for large lists
-- Profile components with React DevTools to identify performance bottlenecks
-
-### Data Fetching
-- Use modern data fetching libraries (React Query, SWR, Apollo Client)
-- Implement proper loading, error, and success states
-- Handle race conditions and request cancellation
-- Use optimistic updates for better user experience
-- Implement proper caching strategies
-- Handle offline scenarios and network errors gracefully
-
-### Error Handling
-- Implement Error Boundaries for component-level error handling
-- Use proper error states in data fetching
-- Implement fallback UI for error scenarios
-- Log errors appropriately for debugging
-- Handle async errors in effects and event handlers
-- Provide meaningful error messages to users
-
-### Forms and Validation
-- Use controlled components for form inputs
-- Implement proper form validation with libraries like Formik, React Hook Form
-- Handle form submission and error states appropriately
-- Implement accessibility features for forms (labels, ARIA attributes)
-- Use debounced validation for better user experience
-- Handle file uploads and complex form scenarios
-
-### Routing (Next.js App Router)
-- Use file-based routing in `app/` directory
-- Implement layouts for shared UI across routes
-- Use route groups `(groupName)` for organization without affecting URL
-- Leverage Server Components for initial page loads
-- Use `<Link>` from next/link for client-side navigation
-- Implement loading.tsx for loading states
-- Create error.tsx for error boundaries
-
-### Component Library Usage
-- Import components from `@arolariu/components`
-- Use shadcn/ui patterns for consistency
-- Extend library components via composition, not modification
-- Follow Radix UI accessibility patterns
-- Leverage class-variance-authority for variants
-- Use Tailwind CSS utility classes for styling
-
-### React 19 Specific Features
-- **Server Components**: Default in Next.js App Router, no `use client` needed
-- **Actions**: Use Server Actions for form submissions
-- **use() Hook**: Unwrap promises and context in render
-- **Improved Hydration**: Better SSR mismatch handling
-- **Document Metadata**: Use Next.js metadata API
-- **Optimistic Updates**: Built-in optimistic UI patterns
-
-## Quick Reference
-
-### When to Use Client Components
-Add `"use client"` directive only when you need:
-- Browser-only APIs (window, document, localStorage)
-- Event handlers (onClick, onChange, onSubmit with preventDefault)
-- React hooks (useState, useEffect, useContext)
-- Third-party libraries that depend on browser APIs
-
-### Component Patterns for This Codebase
+### Functional Component Template
 
 ```tsx
-// Server Component (Default)
-// No "use client" needed
-export default async function ServerComponent() {
-  const data = await fetchData();
-  return <div>{data.title}</div>;
+import type {ReactNode} from "react";
+
+/**
+ * Brief description of what this component does.
+ *
+ * @param props - Component props
+ * @returns The rendered component
+ *
+ * @example
+ * ```tsx
+ * <MyComponent title="Hello" isVisible>
+ *   <ChildContent />
+ * </MyComponent>
+ * ```
+ */
+
+interface Props {
+  /** The title to display */
+  title: string;
+  /** Child elements to render */
+  children: ReactNode;
+  /** Whether the component is visible */
+  isVisible?: boolean;
 }
 
-// Client Component (When Needed)
+export default function MyComponent({
+  title,
+  children,
+  isVisible = true,
+}: Readonly<Props>): React.JSX.Element {
+  if (!isVisible) return <></>;
+
+  return (
+    <section aria-labelledby="section-title">
+      <h2 id="section-title">{title}</h2>
+      {children}
+    </section>
+  );
+}
+```
+
+### Key Rules
+
+1. **Always use `Readonly<Props>`** - Prevents accidental mutation
+2. **Explicit return type** - `React.JSX.Element` or `Promise<React.JSX.Element>` for async
+3. **Default exports for pages** - Named exports for reusable components
+4. **Destructure props** - Don't pass entire props object around
+
+---
+
+## 🎣 Hook Patterns
+
+### Custom Hook Template
+
+```tsx
 "use client";
-import { useState } from "react";
 
-export function ClientComponent() {
-  const [state, setState] = useState(0);
-  return <button onClick={() => setState(s => s + 1)}>{state}</button>;
+import {useEffect, useState} from "react";
+
+/**
+ * Input parameters for the hook.
+ */
+type HookInput = Readonly<{
+  entityId: string;
+}>;
+
+/**
+ * Return value from the hook.
+ */
+type HookOutput = Readonly<{
+  data: EntityType | null;
+  isLoading: boolean;
+  isError: boolean;
+}>;
+
+/**
+ * Fetches entity data by ID.
+ *
+ * @param params - Hook configuration
+ * @returns Object containing data, loading state, and error state
+ *
+ * @example
+ * ```tsx
+ * const {data, isLoading, isError} = useEntity({entityId: "123"});
+ * ```
+ */
+export function useEntity({entityId}: HookInput): HookOutput {
+  const [data, setData] = useState<EntityType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true; // Cleanup flag
+
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const result = await fetchEntity(entityId);
+        if (isMounted) {
+          setData(result);
+          setIsError(false);
+        }
+      } catch (error) {
+        console.error("Error fetching entity:", error);
+        if (isMounted) setIsError(true);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isMounted = false; // Cleanup on unmount
+    };
+  }, [entityId]);
+
+  return {data, isLoading, isError};
+}
+```
+
+### Rules of Hooks
+
+1. **Only call at top level** - Never inside conditions, loops, or nested functions
+2. **Only call in React functions** - Components or custom hooks
+3. **Prefix with `use`** - `useInvoice`, `useMerchants`, `usePagination`
+4. **Always cleanup effects** - Return cleanup function from `useEffect`
+
+---
+
+## 🧠 Memoization Patterns
+
+### When to Memoize
+
+```tsx
+import {memo, useCallback, useMemo} from "react";
+
+// ✅ Memoize expensive calculations
+const sortedItems = useMemo(() => {
+  return items.sort((a, b) => a.date - b.date);
+}, [items]);
+
+// ✅ Memoize callbacks passed to children
+const handleUpdate = useCallback((id: string) => {
+  updateItem(id);
+}, [updateItem]);
+
+// ✅ Memoize components that receive stable props
+export const ExpensiveList = memo(function ExpensiveList({
+  items,
+  onSelect,
+}: Readonly<Props>): React.JSX.Element {
+  return (
+    <ul>
+      {items.map((item) => (
+        <li key={item.id} onClick={() => onSelect(item.id)}>
+          {item.name}
+        </li>
+      ))}
+    </ul>
+  );
+});
+```
+
+### When NOT to Memoize
+
+```tsx
+// ❌ Don't memoize primitive values
+const doubled = useMemo(() => count * 2, [count]); // Overkill
+
+// ❌ Don't memoize if props change frequently
+const MemoizedAlwaysChanges = memo(Component); // Useless if props change
+
+// ❌ Don't memoize simple inline handlers
+<button onClick={() => setCount(count + 1)} /> // Fine as is
+```
+
+---
+
+## 🌳 Context Pattern
+
+### Context + Provider + Hook
+
+```tsx
+"use client";
+
+import {createContext, use, useCallback, useMemo, useState, type ReactNode} from "react";
+
+// 1. Define types
+type ThemeType = "light" | "dark" | "system";
+
+interface ThemeContextValue {
+  theme: ThemeType;
+  setTheme: (theme: ThemeType) => void;
 }
 
-// Shared Component from Library
-import { Button, Card } from "@arolariu/components";
+// 2. Create context with undefined default
+const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-export function MyComponent() {
+// 3. Create provider component
+export function ThemeProvider({children}: {children: ReactNode}): React.JSX.Element {
+  const [theme, setThemeState] = useState<ThemeType>("system");
+
+  const setTheme = useCallback((newTheme: ThemeType) => {
+    setThemeState(newTheme);
+    localStorage.setItem("theme", newTheme);
+  }, []);
+
+  // Memoize value to prevent unnecessary re-renders
+  const value = useMemo(() => ({theme, setTheme}), [theme, setTheme]);
+
+  return (
+    <ThemeContext.Provider value={value}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+// 4. Create custom hook with error boundary
+export function useTheme(): ThemeContextValue {
+  const context = use(ThemeContext);
+  if (!context) {
+    throw new Error("useTheme must be used within ThemeProvider");
+  }
+  return context;
+}
+```
+
+### Context Guidelines
+
+1. **Always memoize provider value** - Prevents child re-renders
+2. **Create custom hook** - Provides better error messages
+3. **Use `use()` in React 19** - Instead of `useContext()`
+4. **Keep context focused** - One responsibility per context
+
+---
+
+## 🗃️ State Management Hierarchy
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Zustand Stores                          │
+│  Global state, IndexedDB persistence, devtools             │
+│  Use for: Invoices, merchants, app-wide preferences        │
+├─────────────────────────────────────────────────────────────┤
+│                     React Context                           │
+│  Scoped state, domain-specific, component tree sharing     │
+│  Use for: Dialogs, fonts, feature-specific state           │
+├─────────────────────────────────────────────────────────────┤
+│                     useState / useReducer                   │
+│  Local component state, form inputs, UI toggles            │
+│  Use for: Single component, no sharing needed              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Zustand Pattern (from codebase)
+
+```tsx
+import {create} from "zustand";
+import {devtools, persist} from "zustand/middleware";
+
+interface StoreState {
+  items: ReadonlyArray<Item>;
+  selectedIds: string[];
+}
+
+interface StoreActions {
+  setItems: (items: ReadonlyArray<Item>) => void;
+  upsertItem: (item: Item) => void;
+  removeItem: (id: string) => void;
+}
+
+type Store = StoreState & StoreActions;
+
+export const useItemStore = create<Store>()(
+  devtools(
+    persist(
+      (set) => ({
+        items: [],
+        selectedIds: [],
+
+        setItems: (items) => set({items}),
+        upsertItem: (item) => set((state) => ({
+          items: state.items.some((i) => i.id === item.id)
+            ? state.items.map((i) => i.id === item.id ? item : i)
+            : [...state.items, item],
+        })),
+        removeItem: (id) => set((state) => ({
+          items: state.items.filter((i) => i.id !== id),
+        })),
+      }),
+      {name: "item-store"}
+    )
+  )
+);
+```
+
+---
+
+## ♿ Accessibility Requirements
+
+### Semantic HTML
+
+```tsx
+// ✅ Use semantic elements
+<main>
+  <article aria-labelledby="article-title">
+    <h1 id="article-title">Title</h1>
+    <nav aria-label="Article sections">
+      <ul>...</ul>
+    </nav>
+    <section aria-labelledby="section-1">
+      <h2 id="section-1">Section</h2>
+    </section>
+  </article>
+</main>
+
+// ❌ Don't use divs for everything
+<div class="main">
+  <div class="article">
+    <div class="title">Title</div>
+  </div>
+</div>
+```
+
+### Interactive Elements
+
+```tsx
+// ✅ Keyboard accessible
+<button
+  onClick={handleClick}
+  onKeyDown={(e) => e.key === "Enter" && handleClick()}
+  aria-label="Delete invoice"
+  aria-describedby="delete-help"
+>
+  <TrashIcon aria-hidden="true" />
+</button>
+<span id="delete-help" className="sr-only">
+  Permanently removes this invoice
+</span>
+
+// ❌ Non-accessible clickable div
+<div onClick={handleClick}>
+  <TrashIcon />
+</div>
+```
+
+### Required ARIA Attributes
+
+| Element | Required | Example |
+|---------|----------|---------|
+| `<img>` | `alt` | `alt="Invoice preview"` |
+| Icon buttons | `aria-label` | `aria-label="Close dialog"` |
+| Loading states | `aria-busy` | `aria-busy={isLoading}` |
+| Dialogs | `aria-modal`, `role` | `role="dialog" aria-modal="true"` |
+| Error messages | `role="alert"` | `<div role="alert">{error}</div>` |
+
+---
+
+## 🎨 Component Library Usage
+
+### Importing from @arolariu/components
+
+```tsx
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  toast,
+  cn,
+} from "@arolariu/components";
+
+export function MyFeature(): React.JSX.Element {
   return (
     <Card>
-      <Button variant="default">Click me</Button>
+      <CardHeader>
+        <h2>Title</h2>
+      </CardHeader>
+      <CardContent>
+        <Button
+          variant="default"
+          size="lg"
+          onClick={() => toast.success("Done!")}
+        >
+          Action
+        </Button>
+      </CardContent>
     </Card>
   );
 }
 ```
 
-### Routing
-- Use React Router for client-side routing
-- Implement nested routes and route protection
-- Handle route parameters and query strings properly
-- Implement lazy loading for route-based code splitting
-- Use proper navigation patterns and back button handling
-- Implement breadcrumbs and navigation state management
+### Class Merging with `cn()`
 
-### Testing
-- Write unit tests for components using React Testing Library
-- Test component behavior, not implementation details
-- Use Jest for test runner and assertion library
-- Implement integration tests for complex component interactions
-- Mock external dependencies and API calls appropriately
-- Test accessibility features and keyboard navigation
+```tsx
+import {cn} from "@arolariu/components";
 
-### Security
-- Sanitize user inputs to prevent XSS attacks
-- Validate and escape data before rendering
-- Use HTTPS for all external API calls
-- Implement proper authentication and authorization patterns
-- Avoid storing sensitive data in localStorage or sessionStorage
-- Use Content Security Policy (CSP) headers
+// Merge classes conditionally
+<div className={cn(
+  "flex items-center gap-4",
+  "bg-white dark:bg-black",
+  isActive && "ring-2 ring-primary",
+  className // Allow override from props
+)} />
+```
 
-### Accessibility
-- Use semantic HTML elements appropriately
-- Implement proper ARIA attributes and roles
-- Ensure keyboard navigation works for all interactive elements
-- Provide alt text for images and descriptive text for icons
-- Implement proper color contrast ratios
-- Test with screen readers and accessibility tools
+### Extending Components
 
-## Implementation Process
-1. Plan component architecture and data flow
-2. Set up project structure with proper folder organization
-3. Define TypeScript interfaces and types
-4. Implement core components with proper styling
-5. Add state management and data fetching logic
-6. Implement routing and navigation
-7. Add form handling and validation
-8. Implement error handling and loading states
-9. Add testing coverage for components and functionality
-10. Optimize performance and bundle size
-11. Ensure accessibility compliance
-12. Add documentation and code comments
+```tsx
+// ✅ Extend via composition
+import {Button, type ButtonProps} from "@arolariu/components";
 
-## Additional Guidelines
-- Follow React's naming conventions (PascalCase for components, camelCase for functions)
-- Use meaningful commit messages and maintain clean git history
-- Implement proper code splitting and lazy loading strategies
-- Document complex components and custom hooks with JSDoc
-- Use ESLint and Prettier for consistent code formatting
-- Keep dependencies up to date and audit for security vulnerabilities
-- Implement proper environment configuration for different deployment stages
-- Use React Developer Tools for debugging and performance analysis
+interface LoadingButtonProps extends ButtonProps {
+  isLoading?: boolean;
+}
 
-## Common Patterns
-- Higher-Order Components (HOCs) for cross-cutting concerns
-- Render props pattern for component composition
-- Compound components for related functionality
-- Provider pattern for context-based state sharing
-- Container/Presentational component separation
-- Custom hooks for reusable logic extraction
+export function LoadingButton({
+  isLoading,
+  children,
+  disabled,
+  ...props
+}: LoadingButtonProps): React.JSX.Element {
+  return (
+    <Button disabled={disabled || isLoading} {...props}>
+      {isLoading ? <Spinner /> : children}
+    </Button>
+  );
+}
+
+// ❌ Don't modify library components directly
+```
+
+---
+
+## 🧪 Testing Patterns
+
+### Component Tests
+
+```tsx
+import {render, screen} from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import {describe, expect, it, vi} from "vitest";
+import {MyComponent} from "./MyComponent";
+
+describe("MyComponent", () => {
+  it("renders title correctly", () => {
+    render(<MyComponent title="Test Title" />);
+    expect(screen.getByRole("heading", {name: "Test Title"})).toBeInTheDocument();
+  });
+
+  it("calls onClick handler when button clicked", async () => {
+    const handleClick = vi.fn();
+    render(<MyComponent onClick={handleClick} />);
+
+    await userEvent.click(screen.getByRole("button"));
+
+    expect(handleClick).toHaveBeenCalledOnce();
+  });
+
+  it("shows loading state", () => {
+    render(<MyComponent isLoading />);
+    expect(screen.getByRole("status")).toHaveAttribute("aria-busy", "true");
+  });
+});
+```
+
+### Hook Tests
+
+```tsx
+import {renderHook, waitFor} from "@testing-library/react";
+import {describe, expect, it, vi} from "vitest";
+import {useEntity} from "./useEntity";
+
+describe("useEntity", () => {
+  it("returns loading state initially", () => {
+    const {result} = renderHook(() => useEntity({entityId: "123"}));
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.data).toBeNull();
+  });
+
+  it("fetches and returns data", async () => {
+    const {result} = renderHook(() => useEntity({entityId: "123"}));
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.data).toBeDefined();
+  });
+});
+```
+
+---
+
+## 🚫 Anti-Patterns
+
+| Anti-Pattern | Problem | Solution |
+|--------------|---------|----------|
+| `any` types | No type safety | Proper interfaces |
+| Props mutation | Unexpected behavior | `Readonly<Props>` |
+| Missing cleanup | Memory leaks | Effect cleanup functions |
+| Prop drilling | Hard to maintain | Context or Zustand |
+| Inline objects in deps | Infinite loops | `useMemo` for objects |
+| Missing keys | Poor reconciliation | Unique `key` prop |
+| Index as key | Incorrect updates | Use item ID |
+| Direct DOM access | Breaks React model | Use refs properly |
+| Async in useEffect | Unhandled promises | IIFE or separate function |
+
+### Common Mistakes
+
+```tsx
+// ❌ Missing cleanup
+useEffect(() => {
+  const interval = setInterval(tick, 1000);
+  // No cleanup!
+}, []);
+
+// ✅ With cleanup
+useEffect(() => {
+  const interval = setInterval(tick, 1000);
+  return () => clearInterval(interval);
+}, []);
+
+// ❌ Object in dependencies
+useEffect(() => {
+  doSomething(config);
+}, [{option: true}]); // New object every render!
+
+// ✅ Memoize or use primitives
+const config = useMemo(() => ({option: true}), []);
+useEffect(() => {
+  doSomething(config);
+}, [config]);
+
+// ❌ Async useEffect
+useEffect(async () => {
+  const data = await fetchData();
+}, []);
+
+// ✅ IIFE pattern
+useEffect(() => {
+  (async () => {
+    const data = await fetchData();
+  })();
+}, []);
+```
+
+---
+
+## 📋 Checklist
+
+### Before Committing
+
+- [ ] Props typed with `Readonly<Props>`
+- [ ] Explicit return types on components
+- [ ] Effects have cleanup functions
+- [ ] Memoization used appropriately
+- [ ] Accessibility attributes included
+- [ ] Loading and error states handled
+- [ ] JSDoc on public APIs
+- [ ] Tests written/updated
+
+### Code Review Focus
+
+- [ ] No `any` types
+- [ ] No prop drilling (use Context/Zustand)
+- [ ] No inline object dependencies
+- [ ] Proper key props (not index)
+- [ ] Semantic HTML used
+- [ ] No memory leaks
+- [ ] Consistent naming conventions
+
+---
+
+## 🔗 Related Instructions
+
+| File | Scope | Content |
+|------|-------|---------|
+| `frontend.instructions.md` | `sites/arolariu.ro/**` | Next.js, RSC, i18n, metadata |
+| `typescript.instructions.md` | `**/*.ts` | Type patterns, strict mode |
+| `code-review.instructions.md` | All files | Review standards |
+
+For Next.js-specific patterns (Server Components, Server Actions, App Router), see `frontend.instructions.md`.
