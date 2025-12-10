@@ -9,18 +9,8 @@
   ],
   "servers": {
     "github-mcp-server": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "-e",
-        "GITHUB_PERSONAL_ACCESS_TOKEN",
-        "ghcr.io/github/github-mcp-server"
-      ],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github_token}"
-      }
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
     },
     "microsoft-docs-server": {
       "type": "http",
