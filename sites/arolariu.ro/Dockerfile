@@ -34,6 +34,20 @@ RUN npm ci
 FROM base AS builder
 WORKDIR /app
 
+# Environment variables from workflow context (Azure identity)
+ARG AZURE_TENANT_ID
+ARG AZURE_SUBSCRIPTION_ID
+ARG AZURE_CLIENT_ID
+ARG COMMIT_SHA
+ARG INFRA
+
+# Make them available during build (Next.js can embed these at build time)
+ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
+    AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID} \
+    AZURE_CLIENT_ID=${AZURE_CLIENT_ID} \
+    COMMIT_SHA=${COMMIT_SHA} \
+    INFRA=${INFRA}
+
 # Copy everything from deps (includes node_modules with workspace links)
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package.json ./package.json
@@ -56,6 +70,21 @@ RUN npm run build
 # ========================================
 FROM base AS runner
 WORKDIR /app
+
+# Re-declare ARGs to make them available in this stage
+ARG AZURE_TENANT_ID
+ARG AZURE_SUBSCRIPTION_ID
+ARG AZURE_CLIENT_ID
+ARG COMMIT_SHA
+ARG INFRA
+
+# Set runtime environment variables
+ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
+    AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID} \
+    AZURE_CLIENT_ID=${AZURE_CLIENT_ID} \
+    COMMIT_SHA=${COMMIT_SHA} \
+    INFRA=${INFRA}
+
 RUN mkdir .next && chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/public ./public
 # The standalone output preserves the monorepo structure, so server.js is at sites/arolariu.ro/server.js

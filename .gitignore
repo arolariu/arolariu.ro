@@ -21,7 +21,7 @@
 **/**/.DS_Store
 **/*.tsbuildinfo
 **/__generated__/**
-**/.eslintcache
+**/artifacts/
 **/test-file.txt
 
 # Exceptions:

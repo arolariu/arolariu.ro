@@ -1,208 +1,104 @@
+import process from "node:process";
+import {fileURLToPath} from "node:url";
 import pc from "picocolors";
-import {resolveConfigFile} from "prettier";
-import {runWithSpinner} from "./common/index.ts";
+import Piscina from "piscina";
+import type {FormatTarget, FormatWorkerInput, FormatWorkerResult} from "./types/format.ts";
 
-type FormatTarget = "all" | "packages" | "website" | "cv" | "api";
-
-const directoryMap: Record<Exclude<FormatTarget, "all">, string> = {
-  packages: "packages/components/**",
-  website: "sites/arolariu.ro/**",
-  cv: "sites/cv.arolariu.ro/**",
-  api: "sites/api.arolariu.ro/**",
-};
+/** All available format targets in consistent order */
+const allTargets: FormatTarget[] = ["packages", "website", "cv", "api"];
 
 /**
- * Checks code for a specific target using the appropriate checker.
- * @param target The target to check (e.g., "packages", "website", "cv", "api").
- * @param hideOutput Whether to hide output (true for parallel execution)
- * @returns Promise with exit code and output
- * @throws Error if configuration cannot be resolved
+ * Prints a format worker result to the console.
+ * @param result The format worker result to print
  */
-async function checkTarget(target: Exclude<FormatTarget, "all">, hideOutput: boolean = true): Promise<{code: number; output: string}> {
-  if (target === "api") {
-    return await runWithSpinner(
-      "dotnet",
-      ["format", "arolariu.slnx", "--verify-no-changes", "--verbosity", hideOutput ? "quiet" : "detailed"],
-      `${pc.cyan("🔍")} Checking ${pc.bold(".NET API")}`,
-      hideOutput,
-    );
-  }
-
-  // Prettier targets
-  const directoryToCheck = directoryMap[target];
-  if (!directoryToCheck) {
-    throw new Error(`No directory mapping found for target: ${target}`);
-  }
-
-  const configFilePath = await resolveConfigFile();
-  if (configFilePath === null) {
-    throw new Error("Could not resolve prettier configuration file!");
-  }
-
-  return await runWithSpinner(
-    "node",
-    [
-      "node_modules/prettier/bin/prettier.cjs",
-      "--check",
-      directoryToCheck,
-      "--cache",
-      "--config",
-      configFilePath,
-      "--config-precedence",
-      "prefer-file",
-      "--check-ignore-pragma",
-    ],
-    `${pc.cyan("🔍")} Checking ${pc.bold(target)}`,
-    hideOutput,
-  );
+function printWorkerResult(result: FormatWorkerResult): void {
+  const workerInfo = pc.gray(`[Worker #${result.workerId}]`);
+  const durationInfo = pc.gray(`[${result.durationMs}ms]`);
+  console.log("─".repeat(45));
+  console.log();
+  console.log(pc.bold(`📁 Target: ${result.target}`) + ` ${workerInfo} ${durationInfo}`);
+  console.log();
+  console.log(result.resultText);
 }
 
 /**
- * Formats code for a specific target using the appropriate formatter.
- * @param target The target to format (e.g., "packages", "website", "cv", "api").
- * @param hideOutput Whether to hide output (true for parallel execution)
- * @returns Promise with exit code and output
- * @throws Error if configuration cannot be resolved
- */
-async function formatTarget(target: Exclude<FormatTarget, "all">, hideOutput: boolean = true): Promise<{code: number; output: string}> {
-  if (target === "api") {
-    return await runWithSpinner(
-      "dotnet",
-      ["format", "arolariu.slnx", "--verbosity", hideOutput ? "quiet" : "detailed"],
-      `${pc.cyan("🔧")} Formatting ${pc.bold(".NET API")}`,
-      hideOutput,
-    );
-  }
-
-  // Prettier targets
-  const directoryToCheck = directoryMap[target];
-  if (!directoryToCheck) {
-    throw new Error(`No directory mapping found for target: ${target}`);
-  }
-
-  const configFilePath = await resolveConfigFile();
-  if (configFilePath === null) {
-    throw new Error("Could not resolve prettier configuration file!");
-  }
-
-  return await runWithSpinner(
-    "node",
-    [
-      "node_modules/prettier/bin/prettier.cjs",
-      "--write",
-      directoryToCheck,
-      "--cache",
-      "--config",
-      configFilePath,
-      "--config-precedence",
-      "prefer-file",
-      "--check-ignore-pragma",
-    ],
-    `${pc.cyan("✨")} Formatting ${pc.bold(target)}`,
-    hideOutput,
-  );
-}
-
-/**
- * Checks and formats code for a specific target.
- * First checks the code, then formats only if needed.
- * @param target The target to check and format
- * @param hideOutput Whether to hide output (true for parallel execution)
+ * Runs formatting on all targets in parallel using Piscina workers.
  * @returns Exit code (0 for success, non-zero for failure)
- */
-async function checkAndFormatTarget(target: Exclude<FormatTarget, "all">, hideOutput: boolean = true): Promise<number> {
-  const checkResult = await checkTarget(target, hideOutput);
-
-  // If check passed, we're done
-  if (checkResult.code === 0) return 0;
-
-  // Otherwise, format the code
-  const formatResult = await formatTarget(target, hideOutput);
-  return formatResult.code;
-}
-
-/**
- * Formats all targets in parallel - checks first, then formats if needed.
- * @returns Exit code (0 for success, non-zero for failure)
- * @throws Error if configuration cannot be resolved or targets are invalid
  */
 async function runOnAllTargets(): Promise<number> {
-  console.log(pc.bold(pc.magenta("\n🧵 Phase 1: Checking all targets in parallel...\n")));
+  console.log(pc.bold(pc.magenta("\n🧵 Running format workers in parallel...")));
 
-  const allTargets: Exclude<FormatTarget, "all">[] = ["packages", "website", "cv", "api"];
-
-  // Phase 1: Run ALL checks in parallel using the wrapper
-  const checkPromises = allTargets.map((target) => checkTarget(target, true).then((result) => ({target, result})));
-
-  const checkResults = await Promise.allSettled(checkPromises).then((results) =>
-    results.map((result, index) => {
-      if (result.status === "fulfilled") {
-        return result.value;
-      } else {
-        const target = allTargets[index];
-        console.error(pc.red(`\n✗ Check failed for target ${target}: ${result.reason}`));
-        // Return a dummy result with error code
-        return {
-          target,
-          result: {code: 1, output: result.reason?.toString() || "Unknown error"},
-        };
-      }
-    }),
-  );
-
-  console.log(); // Add spacing after checks
-
-  // Phase 2: Format only the targets that failed checks
-  const targetsToFormat = checkResults.filter((r) => r.result.code !== 0);
-
-  if (targetsToFormat.length === 0) {
-    console.log(pc.green("✓ All targets already properly formatted!\n"));
-    return 0;
-  }
-
-  console.log(pc.bold(pc.magenta(`\n🧵 Phase 2: Formatting ${targetsToFormat.length} target(s) in parallel...\n`)));
-
-  // Phase 2: Format only failed targets using the wrapper
-  const formatPromises = targetsToFormat.map(({target}) => {
-    if (!target) {
-      throw new Error("Invalid target in format phase");
-    }
-    return formatTarget(target, true);
+  const piscina = new Piscina({
+    filename: fileURLToPath(new URL("./workers/format.worker.ts", import.meta.url)),
+    execArgv: ["--experimental-strip-types", "--no-warnings"],
   });
 
-  const formatResults = await Promise.allSettled(formatPromises).then((results) =>
-    results.map((result) => {
-      if (result.status === "fulfilled") {
-        return result.value;
-      } else {
-        console.error(pc.red(`\n✗ Format operation failed: ${result.reason}`));
-        return {code: 1, output: result.reason?.toString() || "Unknown error"};
-      }
-    }),
-  );
+  console.log(pc.gray(`   Main process PID: ${process.pid}`));
+  console.log(pc.gray(`   Worker pool: min=${piscina.options.minThreads}, max=${piscina.options.maxThreads}\n`));
 
-  console.log(); // Add spacing after formatting
+  try {
+    // Dispatch all workers in parallel
+    const workerPromises = allTargets.map((target) => {
+      const input: FormatWorkerInput = {target};
+      return piscina.run(input) as Promise<FormatWorkerResult>;
+    });
 
-  // Check if any formatting failed
-  const failedCount = formatResults.filter((r) => r.code !== 0).length;
-  if (failedCount > 0) {
-    console.log(pc.yellow(`\n⚠ ${failedCount} target(s) had formatting issues`));
-    return 1;
+    // Wait for all workers to complete
+    const results = await Promise.all(workerPromises);
+
+    // Print results in order
+    for (const result of results) {
+      printWorkerResult(result);
+    }
+
+    // Calculate summary
+    const alreadyFormatted = results.filter((r) => r.checkPassed).length;
+    const formatted = results.filter((r) => r.formatted).length;
+    const failed = results.filter((r) => r.exitCode !== 0).length;
+
+    console.log("─".repeat(45));
+    console.log();
+    console.log(pc.bold("📊 Summary:"));
+    if (alreadyFormatted > 0) {
+      console.log(pc.green(`   ✓ ${alreadyFormatted} target(s) already formatted`));
+    }
+    if (formatted > 0) {
+      console.log(pc.yellow(`   ✎ ${formatted} target(s) were formatted`));
+    }
+    if (failed > 0) {
+      console.log(pc.red(`   ✗ ${failed} target(s) failed`));
+    }
+    console.log();
+
+    return failed > 0 ? 1 : 0;
+  } finally {
+    await piscina.destroy();
   }
-
-  return 0;
 }
 
 /**
- * Formats a single target with full output visibility.
- * @param target The specific target to format (not "all")
+ * Runs formatting on a single target using a Piscina worker.
+ * @param target The specific target to format
  * @returns Exit code (0 for success, non-zero for failure)
  */
-async function runOnSingleTarget(target: Exclude<FormatTarget, "all">): Promise<number> {
+async function runOnSingleTarget(target: FormatTarget): Promise<number> {
   console.log(pc.bold(pc.magenta(`\n🎨 Formatting: ${target}\n`)));
 
-  // For single targets, show full output using the wrapper (hideOutput = false)
-  return await checkAndFormatTarget(target, false);
+  const piscina = new Piscina({
+    filename: fileURLToPath(new URL("./workers/format.worker.ts", import.meta.url)),
+    execArgv: ["--experimental-strip-types", "--no-warnings"],
+  });
+
+  try {
+    const input: FormatWorkerInput = {target};
+    const result = (await piscina.run(input)) as FormatWorkerResult;
+
+    printWorkerResult(result);
+
+    return result.exitCode;
+  } finally {
+    await piscina.destroy();
+  }
 }
 
 export async function main(arg?: string): Promise<number> {

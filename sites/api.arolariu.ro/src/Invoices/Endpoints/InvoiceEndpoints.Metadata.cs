@@ -38,7 +38,7 @@ public static partial class InvoiceEndpoints
     "This operation requires the user to be authenticated and authorized.",
     OperationId = nameof(CreateNewInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status201Created, "The invoice was successfully created in the system.", typeof(InvoiceDetailResponseDto))]
+  [SwaggerResponse(StatusCodes.Status201Created, "The invoice was successfully created in the system.", typeof(InvoiceResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice DTO is invalid. Please check the request body for errors.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -69,7 +69,7 @@ public static partial class InvoiceEndpoints
     "If successful, the invoice details are returned.",
     OperationId = nameof(RetrieveSpecificInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The invoice was successfully retrieved.", typeof(InvoiceDetailResponseDto))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The invoice was successfully retrieved.", typeof(InvoiceResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access this invoice.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -98,7 +98,7 @@ public static partial class InvoiceEndpoints
     "It returns all invoices that the authenticated user is authorized to view.",
     OperationId = nameof(RetrieveAllInvoicesAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The invoices were successfully retrieved.", typeof(InvoiceSummaryResponseDto[]))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The invoices were successfully retrieved.", typeof(InvoiceResponseDto[]))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status404NotFound, "No invoices were found in the system.", typeof(ProblemDetails))]
@@ -128,7 +128,7 @@ public static partial class InvoiceEndpoints
     "If the invoice exists and the user has permission, the update is performed.",
     OperationId = nameof(UpdateSpecificInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was successfully updated.", typeof(InvoiceDetailResponseDto))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was successfully updated.", typeof(InvoiceResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice data is invalid. Please check the request body for errors.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -160,7 +160,7 @@ public static partial class InvoiceEndpoints
     "The operation validates the partial data and applies the changes if the invoice exists and the user is authorized.",
     OperationId = nameof(PatchSpecificInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was successfully patched.", typeof(InvoiceDetailResponseDto))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice was successfully patched.", typeof(InvoiceResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided partial invoice data is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -413,7 +413,7 @@ public static partial class InvoiceEndpoints
     "If successful, the merchant is linked to the invoice.",
     OperationId = nameof(AddMerchantToInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status201Created, "The merchant was successfully added to the invoice.", typeof(InvoiceDetailResponseDto))]
+  [SwaggerResponse(StatusCodes.Status201Created, "The merchant was successfully added to the invoice.", typeof(InvoiceResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant data is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to perform this operation.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -824,7 +824,7 @@ public static partial class InvoiceEndpoints
     "If successful, a list of invoices is returned.",
     OperationId = nameof(RetrieveInvoicesFromMerchantAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status200OK, "The invoices were successfully retrieved.", typeof(IEnumerable<InvoiceSummaryResponseDto>))]
+  [SwaggerResponse(StatusCodes.Status200OK, "The invoices were successfully retrieved.", typeof(IEnumerable<InvoiceResponseDto>))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided merchant identifier is invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to access the invoices from this merchant.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status403Forbidden, "The user is not authenticated. Please provide valid credentials.", typeof(ProblemDetails))]
@@ -953,7 +953,7 @@ public static partial class InvoiceEndpoints
     "If successful, the analysis result is returned.",
     OperationId = nameof(AnalyzeInvoiceAsync),
     Tags = [EndpointNameTag])]
-  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice analysis has been accepted and is processing.", typeof(InvoiceDetailResponseDto))]
+  [SwaggerResponse(StatusCodes.Status202Accepted, "The invoice analysis has been accepted and is processing.", typeof(InvoiceResponseDto))]
   [SwaggerResponse(StatusCodes.Status400BadRequest, "The provided invoice identifier or analysis options are invalid.", typeof(ValidationProblemDetails))]
   [SwaggerResponse(StatusCodes.Status401Unauthorized, "The user is not authorized to analyze this invoice.", typeof(ProblemDetails))]
   [SwaggerResponse(StatusCodes.Status402PaymentRequired, "The user does not have enough credits to perform this analysis.", typeof(ProblemDetails))]

@@ -14,11 +14,11 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "test": "npm run test:unit",
-    "test:unit": "npm run test:vitest",
+    "test:unit": "svelte-kit sync && npm run test:vitest",
     "test:vitest": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "svelte-kit sync && vitest run --coverage"
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "*",

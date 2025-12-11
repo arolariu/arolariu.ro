@@ -1,98 +1,121 @@
-import {ESLint, Linter} from "eslint";
-import type {Config} from "eslint/config";
 import process from "node:process";
 import pc from "picocolors";
-import eslintConfig from "../eslint.config.ts";
+import Piscina from "piscina";
+import type {ESLintWorkerInput, ESLintWorkerResult} from "./types/lint.ts";
 
 type LintTarget = "all" | "packages" | "website" | "cv";
 
 /**
- * Load ESLint configuration based on the lint target.
- * This filters the configurations defined in eslint.config.ts.
- * @param lintTarget The target to load the ESLint config for.
- * @returns The ESLint configuration for the specified target.
+ * Maps lint targets to their ESLint config names.
  */
-function loadESLintConfig(lintTarget: LintTarget): Config | Config[] {
-  switch (lintTarget) {
-    case "all":
-      return eslintConfig;
-    case "packages":
-      return eslintConfig.find((cfg) => cfg.name === "[@arolariu/packages]")!;
-    case "website":
-      return eslintConfig.find((cfg) => cfg.name === "[@arolariu/website]")!;
-    case "cv":
-      return eslintConfig.find((cfg) => cfg.name === "[@arolariu/cv]")!;
-    default:
-      throw new Error(`Unknown lint target: ${lintTarget}`);
-  }
-}
+const configNameMap: Record<Exclude<LintTarget, "all">, string> = {
+  packages: "[@arolariu/packages]",
+  website: "[@arolariu/website]",
+  cv: "[@arolariu/cv]",
+};
 
-async function runESLint(config: Linter.Config<Linter.RulesRecord>) {
-  const eslint = new ESLint({
-    baseConfig: config,
-    cache: true,
-    cacheLocation: ".eslintcache",
-    cacheStrategy: "content",
-    errorOnUnmatchedPattern: true,
-    stats: true,
-  });
+/**
+ * All lint targets in consistent order for parallel execution.
+ */
+const allTargets: Exclude<LintTarget, "all">[] = ["packages", "website", "cv"];
 
-  console.log(pc.cyan(`\n🔍 Using ESLint config: ${pc.bold(config.name || "unknown")}`));
+/**
+ * Prints the result from an ESLint worker with formatted output.
+ * @param result The ESLint worker result
+ */
+function printWorkerResult(result: ESLintWorkerResult): void {
+  const workerInfo = pc.gray(`[Worker #${result.workerId}]`);
+  const durationInfo = pc.gray(`[${result.durationMs}ms]`);
+  console.log(pc.cyan(`\n🔍 ESLint config: ${pc.bold(result.configName)} ${workerInfo} ${durationInfo}`));
 
-  const rawPatterns = Array.isArray(config.files) ? config.files : [config.files];
-  const stringPatterns = rawPatterns.filter((p): p is string => typeof p === "string");
-
-  console.log(pc.gray("\n📂 Lint file paths:"));
-  console.log(pc.gray(stringPatterns.map((p) => `   - ${p}`).join("\n")));
-
-  console.log(pc.cyan("\n⚡ Running ESLint analysis..."));
-  const results = await eslint.lintFiles(stringPatterns);
-  const formatter = await eslint.loadFormatter("stylish");
-  const resultText = formatter.format(results);
-
-  if (resultText) {
-    console.log(resultText);
+  if (result.error) {
+    console.log(pc.red(`  ✗ Worker error: ${result.error}`));
+    return;
   }
 
-  const errorCount = results.reduce((sum, res) => sum + res.errorCount, 0);
-  const warningCount = results.reduce((sum, res) => sum + res.warningCount, 0);
+  if (result.resultText) {
+    console.log(result.resultText);
+  }
 
-  if (errorCount > 0 || warningCount > 0) {
-    if (errorCount > 0) {
-      console.log(pc.red(`  ✗ ESLint found ${errorCount} error(s) and ${warningCount} warning(s)`));
+  if (result.errorCount > 0 || result.warningCount > 0) {
+    if (result.errorCount > 0) {
+      console.log(pc.red(`  ✗ ESLint found ${result.errorCount} error(s) and ${result.warningCount} warning(s)`));
     } else {
-      console.log(pc.yellow(`  ⚠ ESLint found ${warningCount} warning(s)`));
+      console.log(pc.yellow(`  ⚠ ESLint found ${result.warningCount} warning(s)`));
     }
-    return errorCount > 0 ? 1 : 0;
+  } else {
+    console.log(pc.green(`  ✓ No linting issues found for ${result.configName}`));
   }
-
-  console.log(pc.green(`  ✓ No linting issues found for ${config.name}`));
-  return 0;
 }
 
 /**
- * Run ESLint for the specified target.
+ * Run ESLint for the specified target using Piscina worker threads.
  * @param lintTarget The target to lint.
  */
 async function startESLint(lintTarget: LintTarget): Promise<number> {
   console.log(pc.bold(pc.magenta(`\n🔎 Running ESLint for: ${lintTarget}`)));
-  let lintConfig = loadESLintConfig(lintTarget);
-  let totalErrors = 0;
 
-  if (lintTarget === "all") {
-    console.log(pc.yellow("⏱️  Warning: Running lint on 'all' may take a while..."));
-    for (const config of Array.isArray(lintConfig) ? lintConfig : [lintConfig]) {
-      console.log(pc.gray("\n─────────────────────────────────────────────────"));
-      const exitCode = await runESLint(config);
-      if (exitCode !== 0) totalErrors++;
-      console.log(pc.gray("─────────────────────────────────────────────────"));
+  // Create Piscina worker pool
+  const piscina = new Piscina({
+    filename: new URL("./workers/eslint.worker.ts", import.meta.url).href,
+    minThreads: 1,
+    maxThreads: 3,
+    idleTimeout: 500,
+  });
+
+  try {
+    if (lintTarget === "all") {
+      console.log(pc.yellow("⏱️  Running lint on all targets in parallel..."));
+      console.log(pc.bold(pc.magenta("\n🧵 Dispatching workers for parallel linting...")));
+      console.log(pc.gray(`   Main process PID: ${process.pid}`));
+      console.log(pc.gray(`   Worker pool: min=${piscina.options.minThreads}, max=${piscina.options.maxThreads}\n`));
+
+      // Dispatch all targets in parallel
+      const promises = allTargets.map((target) => {
+        const configName = configNameMap[target];
+        const input: ESLintWorkerInput = {configName};
+        return piscina.run(input) as Promise<ESLintWorkerResult>;
+      });
+
+      // Wait for all workers to complete
+      const results = await Promise.all(promises);
+
+      // Print results in consistent order (packages → website → cv)
+      let totalErrors = 0;
+      let totalWarnings = 0;
+
+      for (const result of results) {
+        console.log(pc.gray("\n─────────────────────────────────────────────────"));
+        printWorkerResult(result);
+        console.log(pc.gray("─────────────────────────────────────────────────"));
+
+        if (result.error) {
+          totalErrors++;
+        } else {
+          totalErrors += result.errorCount;
+          totalWarnings += result.warningCount;
+        }
+      }
+
+      console.log(pc.bold(pc.cyan(`\n📊 Summary: ${totalErrors} error(s), ${totalWarnings} warning(s)`)));
+      return totalErrors > 0 ? 1 : 0;
+    } else {
+      // Single target - still use worker for consistency
+      const configName = configNameMap[lintTarget];
+      const input: ESLintWorkerInput = {configName};
+      const result = (await piscina.run(input)) as ESLintWorkerResult;
+
+      printWorkerResult(result);
+
+      if (result.error) {
+        return 1;
+      }
+      return result.errorCount > 0 ? 1 : 0;
     }
-  } else {
-    const config = lintConfig as Config;
-    totalErrors = await runESLint(config);
+  } finally {
+    // Always close the pool
+    await piscina.close();
   }
-
-  return totalErrors;
 }
 
 export async function main(arg?: string): Promise<number> {

@@ -7,6 +7,10 @@
 import "fake-indexeddb/auto";
 import {vi} from "vitest";
 
+// Set required environment variables before any imports that depend on them
+// This must be done before modules like utils.server.ts are imported
+process.env["RESEND_API_KEY"] = "re_test_mock_api_key_for_vitest";
+
 // Mock Next.js router
 vi.mock("next/navigation", () => ({
   useRouter() {
