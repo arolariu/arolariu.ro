@@ -14,6 +14,12 @@
       "problemMatcher": []
     },
     {
+      "label": "Tests: All Tests",
+      "type": "shell",
+      "command": "npm run test:unit && npm run test:e2e",
+      "problemMatcher": []
+    },
+    {
       "label": "Checks: Format Run",
       "type": "shell",
       "command": "npm run format",
