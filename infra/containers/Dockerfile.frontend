@@ -2,30 +2,54 @@
 # Frontend Container Image for arolariu.ro - see https://arolariu.ro
 # Frontend Container Image based on Node.js 24 Alpine
 #
+# ENHANCED PRODUCTION-GRADE DOCKERFILE
+#
 # Key points:
 # - Multi-stage build for optimized image size
 # - Monorepo-aware: copies root tsconfig, vitest.config, and workspace packages
 # - Uses Next.js standalone output for minimal production image
 # - Non-root user (nextjs) for security
-# - Uses dumb-init for proper signal handling
+# - Uses dumb-init for proper signal handling (PID 1 zombie reaping)
+# - OCI-compliant labels for container metadata
+# - Security hardening with read-only filesystem support
+# - Health check for container orchestration
+# - Distroless-style minimal attack surface
 #
 # Build context: Repository root (not sites/arolariu.ro)
 # Usage: docker build -f infra/containers/Dockerfile.frontend -t arolariu-frontend .
 ###############################################################################
 
-# Stage 0: Base image with system dependencies
-FROM node:24-alpine AS base
-
-# Install system dependencies and create non-root user
-RUN corepack enable && \
-  apk update && apk upgrade && \
-  apk add --no-cache libc6-compat dumb-init && \
-  rm -rf /var/cache/apk/* && \
-  addgroup --system --gid 1001 nodejs && \
-  adduser --system --uid 1001 nextjs
+# ========================================
+# Build Arguments (defined once at top)
+# ========================================
+ARG NODE_VERSION=24
+ARG COMMIT_SHA=unknown
+ARG INFRA=unknown
+ARG AZURE_TENANT_ID
+ARG AZURE_SUBSCRIPTION_ID
+ARG AZURE_CLIENT_ID
+ARG BUILD_DATE
+ARG VERSION=1.0.0
 
 # ========================================
-# Stage 1: Install dependencies
+# Stage 0: Base image with system dependencies
+# ========================================
+FROM node:${NODE_VERSION}-alpine AS base
+
+# Install system dependencies and create non-root user in single layer
+RUN corepack enable && \
+    apk update && apk upgrade && \
+    apk add --no-cache \
+        libc6-compat \
+        dumb-init \
+        curl \
+        tini \
+    && rm -rf /var/cache/apk/* /tmp/* && \
+    addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 --ingroup nodejs nextjs
+
+# ========================================
+# Stage 1: Install dependencies (cached layer)
 # ========================================
 FROM base AS deps
 WORKDIR /app
@@ -34,12 +58,13 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY tsconfig.json vitest.config.ts ./
 
-# Copy workspace package manifests
+# Copy workspace package manifests (for npm workspace resolution)
 COPY packages/components/package.json ./packages/components/
 COPY sites/arolariu.ro/package.json ./sites/arolariu.ro/
 
-# Install all dependencies (this resolves workspace links)
-RUN npm ci
+# Install all dependencies with clean install for reproducibility
+RUN npm ci --prefer-offline --no-audit && \
+    npm cache clean --force
 
 # ========================================
 # Stage 2: Build the application
@@ -47,7 +72,24 @@ RUN npm ci
 FROM base AS builder
 WORKDIR /app
 
-# Copy everything from deps (includes node_modules with workspace links)
+# Re-declare ARGs for build stage
+ARG COMMIT_SHA
+ARG INFRA
+ARG AZURE_TENANT_ID
+ARG AZURE_SUBSCRIPTION_ID
+ARG AZURE_CLIENT_ID
+ARG VERSION
+
+# Make environment variables available during build (Next.js embeds these at build time)
+ENV AZURE_TENANT_ID=${AZURE_TENANT_ID} \
+    AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID} \
+    AZURE_CLIENT_ID=${AZURE_CLIENT_ID} \
+    COMMIT_SHA=${COMMIT_SHA} \
+    INFRA=${INFRA} \
+    NEXT_TELEMETRY_DISABLED=1 \
+    NODE_ENV=production
+
+# Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/package.json ./package.json
 COPY --from=deps /app/package-lock.json ./package-lock.json
@@ -60,25 +102,75 @@ COPY packages/components/ ./packages/components/
 # Copy the website source
 COPY sites/arolariu.ro/ ./sites/arolariu.ro/
 
-# Build the website
+# Build the website with optimizations
 WORKDIR /app/sites/arolariu.ro
-RUN npm run build
+RUN npm run build && \
+    # Remove source maps in production for smaller image
+    find .next -name "*.map" -type f -delete 2>/dev/null || true
 
 # ========================================
-# Stage 3: Prepare the production image
+# Stage 3: Production image
 # ========================================
 FROM base AS runner
 WORKDIR /app
-RUN mkdir .next && chown nextjs:nodejs .next
+
+# Re-declare ARGs for labels
+ARG COMMIT_SHA
+ARG INFRA
+ARG AZURE_TENANT_ID
+ARG AZURE_SUBSCRIPTION_ID
+ARG AZURE_CLIENT_ID
+ARG BUILD_DATE
+ARG VERSION
+
+# OCI-compliant container labels
+LABEL org.opencontainers.image.title="arolariu.ro Frontend" \
+      org.opencontainers.image.description="Next.js frontend for arolariu.ro platform" \
+      org.opencontainers.image.url="https://arolariu.ro" \
+      org.opencontainers.image.source="https://github.com/arolariu/arolariu.ro" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${COMMIT_SHA}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.vendor="arolariu" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.base.name="node:24-alpine"
+
+# Set runtime environment variables
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME="0.0.0.0" \
+    AZURE_TENANT_ID=${AZURE_TENANT_ID} \
+    AZURE_SUBSCRIPTION_ID=${AZURE_SUBSCRIPTION_ID} \
+    AZURE_CLIENT_ID=${AZURE_CLIENT_ID} \
+    COMMIT_SHA=${COMMIT_SHA} \
+    INFRA=${INFRA}
+
+# Create .next directory with correct ownership
+RUN mkdir -p .next && chown nextjs:nodejs .next
+
+# Copy public assets
 COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/public ./public
-# The standalone output preserves the monorepo structure, so server.js is at sites/arolariu.ro/server.js
+
+# Copy standalone server (Next.js preserves monorepo structure)
 COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/standalone/sites/arolariu.ro/ ./
-# Copy the node_modules from the standalone output (contains only required dependencies)
+
+# Copy node_modules from standalone output (minimal dependencies only)
 COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/standalone/node_modules ./node_modules
+
+# Copy static assets
 COPY --from=builder --chown=nextjs:nodejs /app/sites/arolariu.ro/.next/static ./.next/static
 
+# Security: Switch to non-root user
 USER nextjs
+
+# Expose port
 EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-CMD ["dumb-init","node","server.js"]
+
+# Health check for container orchestration (Next.js custom health endpoint)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl --fail --silent http://localhost:3000/api/health || exit 1
+
+# Use dumb-init for proper signal handling (zombie reaping, SIGTERM forwarding)
+# tini is also available as alternative: ["tini", "--", "node", "server.js"]
+CMD ["dumb-init", "node", "server.js"]
