@@ -2,8 +2,8 @@
  * @fileoverview Test check module for hygiene pipeline
  * @module hygiene/checks/testCheck
  *
- * Runs Vitest unit tests with JSON reporter and produces structured results.
- * Captures test statistics, failed tests, and coverage data.
+ * Runs unit tests via `npm run test:unit` (NX runner) and produces structured results.
+ * Captures test statistics from output parsing and coverage data from coverage-summary.json.
  *
  * @example
  * ```typescript
@@ -39,49 +39,9 @@ const ARTIFACT_DIR = "artifacts/hygiene";
 const ARTIFACT_FILENAME = "test-result.json";
 
 /**
- * Path to Vitest JSON output (relative to workspace root)
- */
-const VITEST_JSON_OUTPUT = "artifacts/vitest-output.json";
-
-/**
  * Path to coverage summary (relative to workspace root)
  */
 const COVERAGE_SUMMARY_PATH = "coverage/vitest/coverage-summary.json";
-
-/**
- * Vitest JSON reporter output structure
- */
-interface VitestJsonOutput {
-  numTotalTestSuites: number;
-  numPassedTestSuites: number;
-  numFailedTestSuites: number;
-  numPendingTestSuites: number;
-  numTotalTests: number;
-  numPassedTests: number;
-  numFailedTests: number;
-  numPendingTests: number;
-  numTodoTests: number;
-  startTime: number;
-  success: boolean;
-  testResults: VitestTestFileResult[];
-}
-
-interface VitestTestFileResult {
-  name: string;
-  status: "passed" | "failed" | "skipped";
-  startTime: number;
-  endTime: number;
-  assertionResults: VitestAssertionResult[];
-}
-
-interface VitestAssertionResult {
-  ancestorTitles: string[];
-  fullName: string;
-  status: "passed" | "failed" | "pending" | "todo";
-  title: string;
-  duration: number;
-  failureMessages: string[];
-}
 
 /**
  * Coverage summary JSON structure
@@ -96,6 +56,74 @@ interface CoverageSummaryJson {
 }
 
 /**
+ * Parsed test statistics from Vitest output
+ */
+interface ParsedTestStats {
+  totalTests: number;
+  passed: number;
+  failed: number;
+  skipped: number;
+  duration: number;
+  failedTestNames: string[];
+}
+
+/**
+ * Parses Vitest console output to extract test statistics
+ *
+ * @param output - The stdout/stderr from vitest run
+ * @returns Parsed test statistics
+ */
+function parseVitestOutput(output: string): ParsedTestStats {
+  const stats: ParsedTestStats = {
+    totalTests: 0,
+    passed: 0,
+    failed: 0,
+    skipped: 0,
+    duration: 0,
+    failedTestNames: [],
+  };
+
+  // Parse test counts from Vitest summary line
+  // Example: "Tests  5 passed | 2 failed | 1 skipped (8)"
+  // Or: "✓ 5 passed" "✗ 2 failed"
+  const testSummaryMatch = output.match(/Tests?\s+(\d+)\s+passed(?:\s+\|\s+(\d+)\s+failed)?(?:\s+\|\s+(\d+)\s+skipped)?/i);
+  if (testSummaryMatch) {
+    stats.passed = parseInt(testSummaryMatch[1] ?? "0", 10);
+    stats.failed = parseInt(testSummaryMatch[2] ?? "0", 10);
+    stats.skipped = parseInt(testSummaryMatch[3] ?? "0", 10);
+    stats.totalTests = stats.passed + stats.failed + stats.skipped;
+  }
+
+  // Alternative format: individual counts
+  const passedMatch = output.match(/✓\s+(\d+)\s+passed/);
+  const failedMatch = output.match(/✗\s+(\d+)\s+failed/);
+  const skippedMatch = output.match(/↓\s+(\d+)\s+skipped/);
+
+  if (passedMatch) stats.passed = parseInt(passedMatch[1] ?? "0", 10);
+  if (failedMatch) stats.failed = parseInt(failedMatch[1] ?? "0", 10);
+  if (skippedMatch) stats.skipped = parseInt(skippedMatch[1] ?? "0", 10);
+
+  if (passedMatch || failedMatch || skippedMatch) {
+    stats.totalTests = stats.passed + stats.failed + stats.skipped;
+  }
+
+  // Parse duration: "Duration  1.23s" or "Time: 1.23s"
+  const durationMatch = output.match(/(?:Duration|Time)[:\s]+(\d+(?:\.\d+)?)\s*s/i);
+  if (durationMatch) {
+    stats.duration = Math.round(parseFloat(durationMatch[1] ?? "0") * 1000);
+  }
+
+  // Extract failed test names from output
+  // Pattern: "FAIL tests/foo.test.ts > Test Suite > test name"
+  const failedTestMatches = output.matchAll(/FAIL\s+(.+?)\s+>\s+(.+)/g);
+  for (const match of failedTestMatches) {
+    stats.failedTestNames.push(match[2] ?? "Unknown test");
+  }
+
+  return stats;
+}
+
+/**
  * Runs the test check and produces a result artifact
  *
  * @returns The test check result
@@ -107,31 +135,22 @@ export async function runTestCheck(): Promise<HygieneCheckResult> {
   try {
     core.info("🧪 Starting test check...");
 
-    // Ensure artifacts directory exists for vitest output
-    const vitestOutputPath = path.join(workspaceRoot, VITEST_JSON_OUTPUT);
-    await fs.mkdir(path.dirname(vitestOutputPath), {recursive: true});
+    // Run npm run test:unit which uses nx to run tests across workspace projects
+    // This ensures we only run tests for actual projects, not .github/scripts tests
+    core.info("Running npm run test:unit...");
+    const testResult = await exec.getExecOutput("npm", ["run", "test:unit"], {
+      ignoreReturnCode: true,
+      silent: false,
+    });
 
-    // Run vitest with JSON reporter
-    core.info("Running npm run test:unit with JSON reporter...");
-    const testResult = await exec.getExecOutput(
-      "npx",
-      ["vitest", "run", "--reporter=json", `--outputFile=${vitestOutputPath}`, "--coverage"],
-      {
-        ignoreReturnCode: true,
-        silent: false,
-      },
-    );
+    const totalDuration = Math.round(performance.now() - startTime);
 
-    const duration = Math.round(performance.now() - startTime);
+    // Parse test statistics from output
+    const combinedOutput = testResult.stdout + "\n" + testResult.stderr;
+    const parsedStats = parseVitestOutput(combinedOutput);
 
-    // Parse Vitest JSON output
-    let vitestOutput: VitestJsonOutput | null = null;
-    try {
-      const jsonContent = await fs.readFile(vitestOutputPath, "utf-8");
-      vitestOutput = JSON.parse(jsonContent) as VitestJsonOutput;
-    } catch (parseError) {
-      core.warning(`Could not parse Vitest JSON output: ${(parseError as Error).message}`);
-    }
+    // Use parsed duration or fallback to total duration
+    const testDuration = parsedStats.duration > 0 ? parsedStats.duration : totalDuration;
 
     // Parse coverage if available
     let coverage: CoverageSummary | undefined;
@@ -166,88 +185,58 @@ export async function runTestCheck(): Promise<HygieneCheckResult> {
       core.info("Coverage summary not available");
     }
 
+    // Build test summary
+    const testSummary: TestSummary = {
+      totalFiles: 0, // Not available from output parsing
+      totalSuites: 0, // Not available from output parsing
+      totalTests: parsedStats.totalTests,
+      passed: parsedStats.passed,
+      failed: parsedStats.failed,
+      skipped: parsedStats.skipped,
+      todo: 0,
+      duration: testDuration,
+    };
+
     let result: HygieneCheckResult;
 
-    if (testResult.exitCode === 0 && vitestOutput?.success !== false) {
+    if (testResult.exitCode === 0) {
       core.info("✅ All tests passed");
 
-      const testSummary: TestSummary = vitestOutput
-        ? {
-            totalFiles: vitestOutput.testResults.length,
-            totalSuites: vitestOutput.numTotalTestSuites,
-            totalTests: vitestOutput.numTotalTests,
-            passed: vitestOutput.numPassedTests,
-            failed: vitestOutput.numFailedTests,
-            skipped: vitestOutput.numPendingTests,
-            todo: vitestOutput.numTodoTests,
-            duration,
-          }
-        : {
-            totalFiles: 0,
-            totalSuites: 0,
-            totalTests: 0,
-            passed: 0,
-            failed: 0,
-            skipped: 0,
-            todo: 0,
-            duration,
-          };
-
-      result = createSuccessResult("test", `All ${testSummary.totalTests} tests passed`, duration, {
-        testSummary,
-        failedTests: [],
-        coverage,
-      });
+      result = createSuccessResult(
+        "test",
+        testSummary.totalTests > 0 ? `All ${testSummary.totalTests} tests passed` : "Tests passed",
+        totalDuration,
+        {
+          testSummary,
+          failedTests: [],
+          coverage,
+        },
+      );
     } else {
       core.warning("❌ Tests failed");
 
-      // Extract failed tests
-      const failedTests: TestResult[] = [];
+      // Build failed tests list from parsed names
+      const failedTests: TestResult[] = parsedStats.failedTestNames.map((name) => ({
+        file: "unknown",
+        suite: "",
+        name,
+        status: "failed" as const,
+        duration: 0,
+        error: "See test output for details",
+      }));
 
-      if (vitestOutput) {
-        for (const file of vitestOutput.testResults) {
-          for (const assertion of file.assertionResults) {
-            if (assertion.status === "failed") {
-              failedTests.push({
-                file: file.name,
-                suite: assertion.ancestorTitles.join(" > "),
-                name: assertion.title,
-                status: "failed",
-                duration: assertion.duration,
-                error: assertion.failureMessages.join("\n"),
-              });
-            }
-          }
-        }
-      }
-
-      const testSummary: TestSummary = vitestOutput
-        ? {
-            totalFiles: vitestOutput.testResults.length,
-            totalSuites: vitestOutput.numTotalTestSuites,
-            totalTests: vitestOutput.numTotalTests,
-            passed: vitestOutput.numPassedTests,
-            failed: vitestOutput.numFailedTests,
-            skipped: vitestOutput.numPendingTests,
-            todo: vitestOutput.numTodoTests,
-            duration,
-          }
-        : {
-            totalFiles: 0,
-            totalSuites: 0,
-            totalTests: 0,
-            passed: 0,
-            failed: 0,
-            skipped: 0,
-            todo: 0,
-            duration,
-          };
-
-      result = createFailureResult("test", `${testSummary.failed} of ${testSummary.totalTests} tests failed`, duration, {
-        testSummary,
-        failedTests,
-        coverage,
-      });
+      result = createFailureResult(
+        "test",
+        testSummary.failed > 0
+          ? `${testSummary.failed} of ${testSummary.totalTests} tests failed`
+          : "Tests failed (see output for details)",
+        totalDuration,
+        {
+          testSummary,
+          failedTests,
+          coverage,
+        },
+      );
     }
 
     // Write artifact
