@@ -182,6 +182,7 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
+          generate: 'true'
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
       - name: 🧪 Running unit tests...
