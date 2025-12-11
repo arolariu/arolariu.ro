@@ -182,8 +182,10 @@ jobs:
         uses: ./.github/actions/setup-workspace
         with:
           node-version: ${{ env.NODE_VERSION }}
-          generate: 'true'
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
+
+      - name: "🔨 Building @arolariu/components package..."
+        run: npm run build:components
 
       - name: 🧪 Running unit tests...
         id: test
