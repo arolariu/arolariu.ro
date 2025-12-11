@@ -220,7 +220,14 @@ jobs:
         env:
           CONTAINER_NAME: ${{inputs.container_name || 'frontend/dev.arolariu'}}
           CONTAINER_TAG: ${{inputs.environment == 'production' && github.sha || 'latest'}}
-        run: docker build -f sites/arolariu.ro/Dockerfile -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} .
+        run: |
+          docker build -f sites/arolariu.ro/Dockerfile \
+            --build-arg AZURE_TENANT_ID=${{ env.AZURE_TENANT_ID }} \
+            --build-arg AZURE_SUBSCRIPTION_ID=${{ env.AZURE_SUBSCRIPTION_ID }} \
+            --build-arg AZURE_CLIENT_ID=${{ env.AZURE_CLIENT_ID }} \
+            --build-arg COMMIT_SHA=${{ env.COMMIT_SHA }} \
+            --build-arg INFRA=${{ env.INFRA }} \
+            -t ${{ secrets.AZURE_CONTAINER_REGISTRY_ADDRESS }}/${{env.CONTAINER_NAME}}:${{env.CONTAINER_TAG}} .
 
       - name: ⏫ Pushing the docker container...
         env:
