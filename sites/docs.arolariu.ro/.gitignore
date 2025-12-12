@@ -3,5 +3,5 @@
 ###############
 *.yml
 .manifest
-ts-api/latest/components/reference/**
-ts-api/latest/website/reference/**
+articles/ts-api/latest/components/reference/**
+articles/ts-api/latest/website/reference/**
