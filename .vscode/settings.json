@@ -216,7 +216,7 @@
   "editor.hideCursorInOverviewRuler": false,
   "editor.hover.above": true,
   "editor.hover.delay": 300,
-  "editor.hover.enabled": true,
+  "editor.hover.enabled": "on",
   "editor.hover.hidingDelay": 300,
   "editor.hover.sticky": true,
   "editor.indentSize": "tabSize",
