@@ -131,10 +131,9 @@ describe("InvoiceBuilder", () => {
       expect(invoice.paymentInformation).toEqual(paymentInfo);
     });
 
-    it("should set paymentInformation to null", () => {
-      const builder = new InvoiceBuilder();
-      const invoice = builder.withPaymentInformation(null).build();
-      expect(invoice.paymentInformation).toBeNull();
+    it("should have default paymentInformation", () => {
+      const invoice = new InvoiceBuilder().build();
+      expect(invoice.paymentInformation).toBeDefined();
     });
 
     it("should set possibleRecipes", () => {

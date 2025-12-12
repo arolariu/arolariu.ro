@@ -8,22 +8,27 @@ vi.mock("@/lib/utils.generic", () => ({
 }));
 
 describe("useUserInformation", () => {
-  let mockFetch: ReturnType<typeof vi.fn>;
+  type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+
+  let mockFetch: ReturnType<typeof vi.fn<FetchLike>>;
 
   beforeEach(() => {
-    mockFetch = vi.fn();
-    global.fetch = mockFetch;
+    mockFetch = vi.fn<FetchLike>();
+    globalThis.fetch = mockFetch;
     vi.clearAllMocks();
   });
 
   it("should initialize with default values", () => {
-    mockFetch.mockResolvedValue({
-      json: async () => ({
-        user: null,
-        userIdentifier: "00000000-0000-0000-0000-000000000000",
-        userJwt: "",
-      }),
-    });
+    mockFetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          user: null,
+          userIdentifier: "00000000-0000-0000-0000-000000000000",
+          userJwt: "",
+        }),
+        {headers: {"Content-Type": "application/json"}},
+      ),
+    );
 
     const {result} = renderHook(() => useUserInformation());
 
@@ -47,9 +52,7 @@ describe("useUserInformation", () => {
       userJwt: "mock-jwt-token",
     };
 
-    mockFetch.mockResolvedValue({
-      json: async () => mockUserData,
-    });
+    mockFetch.mockResolvedValue(new Response(JSON.stringify(mockUserData), {headers: {"Content-Type": "application/json"}}));
 
     const {result} = renderHook(() => useUserInformation());
 
@@ -84,8 +87,8 @@ describe("useUserInformation", () => {
   });
 
   it("should set loading state during fetch", async () => {
-    let resolvePromise: (value: unknown) => void;
-    const promise = new Promise((resolve) => {
+    let resolvePromise: (value: Response) => void;
+    const promise: Promise<Response> = new Promise((resolve) => {
       resolvePromise = resolve;
     });
 
@@ -97,13 +100,16 @@ describe("useUserInformation", () => {
     expect(result.current.isLoading).toBe(true);
 
     // Resolve the promise
-    resolvePromise!({
-      json: async () => ({
-        user: null,
-        userIdentifier: "test-id",
-        userJwt: "test-jwt",
-      }),
-    });
+    resolvePromise!(
+      new Response(
+        JSON.stringify({
+          user: null,
+          userIdentifier: "test-id",
+          userJwt: "test-jwt",
+        }),
+        {headers: {"Content-Type": "application/json"}},
+      ),
+    );
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -111,13 +117,16 @@ describe("useUserInformation", () => {
   });
 
   it("should abort previous request when component unmounts", () => {
-    mockFetch.mockResolvedValue({
-      json: async () => ({
-        user: null,
-        userIdentifier: "test-id",
-        userJwt: "",
-      }),
-    });
+    mockFetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          user: null,
+          userIdentifier: "test-id",
+          userJwt: "",
+        }),
+        {headers: {"Content-Type": "application/json"}},
+      ),
+    );
 
     const {unmount} = renderHook(() => useUserInformation());
 
@@ -130,11 +139,7 @@ describe("useUserInformation", () => {
   it("should handle JSON parsing errors", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    mockFetch.mockResolvedValue({
-      json: async () => {
-        throw new Error("Invalid JSON");
-      },
-    });
+    mockFetch.mockResolvedValue(new Response("{not-valid-json", {headers: {"Content-Type": "application/json"}}));
 
     const {result} = renderHook(() => useUserInformation());
 

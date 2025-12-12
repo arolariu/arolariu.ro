@@ -4,7 +4,7 @@
  */
 
 import {InvoiceBuilder} from "@/data/mocks";
-import {InvoiceCategory, InvoiceScanType} from "@/types/invoices";
+import {InvoiceCategory, InvoiceScanType, PaymentType} from "@/types/invoices";
 import {act, renderHook} from "@testing-library/react";
 import {beforeEach, describe, expect, it, vi} from "vitest";
 import {useInvoicesStore} from "./invoicesStore";
@@ -19,6 +19,14 @@ vi.mock("./storage/indexedDBStorage", () => ({
 }));
 
 describe("useInvoicesStore", () => {
+  const paymentInformationFixture = {
+    transactionDate: new Date("2025-01-01T00:00:00.000Z"),
+    paymentType: PaymentType.Cash,
+    currency: {code: "USD", name: "US Dollar", symbol: "$"},
+    totalCostAmount: 42,
+    totalTaxAmount: 4.2,
+  };
+
   // Mock invoice data using builders
   const mockInvoice1 = new InvoiceBuilder()
     .withId("invoice-1")
@@ -30,7 +38,7 @@ describe("useInvoicesStore", () => {
     .withCategory(InvoiceCategory.GROCERY)
     .withScans([{scanType: InvoiceScanType.JPEG, location: "https://example.com/invoice1.jpg", metadata: {}}])
     .withMerchantReference("merchant-1")
-    .withPaymentInformation(null)
+    .withPaymentInformation(paymentInformationFixture)
     .build();
 
   const mockInvoice2 = new InvoiceBuilder()
@@ -43,7 +51,7 @@ describe("useInvoicesStore", () => {
     .withCategory(InvoiceCategory.FAST_FOOD)
     .withScans([{scanType: InvoiceScanType.JPEG, location: "https://example.com/invoice2.jpg", metadata: {}}])
     .withMerchantReference("merchant-2")
-    .withPaymentInformation(null)
+    .withPaymentInformation(paymentInformationFixture)
     .build();
 
   const mockInvoice3 = new InvoiceBuilder()
@@ -56,7 +64,7 @@ describe("useInvoicesStore", () => {
     .withCategory(InvoiceCategory.HOME_CLEANING)
     .withScans([{scanType: InvoiceScanType.JPEG, location: "https://example.com/invoice3.jpg", metadata: {}}])
     .withMerchantReference("merchant-1")
-    .withPaymentInformation(null)
+    .withPaymentInformation(paymentInformationFixture)
     .build();
 
   beforeEach(() => {
@@ -197,7 +205,7 @@ describe("useInvoicesStore", () => {
         .withCategory(InvoiceCategory.CAR_AUTO)
         .withScans([{scanType: InvoiceScanType.JPEG, location: "https://example.com/updated.jpg", metadata: {}}])
         .withMerchantReference("merchant-updated")
-        .withPaymentInformation(null)
+        .withPaymentInformation(paymentInformationFixture)
         .build();
 
       // Upsert should update, not duplicate

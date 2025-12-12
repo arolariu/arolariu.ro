@@ -267,15 +267,18 @@ describe("useMerchantsStore", () => {
         result.current.getState().setMerchants([mockMerchant1]);
         result.current.getState().updateMerchant(mockMerchant1.id, {
           name: "New Name",
-          address: "New Address",
-          phoneNumber: "+1-555-9999",
+          address: {
+            ...mockMerchant1.address,
+            address: "New Address",
+            phoneNumber: "+1-555-9999",
+          },
         });
       });
 
       const updatedMerchant = result.current.getState().merchants[0];
       expect(updatedMerchant?.name).toBe("New Name");
-      expect(updatedMerchant?.address).toBe("New Address");
-      expect(updatedMerchant?.phoneNumber).toBe("+1-555-9999");
+      expect(updatedMerchant?.address.address).toBe("New Address");
+      expect(updatedMerchant?.address.phoneNumber).toBe("+1-555-9999");
       expect(updatedMerchant?.category).toBe(mockMerchant1.category); // Should remain unchanged
     });
 
