@@ -1,0 +1,7 @@
+###############
+#  temp file  #
+###############
+*.yml
+.manifest
+articles/ts-api/latest/components/reference/**
+articles/ts-api/latest/website/reference/**

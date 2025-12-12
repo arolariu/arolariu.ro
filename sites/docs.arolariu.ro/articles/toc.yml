@@ -1,2 +1,16 @@
 - name: Introduction
   href: index.md
+
+- name: Monorepo Docs
+  href: monorepo/index.md
+
+- name: TypeScript API
+  href: ts-api/index.md
+  items:
+    - name: Latest
+      href: ts-api/latest/index.md
+      items:
+        - name: Components
+          href: ts-api/latest/components/index.md
+        - name: Website
+          href: ts-api/latest/website/index.md

@@ -49,11 +49,16 @@
         "cwd": "sites/cv.arolariu.ro"
       }
     },
-    "test:unit": {
+    "test": {
       "executor": "nx:run-commands",
       "options": {
         "command": "npm run test:unit",
         "cwd": "sites/cv.arolariu.ro"
+      },
+      "configurations": {
+        "unit": {
+          "command": "npm run test:unit"
+        }
       }
     },
     "format": {
@@ -65,6 +70,7 @@
     }
   },
   "tags": [
+    "domain:frontend",
     "scope:cv",
     "type:app"
   ]

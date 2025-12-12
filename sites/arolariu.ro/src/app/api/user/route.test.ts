@@ -50,7 +50,7 @@ describe("GET /api/user", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default withSpan implementation that provides span object and handles nested withSpan calls
-    mockWithSpan.mockImplementation(async (name: string, fn: (span?: unknown) => Promise<unknown>) => {
+    mockWithSpan.mockImplementation(async (_spanName: string, fn: (span?: unknown) => Promise<unknown>) => {
       const mockSpan = {
         setAttributes: vi.fn(),
       };

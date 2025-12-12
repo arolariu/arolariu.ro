@@ -4,7 +4,7 @@ import {API_JWT, API_URL, CONFIG_STORE, convertBase64ToBlob, getMimeTypeFromBase
 
 // Mock the telemetry module
 vi.mock("@/telemetry", () => ({
-  withSpan: vi.fn(async (name, fn) =>
+  withSpan: vi.fn(async (_spanName, fn) =>
     fn({
       setAttributes: vi.fn(),
       setStatus: vi.fn(),

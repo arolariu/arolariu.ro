@@ -1,0 +1,28 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "sites/arolariu.ro/src/types/index.ts",
+    "sites/arolariu.ro/src/lib"
+  ],
+  "entryPointStrategy": "expand",
+  "tsconfig": "sites/arolariu.ro/tsconfig.typedoc.json",
+  "out": "sites/docs.arolariu.ro/articles/ts-api/latest/website/reference",
+  "plugin": [
+    "typedoc-plugin-markdown"
+  ],
+  "readme": "none",
+  "exclude": [
+    "**/*.d.ts",
+    "**/*.spec.*",
+    "**/*.test.*",
+    "**/*.stories.*",
+    "**/node_modules/**",
+    "**/.next/**"
+  ],
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "sort": [
+    "source-order"
+  ]
+}

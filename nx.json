@@ -16,12 +16,24 @@
       "!{projectRoot}/jest.config.[jt]s",
       "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)"
     ],
-    "sharedGlobals": []
+    "sharedGlobals": [
+      "{workspaceRoot}/nx.json",
+      "{workspaceRoot}/package.json",
+      "{workspaceRoot}/package-lock.json",
+      "{workspaceRoot}/tsconfig.json",
+      "{workspaceRoot}/eslint.config.ts",
+      "{workspaceRoot}/prettier.config.ts",
+      "{workspaceRoot}/vitest.config.ts",
+      "{workspaceRoot}/vitest.setup.ts",
+      "{workspaceRoot}/arolariu.sln",
+      "{workspaceRoot}/arolariu.slnx",
+      "{workspaceRoot}/scripts/**/*"
+    ]
   },
   "targetDefaults": {
     "build": {
       "dependsOn": [
-        "build"
+        "^build"
       ],
       "inputs": [
         "production"
@@ -30,8 +42,7 @@
     },
     "test": {
       "inputs": [
-        "default",
-        "production"
+        "default"
       ],
       "cache": true
     }

@@ -7,15 +7,23 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dotnet build arolariu.sln --configuration Release",
-        "cwd": "."
-      }
+        "command": "dotnet build src/Core/arolariu.Backend.Core.csproj --configuration Release",
+        "cwd": "sites/api.arolariu.ro"
+      },
+      "outputs": [
+        "{projectRoot}/src/Core/bin"
+      ]
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "dotnet test --configuration Release --logger trx --results-directory ./TestResults --collect:\"XPlat Code Coverage\"",
-        "cwd": "sites/api.arolariu.ro"
+        "command": "dotnet test arolariu.sln --configuration Release --logger trx --results-directory ./TestResults --collect:\"XPlat Code Coverage\"",
+        "cwd": "."
+      },
+      "configurations": {
+        "unit": {
+          "command": "dotnet test arolariu.sln --configuration Release --logger trx --results-directory ./TestResults --collect:\"XPlat Code Coverage\""
+        }
       }
     },
     "dev": {
@@ -27,6 +35,7 @@
     }
   },
   "tags": [
+    "domain:backend",
     "scope:api",
     "type:app",
     "platform:dotnet"

@@ -11,35 +11,52 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "// Collection-level test: Status code validation",
-          "pm.test(\"Response status is successful (200-299)\", function () {",
-          "    pm.expect(pm.response.code).to.be.within(200, 299,",
-          "        `Expected 2xx status, got ${pm.response.code}`);",
+          "// Collection-level tests: default expectations for most routes (pages + assets)",
+          "// Note: request-level tests can tighten/override these defaults.",
+          "",
+          "// Status code validation: allow redirects (common for auth/protected pages)",
+          "pm.test(\"Response status is OK (200-399)\", function () {",
+          "    pm.expect(pm.response.code).to.be.within(200, 399,",
+          "        `Expected 2xx-3xx status, got ${pm.response.code}`);",
           "});",
           "",
-          "// Collection-level test: STRICT response time (<3000ms for optimal UX)",
-          "pm.test(\"Response time is under 3000ms (strict performance)\", function () {",
-          "    pm.expect(pm.response.responseTime).to.be.below(3000,",
-          "        `Response time ${pm.response.responseTime}ms exceeds 3000ms SLA`);",
+          "// Strict response time check (configurable via collection/environment variable)",
+          "pm.test(\"Response time is under configured threshold\", function () {",
+          "    var raw = pm.environment.get('maxResponseTimeMs') || pm.collectionVariables.get('maxResponseTimeMs') || '3000';",
+          "    var maxMs = Number(raw);",
+          "    pm.expect(maxMs).to.be.a('number');",
+          "    pm.expect(pm.response.responseTime).to.be.below(maxMs,",
+          "        `Response time ${pm.response.responseTime}ms exceeds ${maxMs}ms SLA`);",
           "});",
           "",
-          "// Collection-level test: Content-Type header validation",
+          "// Content-Type header validation (covers HTML, JSON, XML, icons, SVG, RSC)",
           "pm.test(\"Response has valid Content-Type header\", function () {",
           "    var contentType = pm.response.headers.get('Content-Type');",
           "    pm.expect(contentType).to.exist;",
-          "    pm.expect(contentType).to.match(/text\\/html|application\\/json|text\\/plain/,",
+          "    pm.expect(contentType).to.match(/^(text\\/html|application\\/json|text\\/plain|application\\/xml|text\\/xml|image\\/x-icon|image\\/vnd\\.microsoft\\.icon|image\\/svg\\+xml|application\\/manifest\\+json|text\\/x-component)(;.*)?$/i,",
           "        `Invalid Content-Type: ${contentType}`);",
           "});",
           "",
-          "// Collection-level test: Response body is not empty",
-          "pm.test(\"Response body exists\", function () {",
-          "    pm.expect(pm.response.text()).to.have.length.greaterThan(0);",
+          "// Response body exists (skip for 204/304 and HEAD)",
+          "pm.test(\"Response body exists (when applicable)\", function () {",
+          "    var method = (pm.request && pm.request.method) ? pm.request.method.toUpperCase() : 'GET';",
+          "    if (method === 'HEAD' || pm.response.code === 204 || pm.response.code === 304) {",
+          "        pm.expect(true).to.equal(true);",
+          "        return;",
+          "    }",
+          "    pm.expect(pm.response.responseSize).to.be.above(0);",
           "});",
           "",
-          "// Collection-level test: Security headers for frontend",
-          "pm.test(\"Security headers are present\", function () {",
-          "    pm.expect(pm.response.headers.get('X-Frame-Options')).to.exist;",
-          "    pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.exist;",
+          "// Security headers (strict by default; disable by setting strictSecurityHeaders=false)",
+          "pm.test(\"Security headers are present (configurable)\", function () {",
+          "    var strict = (pm.environment.get('strictSecurityHeaders') || pm.collectionVariables.get('strictSecurityHeaders') || 'true').toLowerCase();",
+          "    if (strict !== 'true') return;",
+          "",
+          "    pm.expect(pm.response.headers.get('X-Frame-Options')).to.equal('DENY');",
+          "    pm.expect(pm.response.headers.get('X-Content-Type-Options')).to.equal('nosniff');",
+          "    pm.expect(pm.response.headers.get('Referrer-Policy')).to.exist;",
+          "    pm.expect(pm.response.headers.get('Permissions-Policy')).to.exist;",
+          "    pm.expect(pm.response.headers.get('Content-Security-Policy')).to.exist;",
           "});",
           "",
           "// Log detailed performance metrics",
@@ -102,6 +119,44 @@
           }
         },
         {
+          "name": "Get About / The Author",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify the the-author page is accessible",
+            "url": {
+              "raw": "{{baseUrl}}/about/the-author",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "about",
+                "the-author"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get About / The Platform",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify the the-platform page is accessible",
+            "url": {
+              "raw": "{{baseUrl}}/about/the-platform",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "about",
+                "the-platform"
+              ]
+            }
+          }
+        },
+        {
           "name": "Get Domains Page",
           "request": {
             "method": "GET",
@@ -120,19 +175,119 @@
           }
         },
         {
+          "name": "Get Domains / Invoices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify the invoices domain root page is accessible",
+            "url": {
+              "raw": "{{baseUrl}}/domains/invoices",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "domains",
+                "invoices"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Domains / Invoices / Create Invoice",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify the create-invoice page is accessible (may redirect if auth is required)",
+            "url": {
+              "raw": "{{baseUrl}}/domains/invoices/create-invoice",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "domains",
+                "invoices",
+                "create-invoice"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Domains / Invoices / View Invoices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify the view-invoices page is accessible (may redirect if auth is required)",
+            "url": {
+              "raw": "{{baseUrl}}/domains/invoices/view-invoices",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "domains",
+                "invoices",
+                "view-invoices"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Domains / Invoices / View Invoice (dynamic)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify the view-invoice dynamic route is accessible (requires {{invoiceId}}; may redirect if auth is required)",
+            "url": {
+              "raw": "{{baseUrl}}/domains/invoices/view-invoice/{{invoiceId}}",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "domains",
+                "invoices",
+                "view-invoice",
+                "{{invoiceId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Domains / Invoices / Edit Invoice (dynamic)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify the edit-invoice dynamic route is accessible (requires {{invoiceId}}; may redirect if auth is required)",
+            "url": {
+              "raw": "{{baseUrl}}/domains/invoices/edit-invoice/{{invoiceId}}",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "domains",
+                "invoices",
+                "edit-invoice",
+                "{{invoiceId}}"
+              ]
+            }
+          }
+        },
+        {
           "name": "Get Privacy Policy",
           "request": {
             "method": "GET",
             "header": [],
             "description": "Verify the privacy policy page is accessible",
             "url": {
-              "raw": "{{baseUrl}}/privacy-and-terms/privacy-policy",
+              "raw": "{{baseUrl}}/privacy-policy",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
               ],
               "path": [
-                "privacy-and-terms",
                 "privacy-policy"
               ]
             }
@@ -145,14 +300,87 @@
             "header": [],
             "description": "Verify the terms of service page is accessible",
             "url": {
-              "raw": "{{baseUrl}}/privacy-and-terms/terms-of-service",
+              "raw": "{{baseUrl}}/terms-of-service",
               "protocol": "{{baseProtocol}}",
               "host": [
                 "{{baseHost}}"
               ],
               "path": [
-                "privacy-and-terms",
                 "terms-of-service"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Acknowledgements",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify the acknowledgements page is accessible",
+            "url": {
+              "raw": "{{baseUrl}}/acknowledgements",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "acknowledgements"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Auth Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify the /auth page is accessible (may redirect)",
+            "url": {
+              "raw": "{{baseUrl}}/auth",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "auth"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Auth / Sign In",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify the sign-in page is accessible",
+            "url": {
+              "raw": "{{baseUrl}}/auth/sign-in",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "auth",
+                "sign-in"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Auth / Sign Up",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify the sign-up page is accessible",
+            "url": {
+              "raw": "{{baseUrl}}/auth/sign-up",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "auth",
+                "sign-up"
               ]
             }
           }
@@ -186,14 +414,19 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.test(\"/api/user returns 2xx\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});",
+                  "",
                   "pm.test(\"Response is valid JSON\", function () {",
                   "    pm.response.to.have.jsonBody();",
                   "});",
                   "",
-                  "pm.test(\"User object has expected structure\", function () {",
+                  "pm.test(\"Response has expected structure\", function () {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('isSignedIn');",
-                  "    pm.expect(jsonData).to.have.property('isLoading');",
+                  "    pm.expect(jsonData).to.have.property('userIdentifier');",
+                  "    pm.expect(jsonData).to.have.property('userJwt');",
+                  "    pm.expect(jsonData).to.have.property('user');",
                   "});"
                 ]
               }
@@ -307,6 +540,37 @@
           ]
         },
         {
+          "name": "Get Icon.svg",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify icon.svg is accessible",
+            "url": {
+              "raw": "{{baseUrl}}/icon.svg",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "icon.svg"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Icon.svg is served successfully\", function () {",
+                  "    pm.expect(pm.response.code).to.be.within(200, 299);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Get Favicon",
           "request": {
             "method": "GET",
@@ -336,6 +600,60 @@
               }
             }
           ]
+        },
+        {
+          "name": "Get Humans.txt",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify humans.txt is accessible",
+            "url": {
+              "raw": "{{baseUrl}}/humans.txt",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "humans.txt"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Security.txt",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify security.txt is accessible",
+            "url": {
+              "raw": "{{baseUrl}}/security.txt",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "security.txt"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Browserconfig.xml",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Verify browserconfig.xml is accessible",
+            "url": {
+              "raw": "{{baseUrl}}/browserconfig.xml",
+              "protocol": "{{baseProtocol}}",
+              "host": [
+                "{{baseHost}}"
+              ],
+              "path": [
+                "browserconfig.xml"
+              ]
+            }
+          }
         }
       ]
     }
@@ -344,6 +662,21 @@
     {
       "key": "authToken",
       "value": "",
+      "type": "string"
+    },
+    {
+      "key": "maxResponseTimeMs",
+      "value": "3000",
+      "type": "string"
+    },
+    {
+      "key": "strictSecurityHeaders",
+      "value": "true",
+      "type": "string"
+    },
+    {
+      "key": "invoiceId",
+      "value": "example-invoice-id",
       "type": "string"
     },
     {

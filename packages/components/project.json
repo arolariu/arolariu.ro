@@ -14,32 +14,28 @@
         "{projectRoot}/dist"
       ]
     },
-    "build:storybook": {
+    "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npm run build:storybook",
-        "cwd": "packages/components"
-      },
-      "outputs": [
-        "{projectRoot}/storybook-static"
-      ]
-    },
-    "storybook": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npm run storybook",
+        "command": "echo 'No dev target configured for @arolariu/components (storybook script not present). Use components:build instead.'",
         "cwd": "packages/components"
       }
     },
-    "test:unit": {
+    "test": {
       "executor": "nx:run-commands",
       "options": {
         "command": "echo 'No unit tests configured for components yet'",
         "cwd": "packages/components"
+      },
+      "configurations": {
+        "unit": {
+          "command": "echo 'No unit tests configured for components yet'"
+        }
       }
     }
   },
   "tags": [
+    "domain:frontend",
     "scope:components",
     "type:lib"
   ]
