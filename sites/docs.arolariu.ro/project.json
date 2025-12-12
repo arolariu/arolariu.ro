@@ -47,12 +47,25 @@
     "clean": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "rm -rf _site api obj",
+        "command": "npx rimraf _site api obj",
         "cwd": "sites/docs.arolariu.ro"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo 'No tests configured for docs yet'",
+        "cwd": "sites/docs.arolariu.ro"
+      },
+      "configurations": {
+        "unit": {
+          "command": "echo 'No unit tests configured for docs yet'"
+        }
       }
     }
   },
   "tags": [
+    "domain:docs",
     "scope:docs",
     "type:app",
     "platform:dotnet"

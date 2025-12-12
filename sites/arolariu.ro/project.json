@@ -44,15 +44,22 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npm run test",
-        "cwd": "sites/arolariu.ro"
-      }
-    },
-    "test:unit": {
-      "executor": "nx:run-commands",
-      "options": {
         "command": "npm run test:vitest",
         "cwd": "sites/arolariu.ro"
+      },
+      "configurations": {
+        "unit": {
+          "command": "npm run test:vitest"
+        },
+        "e2e": {
+          "command": "npm run test:e2e"
+        },
+        "storybook": {
+          "command": "npm run test:storybook"
+        },
+        "all": {
+          "command": "npm run test"
+        }
       }
     },
     "storybook": {
@@ -64,6 +71,7 @@
     }
   },
   "tags": [
+    "domain:frontend",
     "scope:website",
     "type:app"
   ]
