@@ -1,0 +1,19 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "packages/components/src/index.ts"
+  ],
+  "entryPointStrategy": "resolve",
+  "tsconfig": "packages/components/tsconfig.json",
+  "out": "sites/docs.arolariu.ro/articles/ts-api/latest/components/reference",
+  "plugin": [
+    "typedoc-plugin-markdown"
+  ],
+  "readme": "none",
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "sort": [
+    "source-order"
+  ]
+}

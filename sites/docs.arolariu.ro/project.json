@@ -4,6 +4,13 @@
   "sourceRoot": "sites/docs.arolariu.ro",
   "projectType": "application",
   "targets": {
+    "typedoc": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run docs:typedoc",
+        "cwd": "."
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
       "options": {

@@ -2,7 +2,18 @@
   "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
   "build": {
     "content": [
-      "**/*.{md,yml}"
+      {
+        "files": [
+          "**/*.{md,yml}"
+        ]
+      },
+      {
+        "files": [
+          "**/*.{md,yml}"
+        ],
+        "src": "../../docs",
+        "dest": "articles/monorepo"
+      }
     ],
     "resource": [
       "images/**"

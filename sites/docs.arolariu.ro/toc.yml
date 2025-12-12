@@ -1,9 +1,17 @@
 - name: Index
   href: index.md
 
+- name: Monorepo Docs
+  href: articles/monorepo/
+  homepage: articles/monorepo/index.md
+
 - name: General Articles
   href: articles/
   homepage: articles/index.md
+
+- name: TypeScript API
+  href: articles/ts-api/
+  homepage: articles/ts-api/index.md
 
 - name: API Documentation
   href: api/
