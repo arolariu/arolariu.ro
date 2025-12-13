@@ -1,5 +1,6 @@
 "use client";
 
+import deleteInvoice from "@/lib/actions/invoices/deleteInvoice";
 import type {Invoice} from "@/types/invoices";
 import {
   Alert,
@@ -16,8 +17,10 @@ import {
   Input,
   Label,
   Separator,
+  toast,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
+import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbFileX, TbLoader2, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, TbX} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
@@ -43,6 +46,8 @@ import {useDialog} from "../_contexts/DialogContext";
  * @returns The DeleteInvoiceDialog component, CSR'ed.
  */
 export default function DeleteInvoiceDialog(): React.JSX.Element {
+  const router = useRouter();
+
   const {
     isOpen,
     open,
@@ -79,15 +84,22 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
 
     setIsDeleting(true);
 
-    // Simulate deletion process
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Log deletion (API integration pending)
-    console.info("Deleting invoice:", invoice.id);
-
-    setIsDeleting(false);
-    handleClose();
-  }, [invoice.id, isConfirmValid, handleClose]);
+    try {
+      await deleteInvoice({invoiceId: invoice.id});
+      toast("Invoice Deleted", {
+        description: "The invoice was deleted successfully.",
+      });
+      handleClose();
+      router.push("/domains/invoices/view-invoices");
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      toast("Delete Failed", {
+        description: "We couldn't delete this invoice. Please try again.",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [invoice.id, isConfirmValid, handleClose, router]);
 
   // Calculate deletion impact
   const itemCount = invoice.items?.length ?? 0;

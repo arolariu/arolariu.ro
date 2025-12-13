@@ -21,6 +21,7 @@
         "{projectRoot}/_site"
       ],
       "dependsOn": [
+        "typedoc",
         "api:build"
       ]
     },
@@ -48,6 +49,7 @@
         "cwd": "sites/docs.arolariu.ro"
       },
       "dependsOn": [
+        "typedoc",
         "api:build"
       ]
     },

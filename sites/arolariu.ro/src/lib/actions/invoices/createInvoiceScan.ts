@@ -1,12 +1,17 @@
+"use server";
+
 import {convertBase64ToBlob} from "@/lib/utils.server";
 import {withSpan} from "@/telemetry";
 import {DefaultAzureCredential} from "@azure/identity";
 import {BlobServiceClient} from "@azure/storage-blob";
 
 type ServerActionInputType = Readonly<{
-  base64Data: string;
-  blobName: string;
-  metadata?: {[propertyName: string]: string};
+  /** The base64-encoded data of the invoice scan. */
+  readonly base64Data: string;
+  /** The name of the blob to be created in Azure Storage. */
+  readonly blobName: string;
+  /** Optional metadata to associate with the blob. */
+  readonly metadata?: {[propertyName: string]: string};
 }>;
 type ServerActionOutputType = Promise<
   Readonly<{

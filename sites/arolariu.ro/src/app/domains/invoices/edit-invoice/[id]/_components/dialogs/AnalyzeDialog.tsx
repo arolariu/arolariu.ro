@@ -1,6 +1,7 @@
 "use client";
 
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
+import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
 import type {Invoice} from "@/types/invoices";
 import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {
@@ -168,6 +169,11 @@ export default function AnalyzeDialog(): React.JSX.Element {
     setIsAnalyzing(true);
     setProgress(0);
 
+    const delay = async (ms: number): Promise<void> =>
+      new Promise((resolve) => {
+        setTimeout(resolve, ms);
+      });
+
     const steps = [
       "Preparing document...",
       "Running OCR extraction...",
@@ -176,28 +182,66 @@ export default function AnalyzeDialog(): React.JSX.Element {
       "Finalizing results...",
     ];
 
-    // Simulate analysis process with progress updates
-    for (let i = 0; i < steps.length; i++) {
-      setCurrentStep(steps[i] ?? "Processing...");
-      setProgress(((i + 1) / steps.length) * 100);
-      await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      const analysisPromise = analyzeInvoice({
+        invoiceIdentifier: invoice.id,
+        analysisOptions: selectedOption,
+      });
+
+      // Keep the same spinner + step texts while the backend request is pending.
+      // We intentionally cap progress at 95% until the request completes.
+      let isAnalysisSettled = false;
+
+      analysisPromise
+        .then(() => {
+          isAnalysisSettled = true;
+        })
+        .catch(() => {
+          isAnalysisSettled = true;
+        });
+
+      const stepDelayMs = 800;
+
+      while (!isAnalysisSettled) {
+        for (let i = 0; i < steps.length; i++) {
+          if (isAnalysisSettled) break;
+
+          setCurrentStep(steps[i] ?? "Processing...");
+          setProgress(((i + 1) / steps.length) * 95);
+
+          // Wait briefly before advancing steps, but don’t block completion.
+          await Promise.race([analysisPromise, delay(stepDelayMs)]);
+        }
+      }
+
+      // Await again so we propagate errors into the catch below.
+      await analysisPromise;
+
+      // Log analysis configuration (enhancements not wired into the API yet)
+      console.info("Analyzing invoice:", invoice.id, {
+        option: selectedOption,
+        enhancements: selectedEnhancements,
+      });
+
+      setCurrentStep("Finalizing results...");
+      setProgress(100);
+
+      toast("Analysis Complete", {
+        description: "Your invoice has been analyzed successfully.",
+      });
+
+      close();
+    } catch (error) {
+      console.error("Error analyzing invoice:", error);
+      toast("Analysis Failed", {
+        description: "We couldn't analyze your invoice. Please try again.",
+      });
+    } finally {
+      setIsAnalyzing(false);
+      setProgress(0);
+      setCurrentStep("");
     }
-
-    // Log analysis configuration (API integration pending)
-    console.info("Analyzing invoice:", invoice.id, {
-      option: selectedOption,
-      enhancements: selectedEnhancements,
-    });
-
-    toast("Analysis Complete", {
-      description: "Your invoice has been analyzed successfully.",
-    });
-
-    setIsAnalyzing(false);
-    setProgress(0);
-    setCurrentStep("");
-    close();
-  }, [invoice, selectedOption, selectedEnhancements, close]);
+  }, [invoice.id, selectedOption, selectedEnhancements, close]);
 
   const selectedConfig = ANALYSIS_OPTIONS.find((opt) => opt.id === selectedOption);
 

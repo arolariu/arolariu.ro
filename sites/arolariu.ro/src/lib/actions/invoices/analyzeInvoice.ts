@@ -6,7 +6,9 @@ import type {InvoiceAnalysisOptions} from "@/types/invoices";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 type ServerActionInputType = Readonly<{
+  /** The identifier of the invoice to be analyzed. */
   readonly invoiceIdentifier: string;
+  /** Options for analyzing the invoice. */
   readonly analysisOptions: Readonly<InvoiceAnalysisOptions>;
 }>;
 

@@ -1,6 +1,8 @@
 import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
 import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
+import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
+import RenderForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import React from "react";
@@ -116,8 +118,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function EditInvoicePage(
   props: Readonly<PageProps<"/domains/invoices/edit-invoice/[id]">>,
 ): Promise<React.JSX.Element> {
-  const resolvedParams = await props.params;
-  const invoiceIdentifier = resolvedParams.id;
+  const pageParams = await props.params;
+  const invoiceIdentifier = pageParams.id;
+
+  const {isAuthenticated} = await fetchAaaSUserFromAuthService();
+  if (!isAuthenticated) return <RenderForbiddenScreen />;
 
   // By fetching straight from the server, we ensure we have the latest snapshot.
   const invoice = await fetchInvoice({invoiceId: invoiceIdentifier});

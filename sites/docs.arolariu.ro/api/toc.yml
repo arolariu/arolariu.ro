@@ -1,0 +1,670 @@
+### YamlMime:TableOfContent
+items:
+- uid: arolariu.Backend
+  name: arolariu.Backend
+  type: Namespace
+  items:
+  - uid: arolariu.Backend.Common
+    name: Common
+    type: Namespace
+    items:
+    - uid: arolariu.Backend.Common.DDD
+      name: DDD
+      type: Namespace
+      items:
+      - uid: arolariu.Backend.Common.DDD.Contracts
+        name: Contracts
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Common.DDD.Contracts.BaseEntity`1
+          name: BaseEntity<T>
+          type: Class
+        - uid: arolariu.Backend.Common.DDD.Contracts.IAuditable
+          name: IAuditable
+          type: Interface
+        - uid: arolariu.Backend.Common.DDD.Contracts.NamedEntity`1
+          name: NamedEntity<T>
+          type: Class
+      - uid: arolariu.Backend.Common.DDD.ValueObjects
+        name: ValueObjects
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Common.DDD.ValueObjects.ContactInformation
+          name: ContactInformation
+          type: Class
+        - uid: arolariu.Backend.Common.DDD.ValueObjects.Currency
+          name: Currency
+          type: Struct
+    - uid: arolariu.Backend.Common.Options
+      name: Options
+      type: Namespace
+      items:
+      - uid: arolariu.Backend.Common.Options.ApplicationOptions
+        name: ApplicationOptions
+        type: Class
+      - uid: arolariu.Backend.Common.Options.AzureOptions
+        name: AzureOptions
+        type: Class
+      - uid: arolariu.Backend.Common.Options.CloudOptionsManager
+        name: CloudOptionsManager
+        type: Class
+      - uid: arolariu.Backend.Common.Options.IOptionsManager
+        name: IOptionsManager
+        type: Interface
+      - uid: arolariu.Backend.Common.Options.LocalOptions
+        name: LocalOptions
+        type: Class
+      - uid: arolariu.Backend.Common.Options.LocalOptionsManager
+        name: LocalOptionsManager
+        type: Class
+    - uid: arolariu.Backend.Common.Services.KeyVault
+      name: Services.KeyVault
+      type: Namespace
+      items:
+      - uid: arolariu.Backend.Common.Services.KeyVault.IKeyVaultService
+        name: IKeyVaultService
+        type: Interface
+      - uid: arolariu.Backend.Common.Services.KeyVault.KeyVaultService
+        name: KeyVaultService
+        type: Class
+    - uid: arolariu.Backend.Common.Telemetry
+      name: Telemetry
+      type: Namespace
+      items:
+      - uid: arolariu.Backend.Common.Telemetry.Logging
+        name: Logging
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Common.Telemetry.Logging.Log
+          name: Log
+          type: Class
+        - uid: arolariu.Backend.Common.Telemetry.Logging.LoggingExtensions
+          name: LoggingExtensions
+          type: Class
+      - uid: arolariu.Backend.Common.Telemetry.Metering
+        name: Metering
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Common.Telemetry.Metering.MeteringExtensions
+          name: MeteringExtensions
+          type: Class
+      - uid: arolariu.Backend.Common.Telemetry.Tracing
+        name: Tracing
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators
+          name: ActivityGenerators
+          type: Class
+        - uid: arolariu.Backend.Common.Telemetry.Tracing.TracingExtensions
+          name: TracingExtensions
+          type: Class
+    - uid: arolariu.Backend.Common.Validators
+      name: Validators
+      type: Namespace
+      items:
+      - uid: arolariu.Backend.Common.Validators.Validator
+        name: Validator
+        type: Class
+  - uid: arolariu.Backend.Core
+    name: Core
+    type: Namespace
+    items:
+    - uid: arolariu.Backend.Core.Auth
+      name: Auth
+      type: Namespace
+      items:
+      - uid: arolariu.Backend.Core.Auth.Brokers
+        name: Brokers
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Core.Auth.Brokers.AuthDbContext
+          name: AuthDbContext
+          type: Class
+      - uid: arolariu.Backend.Core.Auth.Endpoints
+        name: Endpoints
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Core.Auth.Endpoints.AuthEndpoints
+          name: AuthEndpoints
+          type: Class
+      - uid: arolariu.Backend.Core.Auth.Models
+        name: Models
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Core.Auth.Models.AuthenticatedUser
+          name: AuthenticatedUser
+          type: Class
+        - uid: arolariu.Backend.Core.Auth.Models.AuthenticatedUserRole
+          name: AuthenticatedUserRole
+          type: Class
+      - uid: arolariu.Backend.Core.Auth.Modules
+        name: Modules
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Core.Auth.Modules.WebApplicationBuilderExtensions
+          name: WebApplicationBuilderExtensions
+          type: Class
+        - uid: arolariu.Backend.Core.Auth.Modules.WebApplicationExtensions
+          name: WebApplicationExtensions
+          type: Class
+    - uid: arolariu.Backend.Core.Domain.General
+      name: Domain.General
+      type: Namespace
+      items:
+      - uid: arolariu.Backend.Core.Domain.General.Extensions
+        name: Extensions
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Core.Domain.General.Extensions.WebApplicationBuilderExtensions
+          name: WebApplicationBuilderExtensions
+          type: Class
+        - uid: arolariu.Backend.Core.Domain.General.Extensions.WebApplicationExtensions
+          name: WebApplicationExtensions
+          type: Class
+      - uid: arolariu.Backend.Core.Domain.General.Middlewares
+        name: Middlewares
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Core.Domain.General.Middlewares.SecurityHeadersMiddleware
+          name: SecurityHeadersMiddleware
+          type: Class
+      - uid: arolariu.Backend.Core.Domain.General.Services.Swagger
+        name: Services.Swagger
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Core.Domain.General.Services.Swagger.SwaggerConfigurationService
+          name: SwaggerConfigurationService
+          type: Class
+        - uid: arolariu.Backend.Core.Domain.General.Services.Swagger.SwaggerFilterService
+          name: SwaggerFilterService
+          type: Class
+    - uid: arolariu.Backend.Core.Program
+      name: Program
+      type: Class
+  - uid: arolariu.Backend.Domain.Invoices
+    name: Domain.Invoices
+    type: Namespace
+    items:
+    - uid: arolariu.Backend.Domain.Invoices.Brokers
+      name: Brokers
+      type: Namespace
+      items:
+      - uid: arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers
+        name: AnalysisBrokers
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker
+          name: ClassifierBroker
+          type: Namespace
+          items:
+          - uid: arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker.AzureOpenAiBroker
+            name: AzureOpenAiBroker
+            type: Class
+          - uid: arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.ClassifierBroker.IOpenAiBroker
+            name: IOpenAiBroker
+            type: Interface
+        - uid: arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker
+          name: IdentifierBroker
+          type: Namespace
+          items:
+          - uid: arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker.AzureFormRecognizerBroker
+            name: AzureFormRecognizerBroker
+            type: Class
+          - uid: arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBroker.IFormRecognizerBroker
+            name: IFormRecognizerBroker
+            type: Interface
+      - uid: arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker
+        name: DataBrokers.DatabaseBroker
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Domain.Invoices.Brokers.DataBrokers.DatabaseBroker.InvoiceNoSqlBroker
+          name: InvoiceNoSqlBroker
+          type: Class
+      - uid: arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker
+        name: DatabaseBroker
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Domain.Invoices.Brokers.DatabaseBroker.IInvoiceNoSqlBroker
+          name: IInvoiceNoSqlBroker
+          type: Interface
+      - uid: arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker
+        name: TranslatorBroker
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker.AzureTranslatorBroker
+          name: AzureTranslatorBroker
+          type: Class
+        - uid: arolariu.Backend.Domain.Invoices.Brokers.TranslatorBroker.ITranslatorBroker
+          name: ITranslatorBroker
+          type: Interface
+    - uid: arolariu.Backend.Domain.Invoices.DDD
+      name: DDD
+      type: Namespace
+      items:
+      - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices
+        name: AggregatorRoots.Invoices
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions
+          name: Exceptions
+          type: Namespace
+          items:
+          - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner
+            name: Inner
+            type: Namespace
+            items:
+            - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner.InvoiceDescriptionNotSetException
+              name: InvoiceDescriptionNotSetException
+              type: Class
+            - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner.InvoiceIdNotSetException
+              name: InvoiceIdNotSetException
+              type: Class
+            - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner.InvoicePaymentInformationNotCorrectException
+              name: InvoicePaymentInformationNotCorrectException
+              type: Class
+            - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner.InvoicePhotoLocationNotCorrectException
+              name: InvoicePhotoLocationNotCorrectException
+              type: Class
+            - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Inner.InvoiceTimeInformationNotCorrectException
+              name: InvoiceTimeInformationNotCorrectException
+              type: Class
+          - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer
+            name: Outer
+            type: Namespace
+            items:
+            - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation
+              name: Foundation
+              type: Namespace
+              items:
+              - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation.InvoiceFoundationDependencyException
+                name: InvoiceFoundationDependencyException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation.InvoiceFoundationDependencyValidationException
+                name: InvoiceFoundationDependencyValidationException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation.InvoiceFoundationServiceException
+                name: InvoiceFoundationServiceException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Foundation.InvoiceFoundationValidationException
+                name: InvoiceFoundationValidationException
+                type: Class
+            - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration
+              name: Orchestration
+              type: Namespace
+              items:
+              - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration.InvoiceOrchestrationDependencyException
+                name: InvoiceOrchestrationDependencyException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration.InvoiceOrchestrationDependencyValidationException
+                name: InvoiceOrchestrationDependencyValidationException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration.InvoiceOrchestrationServiceException
+                name: InvoiceOrchestrationServiceException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Orchestration.InvoiceOrchestrationValidationException
+                name: InvoiceOrchestrationValidationException
+                type: Class
+            - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing
+              name: Processing
+              type: Namespace
+              items:
+              - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyException
+                name: InvoiceProcessingServiceDependencyException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceDependencyValidationException
+                name: InvoiceProcessingServiceDependencyValidationException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceException
+                name: InvoiceProcessingServiceException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing.InvoiceProcessingServiceValidationException
+                name: InvoiceProcessingServiceValidationException
+                type: Class
+        - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Invoice
+          name: Invoice
+          type: Class
+        - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.InvoiceCategory
+          name: InvoiceCategory
+          type: Enum
+        - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.InvoiceScan
+          name: InvoiceScan
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.ScanType
+          name: ScanType
+          type: Enum
+      - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants
+        name: Entities.Merchants
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions
+          name: Exceptions
+          type: Namespace
+          items:
+          - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner
+            name: Inner
+            type: Namespace
+            items:
+            - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner.MerchantIdNotSetException
+              name: MerchantIdNotSetException
+              type: Class
+            - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Inner.MerchantParentCompanyIdNotSetException
+              name: MerchantParentCompanyIdNotSetException
+              type: Class
+          - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer
+            name: Outer
+            type: Namespace
+            items:
+            - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation
+              name: Foundation
+              type: Namespace
+              items:
+              - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation.MerchantFoundationServiceDependencyException
+                name: MerchantFoundationServiceDependencyException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation.MerchantFoundationServiceDependencyValidationException
+                name: MerchantFoundationServiceDependencyValidationException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation.MerchantFoundationServiceException
+                name: MerchantFoundationServiceException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Foundation.MerchantFoundationServiceValidationException
+                name: MerchantFoundationServiceValidationException
+                type: Class
+            - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration
+              name: Orchestration
+              type: Namespace
+              items:
+              - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration.MerchantOrchestrationServiceDependencyException
+                name: MerchantOrchestrationServiceDependencyException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration.MerchantOrchestrationServiceDependencyValidationException
+                name: MerchantOrchestrationServiceDependencyValidationException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration.MerchantOrchestrationServiceException
+                name: MerchantOrchestrationServiceException
+                type: Class
+              - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Exceptions.Outer.Orchestration.MerchantOrchestrationServiceValidationException
+                name: MerchantOrchestrationServiceValidationException
+                type: Class
+        - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.Merchant
+          name: Merchant
+          type: Class
+        - uid: arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants.MerchantCategory
+          name: MerchantCategory
+          type: Enum
+      - uid: arolariu.Backend.Domain.Invoices.DDD.ValueObjects
+        name: ValueObjects
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products
+          name: Products
+          type: Namespace
+          items:
+          - uid: arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.Product
+            name: Product
+            type: Class
+          - uid: arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.ProductCategory
+            name: ProductCategory
+            type: Enum
+          - uid: arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products.ProductMetadata
+            name: ProductMetadata
+            type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Allergen
+          name: Allergen
+          type: Class
+        - uid: arolariu.Backend.Domain.Invoices.DDD.ValueObjects.PaymentInformation
+          name: PaymentInformation
+          type: Class
+        - uid: arolariu.Backend.Domain.Invoices.DDD.ValueObjects.PaymentType
+          name: PaymentType
+          type: Enum
+        - uid: arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Recipe
+          name: Recipe
+          type: Class
+        - uid: arolariu.Backend.Domain.Invoices.DDD.ValueObjects.RecipeComplexity
+          name: RecipeComplexity
+          type: Enum
+    - uid: arolariu.Backend.Domain.Invoices.DTOs
+      name: DTOs
+      type: Namespace
+      items:
+      - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests
+        name: Requests
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.AddMerchantToInvoiceRequestDto
+          name: AddMerchantToInvoiceRequestDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.AnalyzeInvoiceRequestDto
+          name: AnalyzeInvoiceRequestDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.CreateInvoiceRequestDto
+          name: CreateInvoiceRequestDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.CreateInvoiceScanRequestDto
+          name: CreateInvoiceScanRequestDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.CreateMerchantRequestDto
+          name: CreateMerchantRequestDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.CreateProductRequestDto
+          name: CreateProductRequestDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.DeleteMetadataRequestDto
+          name: DeleteMetadataRequestDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.DeleteProductRequestDto
+          name: DeleteProductRequestDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.MerchantInvoicesRequestDto
+          name: MerchantInvoicesRequestDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.PatchInvoiceRequestDto
+          name: PatchInvoiceRequestDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.PatchMetadataRequestDto
+          name: PatchMetadataRequestDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.UpdateInvoiceRequestDto
+          name: UpdateInvoiceRequestDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.UpdateMerchantRequestDto
+          name: UpdateMerchantRequestDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Requests.UpdateProductRequestDto
+          name: UpdateProductRequestDto
+          type: Struct
+      - uid: arolariu.Backend.Domain.Invoices.DTOs.Responses
+        name: Responses
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Responses.InvoiceResponseDto
+          name: InvoiceResponseDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Responses.InvoiceScanResponseDto
+          name: InvoiceScanResponseDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Responses.MerchantResponseDto
+          name: MerchantResponseDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Responses.ProductResponseDto
+          name: ProductResponseDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Responses.ResourceCreatedResponseDto
+          name: ResourceCreatedResponseDto
+          type: Struct
+        - uid: arolariu.Backend.Domain.Invoices.DTOs.Responses.ResourceUpdatedResponseDto
+          name: ResourceUpdatedResponseDto
+          type: Struct
+      - uid: arolariu.Backend.Domain.Invoices.DTOs.AnalysisOptions
+        name: AnalysisOptions
+        type: Enum
+    - uid: arolariu.Backend.Domain.Invoices.Endpoints
+      name: Endpoints
+      type: Namespace
+      items:
+      - uid: arolariu.Backend.Domain.Invoices.Endpoints.InvoiceEndpoints
+        name: InvoiceEndpoints
+        type: Class
+    - uid: arolariu.Backend.Domain.Invoices.Modules
+      name: Modules
+      type: Namespace
+      items:
+      - uid: arolariu.Backend.Domain.Invoices.Modules.ValueConverters
+        name: ValueConverters
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Domain.Invoices.Modules.ValueConverters.ValueConverterForIEnumerableOf`1
+          name: ValueConverterForIEnumerableOf<T>
+          type: Class
+      - uid: arolariu.Backend.Domain.Invoices.Modules.WebApplicationBuilderExtensions
+        name: WebApplicationBuilderExtensions
+        type: Class
+      - uid: arolariu.Backend.Domain.Invoices.Modules.WebApplicationExtensions
+        name: WebApplicationExtensions
+        type: Class
+    - uid: arolariu.Backend.Domain.Invoices.Services
+      name: Services
+      type: Namespace
+      items:
+      - uid: arolariu.Backend.Domain.Invoices.Services.Foundation
+        name: Foundation
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis
+          name: InvoiceAnalysis
+          type: Namespace
+          items:
+          - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis.IInvoiceAnalysisFoundationService
+            name: IInvoiceAnalysisFoundationService
+            type: Interface
+          - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis.InvoiceAnalysisFoundationService
+            name: InvoiceAnalysisFoundationService
+            type: Class
+          - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceAnalysis.InvoiceAnalysisFoundationService.ReturningAnalysisFunction
+            name: InvoiceAnalysisFoundationService.ReturningAnalysisFunction
+            type: Delegate
+        - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage
+          name: InvoiceStorage
+          type: Namespace
+          items:
+          - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage.IInvoiceStorageFoundationService
+            name: IInvoiceStorageFoundationService
+            type: Interface
+          - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage.InvoiceStorageFoundationService
+            name: InvoiceStorageFoundationService
+            type: Class
+          - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage.InvoiceStorageFoundationService.ReturningInvoiceFunction
+            name: InvoiceStorageFoundationService.ReturningInvoiceFunction
+            type: Delegate
+          - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage.InvoiceStorageFoundationService.ReturningInvoicesFunction
+            name: InvoiceStorageFoundationService.ReturningInvoicesFunction
+            type: Delegate
+          - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.InvoiceStorage.InvoiceStorageFoundationService.ReturningTaskFunction
+            name: InvoiceStorageFoundationService.ReturningTaskFunction
+            type: Delegate
+        - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage
+          name: MerchantStorage
+          type: Namespace
+          items:
+          - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage.IMerchantStorageFoundationService
+            name: IMerchantStorageFoundationService
+            type: Interface
+          - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage.MerchantStorageFoundationService
+            name: MerchantStorageFoundationService
+            type: Class
+          - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage.MerchantStorageFoundationService.CallbackFunctionForMerchant
+            name: MerchantStorageFoundationService.CallbackFunctionForMerchant
+            type: Delegate
+          - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage.MerchantStorageFoundationService.CallbackFunctionForMerchantList
+            name: MerchantStorageFoundationService.CallbackFunctionForMerchantList
+            type: Delegate
+          - uid: arolariu.Backend.Domain.Invoices.Services.Foundation.MerchantStorage.MerchantStorageFoundationService.CallbackFunctionWithNoReturn
+            name: MerchantStorageFoundationService.CallbackFunctionWithNoReturn
+            type: Delegate
+      - uid: arolariu.Backend.Domain.Invoices.Services.Orchestration
+        name: Orchestration
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService
+          name: InvoiceService
+          type: Namespace
+          items:
+          - uid: arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService.IInvoiceOrchestrationService
+            name: IInvoiceOrchestrationService
+            type: Interface
+          - uid: arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService.InvoiceOrchestrationService
+            name: InvoiceOrchestrationService
+            type: Class
+          - uid: arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService.InvoiceOrchestrationService.ReturningAnalysisFunction
+            name: InvoiceOrchestrationService.ReturningAnalysisFunction
+            type: Delegate
+          - uid: arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService.InvoiceOrchestrationService.ReturningInvoiceFunction
+            name: InvoiceOrchestrationService.ReturningInvoiceFunction
+            type: Delegate
+          - uid: arolariu.Backend.Domain.Invoices.Services.Orchestration.InvoiceService.InvoiceOrchestrationService.ReturningInvoicesFunction
+            name: InvoiceOrchestrationService.ReturningInvoicesFunction
+            type: Delegate
+        - uid: arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService
+          name: MerchantService
+          type: Namespace
+          items:
+          - uid: arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService.IMerchantOrchestrationService
+            name: IMerchantOrchestrationService
+            type: Interface
+          - uid: arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService.MerchantOrchestrationService
+            name: MerchantOrchestrationService
+            type: Class
+          - uid: arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService.MerchantOrchestrationService.CallbackFunctionForMerchant
+            name: MerchantOrchestrationService.CallbackFunctionForMerchant
+            type: Delegate
+          - uid: arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService.MerchantOrchestrationService.CallbackFunctionForMerchantList
+            name: MerchantOrchestrationService.CallbackFunctionForMerchantList
+            type: Delegate
+          - uid: arolariu.Backend.Domain.Invoices.Services.Orchestration.MerchantService.MerchantOrchestrationService.CallbackFunctionWithNoReturn
+            name: MerchantOrchestrationService.CallbackFunctionWithNoReturn
+            type: Delegate
+      - uid: arolariu.Backend.Domain.Invoices.Services.Processing
+        name: Processing
+        type: Namespace
+        items:
+        - uid: arolariu.Backend.Domain.Invoices.Services.Processing.IInvoiceProcessingService
+          name: IInvoiceProcessingService
+          type: Interface
+        - uid: arolariu.Backend.Domain.Invoices.Services.Processing.InvoiceProcessingService
+          name: InvoiceProcessingService
+          type: Class
+        - uid: arolariu.Backend.Domain.Invoices.Services.Processing.InvoiceProcessingService.CallbackFunctionForTasksWithInvoiceListReturn
+          name: InvoiceProcessingService.CallbackFunctionForTasksWithInvoiceListReturn
+          type: Delegate
+        - uid: arolariu.Backend.Domain.Invoices.Services.Processing.InvoiceProcessingService.CallbackFunctionForTasksWithInvoiceReturn
+          name: InvoiceProcessingService.CallbackFunctionForTasksWithInvoiceReturn
+          type: Delegate
+        - uid: arolariu.Backend.Domain.Invoices.Services.Processing.InvoiceProcessingService.CallbackFunctionForTasksWithInvoiceScanListReturn
+          name: InvoiceProcessingService.CallbackFunctionForTasksWithInvoiceScanListReturn
+          type: Delegate
+        - uid: arolariu.Backend.Domain.Invoices.Services.Processing.InvoiceProcessingService.CallbackFunctionForTasksWithInvoiceScanReturn
+          name: InvoiceProcessingService.CallbackFunctionForTasksWithInvoiceScanReturn
+          type: Delegate
+        - uid: arolariu.Backend.Domain.Invoices.Services.Processing.InvoiceProcessingService.CallbackFunctionForTasksWithMerchantListReturn
+          name: InvoiceProcessingService.CallbackFunctionForTasksWithMerchantListReturn
+          type: Delegate
+        - uid: arolariu.Backend.Domain.Invoices.Services.Processing.InvoiceProcessingService.CallbackFunctionForTasksWithMerchantReturn
+          name: InvoiceProcessingService.CallbackFunctionForTasksWithMerchantReturn
+          type: Delegate
+        - uid: arolariu.Backend.Domain.Invoices.Services.Processing.InvoiceProcessingService.CallbackFunctionForTasksWithMetadataReturn
+          name: InvoiceProcessingService.CallbackFunctionForTasksWithMetadataReturn
+          type: Delegate
+        - uid: arolariu.Backend.Domain.Invoices.Services.Processing.InvoiceProcessingService.CallbackFunctionForTasksWithNoReturn
+          name: InvoiceProcessingService.CallbackFunctionForTasksWithNoReturn
+          type: Delegate
+        - uid: arolariu.Backend.Domain.Invoices.Services.Processing.InvoiceProcessingService.CallbackFunctionForTasksWithProductListReturn
+          name: InvoiceProcessingService.CallbackFunctionForTasksWithProductListReturn
+          type: Delegate
+        - uid: arolariu.Backend.Domain.Invoices.Services.Processing.InvoiceProcessingService.CallbackFunctionForTasksWithProductReturn
+          name: InvoiceProcessingService.CallbackFunctionForTasksWithProductReturn
+          type: Delegate
+    - uid: arolariu.Backend.Domain.Invoices.Log
+      name: Log
+      type: Class
+memberLayout: SamePage

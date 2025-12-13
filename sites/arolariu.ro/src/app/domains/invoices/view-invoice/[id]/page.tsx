@@ -2,7 +2,7 @@ import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
 import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
-import ForbiddenScreen from "@/presentation/ForbiddenScreen";
+import RenderForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import RenderViewInvoiceScreen from "./island";
@@ -115,7 +115,7 @@ export async function generateMetadata(): Promise<Metadata> {
  * @see {@link fetchMerchant} - Server action for fetching merchant data
  * @see {@link fetchAaaSUserFromAuthService} - Server action for user authentication
  * @see {@link RenderViewInvoiceScreen} - Client component with viewing interface
- * @see {@link ForbiddenScreen} - Component shown for unauthenticated users
+ * @see {@link RenderForbiddenScreen} - Component shown for unauthenticated users
  * @see RFC 2001 - Domain-Driven Design Architecture (invoices bounded context)
  */
 export default async function ViewInvoicePage(
@@ -123,10 +123,9 @@ export default async function ViewInvoicePage(
 ): Promise<React.JSX.Element> {
   const pageParams = await props.params;
   const invoiceIdentifier = pageParams.id;
+
   const {isAuthenticated} = await fetchAaaSUserFromAuthService();
-  if (!isAuthenticated) {
-    return <ForbiddenScreen />;
-  }
+  if (!isAuthenticated) return <RenderForbiddenScreen />;
 
   // By fetching straight from the server, we ensure we have the latest snapshot.
   const invoice = await fetchInvoice({invoiceId: invoiceIdentifier});
