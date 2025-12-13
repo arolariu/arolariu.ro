@@ -16,11 +16,11 @@ import {formatTimelineTime, getEventTooltipContent, getRelativeTime} from "../..
  */
 interface TimelineItemProps {
   /** The timeline event to display */
-  event: TimelineEvent;
+  readonly event: TimelineEvent;
   /** Icon element to display */
-  icon: React.ReactNode;
+  readonly icon: React.ReactNode;
   /** Whether this is the last item in the group */
-  isLast?: boolean;
+  readonly isLast?: boolean;
 }
 
 /**

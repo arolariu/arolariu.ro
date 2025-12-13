@@ -9,7 +9,7 @@ type Props = {
   currency: string;
 };
 
-function CustomTooltip({active, payload}: {active?: boolean; payload?: any[]}) {
+function CustomTooltip({active, payload}: {readonly active?: boolean; readonly payload?: any[]}) {
   if (!active || !payload || !payload.length) return null;
   const data = payload[0].payload;
   return (
