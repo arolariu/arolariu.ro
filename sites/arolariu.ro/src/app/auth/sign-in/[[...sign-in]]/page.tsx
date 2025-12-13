@@ -7,14 +7,44 @@ export const metadata: Metadata = {
 };
 
 /**
- * The sign in page, which allows the user to sign in to the application.
- * @returns The sign in page, with the sign in component from Clerk.
+ * The sign in page with enhanced modern design.
+ *
+ * @remarks
+ * **Rendering Context**: Server Component (default in Next.js App Router).
+ *
+ * **Design Improvements**:
+ * - Centered layout with maximum width container
+ * - Prominent heading with gradient text effect
+ * - Better spacing and padding for mobile/desktop
+ * - Backdrop blur effect for depth
+ *
+ * **Responsive Behavior**:
+ * - Mobile: Full width with padding
+ * - Tablet/Desktop: Centered with max-width constraint
+ *
+ * @returns The enhanced sign in page with Clerk authentication component.
  */
 export default async function SignInPage(): Promise<React.JSX.Element> {
   return (
-    <section className='2xsm:mt-16 2xsm:p-2 flex flex-col sm:p-4 md:mt-0 md:p-8'>
-      <h1 className='my-4 text-center text-2xl font-extrabold'>Sign in by reusing your account from one of the following providers:</h1>
-      <RenderSignInPage />
+    <section className='relative flex min-h-[calc(100vh-200px)] w-full items-center justify-center px-4 py-12 sm:px-6 lg:px-8'>
+      <div className='w-full max-w-md space-y-8'>
+        <div className='text-center'>
+          <h1 className='bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent dark:from-indigo-400 dark:to-purple-400 sm:text-5xl'>
+            Welcome Back
+          </h1>
+          <p className='mt-4 text-lg text-muted-foreground'>
+            Sign in with your preferred provider to continue
+          </p>
+        </div>
+
+        <div className='mt-8'>
+          <RenderSignInPage />
+        </div>
+
+        <p className='text-center text-sm text-muted-foreground'>
+          Protected by enterprise-grade security
+        </p>
+      </div>
     </section>
   );
 }
