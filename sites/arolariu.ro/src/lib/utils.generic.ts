@@ -140,9 +140,7 @@ interface FormatCurrencyOptions extends Partial<Intl.NumberFormatOptions> {
  * ```
  */
 export function formatCurrency(possibleAmount: number, options: FormatCurrencyOptions): string {
-  let formatOptions: Intl.NumberFormatOptions = {};
-
-  formatOptions = {
+  const formatOptions: Intl.NumberFormatOptions = {
     style: "currency",
     currency: options.currencyCode,
     minimumFractionDigits: 0,
@@ -192,8 +190,8 @@ export interface FormatDateOptions extends Partial<Intl.DateTimeFormatOptions> {
  * ```
  */
 export function formatDate(possibleDate: string | Date, options: FormatDateOptions): string {
-  let date: Date | undefined;
-  let formatOptions: Intl.DateTimeFormatOptions = {};
+  let date: Date | undefined = undefined;
+  const formatOptions: Intl.DateTimeFormatOptions = {};
 
   if (typeof possibleDate === "string") {
     date = new Date(possibleDate);
@@ -236,8 +234,11 @@ export function formatDate(possibleDate: string | Date, options: FormatDateOptio
  * formatStatus(1); // "Active"
  * ```
  */
+// eslint-disable-next-line no-redeclare -- TypeScript function overload signatures
 export function formatEnum<T extends Record<string, string | number>>(enumObj: T, value: number): string;
+// eslint-disable-next-line no-redeclare -- TypeScript function overload signatures
 export function formatEnum<T extends Record<string, string | number>>(enumObj: T): (value: number) => string;
+// eslint-disable-next-line no-redeclare, sonarjs/function-return-type -- TypeScript function overload implementation
 export function formatEnum<T extends Record<string, string | number>>(enumObj: T, value?: number): string | ((value: number) => string) {
   if (value !== undefined) {
     const key = Object.keys(enumObj).find((k) => enumObj[k] === value);

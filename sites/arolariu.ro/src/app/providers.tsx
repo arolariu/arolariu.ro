@@ -3,6 +3,8 @@ import {FontContextProvider as FontProvider} from "@/contexts/FontContext";
 import {Toaster as ToastProvider} from "@arolariu/components";
 import {enUS, roRO} from "@clerk/localizations";
 import {ClerkProvider as AuthProvider} from "@clerk/nextjs";
+import enMessages from "@/../../messages/en.json";
+import roMessages from "@/../../messages/ro.json";
 import {NextIntlClientProvider as TranslationProvider} from "next-intl";
 import {ThemeProvider} from "next-themes";
 import dynamic from "next/dynamic";
@@ -119,7 +121,7 @@ type Props = {
  * @see RFC 1003 - Internationalization System documentation
  */
 export default function ContextProviders({locale, children}: Readonly<Props>): React.JSX.Element {
-  const messages = locale === "ro" ? require("../../messages/ro.json") : require("../../messages/en.json");
+  const messages = locale === "ro" ? roMessages : enMessages;
   return (
     <TranslationProvider
       locale={locale}

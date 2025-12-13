@@ -82,7 +82,7 @@ export default function InvoicesHeader(): React.JSX.Element {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link href={`/domains/invoices/create-invoice`}>
+              <Link href='/domains/invoices/create-invoice'>
                 <Button
                   size='sm'
                   className='cursor-pointer gap-1'>

@@ -440,8 +440,8 @@ const otlpEndpoint = process.env["OTEL_EXPORTER_OTLP_ENDPOINT"] ?? "http://local
  */
 const connectionString = process.env["APPLICATIONINSIGHTS_CONNECTION_STRING"];
 
-let traceExporter: OTLPTraceExporter | AzureMonitorTraceExporter;
-let metricExporter: OTLPMetricExporter | AzureMonitorMetricExporter;
+let traceExporter: OTLPTraceExporter | AzureMonitorTraceExporter | undefined = undefined;
+let metricExporter: OTLPMetricExporter | AzureMonitorMetricExporter | undefined = undefined;
 
 if (connectionString) {
   console.log(">>> 📡 Using Azure Monitor exporters for OpenTelemetry");

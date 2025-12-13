@@ -101,8 +101,10 @@ const persistConfig = {
   partialize: (state: MerchantsStore): MerchantsPersistedState => ({
     merchants: [...state.merchants],
   }),
-  onRehydrateStorage: () => (state: MerchantsStore | undefined) => {
-    state?.setHasHydrated(true);
+  onRehydrateStorage() {
+    return (state: MerchantsStore | undefined) => {
+      state?.setHasHydrated(true);
+    };
   },
 } as const;
 
@@ -123,7 +125,7 @@ const createMerchantsSlice = (
   upsertMerchant: (merchant) =>
     set((state) => {
       const existingIndex = state.merchants.findIndex((m) => m.id === merchant.id);
-      if (existingIndex >= 0) {
+      if (existingIndex !== -1) {
         // Update existing merchant
         const updatedMerchants = [...state.merchants];
         updatedMerchants[existingIndex] = merchant;

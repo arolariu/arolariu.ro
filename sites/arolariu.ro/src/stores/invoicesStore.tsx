@@ -114,8 +114,10 @@ const persistConfig = {
   partialize: (state: InvoicesStore): InvoicesPersistedState => ({
     invoices: [...state.invoices],
   }),
-  onRehydrateStorage: () => (state: InvoicesStore | undefined) => {
-    state?.setHasHydrated(true);
+  onRehydrateStorage() {
+    return (state: InvoicesStore | undefined) => {
+      state?.setHasHydrated(true);
+    };
   },
 } as const;
 
@@ -138,7 +140,7 @@ const createInvoicesSlice = (
   upsertInvoice: (invoice) =>
     set((state) => {
       const existingIndex = state.invoices.findIndex((inv) => inv.id === invoice.id);
-      if (existingIndex >= 0) {
+      if (existingIndex !== -1) {
         // Update existing invoice
         const updatedInvoices = [...state.invoices];
         updatedInvoices[existingIndex] = invoice;
