@@ -42,7 +42,7 @@ export function getCategorySpending(items: Product[]): CategorySpending[] {
       count: data.count,
       fill: CATEGORY_COLORS[category] || "var(--chart-1)",
     }))
-    .sort((a, b) => b.amount - a.amount);
+    .toSorted((a, b) => b.amount - a.amount);
 }
 
 // Price distribution data - simplified ranges
@@ -80,13 +80,13 @@ export type QuantityData = {
 export function getQuantityAnalysis(items: Product[]): QuantityData[] {
   return items
     .map((item) => ({
-      name: item.genericName.length > 15 ? item.genericName.substring(0, 12) + "..." : item.genericName,
+      name: item.genericName.length > 15 ? `${item.genericName.slice(0, 12)}...` : item.genericName,
       fullName: item.genericName,
       quantity: item.quantity,
       unit: item.quantityUnit,
       price: item.totalPrice,
     }))
-    .sort((a, b) => b.price - a.price)
+    .toSorted((a, b) => b.price - a.price)
     .slice(0, 5); // Only top 5 items
 }
 
@@ -105,7 +105,7 @@ export type InvoiceSummary = {
 export function getInvoiceSummary(invoice: Invoice): InvoiceSummary {
   const items = invoice.items;
   const categories = new Set(items.map((item) => item.category));
-  const sortedByPrice = [...items].sort((a, b) => b.totalPrice - a.totalPrice);
+  const sortedByPrice = items.toSorted((a, b) => b.totalPrice - a.totalPrice);
 
   return {
     totalItems: items.length,
@@ -226,7 +226,7 @@ export function getMerchantBreakdown(): MerchantBreakdown[] {
       total: Math.round(data.total * 100) / 100,
       average: Math.round((data.total / data.count) * 100) / 100,
     }))
-    .sort((a, b) => b.total - a.total);
+    .toSorted((a, b) => b.total - a.total);
 }
 
 export type CategoryTrendData = {
@@ -249,7 +249,7 @@ export function getCategoryComparison(): CategoryTrendData[] {
       average: Math.round((categoryAverages.get(Number(cat) as ProductCategory) || 0) * 100) / 100,
     }))
     .filter((d) => d.current > 0 || d.average > 0)
-    .sort((a, b) => b.current - a.current);
+    .toSorted((a, b) => b.current - a.current);
 }
 
 // Unit price analysis
@@ -263,12 +263,12 @@ export type UnitPriceData = {
 export function getUnitPriceAnalysis(items: Product[]): UnitPriceData[] {
   return items
     .map((item) => ({
-      name: item.genericName.length > 18 ? item.genericName.substring(0, 15) + "..." : item.genericName,
+      name: item.genericName.length > 18 ? `${item.genericName.slice(0, 15)}...` : item.genericName,
       unitPrice: Math.round((item.totalPrice / item.quantity) * 100) / 100,
       quantity: item.quantity,
       unit: item.quantityUnit,
     }))
-    .sort((a, b) => b.unitPrice - a.unitPrice);
+    .toSorted((a, b) => b.unitPrice - a.unitPrice);
 }
 
 export type BudgetImpact = {

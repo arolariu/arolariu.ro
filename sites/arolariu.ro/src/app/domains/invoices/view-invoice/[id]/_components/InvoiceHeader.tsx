@@ -19,7 +19,7 @@ export function InvoiceHeader(): React.JSX.Element {
       <div className='space-y-1'>
         <div className='flex items-center gap-2'>
           <h1 className='text-3xl font-bold tracking-tight'>{invoice.name}</h1>
-          {invoice.isImportant && (
+          {Boolean(invoice.isImportant) && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -36,7 +36,7 @@ export function InvoiceHeader(): React.JSX.Element {
       </div>
       <div className='flex flex-wrap gap-2'>
         {Boolean(isOwner) && (
-          <React.Fragment>
+          <>
             <Link
               href={`/domains/invoices/edit-invoice/${invoice.id}`}
               className='flex'>
@@ -49,7 +49,7 @@ export function InvoiceHeader(): React.JSX.Element {
               <TbTrash className='mr-2 h-4 w-4' />
               Delete
             </Button>
-          </React.Fragment>
+          </>
         )}
         <Button variant='outline'>
           <TbPrinter className='mr-2 h-4 w-4' />

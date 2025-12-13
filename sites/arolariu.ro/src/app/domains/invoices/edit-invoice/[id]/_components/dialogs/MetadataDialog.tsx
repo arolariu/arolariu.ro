@@ -256,6 +256,6 @@ export default function MetadataDialog(): React.JSX.Element {
     case "edit":
       return <UpdateDialog metadata={metadata} />;
     default:
-      return <></>;
+      return null;
   }
 }

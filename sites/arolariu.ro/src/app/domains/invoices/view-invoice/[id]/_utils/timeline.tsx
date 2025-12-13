@@ -42,7 +42,7 @@ export function getEventIcon(event: TimelineEvent): React.ReactElement {
  * @returns {string} A unique identifier string
  */
 export function generateEventId(): string {
-  return `evt_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  return `evt_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
 /**
@@ -259,10 +259,10 @@ export function generateTimelineFromInvoice(invoice: Invoice): TimelineEvent[] {
  */
 export function getInitials(identifier: string): string {
   if (identifier.includes("@")) {
-    const localPart = identifier.split("@")[0];
-    return localPart!.substring(0, 2).toUpperCase();
+    const [localPart] = identifier.split("@");
+    return localPart!.slice(0, 2).toUpperCase();
   }
-  return identifier.substring(0, 2).toUpperCase();
+  return identifier.slice(0, 2).toUpperCase();
 }
 
 /**

@@ -59,6 +59,6 @@ export default function DialogContainer(): React.JSX.Element {
     case "VIEW_INVOICES__EXPORT":
       return <InvoicesExportDialog />;
     default:
-      return <></>;
+      return null;
   }
 }
