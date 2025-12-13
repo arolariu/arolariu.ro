@@ -1,7 +1,17 @@
 ###############
-#  temp file  #
+#  temp files  #
 ###############
-*.yml
+
+# DocFX-generated API reference (from `docfx metadata`)
+api/**/*.yml
+
+# Misc DocFX build artifacts
 .manifest
+
+# TypeDoc-generated Markdown (latest)
 articles/ts-api/latest/components/reference/**
 articles/ts-api/latest/website/reference/**
+
+# But we do track TOCs
+!toc.yml
+!**/toc.yml
