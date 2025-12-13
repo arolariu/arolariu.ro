@@ -932,44 +932,8 @@ export function generateRandomInvoices(count: number): Invoice[] {
 
 /**
  * Pre-built mock invoice with predictable values for quick testing.
- *
- * @remarks
- * **Deterministic Data:** Unlike {@link generateRandomInvoice}, this mock
- * has fixed, predictable values suitable for snapshot tests and assertions.
- *
- * **Fixed Values:**
- * - `id`: "invoice-1"
- * - `name`: "Test Invoice"
- * - `category`: {@link InvoiceCategory.GROCERY}
- * - `userIdentifier`: "user-123"
- *
- * **Random Values:** Other properties (description, dates, payment info)
- * are randomly generated at module load time. They are consistent within
- * a single test run.
- *
- * **Use Cases:**
- * - Snapshot tests requiring deterministic data
- * - Quick unit test assertions with known ID
- * - Documentation examples
- * - Default values in Storybook stories
- *
- * **Caution:** Avoid using in tests that depend on random fields being
- * specific values. Use {@link InvoiceBuilder} for full control.
- *
- * @example
- * ```typescript
- * // Use in tests with known ID
- * expect(mockInvoice.id).toBe("invoice-1");
- * expect(mockInvoice.name).toBe("Test Invoice");
- *
- * // Use as default in Storybook
- * export const Default: Story = {
- *   args: { invoice: mockInvoice },
- * };
- * ```
- *
- * @see {@link mockInvoiceList} for pre-built list
- * @see {@link InvoiceBuilder} for customized test data
+ * Fixed values: id="invoice-1", name="Test Invoice", category=GROCERY, userIdentifier="user-123".
+ * @example expect(mockInvoice.id).toBe("invoice-1");
  */
 export const mockInvoice = new InvoiceBuilder()
   .withId("invoice-1")
@@ -980,40 +944,6 @@ export const mockInvoice = new InvoiceBuilder()
 
 /**
  * Pre-built list of 5 random invoices for quick testing.
- *
- * @remarks
- * **Module-Level Generation:** Invoices are generated once when the module
- * is first imported. Values are consistent within a single test run but
- * differ across runs due to faker.js randomness.
- *
- * **Invoice Count:** Fixed at 5 invoices. For different counts, use
- * {@link generateRandomInvoices}.
- *
- * **Use Cases:**
- * - List/table component testing
- * - Pagination testing (small dataset)
- * - Filtering and sorting tests
- * - Quick integration tests
- *
- * **Consistency Note:** For fully deterministic tests, configure faker.js
- * seed or use {@link InvoiceBuilder} to create specific test data.
- *
- * @example
- * ```typescript
- * // Use in list component tests
- * render(<InvoiceList invoices={mockInvoiceList} />);
- *
- * // Verify list has expected count
- * expect(mockInvoiceList).toHaveLength(5);
- *
- * // All invoices have required properties
- * for (const invoice of mockInvoiceList) {
- *   expect(invoice.id).toBeDefined();
- *   expect(invoice.items).toBeDefined();
- * }
- * ```
- *
- * @see {@link mockInvoice} for single deterministic invoice
- * @see {@link generateRandomInvoices} for custom-sized lists
+ * @example render(<InvoiceList invoices={mockInvoiceList} />);
  */
 export const mockInvoiceList = generateRandomInvoices(5);
