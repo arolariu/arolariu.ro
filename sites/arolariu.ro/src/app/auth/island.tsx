@@ -1,11 +1,30 @@
 "use client";
 
-import {BackgroundBeams} from "@arolariu/components/background-beams";
+import {Badge} from "@arolariu/components/badge";
+import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
+import {Separator} from "@arolariu/components/separator";
 import {motion, Variants} from "motion/react";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
+
+type AuthCardKey = "signUp" | "signIn";
+
+type AuthCard = Readonly<{
+  key: AuthCardKey;
+  href: string;
+  imageSrc: string;
+  illustrationAlt: string;
+  title: string;
+  description: string;
+  bullets: Readonly<[string, string, string]>;
+  cta: string;
+  secondaryPrompt: string;
+  secondaryAction: string;
+  secondaryHref: string;
+  imageHoverRotate: number;
+}>;
 
 /**
  * The client-side authentication screen with modern design and animations.
@@ -37,6 +56,37 @@ import Link from "next/link";
 export default function RenderAuthScreen(): React.JSX.Element {
   const t = useTranslations("Authentication.Island");
 
+  const cards: ReadonlyArray<AuthCard> = [
+    {
+      key: "signUp",
+      href: "/auth/sign-up/",
+      imageSrc: "/images/auth/sign-up.svg",
+      illustrationAlt: t("signUp.illustrationAlt"),
+      title: t("signUp.title"),
+      description: t("signUp.description"),
+      bullets: [t("signUp.bullets.first"), t("signUp.bullets.second"), t("signUp.bullets.third")],
+      cta: t("signUp.cta"),
+      secondaryPrompt: t("signUp.secondaryPrompt"),
+      secondaryAction: t("signUp.secondaryAction"),
+      secondaryHref: "/auth/sign-in/",
+      imageHoverRotate: 2,
+    },
+    {
+      key: "signIn",
+      href: "/auth/sign-in/",
+      imageSrc: "/images/auth/sign-in.svg",
+      illustrationAlt: t("signIn.illustrationAlt"),
+      title: t("signIn.title"),
+      description: t("signIn.description"),
+      bullets: [t("signIn.bullets.first"), t("signIn.bullets.second"), t("signIn.bullets.third")],
+      cta: t("signIn.cta"),
+      secondaryPrompt: t("signIn.secondaryPrompt"),
+      secondaryAction: t("signIn.secondaryAction"),
+      secondaryHref: "/auth/sign-up/",
+      imageHoverRotate: -2,
+    },
+  ];
+
   const containerVariants: Variants = {
     hidden: {opacity: 0},
     visible: {
@@ -63,119 +113,111 @@ export default function RenderAuthScreen(): React.JSX.Element {
   };
 
   return (
-    <section className='relative min-h-[calc(100vh-200px)] w-full overflow-hidden'>
-      <BackgroundBeams className='pointer-events-none' />
-
+    <section className='relative mx-auto w-full max-w-7xl overflow-hidden'>
       <motion.div
         variants={containerVariants}
         initial='hidden'
         animate='visible'
-        className='relative z-10 mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-2 lg:px-8 lg:py-16'>
-        {/* Sign Up Card */}
-        <motion.div variants={cardVariants}>
-          <Card className='group hover:border-primary hover:shadow-primary/20 relative h-full overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl'>
-            <CardHeader className='space-y-4 pb-6'>
-              <motion.div
-                whileHover={{scale: 1.05, rotate: 2}}
-                transition={{type: "spring", stiffness: 300}}
-                className='relative mx-auto flex h-48 w-48 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 p-4 sm:h-64 sm:w-64'>
-                <Image
-                  src='/images/auth/sign-up.svg'
-                  alt='Sign up illustration'
-                  width={300}
-                  height={300}
-                  className='h-full w-full object-contain transition-transform duration-300 group-hover:scale-110'
-                  priority
+        className='relative mx-auto flex flex-col gap-10 px-4 py-6 sm:px-6 lg:px-8 lg:py-10'>
+        <header className='relative text-center'>
+          <motion.div
+            aria-hidden='true'
+            className='pointer-events-none absolute inset-x-0 -top-10 mx-auto h-32 w-32 rounded-full bg-primary/15 blur-2xl'
+            animate={{y: [0, -6, 0]}}
+            transition={{duration: 6, repeat: Infinity, ease: "easeInOut"}}
+          />
+
+          <h1 className='text-3xl font-semibold tracking-tight sm:text-4xl'>{t("hero.title")}</h1>
+          <p className='text-muted-foreground mx-auto mt-3 max-w-3xl text-base leading-relaxed sm:text-lg'>{t("hero.subtitle")}</p>
+
+          <div className='mt-6 flex flex-wrap items-center justify-center gap-2'>
+            <Badge variant='secondary'>{t("trust.oauth")}</Badge>
+            <Badge variant='secondary'>{t("trust.session")}</Badge>
+            <Badge variant='secondary'>{t("trust.privacy")}</Badge>
+          </div>
+        </header>
+
+        <Separator />
+
+        <div className='grid gap-8 md:grid-cols-2'>
+          {cards.map((card) => (
+            <motion.div
+              key={card.key}
+              variants={cardVariants}>
+              <Card className='group hover:border-primary/60 hover:shadow-primary/10 relative h-full overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl'>
+                <motion.div
+                  aria-hidden='true'
+                  className='pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl'
+                  animate={{scale: [1, 1.05, 1], rotate: [0, 6, 0]}}
+                  transition={{duration: 10, repeat: Infinity, ease: "easeInOut"}}
                 />
-              </motion.div>
 
-              <CardTitle className='text-center text-3xl font-bold tracking-tight'>{t("callToAction")}</CardTitle>
-            </CardHeader>
-
-            <CardContent className='space-y-6'>
-              <CardDescription className='text-muted-foreground text-center text-base leading-relaxed'>{t("description")}</CardDescription>
-
-              <Link
-                href='/auth/sign-up/'
-                className='block w-full'>
-                <motion.button
-                  whileHover={{scale: 1.02}}
-                  whileTap={{scale: 0.98}}
-                  className='group relative w-full overflow-hidden rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/50'>
-                  <span className='relative z-10'>Sign up now →</span>
+                <CardHeader className='space-y-4 pb-6'>
                   <motion.div
-                    className='absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600'
-                    initial={{x: "100%"}}
-                    whileHover={{x: 0}}
-                    transition={{duration: 0.3}}
-                  />
-                </motion.button>
-              </Link>
+                    whileHover={{scale: 1.03, rotate: card.imageHoverRotate}}
+                    transition={{type: "spring", stiffness: 260, damping: 18}}
+                    className='relative mx-auto flex h-44 w-44 items-center justify-center overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 to-muted/10 p-4 sm:h-56 sm:w-56'>
+                    <Image
+                      src={card.imageSrc}
+                      alt={card.illustrationAlt}
+                      width={300}
+                      height={300}
+                      className='h-full w-full object-contain transition-transform duration-300 group-hover:scale-110'
+                      priority
+                    />
+                  </motion.div>
 
-              <p className='text-muted-foreground text-center text-sm'>
-                Already have an account?{" "}
-                <Link
-                  href='/auth/sign-in/'
-                  className='text-primary font-medium underline-offset-4 hover:underline'>
-                  Sign in here
-                </Link>
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
+                  <CardTitle className='text-center text-2xl font-semibold tracking-tight sm:text-3xl'>{card.title}</CardTitle>
 
-        {/* Sign In Card */}
-        <motion.div variants={cardVariants}>
-          <Card className='group hover:border-primary hover:shadow-primary/20 relative h-full overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl'>
-            <CardHeader className='space-y-4 pb-6'>
-              <motion.div
-                whileHover={{scale: 1.05, rotate: -2}}
-                transition={{type: "spring", stiffness: 300}}
-                className='relative mx-auto flex h-48 w-48 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 p-4 sm:h-64 sm:w-64'>
-                <Image
-                  src='/images/auth/sign-in.svg'
-                  alt='Sign in illustration'
-                  width={300}
-                  height={300}
-                  className='h-full w-full object-contain transition-transform duration-300 group-hover:scale-110'
-                  priority
-                />
-              </motion.div>
+                  <div className='flex flex-wrap items-center justify-center gap-2'>
+                    <Badge variant='secondary'>{t("trust.oauth")}</Badge>
+                    <Badge variant='secondary'>{t("trust.session")}</Badge>
+                  </div>
+                </CardHeader>
 
-              <CardTitle className='text-center text-3xl font-bold tracking-tight'>{t("callToAction")}</CardTitle>
-            </CardHeader>
+                <CardContent className='space-y-6'>
+                  <CardDescription className='text-muted-foreground text-center text-base leading-relaxed'>{card.description}</CardDescription>
 
-            <CardContent className='space-y-6'>
-              <CardDescription className='text-muted-foreground text-center text-base leading-relaxed'>{t("description")}</CardDescription>
+                  <ul className='mx-auto grid max-w-md gap-2 text-left text-sm text-muted-foreground'>
+                    <li className='flex items-start gap-2'>
+                      <span aria-hidden='true' className='mt-2 inline-block h-1.5 w-1.5 rounded-full bg-primary/70' />
+                      <span>{card.bullets[0]}</span>
+                    </li>
+                    <li className='flex items-start gap-2'>
+                      <span aria-hidden='true' className='mt-2 inline-block h-1.5 w-1.5 rounded-full bg-primary/70' />
+                      <span>{card.bullets[1]}</span>
+                    </li>
+                    <li className='flex items-start gap-2'>
+                      <span aria-hidden='true' className='mt-2 inline-block h-1.5 w-1.5 rounded-full bg-primary/70' />
+                      <span>{card.bullets[2]}</span>
+                    </li>
+                  </ul>
 
-              <Link
-                href='/auth/sign-in/'
-                className='block w-full'>
-                <motion.button
-                  whileHover={{scale: 1.02}}
-                  whileTap={{scale: 0.98}}
-                  className='group relative w-full overflow-hidden rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/50'>
-                  <span className='relative z-10'>Sign in now →</span>
-                  <motion.div
-                    className='absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600'
-                    initial={{x: "100%"}}
-                    whileHover={{x: 0}}
-                    transition={{duration: 0.3}}
-                  />
-                </motion.button>
-              </Link>
+                  <div className='flex flex-col gap-3'>
+                    <motion.div whileHover={{scale: 1.01}} whileTap={{scale: 0.99}}>
+                      <Button asChild className='w-full'>
+                        <Link href={card.href}>{card.cta}</Link>
+                      </Button>
+                    </motion.div>
 
-              <p className='text-muted-foreground text-center text-sm'>
-                Don&apos;t have an account?{" "}
-                <Link
-                  href='/auth/sign-up/'
-                  className='text-primary font-medium underline-offset-4 hover:underline'>
-                  Create one here
-                </Link>
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
+                    <p className='text-muted-foreground text-center text-sm'>
+                      {card.secondaryPrompt}{" "}
+                      <Link
+                        href={card.secondaryHref}
+                        className='text-primary font-medium underline-offset-4 hover:underline'>
+                        {card.secondaryAction}
+                      </Link>
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        <footer className='text-muted-foreground mx-auto max-w-3xl text-center text-sm leading-relaxed'>
+          {t("footer")}
+        </footer>
       </motion.div>
     </section>
   );

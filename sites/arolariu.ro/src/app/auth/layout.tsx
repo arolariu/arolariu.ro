@@ -1,3 +1,5 @@
+import {BackgroundBeams} from "@arolariu/components/background-beams";
+import {DotBackground} from "@arolariu/components/dot-background";
 import {Suspense} from "react";
 import Loading from "./loading";
 
@@ -7,8 +9,16 @@ import Loading from "./loading";
  */
 export default async function AuthRootLayout(props: Readonly<LayoutProps<"/auth">>): Promise<React.JSX.Element> {
   return (
-    <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-4 px-5 py-24 text-center lg:flex-row lg:gap-8'>
-      <Suspense fallback={<Loading />}>{props.children}</Suspense>
+    <main className='relative w-full overflow-hidden px-5 py-24'>
+      <DotBackground
+        glow
+        className='opacity-40'
+      />
+      <BackgroundBeams className='opacity-60' />
+
+      <div className='relative z-10 mx-auto w-full max-w-7xl'>
+        <Suspense fallback={<Loading />}>{props.children}</Suspense>
+      </div>
     </main>
   );
 }
