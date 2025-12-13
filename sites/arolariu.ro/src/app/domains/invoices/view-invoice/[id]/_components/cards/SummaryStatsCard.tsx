@@ -9,7 +9,7 @@ type Props = {
   currency: string;
 };
 
-export function SummaryStatsCard({summary, currency}: Props): React.JSX.Element {
+export function SummaryStatsCard({summary, currency}: Readonly<Props>): React.JSX.Element {
   const stats = [
     {
       label: "Total Items",

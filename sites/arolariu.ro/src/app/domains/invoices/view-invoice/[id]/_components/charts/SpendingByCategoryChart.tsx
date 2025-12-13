@@ -43,7 +43,7 @@ function CustomLegend({payload}: any) {
   );
 }
 
-export function SpendingByCategoryChart({data, currency}: Props): React.JSX.Element {
+export function SpendingByCategoryChart({data, currency}: Readonly<Props>): React.JSX.Element {
   const chartConfig = data.reduce(
     (acc, item, index) => {
       acc[item.category] = {

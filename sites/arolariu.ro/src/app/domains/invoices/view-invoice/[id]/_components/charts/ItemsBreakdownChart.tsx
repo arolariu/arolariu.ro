@@ -25,7 +25,7 @@ function CustomTooltip({active, payload, currency}: {active?: boolean; payload?:
   );
 }
 
-export function ItemsBreakdownChart({data, currency}: Props): React.JSX.Element {
+export function ItemsBreakdownChart({data, currency}: Readonly<Props>): React.JSX.Element {
   const chartConfig = {
     price: {
       label: "Price",

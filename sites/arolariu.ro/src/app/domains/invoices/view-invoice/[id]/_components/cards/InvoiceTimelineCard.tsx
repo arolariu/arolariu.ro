@@ -84,7 +84,7 @@ type Props = {
   invoice: Invoice;
 };
 
-export function InvoiceTimelineCard({invoice}: Props) {
+export function InvoiceTimelineCard({invoice}: Readonly<Props>) {
   const events = generateTimeline(invoice);
 
   // Group events by date

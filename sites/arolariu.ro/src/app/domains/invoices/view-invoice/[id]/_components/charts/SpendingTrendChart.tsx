@@ -24,7 +24,7 @@ function CustomTooltip({active, payload, currency}: {active?: boolean; payload?:
   );
 }
 
-export function SpendingTrendChart({data, currency}: Props): React.JSX.Element {
+export function SpendingTrendChart({data, currency}: Readonly<Props>): React.JSX.Element {
   const chartConfig = {
     amount: {
       label: "Amount",

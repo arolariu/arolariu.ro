@@ -33,7 +33,7 @@ function CustomTooltip({active, payload, currency}: {active?: boolean; payload?:
   );
 }
 
-export function CategoryComparisonChart({data, currency}: Props): React.JSX.Element {
+export function CategoryComparisonChart({data, currency}: Readonly<Props>): React.JSX.Element {
   const chartConfig = {
     current: {
       label: "Current",

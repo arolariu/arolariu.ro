@@ -38,7 +38,7 @@ function CustomTooltip({active, payload, currency}: {active?: boolean; payload?:
   );
 }
 
-export function MerchantBreakdownChart({data, currency, currentMerchant}: Props): React.JSX.Element {
+export function MerchantBreakdownChart({data, currency, currentMerchant}: Readonly<Props>): React.JSX.Element {
   const chartConfig = {
     total: {
       label: "Total Spent",
