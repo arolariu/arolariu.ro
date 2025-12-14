@@ -128,7 +128,7 @@ jobs:
             await runHygieneCheck();
 
       - name: 📤 Upload format result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: format-result
           path: artifacts/hygiene/format-result.json
@@ -169,7 +169,7 @@ jobs:
             await runHygieneCheck();
 
       - name: 📤 Upload lint result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: lint-result
           path: artifacts/hygiene/lint-result.json
@@ -213,7 +213,7 @@ jobs:
             await runHygieneCheck();
 
       - name: 📤 Upload test result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-result
           path: |
@@ -257,7 +257,7 @@ jobs:
             await runHygieneCheck();
 
       - name: 📤 Upload stats result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: stats-result
           path: artifacts/hygiene/stats-result.json
