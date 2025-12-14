@@ -8,6 +8,12 @@
   "[javascript]": {
     "editor.defaultFormatter": "prettier.prettier-vscode"
   },
+  "[typescript]": {
+    "editor.defaultFormatter": "prettier.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "prettier.prettier-vscode"
+  },
 
   // Breadcrumbs Settings
   "breadcrumbs.enabled": true,
