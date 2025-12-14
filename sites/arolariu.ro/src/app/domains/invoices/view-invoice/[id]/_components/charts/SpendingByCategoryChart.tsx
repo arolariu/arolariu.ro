@@ -5,12 +5,14 @@ import {Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip} from "rechart
 import {CategorySpending} from "../../_utils/analytics";
 
 type Props = {
+
+const EMPTY_PAYLOAD: any[] = [];
   data: CategorySpending[];
   currency: string;
 };
 
-function CustomTooltip({active, payload, currency}: {readonly active?: boolean; readonly payload?: any[]; readonly currency: string}) {
-  if (!active || !payload || !payload.length) return null;
+function CustomTooltip({active, payload = EMPTY_PAYLOAD, currency}: {readonly active?: boolean; readonly payload?: any[]; readonly currency: string}) {
+  if (!active || payload.length === 0) return null;
   const data = payload[0].payload;
   return (
     <div className='bg-background rounded-lg border px-3 py-2 shadow-md'>

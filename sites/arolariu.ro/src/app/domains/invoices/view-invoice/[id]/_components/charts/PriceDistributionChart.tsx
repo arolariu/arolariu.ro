@@ -5,12 +5,14 @@ import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "r
 import type {PriceRange} from "../../_utils/analytics";
 
 type Props = {
+
+const EMPTY_PAYLOAD: any[] = [];
   data: PriceRange[];
   currency: string;
 };
 
 function CustomTooltip({active, payload}: {readonly active?: boolean; readonly payload?: any[]}) {
-  if (!active || !payload || !payload.length) return null;
+  if (!active || payload.length === 0) return null;
   const data = payload[0].payload;
   return (
     <div className='bg-background rounded-lg border px-3 py-2 shadow-md'>
