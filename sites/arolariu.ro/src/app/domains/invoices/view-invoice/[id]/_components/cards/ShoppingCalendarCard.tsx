@@ -99,7 +99,7 @@ export function ShoppingCalendarCard(): React.JSX.Element {
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const {monthName, year, days, avgDaysBetween} = getMonthCalendarData(invoice);
-  const currency = invoice.paymentInformation.currency;
+  const {currency} = invoice.paymentInformation;
   const weekDays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
   return (

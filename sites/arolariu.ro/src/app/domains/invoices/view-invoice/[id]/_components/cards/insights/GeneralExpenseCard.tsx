@@ -11,7 +11,7 @@ export function GeneralExpenseCard(): React.JSX.Element {
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const {paymentInformation} = invoice;
-  const currency = paymentInformation.currency;
+  const {currency} = paymentInformation;
   const totalAmount = paymentInformation.totalCostAmount;
 
   // Auto-detected category (mock)

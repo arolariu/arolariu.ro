@@ -30,7 +30,7 @@ export function NutritionCard(): React.JSX.Element {
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const {items, paymentInformation} = invoice;
-  const currency = paymentInformation.currency;
+  const {currency} = paymentInformation;
 
   // Define food groups
   const foodGroups: FoodGroup[] = [

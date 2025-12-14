@@ -104,7 +104,7 @@ export function SeasonalInsightsCard(): React.JSX.Element {
   const insights = detectSeasonalInsights(invoice);
   const date = new Date(invoice.paymentInformation.transactionDate);
   const monthName = new Intl.DateTimeFormat("en-US", {month: "long"}).format(date);
-  const currency = invoice.paymentInformation.currency;
+  const {currency} = invoice.paymentInformation;
 
   // Simulated December spending data
   const decemberAverage = 1800;

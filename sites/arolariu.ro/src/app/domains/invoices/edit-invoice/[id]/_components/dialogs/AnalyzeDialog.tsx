@@ -153,7 +153,7 @@ export default function AnalyzeDialog(): React.JSX.Element {
   const [currentStep, setCurrentStep] = useState<string>("");
 
   const handleOptionSelect = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const optionId = (e.currentTarget as HTMLDivElement).dataset["optionId"];
+    const {optionId} = (e.currentTarget as HTMLDivElement).dataset;
     if (optionId) {
       setSelectedOption(Number(optionId) as InvoiceAnalysisOptions);
     }
