@@ -5,12 +5,12 @@ import {Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis} from "r
 import type {MerchantBreakdown} from "../../_utils/analytics";
 
 type Props = {
-
-const EMPTY_PAYLOAD: any[] = [];
   data: MerchantBreakdown[];
   currency: string;
   currentMerchant: string;
 };
+
+const EMPTY_PAYLOAD: any[] = [];
 
 function CustomTooltip({active, payload = EMPTY_PAYLOAD, currency}: {readonly active?: boolean; readonly payload?: any[]; readonly currency: string}) {
   if (!active || payload.length === 0) return null;
