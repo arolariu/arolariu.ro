@@ -285,7 +285,7 @@ jobs:
           cache-key-prefix: 'hygiene-${{ github.event.pull_request.number || github.run_id }}'
 
       - name: 📥 Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts/hygiene
           pattern: "*-result"
