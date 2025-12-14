@@ -21,7 +21,7 @@ import {
   CardTitle,
 } from "@arolariu/components";
 import Link from "next/link";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbClipboard, TbClipboardCheck, TbHome, TbRefresh} from "react-icons/tb";
 import QRCode from "react-qr-code";
 import ContextProviders from "./providers";
@@ -76,7 +76,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
    * Handles copying the error digest to clipboard for support purposes.
    * Provides visual feedback via icon change and temporary state.
    */
-  const handleCopyErrorId = async (): Promise<void> => {
+  const handleCopyErrorId = useCallback(async (): Promise<void> => {
     const errorId = error.digest ?? "NO_ERROR_ID";
 
     try {
@@ -90,15 +90,15 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
     } catch (clipboardError) {
       console.error("Failed to copy error ID:", clipboardError);
     }
-  };
+  }, [error.digest]);
 
   /**
    * Handles the reset action with telemetry tracking.
    * Calls the provided reset function to attempt recovery.
    */
-  const handleReset = (): void => {
+  const handleReset = useCallback((): void => {
     reset();
-  };
+  }, [reset]);
 
   return (
     <html

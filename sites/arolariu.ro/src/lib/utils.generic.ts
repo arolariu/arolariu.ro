@@ -190,8 +190,7 @@ export interface FormatDateOptions extends Partial<Intl.DateTimeFormatOptions> {
  * ```
  */
 export function formatDate(possibleDate: string | Date, options: FormatDateOptions): string {
-  let date: Date | undefined = undefined;
-  const formatOptions: Intl.DateTimeFormatOptions = {};
+  let date: Date | undefined;
 
   if (typeof possibleDate === "string") {
     date = new Date(possibleDate);
@@ -199,7 +198,7 @@ export function formatDate(possibleDate: string | Date, options: FormatDateOptio
     date = possibleDate;
   }
 
-  formatOptions = {
+  const formatOptions: Intl.DateTimeFormatOptions = {
     dateStyle: "short",
     ...options,
   };

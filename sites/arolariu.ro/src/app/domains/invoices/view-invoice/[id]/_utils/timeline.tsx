@@ -249,7 +249,7 @@ export function generateTimelineFromInvoice(invoice: Invoice): TimelineEvent[] {
   }
 
   // Sort events by date
-  return events.sort((a, b) => a.date.getTime() - b.date.getTime());
+  return events.toSorted((a, b) => a.date.getTime() - b.date.getTime());
 }
 
 /**
@@ -272,7 +272,7 @@ export function getInitials(identifier: string): string {
  */
 export function getDisplayName(identifier: string): string {
   if (identifier.includes("@")) {
-    const localPart = identifier.split("@")[0];
+    const [localPart] = identifier.split("@");
     return localPart!.charAt(0).toUpperCase() + localPart!.slice(1);
   }
   return identifier;

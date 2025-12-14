@@ -103,7 +103,7 @@ export type InvoiceSummary = {
 };
 
 export function getInvoiceSummary(invoice: Invoice): InvoiceSummary {
-  const items = invoice.items;
+  const {items} = invoice;
   const categories = new Set(items.map((item) => item.category));
   const sortedByPrice = items.toSorted((a, b) => b.totalPrice - a.totalPrice);
 
@@ -112,15 +112,15 @@ export function getInvoiceSummary(invoice: Invoice): InvoiceSummary {
     uniqueCategories: categories.size,
     averageItemPrice: items.length > 0 ? Math.round((invoice.paymentInformation.totalCostAmount / items.length) * 100) / 100 : 0,
     highestItem: sortedByPrice[0] ? {name: sortedByPrice[0].genericName, price: sortedByPrice[0].totalPrice} : {name: "N/A", price: 0},
-    lowestItem: sortedByPrice[sortedByPrice.length - 1]
+    lowestItem: sortedByPrice.at(-1)
       ? {
-          name: sortedByPrice[sortedByPrice.length - 1]!.genericName,
-          price: sortedByPrice[sortedByPrice.length - 1]!.totalPrice,
+          name: sortedByPrice.at(-1)!.genericName,
+          price: sortedByPrice.at(-1)!.totalPrice,
         }
       : {name: "N/A", price: 0},
     taxPercentage:
       invoice.paymentInformation.totalCostAmount > 0
-        ? Math.round((invoice.paymentInformation.totalTaxAmount / invoice.paymentInformation.totalCostAmount) * 10000) / 100
+        ? Math.round((invoice.paymentInformation.totalTaxAmount / invoice.paymentInformation.totalCostAmount) * 10_000) / 100
         : 0,
     totalAmount: invoice.paymentInformation.totalCostAmount,
     taxAmount: invoice.paymentInformation.totalTaxAmount,

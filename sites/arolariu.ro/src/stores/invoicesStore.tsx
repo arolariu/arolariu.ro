@@ -105,9 +105,11 @@ const indexedDBStorage = createIndexedDBStorage<InvoicesPersistedState, Invoice>
 /**
  * Persist middleware configuration
  */
-/**
- * Persist middleware configuration
- */
+
+const setHydratedCallback = (state: InvoicesStore | undefined) => {
+  state?.setHasHydrated(true);
+};
+
 const persistConfig = {
   name: "invoices-store",
   storage: indexedDBStorage,
@@ -115,9 +117,7 @@ const persistConfig = {
     invoices: [...state.invoices],
   }),
   onRehydrateStorage() {
-    return (state: InvoicesStore | undefined) => {
-      state?.setHasHydrated(true);
-    };
+    return setHydratedCallback;
   },
 } as const;
 

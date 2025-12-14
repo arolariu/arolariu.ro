@@ -92,9 +92,11 @@ const indexedDBStorage = createIndexedDBStorage<MerchantsPersistedState, Merchan
 /**
  * Persist middleware configuration
  */
-/**
- * Persist middleware configuration
- */
+
+const setMerchantsHydratedCallback = (state: MerchantsStore | undefined) => {
+  state?.setHasHydrated(true);
+};
+
 const persistConfig = {
   name: "merchants-store",
   storage: indexedDBStorage,
@@ -102,9 +104,7 @@ const persistConfig = {
     merchants: [...state.merchants],
   }),
   onRehydrateStorage() {
-    return (state: MerchantsStore | undefined) => {
-      state?.setHasHydrated(true);
-    };
+    return setMerchantsHydratedCallback;
   },
 } as const;
 
