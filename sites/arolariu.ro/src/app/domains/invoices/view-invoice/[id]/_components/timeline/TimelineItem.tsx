@@ -77,7 +77,7 @@ export function TimelineItem({event, icon, isLast = false}: TimelineItemProps): 
                     className='max-w-xs text-xs'
                     sideOffset={8}>
                     <p>{tooltipContent}</p>
-                    {event.metadata?.confidence && <p className='text-muted-foreground mt-1'>Confidence: {event.metadata.confidence}%</p>}
+                    {Boolean(event.metadata?.confidence) && <p className='text-muted-foreground mt-1'>Confidence: {event.metadata.confidence}%</p>}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
