@@ -439,34 +439,36 @@ const otlpEndpoint = process.env["OTEL_EXPORTER_OTLP_ENDPOINT"] ?? "http://local
  * Set via `APPLICATIONINSIGHTS_CONNECTION_STRING` environment variable.
  */
 const connectionString = process.env["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-
-let traceExporter: OTLPTraceExporter | AzureMonitorTraceExporter;
-let metricExporter: OTLPMetricExporter | AzureMonitorMetricExporter;
-
-if (connectionString) {
-  console.log(">>> 📡 Using Azure Monitor exporters for OpenTelemetry");
-  const credential = new DefaultAzureCredential({
-    managedIdentityClientId: process.env["AZURE_CLIENT_ID"],
-  });
-  traceExporter = new AzureMonitorTraceExporter({
-    connectionString,
-    credential,
-  });
-  metricExporter = new AzureMonitorMetricExporter({
-    connectionString,
-    credential,
-  });
-} else {
-  console.log(">>> 📡 Using OTLP HTTP exporters for OpenTelemetry at", otlpEndpoint);
-  traceExporter = new OTLPTraceExporter({
-    url: `${otlpEndpoint}/v1/traces`,
-    headers: {},
-  });
-  metricExporter = new OTLPMetricExporter({
-    url: `${otlpEndpoint}/v1/metrics`,
-    headers: {},
-  });
-}
+const {traceExporter, metricExporter} = connectionString
+  ? (() => {
+      console.log(">>> 📡 Using Azure Monitor exporters for OpenTelemetry");
+      const credential = new DefaultAzureCredential({
+        managedIdentityClientId: process.env["AZURE_CLIENT_ID"],
+      });
+      return {
+        traceExporter: new AzureMonitorTraceExporter({
+          connectionString,
+          credential,
+        }),
+        metricExporter: new AzureMonitorMetricExporter({
+          connectionString,
+          credential,
+        }),
+      };
+    })()
+  : (() => {
+      console.log(">>> 📡 Using OTLP HTTP exporters for OpenTelemetry at", otlpEndpoint);
+      return {
+        traceExporter: new OTLPTraceExporter({
+          url: `${otlpEndpoint}/v1/traces`,
+          headers: {},
+        }),
+        metricExporter: new OTLPMetricExporter({
+          url: `${otlpEndpoint}/v1/metrics`,
+          headers: {},
+        }),
+      };
+    })();
 
 /**
  * OpenTelemetry SDK instance.

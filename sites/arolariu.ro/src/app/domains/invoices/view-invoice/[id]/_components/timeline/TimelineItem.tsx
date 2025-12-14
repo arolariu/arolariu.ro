@@ -16,11 +16,11 @@ import {formatTimelineTime, getEventTooltipContent, getRelativeTime} from "../..
  */
 interface TimelineItemProps {
   /** The timeline event to display */
-  event: TimelineEvent;
+  readonly event: TimelineEvent;
   /** Icon element to display */
-  icon: React.ReactNode;
+  readonly icon: React.ReactNode;
   /** Whether this is the last item in the group */
-  isLast?: boolean;
+  readonly isLast?: boolean;
 }
 
 /**
@@ -38,7 +38,7 @@ interface TimelineItemProps {
  * />
  * ```
  */
-export function TimelineItem({event, icon, isLast = false}: TimelineItemProps): React.JSX.Element {
+export function TimelineItem({event, icon, isLast = false}: Readonly<TimelineItemProps>): React.JSX.Element {
   const tooltipContent = getEventTooltipContent(event.type, event.metadata);
 
   return (
@@ -77,7 +77,9 @@ export function TimelineItem({event, icon, isLast = false}: TimelineItemProps): 
                     className='max-w-xs text-xs'
                     sideOffset={8}>
                     <p>{tooltipContent}</p>
-                    {event.metadata?.confidence && <p className='text-muted-foreground mt-1'>Confidence: {event.metadata.confidence}%</p>}
+                    {Boolean(event.metadata?.confidence) && (
+                      <p className='text-muted-foreground mt-1'>Confidence: {event.metadata!.confidence}%</p>
+                    )}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

@@ -21,7 +21,7 @@ import {
   CardTitle,
 } from "@arolariu/components";
 import Link from "next/link";
-import {useState} from "react";
+import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbClipboard, TbClipboardCheck, TbHome, TbRefresh} from "react-icons/tb";
 import QRCode from "react-qr-code";
 import ContextProviders from "./providers";
@@ -76,7 +76,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
    * Handles copying the error digest to clipboard for support purposes.
    * Provides visual feedback via icon change and temporary state.
    */
-  const handleCopyErrorId = async (): Promise<void> => {
+  const handleCopyErrorId = useCallback(async (): Promise<void> => {
     const errorId = error.digest ?? "NO_ERROR_ID";
 
     try {
@@ -90,15 +90,15 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
     } catch (clipboardError) {
       console.error("Failed to copy error ID:", clipboardError);
     }
-  };
+  }, [error.digest]);
 
   /**
    * Handles the reset action with telemetry tracking.
    * Calls the provided reset function to attempt recovery.
    */
-  const handleReset = (): void => {
+  const handleReset = useCallback((): void => {
     reset();
-  };
+  }, [reset]);
 
   return (
     <html
@@ -172,7 +172,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
                 </div>
 
                 {/* QR Code with Diagnostic Data */}
-                {errorContext && (
+                {Boolean(errorContext) && (
                   <div className='flex flex-col items-center space-y-2 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-black'>
                     <p className='text-sm text-gray-600 dark:text-gray-400'>Scan for diagnostic information:</p>
                     <QRCode
@@ -192,7 +192,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
                     <pre className='overflow-x-auto text-xs text-gray-600 dark:text-gray-400'>
                       <code>{errorContext || "Loading diagnostic information..."}</code>
                     </pre>
-                    {error.stack && (
+                    {Boolean(error.stack) && (
                       <>
                         <h4 className='mt-4 mb-2 font-semibold'>Stack Trace:</h4>
                         <pre className='overflow-x-auto text-xs text-gray-600 dark:text-gray-400'>
@@ -230,7 +230,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
                 </Button>
 
                 {/* Tertiary Action - Copy Error ID */}
-                {error.digest && (
+                {Boolean(error.digest) && (
                   <Button
                     onClick={handleCopyErrorId}
                     variant='ghost'
@@ -262,7 +262,7 @@ export default function GlobalError({error, reset}: Readonly<GlobalErrorProps>):
                   className='text-indigo-600 underline hover:text-indigo-700 dark:text-indigo-400'>
                   admin@arolariu.ro
                 </a>
-                {error.digest && (
+                {Boolean(error.digest) && (
                   <>
                     {" "}
                     and include the error ID: <code className='rounded bg-gray-100 px-2 py-1 text-xs dark:bg-gray-800'>{error.digest}</code>

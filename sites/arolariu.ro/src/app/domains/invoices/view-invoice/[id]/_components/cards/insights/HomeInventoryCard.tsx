@@ -18,7 +18,7 @@ export function HomeInventoryCard(): React.JSX.Element {
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const {items, paymentInformation} = invoice;
-  const currency = paymentInformation.currency;
+  const {currency} = paymentInformation;
 
   // Get cleaning supplies from invoice
   const cleaningItems = items.filter((i) => i.category === ProductCategory.CLEANING_SUPPLIES);

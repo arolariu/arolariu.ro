@@ -2,8 +2,7 @@
 
 import {useDialog} from "@/app/domains/invoices/_contexts/DialogContext";
 import analyzeInvoice from "@/lib/actions/invoices/analyzeInvoice";
-import type {Invoice} from "@/types/invoices";
-import {InvoiceAnalysisOptions} from "@/types/invoices";
+import {type Invoice, InvoiceAnalysisOptions} from "@/types/invoices";
 import {
   Badge,
   Button,

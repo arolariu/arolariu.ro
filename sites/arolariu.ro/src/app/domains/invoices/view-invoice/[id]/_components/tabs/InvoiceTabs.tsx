@@ -71,7 +71,7 @@ export function InvoiceTabs(): React.JSX.Element {
                           Prep: {recipe.preparationTime}m • Cook: {recipe.cookingTime}m
                         </div>
                       </div>
-                      {recipe.referenceForMoreDetails && (
+                      {Boolean(recipe.referenceForMoreDetails) && (
                         <Button
                           variant='link'
                           className='h-auto p-0 text-sm'

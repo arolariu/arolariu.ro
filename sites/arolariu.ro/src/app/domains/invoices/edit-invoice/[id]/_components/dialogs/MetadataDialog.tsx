@@ -241,7 +241,7 @@ const DeleteDialog = ({metadata}: Readonly<{metadata: Record<string, string>}>) 
  * @see {@link VALID_METADATA_KEYS} - Predefined metadata key definitions
  * @see {@link useDialog} - Dialog state management hook
  */
-export default function MetadataDialog(): React.JSX.Element {
+export default function MetadataDialog(): React.JSX.Element | null {
   const {
     currentDialog: {mode, payload},
   } = useDialog("EDIT_INVOICE__METADATA");
@@ -256,6 +256,6 @@ export default function MetadataDialog(): React.JSX.Element {
     case "edit":
       return <UpdateDialog metadata={metadata} />;
     default:
-      return <></>;
+      return null;
   }
 }

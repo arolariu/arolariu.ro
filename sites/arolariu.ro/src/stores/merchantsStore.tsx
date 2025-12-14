@@ -101,6 +101,7 @@ const persistConfig = {
   partialize: (state: MerchantsStore): MerchantsPersistedState => ({
     merchants: [...state.merchants],
   }),
+  // eslint-disable-next-line unicorn/consistent-function-scoping -- Stable function reference for hydration
   onRehydrateStorage: () => (state: MerchantsStore | undefined) => {
     state?.setHasHydrated(true);
   },

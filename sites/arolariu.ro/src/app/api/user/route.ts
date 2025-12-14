@@ -141,7 +141,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
         addSpanEvent("auth.check.complete", {authenticated: Boolean(isAuthenticated)});
 
         // Authenticated user with Clerk
-        /** eslint-disable-next-line unicorn/prefer-ternary -- no need. */
+        // eslint-disable-next-line unicorn/prefer-ternary -- no need.
         if (isAuthenticated) {
           return withSpan("api.user.authenticated", async (userSpan) => {
             // Record request metric with type-safe attributes
