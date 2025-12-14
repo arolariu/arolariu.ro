@@ -21,7 +21,7 @@ export function DiningCard(): React.JSX.Element {
   const locale = useLocale();
   const {invoice} = useInvoiceContext();
   const {paymentInformation, items} = invoice;
-  const currency = paymentInformation.currency;
+  const {currency} = paymentInformation;
   const totalAmount = paymentInformation.totalCostAmount;
 
   // Estimate nutrition based on typical fast food values
@@ -29,11 +29,18 @@ export function DiningCard(): React.JSX.Element {
   const estimatedCalories = Math.round(350 + itemCount * 280);
   const estimatedProtein = Math.round(12 + itemCount * 11);
   const estimatedCarbs = Math.round(45 + itemCount * 35);
-  const sodiumLevel = totalAmount > 50 ? "High" : totalAmount > 30 ? "Medium" : "Low";
+  
+  // Simplified condition to avoid nested ternary
+  let sodiumLevel = "Low";
+  if (totalAmount > 50) {
+    sodiumLevel = "High";
+  } else if (totalAmount > 30) {
+    sodiumLevel = "Medium";
+  }
 
   // Mock historical data
   const fastFoodFrequency = 3;
-  const avgSpend = 45.0;
+  const avgSpend = 45;
   const favoritePlace = "McDonald's";
   const visits = 8;
 

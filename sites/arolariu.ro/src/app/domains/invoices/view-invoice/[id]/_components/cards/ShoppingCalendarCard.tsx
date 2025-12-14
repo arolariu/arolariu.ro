@@ -77,7 +77,7 @@ function getMonthCalendarData(invoice: Invoice): {
   // Calculate average days between shopping trips
   const shoppingDays = Object.keys(spendingByDay)
     .map(Number)
-    .sort((a, b) => a - b);
+    .toSorted((a, b) => a - b);
   let totalGap = 0;
   for (let i = 1; i < shoppingDays.length; i++) {
     totalGap += shoppingDays[i]! - shoppingDays[i - 1]!;

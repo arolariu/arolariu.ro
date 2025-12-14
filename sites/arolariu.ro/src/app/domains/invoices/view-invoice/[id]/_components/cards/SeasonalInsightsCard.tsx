@@ -34,7 +34,7 @@ function detectSeasonalInsights(invoice: Invoice): Insight[] {
   const historicalAvg = historicalInvoices.reduce(
     (acc, inv) => {
       Object.entries(inv.items).forEach(([cat, amount]) => {
-        const category = Number.parseInt(cat) as ProductCategory;
+        const category = Number.parseInt(cat, 10) as ProductCategory;
         if (!acc[category]) {
           acc[category] = {total: 0, count: 0};
         }
@@ -48,7 +48,7 @@ function detectSeasonalInsights(invoice: Invoice): Insight[] {
 
   // Detect unusual spending patterns
   Object.entries(categorySpending).forEach(([cat, amount]) => {
-    const category = Number.parseInt(cat) as ProductCategory;
+    const category = Number.parseInt(cat, 10) as ProductCategory;
     const avg = historicalAvg[category];
     if (avg && avg.count > 0) {
       const avgAmount = avg.total / avg.count;
