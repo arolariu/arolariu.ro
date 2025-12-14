@@ -9,7 +9,7 @@ import Loading from "./loading";
  */
 export default async function AuthRootLayout(props: Readonly<LayoutProps<"/auth">>): Promise<React.JSX.Element> {
   return (
-    <main className='relative w-full overflow-hidden px-5 py-24'>
+    <main className='relative w-full overflow-hidden px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-24'>
       <DotBackground
         glow
         className='opacity-40'

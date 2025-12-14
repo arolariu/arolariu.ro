@@ -1,6 +1,5 @@
 "use client";
 
-import {Badge} from "@arolariu/components/badge";
 import {Button} from "@arolariu/components/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
 import {Separator} from "@arolariu/components/separator";
@@ -8,6 +7,8 @@ import {motion, Variants} from "motion/react";
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
+import AuthBulletList from "./_components/AuthBulletList";
+import AuthTrustBadgesRow from "./_components/AuthTrustBadgesRow";
 
 type AuthCardKey = "signUp" | "signIn";
 
@@ -55,6 +56,8 @@ type AuthCard = Readonly<{
  */
 export default function RenderAuthScreen(): React.JSX.Element {
   const t = useTranslations("Authentication.Island");
+
+  const trustBadges: Readonly<[string, string, string]> = [t("trust.oauth"), t("trust.session"), t("trust.privacy")];
 
   const cards: ReadonlyArray<AuthCard> = [
     {
@@ -122,7 +125,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
         <header className='relative text-center'>
           <motion.div
             aria-hidden='true'
-            className='pointer-events-none absolute inset-x-0 -top-10 mx-auto h-32 w-32 rounded-full bg-primary/15 blur-2xl'
+            className='bg-primary/15 pointer-events-none absolute inset-x-0 -top-10 mx-auto h-32 w-32 rounded-full blur-2xl'
             animate={{y: [0, -6, 0]}}
             transition={{duration: 6, repeat: Infinity, ease: "easeInOut"}}
           />
@@ -130,11 +133,10 @@ export default function RenderAuthScreen(): React.JSX.Element {
           <h1 className='text-3xl font-semibold tracking-tight sm:text-4xl'>{t("hero.title")}</h1>
           <p className='text-muted-foreground mx-auto mt-3 max-w-3xl text-base leading-relaxed sm:text-lg'>{t("hero.subtitle")}</p>
 
-          <div className='mt-6 flex flex-wrap items-center justify-center gap-2'>
-            <Badge variant='secondary'>{t("trust.oauth")}</Badge>
-            <Badge variant='secondary'>{t("trust.session")}</Badge>
-            <Badge variant='secondary'>{t("trust.privacy")}</Badge>
-          </div>
+          <AuthTrustBadgesRow
+            className='mt-6 flex flex-wrap items-center justify-center gap-2'
+            badges={trustBadges}
+          />
         </header>
 
         <Separator />
@@ -147,7 +149,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
               <Card className='group hover:border-primary/60 hover:shadow-primary/10 relative h-full overflow-hidden border-2 transition-all duration-300 hover:shadow-2xl'>
                 <motion.div
                   aria-hidden='true'
-                  className='pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl'
+                  className='bg-primary/10 pointer-events-none absolute -top-24 -right-24 h-64 w-64 rounded-full blur-3xl'
                   animate={{scale: [1, 1.05, 1], rotate: [0, 6, 0]}}
                   transition={{duration: 10, repeat: Infinity, ease: "easeInOut"}}
                 />
@@ -156,7 +158,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
                   <motion.div
                     whileHover={{scale: 1.03, rotate: card.imageHoverRotate}}
                     transition={{type: "spring", stiffness: 260, damping: 18}}
-                    className='relative mx-auto flex h-44 w-44 items-center justify-center overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 to-muted/10 p-4 sm:h-56 sm:w-56'>
+                    className='from-primary/10 to-muted/10 relative mx-auto flex h-44 w-44 items-center justify-center overflow-hidden rounded-2xl bg-linear-to-br p-4 sm:h-56 sm:w-56'>
                     <Image
                       src={card.imageSrc}
                       alt={card.illustrationAlt}
@@ -169,33 +171,29 @@ export default function RenderAuthScreen(): React.JSX.Element {
 
                   <CardTitle className='text-center text-2xl font-semibold tracking-tight sm:text-3xl'>{card.title}</CardTitle>
 
-                  <div className='flex flex-wrap items-center justify-center gap-2'>
-                    <Badge variant='secondary'>{t("trust.oauth")}</Badge>
-                    <Badge variant='secondary'>{t("trust.session")}</Badge>
-                  </div>
+                  <AuthTrustBadgesRow
+                    className='flex flex-wrap items-center justify-center gap-2'
+                    badges={[trustBadges[0], trustBadges[1]]}
+                  />
                 </CardHeader>
 
                 <CardContent className='space-y-6'>
-                  <CardDescription className='text-muted-foreground text-center text-base leading-relaxed'>{card.description}</CardDescription>
+                  <CardDescription className='text-muted-foreground text-center text-base leading-relaxed'>
+                    {card.description}
+                  </CardDescription>
 
-                  <ul className='mx-auto grid max-w-md gap-2 text-left text-sm text-muted-foreground'>
-                    <li className='flex items-start gap-2'>
-                      <span aria-hidden='true' className='mt-2 inline-block h-1.5 w-1.5 rounded-full bg-primary/70' />
-                      <span>{card.bullets[0]}</span>
-                    </li>
-                    <li className='flex items-start gap-2'>
-                      <span aria-hidden='true' className='mt-2 inline-block h-1.5 w-1.5 rounded-full bg-primary/70' />
-                      <span>{card.bullets[1]}</span>
-                    </li>
-                    <li className='flex items-start gap-2'>
-                      <span aria-hidden='true' className='mt-2 inline-block h-1.5 w-1.5 rounded-full bg-primary/70' />
-                      <span>{card.bullets[2]}</span>
-                    </li>
-                  </ul>
+                  <AuthBulletList
+                    className='text-muted-foreground mx-auto grid max-w-md gap-2 text-left text-sm'
+                    bullets={card.bullets}
+                  />
 
                   <div className='flex flex-col gap-3'>
-                    <motion.div whileHover={{scale: 1.01}} whileTap={{scale: 0.99}}>
-                      <Button asChild className='w-full'>
+                    <motion.div
+                      whileHover={{scale: 1.01}}
+                      whileTap={{scale: 0.99}}>
+                      <Button
+                        asChild
+                        className='w-full'>
                         <Link href={card.href}>{card.cta}</Link>
                       </Button>
                     </motion.div>
@@ -215,9 +213,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
           ))}
         </div>
 
-        <footer className='text-muted-foreground mx-auto max-w-3xl text-center text-sm leading-relaxed'>
-          {t("footer")}
-        </footer>
+        <footer className='text-muted-foreground mx-auto max-w-3xl text-center text-sm leading-relaxed'>{t("footer")}</footer>
       </motion.div>
     </section>
   );
