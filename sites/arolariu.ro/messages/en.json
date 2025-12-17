@@ -298,6 +298,7 @@
       "description": "Sign in using our secure OAuth 2.0 auth server. Your profile will be kept in sync during this browser session. You can use your social media accounts to sign in.",
       "footer": "You can switch providers at any time. Authentication is handled by our trusted identity provider.",
       "hero": {
+        "badge": "Secure Authentication",
         "subtitle": "Pick a path and continue with your preferred provider. Everything stays fast, secure, and localized.",
         "title": "Welcome to the secure entry point"
       },
