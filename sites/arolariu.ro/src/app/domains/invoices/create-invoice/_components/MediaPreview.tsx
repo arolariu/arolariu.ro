@@ -65,16 +65,29 @@ export default function MediaPreview({file}: Readonly<MediaPreviewProps>): React
         ) : null}
       </AnimatePresence>
 
-      {file.type === "pdf" && (
+      {file.status === "failed" && (
         <motion.div
           className='absolute top-3 left-3 z-20'
           initial={{y: -20, opacity: 0}}
           animate={{y: 0, opacity: 1}}>
-          <Badge className='bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg'>PDF</Badge>
+          <Badge
+            variant='destructive'
+            className='shadow-lg'>
+            Error
+          </Badge>
         </motion.div>
       )}
 
-      <div className='relative aspect-square overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900'>
+      {file.type === "pdf" && file.status !== "failed" && (
+        <motion.div
+          className='absolute top-3 left-3 z-20'
+          initial={{y: -20, opacity: 0}}
+          animate={{y: 0, opacity: 1}}>
+          <Badge className='bg-linear-to-r from-pink-500 to-purple-600 text-white shadow-lg'>PDF</Badge>
+        </motion.div>
+      )}
+
+      <div className='relative aspect-square overflow-hidden bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900'>
         {file.type === "pdf" ? (
           <iframe
             src={file.preview}
@@ -98,7 +111,7 @@ export default function MediaPreview({file}: Readonly<MediaPreviewProps>): React
             placeholder='empty'
           />
         )}
-        <div className='absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100' />
+        <div className='absolute inset-0 bg-linear-to-t from-black/50 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100' />
       </div>
 
       <motion.div className='absolute right-3 bottom-3 z-20 flex gap-2'>

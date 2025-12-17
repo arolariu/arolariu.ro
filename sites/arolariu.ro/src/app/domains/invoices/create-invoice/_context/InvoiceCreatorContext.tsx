@@ -188,10 +188,12 @@ export function InvoiceCreatorProvider({children}: Readonly<{children: React.Rea
             toast.success(`Invoice ${result.invoiceId} created successfully!`);
             removeSubmissionById(submission.id);
           } else {
+            toast.error(`Failed to process ${submission.name}: ${result.message}`);
             updateSubmissionStatus(submission.id, "failed", {error: result.message});
           }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          toast.error(`Failed to process ${submission.name}: ${errorMessage}`);
           updateSubmissionStatus(submission.id, "failed", {error: errorMessage});
         }
       }),
