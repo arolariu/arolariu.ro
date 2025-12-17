@@ -42,6 +42,8 @@ export default function TableDisplay(): React.JSX.Element | null {
   const [selectedRows, setSelectedRows] = useState<Set<string>>(() => new Set<string>());
   const [query, setQuery] = useState<string>("");
 
+  const shouldShowSearchAndPagination = submissions.length >= 10;
+
   const {paginatedItems, currentPage, totalPages, pageSize, setPageSize, setCurrentPage} = usePaginationWithSearch({
     items: submissions,
     initialPageSize: 10,
@@ -95,7 +97,6 @@ export default function TableDisplay(): React.JSX.Element | null {
   const handleRename = useCallback(
     (submission: {id: string; name: string}) => (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
-      // TODO: Implement rename dialog to get new name from user
       renameSubmission(submission.id, submission.name);
       toast("Rename feature coming soon", {
         description: "This feature is currently under development.",
@@ -188,18 +189,22 @@ export default function TableDisplay(): React.JSX.Element | null {
   return (
     <>
       <div className='mb-6 flex items-center justify-between gap-4'>
-        <div className='flex-1'>
-          <Input
-            value={query}
-            onChange={handleQueryChange}
-            placeholder='Search by filename...'
-            className='border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
-            aria-label='Search uploads'
-          />
-        </div>
-        <div className='shrink-0 text-sm text-gray-600 dark:text-gray-400'>
-          {paginatedItems.length} of {submissions.length} shown
-        </div>
+        {shouldShowSearchAndPagination ? (
+          <>
+            <div className='flex-1'>
+              <Input
+                value={query}
+                onChange={handleQueryChange}
+                placeholder='Search by filename...'
+                className='border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
+                aria-label='Search uploads'
+              />
+            </div>
+            <div className='shrink-0 text-sm text-gray-600 dark:text-gray-400'>
+              {paginatedItems.length} of {submissions.length} shown
+            </div>
+          </>
+        ) : null}
       </div>
 
       <motion.div
@@ -304,68 +309,70 @@ export default function TableDisplay(): React.JSX.Element | null {
       </motion.div>
 
       {/* Pagination Controls */}
-      <div className='mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row'>
-        <div className='flex items-center gap-2'>
-          <span className='text-sm text-gray-600 dark:text-gray-400'>Rows per page:</span>
-          <Select
-            value={String(pageSize)}
-            onValueChange={handlePageSizeChange}>
-            <SelectTrigger className='h-8 w-20'>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value='10'>10</SelectItem>
-              <SelectItem value='20'>20</SelectItem>
-              <SelectItem value='50'>50</SelectItem>
-              <SelectItem value='100'>100</SelectItem>
-            </SelectContent>
-          </Select>
+      {shouldShowSearchAndPagination ? (
+        <div className='mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row'>
+          <div className='flex items-center gap-2'>
+            <span className='text-sm text-gray-600 dark:text-gray-400'>Rows per page:</span>
+            <Select
+              value={String(pageSize)}
+              onValueChange={handlePageSizeChange}>
+              <SelectTrigger className='h-8 w-20'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='10'>10</SelectItem>
+                <SelectItem value='20'>20</SelectItem>
+                <SelectItem value='50'>50</SelectItem>
+                <SelectItem value='100'>100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination>
+              <PaginationContent className='justify-center'>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href='#'
+                    onClick={handlePrevClick}
+                    className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+
+                {(() => {
+                  const visiblePages = getVisiblePages();
+                  return visiblePages.map((p, idx) =>
+                    p === "..." ? (
+                      <PaginationItem
+                        // eslint-disable-next-line react/no-array-index-key -- Ellipsis placeholders have no stable identifier and their position is deterministic within the pagination range
+                        key={`ellipsis-${idx}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={`page-${p}`}>
+                        <PaginationLink
+                          href='#'
+                          onClick={handlePageClick(p as number)}
+                          isActive={currentPage === p}>
+                          {p}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ),
+                  );
+                })()}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href='#'
+                    onClick={handleNextClick}
+                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </div>
-
-        {totalPages > 1 && (
-          <Pagination>
-            <PaginationContent className='justify-center'>
-              <PaginationItem>
-                <PaginationPrevious
-                  href='#'
-                  onClick={handlePrevClick}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-
-              {(() => {
-                const visiblePages = getVisiblePages();
-                return visiblePages.map((p, idx) =>
-                  p === "..." ? (
-                    <PaginationItem
-                      // eslint-disable-next-line react/no-array-index-key -- Ellipsis placeholders have no stable identifier and their position is deterministic within the pagination range
-                      key={`ellipsis-${idx}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={`page-${p}`}>
-                      <PaginationLink
-                        href='#'
-                        onClick={handlePageClick(p as number)}
-                        isActive={currentPage === p}>
-                        {p}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ),
-                );
-              })()}
-
-              <PaginationItem>
-                <PaginationNext
-                  href='#'
-                  onClick={handleNextClick}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        )}
-      </div>
+      ) : null}
 
       {/* Bulk Actions Footer */}
       {selectedRows.size > 1 && (
