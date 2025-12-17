@@ -1,6 +1,6 @@
 "use client";
 
-import {motion} from "motion/react";
+import {motion, type Variants} from "motion/react";
 import Image from "next/image";
 import AuthBulletList from "./AuthBulletList";
 import AuthTrustBadgesRow from "./AuthTrustBadgesRow";
@@ -14,7 +14,7 @@ export type AuthMarketingPanelProps = Readonly<{
   trustBadges?: ReadonlyArray<string>;
 }>;
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: {opacity: 0},
   visible: {
     opacity: 1,
@@ -25,7 +25,7 @@ const containerVariants = {
   },
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
   hidden: {opacity: 0, x: -20},
   visible: {
     opacity: 1,
