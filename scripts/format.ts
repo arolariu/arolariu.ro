@@ -1,3 +1,14 @@
+/**
+ * @fileoverview Monorepo formatting CLI with parallel worker execution.
+ * @module scripts/format
+ *
+ * @remarks
+ * This module is the interactive entrypoint for `npm run format`.
+ *
+ * It dispatches format jobs for multiple targets (packages/website/cv/api)
+ * via Piscina workers, then renders human-friendly summaries.
+ */
+
 import process from "node:process";
 import {fileURLToPath} from "node:url";
 import pc from "picocolors";
@@ -28,9 +39,15 @@ const box = {
 };
 
 /**
- * Creates a horizontal line with optional label.
- * @param width Total width of the line
- * @param label Optional centered label
+ * Creates a horizontal line for CLI box rendering.
+ *
+ * @remarks
+ * This is a presentation helper. Width is intended to be measured in
+ * *visible* monospace characters (not counting ANSI color sequences).
+ *
+ * @param width - Total width of the line in visible characters.
+ * @param label - Optional centered label.
+ * @returns The rendered line with ANSI coloring applied.
  */
 function createLine(width: number, label?: string): string {
   if (!label) {
@@ -44,10 +61,12 @@ function createLine(width: number, label?: string): string {
 }
 
 /**
- * Creates a progress bar visualization.
- * @param completed Number of completed items
- * @param total Total number of items
- * @param width Width of the progress bar
+ * Creates a progress bar visualization for CLI output.
+ *
+ * @param completed - Number of completed items.
+ * @param total - Total number of items.
+ * @param width - Width of the progress bar in visible characters.
+ * @returns A progress bar string with color and percentage.
  */
 function createProgressBar(completed: number, total: number, width: number = 20): string {
   const percentage = Math.round((completed / total) * 100);
@@ -62,8 +81,10 @@ function createProgressBar(completed: number, total: number, width: number = 20)
 }
 
 /**
- * Creates a status badge for the result.
- * @param result The format worker result
+ * Creates a status badge for a worker result.
+ *
+ * @param result - The format worker result.
+ * @returns A colored badge (CLEAN/FORMATTED/FAILED).
  */
 function createStatusBadge(result: FormatWorkerResult): string {
   if (result.exitCode !== 0) {
@@ -76,8 +97,10 @@ function createStatusBadge(result: FormatWorkerResult): string {
 }
 
 /**
- * Formats duration with appropriate unit and color.
- * @param ms Duration in milliseconds
+ * Formats a duration with an appropriate unit and color.
+ *
+ * @param ms - Duration in milliseconds.
+ * @returns A human-friendly duration string.
  */
 function formatDuration(ms: number): string {
   if (ms < 1000) {
@@ -90,9 +113,15 @@ function formatDuration(ms: number): string {
 }
 
 /**
- * Prints a format worker result to the console as a styled card.
- * @param result The format worker result to print
- * @param index The index of this result (for visual ordering)
+ * Prints a format worker result as a styled CLI card.
+ *
+ * @remarks
+ * This function is intentionally presentation-only and should not influence
+ * formatting outcomes. It truncates verbose tool output to keep logs readable.
+ *
+ * @param result - The format worker result to print.
+ * @param index - Optional index used for stable visual ordering.
+ * @returns Nothing.
  */
 function printWorkerResult(result: FormatWorkerResult, index?: number): void {
   const config = targetConfig[result.target];
@@ -174,8 +203,10 @@ function printTargetOverview(): void {
 }
 
 /**
- * Prints a fancy summary box with results.
- * @param results Array of format worker results
+ * Prints a summary section for all worker results.
+ *
+ * @param results - Array of format worker results.
+ * @returns Nothing.
  */
 function printSummaryBox(results: FormatWorkerResult[]): void {
   const alreadyFormatted = results.filter((r) => r.checkPassed).length;
@@ -221,7 +252,12 @@ function printSummaryBox(results: FormatWorkerResult[]): void {
 
 /**
  * Runs formatting on all targets in parallel using Piscina workers.
- * @returns Exit code (0 for success, non-zero for failure)
+ *
+ * @remarks
+ * This mode maximizes developer feedback speed by running independent targets
+ * concurrently, then printing results in a deterministic target order.
+ *
+ * @returns Exit code (0 for success, non-zero for failure).
  */
 async function runOnAllTargets(): Promise<number> {
   // Show what we're about to do
@@ -275,8 +311,9 @@ async function runOnAllTargets(): Promise<number> {
 
 /**
  * Runs formatting on a single target using a Piscina worker.
- * @param target The specific target to format
- * @returns Exit code (0 for success, non-zero for failure)
+ *
+ * @param target - The specific target to format.
+ * @returns Exit code (0 for success, non-zero for failure).
  */
 async function runOnSingleTarget(target: FormatTarget): Promise<number> {
   const config = targetConfig[target];
@@ -342,6 +379,17 @@ function printHelp(): void {
   console.log();
 }
 
+/**
+ * Runs the formatter CLI.
+ *
+ * @remarks
+ * This is the script entrypoint used by `npm run format`.
+ * The function dispatches formatting work to worker threads and exits with a
+ * conventional POSIX process exit code.
+ *
+ * @param arg - Target name (`all`, `packages`, `website`, `cv`, `api`).
+ * @returns Process exit code (0 for success, non-zero for failure).
+ */
 export async function main(arg?: string): Promise<number> {
   printHeader();
 

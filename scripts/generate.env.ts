@@ -1,3 +1,16 @@
+/**
+ * @fileoverview Environment generator from Azure App Configuration or prompts.
+ * @module scripts/generate.env
+ *
+ * @remarks
+ * This script generates a `.env` file for local development.
+ *
+ * Depending on runtime detection, it either:
+ * - fetches configuration from Azure App Configuration (and resolves Key Vault
+ *   references), or
+ * - prompts the developer for missing values based on required keys.
+ */
+
 import {AppConfigurationClient} from "@azure/app-configuration";
 import {DefaultAzureCredential} from "@azure/identity";
 import fs from "node:fs";
@@ -9,7 +22,13 @@ import {isAzureInfrastructure, isInCI, isProductionEnvironment, isVerboseMode} f
 import type {AllEnvironmentVariablesKeys, TypedConfigurationType} from "./types/index.ts";
 
 /**
- * Fetch configuration values from Azure App Configuration.
+ * Fetches configuration values from Azure App Configuration.
+ *
+ * @remarks
+ * Values may either be literals or Key Vault references. When a Key Vault
+ * reference is detected, the secret is resolved via `getSecretFromKeyVault`.
+ *
+ * @param verbose - Enables verbose logging (useful for troubleshooting).
  * @returns A promise that resolves to the typed configuration object.
  */
 async function fetchConfigurationFromAzureAppConfiguration(verbose: boolean = false): Promise<TypedConfigurationType> {
@@ -59,8 +78,14 @@ async function fetchConfigurationFromAzureAppConfiguration(verbose: boolean = fa
 }
 
 /**
- * Function to parse an existing .env file and extract key-value pairs.
- * @returns The parsed configuration as a typed object.
+ * Parses an existing `.env` file and extracts key/value pairs.
+ *
+ * @remarks
+ * This is a best-effort parser intended for local developer convenience.
+ *
+ * @param envPath - Path to the `.env` file (defaults to `.env`).
+ * @param verbose - Enables verbose error logging.
+ * @returns The parsed configuration as a partial typed object.
  */
 function fetchConfigurationFromLocalEnvFile(envPath: string = ".env", verbose: boolean = false): Partial<TypedConfigurationType> {
   const config = {} as Partial<TypedConfigurationType>;
@@ -107,13 +132,17 @@ function fetchConfigurationFromLocalEnvFile(envPath: string = ".env", verbose: b
 }
 
 /**
- * Function to prompt the user for missing environment variable values.
+ * Prompts the user for missing environment variable values.
  *
  * @remarks
- * This function interactively requests input from the user for any environment
- * variables that are not already defined in the existing configuration.
- * @param missingKeys An array of keys representing the missing environment variables.
- * @returns A promise that resolves to a partial object containing the newly provided configuration values.
+ * This function interactively requests input for keys that are required but
+ * not present in the existing configuration.
+ *
+ * Secret keys are treated specially (they are not echoed back plainly).
+ *
+ * @param missingKeys - Keys representing missing environment variables.
+ * @param verbose - Enables verbose logging.
+ * @returns A partial configuration object containing newly provided values.
  */
 async function promptForMissingKeys(
   missingKeys: AllEnvironmentVariablesKeys[],
@@ -172,9 +201,14 @@ async function promptForMissingKeys(
 }
 
 /**
- * Function that ensures all required environment variables are present,
- * prompting the user for any that are missing.
- * @returns A promise that resolves to the complete typed configuration object.
+ * Ensures all required environment variables are present for local usage.
+ *
+ * @remarks
+ * The function first parses any existing `.env` file and then prompts for
+ * missing required keys.
+ *
+ * @param verbose - Enables verbose logging.
+ * @returns The completed typed configuration.
  */
 async function ensureLocalEnvIsComplete(verbose: boolean = false): Promise<TypedConfigurationType> {
   console.log(pc.cyan("\n🔧 Ensuring local environment configuration is complete...\n"));
@@ -230,7 +264,7 @@ async function ensureLocalEnvIsComplete(verbose: boolean = false): Promise<Typed
  * - Variable substitution
  * - Newlines/tabs breaking the .env format
  * - Shell metacharacters causing execution issues
- * 
+ *
  * @param value The string value to check and potentially quote
  * @returns The value, quoted and escaped if necessary
  */
@@ -255,21 +289,28 @@ function quoteIfNeeded(value: string): string {
   }
 
   // Escape backslashes first (must be done before escaping quotes)
-  let escaped = value.replace(/\\/g, '\\\\');
+  let escaped = value.replace(/\\/g, "\\\\");
   // Then escape double quotes
   escaped = escaped.replace(/"/g, '\\"');
   // Escape newlines as literal \n
-  escaped = escaped.replace(/\n/g, '\\n');
+  escaped = escaped.replace(/\n/g, "\\n");
   // Escape carriage returns as literal \r
-  escaped = escaped.replace(/\r/g, '\\r');
+  escaped = escaped.replace(/\r/g, "\\r");
   // Escape tabs as literal \t
-  escaped = escaped.replace(/\t/g, '\\t');
+  escaped = escaped.replace(/\t/g, "\\t");
 
   return `"${escaped}"`;
 }
 
 /**
- * Helper function to add a configuration section to the env file lines.
+ * Adds a named configuration section to the `.env` output lines.
+ *
+ * @param lines - Mutable array of output lines.
+ * @param sectionName - Human-friendly section name.
+ * @param emoji - Emoji used in console output.
+ * @param keys - Keys to include in this section.
+ * @param config - Completed configuration object.
+ * @returns Nothing.
  */
 function addConfigSection(lines: string[], sectionName: string, emoji: string, keys: string[], config: TypedConfigurationType): void {
   console.log(pc.gray(`   ${emoji} Adding ${sectionName} Configuration...`));
@@ -284,6 +325,12 @@ function addConfigSection(lines: string[], sectionName: string, emoji: string, k
   lines.push(`# ${sectionName} Configuration End`);
 }
 
+/**
+ * Generates the `.env` file content from a configuration object.
+ *
+ * @param config - Completed configuration object.
+ * @returns A newline-separated `.env` payload.
+ */
 function generateEnvFileContent(config: TypedConfigurationType): string {
   console.log(pc.cyan("\n📝 Generating .env file content...\n"));
 
@@ -328,6 +375,14 @@ function generateEnvFileContent(config: TypedConfigurationType): string {
   return lines.join("\n");
 }
 
+/**
+ * Copies the generated `.env` file into configured sub-repositories.
+ *
+ * @param sourcePath - Source `.env` path.
+ * @param targetPaths - Relative target paths to copy to.
+ * @param verbose - Enables verbose error logging.
+ * @returns Nothing.
+ */
 function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[], verbose: boolean = false): void {
   console.log(pc.cyan("\n📂 Copying .env file to sub-repositories...\n"));
   for (const targetPath of targetPaths) {
@@ -343,6 +398,15 @@ function copyEnvFileToSubRepos(sourcePath: string, targetPaths: string[], verbos
   }
 }
 
+/**
+ * Runs the environment generator CLI.
+ *
+ * @remarks
+ * This is the script entrypoint used by `npm run generate:env`.
+ *
+ * @param verbose - Enables verbose logging.
+ * @returns Process exit code (0 for success, non-zero for failure).
+ */
 export async function main(verbose: boolean = false): Promise<number> {
   console.log(pc.cyan("🔧 Configuration:\n"));
   console.log(pc.gray(`   Infrastructure: ${isAzureInfrastructure ? pc.blue("Azure") : pc.yellow("Local")}`));

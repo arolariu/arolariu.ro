@@ -3,6 +3,10 @@
 /**
  * @fileoverview Custom React hook for fetching all merchants for the current user.
  * @module hooks/useMerchants
+ *
+ * @remarks
+ * Client-side data hook that hydrates from persisted Zustand state and then
+ * fetches fresh merchant data via a server action.
  */
 
 import fetchMerchants from "@/lib/actions/invoices/fetchMerchants";
@@ -86,7 +90,7 @@ type HookOutputType = Readonly<{
  *
  *   return (
  *     <Select>
- *       {merchant.map((m) => (
+ *       {merchants.map((m) => (
  *         <SelectItem key={m.id} value={m.id}>
  *           {m.name}
  *         </SelectItem>

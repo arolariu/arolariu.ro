@@ -1,3 +1,13 @@
+/**
+ * @fileoverview E2E runner for OpenAPI/Postman collections via Newman.
+ * @module scripts/test-e2e
+ *
+ * @remarks
+ * This script executes Postman collections (one per target) using Newman.
+ * It injects an auth token into the collection at runtime, produces JSON/JUnit
+ * reports, and generates a Markdown summary of failed assertions.
+ */
+
 import {execSync} from "node:child_process";
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import pc from "picocolors";
@@ -11,8 +21,14 @@ const directoryMap: Record<Exclude<E2ETestTarget, "all">, string> = {
 
 /**
  * Injects an authentication token into a Postman collection JSON file.
- * @param collectionPath The file path to the Postman collection JSON file.
- * @param token The authentication token to inject.
+ *
+ * @remarks
+ * Newman collections may store variables under `collection.variable`.
+ * This function ensures an `authToken` variable exists and is set.
+ *
+ * @param collectionPath - File path to the Postman collection JSON file.
+ * @param token - Authentication token to inject.
+ * @returns Nothing.
  */
 const injectAuthTokenIntoCollection = (collectionPath: string, token: string): void => {
   try {
@@ -35,9 +51,10 @@ const injectAuthTokenIntoCollection = (collectionPath: string, token: string): v
 };
 
 /**
- * Load the OpenAPI test collection path for a specific target.
- * @param target The target to load the OpenAPI test collection for. Can be "frontend" or "backend".
- * @returns The file path to the OpenAPI test collection.
+ * Resolves the collection path for a target.
+ *
+ * @param target - The target to load the collection for.
+ * @returns File path to the Postman collection JSON.
  */
 const loadOpenAPITestCollectionPath = (target: Exclude<E2ETestTarget, "all">): string => {
   const directory = directoryMap[target];
@@ -45,8 +62,10 @@ const loadOpenAPITestCollectionPath = (target: Exclude<E2ETestTarget, "all">): s
 };
 
 /**
- * Run the OpenAPI test collection using Newman via npx (npx newman run <path>).
- * @param path The file path to the OpenAPI test collection.
+ * Ensures the report output directory exists.
+ *
+ * @param dir - Directory path to create.
+ * @returns Nothing.
  */
 const ensureReportDir = (dir: string): void => {
   try {
@@ -57,6 +76,17 @@ const ensureReportDir = (dir: string): void => {
   }
 };
 
+/**
+ * Writes a Markdown summary of Newman assertion failures.
+ *
+ * @remarks
+ * Uses the JSON reporter output (`newman-<target>.json`) to extract failures.
+ * This is primarily intended for CI artifact inspection.
+ *
+ * @param target - Target identifier used in report filenames.
+ * @param reportDir - Report directory path.
+ * @returns Nothing.
+ */
 const writeAssertionSummary = (target: string, reportDir: string): void => {
   const jsonPath = `${reportDir}/newman-${target}.json`;
   if (!existsSync(jsonPath)) {
@@ -87,6 +117,17 @@ const writeAssertionSummary = (target: string, reportDir: string): void => {
   }
 };
 
+/**
+ * Runs a Newman collection and produces JSON/JUnit reports.
+ *
+ * @remarks
+ * Throws when Newman exits with a non-zero code.
+ *
+ * @param target - The target whose collection is being executed.
+ * @param path - Path to the Postman collection JSON.
+ * @param reportDir - Directory to write report artifacts.
+ * @returns A promise that resolves when execution completes.
+ */
 const runOpenAPITestCollection = async (target: Exclude<E2ETestTarget, "all">, path: string, reportDir: string): Promise<void> => {
   console.log(pc.cyan(`\n🧪 Running Newman test collection for: ${pc.bold(target)}`));
   ensureReportDir(reportDir);
@@ -117,8 +158,14 @@ const runOpenAPITestCollection = async (target: Exclude<E2ETestTarget, "all">, p
 };
 
 /**
- * Start the Newman testing process for a specific target.
- * @param target The target to run the Newman tests for. Can be "frontend", "backend", or "all".
+ * Runs the Newman testing flow for a specific target.
+ *
+ * @remarks
+ * Requires `E2E_TEST_AUTH_TOKEN` to be set in the environment.
+ *
+ * @param target - The target to run Newman tests for.
+ * @returns A promise that resolves when the flow completes.
+ * @throws {Error} When `E2E_TEST_AUTH_TOKEN` is missing.
  */
 const startNewmanTesting = async (target: Exclude<E2ETestTarget, "all">): Promise<void> => {
   console.log(pc.bold(pc.magenta(`\n╔════════════════════════════════════════╗`)));
@@ -143,6 +190,15 @@ const startNewmanTesting = async (target: Exclude<E2ETestTarget, "all">): Promis
   console.log(pc.bold(pc.green(`\n✅ Completed Newman tests for: ${target}\n`)));
 };
 
+/**
+ * Runs the E2E CLI.
+ *
+ * @remarks
+ * This is the script entrypoint used by `npm run test:e2e`.
+ *
+ * @param arg - Target selector (`frontend`, `backend`, `all`).
+ * @returns Process exit code (0 for success, non-zero for failure).
+ */
 export async function main(arg?: string): Promise<number> {
   console.log(pc.bold(pc.magenta("\n╔════════════════════════════════════════╗")));
   console.log(pc.bold(pc.magenta("║   arolariu.ro E2E Test Runner          ║")));

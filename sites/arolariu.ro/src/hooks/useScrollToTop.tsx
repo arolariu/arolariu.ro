@@ -3,6 +3,10 @@
 /**
  * @fileoverview Animated scroll-to-top button component.
  * @module hooks/useScrollToTop
+ *
+ * @remarks
+ * Despite living under `src/hooks`, this file exports a UI component (not a
+ * hook). It is client-only and attaches a scroll listener.
  */
 
 import {AnimatePresence, motion} from "motion/react";

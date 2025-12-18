@@ -3,6 +3,10 @@
 /**
  * @fileoverview Custom React hook for fetching all invoices for the current user.
  * @module hooks/useInvoices
+ *
+ * @remarks
+ * Client-side data hook that hydrates from persisted Zustand state and then
+ * fetches fresh invoices via a server action.
  */
 
 import fetchInvoices from "@/lib/actions/invoices/fetchInvoices";
