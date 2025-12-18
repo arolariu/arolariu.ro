@@ -1,5 +1,6 @@
 import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
 import {createMetadata} from "@/metadata";
+import {DotBackground} from "@arolariu/components";
 import type {Metadata} from "next";
 import {getLocale, getTranslations} from "next-intl/server";
 import {redirect} from "next/navigation";
@@ -92,5 +93,13 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AuthPage(): Promise<React.JSX.Element> {
   const {isAuthenticated} = await fetchAaaSUserFromAuthService();
   if (isAuthenticated) return redirect("/");
-  return <RenderAuthScreen />;
+  return (
+    <main className='container mx-auto px-5 py-24'>
+      <DotBackground
+        glow
+        className='opacity-30'
+      />
+      <RenderAuthScreen />
+    </main>
+  );
 }

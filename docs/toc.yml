@@ -1,0 +1,44 @@
+- name: Documentation Index
+  href: README.md
+
+- name: Backend
+  href: backend/README.md
+  items:
+    - name: OpenTelemetry Guide
+      href: backend/opentelemetry-guide.md
+    - name: ConfigureAwait Best Practices
+      href: backend/configureawait-best-practices.md
+    - name: The Standard Guide
+      href: backend/the-standard-guide.md
+
+- name: Frontend
+  href: frontend/README.md
+  items:
+    - name: OpenTelemetry Guide
+      href: frontend/opentelemetry-guide.md
+    - name: i18n Guide
+      href: frontend/i18n-guide.md
+    - name: JSDoc Guide
+      href: frontend/jsdoc-guide.md
+    - name: Metadata Guide
+      href: frontend/metadata-guide.md
+
+- name: RFCs (Selected)
+  href: rfc/0001-github-actions-workflows.md
+  items:
+    - name: RFC 1001 - Frontend Observability
+      href: rfc/1001-opentelemetry-observability-system.md
+    - name: RFC 1002 - JSDoc/TSDoc Standard
+      href: rfc/1002-comprehensive-jsdoc-documentation-standard.md
+    - name: RFC 1003 - Internationalization
+      href: rfc/1003-internationalization-system.md
+    - name: RFC 1004 - Metadata & SEO
+      href: rfc/1004-metadata-seo-system.md
+    - name: RFC 2001 - DDD Architecture
+      href: rfc/2001-domain-driven-design-architecture.md
+    - name: RFC 2002 - Backend Observability
+      href: rfc/2002-opentelemetry-backend-observability.md
+    - name: RFC 2003 - The Standard Implementation
+      href: rfc/2003-the-standard-implementation.md
+    - name: RFC 2004 - XML Documentation Standard
+      href: rfc/2004-comprehensive-xml-documentation-standard.md

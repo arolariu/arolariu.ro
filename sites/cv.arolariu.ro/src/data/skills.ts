@@ -43,4 +43,4 @@ export const skills: ReadonlyArray<SkillStructure> = [
       {name: "API Design", level: 95},
     ],
   },
-];
+] as const;

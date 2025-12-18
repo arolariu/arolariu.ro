@@ -3,6 +3,10 @@
 /**
  * @fileoverview Custom React hook for pagination with integrated search filtering.
  * @module hooks/usePagination
+ *
+ * @remarks
+ * Utility hook for client components that need stable pagination state.
+ * Includes an optional search filter step before pagination.
  */
 
 import {useCallback, useMemo, useState} from "react";

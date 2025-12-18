@@ -17,13 +17,12 @@ export type DialogType =
   | "EDIT_INVOICE__RECIPE"
   | "EDIT_INVOICE__METADATA"
   | "EDIT_INVOICE__ITEMS"
-  | "EDIT_INVOICE__DELETE"
   | "EDIT_INVOICE__FEEDBACK"
   | "VIEW_INVOICE__SHARE_ANALYTICS"
   | "VIEW_INVOICES__SHARE"
   | "VIEW_INVOICES__IMPORT"
   | "VIEW_INVOICES__EXPORT"
-  | "VIEW_INVOICES__DELETE"
+  | "SHARED__INVOICE_DELETE"
   | null; // null is used to indicate no dialog is open
 
 export type DialogMode = Readonly<"view" | "add" | "edit" | "delete" | "share"> | null;

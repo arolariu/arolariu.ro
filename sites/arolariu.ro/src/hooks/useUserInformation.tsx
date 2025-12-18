@@ -3,6 +3,10 @@
 /**
  * @fileoverview Custom React hook for fetching authenticated user information with JWT.
  * @module hooks/useUserInformation
+ *
+ * @remarks
+ * Client-side authentication hook that calls the internal `/api/user` route to
+ * retrieve a Clerk user payload plus a backend JWT for subsequent API calls.
  */
 
 import {SITE_URL} from "@/lib/utils.generic";

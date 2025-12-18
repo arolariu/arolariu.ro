@@ -23,10 +23,13 @@ export default function GridDisplay(): React.JSX.Element | null {
   const {submissions} = useInvoiceCreator();
   const [query, setQuery] = useState("");
 
+  const shouldShowSearch = submissions.length >= 5;
+  const effectiveQuery = shouldShowSearch ? query : "";
+
   const {paginatedItems, currentPage, totalPages, setCurrentPage} = usePaginationWithSearch({
     items: submissions,
     initialPageSize: 9,
-    searchQuery: query,
+    searchQuery: effectiveQuery,
   });
 
   const gridClassMap: Record<number, string> = {
@@ -112,21 +115,25 @@ export default function GridDisplay(): React.JSX.Element | null {
   return (
     <>
       <div className='mb-6 flex items-center justify-between gap-4'>
-        <div className='flex-1'>
-          <Input
-            value={query}
-            onChange={handleQueryChange}
-            placeholder='Search by filename or metadata...'
-            className='border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
-            aria-label='Search uploads'
-          />
-        </div>
-        <div className='shrink-0 text-sm text-gray-600 dark:text-gray-400'>
-          {paginatedItems.length} of {submissions.length} shown
-        </div>
+        {shouldShowSearch ? (
+          <>
+            <div className='flex-1'>
+              <Input
+                value={query}
+                onChange={handleQueryChange}
+                placeholder='Search by filename or metadata...'
+                className='border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
+                aria-label='Search uploads'
+              />
+            </div>
+            <div className='shrink-0 text-sm text-gray-600 dark:text-gray-400'>
+              {paginatedItems.length} of {submissions.length} shown
+            </div>
+          </>
+        ) : null}
       </div>
 
-      <div className={`grid ${gridClasses} mb-8 gap-6 lg:min-h-[800px]`}>
+      <div className={`grid ${gridClasses} mb-8 gap-6 lg:min-h-200`}>
         {paginatedItems.map((submission, index) => (
           <motion.div
             key={submission.id}

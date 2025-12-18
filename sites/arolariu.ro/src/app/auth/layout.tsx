@@ -2,13 +2,23 @@ import {Suspense} from "react";
 import Loading from "./loading";
 
 /**
- * The layout for the authentication pages.
- * @returns The layout for the authentication pages.
+ * Layout for authentication pages.
+ *
+ * @remarks
+ * **Rendering Context**: Server Component layout with client component children.
+ *
+ * **Visual Features**:
+ * Background effects (Three.js 3D scene, particles, beams) are rendered
+ * in the client island component to avoid RSC hydration issues.
+ *
+ * **Accessibility**:
+ * - Content remains fully accessible
+ * - Reduced motion preferences respected in child components
+ *
+ * @param props - Layout properties with children
+ *
+ * @returns The authentication layout
  */
 export default async function AuthRootLayout(props: Readonly<LayoutProps<"/auth">>): Promise<React.JSX.Element> {
-  return (
-    <main className='flex flex-col flex-nowrap items-center justify-center justify-items-center gap-4 px-5 py-24 text-center lg:flex-row lg:gap-8'>
-      <Suspense fallback={<Loading />}>{props.children}</Suspense>
-    </main>
-  );
+  return <Suspense fallback={<Loading />}>{props.children}</Suspense>;
 }

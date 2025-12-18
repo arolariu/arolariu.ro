@@ -1,3 +1,14 @@
+/**
+ * @fileoverview Dev environment bootstrapper for the monorepo.
+ * @module scripts/setup
+ *
+ * @remarks
+ * This script validates local toolchain prerequisites (Node, npm, .NET) and
+ * offers to install/upgrade them to the minimum supported versions.
+ *
+ * It is designed to be interactive and platform-aware (Windows/macOS/Linux).
+ */
+
 import {execSync} from "child_process";
 import {existsSync, mkdirSync} from "fs";
 import {homedir, platform, tmpdir} from "os";
@@ -9,7 +20,13 @@ const REQUIRED_NODE_VERSION = 24;
 const REQUIRED_NPM_VERSION = 11;
 
 /**
- * Check if a command exists in the system
+ * Checks whether an executable is available on the current PATH.
+ *
+ * @remarks
+ * Uses `where` on Windows and `which` on Unix-like systems.
+ *
+ * @param command - Executable name to check (e.g. `dotnet`, `node`, `npm`).
+ * @returns `true` when the command can be resolved, otherwise `false`.
  */
 function commandExists(command: string): boolean {
   try {
@@ -22,7 +39,13 @@ function commandExists(command: string): boolean {
 }
 
 /**
- * Get the current .NET SDK version
+ * Reads the installed .NET SDK version.
+ *
+ * @remarks
+ * If `dotnet` is missing or `dotnet --version` fails, the function returns an
+ * `installed: false` marker so callers can decide whether to prompt install.
+ *
+ * @returns Version metadata including the parsed major version.
  */
 function getDotnetVersion(): {installed: boolean; version: string; majorVersion: number} {
   if (!commandExists("dotnet")) {
@@ -40,7 +63,9 @@ function getDotnetVersion(): {installed: boolean; version: string; majorVersion:
 }
 
 /**
- * Get the current Node.js version
+ * Reads the installed Node.js version.
+ *
+ * @returns Version metadata including the parsed major version.
  */
 function getNodeVersion(): {installed: boolean; version: string; majorVersion: number} {
   if (!commandExists("node")) {
@@ -58,7 +83,9 @@ function getNodeVersion(): {installed: boolean; version: string; majorVersion: n
 }
 
 /**
- * Get the current npm version
+ * Reads the installed npm version.
+ *
+ * @returns Version metadata including the parsed major version.
  */
 function getNpmVersion(): {installed: boolean; version: string; majorVersion: number} {
   if (!commandExists("npm")) {
@@ -76,7 +103,15 @@ function getNpmVersion(): {installed: boolean; version: string; majorVersion: nu
 }
 
 /**
- * Download and install .NET 10 SDK
+ * Downloads and installs the .NET SDK required by this monorepo.
+ *
+ * @remarks
+ * The installer is sourced from the official dot.net install scripts.
+ *
+ * On success the function updates `PATH`/`DOTNET_ROOT` for the *current process*
+ * and prints guidance for persistently updating the user's environment.
+ *
+ * @returns `true` when installation succeeded; otherwise `false`.
  */
 async function installDotnet(): Promise<boolean> {
   console.log(pc.cyan("\n📥 Installing .NET 10 SDK..."));
@@ -137,7 +172,15 @@ async function installDotnet(): Promise<boolean> {
 }
 
 /**
- * Download and install Node.js 24
+ * Downloads and installs the Node.js runtime required by this monorepo.
+ *
+ * @remarks
+ * Installation strategy is platform-dependent:
+ * - Windows: downloads an MSI and invokes `msiexec`.
+ * - macOS: downloads a PKG and invokes `installer`.
+ * - Linux: downloads a tarball and extracts it to a local directory.
+ *
+ * @returns `true` when installation completed; otherwise `false`.
  */
 async function installNodeJs(): Promise<boolean> {
   console.log(pc.cyan("\n📥 Installing Node.js 24..."));
@@ -212,7 +255,15 @@ async function installNodeJs(): Promise<boolean> {
 }
 
 /**
- * Main setup function
+ * Runs the development environment setup flow.
+ *
+ * @remarks
+ * This is the CLI entrypoint used by `npm run setup`.
+ *
+ * The function validates minimum versions for .NET, Node.js and npm.
+ * When requirements are not met, it attempts guided installation or upgrade.
+ *
+ * @returns Process exit code (0 for success, non-zero for failure).
  */
 export async function main(): Promise<number> {
   console.log(pc.bold(pc.magenta("\n╔════════════════════════════════════════╗")));

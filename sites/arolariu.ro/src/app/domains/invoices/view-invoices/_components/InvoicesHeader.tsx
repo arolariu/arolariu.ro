@@ -25,7 +25,7 @@ export default function InvoicesHeader(): React.JSX.Element {
       initial={{y: -20, opacity: 0}}
       animate={{y: 0, opacity: 1}}
       transition={{duration: 0.3}}
-      className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center'>
+      className='flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center print:hidden'>
       <div>
         <h1 className='text-3xl font-bold tracking-tight'>Invoice Management</h1>
         <p className='text-muted-foreground mt-1'>Manage your receipts and track your spending habits</p>
@@ -82,7 +82,7 @@ export default function InvoicesHeader(): React.JSX.Element {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link href={`/domains/invoices/create-invoice`}>
+              <Link href='/domains/invoices/create-invoice'>
                 <Button
                   size='sm'
                   className='cursor-pointer gap-1'>

@@ -35,7 +35,7 @@ import {error, ok, type Result} from "./result";
  *
  * @see {@link Result} for the Result type pattern used
  */
-export async function copyText(text: string): Promise<Result<void>> {
+export async function copyText(text: string): Promise<Readonly<Result<void>>> {
   // SSR / non-browser guard
   if (!globalThis.window) return error(new Error("Clipboard not available (SSR)"));
   if (!text) return ok();

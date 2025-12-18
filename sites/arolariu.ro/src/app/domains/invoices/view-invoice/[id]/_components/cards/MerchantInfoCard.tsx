@@ -25,7 +25,7 @@ export function MerchantInfoCard(): React.JSX.Element {
         <div className='flex items-center gap-2'>
           <Badge variant='outline'>{formatEnum(MerchantCategory, merchant.category)}</Badge>
         </div>
-        {merchant.address.website && (
+        {Boolean(merchant.address.website) && (
           <div className='flex items-center gap-2'>
             <TbGlobe className='text-muted-foreground h-4 w-4' />
             <a
@@ -33,7 +33,7 @@ export function MerchantInfoCard(): React.JSX.Element {
               target='_blank'
               rel='noopener noreferrer'
               className='text-primary text-sm underline-offset-4 hover:underline'>
-              {merchant.address.website.replace(/^https?:\/\//, "")}
+              {merchant.address.website.replace(/^https?:\/\//u, "")}
             </a>
           </div>
         )}

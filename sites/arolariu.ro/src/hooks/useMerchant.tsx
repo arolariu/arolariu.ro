@@ -3,6 +3,11 @@
 /**
  * @fileoverview Custom React hook for fetching a single merchant by identifier.
  * @module hooks/useMerchant
+ *
+ * @remarks
+ * Client-side data hook that integrates with the merchants Zustand store.
+ * Returns cached merchant data after hydration while revalidating in the
+ * background when the identifier changes.
  */
 
 import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";

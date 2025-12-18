@@ -1,6 +1,6 @@
 import type {Certificate} from "@/types";
 
-type CertificationKeys = "az900" | "ai900" | "sc900";
+type CertificationKeys = Readonly<"az900" | "ai900" | "sc900">;
 type Certifications = Readonly<Record<CertificationKeys, Certificate>>;
 
 /**
@@ -8,7 +8,7 @@ type Certifications = Readonly<Record<CertificationKeys, Certificate>>;
  * Each key corresponds to a specific certification.
  * The values are objects containing details about the certification name, issuer, code, issue date, and optional description.
  */
-export const certifications: Certifications = {
+export const certifications: Readonly<Certifications> = {
   az900: {
     name: "AZ-900 (Azure Fundamentals)",
     code: "AZ-900",
@@ -34,11 +34,11 @@ export const certifications: Certifications = {
     description:
       "Validates foundational knowledge of security, compliance, and identity concepts and related cloud-based Microsoft solutions.",
   },
-};
+} as const;
 
 /**
  * Converts the certifications object to an array format for easier iteration in components.
  * This is useful for rendering lists of certifications in the UI.
  * This array will contain all certification entries defined in the `certifications` object.
  */
-export const certificationsAsArray: Certificate[] = Object.values(certifications);
+export const certificationsAsArray: ReadonlyArray<Certificate> = Object.freeze(Object.values(certifications));

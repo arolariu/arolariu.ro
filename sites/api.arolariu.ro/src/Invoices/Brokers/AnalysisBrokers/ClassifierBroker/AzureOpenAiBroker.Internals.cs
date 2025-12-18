@@ -22,7 +22,7 @@ public sealed partial class AzureOpenAiBroker
   /// <para>This constant defines the GPT-4 model deployment name used across all enrichment operations.</para>
   /// <para>Change this value to switch to a different model deployment (e.g., "gpt-4-turbo", "gpt-4o").</para>
   /// </remarks>
-  private const string ChatModelDeploymentName = "gpt-4";
+  private const string ChatModelDeploymentName = "o4-mini";
 
   #region Invoice field generation
   /// <summary>

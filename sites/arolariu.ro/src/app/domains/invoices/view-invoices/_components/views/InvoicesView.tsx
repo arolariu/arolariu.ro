@@ -130,7 +130,7 @@ export default function RenderInvoicesView({invoices}: Readonly<Props>): React.J
 
   return (
     <div className='space-y-4'>
-      <div className='flex flex-col justify-between gap-4 sm:flex-row'>
+      <div className='flex flex-col justify-between gap-4 sm:flex-row print:hidden'>
         <div className='relative flex-1'>
           <TbSearch className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
           <Input

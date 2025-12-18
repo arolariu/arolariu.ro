@@ -1,5 +1,7 @@
 "use client";
 
+import deleteInvoice from "@/lib/actions/invoices/deleteInvoice";
+import {useInvoicesStore} from "@/stores";
 import type {Invoice} from "@/types/invoices";
 import {
   Alert,
@@ -16,8 +18,10 @@ import {
   Input,
   Label,
   Separator,
+  toast,
 } from "@arolariu/components";
 import {AnimatePresence, motion} from "motion/react";
+import {useRouter} from "next/navigation";
 import {useCallback, useState} from "react";
 import {TbAlertTriangle, TbFileX, TbLoader2, TbPhoto, TbReceipt, TbShoppingCart, TbTrash, TbX} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
@@ -40,15 +44,23 @@ import {useDialog} from "../_contexts/DialogContext";
  * - Line items and merchant associations cleared
  * - Shared access revoked for all users
  *
+ * **State Management**:
+ * - Updates Zustand store via `removeInvoice` after successful deletion
+ * - This ensures the cached invoice list is immediately updated
+ * - No need for `revalidatePath` since we use client-side state management
+ *
  * @returns The DeleteInvoiceDialog component, CSR'ed.
  */
 export default function DeleteInvoiceDialog(): React.JSX.Element {
+  const router = useRouter();
+  const removeInvoice = useInvoicesStore((state) => state.removeInvoice);
+
   const {
     isOpen,
     open,
     close,
     currentDialog: {payload},
-  } = useDialog("EDIT_INVOICE__DELETE");
+  } = useDialog("SHARED__INVOICE_DELETE", "delete");
 
   const {invoice} = payload as {invoice: Invoice};
 
@@ -79,15 +91,27 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
 
     setIsDeleting(true);
 
-    // Simulate deletion process
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      await deleteInvoice({invoiceId: invoice.id});
 
-    // Log deletion (API integration pending)
-    console.info("Deleting invoice:", invoice.id);
+      // Update Zustand store to remove the deleted invoice
+      // This ensures the cached invoice list is immediately updated
+      removeInvoice(invoice.id);
 
-    setIsDeleting(false);
-    handleClose();
-  }, [invoice.id, isConfirmValid, handleClose]);
+      toast("Invoice Deleted", {
+        description: "The invoice was deleted successfully.",
+      });
+      handleClose();
+      router.push("/domains/invoices/view-invoices");
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+      toast("Delete Failed", {
+        description: "We couldn't delete this invoice. Please try again.",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [invoice.id, isConfirmValid, handleClose, router, removeInvoice]);
 
   // Calculate deletion impact
   const itemCount = invoice.items?.length ?? 0;

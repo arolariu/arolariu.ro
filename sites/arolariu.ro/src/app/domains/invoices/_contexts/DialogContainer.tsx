@@ -21,7 +21,7 @@ import {useDialogs} from "./DialogContext";
  * related to invoices, merchants, recipes, and metadata.
  * @returns The DialogContainer component, CSR'ed.
  */
-export default function DialogContainer(): React.JSX.Element {
+export default function DialogContainer(): React.JSX.Element | null {
   const {
     currentDialog: {type},
   } = useDialogs();
@@ -46,8 +46,6 @@ export default function DialogContainer(): React.JSX.Element {
       return <InvoiceRecipeDialog />;
     case "EDIT_INVOICE__SHARE":
       return <InvoiceSharingDialog />;
-    case "EDIT_INVOICE__DELETE":
-      return <DeleteInvoiceDialog />;
     // view-invoice/[id] Dialogs
     case "VIEW_INVOICE__SHARE_ANALYTICS":
       return <ShareAnalyticsDialog />;
@@ -58,7 +56,10 @@ export default function DialogContainer(): React.JSX.Element {
       return <InvoicesImportDialog />;
     case "VIEW_INVOICES__EXPORT":
       return <InvoicesExportDialog />;
+    // shared dialogs
+    case "SHARED__INVOICE_DELETE":
+      return <DeleteInvoiceDialog />;
     default:
-      return <></>;
+      return null;
   }
 }

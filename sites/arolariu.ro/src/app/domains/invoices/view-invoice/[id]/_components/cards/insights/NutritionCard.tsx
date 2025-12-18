@@ -202,7 +202,7 @@ export function NutritionCard(): React.JSX.Element {
               <div className='mb-1 flex justify-center'>{group.icon}</div>
               <p className='text-muted-foreground text-xs'>{group.name}</p>
               <p className='text-sm font-semibold'>
-                {group.items} item{group.items !== 1 ? "s" : ""}
+                {group.items} item{group.items === 1 ? "" : "s"}
               </p>
               <p className='text-muted-foreground text-xs'>{formatCurrency(group.amount, {currencyCode: currency.code, locale})}</p>
             </div>
@@ -231,7 +231,7 @@ export function NutritionCard(): React.JSX.Element {
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>
-                        Found in {count} item{count !== 1 ? "s" : ""}
+                        Found in {count} item{count === 1 ? "" : "s"}
                       </p>
                     </TooltipContent>
                   </Tooltip>

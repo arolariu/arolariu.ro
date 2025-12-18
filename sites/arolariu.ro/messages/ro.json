@@ -296,7 +296,88 @@
     "Island": {
       "callToAction": "Efectuați procesul de autentificare",
       "description": "Conectați-vă utilizând serverul nostru securizat de autentificare OAuth 2.0. \nProfilul dvs. va fi menținut sincronizat în timpul acestei sesiuni de browser. \nPuteți folosi conturile de rețele sociale pentru a vă conecta.",
-      "title": "Autentificați-vă cu serverul nostru securizat de autentificare OAuth 2.0."
+      "footer": "Puteți schimba furnizorii oricând. Autentificarea este gestionată de furnizorul nostru de identitate de încredere.",
+      "hero": {
+        "badge": "Autentificare Securizată",
+        "subtitle": "Alegeți o variantă și continuați cu furnizorul preferat. Totul rămâne rapid, sigur și localizat.",
+        "title": "Bun venit la punctul de intrare securizat"
+      },
+      "signIn": {
+        "bullets": {
+          "first": "Continuați cu furnizorul de identitate pe care îl folosiți deja.",
+          "second": "Reluați de unde ați rămas pe orice dispozitiv.",
+          "third": "Sesiunea rămâne sincronizată în timpul navigării."
+        },
+        "cta": "Conectare",
+        "description": "Accesați contul și păstrați sesiunea sincronizată în timpul acestei sesiuni de browser.",
+        "illustrationAlt": "Ilustrație pentru conectare",
+        "secondaryAction": "Creați unul",
+        "secondaryPrompt": "Nu aveți cont?",
+        "title": "Conectare"
+      },
+      "signUp": {
+        "bullets": {
+          "first": "Creați un cont în câteva secunde cu furnizori OAuth.",
+          "second": "Fără parole de reținut.",
+          "third": "Începeți să folosiți platforma imediat."
+        },
+        "cta": "Creați un cont",
+        "description": "Alăturați-vă platformei și deblocați experiențe dedicate membrilor în spațiul de domeniu.",
+        "illustrationAlt": "Ilustrație pentru înregistrare",
+        "secondaryAction": "Conectați-vă",
+        "secondaryPrompt": "Aveți deja cont?",
+        "title": "Înregistrare"
+      },
+      "title": "Autentificați-vă cu serverul nostru securizat de autentificare OAuth 2.0.",
+      "trust": {
+        "oauth": "OAuth 2.0",
+        "privacy": "Confidențialitate",
+        "session": "Sesiune sincronizată"
+      }
+    },
+    "SignIn": {
+      "__metadata__": {
+        "description": "Conectați-vă pentru a continua sesiunea pe arolariu.ro.",
+        "title": "Conectare"
+      },
+      "bullets": {
+        "first": "Conectare rapidă cu furnizori de încredere.",
+        "second": "Sesiunea rămâne consecventă în întreaga aplicație.",
+        "third": "Optimizat pentru mobil și desktop."
+      },
+      "footer": "Protejat prin securitate de nivel enterprise.",
+      "form": {
+        "kicker": "Conectați-vă cu furnizorul preferat",
+        "secondaryAction": "Creați un cont",
+        "secondaryPrompt": "Sunteți nou aici?"
+      },
+      "hero": {
+        "subtitle": "Folosiți furnizorul în care aveți încredere și continuați instant.",
+        "title": "Bun venit înapoi"
+      },
+      "illustrationAlt": "Ilustrație pentru pagina de conectare"
+    },
+    "SignUp": {
+      "__metadata__": {
+        "description": "Creați un cont și începeți să folosiți arolariu.ro.",
+        "title": "Înregistrare"
+      },
+      "bullets": {
+        "first": "Înregistrare rapidă cu furnizori OAuth.",
+        "second": "Nu este necesar niciun card.",
+        "third": "Începeți să explorați platforma imediat."
+      },
+      "footer": "Înregistrare rapidă și sigură.",
+      "form": {
+        "kicker": "Creați contul cu furnizorul preferat",
+        "secondaryAction": "Conectare",
+        "secondaryPrompt": "Aveți deja cont?"
+      },
+      "hero": {
+        "subtitle": "Creați-vă contul în câteva secunde și începeți.",
+        "title": "Alăturați-vă astăzi"
+      },
+      "illustrationAlt": "Ilustrație pentru pagina de înregistrare"
     }
   },
   "Domains": {

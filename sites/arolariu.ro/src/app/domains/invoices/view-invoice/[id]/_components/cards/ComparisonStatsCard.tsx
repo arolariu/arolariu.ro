@@ -9,7 +9,7 @@ type Props = {
   currency: string;
 };
 
-export function ComparisonStatsCard({stats, currency}: Props): React.JSX.Element {
+export function ComparisonStatsCard({stats, currency}: Readonly<Props>): React.JSX.Element {
   const percentageProgress = Math.min(((stats.currentAmount - stats.minAmount) / (stats.maxAmount - stats.minAmount)) * 100, 100);
 
   const getTrendIcon = (value: number) => {

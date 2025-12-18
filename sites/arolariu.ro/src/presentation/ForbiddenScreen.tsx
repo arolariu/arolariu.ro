@@ -1,12 +1,42 @@
+"use client";
+
 import {useTranslations} from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
 
 /**
- * This function renders a screen that tells the user that they are forbidden from accessing a certain resource.
- * @returns Render a screen that tells the user that they are forbidden from accessing a certain resource.
+ * @fileoverview Presentation component for the "forbidden" (HTTP 403) state.
+ * @module presentation/ForbiddenScreen
+ *
+ * @remarks
+ * This is a UI-only screen used when a user is authenticated but not authorized
+ * to access a resource.
+ *
+ * **Internationalization**: Uses `next-intl` via `useTranslations("Forbidden.Screen")`.
+ *
+ * **Rendering context**: Intended for client-side rendering because it uses a React
+ * hook (`useTranslations`). Ensure it is rendered under a Client Component boundary.
  */
-export default function ForbiddenScreen(): React.JSX.Element {
+
+/**
+ * Renders a localized "forbidden" screen for unauthorized access attempts.
+ *
+ * @remarks
+ * The illustration is marked as decorative (`alt=""` + `aria-hidden`) so assistive
+ * technologies focus on the localized heading and descriptive text.
+ *
+ * @returns A full-page section explaining the access restriction.
+ *
+ * @example
+ * ```tsx
+ * import RenderForbiddenScreen from "@/presentation/ForbiddenScreen";
+ *
+ * export default function Page(): React.JSX.Element {
+ *   return <RenderForbiddenScreen />;
+ * }
+ * ```
+ */
+export default function RenderForbiddenScreen(): React.JSX.Element {
   const t = useTranslations("Forbidden.Screen");
 
   return (

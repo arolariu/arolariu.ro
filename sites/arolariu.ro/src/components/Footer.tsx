@@ -101,7 +101,7 @@ export default function Footer(): React.JSX.Element {
   const siteName = SITE_NAME.toUpperCase();
 
   return (
-    <footer className='relative bottom-0 w-full bg-indigo-700'>
+    <footer className='relative bottom-0 w-full bg-indigo-700 print:hidden'>
       <svg
         className='absolute top-0 -mt-5 h-6 w-full text-indigo-700 sm:-mt-10 sm:h-16'
         preserveAspectRatio='none'

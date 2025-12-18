@@ -151,6 +151,7 @@ internal static class WebApplicationBuilderExtensions
         { nameof(options.StorageAccountEndpoint), "Endpoints:StorageAccount" },
         { nameof(options.ApplicationInsightsEndpoint), "Endpoints:ApplicationInsights" },
         { nameof(options.CognitiveServicesEndpoint), "Endpoints:CognitiveServices" },
+        { nameof(options.CognitiveServicesKey), "Endpoints:CognitiveServices:Key" },
       };
 
       foreach (var mapping in configMappings)

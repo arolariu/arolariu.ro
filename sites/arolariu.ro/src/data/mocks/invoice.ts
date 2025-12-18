@@ -1,3 +1,5 @@
+/* eslint-disable max-lines -- Mock data file with extensive JSDoc documentation */
+
 /**
  * @fileoverview Invoice mock builder for testing and development.
  * @module data/mocks/invoice

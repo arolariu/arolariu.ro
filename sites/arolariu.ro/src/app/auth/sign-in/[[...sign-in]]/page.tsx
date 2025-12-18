@@ -1,19 +1,40 @@
+import {createMetadata} from "@/metadata";
 import type {Metadata} from "next";
+import {getLocale, getTranslations} from "next-intl/server";
 import RenderSignInPage from "./island";
 
-export const metadata: Metadata = {
-  title: "Sign In",
-  description: "Sign in to arolariu.ro",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Authentication.SignIn.__metadata__");
+  const locale = await getLocale();
+
+  return createMetadata({
+    locale,
+    title: t("title"),
+    description: t("description"),
+  });
+}
 
 /**
- * The sign in page, which allows the user to sign in to the application.
- * @returns The sign in page, with the sign in component from Clerk.
+ * The sign in page with enhanced modern design.
+ *
+ * @remarks
+ * **Rendering Context**: Server Component (default in Next.js App Router).
+ *
+ * **Design Improvements**:
+ * - Centered layout with maximum width container
+ * - Prominent heading with gradient text effect
+ * - Better spacing and padding for mobile/desktop
+ * - Backdrop blur effect for depth
+ *
+ * **Responsive Behavior**:
+ * - Mobile: Full width with padding
+ * - Tablet/Desktop: Centered with max-width constraint
+ *
+ * @returns The enhanced sign in page with Clerk authentication component.
  */
 export default async function SignInPage(): Promise<React.JSX.Element> {
   return (
-    <section className='2xsm:mt-16 2xsm:p-2 flex flex-col sm:p-4 md:mt-0 md:p-8'>
-      <h1 className='my-4 text-center text-2xl font-extrabold'>Sign in by reusing your account from one of the following providers:</h1>
+    <section className='relative mx-auto flex w-full max-w-6xl items-center justify-center px-4 py-10 sm:px-6 lg:px-8 lg:py-14'>
       <RenderSignInPage />
     </section>
   );

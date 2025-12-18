@@ -6,8 +6,10 @@ import type {CreateInvoiceScanDtoPayload} from "@/types/invoices";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
 type ServerActionInputType = Readonly<{
-  invoiceId: string;
-  payload: CreateInvoiceScanDtoPayload;
+  /** The ID of the invoice to attach the scan to. */
+  readonly invoiceId: string;
+  /** The scan payload containing type, location, and metadata. */
+  readonly payload: CreateInvoiceScanDtoPayload;
 }>;
 type ServerActionOutputType = Promise<void>;
 

@@ -130,6 +130,8 @@ function getTable<E extends BaseEntity>(db: ZustandDB, tableName: EntityTableNam
       return db.invoices as unknown as Table<E, string>;
     case "merchants":
       return db.merchants as unknown as Table<E, string>;
+    default:
+      throw new Error(`Unsupported table name: ${tableName}`);
   }
 }
 

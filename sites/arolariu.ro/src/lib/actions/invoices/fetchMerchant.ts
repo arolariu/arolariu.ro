@@ -5,7 +5,10 @@ import type {Merchant} from "@/types/invoices";
 import {API_URL} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 
-type ServerActionInputType = Readonly<{merchantId: string}>;
+type ServerActionInputType = Readonly<{
+  /** The identifier of the merchant to fetch. */
+  readonly merchantId: string;
+}>;
 type ServerActionOutputType = Promise<Readonly<Merchant>>;
 
 /**

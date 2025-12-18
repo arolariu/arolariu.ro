@@ -6,7 +6,13 @@
     "editor.showFoldingControls": "mouseover"
   },
   "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "prettier.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "prettier.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "prettier.prettier-vscode"
   },
 
   // Breadcrumbs Settings
@@ -156,7 +162,7 @@
   "editor.cursorWidth": 0,
   "editor.defaultColorDecorators": "auto",
   "editor.defaultFoldingRangeProvider": null,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.defaultFormatter": "prettier.prettier-vscode",
   "editor.definitionLinkOpensInPeek": false,
   "editor.detectIndentation": true,
   "editor.dragAndDrop": true,
@@ -553,6 +559,7 @@
 
   // Prettier Settings
   "prettier.configPath": ".prettierrc",
+  "prettier.enableDebugLogs": true,
   "prettier.ignorePath": ".prettierignore",
   "prettier.prettierPath": "./node_modules/prettier",
 

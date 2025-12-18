@@ -22,7 +22,7 @@ type Props = {invoice: Invoice};
  */
 export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.Element {
   const {open: openShareDialog} = useDialog("VIEW_INVOICES__SHARE", "view", {invoice});
-  const {open: openDeleteDialog} = useDialog("VIEW_INVOICES__DELETE", "delete", {invoice});
+  const {open: openDeleteDialog} = useDialog("SHARED__INVOICE_DELETE", "delete", {invoice});
 
   return (
     <DropdownMenu modal={false}>
@@ -32,7 +32,7 @@ export default function TableViewActions({invoice}: Readonly<Props>): React.JSX.
         <Button
           variant='ghost'
           size='icon'
-          className='bg-background/80 h-8 w-8'>
+          className='bg-background/80 h-8 w-8 print:hidden'>
           <TbMenu3 className='h-4 w-4' />
         </Button>
       </DropdownMenuTrigger>

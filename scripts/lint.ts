@@ -1,3 +1,14 @@
+/**
+ * @fileoverview Monorepo ESLint CLI that runs per-target configs in parallel.
+ * @module scripts/lint
+ *
+ * @remarks
+ * This module is the script entrypoint for `npm run lint`.
+ *
+ * It offloads actual lint execution to Piscina workers to keep the main thread
+ * responsive and to reduce wall-clock time when linting multiple targets.
+ */
+
 import process from "node:process";
 import pc from "picocolors";
 import Piscina from "piscina";
@@ -7,6 +18,10 @@ type LintTarget = "all" | "packages" | "website" | "cv";
 
 /**
  * Maps lint targets to their ESLint config names.
+ *
+ * @remarks
+ * The config names are used by the worker to select the correct configuration
+ * and scope for the lint run.
  */
 const configNameMap: Record<Exclude<LintTarget, "all">, string> = {
   packages: "[@arolariu/packages]",
@@ -16,12 +31,22 @@ const configNameMap: Record<Exclude<LintTarget, "all">, string> = {
 
 /**
  * All lint targets in consistent order for parallel execution.
+ *
+ * @remarks
+ * Ordering is preserved when printing results to keep output stable across runs.
  */
 const allTargets: Exclude<LintTarget, "all">[] = ["packages", "website", "cv"];
 
 /**
  * Prints the result from an ESLint worker with formatted output.
- * @param result The ESLint worker result
+ *
+ * @remarks
+ * This is a presentation helper. The worker may return either:
+ * - `error`: an unexpected worker-level failure, or
+ * - counts and textual output for standard ESLint results.
+ *
+ * @param result - The ESLint worker result.
+ * @returns Nothing.
  */
 function printWorkerResult(result: ESLintWorkerResult): void {
   const workerInfo = pc.gray(`[Worker #${result.workerId}]`);
@@ -49,8 +74,14 @@ function printWorkerResult(result: ESLintWorkerResult): void {
 }
 
 /**
- * Run ESLint for the specified target using Piscina worker threads.
- * @param lintTarget The target to lint.
+ * Runs ESLint for the specified target using Piscina worker threads.
+ *
+ * @remarks
+ * When `lintTarget` is `all`, this dispatches one worker per target and
+ * aggregates counts to compute a conventional process exit code.
+ *
+ * @param lintTarget - The target to lint.
+ * @returns Exit code (0 for success, 1 for any error).
  */
 async function startESLint(lintTarget: LintTarget): Promise<number> {
   console.log(pc.bold(pc.magenta(`\n🔎 Running ESLint for: ${lintTarget}`)));
@@ -118,6 +149,15 @@ async function startESLint(lintTarget: LintTarget): Promise<number> {
   }
 }
 
+/**
+ * Runs the lint CLI.
+ *
+ * @remarks
+ * This is the script entrypoint used by Nx/package scripts.
+ *
+ * @param arg - Target name (`all`, `packages`, `website`, `cv`).
+ * @returns Process exit code (0 for success, non-zero for failure).
+ */
 export async function main(arg?: string): Promise<number> {
   console.log(pc.bold(pc.magenta("\n╔════════════════════════════════════════╗")));
   console.log(pc.bold(pc.magenta("║    arolariu.ro Code Linter Tool        ║")));

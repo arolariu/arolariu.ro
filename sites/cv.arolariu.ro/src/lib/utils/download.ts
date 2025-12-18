@@ -43,7 +43,7 @@ import {error, ok, type Result} from "./result";
  * if (!result.ok) console.error(result.error);
  * ```
  */
-function triggerDownload(blob: Blob, filename: string): Result<void> {
+function triggerDownload(blob: Blob, filename: string): Readonly<Result<void>> {
   try {
     const url = URL.createObjectURL(blob);
     const anchorTag = document.createElement("a");
@@ -94,7 +94,7 @@ function triggerDownload(blob: Blob, filename: string): Result<void> {
  * @see {@link downloadJSON} for JSON-specific downloads
  * @see {@link downloadBlob} for pre-existing Blob downloads
  */
-export function downloadText(text: string, filename: string, mime = "text/plain"): Result<void> {
+export function downloadText(text: string, filename: string, mime = "text/plain"): Readonly<Result<void>> {
   if (!globalThis.window) return error(new Error("download not available (SSR)"));
   try {
     const blob = new Blob([text], {type: mime});
@@ -143,7 +143,7 @@ export function downloadText(text: string, filename: string, mime = "text/plain"
  *
  * @see {@link downloadText} for raw text downloads
  */
-export function downloadJSON(data: unknown, filename: string): Result<void> {
+export function downloadJSON(data: unknown, filename: string): Readonly<Result<void>> {
   try {
     const json = JSON.stringify(
       data,
@@ -196,7 +196,7 @@ export function downloadJSON(data: unknown, filename: string): Result<void> {
  * @see {@link downloadText} for string content downloads
  * @see {@link downloadJSON} for JSON object downloads
  */
-export function downloadBlob(blob: Blob, filename: string): Result<void> {
+export function downloadBlob(blob: Blob, filename: string): Readonly<Result<void>> {
   if (!globalThis.window) return error(new Error("download not available (SSR)"));
   return triggerDownload(blob, filename);
 }

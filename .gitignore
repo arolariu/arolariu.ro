@@ -8,6 +8,7 @@
 **/dist/**
 **/build/**
 **/out/**
+**/logs/**
 **/output/**
 **/code-cov/**
 **/.nx/**

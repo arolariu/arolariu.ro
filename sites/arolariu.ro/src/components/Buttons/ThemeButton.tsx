@@ -1,10 +1,32 @@
 "use client";
 
+/**
+ * @fileoverview Animated theme toggle button (light/dark) for the website header.
+ * @module components/Buttons/ThemeButton
+ *
+ * @remarks
+ * **Rendering context**: Client Component (`"use client"`) because it relies on:
+ * - `next-themes` (`useTheme`) which reads/writes theme state in the browser.
+ * - React hooks (`useEffect`, `useState`, `useCallback`).
+ *
+ * **Hydration**: This component intentionally waits until mount before rendering,
+ * to avoid theme mismatches between SSR output and client hydration.
+ */
+
 import {motion} from "motion/react";
 import {useTheme} from "next-themes";
-import React, {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {TbMoon, TbSun} from "react-icons/tb";
 
+/**
+ * Renders the moon icon with a small animation.
+ *
+ * @remarks
+ * Extracted as a standalone component so the parent button can switch icons
+ * without duplicating animation props.
+ *
+ * @returns Animated moon icon.
+ */
 const MoonIcon = (): React.JSX.Element => (
   <motion.div
     className='absolute inset-0 flex items-center justify-center'
@@ -18,6 +40,15 @@ const MoonIcon = (): React.JSX.Element => (
   </motion.div>
 );
 
+/**
+ * Renders the sun icon with a small animation.
+ *
+ * @remarks
+ * Extracted as a standalone component so the parent button can switch icons
+ * without duplicating animation props.
+ *
+ * @returns Animated sun icon.
+ */
 const SunIcon = (): React.JSX.Element => (
   <motion.div
     className='absolute inset-0 flex items-center justify-center'
@@ -32,9 +63,24 @@ const SunIcon = (): React.JSX.Element => (
 );
 
 /**
- * The theme switcher button component.
- * This component allows the user to switch between light and dark themes.
- * @returns The theme switcher button that holds the theme switcher logic.
+ * Renders an animated button that toggles between light and dark themes.
+ *
+ * @remarks
+ * **Why the `mounted` guard?** `next-themes` resolves the active theme on the
+ * client, so rendering before mount can produce a UI mismatch.
+ *
+ * **Accessibility**: Uses `aria-label="Toggle theme"` for screen readers.
+ *
+ * @returns A theme toggle button, or a falsy placeholder before mount.
+ *
+ * @example
+ * ```tsx
+ * import ThemeButton from "@/components/Buttons/ThemeButton";
+ *
+ * export function HeaderActions(): React.JSX.Element {
+ *   return <ThemeButton />;
+ * }
+ * ```
  */
 export default function ThemeButton(): React.JSX.Element {
   const [mounted, setMounted] = useState<boolean>(false);

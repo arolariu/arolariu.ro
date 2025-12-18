@@ -22,7 +22,7 @@
     "graphql.vscode-graphql",
     "usernamehw.errorlens",
     "svelte.svelte-vscode",
-    "esbenp.prettier-vscode",
+    "prettier.prettier-vscode",
     "pranaygp.vscode-css-peek",
     "yoavbls.pretty-ts-errors",
     "bradlc.vscode-tailwindcss",

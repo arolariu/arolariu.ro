@@ -46,7 +46,7 @@ export function InvoiceDetailsCard(): React.JSX.Element {
           <div className='space-y-1'>
             <CardTitle className='flex items-center gap-2'>
               Invoice Details
-              {invoice.isImportant && <TbHeart className='h-4 w-4 fill-red-500 text-red-500' />}
+              {Boolean(invoice.isImportant) && <TbHeart className='h-4 w-4 fill-red-500 text-red-500' />}
             </CardTitle>
             <CardDescription>
               {merchant.name} • {invoice.description}

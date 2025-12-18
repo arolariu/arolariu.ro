@@ -5,7 +5,11 @@ import {
   Badge,
   Button,
   Card,
+  CardAction,
+  CardContent,
   CardFooter,
+  CardHeader,
+  CardTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -97,16 +101,16 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
 
   return (
     <Card className='overflow-hidden transition-shadow duration-300 hover:shadow-md'>
-      <div className='h-full p-4'>
-        <div className='mb-2 flex items-start justify-between'>
-          <div>
-            <h3 className='text-lg font-semibold'>{name}</h3>
-            <Badge
-              variant={getBadgeVariant()}
-              className='mt-1'>
-              {complexityAsString}
-            </Badge>
-          </div>
+      <CardHeader>
+        <CardTitle>
+          <h3 className='text-lg font-semibold'>{name}</h3>
+          <Badge
+            variant={getBadgeVariant()}
+            className='mt-1'>
+            {complexityAsString}
+          </Badge>
+        </CardTitle>
+        <CardAction className='mb-2 flex items-start justify-between'>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -116,6 +120,12 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
+              <DropdownMenuItem
+                className='cursor-pointer'
+                onClick={openViewDialog}>
+                <TbEdit className='mr-2 h-4 w-4' />
+                View
+              </DropdownMenuItem>
               <DropdownMenuItem
                 className='cursor-pointer'
                 onClick={openEditDialog}>
@@ -141,8 +151,9 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-
+        </CardAction>
+      </CardHeader>
+      <CardContent className='h-full p-4'>
         <p className='text-muted-foreground mb-2 text-sm'>{description}</p>
 
         <div className='space-y-4'>
@@ -198,24 +209,22 @@ export default function RecipeCard({recipe}: Readonly<Props>): React.JSX.Element
             </Tooltip>
           </TooltipProvider>
         </div>
-      </div>
+      </CardContent>
 
-      <CardFooter className='bg-muted/50 px-4 py-2'>
-        <div className='mx-auto flex flex-col justify-around gap-6 md:flex-row'>
-          <Button
-            variant='ghost'
-            size='sm'>
-            Visit Reference
-            <TbExternalLink className='ml-2 h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
-          </Button>
-          <Button
-            variant='default'
-            size='sm'
-            onClick={openViewDialog}>
-            View Recipe
-            <TbLayoutBottombarExpand />
-          </Button>
-        </div>
+      <CardFooter className='bg-muted/50 flex items-center justify-center justify-items-center gap-2 px-4 py-2'>
+        <Button
+          variant='ghost'
+          size='sm'>
+          Visit Reference
+          <TbExternalLink className='ml-2 h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5' />
+        </Button>
+        <Button
+          variant='default'
+          size='sm'
+          onClick={openViewDialog}>
+          View Recipe
+          <TbLayoutBottombarExpand />
+        </Button>
       </CardFooter>
     </Card>
   );

@@ -22,7 +22,7 @@ Frontend RFCs are numbered **1000-1999** and located in `/docs/rfc/`.
 |-------|-------|--------|------|-------------|
 | [1001](../rfc/1001-opentelemetry-observability-system.md) | OpenTelemetry Observability System | ✅ Implemented | 2025-10-11 | Comprehensive observability system using OpenTelemetry SDK for Next.js |
 | [1002](../rfc/1002-comprehensive-jsdoc-documentation-standard.md) | JSDoc/TSDoc Documentation Standard | ✅ Implemented | 2025-01-26 | Comprehensive JSDoc documentation standard for TypeScript/React |
-| [1003](../rfc/1003-next-intl-internationalization-system.md) | next-intl Internationalization System | ✅ Implemented | 2025-10-25 | Multi-language support with next-intl and type-safe translations |
+| [1003](../rfc/1003-internationalization-system.md) | next-intl Internationalization System | ✅ Implemented | 2025-10-25 | Multi-language support with next-intl and type-safe translations |
 | [1004](../rfc/1004-metadata-seo-system.md) | Metadata and SEO System | ✅ Implemented | 2025-10-25 | Centralized metadata management and SEO optimization |
 
 ### Proposed RFCs

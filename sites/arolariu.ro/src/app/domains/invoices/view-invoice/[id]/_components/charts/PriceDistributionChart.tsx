@@ -24,7 +24,7 @@ function CustomTooltip({active, payload}: {active?: boolean; payload?: any[]}) {
   );
 }
 
-export function PriceDistributionChart({data, currency}: Props): React.JSX.Element {
+export function PriceDistributionChart({data, currency}: Readonly<Props>): React.JSX.Element {
   const chartConfig = {
     count: {
       label: "Items",

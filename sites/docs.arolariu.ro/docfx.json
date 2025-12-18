@@ -5,14 +5,18 @@
       {
         "files": [
           "**/*.{md,yml}"
-        ]
+        ],
+        "src": "../../docs",
+        "dest": "articles/monorepo"
       },
       {
         "files": [
           "**/*.{md,yml}"
         ],
-        "src": "../../docs",
-        "dest": "articles/monorepo"
+        "exclude": [
+          "articles/monorepo/toc.yml",
+          "_site/**"
+        ]
       }
     ],
     "resource": [
@@ -32,7 +36,9 @@
       "_disableSideFilter": false,
       "msClarityId": "hvhwmt03k3",
       "_gitContribute": {
-        "repo": "https://github.com/arolariu/arolariu.ro"
+        "repo": "https://github.com/arolariu/arolariu.ro",
+        "branch": "main",
+        "path": "/"
       },
       "_gitUrlPattern": "github"
     },

@@ -1,3 +1,4 @@
+import {formatCurrency, formatDate} from "@/lib/utils.generic";
 import {InvoiceCategory, type Invoice} from "@/types/invoices";
 import {
   Badge,
@@ -15,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@arolariu/components";
+import {useLocale} from "next-intl";
 import Link from "next/link";
 import {useCallback, useState} from "react";
 import {TbArrowsUpDown, TbEye} from "react-icons/tb";
@@ -31,6 +33,7 @@ type TableViewProps = {
 };
 
 export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element => {
+  const locale = useLocale();
   const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<ReadonlyArray<string>>([]);
 
@@ -65,7 +68,7 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>
+          <TableHead className='print:hidden'>
             <Checkbox
               className='bg-background/80 backdrop-blur-sm'
               checked={
@@ -83,7 +86,7 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
               variant='ghost'
               className='flex h-auto cursor-pointer items-center gap-1 p-0 font-medium'>
               Date
-              <TbArrowsUpDown className='h-4 w-4' />
+              <TbArrowsUpDown className='h-4 w-4 print:hidden' />
             </Button>
           </TableHead>
           <TableHead>
@@ -91,7 +94,7 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
               variant='ghost'
               className='flex h-auto cursor-pointer items-center gap-1 p-0 font-medium'>
               Amount
-              <TbArrowsUpDown className='h-4 w-4' />
+              <TbArrowsUpDown className='h-4 w-4 print:hidden' />
             </Button>
           </TableHead>
           <TableHead className='text-end'>Actions</TableHead>
@@ -102,7 +105,7 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
           .toSorted((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .map((invoice) => (
             <TableRow key={invoice.id}>
-              <TableCell>
+              <TableCell className='print:hidden'>
                 <Checkbox
                   checked={selectedInvoiceIds.includes(invoice.id)}
                   // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
@@ -110,12 +113,20 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
                   aria-label={`Select invoice ${invoice.id}`}
                 />
               </TableCell>
-              <TableCell>{invoice.name.length > 0 ? invoice.name : invoice.id}</TableCell>
+              <TableCell>
+                <span className='print:hidden'>{invoice.name.length > 0 ? invoice.name : invoice.id}</span>
+                <span className='hidden print:inline'>{invoice.id}</span>
+              </TableCell>
               <TableCell>
                 <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{InvoiceCategory[invoice.category]}</Badge>
               </TableCell>
-              <TableCell>{new Date(invoice.createdAt).toUTCString()}</TableCell>
-              <TableCell>{invoice.paymentInformation?.totalCostAmount}</TableCell>
+              <TableCell>{formatDate(invoice.createdAt, {locale})}</TableCell>
+              <TableCell>
+                {formatCurrency(invoice.paymentInformation.totalCostAmount, {
+                  locale,
+                  currencyCode: invoice.paymentInformation.currency.code,
+                })}
+              </TableCell>
               <TableCell className='relative text-right'>
                 <div className='flex justify-end gap-2'>
                   <TooltipProvider>

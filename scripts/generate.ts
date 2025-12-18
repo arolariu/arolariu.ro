@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Generation CLI orchestrator for monorepo build artifacts.
+ * @module scripts/generate
+ *
+ * @remarks
+ * This module wires together multiple generators (env, acks, i18n, gql) under
+ * a single CLI command, keeping output consistent across tools.
+ */
+
 import pc from "picocolors";
 
 /**

@@ -51,11 +51,11 @@ This component is automatically rendered by SvelteKit when an error occurs.
     },
   );
 
-  function goHome() {
+  function goHome(): void {
     goto("/");
   }
 
-  function retry() {
+  function retry(): void {
     window.location.reload();
   }
 </script>

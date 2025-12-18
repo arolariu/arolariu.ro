@@ -3,6 +3,11 @@
 /**
  * @fileoverview Custom React hook for fetching a single invoice by identifier.
  * @module hooks/useInvoice
+ *
+ * @remarks
+ * Client-side data hook that integrates with the invoices Zustand store.
+ * The exported hook uses a stale-while-revalidate pattern: it returns cached
+ * data after hydration while re-fetching in the background.
  */
 
 import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";

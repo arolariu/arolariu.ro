@@ -296,7 +296,88 @@
     "Island": {
       "callToAction": "Perform auth",
       "description": "Sign in using our secure OAuth 2.0 auth server. Your profile will be kept in sync during this browser session. You can use your social media accounts to sign in.",
-      "title": "Authenticate with our secure OAuth 2.0 auth server."
+      "footer": "You can switch providers at any time. Authentication is handled by our trusted identity provider.",
+      "hero": {
+        "badge": "Secure Authentication",
+        "subtitle": "Pick a path and continue with your preferred provider. Everything stays fast, secure, and localized.",
+        "title": "Welcome to the secure entry point"
+      },
+      "signIn": {
+        "bullets": {
+          "first": "Continue with the identity provider you already use.",
+          "second": "Resume where you left off on any device.",
+          "third": "Session stays in sync while you browse."
+        },
+        "cta": "Sign in",
+        "description": "Access your account and keep your session synchronized during this browser session.",
+        "illustrationAlt": "Illustration for signing in",
+        "secondaryAction": "Create one",
+        "secondaryPrompt": "Don’t have an account?",
+        "title": "Sign in"
+      },
+      "signUp": {
+        "bullets": {
+          "first": "Create an account in seconds with OAuth providers.",
+          "second": "No passwords to remember.",
+          "third": "Start using the platform right away."
+        },
+        "cta": "Create an account",
+        "description": "Join the platform and unlock member-only experiences across the domain space.",
+        "illustrationAlt": "Illustration for signing up",
+        "secondaryAction": "Sign in",
+        "secondaryPrompt": "Already have an account?",
+        "title": "Sign up"
+      },
+      "title": "Authenticate with our secure OAuth 2.0 auth server.",
+      "trust": {
+        "oauth": "OAuth 2.0",
+        "privacy": "Privacy-first",
+        "session": "Session sync"
+      }
+    },
+    "SignIn": {
+      "__metadata__": {
+        "description": "Sign in to continue your session on arolariu.ro.",
+        "title": "Sign In"
+      },
+      "bullets": {
+        "first": "Fast sign-in with trusted providers.",
+        "second": "Your session stays consistent across the app.",
+        "third": "Designed to work well on mobile and desktop."
+      },
+      "footer": "Protected by enterprise-grade security.",
+      "form": {
+        "kicker": "Sign in with your preferred provider",
+        "secondaryAction": "Create an account",
+        "secondaryPrompt": "New here?"
+      },
+      "hero": {
+        "subtitle": "Use the provider you trust and continue instantly.",
+        "title": "Welcome back"
+      },
+      "illustrationAlt": "Illustration for the sign-in page"
+    },
+    "SignUp": {
+      "__metadata__": {
+        "description": "Create an account and start using arolariu.ro.",
+        "title": "Sign Up"
+      },
+      "bullets": {
+        "first": "Quick onboarding with OAuth providers.",
+        "second": "No credit card required.",
+        "third": "Start exploring the platform right away."
+      },
+      "footer": "Quick and secure registration.",
+      "form": {
+        "kicker": "Create your account with your preferred provider",
+        "secondaryAction": "Sign in",
+        "secondaryPrompt": "Already have an account?"
+      },
+      "hero": {
+        "subtitle": "Create your account in seconds and get started.",
+        "title": "Join us today"
+      },
+      "illustrationAlt": "Illustration for the sign-up page"
     }
   },
   "Domains": {
