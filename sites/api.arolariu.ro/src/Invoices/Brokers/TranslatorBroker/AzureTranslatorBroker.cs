@@ -47,19 +47,15 @@ public class AzureTranslatorBroker : ITranslatorBroker
     ArgumentNullException.ThrowIfNull(optionsManager);
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-    var cognitiveServicesEndpoint = options.CognitiveServicesEndpoint;
+    var cognitiveServicesEndpoint = "https://api.cognitive.microsofttranslator.com/";
     var cognitiveServicesApiKey = options.CognitiveServicesKey;
-    var credentials = new DefaultAzureCredential(
-#if !DEBUG
-			new DefaultAzureCredentialOptions
-			{
-				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
-			}
-#endif
-    );
+
+    // Use AzureKeyCredential instead of DefaultAzureCredential
+    var credentials = new Azure.AzureKeyCredential(cognitiveServicesApiKey);
 
     textTranslationClient = new TextTranslationClient(
       credential: credentials,
+      region: "swedencentral",
       endpoint: new Uri(cognitiveServicesEndpoint));
   }
 
@@ -79,20 +75,16 @@ public class AzureTranslatorBroker : ITranslatorBroker
     ArgumentNullException.ThrowIfNull(httpClient);
     ApplicationOptions options = optionsManager.GetApplicationOptions();
 
-    var cognitiveServicesEndpoint = options.CognitiveServicesEndpoint;
+    var cognitiveServicesEndpoint = "https://api.cognitive.microsofttranslator.com/";
     var cognitiveServicesApiKey = options.CognitiveServicesKey;
-    var credentials = new DefaultAzureCredential(
-#if !DEBUG
-			new DefaultAzureCredentialOptions
-			{
-				ManagedIdentityClientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID")
-			}
-#endif
-    );
+
+    // Use AzureKeyCredential instead of DefaultAzureCredential
+    var credentials = new Azure.AzureKeyCredential(cognitiveServicesApiKey);
 
     textTranslationClient = new TextTranslationClient(
       credential: credentials,
       endpoint: new Uri(cognitiveServicesEndpoint),
+      region: "swedencentral",
       options: new TextTranslationClientOptions
       {
         Transport = new HttpClientTransport(httpClient)
