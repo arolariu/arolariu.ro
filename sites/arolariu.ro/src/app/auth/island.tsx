@@ -1,24 +1,11 @@
 "use client";
 
-import {Badge} from "@arolariu/components/badge";
-import {Button} from "@arolariu/components/button";
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components/card";
-import {DotBackground} from "@arolariu/components/dot-background";
-import {Separator} from "@arolariu/components/separator";
-import {motion, type Variants} from "motion/react";
+import {Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitle} from "@arolariu/components";
 import {useTranslations} from "next-intl";
-import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import {FiArrowRight, FiLock, FiShield, FiUserPlus} from "react-icons/fi";
-import AuthFloatingParticles from "./_components/AuthFloatingParticles";
+import {TbArrowRight, TbLock, TbShield, TbUserPlus} from "react-icons/tb";
 import AuthTrustBadgesRow from "./_components/AuthTrustBadgesRow";
-
-// Dynamically import Three.js scene to avoid SSR issues
-const Auth3DScene = dynamic(() => import("./_components/Auth3DScene"), {
-  ssr: false,
-  loading: () => null,
-});
 
 type AuthCardKey = "signUp" | "signIn";
 
@@ -37,53 +24,6 @@ type AuthCard = Readonly<{
   icon: React.ComponentType<{className?: string}>;
   gradient: string;
 }>;
-
-const containerVariants: Variants = {
-  hidden: {opacity: 0},
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.1,
-    },
-  },
-};
-
-const headerVariants: Variants = {
-  hidden: {opacity: 0, y: -30},
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 80,
-      damping: 20,
-    },
-  },
-};
-
-const cardVariants: Variants = {
-  hidden: {opacity: 0, y: 40, scale: 0.9},
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      type: "spring",
-      stiffness: 100,
-      damping: 15,
-    },
-  },
-};
-
-const floatingAnimation = {
-  y: [0, -8, 0],
-  transition: {
-    duration: 4,
-    repeat: Infinity,
-    ease: "easeInOut" as const,
-  },
-};
 
 /**
  * Enhanced client-side authentication screen with immersive animations.
@@ -130,7 +70,7 @@ export default function RenderAuthScreen(): React.JSX.Element {
       secondaryPrompt: t("signUp.secondaryPrompt"),
       secondaryAction: t("signUp.secondaryAction"),
       secondaryHref: "/auth/sign-in/",
-      icon: FiUserPlus,
+      icon: TbUserPlus,
       gradient: "from-emerald-500/20 via-cyan-500/10 to-transparent",
     },
     {
@@ -145,199 +85,131 @@ export default function RenderAuthScreen(): React.JSX.Element {
       secondaryPrompt: t("signIn.secondaryPrompt"),
       secondaryAction: t("signIn.secondaryAction"),
       secondaryHref: "/auth/sign-up/",
-      icon: FiLock,
+      icon: TbLock,
       gradient: "from-violet-500/20 via-purple-500/10 to-transparent",
     },
   ];
 
   return (
-    <>
-      {/* Layer 2: Dot pattern with glow */}
-      <DotBackground
-        glow
-        className='opacity-30'
-      />
+    <section className='relative mx-auto w-full max-w-6xl'>
+      <div className='relative flex flex-col gap-12'>
+        <header className='relative text-center'>
+          <div className='relative'>
+            <Badge
+              variant='secondary'
+              className='mb-4 px-4 py-1.5 text-sm font-medium'>
+              <TbShield className='mr-2 h-4 w-4' />
+              OAuth 2.0
+            </Badge>
 
-      {/* Layer 4: Three.js 3D geometric shapes */}
-      <Auth3DScene
-        className='opacity-50'
-        intensity='medium'
-      />
+            <h1 className='from-foreground via-foreground/90 to-foreground/70 bg-linear-to-r bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl lg:text-6xl'>
+              {t("hero.title")}
+            </h1>
 
-      {/* Layer 5: Floating particles */}
-      <AuthFloatingParticles
-        count={25}
-        className='opacity-60'
-      />
-
-      {/* Main Content */}
-      <section className='relative mx-auto w-full max-w-6xl'>
-        <motion.div
-          variants={containerVariants}
-          initial='hidden'
-          animate='visible'
-          className='relative flex flex-col gap-12'>
-          {/* Hero Header */}
-          <motion.header
-            variants={headerVariants}
-            className='relative text-center'>
-            {/* Animated glow behind title */}
-            <motion.div
-              aria-hidden='true'
-              className='bg-primary/20 pointer-events-none absolute inset-x-0 top-0 mx-auto h-40 w-40 rounded-full blur-3xl'
-              animate={{
-                scale: [1, 1.2, 1],
-                opacity: [0.4, 0.6, 0.4],
-              }}
-              transition={{
-                duration: 5,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-
-            <motion.div className='relative'>
-              <Badge
-                variant='secondary'
-                className='mb-4 px-4 py-1.5 text-sm font-medium'>
-                <FiShield className='mr-2 h-4 w-4' />
-                OAuth 2.0
-              </Badge>
-
-              <h1 className='from-foreground via-foreground/90 to-foreground/70 bg-linear-to-r bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl lg:text-6xl'>
-                {t("hero.title")}
-              </h1>
-
-              <p className='text-muted-foreground mx-auto mt-4 max-w-2xl text-lg leading-relaxed sm:text-xl'>{t("hero.subtitle")}</p>
-            </motion.div>
-
-            <AuthTrustBadgesRow
-              className='mt-8 flex flex-wrap items-center justify-center gap-3'
-              badges={trustBadges}
-            />
-          </motion.header>
-
-          <motion.div variants={headerVariants}>
-            <Separator className='mx-auto max-w-md opacity-50' />
-          </motion.div>
-
-          {/* Auth Cards Grid */}
-          <div className='grid gap-8 md:grid-cols-2 lg:gap-10'>
-            {cards.map((card, index) => (
-              <motion.div
-                key={card.key}
-                variants={cardVariants}
-                whileHover={{y: -4, transition: {duration: 0.2}}}>
-                <Card className='group bg-card/50 border-border/50 hover:border-primary/40 relative h-full overflow-hidden border backdrop-blur-sm transition-all duration-500 hover:shadow-2xl'>
-                  {/* Gradient overlay */}
-                  <div
-                    className={`pointer-events-none absolute inset-0 bg-linear-to-br ${card.gradient} opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
-                    aria-hidden='true'
-                  />
-
-                  {/* Animated corner glow */}
-                  <motion.div
-                    aria-hidden='true'
-                    className='bg-primary/30 pointer-events-none absolute -top-16 -right-16 h-32 w-32 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100'
-                  />
-
-                  <CardHeader className='relative space-y-6 pb-4'>
-                    {/* Icon badge */}
-                    <div className='flex items-center justify-between'>
-                      <div className='bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-xl'>
-                        <card.icon className='h-6 w-6' />
-                      </div>
-                      <motion.div
-                        animate={floatingAnimation}
-                        className='text-muted-foreground text-sm font-medium'>
-                        {index === 0 ? "Step 1" : "Step 2"}
-                      </motion.div>
-                    </div>
-
-                    {/* Illustration */}
-                    <motion.div
-                      whileHover={{scale: 1.05, rotate: index === 0 ? 2 : -2}}
-                      transition={{type: "spring", stiffness: 300, damping: 20}}
-                      className='from-muted/30 to-muted/10 relative mx-auto flex h-48 w-48 items-center justify-center rounded-2xl bg-linear-to-br p-4 sm:h-56 sm:w-56'>
-                      <motion.div animate={floatingAnimation}>
-                        <Image
-                          src={card.imageSrc}
-                          alt={card.illustrationAlt}
-                          width={200}
-                          height={200}
-                          className='h-full w-full object-contain drop-shadow-lg transition-transform duration-300'
-                          priority={index === 0}
-                        />
-                      </motion.div>
-                    </motion.div>
-
-                    <div className='space-y-2 text-center'>
-                      <CardTitle className='text-2xl font-bold tracking-tight sm:text-3xl'>{card.title}</CardTitle>
-                      <CardDescription className='text-muted-foreground text-base leading-relaxed'>{card.description}</CardDescription>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className='relative space-y-6 pt-2'>
-                    {/* Benefits list */}
-                    <ul className='space-y-3'>
-                      {card.bullets.map((bullet, bulletIndex) => (
-                        <li
-                          key={`${card.key}-bullet-${bulletIndex}`}
-                          className='text-muted-foreground flex items-start gap-3 text-sm'>
-                          <motion.span
-                            initial={{opacity: 0, x: -10}}
-                            whileInView={{opacity: 1, x: 0}}
-                            transition={{delay: bulletIndex * 0.1}}
-                            className='flex items-start gap-3'>
-                            <span
-                              className='bg-primary/70 mt-1.5 h-2 w-2 shrink-0 rounded-full'
-                              aria-hidden='true'
-                            />
-                            <span>{bullet}</span>
-                          </motion.span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {/* CTA Section */}
-                    <div className='space-y-4 pt-2'>
-                      <motion.div
-                        whileHover={{scale: 1.02}}
-                        whileTap={{scale: 0.98}}>
-                        <Button
-                          asChild
-                          size='lg'
-                          className='group/btn w-full text-base font-semibold'>
-                          <Link href={card.href}>
-                            {card.cta}
-                            <FiArrowRight className='ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1' />
-                          </Link>
-                        </Button>
-                      </motion.div>
-
-                      <p className='text-muted-foreground text-center text-sm'>
-                        {card.secondaryPrompt}{" "}
-                        <Link
-                          href={card.secondaryHref}
-                          className='text-primary font-medium underline-offset-4 transition-colors hover:underline'>
-                          {card.secondaryAction}
-                        </Link>
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+            <p className='text-muted-foreground mx-auto mt-4 max-w-2xl text-lg leading-relaxed sm:text-xl'>{t("hero.subtitle")}</p>
           </div>
 
-          {/* Footer */}
-          <motion.footer
-            variants={headerVariants}
-            className='text-muted-foreground mx-auto max-w-2xl text-center text-sm leading-relaxed'>
-            {t("footer")}
-          </motion.footer>
-        </motion.div>
-      </section>
-    </>
+          <AuthTrustBadgesRow
+            className='mt-8 flex flex-wrap items-center justify-center gap-3'
+            badges={trustBadges}
+          />
+        </header>
+
+        <div className='grid gap-8 md:grid-cols-2 lg:gap-10'>
+          {cards.map((card, index) => (
+            <div
+              key={card.key}
+              className='transition-transform duration-200 hover:-translate-y-1'>
+              <Card className='group bg-card/50 border-border/50 hover:border-primary/40 relative h-full overflow-hidden border backdrop-blur-sm transition-all duration-500 hover:shadow-2xl'>
+                {/* Gradient overlay */}
+                <div
+                  className={`pointer-events-none absolute inset-0 bg-linear-to-br ${card.gradient} opacity-0 transition-opacity duration-500 group-hover:opacity-100`}
+                  aria-hidden='true'
+                />
+
+                {/* Corner glow */}
+                <div
+                  aria-hidden='true'
+                  className='bg-primary/30 pointer-events-none absolute -top-16 -right-16 h-32 w-32 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100'
+                />
+
+                <CardHeader className='relative space-y-6 pb-4'>
+                  {/* Icon badge */}
+                  <div className='flex items-center justify-between'>
+                    <div className='bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-xl'>
+                      <card.icon className='h-6 w-6' />
+                    </div>
+                    <div className='text-muted-foreground text-sm font-medium'>{index === 0 ? "Step 1" : "Step 2"}</div>
+                  </div>
+
+                  {/* Illustration */}
+                  <div className='from-muted/30 to-muted/10 relative mx-auto flex h-48 w-48 items-center justify-center rounded-2xl bg-linear-to-br p-4 transition-transform duration-300 hover:scale-105 sm:h-56 sm:w-56'>
+                    <Image
+                      src={card.imageSrc}
+                      alt={card.illustrationAlt}
+                      width={200}
+                      height={200}
+                      className='h-full w-full object-contain drop-shadow-lg'
+                      priority={index === 0}
+                    />
+                  </div>
+
+                  <div className='space-y-2 text-center'>
+                    <CardTitle className='text-2xl font-bold tracking-tight sm:text-3xl'>{card.title}</CardTitle>
+                    <CardDescription className='text-muted-foreground text-base leading-relaxed'>{card.description}</CardDescription>
+                  </div>
+                </CardHeader>
+
+                <CardContent className='relative space-y-6 pt-2'>
+                  {/* Benefits list */}
+                  <ul className='space-y-3'>
+                    {card.bullets.map((bullet, bulletIndex) => (
+                      <li
+                        key={`${card.key}-bullet-${bulletIndex}`}
+                        className='text-muted-foreground flex items-start gap-3 text-sm'>
+                        <span className='flex items-start gap-3'>
+                          <span
+                            className='bg-primary/70 mt-1.5 h-2 w-2 shrink-0 rounded-full'
+                            aria-hidden='true'
+                          />
+                          <span>{bullet}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* CTA Section */}
+                  <div className='space-y-4 pt-2'>
+                    <div className='transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]'>
+                      <Button
+                        asChild
+                        size='lg'
+                        className='group/btn w-full text-base font-semibold'>
+                        <Link href={card.href}>
+                          {card.cta}
+                          <TbArrowRight className='ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1' />
+                        </Link>
+                      </Button>
+                    </div>
+
+                    <p className='text-muted-foreground text-center text-sm'>
+                      {card.secondaryPrompt}{" "}
+                      <Link
+                        href={card.secondaryHref}
+                        className='text-primary font-medium underline-offset-4 transition-colors hover:underline'>
+                        {card.secondaryAction}
+                      </Link>
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <footer className='text-muted-foreground mx-auto max-w-2xl text-center text-sm leading-relaxed'>{t("footer")}</footer>
+      </div>
+    </section>
   );
 }

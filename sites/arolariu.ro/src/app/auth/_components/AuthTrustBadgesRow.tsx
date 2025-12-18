@@ -1,4 +1,6 @@
-import {Badge} from "@arolariu/components/badge";
+"use client";
+
+import {Badge} from "@arolariu/components";
 
 export type AuthTrustBadgesRowProps = Readonly<{
   badges: ReadonlyArray<string>;
