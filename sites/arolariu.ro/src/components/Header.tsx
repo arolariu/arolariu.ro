@@ -17,7 +17,7 @@ function Header(): React.JSX.Element {
   const {isMobile, isDesktop} = useWindowSize();
 
   return (
-    <header>
+    <header className='print:hidden'>
       <nav className='navbar 2xsm:fixed 2xsm:top-0 2xsm:z-50 bg-white text-black lg:relative lg:z-auto dark:bg-black dark:text-white'>
         <div className='navbar-start flex flex-row flex-nowrap'>
           {Boolean(isMobile) && <MobileNavigation />}

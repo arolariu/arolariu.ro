@@ -49,7 +49,7 @@ type Props = {
  */
 export default function InvoiceHeader({invoice}: Readonly<Props>): React.JSX.Element {
   const [invoiceName, setInvoiceName] = useState<string>(invoice.name);
-  const {open: openDeleteDialog} = useDialog("EDIT_INVOICE__DELETE", "view", {invoice});
+  const {open: openDeleteDialog} = useDialog("SHARED__INVOICE_DELETE", "delete", {invoice});
   const {open: openAnalysisDialog} = useDialog("EDIT_INVOICE__ANALYSIS", "view", {invoice});
 
   const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {

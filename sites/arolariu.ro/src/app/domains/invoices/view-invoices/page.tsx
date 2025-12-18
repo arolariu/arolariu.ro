@@ -134,7 +134,7 @@ export default async function ViewInvoicesPage() {
 
   return (
     <main className='container mx-auto px-5 py-24'>
-      <section className='mb-20 flex w-full flex-col text-center'>
+      <section className='mb-20 flex w-full flex-col text-center print:hidden'>
         <h1 className='mb-4 bg-linear-to-r from-pink-400 to-red-600 bg-clip-text text-2xl font-medium text-transparent sm:text-3xl'>
           {t("title", {name: username})}
         </h1>

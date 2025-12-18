@@ -60,7 +60,7 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
     open,
     close,
     currentDialog: {payload},
-  } = useDialog("EDIT_INVOICE__DELETE");
+  } = useDialog("SHARED__INVOICE_DELETE", "delete");
 
   const {invoice} = payload as {invoice: Invoice};
 

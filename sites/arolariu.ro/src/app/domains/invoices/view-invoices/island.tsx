@@ -43,7 +43,7 @@ export default function RenderViewInvoicesScreen(): React.JSX.Element {
           <Tabs
             defaultValue='invoices'
             className='w-full'>
-            <TabsList className='grid w-full max-w-md grid-cols-3'>
+            <TabsList className='grid w-full max-w-md grid-cols-3 print:hidden'>
               <TabsTrigger
                 value='invoices'
                 className='cursor-pointer'>
