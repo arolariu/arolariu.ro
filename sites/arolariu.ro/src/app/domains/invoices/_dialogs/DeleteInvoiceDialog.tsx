@@ -93,11 +93,11 @@ export default function DeleteInvoiceDialog(): React.JSX.Element {
 
     try {
       await deleteInvoice({invoiceId: invoice.id});
-      
+
       // Update Zustand store to remove the deleted invoice
       // This ensures the cached invoice list is immediately updated
       removeInvoice(invoice.id);
-      
+
       toast("Invoice Deleted", {
         description: "The invoice was deleted successfully.",
       });
