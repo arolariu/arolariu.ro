@@ -38,7 +38,7 @@ export {ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants}
 
 export {Calendar} from "./components/ui/calendar";
 
-export {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./components/ui/card";
+export {Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "./components/ui/card";
 
 export {Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi} from "./components/ui/carousel";
 

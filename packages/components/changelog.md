@@ -8,6 +8,10 @@ All notable changes to **@arolariu/components** are documented here following [K
 
 ## 🎉 Latest Releases
 
+### [0.4.2](https://www.npmjs.com/package/@arolariu/components/v/0.4.2) - 2025-12-18
+**✨ New Features & Improvements**
+- 🆕 **New Component: `CardAction`** - A component for adding actions to cards.
+
 ### [0.4.1](https://www.npmjs.com/package/@arolariu/components/v/0.4.1) - 2025-12-08
 **🔧 Bug Fixes & Maintenance**
 - ⬆️ **Recharts V3** Upgraded chart.tsx to use Rechars v3.5
