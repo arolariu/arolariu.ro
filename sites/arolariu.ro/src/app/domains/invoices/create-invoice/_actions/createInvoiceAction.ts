@@ -53,7 +53,7 @@ export async function createInvoiceAction(submission: PendingInvoiceSubmission):
       // 1. Upload the file to Azure Blob Storage
       // ----------------------------------------------------------------------
       const blobExtension = submission.file.name.split(".").pop();
-      const blobName = `${submission.id}#${Date.now().toFixed(0)}.${blobExtension}`;
+      const blobName = `${submission.id}xXx${Date.now().toFixed(0)}.${blobExtension}`;
       addSpanEvent("blob.upload.start", {blobName, mimeType: submission.mimeType, size: submission.size});
       const base64Data = Buffer.from(await submission.file.arrayBuffer()).toString("base64");
       const {status, blobUrl} = await createInvoiceScan({base64Data, blobName});
