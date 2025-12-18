@@ -19,6 +19,7 @@ var roleDefinitions = {
   noSqlDbOperator: '230815da-be43-4aae-9cb4-875f7bd000aa'
   appConfigContributor: 'fe86443c-f201-4fc4-9d2a-ac61149fbda0'
   openAiContributor: 'a001fd3d-188f-4b5d-821b-7da978bf7442'
+  openAiUser: '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
   keyVaultContributor: 'f25e0fa2-a7c8-4377-a976-54943a77a395'
   keyVaultSecretsContributor: 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7'
   acrPull: '7f951dda-4ed3-4680-a7ca-43fe172d538d' // Azure Container Registry Pull
@@ -131,6 +132,17 @@ resource backendOpenAiContributorRoleAssignment 'Microsoft.Authorization/roleAss
     principalId: backendIdentity.principalId
     principalType: 'ServicePrincipal'
     description: 'Backend managed identity access to OpenAI management'
+  }
+}
+
+// OpenAI User role assignment for backend managed identity
+resource backendOpenAiUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, backendIdentity.principalId, roleDefinitions.openAiUser)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleDefinitions.openAiUser)
+    principalId: backendIdentity.principalId
+    principalType: 'ServicePrincipal'
+    description: 'Backend managed identity access to OpenAI user operations'
   }
 }
 
