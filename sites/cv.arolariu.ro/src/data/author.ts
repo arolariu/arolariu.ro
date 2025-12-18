@@ -1,6 +1,6 @@
 import type {PersonalInformation} from "@/types";
 
-export const author: PersonalInformation = {
+export const author: Readonly<PersonalInformation> = {
   name: "Alexandru-Razvan Olariu",
   age:
     new Date().getFullYear()
@@ -14,4 +14,4 @@ export const author: PersonalInformation = {
   github: "https://www.github.com/arolariu",
   region: "Romania / European Union",
   summary: "Passionate software engineer with a focus on building impactful solutions.",
-};
+} as const;

@@ -1,5 +1,5 @@
 import {browser} from "$app/environment";
-export type Theme = "light" | "dark";
+export type Theme = Readonly<"light" | "dark">;
 
 class ThemeState {
   private __theme__ = $state<Theme>("dark");

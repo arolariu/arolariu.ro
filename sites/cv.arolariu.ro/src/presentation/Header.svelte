@@ -30,7 +30,7 @@
     class: extra = "",
   }: Props = $props();
 
-  function goBack() {
+  function goBack(): void {
     goto("/");
   }
 

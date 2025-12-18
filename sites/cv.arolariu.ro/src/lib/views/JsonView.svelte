@@ -45,7 +45,7 @@ for maximum compatibility with resume processing tools.
   import {jsonCVData} from "@/data/json";
 
   /** Tracks whether the copy action succeeded (resets after 2 seconds). */
-  let copySuccess = $state(false);
+  let copySuccess = $state<boolean>(false);
 
   /** Active tab controlling JSON format display: "formatted" or "raw". */
   let activeTab = $state<"formatted" | "raw">("formatted");
@@ -63,7 +63,7 @@ for maximum compatibility with resume processing tools.
    * Uses the active tab to determine whether to copy formatted or raw JSON.
    * Shows visual feedback for 2 seconds via `copySuccess` state.
    */
-  async function copyToClipboard() {
+  async function copyToClipboard(): Promise<void> {
     const textToCopy = activeTab === "raw" ? rawJSON : formattedJSON;
     await copyText(textToCopy);
     copySuccess = true;
@@ -77,7 +77,7 @@ for maximum compatibility with resume processing tools.
    * Uses the active tab to determine whether to download formatted or raw JSON.
    * File is named "alexandru-olariu-cv.json" with MIME type "application/json".
    */
-  function downloadJSONFile() {
+  function downloadJSONFile(): void {
     const textToDownload = activeTab === "raw" ? rawJSON : formattedJSON;
     downloadText(textToDownload, "alexandru-olariu-cv.json", "application/json");
   }
@@ -88,7 +88,7 @@ for maximum compatibility with resume processing tools.
    * @param tab - The tab to activate: "formatted" for pretty-printed,
    *   "raw" for minified JSON.
    */
-  function setTab(tab: "formatted" | "raw") {
+  function setTab(tab: "formatted" | "raw"): void {
     activeTab = tab;
   }
 

@@ -9,7 +9,7 @@ type Experiences = Readonly<Record<ExperienceKeys, Experience>>;
  * The values are objects containing details about the title, company, location, period, description,
  * responsibilities, achievements, and technologies used.
  */
-export const experiences: Experiences = {
+export const experiences: Readonly<Experiences> = {
   microsoft3: {
     title: "E + D M365 AI Fullstack Software Engineer II",
     company: "Microsoft",
@@ -74,14 +74,14 @@ export const experiences: Experiences = {
     achievements:
       "# I've consistently over-exceeded the quota of reported bugs, glitches and artefacts, ranking as the #1 reporter for a solid 5 months out of the 6 worked. #  Found and reported major code defects that ranged from race conditions to memory resource allocation defects. #  Increased the daily report efficiency by leveraging SQL and JQL filtering capabilities.",
   },
-};
+} as const;
 
 /**
  * This array is a flattened version of the experiences object.
  * It is useful for iterating over experiences in UI components.
  * Each entry in the array corresponds to an experience defined in the `experiences` object.
  */
-export const experiencesAsArray = Object.values(experiences);
+export const experiencesAsArray: ReadonlyArray<Experience> = Object.freeze(Object.values(experiences));
 
 /**
  * Parses a string of items into an array.

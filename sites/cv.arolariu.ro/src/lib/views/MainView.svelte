@@ -97,7 +97,7 @@ to respective format routes.
       icon: "help",
       action: () => (showHelpDialog = true),
     },
-  ];
+  ] as const;
 </script>
 
 <div

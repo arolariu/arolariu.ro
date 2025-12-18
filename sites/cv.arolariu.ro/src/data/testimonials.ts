@@ -18,7 +18,7 @@ type Testimonials = Readonly<Record<TestimonialKeys, Testimonial>>;
  * Each testimonial includes the author's name, position, company, and a quote.
  * This data is structured to provide insights into the author's professional relationships and impact.
  */
-export const testimonials: Testimonials = {
+export const testimonials: Readonly<Testimonials> = {
   perspectiveFromX: {
     author: "Anonymous",
     company: "Microsoft",
@@ -82,11 +82,11 @@ export const testimonials: Testimonials = {
     quote:
       "You always step up to help, sharing your time generously, even when you have your own pressing tasks. Your quick and helpful replies to any questions are greatly appreciated. You take a prioritized and meticulous approach, providing instant solutions that not only unblock us in the short term but also outline long-term fixes and their implementation timelines. Your solution-oriented mindset is a true asset for our team. Your expertise, willingness to assist, and pleasant personality make you a great colleague. Keep up the great work!",
   },
-};
+} as const;
 
 /**
  * Array of all testimonials, flattened.
  * This is useful for iterating through testimonials in components.
  * Each entry in the array corresponds to a testimonial defined in the `testimonials` object.
  */
-export const testimonialsAsArray = Object.values(testimonials);
+export const testimonialsAsArray: ReadonlyArray<Testimonial> = Object.freeze(Object.values(testimonials));

@@ -8,7 +8,7 @@ type Educations = Readonly<Record<EducationKeys, Education>>;
  * Each key corresponds to a specific educational institution or program.
  * The values are objects containing details about the degree, institution, location, period, status, and description.
  */
-export const education: Educations = {
+export const education: Readonly<Educations> = {
   malmoSweden: {
     degree: "MSc. Internet of Things & Network Engineering",
     institution: "Malmö University",
@@ -29,11 +29,11 @@ export const education: Educations = {
     description:
       "Bachelor's degree in Computer Science and Economy from the Bucharest University of Economic Studies in Bucharest, Romania. Finished in top 1% according to thesis rating statistics.",
   },
-};
+} as const;
 
 /**
  * Converts the education object to an array format for easier iteration in components.
  * This is useful for rendering lists of education items in the UI.
  * This array will contain all education entries defined in the `education` object.
  */
-export const educationAsArray: Education[] = Object.values(education);
+export const educationAsArray: ReadonlyArray<Education> = Object.freeze(Object.values(education));
