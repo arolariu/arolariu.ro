@@ -8,6 +8,10 @@
     }
   ],
   "servers": {
+    "nextjs-devtools": {
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"]
+    },
     "github-mcp-server": {
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/"
