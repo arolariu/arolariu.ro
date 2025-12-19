@@ -124,7 +124,7 @@ runs:
       working-directory: ${{ inputs.working-directory }}
       run: |
         echo "::group::🎭 Installing Playwright browsers..."
-        npx playwright install --with-deps
+        npx playwright install chromium --with-deps
         echo "::endgroup::"
         echo "✅ Playwright browsers installed"
 
