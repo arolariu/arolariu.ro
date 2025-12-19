@@ -129,6 +129,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   serverExternalPackages: [
+    "@azure/identity",
+    "@azure/monitor-opentelemetry-exporter",
     "@opentelemetry/api",
     "@opentelemetry/auto-instrumentations-node",
     "@opentelemetry/exporter-logs-otlp-http",
