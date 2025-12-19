@@ -1,7 +1,7 @@
 "use server";
 
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import {API_URL} from "@/lib/utils.server";
-import {addSpanEvent, logWithTrace, withSpan} from "@/telemetry";
 import type {CreateInvoiceDtoPayload, Invoice} from "@/types/invoices";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 

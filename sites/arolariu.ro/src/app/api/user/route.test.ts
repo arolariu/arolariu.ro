@@ -29,7 +29,7 @@ vi.mock("@/lib/utils.generic", () => ({
 }));
 
 // Mock telemetry functions
-vi.mock("@/telemetry", () => ({
+vi.mock("@/instrumentation.server", () => ({
   withSpan: mockWithSpan,
   createCounter: vi.fn(() => ({
     add: vi.fn(),
