@@ -168,6 +168,10 @@ const nextConfig: NextConfig = {
   compress: false, // We use AFD built-in compression for static assets.
   trailingSlash: true,
   typedRoutes: true,
+
+  enablePrerenderSourceMaps: isDebugBuild,
+  productionBrowserSourceMaps: isDebugBuild,
+  reactProductionProfiling: isDebugBuild,
 };
 
 const withBundleAnalyzer = withBundleAnalyzerInit({
