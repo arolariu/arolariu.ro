@@ -9,7 +9,7 @@ This guide provides practical examples for implementing OpenTelemetry tracing, l
 ### 1. Import Telemetry Functions
 
 ```typescript
-import {withSpan, addSpanEvent, setSpanAttributes, recordSpanError, logWithTrace} from "@/telemetry";
+import {withSpan, addSpanEvent, setSpanAttributes, recordSpanError, logWithTrace} from "@/instrumentation.server";
 ```
 
 ### 2. Wrap Operations with Spans
@@ -29,7 +29,7 @@ export async function fetchUserData(userId: string) {
 ### Basic Span Creation
 
 ```typescript
-import {withSpan} from "@/telemetry";
+import {withSpan} from "@/instrumentation.server";
 
 export async function processInvoice(invoiceId: string) {
   return withSpan("business.invoice.process", async (span) => {
@@ -47,7 +47,7 @@ export async function processInvoice(invoiceId: string) {
 ### Adding Span Attributes
 
 ```typescript
-import {withSpan} from "@/telemetry";
+import {withSpan} from "@/instrumentation.server";
 
 export async function createInvoice(data: InvoiceData) {
   return withSpan("api.invoice.create", async (span) => {
@@ -75,7 +75,7 @@ export async function createInvoice(data: InvoiceData) {
 ### Adding Span Events
 
 ```typescript
-import {withSpan, addSpanEvent} from "@/telemetry";
+import {withSpan, addSpanEvent} from "@/instrumentation.server";
 
 export async function uploadFile(file: File) {
   return withSpan("api.file.upload", async (span) => {
@@ -107,7 +107,7 @@ export async function uploadFile(file: File) {
 ### Error Handling with Spans
 
 ```typescript
-import {withSpan, recordSpanError} from "@/telemetry";
+import {withSpan, recordSpanError} from "@/instrumentation.server";
 
 export async function deleteInvoice(invoiceId: string) {
   return withSpan("api.invoice.delete", async (span) => {
@@ -135,7 +135,7 @@ export async function deleteInvoice(invoiceId: string) {
 ### Server Component Tracing
 
 ```typescript
-import {withSpan} from "@/telemetry";
+import {withSpan} from "@/instrumentation.server";
 
 export default async function InvoicePage({params}: {params: {id: string}}) {
   return withSpan("page.invoice.render", async (span) => {
@@ -160,7 +160,7 @@ export default async function InvoicePage({params}: {params: {id: string}}) {
 ### API Route Tracing
 
 ```typescript
-import {withSpan, logWithTrace} from "@/telemetry";
+import {withSpan, logWithTrace} from "@/instrumentation.server";
 import {NextRequest, NextResponse} from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -193,7 +193,7 @@ export async function GET(request: NextRequest) {
 ### JWT Token Operations
 
 ```typescript
-import {withSpan, addSpanEvent, logWithTrace} from "@/telemetry";
+import {withSpan, addSpanEvent, logWithTrace} from "@/instrumentation.server";
 
 export async function createJwtToken(payload: Record<string, any>, secret: string) {
   return withSpan("auth.jwt.create", async (span) => {
@@ -238,7 +238,7 @@ export async function createJwtToken(payload: Record<string, any>, secret: strin
 ### Structured Logging with Trace Context
 
 ```typescript
-import {logWithTrace} from "@/telemetry";
+import {logWithTrace} from "@/instrumentation.server";
 
 // Log levels: debug, info, warn, error
 // Render contexts: server, client, edge
@@ -263,7 +263,7 @@ export async function processPayment(amount: number) {
 ### Debug Logging
 
 ```typescript
-import {logWithTrace} from "@/telemetry";
+import {logWithTrace} from "@/instrumentation.server";
 
 export function validateInvoiceData(data: InvoiceData) {
   logWithTrace("debug", "Starting invoice validation", {
@@ -286,7 +286,7 @@ The telemetry system provides pre-built helpers for common attribute patterns:
 ### HTTP Server Attributes
 
 ```typescript
-import {withSpan, createHttpServerAttributes} from "@/telemetry";
+import {withSpan, createHttpServerAttributes} from "@/instrumentation.server";
 
 export async function GET(request: NextRequest) {
   return withSpan("http.server.api.route", async (span) => {
@@ -307,7 +307,7 @@ export async function GET(request: NextRequest) {
 ### HTTP Client Attributes
 
 ```typescript
-import {withSpan, createHttpClientAttributes} from "@/telemetry";
+import {withSpan, createHttpClientAttributes} from "@/instrumentation.server";
 
 export async function fetchExternalAPI() {
   return withSpan("http.client.external.api", async (span) => {
@@ -331,7 +331,7 @@ export async function fetchExternalAPI() {
 ### Database Attributes
 
 ```typescript
-import {withSpan, createDatabaseAttributes} from "@/telemetry";
+import {withSpan, createDatabaseAttributes} from "@/instrumentation.server";
 
 export async function queryInvoices(userId: string) {
   return withSpan("db.query.invoices", async (span) => {
@@ -358,7 +358,7 @@ export async function queryInvoices(userId: string) {
 ### Cache Attributes
 
 ```typescript
-import {withSpan, createCacheAttributes} from "@/telemetry";
+import {withSpan, createCacheAttributes} from "@/instrumentation.server";
 
 export async function getCachedInvoice(invoiceId: string) {
   return withSpan("cache.get.invoice", async (span) => {
@@ -384,7 +384,7 @@ export async function getCachedInvoice(invoiceId: string) {
 ### Authentication Attributes
 
 ```typescript
-import {withSpan, createAuthAttributes} from "@/telemetry";
+import {withSpan, createAuthAttributes} from "@/instrumentation.server";
 
 export async function authenticateUser(token: string) {
   return withSpan("auth.verify", async (span) => {

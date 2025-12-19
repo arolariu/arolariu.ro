@@ -3,7 +3,7 @@ import {COMMIT_SHA, TIMESTAMP} from "./utils.generic";
 import {API_JWT, API_URL, CONFIG_STORE, convertBase64ToBlob, getMimeTypeFromBase64} from "./utils.server";
 
 // Mock the telemetry module
-vi.mock("@/telemetry", () => ({
+vi.mock("@/instrumentation.server", () => ({
   withSpan: vi.fn(async (_spanName, fn) =>
     fn({
       setAttributes: vi.fn(),

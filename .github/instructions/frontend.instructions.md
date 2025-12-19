@@ -556,7 +556,7 @@ export type SpanOperationType =
 ### Using Telemetry
 
 ```tsx
-import {withSpan, createCounter, logWithTrace} from "@/telemetry";
+import {withSpan, createCounter, logWithTrace} from "@/instrumentation.server";
 
 // Server Component with tracing
 export default async function Page() {

@@ -1,3 +1,5 @@
+import "client-only";
+
 import type {BrowserInformation} from "@/types";
 
 /**

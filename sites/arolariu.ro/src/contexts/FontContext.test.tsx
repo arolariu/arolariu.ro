@@ -381,5 +381,46 @@ describe("FontContext", () => {
       // The className should remain unchanged since caudex-font is already present
       expect(result.current.fontType).toBe("normal");
     });
+
+    it("should ignore storage event with invalid value", () => {
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      act(() => {
+        const event = new StorageEvent("storage", {
+          key: "selectedFont",
+          newValue: "invalid-font",
+        });
+        globalThis.dispatchEvent(event);
+      });
+
+      expect(result.current.fontType).toBe("normal");
+    });
+
+    it("should ignore storage event for different key", () => {
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+      const {result} = renderHook(() => useFontContext(), {wrapper});
+
+      act(() => {
+        const event = new StorageEvent("storage", {
+          key: "otherKey",
+          newValue: "dyslexic",
+        });
+        globalThis.dispatchEvent(event);
+      });
+
+      expect(result.current.fontType).toBe("normal");
+    });
+
+    it("should return early if font class is already present (Safety Check 1)", () => {
+      // Set up the DOM so classList.contains returns true
+      document.documentElement.className = "caudex-font extra-class";
+
+      const wrapper = ({children}: {children: React.ReactNode}) => <FontContextProvider>{children}</FontContextProvider>;
+      renderHook(() => useFontContext(), {wrapper});
+
+      // If it returns early, className should remain exactly as set
+      expect(document.documentElement.className).toBe("caudex-font extra-class");
+    });
   });
 });

@@ -14,7 +14,7 @@ export async function register() {
   // Initialize OpenTelemetry early in the application lifecycle
   if (process.env["NEXT_RUNTIME"] === "nodejs") {
     // Dynamic import to avoid bundling telemetry code in client bundles
-    const {startTelemetry} = await import("@/telemetry");
+    const {startTelemetry} = await import("@/instrumentation.server");
     startTelemetry();
     console.log(">>> 🔭 OpenTelemetry has been initialized for the Node.js runtime!");
   }

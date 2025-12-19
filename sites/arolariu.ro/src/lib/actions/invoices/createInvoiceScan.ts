@@ -1,7 +1,7 @@
 "use server";
 
+import {withSpan} from "@/instrumentation.server";
 import {convertBase64ToBlob} from "@/lib/utils.server";
-import {withSpan} from "@/telemetry";
 import {DefaultAzureCredential} from "@azure/identity";
 import {BlobServiceClient} from "@azure/storage-blob";
 

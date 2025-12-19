@@ -1,5 +1,3 @@
-import {generateGuid} from "@/lib/utils.generic";
-import {API_JWT, createJwtToken} from "@/lib/utils.server";
 import {
   addSpanEvent,
   createAuthAttributes,
@@ -11,7 +9,9 @@ import {
   recordSpanError,
   setSpanAttributes,
   withSpan,
-} from "@/telemetry";
+} from "@/instrumentation.server";
+import {generateGuid} from "@/lib/utils.generic";
+import {API_JWT, createJwtToken} from "@/lib/utils.server";
 import type {UserInformation} from "@/types";
 import {auth, currentUser} from "@clerk/nextjs/server";
 import {NextResponse} from "next/server";

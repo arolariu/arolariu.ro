@@ -43,3 +43,15 @@ vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({user: null, isLoaded: true, isSignedIn: false}),
   useAuth: () => ({userId: null, isLoaded: true, isSignedIn: false}),
 }));
+
+// Mock server-only to prevent errors in tests
+vi.mock("server-only", () => {
+  return {};
+});
+
+// Mute console output during tests to keep the output clean
+vi.spyOn(console, "log").mockImplementation(() => {});
+vi.spyOn(console, "info").mockImplementation(() => {});
+vi.spyOn(console, "warn").mockImplementation(() => {});
+vi.spyOn(console, "error").mockImplementation(() => {});
+vi.spyOn(console, "debug").mockImplementation(() => {});

@@ -518,6 +518,8 @@ describe("resetDatabaseInstance and getDatabaseInstance", () => {
     // @ts-expect-error - Intentionally setting to undefined for testing
     delete globalThis.indexedDB;
 
+    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
     const {getDatabaseInstance, resetDatabaseInstance} = await import("./indexedDBStorage");
 
     resetDatabaseInstance();
@@ -526,6 +528,7 @@ describe("resetDatabaseInstance and getDatabaseInstance", () => {
     expect(db).toBeNull();
 
     globalThis.indexedDB = originalIndexedDB;
+    consoleWarnSpy.mockRestore();
   });
 });
 

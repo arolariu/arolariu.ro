@@ -16,6 +16,19 @@ export default mergeConfig(
     plugins: [react()],
     test: {
       setupFiles: [resolve(__dirname, "../../vitest.setup.ts"), resolve(__dirname, "./vitest.setup.ts")],
+      coverage: {
+        exclude: [
+          "**/instrumentation.server.ts",
+          "**/instrumentation.ts",
+          "**/node_modules/**",
+          "**/dist/**",
+          "**/.next/**",
+          "**/.rslib/**",
+          "**/build/**",
+          "**/storybook-static/**",
+          "**/*.spec.{ts,tsx,js,jsx}",
+        ],
+      },
     },
     resolve: {
       alias: {

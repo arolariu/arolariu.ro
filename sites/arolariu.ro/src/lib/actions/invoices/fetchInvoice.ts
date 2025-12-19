@@ -1,6 +1,6 @@
 "use server";
 
-import {addSpanEvent, logWithTrace, withSpan} from "@/telemetry";
+import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
 import type {Invoice} from "@/types/invoices";
 import {API_URL} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";

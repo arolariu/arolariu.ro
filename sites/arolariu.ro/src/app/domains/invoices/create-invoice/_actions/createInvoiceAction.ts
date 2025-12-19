@@ -1,8 +1,8 @@
 "use server";
 
+import {addSpanEvent, createCounter, createNextJsAttributes, logWithTrace, setSpanAttributes, withSpan} from "@/instrumentation.server";
 import {createInvoice} from "@/lib/actions/invoices/createInvoice";
 import {createInvoiceScan} from "@/lib/actions/invoices/createInvoiceScan";
-import {addSpanEvent, createCounter, createNextJsAttributes, logWithTrace, setSpanAttributes, withSpan} from "@/telemetry";
 import {CreateInvoiceDtoPayload, InvoiceScanType} from "@/types/invoices";
 import type {PendingInvoiceSubmission, PendingInvoiceSubmissionResult} from "../_types/InvoiceSubmission";
 

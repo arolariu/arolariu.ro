@@ -1,4 +1,6 @@
-import {addSpanEvent, logWithTrace, recordSpanError, withSpan} from "@/telemetry";
+import "server-only";
+
+import {addSpanEvent, logWithTrace, recordSpanError, withSpan} from "@/instrumentation.server";
 import {type JWTPayload, SignJWT, jwtVerify} from "jose";
 import {Blob} from "node:buffer";
 import {Resend} from "resend";
