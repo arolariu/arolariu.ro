@@ -44,12 +44,12 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npm run test:vitest",
+        "command": "npm run test",
         "cwd": "sites/arolariu.ro"
       },
       "configurations": {
         "unit": {
-          "command": "npm run test:vitest"
+          "command": "npm run test:unit"
         },
         "e2e": {
           "command": "npm run test:e2e"

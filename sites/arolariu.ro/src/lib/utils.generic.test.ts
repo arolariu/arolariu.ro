@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {COMMIT_SHA, generateGuid, SITE_ENV, SITE_NAME, SITE_URL, TIMESTAMP} from "./utils.generic";
 
 describe("generateGuid", () => {
@@ -188,6 +188,14 @@ describe("formatDate", () => {
     const formatted = formatDate("2023-07-04", {locale: "en-US", dateStyle: "long"});
     expect(formatted).toBe("July 4, 2023");
   });
+
+  it("should handle invalid input types gracefully", async () => {
+    const {formatDate} = await import("./utils.generic");
+    // @ts-expect-error - Testing invalid input
+    const formatted = formatDate(null, {locale: "en-US"});
+    // Current implementation defaults to current date if input is invalid/undefined
+    expect(formatted).toBeTruthy();
+  });
 });
 
 describe("Environment Variables", () => {
@@ -241,6 +249,34 @@ describe("Environment Variables", () => {
   it("should return empty string when TIMESTAMP is not set", () => {
     expect(TIMESTAMP).not.toBeNull();
     expect(TIMESTAMP).not.toBeUndefined();
+  });
+});
+
+describe("Environment Variables Fallback", () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    vi.resetModules();
+    process.env = {...originalEnv};
+    delete process.env["SITE_ENV"];
+    delete process.env["SITE_URL"];
+    delete process.env["SITE_NAME"];
+    delete process.env["COMMIT_SHA"];
+    delete process.env["TIMESTAMP"];
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("should fallback to empty string when env vars are missing", async () => {
+    const {COMMIT_SHA, SITE_ENV, SITE_NAME, SITE_URL, TIMESTAMP} = await import("./utils.generic");
+
+    expect(SITE_ENV).toBe("");
+    expect(SITE_URL).toBe("");
+    expect(SITE_NAME).toBe("");
+    expect(COMMIT_SHA).toBe("");
+    expect(TIMESTAMP).toBe("");
   });
 });
 

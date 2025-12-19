@@ -43,3 +43,8 @@ vi.mock("@clerk/nextjs", () => ({
   useUser: () => ({user: null, isLoaded: true, isSignedIn: false}),
   useAuth: () => ({userId: null, isLoaded: true, isSignedIn: false}),
 }));
+
+// Mock server-only to prevent errors in tests
+vi.mock("server-only", () => {
+  return {};
+});
