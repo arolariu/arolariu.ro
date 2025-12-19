@@ -128,6 +128,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   output: "standalone",
 
+  serverExternalPackages: ["require-in-the-middle", "import-in-the-middle", "@opentelemetry/instrumentation", "@opentelemetry/sdk-node"],
+
   experimental: {
     // Enable server source maps in development for debugging
     serverSourceMaps: isDebugBuild,
