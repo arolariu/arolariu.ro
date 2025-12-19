@@ -54,8 +54,27 @@ env:
   COMMIT_SHA: ${{ github.sha }}
 
 jobs:
-  build-and-deploy:
+  test:
     if: github.repository == 'arolariu/arolariu.ro'
+    name: 🧪 Testing the CV platform...
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛫 Checking out the branch inside the runner environment...
+        uses: actions/checkout@v6
+
+      - name: 📦 Setup workspace
+        uses: ./.github/actions/setup-workspace
+        with:
+          node-version: '24'
+          cache-key-prefix: 'cv'
+
+      - name: 🧪 Running unit tests...
+        working-directory: './sites/cv.arolariu.ro'
+        run: npm run test:unit
+
+  build-and-deploy:
+    if: github.repository == 'arolariu/arolariu.ro' && (needs.test.result == 'success' || needs.test.result == 'skipped')
+    needs: test
     name: 🚀 Building and deploying the CV platform (cv.arolariu.ro)...
     runs-on: ubuntu-latest
     environment:
