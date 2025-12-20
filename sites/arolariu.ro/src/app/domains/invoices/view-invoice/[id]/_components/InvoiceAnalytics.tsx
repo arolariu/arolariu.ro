@@ -1,5 +1,6 @@
 "use client";
 
+import {useUserInformation} from "@/hooks";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@arolariu/components";
 import {TbChartBar, TbTrendingUp} from "react-icons/tb";
 import {useInvoiceContext} from "../_context/InvoiceContext";
@@ -24,6 +25,11 @@ import {SpendingTrendChart} from "./charts/SpendingTrendChart";
 
 export function InvoiceAnalytics(): React.JSX.Element {
   const {invoice, merchant} = useInvoiceContext();
+  const {
+    userInformation: {userIdentifier},
+  } = useUserInformation();
+
+  const isOwner = invoice.userIdentifier === userIdentifier;
   const currency = invoice.paymentInformation.currency.symbol;
   const categoryData = getCategorySpending(invoice.items);
   const priceData = getPriceDistribution(invoice.items);
@@ -51,12 +57,14 @@ export function InvoiceAnalytics(): React.JSX.Element {
               <TbChartBar className='mr-1.5 h-3.5 w-3.5' />
               This Invoice
             </TabsTrigger>
-            <TabsTrigger
-              value='compare'
-              className='text-xs sm:text-sm'>
-              <TbTrendingUp className='mr-1.5 h-3.5 w-3.5' />
-              Comparison
-            </TabsTrigger>
+            {Boolean(isOwner) && (
+              <TabsTrigger
+                value='compare'
+                className='text-xs sm:text-sm'>
+                <TbTrendingUp className='mr-1.5 h-3.5 w-3.5' />
+                Comparison
+              </TabsTrigger>
+            )}
           </TabsList>
         </div>
 
@@ -100,44 +108,46 @@ export function InvoiceAnalytics(): React.JSX.Element {
         </TabsContent>
 
         {/* Comparison Analytics */}
-        <TabsContent
-          value='compare'
-          className='mt-0'>
-          <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-            {/* Comparison Stats */}
-            <div className='animate-in fade-in slide-in-from-bottom-4 duration-300'>
-              <ComparisonStatsCard
-                stats={comparisonStats}
-                currency={currency}
-              />
-            </div>
+        {Boolean(isOwner) && (
+          <TabsContent
+            value='compare'
+            className='mt-0'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+              {/* Comparison Stats */}
+              <div className='animate-in fade-in slide-in-from-bottom-4 duration-300'>
+                <ComparisonStatsCard
+                  stats={comparisonStats}
+                  currency={currency}
+                />
+              </div>
 
-            {/* Spending Trend */}
-            <div className='animate-in fade-in slide-in-from-bottom-4 delay-75 duration-300 sm:col-span-1 lg:col-span-2'>
-              <SpendingTrendChart
-                data={trendData}
-                currency={currency}
-              />
-            </div>
+              {/* Spending Trend */}
+              <div className='animate-in fade-in slide-in-from-bottom-4 delay-75 duration-300 sm:col-span-1 lg:col-span-2'>
+                <SpendingTrendChart
+                  data={trendData}
+                  currency={currency}
+                />
+              </div>
 
-            {/* Category Comparison */}
-            <div className='animate-in fade-in slide-in-from-bottom-4 delay-100 duration-300 sm:col-span-2 lg:col-span-2'>
-              <CategoryComparisonChart
-                data={categoryComparison}
-                currency={currency}
-              />
-            </div>
+              {/* Category Comparison */}
+              <div className='animate-in fade-in slide-in-from-bottom-4 delay-100 duration-300 sm:col-span-2 lg:col-span-2'>
+                <CategoryComparisonChart
+                  data={categoryComparison}
+                  currency={currency}
+                />
+              </div>
 
-            {/* Merchant Breakdown */}
-            <div className='animate-in fade-in slide-in-from-bottom-4 delay-150 duration-300'>
-              <MerchantBreakdownChart
-                data={merchantBreakdown}
-                currency={currency}
-                currentMerchant={merchant.name}
-              />
+              {/* Merchant Breakdown */}
+              <div className='animate-in fade-in slide-in-from-bottom-4 delay-150 duration-300'>
+                <MerchantBreakdownChart
+                  data={merchantBreakdown}
+                  currency={currency}
+                  currentMerchant={merchant.name}
+                />
+              </div>
             </div>
-          </div>
-        </TabsContent>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

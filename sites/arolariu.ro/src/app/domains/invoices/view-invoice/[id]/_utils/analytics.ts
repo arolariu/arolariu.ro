@@ -321,3 +321,54 @@ export function computeBudgetImpact(paymentInformation: PaymentInformation): Bud
     isNearLimit,
   };
 }
+
+export type DayData = {
+  amount: number;
+  count: number;
+};
+
+export type ShoppingPatterns = {
+  spendingByDay: Record<number, DayData>;
+  avgDaysBetween: number;
+};
+
+export function getShoppingPatterns(month: Date): ShoppingPatterns {
+  const year = month.getFullYear();
+  const currentMonth = month.getMonth();
+
+  // Combine all invoices including current
+  // In a real app, this would fetch from API based on the month
+  const allInvoices = generateRandomInvoices(50);
+
+  // Filter invoices for this month
+  const monthInvoices = allInvoices.filter((inv) => {
+    const invDate = new Date(inv.createdAt);
+    return invDate.getMonth() === currentMonth && invDate.getFullYear() === year;
+  });
+
+  // Create spending map by day
+  const spending = monthInvoices.reduce(
+    (acc, inv) => {
+      const day = new Date(inv.createdAt).getDate();
+      if (!acc[day]) {
+        acc[day] = {amount: 0, count: 0};
+      }
+      acc[day].amount += inv.paymentInformation.totalCostAmount;
+      acc[day].count += 1;
+      return acc;
+    },
+    {} as Record<number, DayData>,
+  );
+
+  // Calculate average days between shopping trips
+  const shoppingDays = Object.keys(spending)
+    .map(Number)
+    .sort((a, b) => a - b);
+  let totalGap = 0;
+  for (let i = 1; i < shoppingDays.length; i++) {
+    totalGap += shoppingDays[i]! - shoppingDays[i - 1]!;
+  }
+  const avg = shoppingDays.length > 1 ? totalGap / (shoppingDays.length - 1) : 0;
+
+  return {spendingByDay: spending, avgDaysBetween: avg};
+}

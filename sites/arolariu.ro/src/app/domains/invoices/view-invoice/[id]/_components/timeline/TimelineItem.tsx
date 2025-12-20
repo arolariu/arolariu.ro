@@ -5,28 +5,30 @@
 
 "use client";
 
+import {formatDate} from "@/lib/utils.generic";
 import {Button, cn, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
+import {useLocale} from "next-intl";
 import {TbInfoCircle} from "react-icons/tb";
 import {TimelineEvent} from "../../_types/timeline";
-import {formatTimelineTime, getEventTooltipContent, getRelativeTime} from "../../_utils/timeline";
+import {getEventTooltipContent, getRelativeTime} from "../../_utils/timeline";
 
 /**
  * Props for the TimelineItem component.
  * @interface TimelineItemProps
  */
-interface TimelineItemProps {
+type Props = Readonly<{
   /** The timeline event to display */
   readonly event: TimelineEvent;
   /** Icon element to display */
   readonly icon: React.ReactNode;
   /** Whether this is the last item in the group */
   readonly isLast?: boolean;
-}
+}>;
 
 /**
  * Renders a single timeline event with icon, details, and tooltip.
  *
- * @param {TimelineItemProps} props - Component props
+ * @param {Props} props - Component props
  * @returns {JSX.Element} The timeline item component
  *
  * @example
@@ -38,7 +40,8 @@ interface TimelineItemProps {
  * />
  * ```
  */
-export function TimelineItem({event, icon, isLast = false}: Readonly<TimelineItemProps>): React.JSX.Element {
+export function TimelineItem({event, icon, isLast = false}: Readonly<Props>): React.JSX.Element {
+  const locale = useLocale();
   const tooltipContent = getEventTooltipContent(event.type, event.metadata);
 
   return (
@@ -84,7 +87,7 @@ export function TimelineItem({event, icon, isLast = false}: Readonly<TimelineIte
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <span className='text-muted-foreground shrink-0 text-xs'>{formatTimelineTime(event.date)}</span>
+            <span className='text-muted-foreground shrink-0 text-xs'>{formatDate(event.date, {locale})}</span>
           </div>
           <p className='text-muted-foreground mt-0.5 text-xs'>{event.description}</p>
           <p className='text-muted-foreground/70 mt-0.5 text-xs'>{getRelativeTime(event.date)}</p>
