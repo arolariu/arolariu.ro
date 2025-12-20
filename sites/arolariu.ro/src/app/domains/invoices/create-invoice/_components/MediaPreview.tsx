@@ -6,13 +6,13 @@ import {TbEdit, TbRotateClockwise, TbTrash} from "react-icons/tb";
 import {useInvoiceCreator} from "../_context/InvoiceCreatorContext";
 import type {PendingInvoiceSubmission} from "../_types/InvoiceSubmission";
 
-type MediaPreviewProps = {file: PendingInvoiceSubmission};
+type Props = Readonly<{file: PendingInvoiceSubmission}>;
 
 /**
  * Media preview component for invoice scans.
  * @returns JSX.Element that displays a preview of the invoice scan.
  */
-export default function MediaPreview({file}: Readonly<MediaPreviewProps>): React.JSX.Element {
+export default function MediaPreview({file}: Readonly<Props>): React.JSX.Element {
   const {rotateSubmissionPhoto, renameSubmission, removeSubmissions} = useInvoiceCreator();
   const showProcessing = Boolean(file.isProcessing);
   const imageAdjustments = file.type === "image" ? file.adjustments : undefined;
