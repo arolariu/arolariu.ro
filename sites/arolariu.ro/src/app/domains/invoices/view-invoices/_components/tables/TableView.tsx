@@ -1,4 +1,5 @@
 import {formatCurrency, formatDate} from "@/lib/utils.generic";
+import {useInvoicesStore} from "@/stores";
 import {InvoiceCategory, type Invoice} from "@/types/invoices";
 import {
   Badge,
@@ -18,11 +19,11 @@ import {
 } from "@arolariu/components";
 import {useLocale} from "next-intl";
 import Link from "next/link";
-import {useCallback, useState} from "react";
+import {useCallback} from "react";
 import {TbArrowsUpDown, TbEye} from "react-icons/tb";
 import TableViewActions from "./TableViewActions";
 
-type TableViewProps = {
+type Props = Readonly<{
   invoices: ReadonlyArray<Invoice> | Invoice[];
   pageSize: number;
   currentPage: number;
@@ -30,31 +31,45 @@ type TableViewProps = {
   handlePrevPage: () => void;
   handleNextPage: () => void;
   handlePageSizeChange: (size: number) => void;
-};
+}>;
 
-export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element => {
+export const TableView = (props: Readonly<Props>): React.JSX.Element => {
   const locale = useLocale();
   const {invoices, currentPage, pageSize, totalPages, handlePrevPage, handleNextPage, handlePageSizeChange} = props;
-  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState<ReadonlyArray<string>>([]);
+  const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
+  const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
 
   const handleSelectInvoice = useCallback(
     (invoiceId: string) => {
-      if (selectedInvoiceIds.includes(invoiceId)) {
-        setSelectedInvoiceIds(selectedInvoiceIds.filter((id) => id !== invoiceId));
+      const invoice = invoices.find((inv) => inv.id === invoiceId);
+      if (!invoice) return;
+
+      const isSelected = selectedInvoices.some((inv) => inv.id === invoiceId);
+      if (isSelected) {
+        setSelectedInvoices(selectedInvoices.filter((inv) => inv.id !== invoiceId));
       } else {
-        setSelectedInvoiceIds([...selectedInvoiceIds, invoiceId]);
+        setSelectedInvoices([...selectedInvoices, invoice]);
       }
     },
-    [selectedInvoiceIds],
+    [invoices, selectedInvoices, setSelectedInvoices],
   );
 
   const handleSelectAllInvoices = useCallback(() => {
-    if (selectedInvoiceIds.length === invoices.length) {
-      setSelectedInvoiceIds([]);
+    const allPageInvoicesSelected = invoices.every((invoice) => selectedInvoices.some((selected) => selected.id === invoice.id));
+
+    if (allPageInvoicesSelected) {
+      const pageInvoiceIds = new Set(invoices.map((inv) => inv.id));
+      setSelectedInvoices(selectedInvoices.filter((inv) => !pageInvoiceIds.has(inv.id)));
     } else {
-      setSelectedInvoiceIds(invoices.map((invoice) => invoice.id));
+      const newSelection = [...selectedInvoices];
+      invoices.forEach((invoice) => {
+        if (!newSelection.some((selected) => selected.id === invoice.id)) {
+          newSelection.push(invoice);
+        }
+      });
+      setSelectedInvoices(newSelection);
     }
-  }, [invoices, selectedInvoiceIds]);
+  }, [invoices, selectedInvoices, setSelectedInvoices]);
 
   if (invoices.length === 0) {
     return (
@@ -64,6 +79,10 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
     );
   }
 
+  const selectedCountOnPage = invoices.filter((inv) => selectedInvoices.some((s) => s.id === inv.id)).length;
+  const isAllSelected = invoices.length > 0 && selectedCountOnPage === invoices.length;
+  const isIndeterminate = selectedCountOnPage > 0 && selectedCountOnPage < invoices.length;
+
   return (
     <Table>
       <TableHeader>
@@ -71,10 +90,7 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
           <TableHead className='print:hidden'>
             <Checkbox
               className='bg-background/80 backdrop-blur-sm'
-              checked={
-                selectedInvoiceIds.length === invoices.length
-                || (selectedInvoiceIds.length > 0 && selectedInvoiceIds.length < invoices.length && "indeterminate")
-              }
+              checked={isAllSelected || (isIndeterminate && "indeterminate")}
               onCheckedChange={handleSelectAllInvoices}
               aria-label='Select all invoices'
             />
@@ -107,7 +123,7 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
             <TableRow key={invoice.id}>
               <TableCell className='print:hidden'>
                 <Checkbox
-                  checked={selectedInvoiceIds.includes(invoice.id)}
+                  checked={selectedInvoices.some((s) => s.id === invoice.id)}
                   // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
                   onCheckedChange={() => handleSelectInvoice(invoice.id)}
                   aria-label={`Select invoice ${invoice.id}`}
@@ -120,7 +136,18 @@ export const TableView = (props: Readonly<TableViewProps>): React.JSX.Element =>
               <TableCell>
                 <Badge variant={invoice.category % 200 === 0 ? "default" : "secondary"}>{InvoiceCategory[invoice.category]}</Badge>
               </TableCell>
-              <TableCell>{formatDate(invoice.createdAt, {locale})}</TableCell>
+              <TableCell>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className='cursor-help'>{formatDate(invoice.createdAt, {locale})} </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{new Date(invoice.createdAt).toUTCString()}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </TableCell>
               <TableCell>
                 {formatCurrency(invoice.paymentInformation.totalCostAmount, {
                   locale,

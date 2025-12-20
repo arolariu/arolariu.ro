@@ -59,7 +59,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
         <div
           key={invoice.id}
           className='relative'>
-          <div className='absolute top-2 left-2 z-10'>
+          <div className='absolute top-2 left-2 z-10 print:hidden'>
             <Checkbox
               checked={selectedInvoices.includes(invoice)}
               // eslint-disable-next-line react/jsx-no-bind -- inline fn for ease.
@@ -78,7 +78,7 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
             />
             <CardHeader className='mt-6 pt-4 pb-2'>
               <CardTitle className='text-lg'>{invoice.name}</CardTitle>
-              <div className='absolute top-80 right-2 z-10 flex gap-1'>
+              <div className='absolute top-80 right-2 z-10 flex gap-1 print:hidden'>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger
