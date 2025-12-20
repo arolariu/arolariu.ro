@@ -33,7 +33,7 @@ export async function fetchBFFUserFromAuthService(): Promise<Readonly<UserInform
     if (isAuthenticated) {
       ("use cache");
       const user = await currentUser();
-      const userIdentifier = generateGuid(userId);
+      const userIdentifier = generateGuid(user?.primaryEmailAddress?.emailAddress ?? userId);
 
       const currentTimestamp = Math.floor(Date.now() / 1000);
       // todo: we don't store the generated token, so we fallback to 5 minutes expiration time.

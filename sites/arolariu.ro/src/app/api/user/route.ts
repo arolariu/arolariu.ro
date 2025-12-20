@@ -156,7 +156,7 @@ export async function GET(): Promise<NextResponse<Readonly<UserInformation>>> {
             logWithTrace("info", "Fetching authenticated user clerk information", {userId}, "api");
 
             const user = await currentUser();
-            const userIdentifier = generateGuid(userId);
+            const userIdentifier = generateGuid(user?.primaryEmailAddress?.emailAddress ?? userId);
             const currentTimestamp = Math.floor(Date.now() / 1000);
             // todo: we don't store the generated token, so we fallback to 5 minutes expiration time.
             const expirationTime = currentTimestamp + 300; // 5 minute expiration
