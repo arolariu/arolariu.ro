@@ -16,6 +16,7 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     pool: "forks",
+    setupFiles: ["./vitest.setup.ts"],
     testTimeout: 10000, // 10 seconds for each test
     hookTimeout: 20000, // 20 seconds for before/after hooks
     teardownTimeout: 5000, // 5 seconds for teardown
