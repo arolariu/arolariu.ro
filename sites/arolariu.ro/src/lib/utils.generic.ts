@@ -64,6 +64,35 @@ export const TIMESTAMP = process.env["TIMESTAMP"] ?? "";
 
 /* v8 ignore stop */
 
+// ============================================================================
+// Sharing Constants
+// ============================================================================
+
+/**
+ * The maximum possible GUID value (all 9s).
+ *
+ * @remarks
+ * Used as a sentinel value to represent special states such as "public" access.
+ * For example, when this GUID is present in an invoice's `sharedWith` array,
+ * the invoice is publicly accessible to anyone with the link.
+ *
+ * **Value**: `"99999999-9999-9999-9999-999999999999"`
+ *
+ * @see {@link EMPTY_GUID} - The minimum GUID value (all 0s)
+ */
+export const LAST_GUID = "99999999-9999-9999-9999-999999999999";
+
+/**
+ * Empty GUID representing no value or uninitialized state (all 0s).
+ *
+ * @remarks
+ * Used as a placeholder or default value when a GUID is required but
+ * no meaningful value exists.
+ *
+ * **Value**: `"00000000-0000-0000-0000-000000000000"`
+ */
+export const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
+
 /**
  * Generates a UUID v4 (random) or v5 (namespaced) string.
  *
