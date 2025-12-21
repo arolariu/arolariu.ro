@@ -1,6 +1,7 @@
 "use client";
 
 import DeleteInvoiceDialog from "../_dialogs/DeleteInvoiceDialog";
+import ShareInvoiceDialog from "../_dialogs/ShareInvoiceDialog";
 import AnalyzeDialog from "../edit-invoice/[id]/_components/dialogs/AnalyzeDialog";
 import InvoiceFeedbackDialog from "../edit-invoice/[id]/_components/dialogs/FeedbackDialog";
 import InvoiceImageDialog from "../edit-invoice/[id]/_components/dialogs/ImageDialog";
@@ -9,7 +10,6 @@ import InvoiceMerchantDialog from "../edit-invoice/[id]/_components/dialogs/Merc
 import InvoiceMerchantReceiptsDialog from "../edit-invoice/[id]/_components/dialogs/MerchantReceiptsDialog";
 import InvoiceMetadataDialog from "../edit-invoice/[id]/_components/dialogs/MetadataDialog";
 import InvoiceRecipeDialog from "../edit-invoice/[id]/_components/dialogs/RecipeDialog";
-import InvoiceSharingDialog from "../edit-invoice/[id]/_components/dialogs/SharingDialog";
 import ShareAnalyticsDialog from "../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog";
 import InvoicesExportDialog from "../view-invoices/_components/dialogs/ExportDialog";
 import InvoicesImportDialog from "../view-invoices/_components/dialogs/ImportDialog";
@@ -44,8 +44,6 @@ export default function DialogContainer(): React.JSX.Element | null {
       return <InvoiceImageDialog />;
     case "EDIT_INVOICE__RECIPE":
       return <InvoiceRecipeDialog />;
-    case "EDIT_INVOICE__SHARE":
-      return <InvoiceSharingDialog />;
     // view-invoice/[id] Dialogs
     case "VIEW_INVOICE__SHARE_ANALYTICS":
       return <ShareAnalyticsDialog />;
@@ -59,6 +57,8 @@ export default function DialogContainer(): React.JSX.Element | null {
     // shared dialogs
     case "SHARED__INVOICE_DELETE":
       return <DeleteInvoiceDialog />;
+    case "SHARED__INVOICE_SHARE":
+      return <ShareInvoiceDialog />;
     default:
       return null;
   }
