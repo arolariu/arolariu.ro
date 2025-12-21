@@ -3,6 +3,7 @@ namespace arolariu.Backend.Domain.Invoices.Brokers.AnalysisBrokers.IdentifierBro
 using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
+using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
 using arolariu.Backend.Domain.Invoices.DTOs;
 
 /// <summary>
@@ -42,4 +43,13 @@ public interface IFormRecognizerBroker
   /// <returns>The enriched invoice aggregate (same instance reference).</returns>
   /// <exception cref="System.ArgumentNullException">Thrown when <paramref name="invoice"/> is null.</exception>
   ValueTask<Invoice> PerformOcrAnalysisOnSingleInvoice(Invoice invoice, AnalysisOptions options);
+
+  /// <summary>
+  /// Performs optical character recognition + structural field extraction on a single merchant document image
+  /// </summary>
+  /// <param name="scan"></param>
+  /// <param name="merchant"></param>
+  /// <param name="options"></param>
+  /// <returns></returns>
+  ValueTask<Merchant> PerformOcrAnalysisOnSingleMerchant(InvoiceScan scan, Merchant merchant, AnalysisOptions options);
 }
