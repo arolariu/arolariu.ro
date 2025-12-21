@@ -60,6 +60,11 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// <param name="IsImportant">
 /// Optional importance flag update. Null preserves the existing flag value.
 /// </param>
+/// <param name="SharedWith">
+/// Optional list of user identifiers to share the invoice with. When provided,
+/// this completely replaces the existing SharedWith list. Use an empty list to
+/// remove all shares. Null preserves the existing sharing settings.
+/// </param>
 /// <param name="AdditionalMetadata">
 /// Optional metadata entries to merge with existing metadata. Existing keys are
 /// overwritten; new keys are added. Null or empty dictionary means no metadata changes.
@@ -91,6 +96,7 @@ public readonly record struct PatchInvoiceRequestDto(
   PaymentInformation? PaymentInformation,
   Guid? MerchantReference,
   bool? IsImportant,
+  ICollection<Guid>? SharedWith,
   IDictionary<string, object>? AdditionalMetadata)
 {
   /// <summary>
@@ -164,9 +170,20 @@ public readonly record struct PatchInvoiceRequestDto(
       patched.PossibleRecipes.Add(recipe);
     }
 
-    foreach (var sharedUser in existing.SharedWith)
+    // SharedWith: Replace entirely if provided, otherwise copy from existing
+    if (SharedWith is not null)
     {
-      patched.SharedWith.Add(sharedUser);
+      foreach (var sharedUser in SharedWith)
+      {
+        patched.SharedWith.Add(sharedUser);
+      }
+    }
+    else
+    {
+      foreach (var sharedUser in existing.SharedWith)
+      {
+        patched.SharedWith.Add(sharedUser);
+      }
     }
 
     // Merge metadata (existing first, then overlay with new)
