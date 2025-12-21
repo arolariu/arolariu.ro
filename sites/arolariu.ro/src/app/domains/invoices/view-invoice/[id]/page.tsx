@@ -1,6 +1,7 @@
 import fetchInvoice from "@/lib/actions/invoices/fetchInvoice";
 import fetchMerchant from "@/lib/actions/invoices/fetchMerchant";
-import {fetchAaaSUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {fetchBFFUserFromAuthService} from "@/lib/actions/user/fetchUser";
+import {EMPTY_GUID, LAST_GUID} from "@/lib/utils.generic";
 import {createMetadata} from "@/metadata";
 import RenderForbiddenScreen from "@/presentation/ForbiddenScreen";
 import type {Metadata} from "next";
@@ -124,12 +125,21 @@ export default async function ViewInvoicePage(
   const pageParams = await props.params;
   const invoiceIdentifier = pageParams.id;
 
-  const {isAuthenticated} = await fetchAaaSUserFromAuthService();
-  if (!isAuthenticated) return <RenderForbiddenScreen />;
-
   // By fetching straight from the server, we ensure we have the latest snapshot.
   const invoice = await fetchInvoice({invoiceId: invoiceIdentifier});
   const merchant = await fetchMerchant({merchantId: invoice.merchantReference});
+
+  const {userIdentifier} = await fetchBFFUserFromAuthService();
+  const isGuestUser = userIdentifier === EMPTY_GUID;
+  const isPublicInvoice = invoice.sharedWith.includes(LAST_GUID);
+  const isOwner = invoice.userIdentifier === userIdentifier;
+  const isSharedWithUser = invoice.sharedWith.includes(userIdentifier);
+
+  // Access rules:
+  // - Guest users can only view public invoices
+  // - Authenticated users can view if: owner, shared with them, or public
+  const canAccess = isPublicInvoice || (!isGuestUser && (isOwner || isSharedWithUser));
+  if (!canAccess) return <RenderForbiddenScreen />;
 
   return (
     <main className='px-5 py-24'>
