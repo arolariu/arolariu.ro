@@ -1,6 +1,7 @@
 "use server";
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {validateStringIsGuidType} from "@/lib/utils.generic";
 import type {Merchant} from "@/types/invoices";
 import {API_URL} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
@@ -22,6 +23,10 @@ export default async function fetchMerchant({merchantId}: ServerActionInputType)
 
   return withSpan("api.actions.invoices.fetchMerchant", async () => {
     try {
+      // Step 0. Validate input is correct
+      logWithTrace("info", "Validating input for fetchMerchant", {merchantId}, "server");
+      validateStringIsGuidType(merchantId, "merchantId");
+
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication", {}, "server");

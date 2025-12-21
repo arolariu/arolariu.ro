@@ -20,9 +20,12 @@ vi.mock("../user/fetchUser", () => ({
   fetchBFFUserFromAuthService: vi.fn(),
 }));
 
+// Valid UUID v4 for testing
+const VALID_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+
 describe("patchInvoice", () => {
   const mockToken = "mock-jwt-token";
-  const mockInvoiceId = "invoice-123";
+  const mockInvoiceId = VALID_UUID;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -152,7 +155,7 @@ describe("patchInvoice", () => {
 
       const result = await patchInvoice({invoiceId: "", payload});
 
-      expect(result).toEqual({success: false, error: "Invoice ID is required"});
+      expect(result).toEqual({success: false, error: "Invalid invoiceId: expected a non-empty string, got string"});
       expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 
@@ -161,7 +164,7 @@ describe("patchInvoice", () => {
 
       const result = await patchInvoice({invoiceId: "   ", payload});
 
-      expect(result).toEqual({success: false, error: "Invoice ID is required"});
+      expect(result).toEqual({success: false, error: 'Invalid invoiceId: "   " is not a valid UUID v4'});
       expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 

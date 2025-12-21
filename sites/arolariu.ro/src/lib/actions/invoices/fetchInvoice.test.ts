@@ -17,6 +17,9 @@ vi.mock("../user/fetchUser", () => ({
   fetchBFFUserFromAuthService: vi.fn(),
 }));
 
+// Valid UUID v4 for testing
+const VALID_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+
 describe("fetchInvoice", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -28,9 +31,9 @@ describe("fetchInvoice", () => {
   });
 
   it("should fetch a single invoice successfully", async () => {
-    const mockInvoice = {id: "1", totalAmount: 100};
+    const mockInvoice = {id: VALID_UUID, totalAmount: 100};
     const mockToken = "mock-token";
-    const invoiceId = "1";
+    const invoiceId = VALID_UUID;
 
     (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
     (global.fetch as any).mockResolvedValue({
@@ -52,7 +55,7 @@ describe("fetchInvoice", () => {
 
   it("should throw an error if fetch fails", async () => {
     const mockToken = "mock-token";
-    const invoiceId = "1";
+    const invoiceId = VALID_UUID;
     const errorMessage = "Not Found";
 
     (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
@@ -68,7 +71,7 @@ describe("fetchInvoice", () => {
 
   it("should throw an error if fetchBFFUserFromAuthService fails", async () => {
     const error = new Error("Auth failed");
-    const invoiceId = "1";
+    const invoiceId = VALID_UUID;
     (fetchBFFUserFromAuthService as any).mockRejectedValue(error);
 
     await expect(fetchInvoice({invoiceId})).rejects.toThrow("Auth failed");

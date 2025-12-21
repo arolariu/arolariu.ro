@@ -17,6 +17,7 @@
  */
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {validateStringIsGuidType} from "@/lib/utils.generic";
 import type {Invoice, InvoiceCategory, PaymentInformation} from "@/types/invoices";
 import {API_URL} from "../../utils.server";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
@@ -37,7 +38,7 @@ import {fetchBFFUserFromAuthService} from "../user/fetchUser";
  * @property sharedWith - Optional list of user GUIDs to share with (replaces existing)
  * @property additionalMetadata - Optional metadata entries to merge
  */
-export type PatchInvoicePayload = Readonly<{
+type PatchInvoicePayload = Readonly<{
   name?: string;
   description?: string;
   category?: InvoiceCategory;
@@ -55,7 +56,7 @@ export type PatchInvoicePayload = Readonly<{
  * @property invoice - The updated invoice (present on success)
  * @property error - Error message (present on failure)
  */
-export type PatchInvoiceResult = Readonly<{success: true; invoice: Invoice} | {success: false; error: string}>;
+type PatchInvoiceResult = Readonly<{success: true; invoice: Invoice} | {success: false; error: string}>;
 
 type ServerActionInputType = Readonly<{
   /** The identifier of the invoice to patch. */
@@ -112,10 +113,8 @@ export default async function patchInvoice({invoiceId, payload}: ServerActionInp
 
   return withSpan("api.actions.invoices.patchInvoice", async () => {
     try {
-      // Validate input
-      if (!invoiceId || invoiceId.trim() === "") {
-        return {success: false, error: "Invoice ID is required"};
-      }
+      // Step 0. Validate input is correct
+      validateStringIsGuidType(invoiceId, "invoiceId");
 
       if (!payload || Object.keys(payload).length === 0) {
         return {success: false, error: "Patch payload cannot be empty"};

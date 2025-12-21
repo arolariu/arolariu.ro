@@ -17,6 +17,9 @@ vi.mock("../user/fetchUser", () => ({
   fetchBFFUserFromAuthService: vi.fn(),
 }));
 
+// Valid UUID v4 for testing
+const VALID_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+
 describe("attachInvoiceScan", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -29,7 +32,7 @@ describe("attachInvoiceScan", () => {
 
   it("should attach an invoice scan successfully", async () => {
     const mockToken = "mock-token";
-    const invoiceId = "1";
+    const invoiceId = VALID_UUID;
     const payload = {some: "data"} as any;
 
     (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
@@ -52,7 +55,7 @@ describe("attachInvoiceScan", () => {
 
   it("should throw an error if attachment fails", async () => {
     const mockToken = "mock-token";
-    const invoiceId = "1";
+    const invoiceId = VALID_UUID;
     const payload = {some: "data"} as any;
     const errorMessage = "Bad Request";
 

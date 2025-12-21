@@ -17,6 +17,9 @@ vi.mock("../user/fetchUser", () => ({
   fetchBFFUserFromAuthService: vi.fn(),
 }));
 
+// Valid UUID v4 for testing
+const VALID_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+
 describe("fetchMerchant", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -28,9 +31,9 @@ describe("fetchMerchant", () => {
   });
 
   it("should fetch a merchant successfully", async () => {
-    const mockMerchant = {id: "1", name: "Test Merchant"};
+    const mockMerchant = {id: VALID_UUID, name: "Test Merchant"};
     const mockToken = "mock-token";
-    const merchantId = "1";
+    const merchantId = VALID_UUID;
 
     (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
     (global.fetch as any).mockResolvedValue({
@@ -52,7 +55,7 @@ describe("fetchMerchant", () => {
 
   it("should throw an error if fetch fails", async () => {
     const mockToken = "mock-token";
-    const merchantId = "1";
+    const merchantId = VALID_UUID;
     const errorMessage = "Not Found";
 
     (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});

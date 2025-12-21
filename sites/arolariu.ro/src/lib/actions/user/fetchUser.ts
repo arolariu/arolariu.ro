@@ -1,6 +1,6 @@
 "use server";
 
-import {generateGuid} from "@/lib/utils.generic";
+import {EMPTY_GUID, generateGuid} from "@/lib/utils.generic";
 import {API_JWT, createJwtToken} from "@/lib/utils.server";
 import type {UserInformation} from "@/types";
 import {auth, currentUser, type User} from "@clerk/nextjs/server";
@@ -66,7 +66,7 @@ export async function fetchBFFUserFromAuthService(): Promise<Readonly<UserInform
 
       return userInformation;
     } else {
-      const guestIdentifier = "00000000-0000-0000-0000-000000000000";
+      const guestIdentifier = EMPTY_GUID;
       const currentTimestamp = Math.floor(Date.now() / 1000);
       // todo: we don't store the generated token, so we fallback to 5 minutes expiration time.
       const expirationTime = currentTimestamp + 300; // 5 minute expiration

@@ -94,6 +94,57 @@ export const LAST_GUID = "99999999-9999-9999-9999-999999999999";
 export const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 
 /**
+ * Regular expression pattern for validating UUID v4 format.
+ *
+ * @remarks
+ * Matches the standard UUID v4 format: `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`
+ * where `x` is any hexadecimal digit and `y` is one of `8`, `9`, `a`, or `b`.
+ *
+ * @see {@link https://tools.ietf.org/html/rfc4122#section-4.4} - RFC 4122 Section 4.4
+ */
+const UUID_V4_REGEX = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
+
+/**
+ * Asserts that a given string is a valid UUID v4 format.
+ *
+ * @remarks
+ * This function validates that the input string conforms to the UUID v4 specification.
+ * It throws an error if the input is not a valid UUID v4, making it suitable for
+ * runtime validation of identifiers in server actions.
+ *
+ * **Validation Rules:**
+ * - Must be a non-empty string
+ * - Must match the UUID v4 format: `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`
+ * - Version digit (position 14) must be `4`
+ * - Variant digit (position 19) must be `8`, `9`, `a`, or `b`
+ *
+ * @param input - The string to validate as a UUID v4.
+ * @param paramName - Optional parameter name for error messages (defaults to "identifier").
+ * @throws {Error} If the input is not a valid UUID v4 string.
+ *
+ * @example
+ * ```typescript
+ * // Valid UUID v4 - no error thrown
+ * assertValidGuid("550e8400-e29b-41d4-a716-446655440000");
+ *
+ * // Invalid - throws Error
+ * assertValidGuid("not-a-guid"); // Error: Invalid identifier: "not-a-guid" is not a valid UUID v4
+ *
+ * // With custom parameter name
+ * assertValidGuid(invoiceId, "invoiceId"); // Error: Invalid invoiceId: "..." is not a valid UUID v4
+ * ```
+ */
+export function validateStringIsGuidType(input: string, paramName = "identifier"): asserts input is string {
+  if (typeof input !== "string" || input.length === 0) {
+    throw new Error(`Invalid ${paramName}: expected a non-empty string, got ${typeof input}`);
+  }
+
+  if (!UUID_V4_REGEX.test(input)) {
+    throw new Error(`Invalid ${paramName}: "${input}" is not a valid UUID v4`);
+  }
+}
+
+/**
  * Generates a UUID v4 (random) or v5 (namespaced) string.
  *
  * @remarks

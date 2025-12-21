@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {COMMIT_SHA, generateGuid, SITE_ENV, SITE_NAME, SITE_URL, TIMESTAMP} from "./utils.generic";
+import {COMMIT_SHA, generateGuid, SITE_ENV, SITE_NAME, SITE_URL, TIMESTAMP, validateStringIsGuidType} from "./utils.generic";
 
 describe("generateGuid", () => {
   it("should generate a valid UUIDv4 string", () => {
@@ -390,6 +390,127 @@ describe("formatEnum", () => {
       const {formatEnum} = await import("./utils.generic");
       expect(formatEnum(SingleValue, 42)).toBe("Only");
       expect(formatEnum(SingleValue, 0)).toBe("");
+    });
+  });
+});
+
+describe("assertValidGuid", () => {
+  describe("valid UUID v4 inputs", () => {
+    it("should not throw for a valid UUID v4", () => {
+      expect(() => validateStringIsGuidType("550e8400-e29b-41d4-a716-446655440000")).not.toThrow();
+    });
+
+    it("should not throw for a valid UUID v4 with uppercase letters", () => {
+      expect(() => validateStringIsGuidType("550E8400-E29B-41D4-A716-446655440000")).not.toThrow();
+    });
+
+    it("should not throw for UUID v4 with mixed case", () => {
+      expect(() => validateStringIsGuidType("550e8400-E29B-41d4-A716-446655440000")).not.toThrow();
+    });
+
+    it("should not throw for generated UUIDs", () => {
+      const guid = generateGuid();
+      expect(() => validateStringIsGuidType(guid)).not.toThrow();
+    });
+
+    it("should accept UUID v4 with variant bits 8, 9, a, b", () => {
+      expect(() => validateStringIsGuidType("550e8400-e29b-41d4-8716-446655440000")).not.toThrow();
+      expect(() => validateStringIsGuidType("550e8400-e29b-41d4-9716-446655440000")).not.toThrow();
+      expect(() => validateStringIsGuidType("550e8400-e29b-41d4-a716-446655440000")).not.toThrow();
+      expect(() => validateStringIsGuidType("550e8400-e29b-41d4-b716-446655440000")).not.toThrow();
+    });
+  });
+
+  describe("invalid inputs - wrong format", () => {
+    it("should throw for an empty string", () => {
+      expect(() => validateStringIsGuidType("")).toThrow("Invalid identifier: expected a non-empty string");
+    });
+
+    it("should throw for a plain string", () => {
+      expect(() => validateStringIsGuidType("not-a-guid")).toThrow('Invalid identifier: "not-a-guid" is not a valid UUID v4');
+    });
+
+    it("should throw for UUID without hyphens", () => {
+      expect(() => validateStringIsGuidType("550e8400e29b41d4a716446655440000")).toThrow("is not a valid UUID v4");
+    });
+
+    it("should throw for UUID with wrong hyphen positions", () => {
+      expect(() => validateStringIsGuidType("550e840-0e29b-41d4-a716-446655440000")).toThrow("is not a valid UUID v4");
+    });
+
+    it("should throw for UUID that is too short", () => {
+      expect(() => validateStringIsGuidType("550e8400-e29b-41d4-a716")).toThrow("is not a valid UUID v4");
+    });
+
+    it("should throw for UUID that is too long", () => {
+      expect(() => validateStringIsGuidType("550e8400-e29b-41d4-a716-446655440000-extra")).toThrow("is not a valid UUID v4");
+    });
+  });
+
+  describe("invalid inputs - wrong version", () => {
+    it("should throw for UUID v1 (version digit is 1)", () => {
+      expect(() => validateStringIsGuidType("550e8400-e29b-11d4-a716-446655440000")).toThrow("is not a valid UUID v4");
+    });
+
+    it("should throw for UUID v3 (version digit is 3)", () => {
+      expect(() => validateStringIsGuidType("550e8400-e29b-31d4-a716-446655440000")).toThrow("is not a valid UUID v4");
+    });
+
+    it("should throw for UUID v5 (version digit is 5)", () => {
+      expect(() => validateStringIsGuidType("550e8400-e29b-51d4-a716-446655440000")).toThrow("is not a valid UUID v4");
+    });
+  });
+
+  describe("invalid inputs - wrong variant", () => {
+    it("should throw for UUID with variant digit 0", () => {
+      expect(() => validateStringIsGuidType("550e8400-e29b-41d4-0716-446655440000")).toThrow("is not a valid UUID v4");
+    });
+
+    it("should throw for UUID with variant digit c", () => {
+      expect(() => validateStringIsGuidType("550e8400-e29b-41d4-c716-446655440000")).toThrow("is not a valid UUID v4");
+    });
+
+    it("should throw for UUID with variant digit f", () => {
+      expect(() => validateStringIsGuidType("550e8400-e29b-41d4-f716-446655440000")).toThrow("is not a valid UUID v4");
+    });
+  });
+
+  describe("custom parameter name", () => {
+    it("should include custom parameter name in error message", () => {
+      expect(() => validateStringIsGuidType("invalid", "invoiceId")).toThrow('Invalid invoiceId: "invalid" is not a valid UUID v4');
+    });
+
+    it("should include custom parameter name for empty string error", () => {
+      expect(() => validateStringIsGuidType("", "userId")).toThrow("Invalid userId: expected a non-empty string");
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should throw for null coerced to string", () => {
+      // @ts-expect-error - Testing runtime behavior with invalid input
+      expect(() => validateStringIsGuidType(null)).toThrow("expected a non-empty string");
+    });
+
+    it("should throw for undefined coerced to string", () => {
+      // @ts-expect-error - Testing runtime behavior with invalid input
+      expect(() => validateStringIsGuidType(undefined)).toThrow("expected a non-empty string");
+    });
+
+    it("should throw for number input", () => {
+      // @ts-expect-error - Testing runtime behavior with invalid input
+      expect(() => validateStringIsGuidType(123)).toThrow("expected a non-empty string");
+    });
+
+    it("should throw for whitespace-only string", () => {
+      expect(() => validateStringIsGuidType("   ")).toThrow("is not a valid UUID v4");
+    });
+
+    it("should throw for UUID with leading/trailing whitespace", () => {
+      expect(() => validateStringIsGuidType(" 550e8400-e29b-41d4-a716-446655440000 ")).toThrow("is not a valid UUID v4");
+    });
+
+    it("should throw for special characters in UUID", () => {
+      expect(() => validateStringIsGuidType("550e8400-e29b-41d4-a716-44665544000g")).toThrow("is not a valid UUID v4");
     });
   });
 });

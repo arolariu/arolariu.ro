@@ -1,6 +1,7 @@
 "use server";
 
 import {addSpanEvent, logWithTrace, withSpan} from "@/instrumentation.server";
+import {validateStringIsGuidType} from "@/lib/utils.generic";
 import {API_URL} from "@/lib/utils.server";
 import type {CreateInvoiceScanDtoPayload} from "@/types/invoices";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
@@ -23,6 +24,10 @@ export async function attachInvoiceScan({invoiceId, payload}: ServerActionInputT
 
   return withSpan("api.actions.invoices.attachInvoiceScan", async () => {
     try {
+      // Step 0. Validate input is correct
+      logWithTrace("info", "Validating input for attachInvoiceScan", {invoiceId, payload}, "server");
+      validateStringIsGuidType(invoiceId, "invoiceId");
+
       // Step 1. Fetch user JWT for authentication
       addSpanEvent("bff.user.jwt.fetch.start");
       logWithTrace("info", "Fetching BFF user JWT for authentication", {}, "server");

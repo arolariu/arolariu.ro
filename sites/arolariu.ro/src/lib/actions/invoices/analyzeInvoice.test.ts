@@ -26,6 +26,9 @@ vi.mock("@/types/invoices", () => ({
 
 import {InvoiceAnalysisOptions} from "@/types/invoices";
 
+// Valid UUID v4 for testing
+const VALID_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
+
 describe("analyzeInvoice", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -39,8 +42,8 @@ describe("analyzeInvoice", () => {
   it("should analyze an invoice successfully", async () => {
     const mockToken = "mock-token";
     const mockUserIdentifier = "user-123";
-    const invoiceIdentifier = "1";
-    const analysisOptions = InvoiceAnalysisOptions.BasicAnalysis;
+    const invoiceIdentifier = VALID_UUID;
+    const analysisOptions = InvoiceAnalysisOptions.CompleteAnalysis;
 
     (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken, userIdentifier: mockUserIdentifier});
     (global.fetch as any).mockResolvedValue({
@@ -65,8 +68,8 @@ describe("analyzeInvoice", () => {
 
   it("should throw an error if analysis fails", async () => {
     const mockToken = "mock-token";
-    const invoiceIdentifier = "1";
-    const analysisOptions = InvoiceAnalysisOptions.BasicAnalysis;
+    const invoiceIdentifier = VALID_UUID;
+    const analysisOptions = InvoiceAnalysisOptions.CompleteAnalysis;
     const errorMessage = "Internal Server Error";
 
     (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken, userIdentifier: "user-123"});
