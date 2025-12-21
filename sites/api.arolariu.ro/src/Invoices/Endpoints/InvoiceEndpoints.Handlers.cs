@@ -17,6 +17,7 @@ using arolariu.Backend.Domain.Invoices.Services.Processing;
 
 using Microsoft.AspNetCore.Http;
 
+using static arolariu.Backend.Common.GuidConstants;
 using static arolariu.Backend.Common.Telemetry.Tracing.ActivityGenerators;
 
 public static partial class InvoiceEndpoints
@@ -85,12 +86,50 @@ public static partial class InvoiceEndpoints
     {
       using var activity = InvoicePackageTracing.StartActivity(nameof(RetrieveSpecificInvoiceAsync), ActivityKind.Server);
       var potentialUserIdentifier = RetrieveUserIdentifierClaimFromPrincipal(httpContext);
+      var isGuestUser = potentialUserIdentifier == EmptyGuid;
 
-      var possibleInvoice = await invoiceProcessingService
-        .ReadInvoice(id, potentialUserIdentifier)
-        .ConfigureAwait(false);
+      // Access Control Strategy:
+      // 1. If authenticated user, first try point read with partition key (efficient owner lookup)
+      // 2. If not found or guest user, do cross-partition read (for shared/public invoices)
+      // 3. Then apply access control matrix on the result
 
-      return possibleInvoice is null ? TypedResults.NotFound() : TypedResults.Ok(InvoiceResponseDto.FromInvoice(possibleInvoice));
+      Invoice? possibleInvoice = null;
+
+      // Step 1: Try point read with partition key if authenticated (owner scenario)
+      if (!isGuestUser)
+      {
+        possibleInvoice = await invoiceProcessingService
+          .ReadInvoice(id, potentialUserIdentifier)
+          .ConfigureAwait(false);
+      }
+
+      // Step 2: If not found (or guest), try cross-partition read (shared/public scenario)
+      possibleInvoice ??= await invoiceProcessingService
+          .ReadInvoice(id, userIdentifier: null)
+          .ConfigureAwait(false);
+
+      if (possibleInvoice is null)
+      {
+        return TypedResults.NotFound();
+      }
+
+      // Step 3: Access Control Matrix
+      // 1. Public invoices (SharedWith contains LastGuid) are accessible to everyone
+      // 2. Invoice owner (UserIdentifier matches) can always access
+      // 3. Users with whom the invoice is shared (SharedWith contains user) can access
+      // 4. All other access attempts are forbidden
+      var isPublicInvoice = possibleInvoice.SharedWith.Contains(LastGuid);
+      var isOwner = possibleInvoice.UserIdentifier == potentialUserIdentifier;
+      var isSharedWithUser = possibleInvoice.SharedWith.Contains(potentialUserIdentifier);
+
+      var canAccess = isPublicInvoice || (!isGuestUser && (isOwner || isSharedWithUser));
+
+      if (!canAccess)
+      {
+        return TypedResults.Forbid();
+      }
+
+      return TypedResults.Ok(InvoiceResponseDto.FromInvoice(possibleInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
