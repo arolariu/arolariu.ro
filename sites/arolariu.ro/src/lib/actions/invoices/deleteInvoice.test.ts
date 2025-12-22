@@ -1,3 +1,4 @@
+import {InvoiceBuilder} from "@/data/mocks";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 import deleteInvoice from "./deleteInvoice";
@@ -18,6 +19,8 @@ vi.mock("../user/fetchUser", () => ({
 }));
 
 describe("deleteInvoice", () => {
+  const mockToken = "mock-token";
+
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch = vi.fn();
@@ -28,18 +31,17 @@ describe("deleteInvoice", () => {
   });
 
   it("should delete an invoice successfully", async () => {
-    const mockToken = "mock-token";
-    const invoiceId = "1";
+    const mockInvoice = new InvoiceBuilder().withId("invoice-to-delete").build();
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
     });
 
-    await deleteInvoice({invoiceId});
+    await deleteInvoice({invoiceId: mockInvoice.id});
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith(`http://mock-api/rest/v1/invoices/${invoiceId}`, {
+    expect(global.fetch).toHaveBeenCalledWith(`http://mock-api/rest/v1/invoices/${mockInvoice.id}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${mockToken}`,
@@ -49,18 +51,19 @@ describe("deleteInvoice", () => {
   });
 
   it("should throw an error if deletion fails", async () => {
-    const mockToken = "mock-token";
-    const invoiceId = "1";
+    const mockInvoice = new InvoiceBuilder().withId("invoice-to-delete").build();
     const errorMessage = "Not Found";
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 404,
       statusText: "Not Found",
       text: async () => errorMessage,
     });
 
-    await expect(deleteInvoice({invoiceId})).rejects.toThrow(`BFF delete invoice request failed: 404 Not Found - ${errorMessage}`);
+    await expect(deleteInvoice({invoiceId: mockInvoice.id})).rejects.toThrow(
+      `BFF delete invoice request failed: 404 Not Found - ${errorMessage}`,
+    );
   });
 });

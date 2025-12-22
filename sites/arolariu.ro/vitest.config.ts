@@ -33,6 +33,7 @@ export default mergeConfig(
     resolve: {
       alias: {
         "@": resolve(__dirname, "./src"),
+        "@arolariu/components": resolve(__dirname, "../../packages/components/src/index.ts"),
       },
     },
   }),
