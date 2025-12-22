@@ -13,7 +13,6 @@ import InvoiceRecipeDialog from "../edit-invoice/[id]/_components/dialogs/Recipe
 import ShareAnalyticsDialog from "../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog";
 import InvoicesExportDialog from "../view-invoices/_components/dialogs/ExportDialog";
 import InvoicesImportDialog from "../view-invoices/_components/dialogs/ImportDialog";
-import InvoicesInvoiceShareDialog from "../view-invoices/_components/dialogs/ShareDialog";
 import {useDialogs} from "./DialogContext";
 
 /**
@@ -48,8 +47,6 @@ export default function DialogContainer(): React.JSX.Element | null {
     case "VIEW_INVOICE__SHARE_ANALYTICS":
       return <ShareAnalyticsDialog />;
     // view-invoices Dialogs
-    case "VIEW_INVOICES__SHARE":
-      return <InvoicesInvoiceShareDialog />;
     case "VIEW_INVOICES__IMPORT":
       return <InvoicesImportDialog />;
     case "VIEW_INVOICES__EXPORT":

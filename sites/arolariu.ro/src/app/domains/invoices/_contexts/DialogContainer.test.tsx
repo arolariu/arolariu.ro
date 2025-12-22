@@ -70,10 +70,6 @@ vi.mock("../view-invoices/_components/dialogs/ImportDialog", () => ({
   default: () => <div data-testid='import-dialog'>InvoicesImportDialog</div>,
 }));
 
-vi.mock("../view-invoices/_components/dialogs/ShareDialog", () => ({
-  default: () => <div data-testid='invoices-share-dialog'>InvoicesInvoiceShareDialog</div>,
-}));
-
 // Import the component after mocks are set up
 import DialogContainer from "./DialogContainer";
 import type {DialogType} from "./DialogContext";
@@ -192,15 +188,6 @@ describe("DialogContainer", () => {
   });
 
   describe("view-invoices dialogs", () => {
-    test("renders InvoicesInvoiceShareDialog when type is VIEW_INVOICES__SHARE", () => {
-      setupMockDialogType("VIEW_INVOICES__SHARE");
-
-      render(<DialogContainer />);
-
-      expect(screen.getByTestId("invoices-share-dialog")).toBeInTheDocument();
-      expect(screen.getByText("InvoicesInvoiceShareDialog")).toBeInTheDocument();
-    });
-
     test("renders InvoicesImportDialog when type is VIEW_INVOICES__IMPORT", () => {
       setupMockDialogType("VIEW_INVOICES__IMPORT");
 
@@ -251,7 +238,6 @@ describe("DialogContainer", () => {
       {type: "EDIT_INVOICE__IMAGE", expectedTestId: "image-dialog"},
       {type: "EDIT_INVOICE__RECIPE", expectedTestId: "recipe-dialog"},
       {type: "VIEW_INVOICE__SHARE_ANALYTICS", expectedTestId: "share-analytics-dialog"},
-      {type: "VIEW_INVOICES__SHARE", expectedTestId: "invoices-share-dialog"},
       {type: "VIEW_INVOICES__IMPORT", expectedTestId: "import-dialog"},
       {type: "VIEW_INVOICES__EXPORT", expectedTestId: "export-dialog"},
       {type: "SHARED__INVOICE_DELETE", expectedTestId: "delete-invoice-dialog"},
@@ -278,7 +264,6 @@ describe("DialogContainer", () => {
         "EDIT_INVOICE__ITEMS",
         "EDIT_INVOICE__FEEDBACK",
         "VIEW_INVOICE__SHARE_ANALYTICS",
-        "VIEW_INVOICES__SHARE",
         "VIEW_INVOICES__IMPORT",
         "VIEW_INVOICES__EXPORT",
         "SHARED__INVOICE_DELETE",

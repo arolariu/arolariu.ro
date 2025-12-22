@@ -69,7 +69,7 @@ type Props = {
  * @see {@link Invoice} - Invoice type with sharedWith array
  */
 export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Element {
-  const {open} = useDialog("SHARED__INVOICE_SHARE", "share", invoice);
+  const {open} = useDialog("SHARED__INVOICE_SHARE", "share", {invoice});
   const {userInformation} = useUserInformation();
   const router = useRouter();
   const [isMarkingPrivate, setIsMarkingPrivate] = useState<boolean>(false);
