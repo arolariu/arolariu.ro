@@ -5,13 +5,13 @@ import deleteInvoice from "./deleteInvoice";
 
 // Mock dependencies
 vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((name, fn) => fn()),
+  withSpan: vi.fn((_name, fn) => fn()),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
 }));
 
 vi.mock("../../utils.server", () => ({
-  API_URL: "http://mock-api",
+  API_URL: "https://mock-api",
 }));
 
 vi.mock("../user/fetchUser", () => ({
@@ -23,7 +23,7 @@ describe("deleteInvoice", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
   });
 
   afterEach(() => {
@@ -34,14 +34,14 @@ describe("deleteInvoice", () => {
     const mockInvoice = new InvoiceBuilder().build();
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
     });
 
     await deleteInvoice({invoiceId: mockInvoice.id});
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith(`http://mock-api/rest/v1/invoices/${mockInvoice.id}`, {
+    expect(globalThis.fetch).toHaveBeenCalledWith(`https://mock-api/rest/v1/invoices/${mockInvoice.id}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${mockToken}`,
@@ -55,7 +55,7 @@ describe("deleteInvoice", () => {
     const errorMessage = "Not Found";
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 404,
       statusText: "Not Found",

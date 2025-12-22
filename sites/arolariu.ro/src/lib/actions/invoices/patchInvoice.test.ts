@@ -164,7 +164,7 @@ describe("patchInvoice", () => {
 
       const result = await patchInvoice({invoiceId: "   ", payload});
 
-      expect(result).toEqual({success: false, error: 'Invalid invoiceId: "   " is not a valid UUID v4'});
+      expect(result).toEqual({success: false, error: 'Invalid invoiceId: "   " is not a valid GUID'});
       expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 

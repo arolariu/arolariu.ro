@@ -6,13 +6,13 @@ import {attachInvoiceScan} from "./attachInvoiceScan";
 
 // Mock dependencies
 vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((name, fn) => fn()),
+  withSpan: vi.fn((_name, fn) => fn()),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
 }));
 
 vi.mock("@/lib/utils.server", () => ({
-  API_URL: "http://mock-api",
+  API_URL: "https://mock-api",
 }));
 
 vi.mock("../user/fetchUser", () => ({
@@ -24,7 +24,7 @@ describe("attachInvoiceScan", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
   });
 
   afterEach(() => {
@@ -34,20 +34,20 @@ describe("attachInvoiceScan", () => {
   it("should attach an invoice scan successfully", async () => {
     const mockInvoice = new InvoiceBuilder().build();
     const payload = {
-      scanType: InvoiceScanType.JPEG,
+      type: InvoiceScanType.JPEG,
       location: "https://storage.example.com/scan.jpg",
-      metadata: {},
+      additionalMetadata: {},
     };
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
     });
 
     await attachInvoiceScan({invoiceId: mockInvoice.id, payload});
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith(`http://mock-api/rest/v1/invoices/${mockInvoice.id}/scans`, {
+    expect(globalThis.fetch).toHaveBeenCalledWith(`https://mock-api/rest/v1/invoices/${mockInvoice.id}/scans`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${mockToken}`,
@@ -60,14 +60,14 @@ describe("attachInvoiceScan", () => {
   it("should throw an error if attachment fails", async () => {
     const mockInvoice = new InvoiceBuilder().build();
     const payload = {
-      scanType: InvoiceScanType.JPEG,
+      type: InvoiceScanType.JPEG,
       location: "https://storage.example.com/scan.jpg",
-      metadata: {},
+      additionalMetadata: {},
     };
     const errorMessage = "Bad Request";
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 400,
       statusText: "Bad Request",

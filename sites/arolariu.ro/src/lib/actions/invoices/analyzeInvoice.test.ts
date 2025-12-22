@@ -6,13 +6,13 @@ import analyzeInvoice from "./analyzeInvoice";
 
 // Mock dependencies
 vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((name, fn) => fn()),
+  withSpan: vi.fn((_name, fn) => fn()),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
 }));
 
 vi.mock("@/lib/utils.server", () => ({
-  API_URL: "http://mock-api",
+  API_URL: "https://mock-api",
 }));
 
 vi.mock("../user/fetchUser", () => ({
@@ -25,7 +25,7 @@ describe("analyzeInvoice", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
   });
 
   afterEach(() => {
@@ -40,14 +40,14 @@ describe("analyzeInvoice", () => {
       userJwt: mockToken,
       userIdentifier: mockUserIdentifier,
     });
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
     });
 
     await analyzeInvoice({invoiceIdentifier: mockInvoice.id, analysisOptions});
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith(`http://mock-api/rest/v1/invoices/${mockInvoice.id}/analyze`, {
+    expect(globalThis.fetch).toHaveBeenCalledWith(`https://mock-api/rest/v1/invoices/${mockInvoice.id}/analyze`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${mockToken}`,
@@ -69,7 +69,7 @@ describe("analyzeInvoice", () => {
       userJwt: mockToken,
       userIdentifier: mockUserIdentifier,
     });
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 500,
       statusText: "Internal Server Error",

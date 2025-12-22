@@ -1,17 +1,18 @@
 import {InvoiceBuilder, MerchantBuilder} from "@/data/mocks";
+import {InvoiceScanType} from "@/types/invoices";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 import {createInvoice} from "./createInvoice";
 
 // Mock dependencies
 vi.mock("@/instrumentation.server", () => ({
-  withSpan: vi.fn((name, fn) => fn()),
+  withSpan: vi.fn((_name, fn) => fn()),
   addSpanEvent: vi.fn(),
   logWithTrace: vi.fn(),
 }));
 
 vi.mock("@/lib/utils.server", () => ({
-  API_URL: "http://mock-api",
+  API_URL: "https://mock-api",
 }));
 
 vi.mock("../user/fetchUser", () => ({
@@ -24,7 +25,7 @@ describe("createInvoice", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
   });
 
   afterEach(() => {
@@ -33,14 +34,26 @@ describe("createInvoice", () => {
 
   it("should create an invoice successfully", async () => {
     const mockMerchant = new MerchantBuilder().withName("Test Merchant").build();
-    const mockPayload = {merchantName: mockMerchant.name};
+    const mockScan = {
+      scanType: InvoiceScanType.JPEG,
+      location: "https://cdn.arolariu.ro/invoices/test-scan.jpg",
+      metadata: {},
+    };
+    const mockPayload = {
+      userIdentifier: mockUserIdentifier,
+      initialScan: mockScan,
+      metadata: {
+        isImportant: "false",
+        requiresAnalysis: "true",
+      },
+    };
     const mockInvoice = new InvoiceBuilder().withId("created-invoice-id").withMerchantReference(mockMerchant.id).build();
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({
       userJwt: mockToken,
       userIdentifier: mockUserIdentifier,
     });
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => mockInvoice,
     });
@@ -48,7 +61,7 @@ describe("createInvoice", () => {
     const result = await createInvoice(mockPayload);
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith("http://mock-api/rest/v1/invoices", {
+    expect(globalThis.fetch).toHaveBeenCalledWith("https://mock-api/rest/v1/invoices", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${mockToken}`,
@@ -60,23 +73,34 @@ describe("createInvoice", () => {
   });
 
   it("should use provided userIdentifier if present", async () => {
-    const mockMerchant = new MerchantBuilder().withName("Test Merchant").build();
     const providedUserId = "provided-id";
-    const mockPayload = {merchantName: mockMerchant.name, userIdentifier: providedUserId};
+    const mockScan = {
+      scanType: InvoiceScanType.JPEG,
+      location: "https://cdn.arolariu.ro/invoices/test-scan.jpg",
+      metadata: {},
+    };
+    const mockPayload = {
+      userIdentifier: providedUserId,
+      initialScan: mockScan,
+      metadata: {
+        isImportant: "false",
+        requiresAnalysis: "true",
+      },
+    };
     const mockInvoice = new InvoiceBuilder().withUserIdentifier(providedUserId).build();
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({
       userJwt: mockToken,
       userIdentifier: "default-id",
     });
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => mockInvoice,
     });
 
     await createInvoice(mockPayload);
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         body: JSON.stringify(mockPayload),
@@ -85,23 +109,32 @@ describe("createInvoice", () => {
   });
 
   it("should throw an error if creation fails", async () => {
-    const mockMerchant = new MerchantBuilder().withName("Test Merchant").build();
-    const mockPayload = {merchantName: mockMerchant.name};
+    const mockScan = {
+      scanType: InvoiceScanType.JPEG,
+      location: "https://cdn.arolariu.ro/invoices/test-scan.jpg",
+      metadata: {},
+    };
+    const mockPayload = {
+      userIdentifier: mockUserIdentifier,
+      initialScan: mockScan,
+      metadata: {
+        isImportant: "false",
+        requiresAnalysis: "true",
+      },
+    };
     const errorMessage = "Bad Request";
 
     (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({
       userJwt: mockToken,
       userIdentifier: mockUserIdentifier,
     });
-    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 400,
       statusText: "Bad Request",
       text: async () => errorMessage,
     });
 
-    await expect(createInvoice(mockPayload)).rejects.toThrow(
-      `BFF create invoice request failed: 400 Bad Request - ${errorMessage}`,
-    );
+    await expect(createInvoice(mockPayload)).rejects.toThrow(`BFF create invoice request failed: 400 Bad Request - ${errorMessage}`);
   });
 });
