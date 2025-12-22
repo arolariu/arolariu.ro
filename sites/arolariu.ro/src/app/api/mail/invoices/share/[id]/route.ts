@@ -19,7 +19,6 @@ export async function POST(request: NextRequest, {params}: Props) {
     fromEmail: string;
   };
 
-  // todo: figure out a better way without exposing email.
   const toUsername = toEmail.split("@")[0] as string;
   const fromUsername = fromEmail.split("@")[0] as string;
 
