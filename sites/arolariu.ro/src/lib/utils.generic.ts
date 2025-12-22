@@ -105,33 +105,39 @@ export const EMPTY_GUID = "00000000-0000-0000-0000-000000000000";
 const UUID_V4_REGEX = /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
 
 /**
- * Asserts that a given string is a valid UUID v4 format.
+ * Asserts that a given string is a valid UUID v4 format or a special sentinel GUID.
  *
  * @remarks
- * This function validates that the input string conforms to the UUID v4 specification.
- * It throws an error if the input is not a valid UUID v4, making it suitable for
+ * This function validates that the input string conforms to the UUID v4 specification
+ * or is one of the special sentinel GUIDs (EMPTY_GUID or LAST_GUID).
+ * It throws an error if the input is invalid, making it suitable for
  * runtime validation of identifiers in server actions.
  *
  * **Validation Rules:**
  * - Must be a non-empty string
- * - Must match the UUID v4 format: `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`
- * - Version digit (position 14) must be `4`
- * - Variant digit (position 19) must be `8`, `9`, `a`, or `b`
+ * - Must match one of:
+ *   - UUID v4 format: `xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx`
+ *   - EMPTY_GUID: `00000000-0000-0000-0000-000000000000`
+ *   - LAST_GUID: `99999999-9999-9999-9999-999999999999`
  *
- * @param input - The string to validate as a UUID v4.
+ * @param input - The string to validate as a UUID v4 or sentinel GUID.
  * @param paramName - Optional parameter name for error messages (defaults to "identifier").
- * @throws {Error} If the input is not a valid UUID v4 string.
+ * @throws {Error} If the input is not a valid UUID v4 or sentinel GUID string.
  *
  * @example
  * ```typescript
  * // Valid UUID v4 - no error thrown
  * assertValidGuid("550e8400-e29b-41d4-a716-446655440000");
  *
+ * // Valid sentinel GUIDs - no error thrown
+ * assertValidGuid("00000000-0000-0000-0000-000000000000"); // EMPTY_GUID
+ * assertValidGuid("99999999-9999-9999-9999-999999999999"); // LAST_GUID
+ *
  * // Invalid - throws Error
- * assertValidGuid("not-a-guid"); // Error: Invalid identifier: "not-a-guid" is not a valid UUID v4
+ * assertValidGuid("not-a-guid"); // Error: Invalid identifier: "not-a-guid" is not a valid GUID
  *
  * // With custom parameter name
- * assertValidGuid(invoiceId, "invoiceId"); // Error: Invalid invoiceId: "..." is not a valid UUID v4
+ * assertValidGuid(invoiceId, "invoiceId"); // Error: Invalid invoiceId: "..." is not a valid GUID
  * ```
  */
 export function validateStringIsGuidType(input: string, paramName = "identifier"): asserts input is string {
@@ -139,8 +145,13 @@ export function validateStringIsGuidType(input: string, paramName = "identifier"
     throw new Error(`Invalid ${paramName}: expected a non-empty string, got ${typeof input}`);
   }
 
+  // Allow special sentinel GUIDs
+  if (input === EMPTY_GUID || input === LAST_GUID) {
+    return;
+  }
+
   if (!UUID_V4_REGEX.test(input)) {
-    throw new Error(`Invalid ${paramName}: "${input}" is not a valid UUID v4`);
+    throw new Error(`Invalid ${paramName}: "${input}" is not a valid GUID`);
   }
 }
 
