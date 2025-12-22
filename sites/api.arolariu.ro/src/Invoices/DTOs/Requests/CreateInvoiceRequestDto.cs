@@ -82,9 +82,15 @@ public readonly record struct CreateInvoiceRequestDto(
   /// </returns>
   public Invoice ToInvoice()
   {
-    Invoice invoice = Invoice.Default();
-    invoice.UserIdentifier = UserIdentifier;
-    invoice.Scans.Add(InitialScan);
+    Invoice invoice = new Invoice
+    {
+      id = Guid.NewGuid(),
+      UserIdentifier = UserIdentifier,
+      CreatedAt = DateTime.UtcNow,
+      CreatedBy = UserIdentifier,
+      Scans = [InitialScan],
+    };
+
 
     if (Metadata is not null)
     {
@@ -95,6 +101,7 @@ public readonly record struct CreateInvoiceRequestDto(
       }
     }
 
+    invoice.PerformUpdate(UserIdentifier);
     return invoice;
   }
 }
