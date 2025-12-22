@@ -21,7 +21,7 @@ using arolariu.Backend.Domain.Invoices.DDD.ValueObjects;
 /// and value semantics for equality comparisons.
 /// </para>
 /// <para>
-/// <b>Merge Strategy:</b> Uses <see cref="ApplyTo(Invoice)"/> which performs a
+/// <b>Merge Strategy:</b> Uses <see cref="ApplyTo(Invoice, Guid)"/> which performs a
 /// non-destructive merge with the following rules:
 /// <list type="bullet">
 ///   <item><description>Null values preserve the original field value.</description></item>
@@ -130,6 +130,7 @@ public readonly record struct PatchInvoiceRequestDto(
   /// <param name="existing">
   /// The existing invoice to apply patches to. Must not be null.
   /// </param>
+  /// <param name="updatedBy"></param>
   /// <returns>
   /// A new <see cref="Invoice"/> instance with merged values from this DTO and
   /// the existing invoice.
@@ -137,7 +138,7 @@ public readonly record struct PatchInvoiceRequestDto(
   /// <exception cref="ArgumentNullException">
   /// Thrown when <paramref name="existing"/> is null.
   /// </exception>
-  public Invoice ApplyTo(Invoice existing)
+  public Invoice ApplyTo(Invoice existing, Guid updatedBy)
   {
     ArgumentNullException.ThrowIfNull(existing);
     var patched = new Invoice
@@ -200,7 +201,7 @@ public readonly record struct PatchInvoiceRequestDto(
       }
     }
 
-    patched.NumberOfUpdates++;
+    patched.PerformUpdate(updatedBy);
     return patched;
   }
 }
