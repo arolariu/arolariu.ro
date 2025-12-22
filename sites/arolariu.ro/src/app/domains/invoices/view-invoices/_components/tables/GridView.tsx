@@ -1,3 +1,4 @@
+import {formatCurrency, formatDate} from "@/lib/utils.generic";
 import {useInvoicesStore} from "@/stores";
 import {type Invoice} from "@/types/invoices";
 import {
@@ -15,6 +16,7 @@ import {
   TooltipTrigger,
 } from "@arolariu/components";
 import {motion} from "motion/react";
+import {useLocale} from "next-intl";
 import Image from "next/image";
 import {useCallback} from "react";
 import {TbCalendar, TbEye} from "react-icons/tb";
@@ -25,6 +27,7 @@ type Props = Readonly<{
 }>;
 
 export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
+  const locale = useLocale();
   const selectedInvoices = useInvoicesStore((state) => state.selectedInvoices);
   const setSelectedInvoices = useInvoicesStore((state) => state.setSelectedInvoices);
 
@@ -69,16 +72,15 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
             />
           </div>
           <Card className='overflow-hidden'>
-            <Image
-              src={invoice.scans[0]?.location || "/placeholder.svg"}
-              alt={invoice.name}
-              className='h-full w-full object-fill transition-transform duration-500'
-              width={400}
-              height={400}
-            />
-            <CardHeader className='mt-6 pt-4 pb-2'>
-              <CardTitle className='text-lg'>{invoice.name}</CardTitle>
-              <div className='absolute top-80 right-2 z-10 flex gap-1 print:hidden'>
+            <div className='relative'>
+              <Image
+                src={invoice.scans[0]?.location || "/placeholder.svg"}
+                alt={invoice.name}
+                className='h-full w-full object-fill transition-transform duration-500'
+                width={400}
+                height={400}
+              />
+              <div className='absolute right-2 bottom-2 z-10 flex gap-1 print:hidden'>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger
@@ -96,15 +98,23 @@ export const GridView = ({invoices}: Readonly<Props>): React.JSX.Element => {
                 </TooltipProvider>
                 <TableViewActions invoice={invoice} />
               </div>
+            </div>
+            <CardHeader className='pt-4 pb-2'>
+              <CardTitle className='text-lg'>{invoice.name}</CardTitle>
               <CardDescription>{invoice.description}</CardDescription>
             </CardHeader>
             <CardContent className='pb-2'>
               <div className='flex items-center justify-between'>
                 <div className='text-muted-foreground flex items-center gap-1 text-sm'>
                   <TbCalendar className='h-3.5 w-3.5' />
-                  <span>{new Date(invoice.createdAt).toUTCString()}</span>
+                  <span>{formatDate(invoice.createdAt, {dateStyle: "full", locale})}</span>
                 </div>
-                <div className='text-lg font-medium'>TODO EURO</div>
+                <div className='text-lg font-medium'>
+                  {formatCurrency(invoice.paymentInformation.totalCostAmount, {
+                    currencyCode: invoice.paymentInformation.currency.code,
+                    locale,
+                  })}
+                </div>
               </div>
             </CardContent>
             <CardFooter className='flex justify-between pt-2'>
