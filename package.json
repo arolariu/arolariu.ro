@@ -78,7 +78,7 @@
     "@azure/keyvault-secrets": "4.10.0",
     "@azure/monitor-opentelemetry-exporter": "1.0.0-beta.32",
     "@azure/storage-blob": "12.29.1",
-    "@clerk/localizations": "3.32.0",
+    "@clerk/localizations": "3.32.1",
     "@clerk/nextjs": "6.36.4",
     "@eslint/js": "9.39.2",
     "@faker-js/faker": "10.1.0",
