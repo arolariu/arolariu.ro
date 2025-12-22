@@ -1,4 +1,5 @@
-import type {Invoice} from "@/types/invoices";
+import {InvoiceBuilder} from "@/data/mocks";
+import {type Invoice, type PaymentType} from "@/types/invoices";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 import updateInvoice from "./updateInvoice";
@@ -25,38 +26,12 @@ vi.mock("../user/fetchUser", () => ({
 const VALID_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
 
 /**
- * Creates a mock invoice object for testing.
+ * Creates a base invoice builder pre-configured with a deterministic ID.
  *
- * @param overrides - Partial invoice fields to override defaults
- * @returns A complete mock Invoice object
+ * @returns An InvoiceBuilder instance with the test UUID already set
  */
-function createMockInvoice(overrides: Partial<Invoice> = {}): Invoice {
-  return {
-    id: VALID_UUID,
-    name: "Test Invoice",
-    description: "Test invoice description",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    isDeleted: false,
-    isImportant: false,
-    userIdentifier: "user-123",
-    sharedWith: [],
-    category: 0,
-    scans: [],
-    paymentInformation: {
-      totalAmount: 100,
-      currency: {name: "USD", symbol: "$", code: "USD"},
-      dateOfPurchase: new Date().toISOString(),
-      paymentType: 0,
-      isTaxed: false,
-      taxPercentage: 0,
-    },
-    merchantReference: "merchant-123",
-    items: [],
-    possibleRecipes: [],
-    additionalMetadata: {},
-    ...overrides,
-  } as Invoice;
+function createTestInvoiceBuilder(): InvoiceBuilder {
+  return new InvoiceBuilder().withId(VALID_UUID).withUserIdentifier("user-123");
 }
 
 describe("updateInvoice", () => {
@@ -75,7 +50,7 @@ describe("updateInvoice", () => {
 
   describe("successful update operations", () => {
     it("should update an invoice successfully", async () => {
-      const mockInvoice = createMockInvoice();
+      const mockInvoice = createTestInvoiceBuilder().build();
       const mockUpdatedInvoice = {...mockInvoice, name: "Updated Name"};
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -98,7 +73,7 @@ describe("updateInvoice", () => {
     });
 
     it("should update invoice with modified name", async () => {
-      const mockInvoice = createMockInvoice({name: "New Invoice Name"});
+      const mockInvoice = createTestInvoiceBuilder().withName("New Invoice Name").build();
       const mockUpdatedInvoice = {...mockInvoice};
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -113,7 +88,7 @@ describe("updateInvoice", () => {
 
     it("should update invoice with modified sharedWith array", async () => {
       const sharedWith = ["user-1", "user-2", "99999999-9999-9999-9999-999999999999"];
-      const mockInvoice = createMockInvoice({sharedWith});
+      const mockInvoice = createTestInvoiceBuilder().withSharedWith(sharedWith).build();
       const mockUpdatedInvoice = {...mockInvoice};
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -133,21 +108,7 @@ describe("updateInvoice", () => {
     });
 
     it("should update invoice with items", async () => {
-      const items = [
-        {
-          rawName: "Product 1",
-          category: 1,
-          genericName: "Product",
-          quantity: 2,
-          quantityUnit: "pcs",
-          price: 10.5,
-          totalPrice: 21.0,
-          detectedAllergens: [],
-          productCode: "P001",
-          metadata: {},
-        },
-      ];
-      const mockInvoice = createMockInvoice({items});
+      const mockInvoice = createTestInvoiceBuilder().withRandomItems(3).build();
       const mockUpdatedInvoice = {...mockInvoice};
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -161,15 +122,15 @@ describe("updateInvoice", () => {
     });
 
     it("should update invoice with payment information", async () => {
-      const paymentInformation = {
-        totalAmount: 250.99,
-        currency: {name: "Euro", symbol: "€", code: "EUR"},
-        dateOfPurchase: new Date().toISOString(),
-        paymentType: 1,
-        isTaxed: true,
-        taxPercentage: 19,
-      };
-      const mockInvoice = createMockInvoice({paymentInformation});
+      const mockInvoice = createTestInvoiceBuilder()
+        .withPaymentInformation({
+          transactionDate: new Date(),
+          paymentType: 1 as PaymentType,
+          currency: {name: "Euro", symbol: "€", code: "EUR"},
+          totalCostAmount: 250.99,
+          totalTaxAmount: 47.69,
+        })
+        .build();
       const mockUpdatedInvoice = {...mockInvoice};
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -183,22 +144,23 @@ describe("updateInvoice", () => {
     });
 
     it("should update invoice isImportant flag", async () => {
-      const mockInvoice = createMockInvoice({isImportant: true});
-      const mockUpdatedInvoice = {...mockInvoice};
+      const mockInvoice = createTestInvoiceBuilder().build();
+      // Manually set isImportant since the builder randomizes it
+      const invoiceWithImportant = {...mockInvoice, isImportant: true} as Invoice;
+      const mockUpdatedInvoice = {...invoiceWithImportant};
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         json: async () => mockUpdatedInvoice,
       });
 
-      const result = await updateInvoice({invoiceId: mockInvoiceId, invoice: mockInvoice});
+      const result = await updateInvoice({invoiceId: mockInvoiceId, invoice: invoiceWithImportant});
 
       expect(result).toEqual({success: true, invoice: mockUpdatedInvoice});
     });
 
     it("should update invoice with additional metadata", async () => {
-      const additionalMetadata = {customField: "value", count: 42, nested: {key: "val"}};
-      const mockInvoice = createMockInvoice({additionalMetadata});
+      const mockInvoice = createTestInvoiceBuilder().withAdditionalMetadata({customField: "value", nestedKey: "nested-val"}).build();
       const mockUpdatedInvoice = {...mockInvoice};
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -214,7 +176,7 @@ describe("updateInvoice", () => {
 
   describe("validation errors", () => {
     it("should return error for empty invoiceId", async () => {
-      const mockInvoice = createMockInvoice({id: ""});
+      const mockInvoice = new InvoiceBuilder().withId("").withUserIdentifier("user-123").build();
 
       const result = await updateInvoice({invoiceId: "", invoice: mockInvoice});
 
@@ -223,7 +185,7 @@ describe("updateInvoice", () => {
     });
 
     it("should return error for whitespace-only invoiceId", async () => {
-      const mockInvoice = createMockInvoice({id: "   "});
+      const mockInvoice = new InvoiceBuilder().withId("   ").withUserIdentifier("user-123").build();
 
       const result = await updateInvoice({invoiceId: "   ", invoice: mockInvoice});
 
@@ -249,7 +211,7 @@ describe("updateInvoice", () => {
 
     it("should return error for invoice ID mismatch", async () => {
       const differentId = "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e";
-      const mockInvoice = createMockInvoice({id: differentId});
+      const mockInvoice = new InvoiceBuilder().withId(differentId).withUserIdentifier("user-123").build();
 
       const result = await updateInvoice({invoiceId: mockInvoiceId, invoice: mockInvoice});
 
@@ -260,8 +222,8 @@ describe("updateInvoice", () => {
 
   describe("API error handling", () => {
     it("should return error for 404 response", async () => {
+      const mockInvoice = createTestInvoiceBuilder().build();
       const errorMessage = "Invoice not found";
-      const mockInvoice = createMockInvoice();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,
@@ -279,8 +241,8 @@ describe("updateInvoice", () => {
     });
 
     it("should return error for 401 unauthorized response", async () => {
+      const mockInvoice = createTestInvoiceBuilder().build();
       const errorMessage = "Unauthorized";
-      const mockInvoice = createMockInvoice();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,
@@ -298,8 +260,8 @@ describe("updateInvoice", () => {
     });
 
     it("should return error for 403 forbidden response", async () => {
+      const mockInvoice = createTestInvoiceBuilder().build();
       const errorMessage = "Access denied";
-      const mockInvoice = createMockInvoice();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,
@@ -317,8 +279,8 @@ describe("updateInvoice", () => {
     });
 
     it("should return error for 500 server error response", async () => {
+      const mockInvoice = createTestInvoiceBuilder().build();
       const errorMessage = "Internal server error";
-      const mockInvoice = createMockInvoice();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,
@@ -336,8 +298,8 @@ describe("updateInvoice", () => {
     });
 
     it("should return error for 400 bad request response", async () => {
+      const mockInvoice = createTestInvoiceBuilder().build();
       const errorMessage = "Invalid invoice data";
-      const mockInvoice = createMockInvoice();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,
@@ -358,7 +320,7 @@ describe("updateInvoice", () => {
   describe("network and exception handling", () => {
     it("should handle fetch network error", async () => {
       const networkError = new Error("Network request failed");
-      const mockInvoice = createMockInvoice();
+      const mockInvoice = createTestInvoiceBuilder().build();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(networkError);
 
@@ -372,7 +334,7 @@ describe("updateInvoice", () => {
 
     it("should handle auth service failure", async () => {
       const authError = new Error("Auth service unavailable");
-      const mockInvoice = createMockInvoice();
+      const mockInvoice = createTestInvoiceBuilder().build();
 
       (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockRejectedValue(authError);
 
@@ -385,7 +347,7 @@ describe("updateInvoice", () => {
     });
 
     it("should handle non-Error exceptions", async () => {
-      const mockInvoice = createMockInvoice();
+      const mockInvoice = createTestInvoiceBuilder().build();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockRejectedValue("String error");
 
@@ -399,7 +361,7 @@ describe("updateInvoice", () => {
 
     it("should handle timeout errors", async () => {
       const timeoutError = new Error("Request timeout");
-      const mockInvoice = createMockInvoice();
+      const mockInvoice = createTestInvoiceBuilder().build();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(timeoutError);
 
@@ -415,7 +377,7 @@ describe("updateInvoice", () => {
   describe("authentication", () => {
     it("should include Bearer token in Authorization header", async () => {
       const customToken = "custom-jwt-token";
-      const mockInvoice = createMockInvoice();
+      const mockInvoice = createTestInvoiceBuilder().build();
       (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: customToken});
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -436,7 +398,7 @@ describe("updateInvoice", () => {
     });
 
     it("should set Content-Type to application/json", async () => {
-      const mockInvoice = createMockInvoice();
+      const mockInvoice = createTestInvoiceBuilder().build();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -458,30 +420,31 @@ describe("updateInvoice", () => {
 
   describe("request configuration", () => {
     it("should serialize full invoice to JSON in request body", async () => {
-      const mockInvoice = createMockInvoice({
-        name: "Full Invoice",
-        description: "Complete description",
-        sharedWith: ["user-1", "user-2"],
-        isImportant: true,
-      });
+      const mockInvoice = createTestInvoiceBuilder()
+        .withName("Full Invoice")
+        .withDescription("Complete description")
+        .withSharedWith(["user-1", "user-2"])
+        .build();
+      // Set isImportant since builder randomizes it
+      const invoiceForTest = {...mockInvoice, isImportant: true} as Invoice;
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
-        json: async () => mockInvoice,
+        json: async () => invoiceForTest,
       });
 
-      await updateInvoice({invoiceId: mockInvoiceId, invoice: mockInvoice});
+      await updateInvoice({invoiceId: mockInvoiceId, invoice: invoiceForTest});
 
       expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          body: JSON.stringify(mockInvoice),
+          body: JSON.stringify(invoiceForTest),
         }),
       );
     });
 
     it("should use POST HTTP method", async () => {
-      const mockInvoice = createMockInvoice();
+      const mockInvoice = createTestInvoiceBuilder().build();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -499,7 +462,7 @@ describe("updateInvoice", () => {
     });
 
     it("should use correct API endpoint with invoice ID", async () => {
-      const mockInvoice = createMockInvoice();
+      const mockInvoice = createTestInvoiceBuilder().build();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -514,23 +477,7 @@ describe("updateInvoice", () => {
 
   describe("complex invoice scenarios", () => {
     it("should handle invoice with multiple scans", async () => {
-      const scans = [
-        {
-          id: "scan-1",
-          rawImageUri: "https://example.com/scan1.jpg",
-          ocrMetadata: {},
-          isProcessed: true,
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: "scan-2",
-          rawImageUri: "https://example.com/scan2.jpg",
-          ocrMetadata: {},
-          isProcessed: false,
-          createdAt: new Date().toISOString(),
-        },
-      ];
-      const mockInvoice = createMockInvoice({scans});
+      const mockInvoice = createTestInvoiceBuilder().withRandomScans(2).build();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -544,7 +491,7 @@ describe("updateInvoice", () => {
 
     it("should handle invoice marked as public (with LAST_GUID in sharedWith)", async () => {
       const LAST_GUID = "99999999-9999-9999-9999-999999999999";
-      const mockInvoice = createMockInvoice({sharedWith: [LAST_GUID]});
+      const mockInvoice = createTestInvoiceBuilder().withSharedWith([LAST_GUID]).build();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
@@ -557,15 +504,7 @@ describe("updateInvoice", () => {
     });
 
     it("should handle invoice with possible recipes", async () => {
-      const possibleRecipes = [
-        {
-          name: "Recipe 1",
-          description: "A delicious recipe",
-          ingredients: ["item1", "item2"],
-          steps: ["Step 1", "Step 2"],
-        },
-      ];
-      const mockInvoice = createMockInvoice({possibleRecipes});
+      const mockInvoice = createTestInvoiceBuilder().withRandomRecipes(2).build();
 
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,

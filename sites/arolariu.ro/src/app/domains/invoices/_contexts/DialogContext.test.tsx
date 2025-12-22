@@ -8,50 +8,50 @@ const wrapper = ({children}: {children: ReactNode}) => <DialogProvider>{children
 
 describe("DialogProvider", () => {
   test("should provide the current dialog state", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
 
     act(() => {
       result.current.open();
     });
 
     expect(result.current.isOpen).toBe(true);
-    expect(result.current.currentDialog.type).toBe("EDIT_INVOICE__SHARE");
+    expect(result.current.currentDialog.type).toBe("SHARED__INVOICE_SHARE");
   });
 
   test("should provide the isOpen function", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
     expect(typeof result.current.isOpen).toBe("boolean");
   });
 
   test("should provide the openDialog function", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
     expect(typeof result.current.open).toBe("function");
   });
 
   test("should provide the closeDialog function", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
     expect(typeof result.current.close).toBe("function");
   });
 
   test("should set the current dialog state when openDialog is called", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
 
     act(() => {
       result.current.open();
     });
 
-    expect(result.current.currentDialog.type).toBe("EDIT_INVOICE__SHARE");
+    expect(result.current.currentDialog.type).toBe("SHARED__INVOICE_SHARE");
   });
 });
 
 describe("useDialog", () => {
   test("should return isOpen as false initially", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
     expect(result.current.isOpen).toBe(false);
   });
 
   test("should set isOpen to true when open is called", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
 
     act(() => {
       result.current.open();
@@ -61,7 +61,7 @@ describe("useDialog", () => {
   });
 
   test("should set isOpen to false when close is called", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
 
     act(() => {
       result.current.open();
@@ -75,7 +75,7 @@ describe("useDialog", () => {
   });
 
   test("should not close the current dialog if another dialog says so", () => {
-    const {result: shareResult} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result: shareResult} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
     const {result: merchantResult} = renderHook(() => useDialog("EDIT_INVOICE__MERCHANT"), {wrapper});
 
     act(() => {
@@ -103,30 +103,30 @@ describe("useDialog", () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     expect(() => {
-      renderHook(() => useDialog("EDIT_INVOICE__SHARE"));
+      renderHook(() => useDialog("SHARED__INVOICE_SHARE"));
     }).toThrow("useDialogs must be used within a DialogProvider");
 
     consoleErrorSpy.mockRestore();
   });
 
   test("it uses current dialog when openDialog is called", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
 
     act(() => {
       result.current.open();
     });
 
-    expect(result.current.currentDialog.type).toBe("EDIT_INVOICE__SHARE");
+    expect(result.current.currentDialog.type).toBe("SHARED__INVOICE_SHARE");
   });
 
   test("it uses current dialog when closeDialog is called", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
 
     act(() => {
       result.current.open();
     });
 
-    expect(result.current.currentDialog.type).toBe("EDIT_INVOICE__SHARE");
+    expect(result.current.currentDialog.type).toBe("SHARED__INVOICE_SHARE");
 
     act(() => {
       result.current.close();
@@ -136,35 +136,35 @@ describe("useDialog", () => {
   });
 
   test("it opens dialog with correct type and mode", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE", "edit"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "edit"), {wrapper});
 
     act(() => {
       result.current.open();
     });
 
-    expect(result.current.currentDialog.type).toBe("EDIT_INVOICE__SHARE");
+    expect(result.current.currentDialog.type).toBe("SHARED__INVOICE_SHARE");
     expect(result.current.currentDialog.mode).toBe("edit");
   });
 
   test("it opens dialog with correct type and payload", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE", "edit", {id: 1}), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "edit", {id: 1}), {wrapper});
 
     act(() => {
       result.current.open();
     });
 
-    expect(result.current.currentDialog.type).toBe("EDIT_INVOICE__SHARE");
+    expect(result.current.currentDialog.type).toBe("SHARED__INVOICE_SHARE");
     expect(result.current.currentDialog.payload).toStrictEqual({id: 1});
   });
 
   test("it closes dialog and resets state", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE", "edit", {id: 1}), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "edit", {id: 1}), {wrapper});
 
     act(() => {
       result.current.open();
     });
 
-    expect(result.current.currentDialog.type).toBe("EDIT_INVOICE__SHARE");
+    expect(result.current.currentDialog.type).toBe("SHARED__INVOICE_SHARE");
     expect(result.current.currentDialog.mode).toBe("edit");
     expect(result.current.currentDialog.payload).toStrictEqual({id: 1});
 
@@ -176,19 +176,19 @@ describe("useDialog", () => {
   });
 
   test("it opens dialog with correct type, mode, and payload", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE", "edit", {id: 1}), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "edit", {id: 1}), {wrapper});
 
     act(() => {
       result.current.open();
     });
 
-    expect(result.current.currentDialog.type).toBe("EDIT_INVOICE__SHARE");
+    expect(result.current.currentDialog.type).toBe("SHARED__INVOICE_SHARE");
     expect(result.current.currentDialog.mode).toBe("edit");
     expect(result.current.currentDialog.payload).toStrictEqual({id: 1});
   });
 
   test("it does not open dialog if already open", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
 
     act(() => {
       result.current.open();
@@ -204,7 +204,7 @@ describe("useDialog", () => {
   });
 
   test("it does not close dialog if another dialog says so", () => {
-    const {result: shareResult} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result: shareResult} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
     const {result: merchantResult} = renderHook(() => useDialog("EDIT_INVOICE__MERCHANT"), {wrapper});
 
     act(() => {
@@ -229,7 +229,7 @@ describe("useDialog", () => {
   });
 
   test("it does not open dialog if already open (duplicate)", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
 
     act(() => {
       result.current.open();
@@ -245,7 +245,7 @@ describe("useDialog", () => {
   });
 
   test("it does not alter the current dialog if another dialog says so", () => {
-    const {result: shareResult} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result: shareResult} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
     const {result: merchantResult} = renderHook(() => useDialog("EDIT_INVOICE__MERCHANT"), {wrapper});
 
     act(() => {
@@ -271,8 +271,8 @@ describe("useDialog", () => {
 
   test("dialog state is persisted across different useDialog calls", () => {
     // Create two separate hooks for the same dialog type
-    const {result: shareHook1} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
-    const {result: shareHook2} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result: shareHook1} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
+    const {result: shareHook2} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
 
     // Initially both should show the dialog as closed
     expect(shareHook1.current.isOpen).toBe(false);
@@ -332,7 +332,7 @@ describe("useDialog", () => {
   });
 
   test("closing and reopening dialog works correctly", () => {
-    const {result} = renderHook(() => useDialog("EDIT_INVOICE__SHARE", "edit"), {wrapper});
+    const {result} = renderHook(() => useDialog("SHARED__INVOICE_SHARE", "edit"), {wrapper});
 
     // Open the dialog
     act(() => {
@@ -351,13 +351,13 @@ describe("useDialog", () => {
       result.current.open();
     });
     expect(result.current.isOpen).toBe(true);
-    expect(result.current.currentDialog.type).toBe("EDIT_INVOICE__SHARE");
+    expect(result.current.currentDialog.type).toBe("SHARED__INVOICE_SHARE");
     expect(result.current.currentDialog.mode).toBe("edit");
   });
 
   test("context maintains singleton reference to dialog state type", () => {
     // Create multiple hooks
-    const {result: hook1} = renderHook(() => useDialog("EDIT_INVOICE__SHARE"), {wrapper});
+    const {result: hook1} = renderHook(() => useDialog("SHARED__INVOICE_SHARE"), {wrapper});
     const {result: hook2} = renderHook(() => useDialog("EDIT_INVOICE__MERCHANT"), {wrapper});
 
     // Store original references
