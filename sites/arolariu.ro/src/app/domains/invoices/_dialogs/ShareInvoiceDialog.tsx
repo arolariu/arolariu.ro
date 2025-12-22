@@ -18,6 +18,7 @@ import {
   DialogTitle,
   toast,
 } from "@arolariu/components";
+import {useRouter} from "next/navigation";
 import React, {useCallback, useMemo, useState} from "react";
 import {TbAlertTriangle, TbGlobe, TbLock} from "react-icons/tb";
 import {useDialog} from "../_contexts/DialogContext";
@@ -140,6 +141,8 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   const [email, setEmail] = useState<string>("");
   const [isRevoking, setIsRevoking] = useState<boolean>(false);
 
+  const router = useRouter();
+
   const {
     currentDialog: {payload},
     isOpen,
@@ -191,13 +194,19 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
    */
   const handleCopyLink = useCallback(() => {
     const copyLinkAction = async () => {
+      const wasPrivate = !isInvoicePublic;
       // If invoice is not already public, make it public first
-      if (!isInvoicePublic && sharingMode === "public") {
+      if (wasPrivate && sharingMode === "public") {
         await makeInvoicePublic();
       }
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+
+      // Refresh the page data if sharing state changed
+      if (wasPrivate) {
+        router.refresh();
+      }
     };
 
     toast.promise(copyLinkAction(), {
@@ -205,7 +214,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       success: isInvoicePublic ? "Link copied to clipboard!" : "Invoice is now public! Link copied to clipboard.",
       error: (err: Error) => `Failed: ${err.message}`,
     });
-  }, [isInvoicePublic, makeInvoicePublic, sharingMode, shareUrl]);
+  }, [isInvoicePublic, makeInvoicePublic, router, sharingMode, shareUrl]);
 
   /**
    * Makes the invoice public and copies the QR code image to clipboard.
@@ -213,8 +222,9 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
    */
   const handleCopyQRCode = useCallback(() => {
     const copyQRCodeAction = async () => {
+      const wasPrivate = !isInvoicePublic;
       // If invoice is not already public, make it public first
-      if (!isInvoicePublic && sharingMode === "public") {
+      if (wasPrivate && sharingMode === "public") {
         await makeInvoicePublic();
       }
 
@@ -224,6 +234,11 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       }
 
       await copySvgToClipboard(qrCodeElement);
+
+      // Refresh the page data if sharing state changed
+      if (wasPrivate) {
+        router.refresh();
+      }
     };
 
     toast.promise(copyQRCodeAction(), {
@@ -231,7 +246,7 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
       success: isInvoicePublic ? "QR code copied to clipboard!" : "Invoice is now public! QR code copied to clipboard.",
       error: (err: Error) => `Failed: ${err.message}`,
     });
-  }, [isInvoicePublic, makeInvoicePublic, sharingMode]);
+  }, [isInvoicePublic, makeInvoicePublic, router, sharingMode]);
 
   /**
    * Sends an email invitation to share the invoice privately.
@@ -270,35 +285,37 @@ export default function ShareInvoiceDialog(): React.JSX.Element {
   /**
    * Revokes public access from the invoice by removing LAST_GUID from sharedWith.
    * Uses toast.promise for consistent loading/success/error states.
+   * Button is disabled via `isRevoking` state until backend responds.
    */
   const handleRevokeAccess = useCallback(() => {
     setIsRevoking(true);
 
     const revokeAction = async () => {
-      try {
-        const newSharedWith = (invoice.sharedWith ?? []).filter((id) => id !== LAST_GUID);
+      const newSharedWith = (invoice.sharedWith ?? []).filter((id) => id !== LAST_GUID);
 
-        const result = await patchInvoice({
-          invoiceId: invoice.id,
-          payload: {sharedWith: newSharedWith},
-        });
+      const result = await patchInvoice({
+        invoiceId: invoice.id,
+        payload: {sharedWith: newSharedWith},
+      });
 
-        if (!result.success) {
-          throw new Error(result.error);
-        }
-
-        handleClose();
-      } finally {
-        setIsRevoking(false);
+      if (!result.success) {
+        throw new Error(result.error);
       }
+
+      // Refresh the page data to reflect the new private state
+      router.refresh();
+      handleClose();
     };
 
-    toast.promise(revokeAction(), {
-      loading: "Revoking public access...",
-      success: "Invoice is now private. Existing links will no longer work.",
-      error: (err: Error) => `Failed: ${err.message}`,
-    });
-  }, [invoice.id, invoice.sharedWith, handleClose]);
+    toast.promise(
+      revokeAction().finally(() => setIsRevoking(false)),
+      {
+        loading: "Sending revoke request to backend...",
+        success: "Invoice is now private. Existing links will no longer work.",
+        error: (err: Error) => `Failed to revoke access: ${err.message}`,
+      },
+    );
+  }, [invoice.id, invoice.sharedWith, router, handleClose]);
 
   /** Get the dialog description based on current state */
   const getDialogDescription = (): string => {

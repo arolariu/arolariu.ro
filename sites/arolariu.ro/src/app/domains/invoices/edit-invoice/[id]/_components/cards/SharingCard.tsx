@@ -1,4 +1,5 @@
 import {useUserInformation} from "@/hooks";
+import patchInvoice from "@/lib/actions/invoices/patchInvoice";
 import {LAST_GUID} from "@/lib/utils.generic";
 import type {Invoice} from "@/types/invoices";
 import {
@@ -20,7 +21,8 @@ import {
 } from "@arolariu/components";
 import {motion} from "motion/react";
 import Image from "next/image";
-import {useCallback, useMemo} from "react";
+import {useRouter} from "next/navigation";
+import {useCallback, useMemo, useState} from "react";
 import {TbArrowRight, TbDeselect, TbGlobe, TbLock, TbLockCog, TbShare2, TbUser} from "react-icons/tb";
 import {useDialog} from "../../../../_contexts/DialogContext";
 
@@ -69,6 +71,8 @@ type Props = {
 export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Element {
   const {open} = useDialog("SHARED__INVOICE_SHARE", "share", invoice);
   const {userInformation} = useUserInformation();
+  const router = useRouter();
+  const [isMarkingPrivate, setIsMarkingPrivate] = useState<boolean>(false);
 
   /** Check if the invoice is currently public */
   const isInvoicePublic = useMemo(() => {
@@ -93,12 +97,39 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
     });
   }, []);
 
+  /**
+   * Revokes public access from the invoice by removing LAST_GUID from sharedWith.
+   * Uses toast.promise for consistent loading/success/error states.
+   * Button is disabled via `isMarkingPrivate` state until backend responds.
+   */
   const handleMarkPrivate = useCallback(() => {
-    // TODO: Implement mark as private functionality
-    toast("Mark private feature coming soon", {
-      description: "This feature is currently under development.",
-    });
-  }, []);
+    setIsMarkingPrivate(true);
+
+    const markPrivateAction = async () => {
+      const newSharedWith = (invoice.sharedWith ?? []).filter((id) => id !== LAST_GUID);
+
+      const result = await patchInvoice({
+        invoiceId: invoice.id,
+        payload: {sharedWith: newSharedWith},
+      });
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      // Refresh the page data to reflect the new private state
+      router.refresh();
+    };
+
+    toast.promise(
+      markPrivateAction().finally(() => setIsMarkingPrivate(false)),
+      {
+        loading: "Revoking public access...",
+        success: "Invoice is now private. Existing links will no longer work.",
+        error: (err: Error) => `Failed to mark private: ${err.message}`,
+      },
+    );
+  }, [invoice.id, invoice.sharedWith, router]);
 
   return (
     <Card className='group transition-shadow duration-300 hover:shadow-md'>
@@ -218,20 +249,23 @@ export default function SharingCard({invoice}: Readonly<Props>): React.JSX.Eleme
             </TooltipContent>
           </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant='destructive'
-                className='w-full cursor-pointer'
-                onClick={handleMarkPrivate}>
-                <span>Mark as Private</span>
-                <TbLock className='ml-2 h-4 w-4 transition-transform' />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side='bottom'>
-              <p>Mark the invoice as private</p>
-            </TooltipContent>
-          </Tooltip>
+          {isInvoicePublic && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant='destructive'
+                  className='w-full cursor-pointer'
+                  disabled={isMarkingPrivate}
+                  onClick={handleMarkPrivate}>
+                  <span>{isMarkingPrivate ? "Revoking Access..." : "Mark as Private"}</span>
+                  <TbLock className='ml-2 h-4 w-4 transition-transform' />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side='bottom'>
+                <p>Mark the invoice as private</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </TooltipProvider>
       </CardFooter>
     </Card>
