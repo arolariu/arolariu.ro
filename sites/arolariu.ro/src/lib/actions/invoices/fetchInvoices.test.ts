@@ -1,3 +1,4 @@
+import {InvoiceBuilder} from "@/data/mocks";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 import fetchInvoices from "./fetchInvoices";
@@ -18,6 +19,8 @@ vi.mock("../user/fetchUser", () => ({
 }));
 
 describe("fetchInvoices", () => {
+  const mockToken = "mock-token";
+
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch = vi.fn();
@@ -28,11 +31,10 @@ describe("fetchInvoices", () => {
   });
 
   it("should fetch invoices successfully", async () => {
-    const mockInvoices = [{id: "1", totalAmount: 100}];
-    const mockToken = "mock-token";
+    const mockInvoices = new InvoiceBuilder().buildMany(3);
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => mockInvoices,
     });
@@ -50,23 +52,25 @@ describe("fetchInvoices", () => {
   });
 
   it("should throw an error if fetch fails", async () => {
-    const mockToken = "mock-token";
     const errorMessage = "Internal Server Error";
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 500,
       statusText: "Internal Server Error",
       text: async () => errorMessage,
     });
 
-    await expect(fetchInvoices()).rejects.toThrow(`BFF fetch invoices request failed: 500 Internal Server Error - ${errorMessage}`);
+    await expect(fetchInvoices()).rejects.toThrow(
+      `BFF fetch invoices request failed: 500 Internal Server Error - ${errorMessage}`,
+    );
   });
 
   it("should throw an error if fetchBFFUserFromAuthService fails", async () => {
     const error = new Error("Auth failed");
-    (fetchBFFUserFromAuthService as any).mockRejectedValue(error);
+
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockRejectedValue(error);
 
     await expect(fetchInvoices()).rejects.toThrow("Auth failed");
   });

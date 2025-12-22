@@ -1,3 +1,4 @@
+import {InvoiceBuilder} from "@/data/mocks";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 import fetchInvoice from "./fetchInvoice";
@@ -17,10 +18,9 @@ vi.mock("../user/fetchUser", () => ({
   fetchBFFUserFromAuthService: vi.fn(),
 }));
 
-// Valid UUID v4 for testing
-const VALID_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
-
 describe("fetchInvoice", () => {
+  const mockToken = "mock-token";
+
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch = vi.fn();
@@ -31,20 +31,18 @@ describe("fetchInvoice", () => {
   });
 
   it("should fetch a single invoice successfully", async () => {
-    const mockInvoice = {id: VALID_UUID, totalAmount: 100};
-    const mockToken = "mock-token";
-    const invoiceId = VALID_UUID;
+    const mockInvoice = new InvoiceBuilder().build();
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => mockInvoice,
     });
 
-    const result = await fetchInvoice({invoiceId});
+    const result = await fetchInvoice({invoiceId: mockInvoice.id});
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith(`http://mock-api/rest/v1/invoices/${invoiceId}`, {
+    expect(global.fetch).toHaveBeenCalledWith(`http://mock-api/rest/v1/invoices/${mockInvoice.id}`, {
       headers: {
         Authorization: `Bearer ${mockToken}`,
         "Content-Type": "application/json",
@@ -54,26 +52,28 @@ describe("fetchInvoice", () => {
   });
 
   it("should throw an error if fetch fails", async () => {
-    const mockToken = "mock-token";
-    const invoiceId = VALID_UUID;
+    const mockInvoice = new InvoiceBuilder().build();
     const errorMessage = "Not Found";
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 404,
       statusText: "Not Found",
       text: async () => errorMessage,
     });
 
-    await expect(fetchInvoice({invoiceId})).rejects.toThrow(`BFF fetch invoice request failed: 404 Not Found - ${errorMessage}`);
+    await expect(fetchInvoice({invoiceId: mockInvoice.id})).rejects.toThrow(
+      `BFF fetch invoice request failed: 404 Not Found - ${errorMessage}`,
+    );
   });
 
   it("should throw an error if fetchBFFUserFromAuthService fails", async () => {
+    const mockInvoice = new InvoiceBuilder().build();
     const error = new Error("Auth failed");
-    const invoiceId = VALID_UUID;
-    (fetchBFFUserFromAuthService as any).mockRejectedValue(error);
 
-    await expect(fetchInvoice({invoiceId})).rejects.toThrow("Auth failed");
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockRejectedValue(error);
+
+    await expect(fetchInvoice({invoiceId: mockInvoice.id})).rejects.toThrow("Auth failed");
   });
 });

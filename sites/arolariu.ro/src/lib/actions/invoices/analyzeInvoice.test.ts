@@ -1,3 +1,5 @@
+import {InvoiceBuilder} from "@/data/mocks";
+import {InvoiceAnalysisOptions} from "@/types/invoices";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 import analyzeInvoice from "./analyzeInvoice";
@@ -17,19 +19,10 @@ vi.mock("../user/fetchUser", () => ({
   fetchBFFUserFromAuthService: vi.fn(),
 }));
 
-// Mock enum
-vi.mock("@/types/invoices", () => ({
-  InvoiceAnalysisOptions: {
-    BasicAnalysis: 0,
-  },
-}));
-
-import {InvoiceAnalysisOptions} from "@/types/invoices";
-
-// Valid UUID v4 for testing
-const VALID_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
-
 describe("analyzeInvoice", () => {
+  const mockToken = "mock-token";
+  const mockUserIdentifier = "user-123";
+
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch = vi.fn();
@@ -40,20 +33,21 @@ describe("analyzeInvoice", () => {
   });
 
   it("should analyze an invoice successfully", async () => {
-    const mockToken = "mock-token";
-    const mockUserIdentifier = "user-123";
-    const invoiceIdentifier = VALID_UUID;
+    const mockInvoice = new InvoiceBuilder().withUserIdentifier(mockUserIdentifier).build();
     const analysisOptions = InvoiceAnalysisOptions.CompleteAnalysis;
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken, userIdentifier: mockUserIdentifier});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({
+      userJwt: mockToken,
+      userIdentifier: mockUserIdentifier,
+    });
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
     });
 
-    await analyzeInvoice({invoiceIdentifier, analysisOptions});
+    await analyzeInvoice({invoiceIdentifier: mockInvoice.id, analysisOptions});
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith(`http://mock-api/rest/v1/invoices/${invoiceIdentifier}/analyze`, {
+    expect(global.fetch).toHaveBeenCalledWith(`http://mock-api/rest/v1/invoices/${mockInvoice.id}/analyze`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${mockToken}`,
@@ -67,20 +61,22 @@ describe("analyzeInvoice", () => {
   });
 
   it("should throw an error if analysis fails", async () => {
-    const mockToken = "mock-token";
-    const invoiceIdentifier = VALID_UUID;
+    const mockInvoice = new InvoiceBuilder().build();
     const analysisOptions = InvoiceAnalysisOptions.CompleteAnalysis;
     const errorMessage = "Internal Server Error";
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken, userIdentifier: "user-123"});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({
+      userJwt: mockToken,
+      userIdentifier: mockUserIdentifier,
+    });
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 500,
       statusText: "Internal Server Error",
       text: async () => errorMessage,
     });
 
-    await expect(analyzeInvoice({invoiceIdentifier, analysisOptions})).rejects.toThrow(
+    await expect(analyzeInvoice({invoiceIdentifier: mockInvoice.id, analysisOptions})).rejects.toThrow(
       `BFF analyze invoice request failed: 500 Internal Server Error - ${errorMessage}`,
     );
   });

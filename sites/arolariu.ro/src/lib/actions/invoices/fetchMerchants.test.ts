@@ -1,3 +1,4 @@
+import {MerchantBuilder} from "@/data/mocks";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 import fetchMerchants from "./fetchMerchants";
@@ -18,6 +19,8 @@ vi.mock("../user/fetchUser", () => ({
 }));
 
 describe("fetchMerchants", () => {
+  const mockToken = "mock-token";
+
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch = vi.fn();
@@ -28,11 +31,10 @@ describe("fetchMerchants", () => {
   });
 
   it("should fetch merchants successfully", async () => {
-    const mockMerchants = [{id: "1", name: "Test Merchant"}];
-    const mockToken = "mock-token";
+    const mockMerchants = new MerchantBuilder().buildMany(3);
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => mockMerchants,
     });
@@ -50,17 +52,18 @@ describe("fetchMerchants", () => {
   });
 
   it("should throw an error if fetch fails", async () => {
-    const mockToken = "mock-token";
     const errorMessage = "Internal Server Error";
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 500,
       statusText: "Internal Server Error",
       text: async () => errorMessage,
     });
 
-    await expect(fetchMerchants()).rejects.toThrow(`BFF fetch merchants request failed: 500 Internal Server Error - ${errorMessage}`);
+    await expect(fetchMerchants()).rejects.toThrow(
+      `BFF fetch merchants request failed: 500 Internal Server Error - ${errorMessage}`,
+    );
   });
 });

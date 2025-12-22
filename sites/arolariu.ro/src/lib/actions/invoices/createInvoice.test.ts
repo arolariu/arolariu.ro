@@ -1,3 +1,4 @@
+import {InvoiceBuilder, MerchantBuilder} from "@/data/mocks";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 import {createInvoice} from "./createInvoice";
@@ -18,6 +19,9 @@ vi.mock("../user/fetchUser", () => ({
 }));
 
 describe("createInvoice", () => {
+  const mockToken = "mock-token";
+  const mockUserIdentifier = "user-123";
+
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch = vi.fn();
@@ -28,13 +32,15 @@ describe("createInvoice", () => {
   });
 
   it("should create an invoice successfully", async () => {
-    const mockPayload = {merchantName: "Test Merchant"};
-    const mockInvoice = {id: "1", ...mockPayload};
-    const mockToken = "mock-token";
-    const mockUserIdentifier = "user-123";
+    const mockMerchant = new MerchantBuilder().withName("Test Merchant").build();
+    const mockPayload = {merchantName: mockMerchant.name};
+    const mockInvoice = new InvoiceBuilder().withId("created-invoice-id").withMerchantReference(mockMerchant.id).build();
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken, userIdentifier: mockUserIdentifier});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({
+      userJwt: mockToken,
+      userIdentifier: mockUserIdentifier,
+    });
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => mockInvoice,
     });
@@ -54,12 +60,16 @@ describe("createInvoice", () => {
   });
 
   it("should use provided userIdentifier if present", async () => {
-    const mockPayload = {merchantName: "Test Merchant", userIdentifier: "provided-id"};
-    const mockInvoice = {id: "1", ...mockPayload};
-    const mockToken = "mock-token";
+    const mockMerchant = new MerchantBuilder().withName("Test Merchant").build();
+    const providedUserId = "provided-id";
+    const mockPayload = {merchantName: mockMerchant.name, userIdentifier: providedUserId};
+    const mockInvoice = new InvoiceBuilder().withUserIdentifier(providedUserId).build();
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken, userIdentifier: "default-id"});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({
+      userJwt: mockToken,
+      userIdentifier: "default-id",
+    });
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => mockInvoice,
     });
@@ -75,18 +85,23 @@ describe("createInvoice", () => {
   });
 
   it("should throw an error if creation fails", async () => {
-    const mockPayload = {merchantName: "Test Merchant"};
-    const mockToken = "mock-token";
+    const mockMerchant = new MerchantBuilder().withName("Test Merchant").build();
+    const mockPayload = {merchantName: mockMerchant.name};
     const errorMessage = "Bad Request";
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken, userIdentifier: "user-123"});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({
+      userJwt: mockToken,
+      userIdentifier: mockUserIdentifier,
+    });
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 400,
       statusText: "Bad Request",
       text: async () => errorMessage,
     });
 
-    await expect(createInvoice(mockPayload)).rejects.toThrow(`BFF create invoice request failed: 400 Bad Request - ${errorMessage}`);
+    await expect(createInvoice(mockPayload)).rejects.toThrow(
+      `BFF create invoice request failed: 400 Bad Request - ${errorMessage}`,
+    );
   });
 });

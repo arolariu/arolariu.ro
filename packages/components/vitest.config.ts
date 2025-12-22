@@ -14,9 +14,6 @@ export default mergeConfig(
   baseConfig,
   defineConfig({
     plugins: [react()],
-    test: {
-      setupFiles: ["../../vitest.setup.ts"],
-    },
     resolve: {
       alias: {
         "@": resolve(__dirname, "./src"),

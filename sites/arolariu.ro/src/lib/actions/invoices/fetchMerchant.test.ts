@@ -1,3 +1,4 @@
+import {MerchantBuilder} from "@/data/mocks";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {fetchBFFUserFromAuthService} from "../user/fetchUser";
 import fetchMerchant from "./fetchMerchant";
@@ -17,10 +18,9 @@ vi.mock("../user/fetchUser", () => ({
   fetchBFFUserFromAuthService: vi.fn(),
 }));
 
-// Valid UUID v4 for testing
-const VALID_UUID = "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d";
-
 describe("fetchMerchant", () => {
+  const mockToken = "mock-token";
+
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch = vi.fn();
@@ -31,20 +31,18 @@ describe("fetchMerchant", () => {
   });
 
   it("should fetch a merchant successfully", async () => {
-    const mockMerchant = {id: VALID_UUID, name: "Test Merchant"};
-    const mockToken = "mock-token";
-    const merchantId = VALID_UUID;
+    const mockMerchant = new MerchantBuilder().withName("Test Merchant").build();
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => mockMerchant,
     });
 
-    const result = await fetchMerchant({merchantId});
+    const result = await fetchMerchant({merchantId: mockMerchant.id});
 
     expect(fetchBFFUserFromAuthService).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith(`http://mock-api/rest/v1/merchants/${merchantId}`, {
+    expect(global.fetch).toHaveBeenCalledWith(`http://mock-api/rest/v1/merchants/${mockMerchant.id}`, {
       headers: {
         Authorization: `Bearer ${mockToken}`,
         "Content-Type": "application/json",
@@ -54,18 +52,19 @@ describe("fetchMerchant", () => {
   });
 
   it("should throw an error if fetch fails", async () => {
-    const mockToken = "mock-token";
-    const merchantId = VALID_UUID;
+    const mockMerchant = new MerchantBuilder().build();
     const errorMessage = "Not Found";
 
-    (fetchBFFUserFromAuthService as any).mockResolvedValue({userJwt: mockToken});
-    (global.fetch as any).mockResolvedValue({
+    (fetchBFFUserFromAuthService as ReturnType<typeof vi.fn>).mockResolvedValue({userJwt: mockToken});
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 404,
       statusText: "Not Found",
       text: async () => errorMessage,
     });
 
-    await expect(fetchMerchant({merchantId})).rejects.toThrow(`BFF fetch merchant request failed: 404 Not Found - ${errorMessage}`);
+    await expect(fetchMerchant({merchantId: mockMerchant.id})).rejects.toThrow(
+      `BFF fetch merchant request failed: 404 Not Found - ${errorMessage}`,
+    );
   });
 });
