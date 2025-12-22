@@ -200,6 +200,7 @@ public readonly record struct PatchInvoiceRequestDto(
       }
     }
 
+    patched.NumberOfUpdates++;
     return patched;
   }
 }
