@@ -92,6 +92,17 @@ public sealed class Invoice : NamedEntity<Guid>
   [SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Set is only exposed for tests.")]
   public IDictionary<string, object> AdditionalMetadata { get; set; } = new Dictionary<string, object>();
 
+
+  /// <summary>
+  /// Performs an update operation on the current object or its state.
+  /// </summary>
+  public void PerformUpdate(Guid updatedById)
+  {
+    this.LastUpdatedBy = updatedById;
+    this.LastUpdatedAt = DateTimeOffset.Now;
+    this.NumberOfUpdates++;
+  }
+
   /// <summary>
   /// Factory producing a new invoice aggregate initialized with sentinel defaults.
   /// </summary>
