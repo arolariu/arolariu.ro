@@ -121,24 +121,28 @@ export function usePackageFilters(packages: HookInputType): Readonly<HookReturnT
     [packages],
   );
 
-  const filteredAndSortedPackages = Array.from(flatPackages)
-    // Filter by search query
-    .filter(
-      (pkg) =>
-        // Filter by package name
-        pkg.name.toLowerCase().includes(searchQuery.toLowerCase())
-        // Filter by any dependent package name
-        || (pkg.dependents?.some((dep) => dep.name.toLowerCase().includes(searchQuery.toLowerCase())) ?? false),
-    )
-    // Then filter by package type
-    .filter((pkg) => {
-      if (packageType === "all") {
-        return true;
-      }
-      return memoizedExtractPackageType(pkg) === packageType;
-    })
-    // Then sort by the selected field and direction
-    .toSorted((a, b) => __sortPackages__(a, b, sortField, sortDirection, memoizedExtractPackageType));
+  const filteredAndSortedPackages = useMemo(
+    () =>
+      Array.from(flatPackages)
+        // Filter by search query
+        .filter(
+          (pkg) =>
+            // Filter by package name
+            pkg.name.toLowerCase().includes(searchQuery.toLowerCase())
+            // Filter by any dependent package name
+            || (pkg.dependents?.some((dep) => dep.name.toLowerCase().includes(searchQuery.toLowerCase())) ?? false),
+        )
+        // Then filter by package type
+        .filter((pkg) => {
+          if (packageType === "all") {
+            return true;
+          }
+          return memoizedExtractPackageType(pkg) === packageType;
+        })
+        // Then sort by the selected field and direction
+        .toSorted((a, b) => __sortPackages__(a, b, sortField, sortDirection, memoizedExtractPackageType)),
+    [flatPackages, searchQuery, packageType, sortField, sortDirection, memoizedExtractPackageType],
+  );
 
   return {
     searchQuery,
