@@ -8,9 +8,6 @@ using System.Threading.Tasks;
 
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices;
 using arolariu.Backend.Domain.Invoices.DDD.AggregatorRoots.Invoices.Exceptions.Outer.Processing;
-using arolariu.Backend.Domain.Invoices.DDD.Entities.Merchants;
-using arolariu.Backend.Domain.Invoices.DDD.ValueObjects.Products;
-using arolariu.Backend.Domain.Invoices.DTOs;
 using arolariu.Backend.Domain.Invoices.DTOs.Requests;
 using arolariu.Backend.Domain.Invoices.DTOs.Responses;
 using arolariu.Backend.Domain.Invoices.Services.Processing;
@@ -124,12 +121,7 @@ public static partial class InvoiceEndpoints
 
       var canAccess = isPublicInvoice || (!isGuestUser && (isOwner || isSharedWithUser));
 
-      if (!canAccess)
-      {
-        return TypedResults.Forbid();
-      }
-
-      return TypedResults.Ok(InvoiceResponseDto.FromInvoice(possibleInvoice));
+      return !canAccess ? TypedResults.Forbid() : TypedResults.Ok(InvoiceResponseDto.FromInvoice(possibleInvoice));
     }
     catch (InvoiceProcessingServiceValidationException exception)
     {
@@ -361,10 +353,11 @@ public static partial class InvoiceEndpoints
         return TypedResults.NotFound();
       }
 
-      var newInvoice = invoicePayload.ApplyTo(possibleInvoice);
+      var newInvoice = invoicePayload.ApplyTo(possibleInvoice, potentialUserIdentifier);
 
       // If the merchant reference was updated, we need to validate the new merchant reference.
-      if (newInvoice.MerchantReference != possibleInvoice.MerchantReference)
+      if (invoicePayload.MerchantReference is not null &&
+          newInvoice.MerchantReference != possibleInvoice.MerchantReference)
       {
         var possibleMerchant = await invoiceProcessingService
           .ReadMerchant(newInvoice.MerchantReference)
