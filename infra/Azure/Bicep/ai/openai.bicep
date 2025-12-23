@@ -14,14 +14,9 @@
 // - Consider GPT-4o for production (best balance of cost/capability)
 //
 // Authentication:
-// - Backend UAMI receives "Cognitive Services User" role
+// - Backend UAMI receives "Cognitive Services User" role via rbac/backend-uami-rbac.bicep
 // - No API keys are used; all access via managed identity
-// - Role assignment is scoped to this specific OpenAI resource
-//
-// Role Assignment Details:
-// - Role: Cognitive Services User (a97b65f3-24c7-4388-baec-2e87135dc908)
-// - Allows: Read access to models, inference API calls
-// - Does not allow: Model deployment, account management
+// - RBAC assignments are centralized in the rbac/ module for consistency
 //
 // SKU: S0 (Standard)
 // - Pay-as-you-go pricing based on tokens processed
@@ -31,7 +26,7 @@
 // - Public network access enabled
 // - Consider private endpoints for production
 //
-// See: rbac/backend-uami-rbac.bicep (additional AI roles if needed)
+// See: rbac/backend-uami-rbac.bicep (OpenAI Contributor + User roles)
 // See: docs/rfc/2001-domain-driven-design-architecture.md (Invoice AI)
 // =====================================================================================
 
@@ -51,9 +46,6 @@ param openAiDeploymentDate string
 @description('The prefix to use for the names of the resources.')
 param openAiConventionPrefix string
 
-@description('The backend managed identity principal id to which we will grant access to the AI services.')
-param backendManagedIdentityPrincipalId string
-
 import { resourceTags } from '../types/common.type.bicep'
 var commonTags resourceTags = {
   environment: 'PRODUCTION'
@@ -66,7 +58,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource openAi 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' = {
+resource openAi 'Microsoft.CognitiveServices/accounts@2025-10-01-preview' = {
   name: '${openAiConventionPrefix}-openai'
   location: openAiLocation
   sku: { name: 'S0' }
@@ -78,16 +70,6 @@ resource openAi 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' = {
   tags: union(commonTags, {
     sku: 'Free Tier'
   })
-}
-
-resource openAiRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(openAi.id, backendManagedIdentityPrincipalId, 'Cognitive Services User')
-  scope: openAi
-  properties: {
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', 'a97b65f3-24c7-4388-baec-2e87135dc908')
-    principalId: backendManagedIdentityPrincipalId
-    principalType: 'ServicePrincipal'
-  }
 }
 
 output openAiId string = openAi.id
