@@ -26,7 +26,7 @@
     "pretty-bytes": "7.1.0"
   },
   "devDependencies": {
-    "@types/node": "24.10.4",
+    "@types/node": "25.0.3",
     "@vitest/ui": "4.0.16",
     "typescript": "5.9.3",
     "vitest": "4.0.16"
