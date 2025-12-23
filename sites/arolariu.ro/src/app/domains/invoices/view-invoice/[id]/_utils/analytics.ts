@@ -112,10 +112,10 @@ export function getInvoiceSummary(invoice: Invoice): InvoiceSummary {
     uniqueCategories: categories.size,
     averageItemPrice: items.length > 0 ? Math.round((invoice.paymentInformation.totalCostAmount / items.length) * 100) / 100 : 0,
     highestItem: sortedByPrice[0] ? {name: sortedByPrice[0].genericName, price: sortedByPrice[0].totalPrice} : {name: "N/A", price: 0},
-    lowestItem: sortedByPrice[sortedByPrice.length - 1]
+    lowestItem: sortedByPrice.at(-1)
       ? {
-          name: sortedByPrice[sortedByPrice.length - 1]!.genericName,
-          price: sortedByPrice[sortedByPrice.length - 1]!.totalPrice,
+          name: sortedByPrice.at(-1)!.genericName,
+          price: sortedByPrice.at(-1)!.totalPrice,
         }
       : {name: "N/A", price: 0},
     taxPercentage:
@@ -235,20 +235,21 @@ export type CategoryTrendData = {
   average: number;
 };
 
+/**
+ * Gets category comparison data for demo purposes.
+ * @returns Array of category trend data comparing current to average spending.
+ */
 export function getCategoryComparison(): CategoryTrendData[] {
   const current = generateRandomInvoice().category; // This would be the current invoice
 
-  // Calculate average for each category
-  const categoryAverages = new Map<ProductCategory, number>();
-
   return Object.entries(current)
-    .filter(([_, amount]) => amount > 0 || (categoryAverages.get(Number(_) as ProductCategory) || 0) > 0)
+    .filter(([_, amount]) => amount > 0)
     .map(([cat, amount]) => ({
       category: formatEnum(ProductCategory, Number(cat) as ProductCategory),
       current: Math.round(amount * 100) / 100,
-      average: Math.round((categoryAverages.get(Number(cat) as ProductCategory) || 0) * 100) / 100,
+      average: 0, // Historical averages not yet implemented
     }))
-    .filter((d) => d.current > 0 || d.average > 0)
+    .filter((d) => d.current > 0)
     .sort((a, b) => b.current - a.current);
 }
 
@@ -322,16 +323,238 @@ export function computeBudgetImpact(paymentInformation: PaymentInformation): Bud
   };
 }
 
+// ============================================================================
+// Shopping Calendar Analytics
+// ============================================================================
+
+/**
+ * Data for a single day in the shopping calendar.
+ */
 export type DayData = {
+  /** Total amount spent on this day */
   amount: number;
+  /** Number of invoices on this day */
   count: number;
+  /** List of invoice IDs for this day */
+  invoiceIds: string[];
+  /** List of invoice names for tooltips */
+  invoiceNames: string[];
 };
 
+/**
+ * Historical comparison data for a specific day.
+ */
+export type DayHistoricalComparison = {
+  /** Average amount spent on this day of month across all years */
+  historicalAverage: number;
+  /** Number of years with data for this day */
+  yearsWithData: number;
+  /** Percentage difference from historical average */
+  percentageDiff: number;
+  /** Whether current spending is above historical average */
+  isAboveAverage: boolean;
+};
+
+/**
+ * Complete shopping patterns for calendar display.
+ */
 export type ShoppingPatterns = {
+  /** Spending data by day of month (1-31) */
   spendingByDay: Record<number, DayData>;
+  /** Average days between shopping trips */
   avgDaysBetween: number;
+  /** Total spent in the month */
+  monthTotal: number;
+  /** Number of shopping days in the month */
+  shoppingDaysCount: number;
+  /** Average spend per shopping trip */
+  avgPerTrip: number;
+  /** Historical comparison by day */
+  historicalByDay: Record<number, DayHistoricalComparison>;
+  /** Most active shopping day (day of week: 0=Sunday) */
+  mostActiveWeekday: number;
+  /** Least active shopping day */
+  leastActiveWeekday: number;
 };
 
+/**
+ * Computes shopping patterns from cached invoices for a specific month.
+ *
+ * @param invoices - All cached invoices from the store
+ * @param targetMonth - The month to compute patterns for
+ * @returns Complete shopping patterns with historical comparison
+ */
+export function computeShoppingPatterns(invoices: ReadonlyArray<Invoice>, targetMonth: Date): ShoppingPatterns {
+  const targetYear = targetMonth.getFullYear();
+  const targetMonthIndex = targetMonth.getMonth();
+
+  // Filter invoices for the target month
+  const monthInvoices = invoices.filter((inv) => {
+    const invDate = new Date(inv.paymentInformation.transactionDate);
+    return invDate.getMonth() === targetMonthIndex && invDate.getFullYear() === targetYear;
+  });
+
+  // Create spending map by day
+  const spendingByDay: Record<number, DayData> = {};
+  let monthTotal = 0;
+
+  for (const inv of monthInvoices) {
+    const day = new Date(inv.paymentInformation.transactionDate).getDate();
+    spendingByDay[day] ??= {amount: 0, count: 0, invoiceIds: [], invoiceNames: []};
+    const dayData = spendingByDay[day];
+    if (dayData) {
+      dayData.amount += inv.paymentInformation.totalCostAmount;
+      dayData.count += 1;
+      dayData.invoiceIds.push(inv.id);
+      dayData.invoiceNames.push(inv.name);
+    }
+    monthTotal += inv.paymentInformation.totalCostAmount;
+  }
+
+  // Calculate average days between shopping trips
+  const shoppingDays = Object.keys(spendingByDay)
+    .map(Number)
+    .sort((a, b) => a - b);
+  let totalGap = 0;
+  for (let i = 1; i < shoppingDays.length; i++) {
+    totalGap += shoppingDays[i]! - shoppingDays[i - 1]!;
+  }
+  const avgDaysBetween = shoppingDays.length > 1 ? totalGap / (shoppingDays.length - 1) : 0;
+
+  // Compute historical comparison for each day
+  const historicalByDay = computeHistoricalComparison(invoices, targetMonthIndex, targetYear, spendingByDay);
+
+  // Compute weekday activity
+  const weekdayActivity = computeWeekdayActivity(invoices);
+
+  return {
+    spendingByDay,
+    avgDaysBetween,
+    monthTotal: Math.round(monthTotal * 100) / 100,
+    shoppingDaysCount: shoppingDays.length,
+    avgPerTrip: shoppingDays.length > 0 ? Math.round((monthTotal / shoppingDays.length) * 100) / 100 : 0,
+    historicalByDay,
+    mostActiveWeekday: weekdayActivity.mostActive,
+    leastActiveWeekday: weekdayActivity.leastActive,
+  };
+}
+
+/**
+ * Computes historical comparison for spending by day of month.
+ */
+function computeHistoricalComparison(
+  invoices: ReadonlyArray<Invoice>,
+  targetMonthIndex: number,
+  targetYear: number,
+  currentSpending: Record<number, DayData>,
+): Record<number, DayHistoricalComparison> {
+  const result: Record<number, DayHistoricalComparison> = {};
+
+  // Get all invoices from same month in previous years
+  const historicalInvoices = invoices.filter((inv) => {
+    const invDate = new Date(inv.paymentInformation.transactionDate);
+    return invDate.getMonth() === targetMonthIndex && invDate.getFullYear() < targetYear;
+  });
+
+  // Group historical spending by day
+  const historicalByDay: Record<number, {total: number; years: Set<number>}> = {};
+  for (const inv of historicalInvoices) {
+    const invDate = new Date(inv.paymentInformation.transactionDate);
+    const day = invDate.getDate();
+    const year = invDate.getFullYear();
+
+    historicalByDay[day] ??= {total: 0, years: new Set()};
+    const dayData = historicalByDay[day];
+    if (dayData) {
+      dayData.total += inv.paymentInformation.totalCostAmount;
+      dayData.years.add(year);
+    }
+  }
+
+  // Compute comparison for each day that has current spending
+  for (const dayStr of Object.keys(currentSpending)) {
+    const day = Number(dayStr);
+    const currentAmount = currentSpending[day]?.amount ?? 0;
+    const historical = historicalByDay[day];
+
+    if (historical && historical.years.size > 0) {
+      const historicalAverage = historical.total / historical.years.size;
+      const percentageDiff = historicalAverage > 0 ? ((currentAmount - historicalAverage) / historicalAverage) * 100 : 0;
+
+      result[day] = {
+        historicalAverage: Math.round(historicalAverage * 100) / 100,
+        yearsWithData: historical.years.size,
+        percentageDiff: Math.round(percentageDiff * 10) / 10,
+        isAboveAverage: currentAmount > historicalAverage,
+      };
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Computes which weekdays are most/least active for shopping.
+ */
+function computeWeekdayActivity(invoices: ReadonlyArray<Invoice>): {mostActive: number; leastActive: number} {
+  const weekdayCounts: Record<number, number> = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0};
+
+  for (const inv of invoices) {
+    const weekday = new Date(inv.paymentInformation.transactionDate).getDay();
+    weekdayCounts[weekday] = (weekdayCounts[weekday] ?? 0) + 1;
+  }
+
+  let mostActive = 0;
+  let leastActive = 0;
+  let maxCount = weekdayCounts[0] ?? 0;
+  let minCount = weekdayCounts[0] ?? 0;
+
+  for (let i = 1; i < 7; i++) {
+    const count = weekdayCounts[i] ?? 0;
+    if (count > maxCount) {
+      maxCount = count;
+      mostActive = i;
+    }
+    if (count < minCount) {
+      minCount = count;
+      leastActive = i;
+    }
+  }
+
+  return {mostActive, leastActive};
+}
+
+/**
+ * Gets the intensity class for calendar day coloring based on spending amount.
+ *
+ * @param amount - The spending amount for the day
+ * @param maxAmount - The maximum spending amount in the month (for relative scaling)
+ * @returns Tailwind CSS class string for background color
+ */
+export function getSpendingIntensityClass(amount: number, maxAmount: number): string {
+  if (amount === 0 || maxAmount === 0) return "";
+
+  const ratio = amount / maxAmount;
+
+  if (ratio < 0.2) return "bg-primary/20 hover:bg-primary/30 text-foreground";
+  if (ratio < 0.4) return "bg-primary/40 hover:bg-primary/50 text-foreground";
+  if (ratio < 0.6) return "bg-primary/60 hover:bg-primary/70 text-primary-foreground";
+  if (ratio < 0.8) return "bg-primary/80 hover:bg-primary/90 text-primary-foreground";
+  return "bg-primary hover:bg-primary/90 text-primary-foreground";
+}
+
+/**
+ * Gets a human-readable weekday name.
+ */
+export function getWeekdayName(weekday: number, locale = "en-US"): string {
+  const date = new Date(2024, 0, 7 + weekday); // Jan 7, 2024 is a Sunday
+  return new Intl.DateTimeFormat(locale, {weekday: "long"}).format(date);
+}
+
+// Keep the old function for backward compatibility but mark as deprecated
+/**
+ * @deprecated Use computeShoppingPatterns instead
+ */
 export function getShoppingPatterns(month: Date): ShoppingPatterns {
   const year = month.getFullYear();
   const currentMonth = month.getMonth();
@@ -351,10 +574,12 @@ export function getShoppingPatterns(month: Date): ShoppingPatterns {
     (acc, inv) => {
       const day = new Date(inv.createdAt).getDate();
       if (!acc[day]) {
-        acc[day] = {amount: 0, count: 0};
+        acc[day] = {amount: 0, count: 0, invoiceIds: [], invoiceNames: []};
       }
       acc[day].amount += inv.paymentInformation.totalCostAmount;
       acc[day].count += 1;
+      acc[day].invoiceIds.push(inv.id);
+      acc[day].invoiceNames.push(inv.name);
       return acc;
     },
     {} as Record<number, DayData>,
@@ -370,5 +595,14 @@ export function getShoppingPatterns(month: Date): ShoppingPatterns {
   }
   const avg = shoppingDays.length > 1 ? totalGap / (shoppingDays.length - 1) : 0;
 
-  return {spendingByDay: spending, avgDaysBetween: avg};
+  return {
+    spendingByDay: spending,
+    avgDaysBetween: avg,
+    monthTotal: 0,
+    shoppingDaysCount: shoppingDays.length,
+    avgPerTrip: 0,
+    historicalByDay: {},
+    mostActiveWeekday: 0,
+    leastActiveWeekday: 0,
+  };
 }
