@@ -1,7 +1,52 @@
+// =====================================================================================
+// Production Website - arolariu.ro Next.js Application
+// =====================================================================================
+// This module provisions the production App Service that hosts the main arolariu.ro
+// website. The site runs as a Linux container with Node.js 22 LTS runtime and is
+// configured for enterprise-grade security and performance.
+//
+// Runtime Configuration:
+// - Platform: Linux container (app,linux,container)
+// - Runtime: Node.js 22 LTS (linuxFxVersion)
+// - Container source: Azure Container Registry (via managed identity)
+// - Always On: Enabled (prevents cold starts)
+//
+// Identity:
+// - User-Assigned Managed Identity (Frontend UAMI)
+// - Used for: ACR pull, Key Vault secrets, App Configuration
+// - No system-assigned identity (using UAMI for consistency)
+//
+// Security Configuration:
+// - HTTPS Only: Enforced (redirects HTTP to HTTPS)
+// - FTPS: Disabled (no FTP access)
+// - IP Restrictions: Only Azure Front Door allowed as origin
+// - CORS: Limited to clerk.arolariu.ro, api.arolariu.ro, cdn.arolariu.ro
+//
+// Scaling:
+// - Initial workers: 1
+// - Minimum elastic instances: 1
+// - Load balancing: Least Requests algorithm
+// - Redundancy: None (Front Door provides global redundancy)
+//
+// Observability:
+// - Application Insights instrumentation enabled
+// - HTTP logging enabled
+// - Health check path: /
+//
+// Deployment:
+// - SCM Type: GitHub Actions
+// - Container image pushed via Infrastructure UAMI
+//
+// See: compute/appServicePlans.bicep (hosting plan)
+// See: identity/userAssignedIdentity.bicep (Frontend UAMI)
+// See: network/azureFrontDoor.bicep (traffic routing)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will create the arolariu.ro app service site.'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Production arolariu.ro App Service with container deployment'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 param productionWebsiteLocation string
 param productionWebsiteAppPlanId string

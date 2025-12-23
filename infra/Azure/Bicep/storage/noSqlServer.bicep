@@ -1,7 +1,44 @@
+// =====================================================================================
+// Azure Cosmos DB (NoSQL API) - Globally Distributed Document Database
+// =====================================================================================
+// This module provisions an Azure Cosmos DB account with NoSQL API. Cosmos DB serves
+// as the document store for semi-structured data requiring flexible schemas:
+// - Invoice documents (JSON with varying product structures)
+// - User preferences and settings
+// - Analytics data and aggregations
+//
+// Deployed Containers:
+// - invoices: Stores invoice documents partitioned by user or merchant
+//
+// Consistency Level: Session
+// - Guarantees read-your-writes within a session
+// - Good balance between consistency and performance
+// - Suitable for single-region deployments
+//
+// Pricing Tier:
+// - Free tier enabled (first 1000 RU/s and 25 GB free)
+// - Total throughput limit: 1000 RU/s
+// - Standard offer type
+//
+// Backup Policy:
+// - Continuous backup with 7-day point-in-time restore
+// - Provides granular recovery without snapshots
+//
+// Security Configuration:
+// - TLS 1.2 minimum (minimalTlsVersion: 'Tls12')
+// - Local authentication enabled (for development)
+// - Consider disabling local auth for production (disableLocalAuth: true)
+// - Public network access enabled
+//
+// See: rbac/backend-uami-rbac.bicep (Cosmos DB role assignments)
+// See: docs/rfc/2001-domain-driven-design-architecture.md (data model)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will create a new Azure NoSQL server resource.'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Azure Cosmos DB with NoSQL API for document storage'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The NoSQL Server name.')
 param noSqlServerName string

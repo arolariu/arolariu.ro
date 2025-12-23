@@ -1,7 +1,46 @@
+// =====================================================================================
+// Azure DNS Zone - Authoritative DNS for arolariu.ro Domain
+// =====================================================================================
+// This module provisions an Azure DNS Zone that serves as the authoritative DNS
+// for the arolariu.ro domain. The zone contains all DNS records required for:
+// - Website routing (A, CNAME records pointing to Front Door)
+// - SSL certificate validation (TXT records for domain verification)
+// - Email authentication (SPF, DKIM, DMARC records)
+// - Third-party service verification (Clerk, Google, etc.)
+//
+// Record Types Deployed:
+// - A Record (@): Apex domain to Front Door (ALIAS)
+// - CNAME Records: www, cdn, api, dev, docs, cv subdomains
+// - TXT Records: Domain validation tokens, SPF, DKIM
+// - MX Records: Email routing (if configured)
+//
+// DNSSEC:
+// - DNSSEC is enabled for cryptographic DNS security
+// - Prevents DNS spoofing and cache poisoning attacks
+//
+// Front Door Integration:
+// - Validation tokens are passed from Front Door deployment
+// - TXT records (_dnsauth.*) required for managed certificate issuance
+// - A record uses target resource ID for ALIAS functionality
+//
+// Third-Party Integrations:
+// - Clerk (authentication): CNAME records for custom auth domain
+// - Google (verification): TXT record for Search Console
+// - Email providers: SPF and DKIM records
+//
+// TTL Settings:
+// - 3600 seconds (1 hour) for most records
+// - Lower TTL during migrations for faster propagation
+//
+// See: network/azureFrontDoor.bicep (provides validation tokens)
+// See: bindings/deploymentFile.bicep (custom domain bindings)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will create the necessary Azure DNS Zone resources for arolariu.ro with dynamic DNS records'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Azure DNS Zone with DNSSEC and dynamic Front Door integration'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The name of the Azure DNS Zone resource.')
 param dnsZoneName string

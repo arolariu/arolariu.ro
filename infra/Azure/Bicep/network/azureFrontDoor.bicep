@@ -1,7 +1,48 @@
+// =====================================================================================
+// Azure Front Door - Global CDN, WAF, and Load Balancer
+// =====================================================================================
+// This module provisions Azure Front Door Standard tier which provides:
+// - Global CDN with 118+ edge locations worldwide
+// - Web Application Firewall (WAF) protection
+// - SSL/TLS termination with managed certificates
+// - Intelligent routing and load balancing
+// - Origin health probes and automatic failover
+//
+// Deployed Resources:
+// - Front Door Profile (CDN/AFD resource)
+// - WAF Policy (Web Application Firewall rules)
+// - Custom Domains (arolariu.ro, www.arolariu.ro, cdn.arolariu.ro)
+// - Endpoints and Routes (production traffic routing)
+// - Origin Groups (backend App Services)
+//
+// SKU: Standard_AzureFrontDoor
+// - Includes WAF capability (prevention mode)
+// - Managed certificates for custom domains
+// - Consider Premium for private link to origins
+//
+// WAF Configuration:
+// - Mode: Prevention (blocks malicious requests)
+// - Request body inspection enabled
+// - Custom rules can be added for specific protection
+//
+// Custom Domains:
+// - apex (arolariu.ro) - requires DNS ALIAS record
+// - www (www.arolariu.ro) - uses CNAME record
+// - cdn (cdn.arolariu.ro) - static asset delivery
+//
+// TLS Configuration:
+// - Minimum TLS 1.2 enforced
+// - Managed certificates auto-renewed by Azure
+//
+// See: network/dnsZone.bicep (DNS records for domain validation)
+// See: sites/*.bicep (origin hosts)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will deploy an Azure Front Door resource with production-ready configuration.'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Azure Front Door with WAF, custom domains, and CDN'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The name of the Front Door resource.')
 param frontDoorName string

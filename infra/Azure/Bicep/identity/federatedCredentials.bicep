@@ -1,9 +1,36 @@
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will create both development and production federated managed identities for Azure resources.'
-metadata author = 'Alexandru-Razvan Olariu'
+// =====================================================================================
+// Federated Identity Credentials for GitHub Actions OIDC
+// =====================================================================================
+// This module creates federated identity credentials that enable GitHub Actions
+// to authenticate with Azure using OpenID Connect (OIDC), eliminating the need
+// for storing secrets in GitHub.
+//
+// Authentication Flow:
+// 1. GitHub Actions workflow requests OIDC token from GitHub
+// 2. Token includes subject claim (repo:owner/repo:environment:name)
+// 3. Azure validates token against registered federated credential
+// 4. If valid, Azure issues access token for the managed identity
+// 5. Workflow uses access token to deploy resources
+//
+// Created Credentials:
+// - Development: Allows deployments from 'development' environment
+// - Production: Allows deployments from 'production' environment
+//
+// Security: Only the infrastructure identity receives federated credentials,
+// as it's the only identity used by CI/CD pipelines.
+//
+// See: .github/workflows/ for GitHub Actions workflow configurations
+// =====================================================================================
+
+metadata description = 'Creates federated identity credentials for GitHub Actions OIDC authentication with Azure.'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 import { identity } from '../types/identity.type.bicep'
+
+@description('The infrastructure managed identity that will receive federated credentials for GitHub Actions OIDC.')
 param infrastructureManagedIdentity identity
 
 var federatedCredentials = [

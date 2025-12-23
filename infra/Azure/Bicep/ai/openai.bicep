@@ -1,7 +1,45 @@
+// =====================================================================================
+// Azure OpenAI Service - GPT and Language Model API
+// =====================================================================================
+// This module provisions an Azure OpenAI Service instance that provides access to
+// OpenAI's powerful language models (GPT-4, GPT-3.5, etc.) for the arolariu.ro
+// platform. Azure OpenAI is used for:
+// - Invoice analysis and data extraction
+// - Natural language understanding for user queries
+// - Content generation and summarization
+//
+// Model Deployments:
+// - Models are deployed separately after the account is created
+// - Configure via Azure Portal or separate Bicep module
+// - Consider GPT-4o for production (best balance of cost/capability)
+//
+// Authentication:
+// - Backend UAMI receives "Cognitive Services User" role
+// - No API keys are used; all access via managed identity
+// - Role assignment is scoped to this specific OpenAI resource
+//
+// Role Assignment Details:
+// - Role: Cognitive Services User (a97b65f3-24c7-4388-baec-2e87135dc908)
+// - Allows: Read access to models, inference API calls
+// - Does not allow: Model deployment, account management
+//
+// SKU: S0 (Standard)
+// - Pay-as-you-go pricing based on tokens processed
+// - No commitment tier (consider PTU for predictable workloads)
+//
+// Network Configuration:
+// - Public network access enabled
+// - Consider private endpoints for production
+//
+// See: rbac/backend-uami-rbac.bicep (additional AI roles if needed)
+// See: docs/rfc/2001-domain-driven-design-architecture.md (Invoice AI)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This file contains the bicep code for deploying the Azure OpenAI service.'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Azure OpenAI Service with managed identity authentication'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The location for the OpenAI service.')
 @allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])

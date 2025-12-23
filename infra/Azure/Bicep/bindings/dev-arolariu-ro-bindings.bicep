@@ -1,7 +1,44 @@
+// =====================================================================================
+// Development Website Bindings - dev.arolariu.ro Custom Domain Configuration
+// =====================================================================================
+// This module configures the custom domain binding for the dev.arolariu.ro staging
+// environment. It creates the necessary DNS records and hostname bindings to enable
+// the custom domain with SSL certificate.
+//
+// Deployed Resources:
+// - CNAME DNS record: dev.arolariu.ro → App Service default hostname
+// - TXT DNS record: asuid.dev.arolariu.ro (domain verification)
+// - Hostname binding: Links custom domain to App Service
+// - Managed certificate: Free SSL certificate from Azure
+//
+// Domain Verification Process:
+// 1. TXT record (asuid.dev) contains customDomainVerificationId
+// 2. Azure validates domain ownership via TXT lookup
+// 3. CNAME record routes traffic to App Service
+// 4. Managed certificate is auto-provisioned after verification
+//
+// Certificate Management:
+// - App Service Managed Certificate (free)
+// - Auto-renewed by Azure before expiration
+// - Requires Basic+ App Service Plan tier
+//
+// Note: Development environment uses same binding pattern as production
+// for consistency and realistic testing of domain-specific features.
+//
+// Prerequisites:
+// - App Service must exist (sites/dev-arolariu-ro.bicep)
+// - DNS Zone must exist (network/dnsZone.bicep)
+// - App Service Plan must be Basic tier or higher
+//
+// See: sites/dev-arolariu-ro.bicep (App Service)
+// See: network/dnsZone.bicep (DNS Zone)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'Custom domain binding and managed certificate for dev.arolariu.ro'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Custom domain binding and certificate for dev.arolariu.ro'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The name of the DNS zone for the custom domain.')
 param dnsZoneName string

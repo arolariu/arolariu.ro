@@ -1,7 +1,46 @@
+// =====================================================================================
+// Development Website - dev.arolariu.ro Staging Environment
+// =====================================================================================
+// This module provisions the development/staging App Service for testing new features
+// before production deployment. The site mirrors production configuration but runs
+// on a lower-cost App Service Plan.
+//
+// Purpose:
+// - Feature branch testing and preview
+// - Integration testing before production merge
+// - QA and UAT environment
+// - Demonstration of unreleased features
+//
+// Runtime Configuration:
+// - Platform: Linux container (app,linux,container)
+// - Runtime: Node.js 22 LTS (matches production)
+// - Container source: Azure Container Registry (development tag)
+// - Always On: Enabled (consistent with production behavior)
+//
+// Identity:
+// - User-Assigned Managed Identity (Frontend UAMI)
+// - Shares identity with production frontend
+// - Same permissions allow realistic testing
+//
+// Cost Optimization:
+// - Uses Development App Service Plan (B1 instead of B2)
+// - No redundancy (single instance)
+// - Environment tag: DEVELOPMENT (for billing differentiation)
+//
+// Security Configuration:
+// - HTTPS Only: Enforced
+// - FTPS: Disabled
+// - CORS: Same origins as production
+//
+// See: compute/appServicePlans.bicep (development plan)
+// See: sites/arolariu-ro.bicep (production counterpart)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will create the dev.arolariu.ro app service site.'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Development staging environment dev.arolariu.ro'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 param developmentWebsiteLocation string
 param developmentWebsiteAppPlanId string

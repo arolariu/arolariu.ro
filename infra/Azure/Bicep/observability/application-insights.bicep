@@ -1,8 +1,47 @@
+// =====================================================================================
+// Azure Application Insights - Application Performance Monitoring (APM)
+// =====================================================================================
+// This module provisions Application Insights for end-to-end application
+// performance monitoring and distributed tracing. Application Insights provides:
+// - Automatic telemetry collection (requests, dependencies, exceptions)
+// - Distributed tracing across frontend and backend services
+// - Live metrics stream for real-time monitoring
+// - Application map visualizing service dependencies
+// - Failure analysis and smart detection alerts
+//
+// Connected Applications:
+// - arolariu.ro (Next.js frontend)
+// - api.arolariu.ro (.NET backend)
+// - All Azure services emit telemetry here
+//
+// Workspace Mode:
+// - Uses Log Analytics Workspace for data storage (not classic mode)
+// - Enables unified querying across logs and metrics
+// - Required for workspace-based retention and export
+//
+// Sampling Configuration:
+// - SamplingPercentage: 30% (only 30% of telemetry is stored)
+// - Reduces costs while maintaining statistical significance
+// - Consider 100% for production debugging scenarios
+//
+// Retention:
+// - 90-day retention for detailed telemetry
+// - Aggregated metrics retained longer in workspace
+//
+// Integration Points:
+// - Connection string provided to App Services for SDK initialization
+// - Instrumentation key for legacy SDK compatibility (deprecated)
+//
+// See: sites/*.bicep (consumes connection string)
+// See: RFC 1001 (Frontend OpenTelemetry)
+// See: RFC 2002 (Backend OpenTelemetry)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will deploy an application insights resource that is connected to the api.arolariu.ro platform (back-end) and the arolariu.ro platform (front-end).'
-
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Application Insights for APM and distributed tracing'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 param applicationInsightsName string
 param applicationInsightsLocation string

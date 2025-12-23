@@ -1,7 +1,42 @@
+// =====================================================================================
+// Azure SQL Server - Relational Database Service
+// =====================================================================================
+// This module provisions an Azure SQL Server and its databases. Azure SQL serves as
+// the primary relational data store for structured data requiring ACID transactions:
+// - User accounts and authentication data
+// - Audit logs and compliance records
+// - Relational data with complex query requirements
+//
+// Deployed Databases:
+// - primary: Main production database
+// - secondary: Read replica or backup database
+//
+// Authentication Model (Hybrid):
+// - Azure AD authentication (primary, recommended)
+// - SQL authentication (fallback, for legacy tools)
+//
+// Azure AD Administrator:
+// - admin@arolariu.ro is configured as the Azure AD admin
+// - All managed identities can authenticate via Azure AD
+// - See rbac/sql-rbac-uami.sql for database-level permissions
+//
+// Security Configuration:
+// - TLS 1.2 minimum (minimalTlsVersion: '1.2')
+// - Public network access enabled (consider private endpoints for production)
+// - Azure SQL version 12.0 (latest stable)
+//
+// Note: Advanced Threat Protection and Auditing are disabled to reduce costs.
+// Enable these features for production workloads with compliance requirements.
+//
+// See: rbac/sql-rbac-uami.sql (database-level RBAC for UAMIs)
+// See: configuration/keyVault.bicep (connection strings stored securely)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will create a new Azure SQL server resource with standardized metadata.'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Azure SQL Server with Azure AD authentication and hybrid auth support'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The SQL Server name.')
 @minLength(1)

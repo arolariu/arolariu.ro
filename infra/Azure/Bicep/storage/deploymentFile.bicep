@@ -1,7 +1,28 @@
 targetScope = 'resourceGroup'
 
-metadata description = 'Storage module deployment file that provisions storage accounts, container registry, and databases with enterprise security standards.'
-metadata author = 'Alexandru-Razvan Olariu'
+// =====================================================================================
+// Storage Module Deployment Orchestrator
+// =====================================================================================
+// This module orchestrates the deployment of all storage-related resources for the
+// arolariu.ro infrastructure, including blob storage, container registry, and databases.
+//
+// Deployed Resources:
+// - Azure Storage Account (Blob, Queue, Table storage for app data)
+// - Azure Container Registry (Docker images for containerized deployments)
+// - Azure SQL Server + Database (Relational data for invoices, users)
+// - Azure Cosmos DB (NoSQL data for flexible document storage)
+//
+// Security Features:
+// - All storage uses managed identity authentication (no connection strings)
+// - TLS 1.2+ required for all connections
+// - Public network access restricted where possible
+//
+// See: rbac/backend-uami-rbac.bicep for storage access permissions
+// =====================================================================================
+
+metadata description = 'Storage module orchestrator that provisions storage accounts, container registry, and databases with enterprise security.'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The date when the deployment is executed.')
 param resourceDeploymentDate string
