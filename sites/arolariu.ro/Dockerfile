@@ -1,5 +1,5 @@
 # Stage 0: Base image with system dependencies
-FROM node:24-alpine AS base
+FROM node:25-alpine AS base
 
 # Install system dependencies
 RUN corepack enable && \
