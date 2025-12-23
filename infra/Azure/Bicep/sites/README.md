@@ -1,15 +1,16 @@
 # 🌍 Sites Module
 
-This module provisions all web applications and static sites for the arolariu.ro platform, including the main website, API services, development environment, and documentation portal.
+This module provisions all web applications and static sites for the arolariu.ro platform, including the main website, API services, development environment, CV portfolio, and documentation portal.
 
 ## 📋 **Overview**
 
-The sites module creates four distinct web applications and static sites:
+The sites module creates five distinct web applications and static sites:
 
 - **Main Website**: Production frontend application (arolariu.ro)
 - **API Service**: RESTful backend services (api.arolariu.ro)
 - **Development Site**: Development environment (dev.arolariu.ro)
-- **Documentation Portal**: Static documentation site (docs.arolariu.ro)
+- **CV Portfolio**: Personal CV/resume site (cv.arolariu.ro) - SvelteKit
+- **Documentation Portal**: Static documentation site (docs.arolariu.ro) - DocFX
 
 ## 🏗️ **Resources Created**
 
@@ -18,7 +19,19 @@ The sites module creates four distinct web applications and static sites:
 | App Service    | `www-arolariu-ro`  | Production  | Main frontend website           |
 | App Service    | `api-arolariu-ro`  | Production  | Backend API services            |
 | App Service    | `dev-arolariu-ro`  | Development | Development/staging environment |
-| Static Web App | `docs-arolariu-ro` | Production  | Documentation portal            |
+| Static Web App | `cv-arolariu-ro`   | Production  | CV/resume portfolio (SvelteKit) |
+| Static Web App | `docs-arolariu-ro` | Production  | Documentation portal (DocFX)    |
+
+## 📁 **Module Files**
+
+| File                   | Purpose                                |
+| ---------------------- | -------------------------------------- |
+| `deploymentFile.bicep` | Orchestrates all site deployments      |
+| `arolariu-ro.bicep`    | Main website (arolariu.ro)             |
+| `api-arolariu-ro.bicep`| API backend service                    |
+| `dev-arolariu-ro.bicep`| Development/staging site               |
+| `cv-arolariu-ro.bicep` | CV portfolio Static Web App            |
+| `docs-arolariu-ro.bicep`| Documentation Static Web App          |
 
 ## 📊 **Architecture**
 
@@ -32,7 +45,7 @@ graph TB
         PROD_PLAN[Production App Service Plan<br/>B2 SKU]
 
         MAIN[www-arolariu-ro<br/>Main Website<br/>Linux Container]
-        API[api-arolariu-ro<br/>API Services<br/>.NET Core 8.0]
+        API[api-arolariu-ro<br/>API Services<br/>.NET 10.0]
 
         PROD_PLAN --> MAIN
         PROD_PLAN --> API
@@ -46,8 +59,9 @@ graph TB
         DEV_PLAN --> DEV
     end
 
-    subgraph "Static Content"
-        DOCS[docs-arolariu-ro<br/>Static Web App<br/>Free Tier]
+    subgraph "Static Web Apps"
+        CV[cv-arolariu-ro<br/>Static Web App<br/>SvelteKit]
+        DOCS[docs-arolariu-ro<br/>Static Web App<br/>DocFX]
     end
 
     subgraph "Dependencies"
@@ -61,6 +75,7 @@ graph TB
     AFD --> MAIN
     AFD --> API
     AFD --> DEV
+    AFD --> CV
     AFD --> DOCS
 
     MI_FE --> MAIN
@@ -85,7 +100,7 @@ graph TB
 
     class PROD_PLAN,MAIN,API production
     class DEV_PLAN,DEV development
-    class DOCS static
+    class CV,DOCS static
     class MI_FE,MI_BE,CONFIG,STORAGE,MONITOR dependency
 ```
 
@@ -129,10 +144,12 @@ module sitesDeployment 'sites/deploymentFile.bicep' = {
 | `mainWebsiteUrl`  | string | Default hostname of the main website     |
 | `apiWebsiteUrl`   | string | Default hostname of the API service      |
 | `devWebsiteUrl`   | string | Default hostname of the development site |
+| `cvWebsiteUrl`    | string | Default hostname of the CV portfolio     |
 | `docsWebsiteUrl`  | string | Default hostname of the documentation    |
 | `mainWebsiteName` | string | Name of the main website resource        |
 | `apiWebsiteName`  | string | Name of the API website resource         |
 | `devWebsiteName`  | string | Name of the dev website resource         |
+| `cvWebsiteName`   | string | Name of the CV website resource          |
 | `docsWebsiteName` | string | Name of the docs website resource        |
 
 ## 🌐 **Application Details**

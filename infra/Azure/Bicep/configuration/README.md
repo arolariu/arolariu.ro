@@ -1,8 +1,8 @@
-# Configuration Resources
+# ⚙️ Configuration Module
 
 This module deploys the configuration management infrastructure for the arolariu.ro platform, providing centralized configuration and secrets management through Azure App Configuration and Key Vault.
 
-## Overview
+## 📋 Overview
 
 The configuration infrastructure implements a secure, centralized configuration management system that:
 
@@ -10,6 +10,16 @@ The configuration infrastructure implements a secure, centralized configuration 
 - Provides configuration snapshots for consistent deployments
 - Enables secure access through Managed Identities
 - Supports environment-specific configurations
+
+## 📁 Module Files
+
+| File                      | Purpose                                   |
+| ------------------------- | ----------------------------------------- |
+| `deploymentFile.bicep`    | Orchestrates configuration deployments    |
+| `keyVault.bicep`          | Azure Key Vault for secrets               |
+| `keyVault.json`           | Key Vault secrets data (imported)         |
+| `appConfiguration.bicep`  | Azure App Configuration store             |
+| `appConfiguration.json`   | App Configuration values data (imported)  |
 
 ## Architecture Diagram
 
@@ -277,5 +287,5 @@ module configurationDeployment 'configuration/deploymentFile.bicep' = {
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: July 2025  
+**Last Updated**: December 2025  
 **Maintainer**: Alexandru-Razvan Olariu

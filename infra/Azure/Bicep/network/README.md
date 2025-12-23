@@ -16,7 +16,6 @@ The network module creates a comprehensive global networking solution that:
 
 | Resource Type             | Name Pattern    | Purpose                            |
 | ------------------------- | --------------- | ---------------------------------- |
-| Azure Front Door (Legacy) | `{prefix}-afd`  | Global traffic management (legacy) |
 | CDN Profile               | `{prefix}-afd`  | Modern Front Door CDN profile      |
 | AFD Endpoint              | `production`    | Production traffic endpoint        |
 | AFD Endpoint              | `cdn`           | CDN traffic endpoint               |
@@ -24,6 +23,15 @@ The network module creates a comprehensive global networking solution that:
 | Origin Group              | `cdn`           | CDN origin servers                 |
 | Rule Set                  | `CdnRuleSet`    | Traffic routing and header rules   |
 | DNS Zone                  | `{domain-name}` | Public DNS zone management         |
+| DNSSEC Config             | `default`       | Cryptographic DNS security         |
+
+## 📁 **Module Files**
+
+| File                       | Purpose                              |
+| -------------------------- | ------------------------------------ |
+| `deploymentFile.bicep`     | Orchestrates network deployments     |
+| `azureFrontDoor.bicep`     | Azure Front Door CDN profile         |
+| `dnsZone.bicep`            | DNS Zone with all records            |
 
 ## 📊 **Architecture**
 
@@ -227,18 +235,61 @@ actions: [
 
 ### **Public DNS Zone**
 
-The module creates a public DNS zone for domain management:
+The module creates a public DNS zone with DNSSEC enabled for the arolariu.ro domain:
 
 - **Zone type**: Public
 - **Global scope**: Worldwide DNS resolution
-- **Management**: Azure DNS name servers
-- **Records**: Configured separately (A, CNAME, TXT, etc.)
+- **DNSSEC**: Enabled for cryptographic DNS security
+- **TTL**: 3600 seconds (1 hour) for most records
+
+### **DNS Records**
+
+| Record Type | Name                      | Purpose                                      |
+| ----------- | ------------------------- | -------------------------------------------- |
+| **A**       | `@`                       | Apex domain → Front Door (ALIAS)             |
+| **CNAME**   | `www`                     | WWW subdomain → Front Door                   |
+| **CNAME**   | `cdn`                     | CDN endpoint → Front Door CDN                |
+| **CNAME**   | `api`                     | API subdomain → App Service                  |
+| **CNAME**   | `dev`                     | Dev subdomain → App Service                  |
+| **CNAME**   | `cv`                      | CV subdomain → Static Web App                |
+| **CNAME**   | `docs`                    | Docs subdomain → Static Web App              |
+| **TXT**     | `_dnsauth`                | Front Door apex domain validation            |
+| **TXT**     | `_dnsauth.www`            | Front Door WWW domain validation             |
+| **TXT**     | `_dnsauth.cdn`            | Front Door CDN domain validation             |
+| **TXT**     | `asuid.api`               | App Service API domain verification          |
+| **TXT**     | `asuid.dev`               | App Service Dev domain verification          |
+| **TXT**     | `_dmarc`                  | DMARC email authentication policy            |
+| **TXT**     | `send.mail`               | SPF record for Resend email                  |
+| **TXT**     | `resend._domainkey.mail`  | DKIM record for Resend email                 |
+| **MX**      | `send.mail`               | MX record for Amazon SES                     |
+| **CNAME**   | `clerk`                   | Clerk authentication service                 |
+| **CNAME**   | `accounts`                | Clerk accounts service                       |
+| **CNAME**   | `clkmail`                 | Clerk mail service                           |
+| **CNAME**   | `clk._domainkey`          | Clerk DKIM key 1                             |
+| **CNAME**   | `clk2._domainkey`         | Clerk DKIM key 2                             |
+
+### **Third-Party Service Integration**
+
+#### **Clerk Authentication**
+- `clerk.arolariu.ro` → `frontend-api.clerk.services`
+- `accounts.arolariu.ro` → `accounts.clerk.services`
+- DKIM records for email authentication
+
+#### **Resend Email Service**
+- SPF record: `v=spf1 include:amazonses.com ~all`
+- DKIM public key for email signing
+- MX record pointing to Amazon SES
+
+#### **DMARC Policy**
+- `v=DMARC1; p=none; rua=mailto:admin@arolariu.ro`
+- Policy: None (monitoring mode)
+- Reports sent to admin@arolariu.ro
 
 ### **DNS Configuration Example**
 
 ```bash
 # Example DNS records for the zone
-# A record for apex domain
+# A record for apex domain (ALIAS to Front Door)
 az network dns record-set a add-record \
   --resource-group "arolariu-rg" \
   --zone-name "arolariu.ro" \
@@ -436,5 +487,5 @@ az monitor metrics list \
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: July 2025
+**Last Updated**: December 2025
 **Maintainer**: Alexandru-Razvan Olariu

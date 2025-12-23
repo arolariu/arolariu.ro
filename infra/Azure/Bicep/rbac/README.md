@@ -12,6 +12,16 @@ The RBAC module establishes secure access patterns for three distinct managed id
 
 This module ensures secure, passwordless authentication across all Azure services while maintaining strict separation of concerns between application tiers.
 
+## 📁 Module Files
+
+| File                              | Purpose                                    |
+| --------------------------------- | ------------------------------------------ |
+| `deploymentFile.bicep`            | Orchestrates all RBAC deployments          |
+| `frontend-uami-rbac.bicep`        | Frontend managed identity role assignments |
+| `backend-uami-rbac.bicep`         | Backend managed identity role assignments  |
+| `infrastructure-uami-rbac.bicep`  | Infrastructure identity role assignments   |
+| `sql-rbac-uami.sql`               | SQL Server role assignments script         |
+
 ## 🏗️ Resources Created
 
 | Resource Type   | Purpose                                      | Count  |
@@ -382,5 +392,5 @@ az keyvault secret list \
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: July 2025  
+**Last Updated**: December 2025  
 **Maintainer**: Alexandru-Razvan Olariu

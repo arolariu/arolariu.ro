@@ -8,6 +8,15 @@ This module provisions managed identities, federated credentials, and security g
 - Federated identity credentials for GitHub Actions (OIDC)
 - Security groups for JIT access (manual membership)
 
+## 📁 Module Files
+
+| File                        | Purpose                                      |
+| --------------------------- | -------------------------------------------- |
+| `deploymentFile.bicep`      | Orchestrates all identity deployments        |
+| `userAssignedIdentity.bicep`| User-assigned managed identity creation      |
+| `federatedCredentials.bicep`| GitHub Actions federated credentials (OIDC)  |
+| `securityGroups.bicep`      | Security groups for JIT access               |
+
 ## 🏗️ Resources Created
 
 | Resource Type                  | Name Pattern                | Purpose                           |
@@ -506,5 +515,5 @@ az keyvault secret list \
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: July 2025
+**Last Updated**: December 2025
 **Maintainer**: Alexandru-Razvan Olariu

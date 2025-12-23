@@ -1,28 +1,53 @@
 # 🤖 AI Module
 
-This module deploys an Azure OpenAI resource with secure access and RBAC for backend managed identities.
+This module deploys Azure AI services including Azure OpenAI and AI Foundry for the arolariu.ro platform.
 
 ## 📋 Overview
 
 - Deploys Azure OpenAI (Cognitive Services) with S0 SKU
+- Deploys Azure AI Foundry hub for advanced AI workloads
 - Configures custom subdomain, public network access, and tags
-- Assigns the Cognitive Services User role to a managed identity
+- RBAC assignments are centralized in `rbac/backend-uami-rbac.bicep`
 
 ## 🏗️ Resources Created
 
-| Resource Type     | Purpose                           |
-| ----------------- | --------------------------------- |
-| CognitiveServices | Azure OpenAI resource             |
-| Role Assignment   | RBAC for backend managed identity |
+| Resource Type     | Name Pattern         | Purpose                        |
+| ----------------- | -------------------- | ------------------------------ |
+| CognitiveServices | `{prefix}-openai`    | Azure OpenAI resource          |
+| AI Foundry Hub    | `{prefix}-ai-hub`    | AI Foundry hub for AI services |
+
+## 📊 Architecture
+
+```mermaid
+graph TB
+    subgraph "AI Module"
+        OPENAI[Azure OpenAI<br/>Cognitive Services S0]
+        FOUNDRY[AI Foundry Hub<br/>Advanced AI Workloads]
+    end
+
+    subgraph "Security (Centralized RBAC)"
+        RBAC[backend-uami-rbac.bicep]
+        BE_ID[Backend Managed Identity]
+    end
+
+    subgraph "Consumers"
+        API[api.arolariu.ro]
+    end
+
+    RBAC --> OPENAI
+    RBAC --> FOUNDRY
+    BE_ID --> RBAC
+    API --> OPENAI
+    API --> FOUNDRY
+```
 
 ## 🔧 Parameters
 
-| Parameter                           | Type   | Required | Description                                    |
-| ----------------------------------- | ------ | -------- | ---------------------------------------------- |
-| `resourceLocation`                  | string | ✅       | Azure region for the OpenAI resource           |
-| `resourceDeploymentDate`            | string | ✅       | Deployment timestamp                           |
-| `resourceConventionPrefix`          | string | ✅       | Prefix for resource names                      |
-| `backendManagedIdentityPrincipalId` | string | ✅       | PrincipalId (GUID) of backend managed identity |
+| Parameter                  | Type   | Required | Description                          |
+| -------------------------- | ------ | -------- | ------------------------------------ |
+| `resourceLocation`         | string | ✅       | Azure region for the OpenAI resource |
+| `resourceDeploymentDate`   | string | ✅       | Deployment timestamp                 |
+| `resourceConventionPrefix` | string | ✅       | Prefix for resource names            |
 
 ## 📤 Outputs
 
@@ -34,10 +59,13 @@ This module deploys an Azure OpenAI resource with secure access and RBAC for bac
 
 ## 🛡️ Security & RBAC
 
-- The backend managed identity is granted the Cognitive Services User role on the OpenAI resource.
-- Only the principalId (GUID) of the managed identity should be passed for RBAC.
+> **Note**: RBAC assignments are centralized in the `rbac/` module for better maintainability.
 
-## � Example Usage
+- The backend managed identity is granted the **Cognitive Services User** role via `rbac/backend-uami-rbac.bicep`
+- No inline RBAC assignments in this module
+- See: [rbac/README.md](../rbac/README.md) for complete RBAC documentation
+
+## 🚀 Example Usage
 
 ```bicep
 module aiDeployment 'ai/deploymentFile.bicep' = {
@@ -46,25 +74,34 @@ module aiDeployment 'ai/deploymentFile.bicep' = {
     resourceLocation: 'swedencentral'
     resourceDeploymentDate: '2025-07-03'
     resourceConventionPrefix: 'arolariu'
-    backendManagedIdentityPrincipalId: backendIdentityPrincipalId
   }
 }
 ```
 
+## 📁 Module Files
+
+| File                  | Purpose                              |
+| --------------------- | ------------------------------------ |
+| `deploymentFile.bicep`| Orchestrates AI service deployments  |
+| `openai.bicep`        | Azure OpenAI Cognitive Services      |
+| `aiFoundry.bicep`     | Azure AI Foundry hub                 |
+
 ## 🚨 Troubleshooting
 
-| Issue                      | Solution                                                |
-| -------------------------- | ------------------------------------------------------- |
-| Principal ID is not a GUID | Pass the managed identity's principalId, not resourceId |
-| Access denied              | Check RBAC assignment and principalId value             |
+| Issue                | Solution                                              |
+| -------------------- | ----------------------------------------------------- |
+| Access denied        | Check RBAC in `rbac/backend-uami-rbac.bicep`          |
+| Quota exceeded       | Request quota increase in Azure portal                |
+| Region not available | OpenAI is only available in select regions            |
 
 ## 📚 References
 
 - [Azure OpenAI Documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/)
+- [Azure AI Foundry](https://learn.microsoft.com/en-us/azure/ai-studio/)
 - [Cognitive Services RBAC](https://learn.microsoft.com/en-us/azure/cognitive-services/authorizing-users)
 
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: July 2025  
+**Last Updated**: December 2025  
 **Maintainer**: Alexandru-Razvan Olariu

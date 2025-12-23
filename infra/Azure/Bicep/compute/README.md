@@ -8,6 +8,13 @@ This module provisions Linux-based Azure App Service Plans for production and de
 - Linux containers, per-site scaling (production), cost-optimized
 - Managed identity integration for secure authentication
 
+## 📁 Module Files
+
+| File                      | Purpose                                    |
+| ------------------------- | ------------------------------------------ |
+| `deploymentFile.bicep`    | Orchestrates App Service Plan deployments  |
+| `appServicePlans.bicep`   | App Service Plans (production & development)|
+
 ## 🏗️ Resources Created
 
 | Resource Type    | Name Pattern           | SKU        | Purpose                      |
