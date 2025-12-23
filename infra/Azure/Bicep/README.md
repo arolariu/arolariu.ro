@@ -33,13 +33,16 @@ A comprehensive, production-ready Azure infrastructure-as-code solution built wi
 
 This infrastructure solution deploys a complete web application platform on Azure with the following components:
 
-- **🔐 Identity & Security**: Managed identities, Key Vault, RBAC
+- **🔐 Identity & Security**: Managed identities, Federated credentials, Security groups
+- **🔒 Configuration**: Key Vault, App Configuration
 - **💻 Compute**: App Service Plans (Production + Development)
-- **🌐 Networking**: Azure Front Door, DNS zones
-- **📦 Storage**: Storage accounts, Container Registry
+- **🌐 Networking**: Azure Front Door, DNS zones with DNSSEC
+- **📦 Storage**: Storage accounts, Container Registry, SQL Database, Cosmos DB
 - **📊 Observability**: Log Analytics, Application Insights, Managed Grafana
-- **⚙️ Configuration**: App Configuration service
-- **🌍 Web Applications**: Main site, API, documentation
+- **🤖 AI Services**: Azure OpenAI, AI Foundry
+- **🌍 Web Applications**: Main site, API, Dev, CV (SvelteKit), Docs (DocFX)
+- **🔗 Bindings**: Custom domains, Managed certificates
+- **🔑 RBAC**: Centralized role assignments for all identities
 
 ### **🎯 Key Features**
 
@@ -100,13 +103,16 @@ infra/Azure/Bicep/
 ├── 📄 main.bicep                    # Subscription-level entry point
 ├── 📄 facade.bicep                  # Main orchestration module
 ├── ⚙️ bicepconfig.json              # Bicep configuration & linting
+├── 📁 ai/                           # Azure OpenAI & AI Foundry
+├── 📁 bindings/                     # Custom domain bindings
 ├── 📁 compute/                      # App Service Plans
-├── 📁 configuration/                # App Configuration
-├── 📁 identity/                     # Managed Identities & Key Vault
+├── 📁 configuration/                # App Configuration & Key Vault
+├── 📁 identity/                     # Managed Identities & Federated Credentials
 ├── 📁 network/                      # Azure Front Door & DNS
 ├── 📁 observability/                # Monitoring & logging
-├── 📁 sites/                        # Web applications
-├── 📁 storage/                      # Storage accounts & Container Registry
+├── 📁 rbac/                         # Centralized RBAC assignments
+├── 📁 sites/                        # Web applications & Static Web Apps
+├── 📁 storage/                      # Storage, SQL, NoSQL, Container Registry
 └── 📁 types/                        # User-defined types
 ```
 
@@ -121,11 +127,17 @@ graph TD
     C --> F[observabilityDeployment]
     C --> G[storageDeployment]
     C --> H[computeDeployment]
+    C --> I[rbacDeployment]
+    C --> J[aiDeployment]
 
-    E --> I[websiteDeployment]
-    F --> I
-    G --> I
-    H --> I
+    E --> K[websiteDeployment]
+    F --> K
+    G --> K
+    H --> K
+    I --> K
+    J --> K
+    
+    K --> L[bindingsDeployment]
 ```
 
 ## 🔧 **Configuration**
@@ -158,11 +170,14 @@ Examples:
 
 1. **🔐 Identities** - Managed identities created first (required for RBAC)
 2. **🌐 Networking** - Front Door and DNS configuration
-3. **⚙️ Configuration** - App Configuration service (depends on identities)
+3. **⚙️ Configuration** - App Configuration & Key Vault (depends on identities)
 4. **📊 Observability** - Monitoring stack (depends on identities & config)
-5. **📦 Storage** - Storage accounts (depends on identities for RBAC)
+5. **📦 Storage** - Storage accounts, SQL, NoSQL (depends on identities for RBAC)
 6. **💻 Compute** - App Service Plans (depends on identities for RBAC)
-7. **🌍 Websites** - Web applications (depends on ALL above)
+7. **🔒 RBAC** - Centralized role assignments (depends on all resources)
+8. **🤖 AI** - Azure OpenAI & AI Foundry (depends on identities)
+9. **🌍 Websites** - Web applications & Static Web Apps (depends on ALL above)
+10. **🔗 Bindings** - Custom domains & certificates (depends on websites & DNS)
 
 ## 🛠️ **Development**
 
@@ -196,11 +211,14 @@ Examples:
 
 Each module contains detailed documentation:
 
+- [📁 ai/](./ai/README.md) - Azure OpenAI & AI Foundry documentation
+- [📁 bindings/](./bindings/README.md) - Custom domain bindings documentation
 - [📁 compute/](./compute/README.md) - App Service Plans documentation
-- [📁 configuration/](./configuration/README.md) - App Configuration documentation
+- [📁 configuration/](./configuration/README.md) - App Configuration & Key Vault documentation
 - [📁 identity/](./identity/README.md) - Identity & security documentation
-- [📁 network/](./network/README.md) - Networking documentation
+- [📁 network/](./network/README.md) - Networking & DNS documentation
 - [📁 observability/](./observability/README.md) - Monitoring documentation
+- [📁 rbac/](./rbac/README.md) - RBAC assignments documentation
 - [📁 sites/](./sites/README.md) - Web applications documentation
 - [📁 storage/](./storage/README.md) - Storage documentation
 

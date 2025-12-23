@@ -1,23 +1,39 @@
 # 🔗 Bindings Module
 
-This module manages custom domain bindings and managed certificates for App Services (main, dev, api, docs) in the arolariu.ro platform. It ensures correct sequencing and secure configuration for domain and certificate provisioning.
+This module manages custom domain bindings and managed certificates for App Services and Static Web Apps in the arolariu.ro platform. It ensures correct sequencing and secure configuration for domain and certificate provisioning.
 
 ---
 
 ## 📋 Overview
 
-- Deploys domain bindings and managed certificates for all web apps.
-- Ensures dependencies: App Service and DNS must exist before bindings.
-- Modular structure for dev, api, main, and docs sites.
+- Deploys domain bindings and managed certificates for all web apps
+- Supports both App Services (api, dev) and Static Web Apps (cv, docs)
+- Ensures dependencies: App Service/Static Web App and DNS must exist before bindings
+- Modular structure for each site type
 
 ---
 
 ## 🏗️ Resources Created
 
-| Resource Type                     | Purpose                              |
-| --------------------------------- | ------------------------------------ |
-| App Service Custom Domain Binding | Binds custom domains to App Services |
-| Managed Certificate               | Issues and attaches certificates     |
+| Resource Type                      | Purpose                                   |
+| ---------------------------------- | ----------------------------------------- |
+| App Service Custom Domain Binding  | Binds custom domains to App Services      |
+| Managed Certificate                | Issues and attaches certificates          |
+| Static Web App Custom Domain       | Binds custom domains to Static Web Apps   |
+
+---
+
+## 📁 Module Files
+
+| File                                     | Purpose                                      |
+| ---------------------------------------- | -------------------------------------------- |
+| `deploymentFile.bicep`                   | Orchestrates all binding deployments         |
+| `api-arolariu-ro-bindings.bicep`         | API domain binding                           |
+| `api-arolariu-ro-certificate-bindings.bicep` | API managed certificate                  |
+| `dev-arolariu-ro-bindings.bicep`         | Dev domain binding                           |
+| `dev-arolariu-ro-certificate-bindings.bicep` | Dev managed certificate                  |
+| `cv-arolariu-ro-bindings.bicep`          | CV Static Web App domain binding             |
+| `docs-arolariu-ro-bindings.bicep`        | Docs Static Web App domain binding           |
 
 ---
 
@@ -34,7 +50,7 @@ This module manages custom domain bindings and managed certificates for App Serv
 | apiWebsiteHostname          | string | ✅       | Hostname for API website                 | -                                                  |
 | devWebsiteHostname          | string | ✅       | Hostname for Dev website                 | -                                                  |
 | docsWebsiteHostname         | string | ✅       | Hostname for Docs website                | -                                                  |
-| prodWebsiteHostname         | string | ✅       | Hostname for Prod website                | -                                                  |
+| cvWebsiteHostname           | string | ✅       | Hostname for CV website                  | -                                                  |
 
 ---
 
@@ -58,6 +74,7 @@ module bindings 'bindings/deploymentFile.bicep' = {
     apiWebsiteHostname: 'api.arolariu.ro'
     devWebsiteHostname: 'dev.arolariu.ro'
     docsWebsiteHostname: 'docs.arolariu.ro'
+    cvWebsiteHostname: 'cv.arolariu.ro'
   }
 }
 ```
@@ -69,35 +86,38 @@ module bindings 'bindings/deploymentFile.bicep' = {
 ```mermaid
 flowchart TD
     subgraph "App Services"
-      DEV[Dev App Service]
-      API[API App Service]
-      MAIN[Main App Service]
-      DOCS[Docs App Service]
+      DEV[Dev App Service<br/>dev.arolariu.ro]
+      API[API App Service<br/>api.arolariu.ro]
+    end
+
+    subgraph "Static Web Apps"
+      CV[CV Static Web App<br/>cv.arolariu.ro]
+      DOCS[Docs Static Web App<br/>docs.arolariu.ro]
     end
 
     subgraph "Bindings Module"
       DEV_BIND[Dev Domain Binding]
       API_BIND[API Domain Binding]
-      MAIN_BIND[Main Domain Binding]
+      CV_BIND[CV Domain Binding]
       DOCS_BIND[Docs Domain Binding]
     end
 
     DEV --> DEV_BIND
     API --> API_BIND
-    MAIN --> MAIN_BIND
+    CV --> CV_BIND
     DOCS --> DOCS_BIND
 
     DEV_BIND --> CERT1[Managed Certificate]
     API_BIND --> CERT2[Managed Certificate]
-    MAIN_BIND --> CERT3[Managed Certificate]
-    DOCS_BIND --> CERT4[Managed Certificate]
+    CV_BIND --> CERT3[Free SWA SSL]
+    DOCS_BIND --> CERT4[Free SWA SSL]
 ```
 
 ---
 
 ## 🔄 Deployment Flow
 
-1. **Deploy App Services** (dev, api, main, docs)
+1. **Deploy App Services** (api, dev) and **Static Web Apps** (cv, docs)
 2. **Deploy DNS zones and records**
 3. **Deploy Bindings Module** (this module)
    - Binds domains to App Services
@@ -140,5 +160,5 @@ flowchart TD
 ---
 
 **Module Version**: 2.1.0  
-**Last Updated**: July 2025  
+**Last Updated**: December 2025  
 **Maintainer**: Alexandru-Razvan Olariu

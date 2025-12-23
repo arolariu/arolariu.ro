@@ -21,6 +21,15 @@ The observability module creates a complete monitoring solution that:
 | Application Insights    | `{prefix}-insights`  | Application performance monitoring    |
 | Managed Grafana         | `{prefix}-grafana`   | Advanced dashboards and visualization |
 
+## 📁 **Module Files**
+
+| File                        | Purpose                                |
+| --------------------------- | -------------------------------------- |
+| `deploymentFile.bicep`      | Orchestrates observability deployments |
+| `log-analytics.bicep`       | Log Analytics workspace                |
+| `application-insights.bicep`| Application Insights resource          |
+| `grafana.bicep`             | Managed Grafana dashboard              |
+
 ## 📊 **Architecture**
 
 ```mermaid
@@ -504,5 +513,5 @@ Usage
 ---
 
 **Module Version**: 2.0.0  
-**Last Updated**: July 2025
+**Last Updated**: December 2025
 **Maintainer**: Alexandru-Razvan Olariu
