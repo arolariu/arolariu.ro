@@ -133,7 +133,6 @@ module aiDeployment 'ai/deploymentFile.bicep' = {
     resourceLocation: resourceLocation
     resourceDeploymentDate: resourceDeploymentDate
     resourceConventionPrefix: resourceConventionPrefix
-    backendManagedIdentityPrincipalId: identitiesDeployment.outputs.managedIdentitiesList[1].principalId
   }
 }
 
