@@ -11,6 +11,8 @@ import {createContext, use, useCallback, useMemo, useRef, useState, type ReactNo
 export type DialogType =
   | "EDIT_INVOICE__ANALYSIS"
   | "EDIT_INVOICE__IMAGE"
+  | "EDIT_INVOICE__SCAN_ADD"
+  | "EDIT_INVOICE__SCAN_REMOVE"
   | "EDIT_INVOICE__MERCHANT"
   | "EDIT_INVOICE__MERCHANT_INVOICES"
   | "EDIT_INVOICE__RECIPE"

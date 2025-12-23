@@ -1,18 +1,14 @@
 "use client";
 
-import type {Invoice} from "@/types/invoices";
 import {Button, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@arolariu/components";
 import {motion} from "motion/react";
-import {useCallback, useState} from "react";
-import {TbPrinter, TbScanEye, TbTrash} from "react-icons/tb";
+import {useCallback, useEffect, useState} from "react";
+import {TbDeviceFloppy, TbPrinter, TbScanEye, TbTrash, TbX} from "react-icons/tb";
 import {useDialog} from "../../../_contexts/DialogContext";
-
-type Props = {
-  invoice: Invoice;
-};
+import {useEditInvoiceContext} from "../_context/EditInvoiceContext";
 
 /**
- * Renders the editable invoice header with inline name editing and print functionality.
+ * Renders the editable invoice header with inline name editing, save, and print functionality.
  *
  * @remarks
  * **Rendering Context**: Client Component (`"use client"` directive).
@@ -21,10 +17,13 @@ type Props = {
  * - Uses `useState` for controlled input of invoice name
  * - Requires `useCallback` for memoized event handlers
  * - Needs access to `window.print()` browser API
+ * - Consumes EditInvoiceContext for centralized state management
  *
  * **Editing Capabilities**:
  * - **Invoice Name**: Inline editable via styled `<Input>` component with transparent
- *   borders. Changes are managed locally; persistence requires explicit save action.
+ *   borders. Changes are tracked in EditInvoiceContext.
+ * - **Save**: Centralized save button that persists all pending changes via patchInvoice.
+ * - **Discard**: Reverts all pending changes without saving.
  * - **Print**: Triggers browser print dialog for the entire invoice page.
  *
  * **Layout**: Responsive flexbox layout that stacks vertically on mobile and
@@ -34,32 +33,50 @@ type Props = {
  * **Animation**: Uses Framer Motion for entrance animation with vertical slide
  * and fade effect.
  *
- * **Accessibility**: Print button wrapped in `Tooltip` for additional context.
- *
- * @param props - Component properties containing the invoice to display/edit
  * @returns Client-rendered JSX element containing editable invoice header
  *
  * @example
  * ```tsx
- * <InvoiceHeader invoice={invoice} />
- * // Renders: [Editable Invoice Name Input] [Invoice ID] [Print Button]
+ * <InvoiceHeader />
+ * // Renders: [Editable Invoice Name Input] [Invoice ID] [Save] [Print] [Delete]
  * ```
  *
- * @see {@link Invoice} - Invoice type definition
+ * @see {@link useEditInvoiceContext} - Context for tracking pending changes
  */
-export default function InvoiceHeader({invoice}: Readonly<Props>): React.JSX.Element {
+export default function InvoiceHeader(): React.JSX.Element {
+  const {invoice, pendingChanges, hasChanges, isSaving, setName, saveChanges, discardChanges} = useEditInvoiceContext();
   const [invoiceName, setInvoiceName] = useState<string>(invoice.name);
   const {open: openDeleteDialog} = useDialog("SHARED__INVOICE_DELETE", "delete", {invoice});
   const {open: openAnalysisDialog} = useDialog("EDIT_INVOICE__ANALYSIS", "view", {invoice});
   const canAnalyze = invoice.items.length <= 0;
 
-  const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setInvoiceName(event.target.value);
-  }, []);
+  // Sync local state with context when pending changes are discarded
+  useEffect(() => {
+    if (pendingChanges.name === undefined) {
+      setInvoiceName(invoice.name);
+    }
+  }, [pendingChanges.name, invoice.name]);
+
+  const handleNameChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const newName = event.target.value;
+      setInvoiceName(newName);
+      setName(newName);
+    },
+    [setName],
+  );
 
   const handleInvoicePrint = useCallback(() => {
     globalThis.window.print();
   }, []);
+
+  const handleSave = useCallback(async () => {
+    await saveChanges();
+  }, [saveChanges]);
+
+  const handleDiscard = useCallback(() => {
+    discardChanges();
+  }, [discardChanges]);
 
   return (
     <motion.div
@@ -75,11 +92,45 @@ export default function InvoiceHeader({invoice}: Readonly<Props>): React.JSX.Ele
             onChange={handleNameChange}
             className='w-full border-0 text-3xl font-bold tracking-tight focus-visible:border-0 focus-visible:ring-0'
           />
-          <p className='text-gray-300 dark:text-gray-800'>{invoice.id}</p>
         </div>
       </div>
       <div className='flex flex-wrap items-center gap-2'>
         <TooltipProvider>
+          {/* Save & Discard buttons - only show when there are changes */}
+          {hasChanges && (
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant='default'
+                    size='sm'
+                    onClick={handleSave}
+                    disabled={isSaving}>
+                    <TbDeviceFloppy className='mr-2 h-4 w-4' />
+                    {isSaving ? "Saving..." : "Save"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Save all pending changes</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={handleDiscard}
+                    disabled={isSaving}>
+                    <TbX className='mr-2 h-4 w-4' />
+                    Discard
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Discard all pending changes</p>
+                </TooltipContent>
+              </Tooltip>
+            </>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button

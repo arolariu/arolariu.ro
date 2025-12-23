@@ -2,6 +2,7 @@
 
 import DeleteInvoiceDialog from "../_dialogs/DeleteInvoiceDialog";
 import ShareInvoiceDialog from "../_dialogs/ShareInvoiceDialog";
+import AddScanDialog from "../edit-invoice/[id]/_components/dialogs/AddScanDialog";
 import AnalyzeDialog from "../edit-invoice/[id]/_components/dialogs/AnalyzeDialog";
 import InvoiceFeedbackDialog from "../edit-invoice/[id]/_components/dialogs/FeedbackDialog";
 import InvoiceImageDialog from "../edit-invoice/[id]/_components/dialogs/ImageDialog";
@@ -10,6 +11,7 @@ import InvoiceMerchantDialog from "../edit-invoice/[id]/_components/dialogs/Merc
 import InvoiceMerchantReceiptsDialog from "../edit-invoice/[id]/_components/dialogs/MerchantReceiptsDialog";
 import InvoiceMetadataDialog from "../edit-invoice/[id]/_components/dialogs/MetadataDialog";
 import InvoiceRecipeDialog from "../edit-invoice/[id]/_components/dialogs/RecipeDialog";
+import RemoveScanDialog from "../edit-invoice/[id]/_components/dialogs/RemoveScanDialog";
 import ShareAnalyticsDialog from "../view-invoice/[id]/_components/dialogs/ShareAnalyticsDialog";
 import InvoicesExportDialog from "../view-invoices/_components/dialogs/ExportDialog";
 import InvoicesImportDialog from "../view-invoices/_components/dialogs/ImportDialog";
@@ -41,6 +43,10 @@ export default function DialogContainer(): React.JSX.Element | null {
       return <InvoiceMetadataDialog />;
     case "EDIT_INVOICE__IMAGE":
       return <InvoiceImageDialog />;
+    case "EDIT_INVOICE__SCAN_ADD":
+      return <AddScanDialog />;
+    case "EDIT_INVOICE__SCAN_REMOVE":
+      return <RemoveScanDialog />;
     case "EDIT_INVOICE__RECIPE":
       return <InvoiceRecipeDialog />;
     // view-invoice/[id] Dialogs

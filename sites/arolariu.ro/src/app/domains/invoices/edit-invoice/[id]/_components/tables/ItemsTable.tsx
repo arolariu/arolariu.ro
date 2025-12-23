@@ -174,31 +174,33 @@ export default function ItemsTable({invoice}: Readonly<Props>) {
           </TableFooter>
         </Table>
 
-        {/* Pagination controls*/}
-        <div className='bg-popover flex items-center justify-between border-t p-4'>
-          <div className='text-muted-foreground text-sm'>
-            {invoice.items.length} {invoice.items.length === 1 ? "item" : "items"} in total
+        {/* Pagination controls - only show when more than one page */}
+        {totalPages > 1 && (
+          <div className='bg-popover flex items-center justify-between border-t p-4'>
+            <div className='text-muted-foreground text-sm'>
+              {invoice.items.length} {invoice.items.length === 1 ? "item" : "items"} in total
+            </div>
+            <div className='flex items-center gap-2'>
+              <Button
+                variant='outline'
+                className='cursor-pointer'
+                size='sm'
+                onClick={handlePreviousPage}>
+                Previous
+              </Button>
+              <span className='text-sm font-medium'>
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant='outline'
+                className='cursor-pointer'
+                size='sm'
+                onClick={handleNextPage}>
+                Next
+              </Button>
+            </div>
           </div>
-          <div className='flex items-center gap-2'>
-            <Button
-              variant='outline'
-              className='cursor-pointer'
-              size='sm'
-              onClick={handlePreviousPage}>
-              Previous
-            </Button>
-            <span className='text-sm font-medium'>
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant='outline'
-              className='cursor-pointer'
-              size='sm'
-              onClick={handleNextPage}>
-              Next
-            </Button>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
