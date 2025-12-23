@@ -64,7 +64,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2025-04-01' = {
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2025-11-01' = {
   name: containerRegistryName
   location: containerRegistryLocation
   sku: { name: 'Basic' }
@@ -81,6 +81,7 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2025-04-01' =
     dataEndpointEnabled: false
     publicNetworkAccess: 'Enabled'
     networkRuleBypassOptions: 'AzureServices'
+    networkRuleBypassAllowedForTasks: false
     zoneRedundancy: 'Disabled'
     anonymousPullEnabled: false
   }

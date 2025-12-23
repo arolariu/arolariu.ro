@@ -63,7 +63,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource managedGrafanaInstance 'Microsoft.Dashboard/grafana@2024-11-01-preview' = {
+resource managedGrafanaInstance 'Microsoft.Dashboard/grafana@2025-09-01-preview' = {
   name: managedGrafanaName
   location: managedGrafanaLocation
   sku: { name: 'Essential' }

@@ -61,7 +61,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2025-06-01' = {
   name: storageAccountName
   location: storageAccountLocation
   sku: { name: 'Standard_LRS' }
@@ -108,7 +108,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   })
 
   // Blob service configuration with security enhancements
-  resource blobServices 'blobServices@2023-05-01' = {
+  resource blobServices 'blobServices@2025-06-01' = {
     name: 'default'
     properties: {
       changeFeed: {
@@ -170,7 +170,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   }
 
   // File service configuration
-  resource fileServices 'fileServices@2023-05-01' = {
+  resource fileServices 'fileServices@2025-06-01' = {
     name: 'default'
     properties: {
       shareDeleteRetentionPolicy: {
@@ -190,20 +190,20 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   }
 
   // Queue service configuration
-  resource queueServices 'queueServices@2023-05-01' = {
+  resource queueServices 'queueServices@2025-06-01' = {
     name: 'default'
     properties: {}
   }
 
   // Table service configuration
-  resource tableServices 'tableServices@2023-05-01' = {
+  resource tableServices 'tableServices@2025-06-01' = {
     name: 'default'
     properties: {}
   }
 }
 
 // Lifecycle management policy for cost optimization
-resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2023-05-01' = {
+resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2025-06-01' = {
   parent: storageAccount
   name: 'default'
   properties: {

@@ -57,7 +57,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource docsStaticWebApp 'Microsoft.Web/staticSites@2024-11-01' = {
+resource docsStaticWebApp 'Microsoft.Web/staticSites@2025-03-01' = {
   name: 'docs-arolariu-ro'
   location: staticWebAppLocation
   sku: { name: 'Free', tier: 'Free' }

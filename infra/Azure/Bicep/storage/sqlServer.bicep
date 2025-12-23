@@ -77,7 +77,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource sqlServer 'Microsoft.Sql/servers@2024-05-01-preview' = {
+resource sqlServer 'Microsoft.Sql/servers@2024-11-01-preview' = {
   name: sqlServerName
   location: sqlServerLocation
   properties: {
@@ -94,7 +94,7 @@ resource sqlServer 'Microsoft.Sql/servers@2024-05-01-preview' = {
     }
   }
 
-  resource sqlServerAdvancedThreatProtection 'advancedThreatProtectionSettings@2024-05-01-preview' = {
+  resource sqlServerAdvancedThreatProtection 'advancedThreatProtectionSettings@2024-11-01-preview' = {
     name: 'Default'
     properties: { state: 'Disabled' }
   }
@@ -104,17 +104,17 @@ resource sqlServer 'Microsoft.Sql/servers@2024-05-01-preview' = {
     properties: { auditingState: 'Disabled' }
   }
 
-  resource sqlServerAuditSettings 'auditingSettings@2024-05-01-preview' = {
+  resource sqlServerAuditSettings 'auditingSettings@2024-11-01-preview' = {
     name: 'default'
     properties: { state: 'Disabled' }
   }
 
-  resource sqlServerConnectionPolicies 'connectionPolicies@2024-05-01-preview' = {
+  resource sqlServerConnectionPolicies 'connectionPolicies@2024-11-01-preview' = {
     name: 'Default'
     properties: { connectionType: 'Default' }
   }
 
-  resource sqlServerAzureAdOnlyAuth 'azureADOnlyAuthentications@2024-05-01-preview' = {
+  resource sqlServerAzureAdOnlyAuth 'azureADOnlyAuthentications@2024-11-01-preview' = {
     name: 'Default'
     properties: { azureADOnlyAuthentication: false }
   }
@@ -124,7 +124,7 @@ resource sqlServer 'Microsoft.Sql/servers@2024-05-01-preview' = {
   })
 }
 
-resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2024-05-01-preview' = {
+resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2024-11-01-preview' = {
   parent: sqlServer
   name: sqlDatabasePrimaryName
   location: sqlServerLocation
@@ -149,7 +149,7 @@ resource sqlDatabasePrimary 'Microsoft.Sql/servers/databases@2024-05-01-preview'
   })
 }
 
-resource sqlDatabaseSecondary 'Microsoft.Sql/servers/databases@2024-05-01-preview' = {
+resource sqlDatabaseSecondary 'Microsoft.Sql/servers/databases@2024-11-01-preview' = {
   parent: sqlServer
   name: sqlDatabaseSecondaryName
   location: sqlServerLocation

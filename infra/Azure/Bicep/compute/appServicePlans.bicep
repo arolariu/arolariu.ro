@@ -109,7 +109,7 @@ var appPlans = [
   }
 ]
 
-resource appPlanFarm 'Microsoft.Web/serverfarms@2024-11-01' = [
+resource appPlanFarm 'Microsoft.Web/serverfarms@2025-03-01' = [
   for appPlan in appPlans: {
     name: appPlan.name
     location: appPlan.location

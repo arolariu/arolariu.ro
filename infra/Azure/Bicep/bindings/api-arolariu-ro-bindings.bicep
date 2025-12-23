@@ -69,7 +69,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource apiWebsite 'Microsoft.Web/sites@2024-11-01' existing = { name: apiWebsiteHostname }
+resource apiWebsite 'Microsoft.Web/sites@2025-03-01' existing = { name: apiWebsiteHostname }
 resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' existing = { name: dnsZoneName }
 
 // Add CNAME record for domain binding
@@ -101,7 +101,7 @@ resource apiTxtRecord 'Microsoft.Network/dnsZones/TXT@2023-07-01-preview' = {
 }
 
 // Custom domain binding for api.arolariu.ro
-resource apiCustomDomain 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {
+resource apiCustomDomain 'Microsoft.Web/sites/hostNameBindings@2025-03-01' = {
   name: 'api.arolariu.ro'
   parent: apiWebsite
   dependsOn: [apiCnameRecord, apiTxtRecord]
@@ -114,7 +114,7 @@ resource apiCustomDomain 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {
 }
 
 // App Service Managed Certificate for api.arolariu.ro
-resource apiManagedCertificate 'Microsoft.Web/certificates@2024-11-01' = {
+resource apiManagedCertificate 'Microsoft.Web/certificates@2025-03-01' = {
   name: 'cert-api-arolariu-ro'
   location: apiWebsiteLocation
   dependsOn: [apiCustomDomain]

@@ -63,7 +63,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource keyVault 'Microsoft.KeyVault/vaults@2024-04-01-preview' = {
+resource keyVault 'Microsoft.KeyVault/vaults@2025-05-01' = {
   name: keyVaultName
   location: keyVaultLocation
   properties: {
@@ -78,7 +78,6 @@ resource keyVault 'Microsoft.KeyVault/vaults@2024-04-01-preview' = {
     sku: { family: 'A', name: 'standard' }
     softDeleteRetentionInDays: 90
     tenantId: subscription().tenantId
-    vaultUri: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}'
   }
   tags: union(commonTags, {
     displayName: 'Key Vault'
@@ -87,7 +86,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2024-04-01-preview' = {
 }
 
 var secrets = loadJsonContent('keyVault.json')
-resource keyVaultSecrets 'Microsoft.KeyVault/vaults/secrets@2024-04-01-preview' = [
+resource keyVaultSecrets 'Microsoft.KeyVault/vaults/secrets@2025-05-01' = [
   for secret in secrets.items: {
     parent: keyVault
     name: secret.name

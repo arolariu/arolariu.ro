@@ -62,9 +62,10 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' = {
+resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-11-01-preview' = {
   name: noSqlServerName
   location: noSqlServerLocation
+  kind: 'GlobalDocumentDB'
   properties: {
     publicNetworkAccess: 'Enabled'
     enableAutomaticFailover: false
@@ -102,7 +103,7 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' 
     capacity: { totalThroughputLimit: 1000 }
   }
 
-  resource primaryNoSqlDatabase 'sqlDatabases@2025-05-01-preview' = {
+  resource primaryNoSqlDatabase 'sqlDatabases@2025-11-01-preview' = {
     name: 'primary'
     location: noSqlServerLocation
     properties: {
@@ -111,7 +112,7 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' 
       }
     }
 
-    resource invoicesContainer 'containers@2025-05-01-preview' = {
+    resource invoicesContainer 'containers@2025-11-01-preview' = {
       name: 'invoices'
       properties: {
         resource: {
@@ -134,7 +135,7 @@ resource noSqlServer 'Microsoft.DocumentDB/databaseAccounts@2025-05-01-preview' 
       }
     }
 
-    resource merchantsContainer 'containers@2025-05-01-preview' = {
+    resource merchantsContainer 'containers@2025-11-01-preview' = {
       name: 'merchants'
       properties: {
         resource: {

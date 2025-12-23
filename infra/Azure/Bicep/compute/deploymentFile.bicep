@@ -23,11 +23,11 @@
 // See: facade.bicep (orchestrates deployment order)
 // =====================================================================================
 
+targetScope = 'resourceGroup'
+
 metadata description = 'Compute orchestrator for App Service Plans (production and development)'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
-
-targetScope = 'resourceGroup'
 
 @description('The date when the deployment is executed.')
 param resourceDeploymentDate string = utcNow()
