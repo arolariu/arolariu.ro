@@ -58,7 +58,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2025-02-01' = {
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2025-07-01' = {
   name: logAnalyticsWorkspaceName
   location: logAnalyticsWorkspaceLocation
   properties: {

@@ -68,7 +68,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource devWebsite 'Microsoft.Web/sites@2024-11-01' existing = { name: devWebsiteHostname }
+resource devWebsite 'Microsoft.Web/sites@2025-03-01' existing = { name: devWebsiteHostname }
 resource dnsZone 'Microsoft.Network/dnsZones@2023-07-01-preview' existing = { name: dnsZoneName }
 
 // Add CNAME record for domain binding
@@ -100,7 +100,7 @@ resource devTxtRecord 'Microsoft.Network/dnsZones/TXT@2023-07-01-preview' = {
 }
 
 // Custom domain binding for dev.arolariu.ro
-resource devCustomDomain 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {
+resource devCustomDomain 'Microsoft.Web/sites/hostNameBindings@2025-03-01' = {
   name: 'dev.arolariu.ro'
   parent: devWebsite
   dependsOn: [devCnameRecord, devTxtRecord]
@@ -113,7 +113,7 @@ resource devCustomDomain 'Microsoft.Web/sites/hostNameBindings@2024-11-01' = {
 }
 
 // App Service Managed Certificate for dev.arolariu.ro
-resource devManagedCertificate 'Microsoft.Web/certificates@2024-11-01' = {
+resource devManagedCertificate 'Microsoft.Web/certificates@2025-03-01' = {
   name: 'cert-dev-arolariu-ro'
   location: devWebsiteLocation
   dependsOn: [devCustomDomain]

@@ -2,12 +2,12 @@
 // Backend API - api.arolariu.ro .NET Application
 // =====================================================================================
 // This module provisions the App Service that hosts the api.arolariu.ro backend API.
-// The API is a .NET 9.0 application running as a Linux container and serves as the
+// The API is a .NET 10.0 application running as a Linux container and serves as the
 // central backend for all business logic and data operations.
 //
 // Runtime Configuration:
 // - Platform: Linux container (app,linux,container)
-// - Runtime: .NET Core 9.0 (linuxFxVersion)
+// - Runtime: .NET Core 10.0 (linuxFxVersion)
 // - Container source: Azure Container Registry (via managed identity)
 // - Always On: Enabled (prevents cold starts)
 //
@@ -38,7 +38,7 @@
 
 targetScope = 'resourceGroup'
 
-metadata description = 'Backend API api.arolariu.ro App Service with .NET 9.0'
+metadata description = 'Backend API api.arolariu.ro App Service with .NET 10.0'
 metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
 metadata version = '2.0.0'
 
@@ -62,7 +62,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource apiWebsite 'Microsoft.Web/sites@2024-11-01' = {
+resource apiWebsite 'Microsoft.Web/sites@2025-03-01' = {
   name: 'api-arolariu-ro'
   location: apiWebsiteLocation
   kind: 'app,linux,container'
@@ -83,7 +83,7 @@ resource apiWebsite 'Microsoft.Web/sites@2024-11-01' = {
       alwaysOn: true
       numberOfWorkers: 1
       http20Enabled: true
-      linuxFxVersion: 'DOTNETCORE|9.0'
+      linuxFxVersion: 'DOTNETCORE|10.0'
       requestTracingEnabled: true
       httpLoggingEnabled: true
       logsDirectorySizeLimit: 50 // 50 MB

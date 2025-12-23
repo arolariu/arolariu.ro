@@ -66,7 +66,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource frontDoorWebApplicationFirewall 'Microsoft.Network/frontdoorwebapplicationfirewallpolicies@2024-02-01' = {
+resource frontDoorWebApplicationFirewall 'Microsoft.Network/FrontDoorWebApplicationFirewallPolicies@2025-10-01' = {
   name: 'productionWAF'
   location: 'Global'
   sku: {
@@ -93,7 +93,7 @@ resource frontDoorWebApplicationFirewall 'Microsoft.Network/frontdoorwebapplicat
 }
 
 // Azure Front Door Profile with nested resources
-resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
+resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-09-01-preview' = {
   name: frontDoorName
   location: 'Global'
   sku: { name: 'Standard_AzureFrontDoor' }
@@ -106,7 +106,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
   })
 
   // WAF Policy Attachment
-  resource wafPolicy 'securityPolicies@2025-04-15' = {
+  resource wafPolicy 'securityPolicies@2025-09-01-preview' = {
     name: 'productionWAF'
     properties: {
       parameters: {
@@ -127,7 +127,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
   }
 
   // Custom Domain for APEX
-  resource apexCustomDomain 'customDomains@2025-04-15' = {
+  resource apexCustomDomain 'customDomains@2025-09-01-preview' = {
     name: 'apex-arolariu-ro'
     properties: {
       hostName: 'arolariu.ro'
@@ -139,7 +139,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
   }
 
   // Custom Domain for WWW
-  resource wwwCustomDomain 'customDomains@2025-04-15' = {
+  resource wwwCustomDomain 'customDomains@2025-09-01-preview' = {
     name: 'www-arolariu-ro'
     properties: {
       hostName: 'www.arolariu.ro'
@@ -151,7 +151,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
   }
 
   // Custom Domain for CDN
-  resource cdnCustomDomain 'customDomains@2025-04-15' = {
+  resource cdnCustomDomain 'customDomains@2025-09-01-preview' = {
     name: 'cdn-arolariu-ro'
     properties: {
       hostName: 'cdn.arolariu.ro'
@@ -163,7 +163,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
   }
 
   // Production Origin Group
-  resource productionOriginGroup 'originGroups@2025-04-15' = {
+  resource productionOriginGroup 'originGroups@2025-09-01-preview' = {
     name: 'production'
     properties: {
       sessionAffinityState: 'Enabled'
@@ -181,7 +181,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
     }
 
     // Production Origin (nested within origin group)
-    resource productionOrigin 'origins@2025-04-15' = {
+    resource productionOrigin 'origins@2025-09-01-preview' = {
       name: 'production-origin'
       properties: {
         hostName: mainWebsiteHostname
@@ -197,7 +197,7 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
   }
 
   // Production Endpoint
-  resource productionEndpoint 'afdEndpoints@2025-04-15' = {
+  resource productionEndpoint 'afdEndpoints@2025-09-01-preview' = {
     name: 'production'
     location: 'Global'
     properties: {
@@ -208,9 +208,16 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
     })
 
     // Production Route (nested within endpoint)
-    resource productionRoute 'routes@2025-04-15' = {
+    resource productionRoute 'routes@2025-09-01-preview' = {
       name: 'production-route'
       properties: {
+        cacheConfiguration: {
+          compressionSettings: {
+            isCompressionEnabled: false
+            contentTypesToCompress: []
+          }
+          queryStringCachingBehavior: 'IgnoreQueryString'
+        }
         customDomains: [
           { id: apexCustomDomain.id }
           { id: wwwCustomDomain.id }
@@ -221,9 +228,6 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
         httpsRedirect: 'Enabled'
         linkToDefaultDomain: 'Enabled'
         forwardingProtocol: 'HttpsOnly'
-        cacheConfiguration: {
-          queryStringCachingBehavior: 'IgnoreQueryString'
-        }
         enabledState: 'Enabled'
       }
       dependsOn: [
@@ -233,13 +237,81 @@ resource frontDoorProfile 'Microsoft.Cdn/profiles@2025-04-15' = {
   }
 
   // CDN Endpoint
-  resource cdnEndpoint 'afdEndpoints@2025-04-15' = {
+  resource cdnEndpoint 'afdEndpoints@2025-09-01-preview' = {
     name: 'cdn'
     location: 'Global'
     properties: { enabledState: 'Enabled' }
     tags: union(commonTags, {
       displayName: 'CDN Endpoint'
     })
+
+    resource cdnRoute 'routes@2025-09-01-preview' = {
+      name: 'cdn-route'
+      properties: {
+        cacheConfiguration: {
+          compressionSettings: {
+            isCompressionEnabled: true
+            contentTypesToCompress: [
+              'application/eot'
+              'application/font'
+              'application/font-sfnt'
+              'application/javascript'
+              'application/json'
+              'application/opentype'
+              'application/otf'
+              'application/pkcs7-mime'
+              'application/truetype'
+              'application/ttf'
+              'application/vnd.ms-fontobject'
+              'application/xhtml+xml'
+              'application/xml'
+              'application/xml+rss'
+              'application/x-font-opentype'
+              'application/x-font-truetype'
+              'application/x-font-ttf'
+              'application/x-httpd-cgi'
+              'application/x-javascript'
+              'application/x-mpegurl'
+              'application/x-opentype'
+              'application/x-otf'
+              'application/x-perl'
+              'application/x-ttf'
+              'font/eot'
+              'font/ttf'
+              'font/otf'
+              'font/opentype'
+              'image/svg+xml'
+              'text/css'
+              'text/csv'
+              'text/html'
+              'text/javascript'
+              'text/js'
+              'text/plain'
+              'text/richtext'
+              'text/tab-separated-values'
+              'text/xml'
+              'text/x-script'
+              'text/x-component'
+              'text/x-java-source'
+            ]
+          }
+          queryStringCachingBehavior: 'UseQueryString'
+        }
+        customDomains: [
+          { id: cdnCustomDomain.id }
+        ]
+        originGroup: { id: productionOriginGroup.id }
+        supportedProtocols: ['Https']
+        patternsToMatch: ['/*']
+        forwardingProtocol: 'MatchRequest'
+        linkToDefaultDomain: 'Disabled'
+        httpsRedirect: 'Enabled'
+        enabledState: 'Enabled'
+      }
+      dependsOn: [
+        productionOriginGroup::productionOrigin
+      ]
+    }
   }
 }
 

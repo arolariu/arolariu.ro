@@ -13,7 +13,7 @@
 //
 // Runtime Configuration:
 // - Platform: Linux container (app,linux,container)
-// - Runtime: Node.js 22 LTS (matches production)
+// - Runtime: Node.js 24 LTS (matches production)
 // - Container source: Azure Container Registry (development tag)
 // - Always On: Enabled (consistent with production behavior)
 //
@@ -60,7 +60,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
+resource devWebsite 'Microsoft.Web/sites@2025-03-01' = {
   name: 'dev-arolariu-ro'
   location: developmentWebsiteLocation
   kind: 'app,linux,container'
@@ -89,7 +89,7 @@ resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
       autoHealEnabled: false
       numberOfWorkers: 1 // Number of instances (initially).
       functionAppScaleLimit: 0
-      linuxFxVersion: 'NODE|22-lts' // Node.js version 22 is used.
+      linuxFxVersion: 'NODE|24-lts' // Node.js version 24 is used.
       alwaysOn: true // The app is (should be!) always on.
       cors: {
         allowedOrigins: [
@@ -121,7 +121,7 @@ resource devWebsite 'Microsoft.Web/sites@2024-11-01' = {
       ]
       ipSecurityRestrictionsDefaultAction: 'Allow'
       minTlsVersion: '1.3' // Minimum TLS version accepted by the server.
-      nodeVersion: '22' // Minimum specified Node.js version.
+      nodeVersion: '24' // Minimum specified Node.js version.
       webSocketsEnabled: true // WebSockets (WSS) are enabled.
     }
   }

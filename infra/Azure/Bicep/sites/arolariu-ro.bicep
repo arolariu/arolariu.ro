@@ -2,12 +2,12 @@
 // Production Website - arolariu.ro Next.js Application
 // =====================================================================================
 // This module provisions the production App Service that hosts the main arolariu.ro
-// website. The site runs as a Linux container with Node.js 22 LTS runtime and is
+// website. The site runs as a Linux container with Node.js 24 LTS runtime and is
 // configured for enterprise-grade security and performance.
 //
 // Runtime Configuration:
 // - Platform: Linux container (app,linux,container)
-// - Runtime: Node.js 22 LTS (linuxFxVersion)
+// - Runtime: Node.js 24 LTS (linuxFxVersion)
 // - Container source: Azure Container Registry (via managed identity)
 // - Always On: Enabled (prevents cold starts)
 //
@@ -68,7 +68,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
+resource mainWebsite 'Microsoft.Web/sites@2025-03-01' = {
   name: 'www-arolariu-ro'
   location: productionWebsiteLocation
   kind: 'app,linux,container'
@@ -96,7 +96,7 @@ resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
       acrUseManagedIdentityCreds: true // Azure Container Registry managed identity is used.
       autoHealEnabled: false
       numberOfWorkers: 1 // Number of instances (initially).
-      linuxFxVersion: 'NODE|22-lts' // Node.js version 22 is used.
+      linuxFxVersion: 'NODE|24-lts' // Node.js version 24 is used.
       minimumElasticInstanceCount: 1 // Minimum number of instances for horizontal scaling.
       alwaysOn: true // The app is (should be!) always on.
       cors: {
@@ -149,7 +149,7 @@ resource mainWebsite 'Microsoft.Web/sites@2024-11-01' = {
       ]
       ipSecurityRestrictionsDefaultAction: 'Deny'
       minTlsVersion: '1.2' // Minimum TLS version accepted by the server.
-      nodeVersion: '22' // Minimum specified Node.js version.
+      nodeVersion: '24' // Minimum specified Node.js version.
       webSocketsEnabled: true // WebSockets (WSS) are enabled.
       appSettings: [
         {

@@ -75,8 +75,8 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource frontDoor 'Microsoft.Cdn/profiles@2025-04-15' existing = { name: frontDoorName }
-resource frontDoorProductionEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2025-04-15' existing = {
+resource frontDoor 'Microsoft.Cdn/profiles@2025-09-01-preview' existing = { name: frontDoorName }
+resource frontDoorProductionEndpoint 'Microsoft.Cdn/profiles/afdEndpoints@2025-09-01-preview' existing = {
   parent: frontDoor
   name: 'production'
 }

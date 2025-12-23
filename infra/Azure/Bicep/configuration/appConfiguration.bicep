@@ -60,7 +60,7 @@ var commonTags resourceTags = {
   version: '2.0.0'
 }
 
-resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2025-02-01-preview' = {
+resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2025-06-01-preview' = {
   name: appConfigurationName
   location: appConfigurationLocation
   sku: { name: 'free' }
@@ -79,7 +79,7 @@ resource appConfiguration 'Microsoft.AppConfiguration/configurationStores@2025-0
 }
 
 var configs = loadJsonContent('appConfiguration.json')
-resource appConfigurationKeyValues 'Microsoft.AppConfiguration/configurationStores/keyValues@2025-02-01-preview' = [
+resource appConfigurationKeyValues 'Microsoft.AppConfiguration/configurationStores/keyValues@2025-06-01-preview' = [
   for config in configs.items: {
     parent: appConfiguration
     name: '${config.key}$${config.label}'
