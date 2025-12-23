@@ -84,7 +84,7 @@
     "@faker-js/faker": "10.1.0",
     "@hookform/resolvers": "5.2.2",
     "@microsoft/api-extractor": "7.55.2",
-    "@next/bundle-analyzer": "16.0.10",
+    "@next/bundle-analyzer": "16.1.1",
     "@next/eslint-plugin-next": "16.0.10",
     "@nx/js": "22.3.3",
     "@nx/node": "22.3.3",
