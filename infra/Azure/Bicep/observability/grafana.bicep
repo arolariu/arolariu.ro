@@ -1,7 +1,45 @@
+// =====================================================================================
+// Azure Managed Grafana - Observability Visualization Platform
+// =====================================================================================
+// This module provisions an Azure Managed Grafana instance for creating dashboards
+// and visualizing observability data. Managed Grafana provides:
+// - Pre-built dashboards for Azure Monitor metrics
+// - Custom dashboards for application-specific KPIs
+// - Alerting and notification channels
+// - Integration with Azure AD for authentication
+//
+// Grafana Version: 11 (latest major version)
+// - Includes improved query performance
+// - New visualization plugins
+// - Enhanced alerting capabilities
+//
+// SKU: Essential
+// - Suitable for small teams and development
+// - Limited to 3 users in Essential tier
+// - Consider Standard tier for production teams
+//
+// Data Sources:
+// - Azure Monitor (automatic integration)
+// - Log Analytics Workspace (via Azure Monitor data source)
+// - Application Insights (via Azure Monitor data source)
+//
+// Access Configuration:
+// - Public network access enabled
+// - Azure AD authentication required
+// - API keys enabled for automation
+//
+// Note: SMTP is disabled - alerts use Azure notification channels
+// instead of email directly from Grafana.
+//
+// See: observability/log-analytics.bicep (data source)
+// See: observability/application-insights.bicep (data source)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will deploy an Azure Managed Grafana instance.'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Azure Managed Grafana for observability visualization'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The location where the Managed Grafana instance will be deployed.')
 param managedGrafanaLocation string

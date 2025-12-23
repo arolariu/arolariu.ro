@@ -1,7 +1,32 @@
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will create three user assigned managed identities: Front-End, Back-End, Infrastructure'
-metadata author = 'Alexandru-Razvan Olariu'
+// =====================================================================================
+// User-Assigned Managed Identities
+// =====================================================================================
+// This module creates three User-Assigned Managed Identities (UAMIs) for the
+// arolariu.ro infrastructure. Each identity has a specific purpose and receives
+// appropriate RBAC permissions via the rbac/ module.
+//
+// Created Identities:
+// 1. Frontend Identity - Used by the Next.js website (arolariu.ro)
+//    - Read-only access to storage, config
+//    - ACR pull for container deployments
+//
+// 2. Backend Identity - Used by the .NET API (api.arolariu.ro)
+//    - Full storage access, database access
+//    - Azure OpenAI, Key Vault secrets
+//
+// 3. Infrastructure Identity - Used by GitHub Actions CI/CD
+//    - Full ACR access (push/pull)
+//    - Website deployment permissions
+//    - Federated credentials for OIDC
+//
+// See: rbac/backend-uami-rbac.bicep, frontend-uami-rbac.bicep, infrastructure-uami-rbac.bicep
+// =====================================================================================
+
+metadata description = 'Creates three User-Assigned Managed Identities for Frontend, Backend, and Infrastructure workloads.'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The prefix for the user assigned managed identities')
 param userAssignedManagedIdentityNamePrefix string

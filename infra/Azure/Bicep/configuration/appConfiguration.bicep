@@ -1,7 +1,42 @@
+// =====================================================================================
+// Azure App Configuration - Centralized Application Settings
+// =====================================================================================
+// This module provisions an Azure App Configuration store for centralized
+// management of non-sensitive application settings and feature flags.
+// App Configuration provides:
+// - Dynamic configuration without redeployment
+// - Feature flag management for controlled rollouts
+// - Configuration versioning and labeling
+// - Integration with Key Vault for secret references
+//
+// Configuration Categories (from appConfiguration.json):
+// - Application settings (URLs, timeouts, limits)
+// - Feature flags (enable/disable features dynamically)
+// - Environment-specific values (labeled by environment)
+//
+// Pricing Tier: Free
+// - 10 MB storage, 1,000 requests/day
+// - No soft delete or purge protection (Free tier limitation)
+// - Suitable for development; consider Standard for production
+//
+// Authentication:
+// - Local authentication DISABLED (disableLocalAuth: true)
+// - All access must use Azure AD/managed identity
+// - This is a security best practice to prevent credential leakage
+//
+// Label Convention:
+// - Keys use format: {key}${label}
+// - Labels enable environment-specific overrides (dev, prod)
+//
+// See: rbac/backend-uami-rbac.bicep (App Configuration Data Reader)
+// See: rbac/frontend-uami-rbac.bicep (App Configuration Data Reader)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will deploy an Azure App Configuration resource running on the free SKU.'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Azure App Configuration with managed identity authentication only'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The name of the App Configuration resource.')
 param appConfigurationName string

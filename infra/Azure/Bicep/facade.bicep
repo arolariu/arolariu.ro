@@ -1,8 +1,32 @@
 targetScope = 'resourceGroup'
 
-metadata description = 'This file acts a facade that will be called by the main bicep file. This file contains all module deployments (compute, storage, identity, etc.). This file is responsible for deploying all the modules.'
+// =====================================================================================
+// Infrastructure Facade - Module Orchestration Layer
+// =====================================================================================
+// This facade orchestrates the deployment of all infrastructure modules in the correct
+// order, managing dependencies between modules and passing outputs between them.
+//
+// Deployment Order (with dependencies):
+// 1. Identity      → Creates managed identities (no dependencies)
+// 2. RBAC          → Assigns roles to identities (depends on: Identity)
+// 3. Configuration → Creates Key Vault, App Config (no dependencies)
+// 4. Observability → Creates monitoring resources (depends on: Identity, Configuration)
+// 5. Storage       → Creates storage, databases, ACR (depends on: Identity, RBAC)
+// 6. Compute       → Creates App Service Plans (depends on: Identity)
+// 7. Sites         → Deploys web applications (depends on: Storage, Configuration)
+// 8. Network       → Creates Front Door, DNS (depends on: Sites)
+// 9. Bindings      → Configures custom domains (depends on: Sites, Network)
+// 10. AI           → Deploys Azure OpenAI (depends on: Configuration)
+//
+// Identity Array Convention:
+// [0] = Frontend identity (arolariu.ro website)
+// [1] = Backend identity (api.arolariu.ro API)
+// [2] = Infrastructure identity (GitHub Actions CI/CD)
+// =====================================================================================
 
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Facade module that orchestrates the deployment of all infrastructure modules with proper dependency management.'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The date when the deployment is executed.')
 param resourceDeploymentDate string = utcNow()

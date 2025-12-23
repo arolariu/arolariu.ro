@@ -1,7 +1,41 @@
+// =====================================================================================
+// Azure Storage Account - Enterprise-Grade Secure Storage
+// =====================================================================================
+// This module provisions an Azure Storage Account configured with enterprise-grade
+// security settings. The storage account serves as the primary data store for:
+// - Blob storage (user uploads, invoice images, static assets)
+// - Table storage (metadata, analytics data)
+// - Queue storage (asynchronous processing pipelines)
+// - File storage (shared application data)
+//
+// Security Configuration:
+// - TLS 1.2 minimum (no legacy protocol support)
+// - Infrastructure encryption enabled (double encryption at rest)
+// - Azure AD authentication by default (defaultToOAuthAuthentication)
+// - HTTPS-only traffic (supportsHttpsTrafficOnly)
+// - Cross-tenant replication disabled (data sovereignty)
+//
+// Data Protection:
+// - Change feed enabled (90-day retention for audit trail)
+// - Point-in-time restore (30-day recovery window)
+// - Container soft delete (7-day retention)
+// - Blob soft delete (7-day retention)
+// - Blob versioning enabled
+//
+// CORS Configuration:
+// - Only arolariu.ro and dev.arolariu.ro origins allowed
+// - Read-only methods: GET, HEAD, OPTIONS
+// - Required for frontend direct access to blob storage
+//
+// See: rbac/backend-uami-rbac.bicep (storage role assignments)
+// See: configuration/keyVault.bicep (connection strings stored)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This template creates a secure storage account with enterprise-grade security standards.'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Secure storage account with enterprise-grade security and data protection'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The storage account name.')
 @minLength(3)

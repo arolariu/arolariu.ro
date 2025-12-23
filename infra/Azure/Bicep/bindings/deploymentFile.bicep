@@ -1,7 +1,41 @@
+// =====================================================================================
+// Custom Domain Bindings Deployment Orchestrator - DNS and SSL Configuration
+// =====================================================================================
+// This orchestrator module deploys custom domain bindings for all arolariu.ro
+// subdomains. It configures DNS records, SSL certificates, and hostname bindings
+// for each web application in the platform.
+//
+// Deployed Bindings:
+// - dev.arolariu.ro → Development website (App Service)
+// - api.arolariu.ro → Backend API (App Service)
+// - docs.arolariu.ro → Documentation (Static Web App)
+// - cv.arolariu.ro → CV/Resume site (Static Web App)
+// - arolariu.ro + www.arolariu.ro → Production website (via Front Door)
+//
+// Architecture Pattern:
+// Bindings are separate from site deployments to enable:
+// - DNS propagation without site redeployment
+// - Certificate renewal independent of application code
+// - Flexible hostname management (add/remove subdomains)
+//
+// Prerequisites:
+// - DNS Zone must exist (see network/deploymentFile.bicep)
+// - Sites must be deployed with default hostnames first
+// - App Service Plans must be configured (Basic+ for custom domains)
+//
+// Certificate Management:
+// - App Service managed certificates are used (auto-renewal)
+// - Front Door uses its own managed certificates for apex/www
+//
+// See: network/dnsZone.bicep (DNS records)
+// See: sites/deploymentFile.bicep (web applications)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This file acts as a deployment file for binding resources'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Custom domain bindings orchestrator for all arolariu.ro subdomains'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The date when the deployment is executed.')
 param resourceDeploymentDate string

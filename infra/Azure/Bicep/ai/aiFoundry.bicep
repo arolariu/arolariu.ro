@@ -1,7 +1,46 @@
+// =====================================================================================
+// Azure AI Foundry - Unified AI Development Platform
+// =====================================================================================
+// This module provisions an Azure AI Foundry instance (formerly Azure AI Services)
+// that provides a unified platform for AI development. AI Foundry includes:
+// - Pre-built AI APIs (Vision, Speech, Language, Decision)
+// - Project management for organizing AI workloads
+// - Integrated model catalog and deployment
+// - Prompt flow for building AI applications
+//
+// AI Project:
+// - Default project: arolariu.ro
+// - Projects organize resources and permissions
+// - Each project can have its own model deployments and endpoints
+//
+// Identity Model:
+// - System-assigned managed identity enabled
+// - Identity is used for accessing dependent Azure resources
+// - No user-assigned identity (different pattern from App Services)
+//
+// Available APIs (via AIServices kind):
+// - Computer Vision (image analysis)
+// - Form Recognizer (document understanding)
+// - Language Understanding (NLU)
+// - Speech Services (TTS/STT)
+// - Custom models via AI Foundry portal
+//
+// SKU: S0 (Standard)
+// - Multi-service cognitive resource
+// - Pay-per-transaction pricing
+//
+// Network Configuration:
+// - Public network access enabled
+// - Default action: Allow
+//
+// See: ai/openai.bicep (dedicated OpenAI for GPT models)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This template deploys an Azure AI Foundry instance.'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Azure AI Foundry (AIServices) with project management'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 @description('The location for the AI Foundry instance.')
 @allowed(['swedencentral', 'norwayeast', 'westeurope', 'northeurope'])

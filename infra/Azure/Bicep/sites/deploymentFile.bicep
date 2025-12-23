@@ -1,3 +1,40 @@
+// =====================================================================================
+// Sites Deployment Orchestrator - Azure Web Applications and Static Sites
+// =====================================================================================
+// This orchestrator module deploys all web applications that make up the arolariu.ro
+// platform. It provisions App Services, Static Web Apps, and configures their
+// runtime settings, managed identities, and observability integration.
+//
+// Deployed Applications:
+// - arolariu.ro (Production) → Next.js frontend (App Service + Frontend UAMI)
+// - api.arolariu.ro → .NET backend API (App Service + Backend UAMI)
+// - dev.arolariu.ro → Development/staging frontend (App Service)
+// - docs.arolariu.ro → DocFX documentation (Static Web App)
+// - cv.arolariu.ro → SvelteKit CV site (Static Web App)
+//
+// Runtime Configuration:
+// - App Services use container deployment from ACR
+// - Static Web Apps use GitHub Actions for deployment
+// - All sites have Application Insights telemetry enabled
+//
+// Identity Model:
+// - Production frontend uses Frontend UAMI (read-only access)
+// - Backend API uses Backend UAMI (read-write access to storage/databases)
+// - Development site shares Frontend UAMI for consistency
+//
+// App Service Plan Assignment:
+// - Production sites → Production App Service Plan (Premium)
+// - Development/API → Development App Service Plan (Standard)
+//
+// See: compute/deploymentFile.bicep (App Service Plans)
+// See: identity/deploymentFile.bicep (Managed Identities)
+// See: observability/deploymentFile.bicep (Application Insights)
+// =====================================================================================
+
+metadata description = 'Sites orchestrator deploying all web applications and static sites'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
+
 targetScope = 'resourceGroup'
 
 @description('The date when the deployment is executed.')

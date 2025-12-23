@@ -1,7 +1,46 @@
+// =====================================================================================
+// Backend API - api.arolariu.ro .NET Application
+// =====================================================================================
+// This module provisions the App Service that hosts the api.arolariu.ro backend API.
+// The API is a .NET 9.0 application running as a Linux container and serves as the
+// central backend for all business logic and data operations.
+//
+// Runtime Configuration:
+// - Platform: Linux container (app,linux,container)
+// - Runtime: .NET Core 9.0 (linuxFxVersion)
+// - Container source: Azure Container Registry (via managed identity)
+// - Always On: Enabled (prevents cold starts)
+//
+// Identity:
+// - User-Assigned Managed Identity (Backend UAMI)
+// - Used for: Storage, Cosmos DB, SQL, Key Vault, App Configuration, OpenAI
+// - Higher privileges than Frontend UAMI (read-write access)
+//
+// API Features:
+// - WebSockets: Enabled (real-time communication)
+// - HTTP/2: Enabled (improved performance)
+// - Request Tracing: Enabled (debugging support)
+//
+// Security Configuration:
+// - Minimum TLS 1.2 enforced
+// - FTPS: Disabled (no FTP access)
+// - IP restrictions can be added for Front Door only access
+//
+// Observability:
+// - Application Insights instrumentation enabled
+// - HTTP logging enabled
+// - Health check path: /
+//
+// See: compute/appServicePlans.bicep (hosting plan)
+// See: identity/userAssignedIdentity.bicep (Backend UAMI)
+// See: rbac/backend-uami-rbac.bicep (role assignments)
+// =====================================================================================
+
 targetScope = 'resourceGroup'
 
-metadata description = 'This template will create the api.arolariu.ro app service site.'
-metadata author = 'Alexandru-Razvan Olariu'
+metadata description = 'Backend API api.arolariu.ro App Service with .NET 9.0'
+metadata author = 'Alexandru-Razvan Olariu <admin@arolariu.ro>'
+metadata version = '2.0.0'
 
 param apiWebsitePlanId string
 param apiWebsiteLocation string
