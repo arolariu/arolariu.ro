@@ -127,7 +127,7 @@ export function useUserInformation(): HookReturnType {
     userJwt: "",
   });
   const abortControllerRef = useRef<AbortController | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
 
   useEffect(() => {
